@@ -1,7 +1,6 @@
-import { createRef } from 'react';
+import { createRef, type ComponentProps } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vite-plus/test';
-import type { MessagesPaneModel } from '../models';
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import MessagesPane from '../components/MessagesPane';
 import { MESSAGE_BOTTOM_GAP } from '../constants';
@@ -48,126 +47,121 @@ vi.mock('../components/messages/MessageItem', () => ({
   ),
 }));
 
-type MessagesPaneModelOverrides = {
-  state?: Partial<MessagesPaneModel['state']>;
-  menu?: Partial<MessagesPaneModel['menu']>;
-  interaction?: Partial<MessagesPaneModel['interaction']>;
-  refs?: Partial<MessagesPaneModel['refs']>;
-  previews?: Partial<MessagesPaneModel['previews']>;
-  actions?: Partial<MessagesPaneModel['actions']>;
-  forwarding?: Partial<MessagesPaneModel['forwarding']>;
+type MessagesPaneRuntime = ComponentProps<typeof MessagesPane>['runtime'];
+
+type MessagesPaneRuntimeOverrides = {
+  user?: Partial<MessagesPaneRuntime['user']>;
+  session?: Partial<MessagesPaneRuntime['session']>;
+  interaction?: Partial<MessagesPaneRuntime['interaction']>;
+  composer?: Partial<MessagesPaneRuntime['composer']>;
+  viewport?: Partial<MessagesPaneRuntime['viewport']>;
+  refs?: Partial<MessagesPaneRuntime['refs']>;
+  previews?: Partial<MessagesPaneRuntime['previews']>;
+  mutations?: Partial<MessagesPaneRuntime['mutations']>;
+  actions?: Partial<MessagesPaneRuntime['actions']>;
 };
 
-const createModel = (
-  overrides: MessagesPaneModelOverrides = {}
-): MessagesPaneModel => ({
-  state: {
-    loading: false,
-    loadError: null,
-    messages: [],
-    user: { id: 'user-a', name: 'Admin' },
-    normalizedSearchQuery: '',
-    messageInputHeight: 0,
-    composerContextualOffset: 0,
-    composerContainerHeight: 0,
-    showScrollToBottom: false,
-    hasOlderMessages: false,
-    isLoadingOlderMessages: false,
-    olderMessagesError: null,
-    ...overrides.state,
-  },
-  menu: {
-    openMessageId: null,
-    placement: 'up',
-    sideAnchor: 'middle',
-    shouldAnimateOpen: false,
-    transitionSourceId: null,
-    offsetX: 0,
-    close: vi.fn(),
-    toggle: vi.fn(),
-    ...overrides.menu,
-  },
-  interaction: {
-    isSelectionMode: false,
-    selectedMessageIds: new Set<string>(),
-    searchMatchedMessageIds: new Set<string>(),
-    activeSearchMessageId: null,
-    expandedMessageIds: new Set<string>(),
-    flashingMessageId: null,
-    isFlashHighlightVisible: false,
-    onToggleMessageSelection: vi.fn(),
-    onToggleExpand: vi.fn(),
-    ...overrides.interaction,
-  },
-  refs: {
-    messagesContainerRef: createRef<HTMLDivElement>(),
-    messagesEndRef: createRef<HTMLDivElement>(),
-    messageBubbleRefs: { current: new Map<string, HTMLDivElement>() },
-    initialMessageAnimationKeysRef: { current: new Set<string>() },
-    initialOpenJumpAnimationKeysRef: { current: new Set<string>() },
-    ...overrides.refs,
-  },
-  previews: {
-    captionMessagesByAttachmentId: new Map<string, ChatMessage>(),
-    captionMessageIds: new Set<string>(),
-    getAttachmentFileName: () => 'Lampiran',
-    getAttachmentFileKind: () => 'document',
-    getImageMessageUrl: vi.fn(() => null),
-    getPdfMessagePreview: vi.fn(() => undefined),
-    documentPreviewUrl: null,
-    documentPreviewName: '',
-    isDocumentPreviewVisible: false,
-    closeDocumentPreview: vi.fn(),
-    isImagePreviewOpen: false,
-    imagePreviewUrl: null,
-    imagePreviewBackdropUrl: null,
-    imagePreviewName: '',
-    isImagePreviewVisible: false,
-    closeImagePreview: vi.fn(),
-    imageGroupPreviewItems: [],
-    activeImageGroupPreviewId: null,
-    isImageGroupPreviewVisible: false,
-    closeImageGroupPreview: vi.fn(),
-    selectImageGroupPreviewItem: vi.fn(),
-    openImageInPortal: vi.fn(async () => {}),
-    openImageGroupInPortal: vi.fn(async () => {}),
-    openDocumentInPortal: vi.fn(async () => {}),
-    ...overrides.previews,
-  },
-  actions: {
-    handleEditMessage: vi.fn(),
-    handleCopyMessage: vi.fn(async () => {}),
-    handleDownloadMessage: vi.fn(async () => {}),
-    handleOpenForwardMessagePicker: vi.fn(),
-    handleDeleteMessage: vi.fn(async () => true),
-    onScrollToBottom: vi.fn(),
-    onLoadOlderMessages: vi.fn(),
-    onRetryLoadMessages: vi.fn(),
-    ...overrides.actions,
-  },
-  forwarding: {
-    isOpen: false,
-    targetMessage: null,
-    captionMessage: null,
-    availableUsers: [],
-    selectedRecipientIds: new Set<string>(),
-    isDirectoryLoading: false,
-    directoryError: null,
-    hasMoreDirectoryUsers: false,
-    isSubmitting: false,
-    onClose: vi.fn(),
-    onToggleRecipient: vi.fn(),
-    onRetryLoadDirectory: vi.fn(),
-    onLoadMoreDirectoryUsers: vi.fn(),
-    onSubmit: vi.fn(async () => {}),
-    ...overrides.forwarding,
-  },
-});
+const createRuntime = (overrides: MessagesPaneRuntimeOverrides = {}) =>
+  ({
+    user: { id: 'user-a', name: 'Admin', ...overrides.user },
+    session: {
+      loading: false,
+      loadError: null,
+      messages: [],
+      hasOlderMessages: false,
+      isLoadingOlderMessages: false,
+      olderMessagesError: null,
+      loadOlderMessages: vi.fn(),
+      retryLoadMessages: vi.fn(),
+      ...overrides.session,
+    },
+    interaction: {
+      isSelectionMode: false,
+      isMessageSearchMode: false,
+      normalizedMessageSearchQuery: '',
+      selectedMessageIds: new Set<string>(),
+      searchMatchedMessageIdSet: new Set<string>(),
+      activeSearchMessageId: null,
+      handleToggleMessageSelection: vi.fn(),
+      ...overrides.interaction,
+    },
+    composer: {
+      messageInputHeight: 0,
+      composerContextualOffset: 0,
+      ...overrides.composer,
+    },
+    viewport: {
+      composerContainerHeight: 0,
+      hasNewMessages: false,
+      isAtBottom: true,
+      closeMessageMenu: vi.fn(),
+      flashingMessageId: null,
+      isFlashHighlightVisible: false,
+      openMenuMessageId: null,
+      menuPlacement: 'up',
+      menuSideAnchor: 'middle',
+      shouldAnimateMenuOpen: false,
+      menuTransitionSourceId: null,
+      menuOffsetX: 0,
+      scrollToBottom: vi.fn(),
+      ...overrides.viewport,
+    },
+    refs: {
+      expandedMessageIds: new Set<string>(),
+      messagesContainerRef: createRef<HTMLDivElement>(),
+      messagesContentRef: createRef<HTMLDivElement>(),
+      messagesEndRef: createRef<HTMLDivElement>(),
+      messageBubbleRefs: { current: new Map<string, HTMLDivElement>() },
+      initialMessageAnimationKeysRef: { current: new Set<string>() },
+      initialOpenJumpAnimationKeysRef: { current: new Set<string>() },
+      handleToggleExpand: vi.fn(),
+      ...overrides.refs,
+    },
+    previews: {
+      captionMessagesByAttachmentId: new Map<string, ChatMessage>(),
+      captionMessageIds: new Set<string>(),
+      getImageMessageUrl: vi.fn(() => null),
+      getPdfMessagePreview: vi.fn(() => undefined),
+      documentPreviewUrl: null,
+      documentPreviewName: '',
+      isDocumentPreviewVisible: false,
+      closeDocumentPreview: vi.fn(),
+      isImagePreviewOpen: false,
+      imagePreviewUrl: null,
+      imagePreviewBackdropUrl: null,
+      imagePreviewName: '',
+      isImagePreviewVisible: false,
+      closeImagePreview: vi.fn(),
+      imageGroupPreviewItems: [],
+      activeImageGroupPreviewId: null,
+      isImageGroupPreviewVisible: false,
+      closeImageGroupPreview: vi.fn(),
+      selectImageGroupPreviewItem: vi.fn(),
+      openImageInPortal: vi.fn(async () => {}),
+      openImageGroupInPortal: vi.fn(async () => {}),
+      openDocumentInPortal: vi.fn(async () => {}),
+      ...overrides.previews,
+    },
+    mutations: {
+      handleEditMessage: vi.fn(),
+      handleCopyMessage: vi.fn(async () => {}),
+      handleDownloadMessage: vi.fn(async () => {}),
+      handleOpenForwardMessagePicker: vi.fn(),
+      handleDeleteMessage: vi.fn(async () => true),
+      ...overrides.mutations,
+    },
+    actions: {
+      getAttachmentFileName: () => 'Lampiran',
+      getAttachmentFileKind: () => 'document',
+      toggleMessageMenu: vi.fn(),
+      ...overrides.actions,
+    },
+  }) as unknown as MessagesPaneRuntime;
 
 describe('MessagesPane', () => {
   it('closes the single-image preview when the empty content area is clicked', () => {
     const closeImagePreview = vi.fn();
-    const model = createModel({
+    const runtime = createRuntime({
       previews: {
         isImagePreviewOpen: true,
         isImagePreviewVisible: true,
@@ -178,7 +172,7 @@ describe('MessagesPane', () => {
       },
     });
 
-    render(<MessagesPane model={model} />);
+    render(<MessagesPane runtime={runtime} />);
 
     const previewContent = screen.getByTestId('image-expand-preview-content');
 
@@ -188,8 +182,8 @@ describe('MessagesPane', () => {
   });
 
   it('reserves scroll space from the measured composer height so the last bubble keeps a gap above it', () => {
-    const model = createModel({
-      state: {
+    const runtime = createRuntime({
+      session: {
         messages: [
           {
             id: 'message-1',
@@ -210,13 +204,17 @@ describe('MessagesPane', () => {
             reply_to_message_id: null,
           },
         ],
-        composerContainerHeight: 128,
+      },
+      composer: {
         messageInputHeight: 22,
         composerContextualOffset: 0,
       },
+      viewport: {
+        composerContainerHeight: 128,
+      },
     });
 
-    const { container } = render(<MessagesPane model={model} />);
+    const { container } = render(<MessagesPane runtime={runtime} />);
 
     const messagesViewport = container.querySelector('[role="presentation"]');
 

@@ -1,27 +1,34 @@
 import { motion } from 'motion/react';
 import { memo } from 'react';
 import { Toaster } from 'react-hot-toast';
+import { useAuthStore } from '@/store/authStore';
 import ChatHeader from './components/ChatHeader';
 import ComposerPanel from './components/ComposerPanel';
 import MessagesPane from './components/MessagesPane';
 import MessageForwardPicker from './components/messages/MessageForwardPicker';
 import { CHAT_SIDEBAR_TOASTER_ID } from './constants';
-import { useChatSidebarController } from './hooks/useChatSidebarController';
+import { useChatSidebarRefs } from './hooks/useChatSidebarRefs';
+import { useChatSidebarRuntimeState } from './hooks/useChatSidebarRuntimeState';
+import { useTargetProfilePhoto } from './hooks/useTargetProfilePhoto';
 import type { ChatSidebarPanelProps } from './types';
+import { computeDmChannelId } from './utils/channel';
 
 const ChatSidebarPanel = memo(
   ({ isOpen, onClose, targetUser }: ChatSidebarPanelProps) => {
-    const {
-      headerModel,
-      messagesModel,
-      composerModel,
-      isAtTop,
-      chatHeaderContainerRef,
-      handleChatPortalBackgroundClick,
-    } = useChatSidebarController({
+    const { user } = useAuthStore();
+    const refs = useChatSidebarRefs();
+    /* c8 ignore next */
+    const currentChannelId =
+      user && targetUser ? computeDmChannelId(user.id, targetUser.id) : null;
+    const { displayTargetPhotoUrl } = useTargetProfilePhoto(targetUser);
+    const runtime = useChatSidebarRuntimeState({
       isOpen,
       onClose,
       targetUser,
+      user,
+      currentChannelId,
+      refs,
+      displayTargetPhotoUrl,
     });
 
     return (
@@ -33,7 +40,7 @@ const ChatSidebarPanel = memo(
         className={`relative h-full w-full select-none ${
           isOpen ? '' : 'pointer-events-none'
         }`}
-        onClickCapture={handleChatPortalBackgroundClick}
+        onClickCapture={runtime.viewport.handleChatPortalBackgroundClick}
       >
         <Toaster
           toasterId={CHAT_SIDEBAR_TOASTER_ID}
@@ -72,23 +79,23 @@ const ChatSidebarPanel = memo(
             <div
               aria-hidden="true"
               className={`pointer-events-none absolute inset-x-0 top-0 z-0 h-32 bg-gradient-to-b from-white via-white/92 via-white/72 to-transparent transition-opacity duration-300 ease-in-out ${
-                isAtTop ? 'opacity-0' : 'opacity-100'
+                runtime.viewport.isAtTop ? 'opacity-0' : 'opacity-100'
               }`}
             />
             <div
-              ref={chatHeaderContainerRef}
+              ref={runtime.refs.chatHeaderContainerRef}
               className="pointer-events-auto relative z-10"
             >
-              <ChatHeader model={headerModel} />
+              <ChatHeader runtime={runtime} />
             </div>
           </div>
 
           <div className="min-h-0 flex flex-1 flex-col">
-            <MessagesPane model={messagesModel} />
+            <MessagesPane runtime={runtime} />
           </div>
 
-          <ComposerPanel model={composerModel} />
-          <MessageForwardPicker model={messagesModel.forwarding} />
+          <ComposerPanel runtime={runtime} />
+          <MessageForwardPicker runtime={runtime} />
         </div>
       </motion.div>
     );

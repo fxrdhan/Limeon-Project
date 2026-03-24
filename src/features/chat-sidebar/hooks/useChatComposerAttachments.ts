@@ -1,8 +1,10 @@
-import type { Dispatch, SetStateAction, ChangeEvent, RefObject } from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { Dispatch, SetStateAction, RefObject } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import type { PendingComposerAttachment } from '../types';
 import { useComposerAttachmentLinkPrompt } from './useComposerAttachmentLinkPrompt';
+import { useComposerAttachmentPickers } from './useComposerAttachmentPickers';
 import { useComposerAttachmentPreviewState } from './useComposerAttachmentPreviewState';
+import { useComposerAttachMenu } from './useComposerAttachMenu';
 import { useComposerLoadingAttachments } from './useComposerLoadingAttachments';
 import { useComposerPendingAttachments } from './useComposerPendingAttachments';
 
@@ -23,18 +25,7 @@ export const useChatComposerAttachments = ({
   message,
   setMessage,
 }: UseChatComposerAttachmentsProps) => {
-  const [isAttachModalOpen, setIsAttachModalOpen] = useState(false);
-  const attachButtonRef = useRef<HTMLButtonElement>(null);
-  const attachModalRef = useRef<HTMLDivElement>(null);
-  const imageInputRef = useRef<HTMLInputElement>(null);
-  const documentInputRef = useRef<HTMLInputElement>(null);
-  const audioInputRef = useRef<HTMLInputElement>(null);
-  const replaceComposerImageAttachmentIdRef = useRef<string | null>(null);
-  const replaceComposerDocumentAttachmentIdRef = useRef<string | null>(null);
-
-  const closeAttachModal = useCallback(() => {
-    setIsAttachModalOpen(false);
-  }, []);
+  const attachMenu = useComposerAttachMenu({ closeMessageMenu });
 
   const {
     pendingComposerAttachments,
@@ -52,6 +43,14 @@ export const useChatComposerAttachments = ({
     editingMessageId,
     messageInputRef,
   });
+
+  const {
+    closeAttachModal,
+    isAttachModalOpen,
+    attachButtonRef,
+    attachModalRef,
+    handleAttachButtonClick,
+  } = attachMenu;
 
   const preview = useComposerAttachmentPreviewState({
     closeAttachModal,
@@ -79,6 +78,12 @@ export const useChatComposerAttachments = ({
     queueLoadingComposerAttachment: loading.queueLoadingComposerAttachment,
     setMessage,
     resetKey: currentChannelId,
+  });
+
+  const pickers = useComposerAttachmentPickers({
+    closeAttachModal,
+    queueComposerImage,
+    queueComposerFile,
   });
 
   const {
@@ -117,6 +122,18 @@ export const useChatComposerAttachments = ({
     handleUseAttachmentPasteAsAttachment,
     resetComposerLinkPromptState,
   } = linkPrompt;
+  const {
+    imageInputRef,
+    documentInputRef,
+    audioInputRef,
+    clearReplaceComposerAttachmentTargets,
+    handleAttachImageClick,
+    handleAttachDocumentClick,
+    handleAttachAudioClick,
+    handleImageFileChange,
+    handleDocumentFileChange,
+    handleAudioFileChange,
+  } = pickers;
 
   const composerAttachmentPreviewItems = useMemo(() => {
     if (loadingComposerAttachments.length === 0) {
@@ -150,12 +167,12 @@ export const useChatComposerAttachments = ({
 
   const resetScopedComposerAttachmentState = useCallback(() => {
     closeAttachModal();
-    replaceComposerImageAttachmentIdRef.current = null;
-    replaceComposerDocumentAttachmentIdRef.current = null;
+    clearReplaceComposerAttachmentTargets();
     resetComposerImagePreviewState();
     resetLoadingComposerAttachments();
     resetComposerLinkPromptState();
   }, [
+    clearReplaceComposerAttachmentTargets,
     closeAttachModal,
     resetComposerImagePreviewState,
     resetComposerLinkPromptState,
@@ -166,16 +183,6 @@ export const useChatComposerAttachments = ({
     resetScopedComposerAttachmentState();
   }, [currentChannelId, resetScopedComposerAttachmentState]);
 
-  const handleAttachButtonClick = useCallback(() => {
-    if (isAttachModalOpen) {
-      closeAttachModal();
-      return;
-    }
-
-    closeMessageMenu();
-    setIsAttachModalOpen(true);
-  }, [closeAttachModal, closeMessageMenu, isAttachModalOpen]);
-
   const removePendingComposerAttachment = useCallback(
     (attachmentId: string) => {
       removePendingComposerAttachmentFromQueue(attachmentId);
@@ -184,19 +191,13 @@ export const useChatComposerAttachments = ({
         resetComposerImagePreviewState();
       }
 
-      replaceComposerImageAttachmentIdRef.current =
-        replaceComposerImageAttachmentIdRef.current === attachmentId
-          ? null
-          : replaceComposerImageAttachmentIdRef.current;
-      replaceComposerDocumentAttachmentIdRef.current =
-        replaceComposerDocumentAttachmentIdRef.current === attachmentId
-          ? null
-          : replaceComposerDocumentAttachmentIdRef.current;
+      clearReplaceComposerAttachmentTargets(attachmentId);
     },
     [
+      clearReplaceComposerAttachmentTargets,
       previewComposerImageAttachment?.id,
-      resetComposerImagePreviewState,
       removePendingComposerAttachmentFromQueue,
+      resetComposerImagePreviewState,
     ]
   );
 
@@ -218,149 +219,6 @@ export const useChatComposerAttachments = ({
       restorePendingComposerAttachmentsFromQueue,
     ]
   );
-
-  const handleAttachImageClick = useCallback(
-    (replaceAttachmentId?: string) => {
-      replaceComposerImageAttachmentIdRef.current = replaceAttachmentId ?? null;
-      replaceComposerDocumentAttachmentIdRef.current = null;
-      closeAttachModal();
-      imageInputRef.current?.click();
-    },
-    [closeAttachModal]
-  );
-
-  const handleAttachDocumentClick = useCallback(
-    (replaceAttachmentId?: string) => {
-      replaceComposerImageAttachmentIdRef.current = null;
-      replaceComposerDocumentAttachmentIdRef.current =
-        replaceAttachmentId ?? null;
-      closeAttachModal();
-      documentInputRef.current?.click();
-    },
-    [closeAttachModal]
-  );
-
-  const handleAttachAudioClick = useCallback(() => {
-    closeAttachModal();
-    replaceComposerImageAttachmentIdRef.current = null;
-    replaceComposerDocumentAttachmentIdRef.current = null;
-    audioInputRef.current?.click();
-  }, [closeAttachModal]);
-
-  const handleImageFileChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      const selectedFiles = Array.from(event.target.files ?? []);
-      event.target.value = '';
-      if (selectedFiles.length === 0) {
-        return;
-      }
-
-      const replaceAttachmentId = replaceComposerImageAttachmentIdRef.current;
-      replaceComposerImageAttachmentIdRef.current = null;
-      replaceComposerDocumentAttachmentIdRef.current = null;
-
-      for (const [fileIndex, selectedFile] of selectedFiles.entries()) {
-        const didQueue = queueComposerImage(
-          selectedFile,
-          fileIndex === 0 ? (replaceAttachmentId ?? undefined) : undefined
-        );
-        if (!didQueue) {
-          break;
-        }
-      }
-    },
-    [queueComposerImage]
-  );
-
-  const handleDocumentFileChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      const selectedFiles = Array.from(event.target.files ?? []);
-      event.target.value = '';
-      if (selectedFiles.length === 0) {
-        return;
-      }
-
-      const replaceAttachmentId =
-        replaceComposerDocumentAttachmentIdRef.current;
-      replaceComposerDocumentAttachmentIdRef.current = null;
-
-      for (const [fileIndex, selectedFile] of selectedFiles.entries()) {
-        const didQueue = queueComposerFile(
-          selectedFile,
-          'document',
-          fileIndex === 0 ? (replaceAttachmentId ?? undefined) : undefined
-        );
-        if (!didQueue) {
-          break;
-        }
-      }
-    },
-    [queueComposerFile]
-  );
-
-  const handleAudioFileChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      const selectedFiles = Array.from(event.target.files ?? []);
-      event.target.value = '';
-      if (selectedFiles.length === 0) {
-        return;
-      }
-
-      replaceComposerDocumentAttachmentIdRef.current = null;
-      for (const selectedFile of selectedFiles) {
-        const didQueue = queueComposerFile(selectedFile, 'audio');
-        if (!didQueue) {
-          break;
-        }
-      }
-    },
-    [queueComposerFile]
-  );
-
-  useEffect(() => {
-    if (!isAttachModalOpen) {
-      return;
-    }
-
-    const handleMouseDown = (event: MouseEvent) => {
-      const eventTarget = event.target;
-      if (!(eventTarget instanceof Node)) {
-        return;
-      }
-
-      if (eventTarget instanceof Element) {
-        const profileLayer = eventTarget.closest(
-          '[data-profile-trigger="true"], [data-profile-portal="true"]'
-        );
-        if (profileLayer) {
-          return;
-        }
-      }
-
-      if (attachModalRef.current?.contains(eventTarget)) {
-        return;
-      }
-      if (attachButtonRef.current?.contains(eventTarget)) {
-        return;
-      }
-
-      closeAttachModal();
-    };
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        closeAttachModal();
-      }
-    };
-
-    document.addEventListener('mousedown', handleMouseDown);
-    document.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      document.removeEventListener('mousedown', handleMouseDown);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [closeAttachModal, isAttachModalOpen]);
 
   return {
     linkPrompt,

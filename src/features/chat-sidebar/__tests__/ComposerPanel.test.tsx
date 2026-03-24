@@ -1,8 +1,8 @@
+import type { ComponentProps } from 'react';
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import ComposerPanel from '../components/ComposerPanel';
-import type { ComposerPanelModel } from '../models';
 
 const { mockPopupMenuContent } = vi.hoisted(() => ({
   mockPopupMenuContent: vi.fn((props: { header?: React.ReactNode }) => (
@@ -79,23 +79,23 @@ vi.mock('../components/composer/ComposerEditBanner', () => ({
   default: () => null,
 }));
 
-const buildComposerModel = (): ComposerPanelModel => ({
-  state: {
-    message:
-      'https://shrtlink.works/bwdrrk3ugm dan https://drive.google.com/file/d/113Z7cPJCdAwGg8emnZfw0aCix4YeS_lH/view?usp=sharing',
-    editingMessagePreview: null,
-    messageInputHeight: 40,
-    isMessageInputMultiline: false,
-    isSendSuccessGlowVisible: false,
-    isSendDisabled: false,
-  },
-  attachments: {
-    isAttachModalOpen: false,
-    linkPrompt: {
-      url: null,
-      isAttachmentCandidate: false,
-      isShortenable: false,
-      hoverableCandidates: [
+type ComposerRuntime = ComponentProps<typeof ComposerPanel>['runtime'];
+
+const buildComposerRuntime = () =>
+  ({
+    composer: {
+      message:
+        'https://shrtlink.works/bwdrrk3ugm dan https://drive.google.com/file/d/113Z7cPJCdAwGg8emnZfw0aCix4YeS_lH/view?usp=sharing',
+      editingMessagePreview: null,
+      messageInputHeight: 40,
+      isMessageInputMultiline: false,
+      isSendSuccessGlowVisible: false,
+      isLoadingAttachmentComposerAttachments: false,
+      isAttachModalOpen: false,
+      attachmentPastePromptUrl: null,
+      isAttachmentPastePromptAttachmentCandidate: false,
+      isAttachmentPastePromptShortenable: false,
+      hoverableAttachmentCandidates: [
         {
           id: 'candidate-1',
           url: 'https://shrtlink.works/bwdrrk3ugm',
@@ -112,70 +112,67 @@ const buildComposerModel = (): ComposerPanelModel => ({
           rangeEnd: 120,
         },
       ],
-      hoverableUrl: null,
+      composerAttachmentPreviewItems: [],
+      previewComposerImageAttachment: undefined,
+      isComposerImageExpanded: false,
+      isComposerImageExpandedVisible: false,
+      attachButtonRef: { current: null },
+      attachModalRef: { current: null },
+      attachmentPastePromptRef: { current: null },
+      imageInputRef: { current: null },
+      documentInputRef: { current: null },
+      audioInputRef: { current: null },
+      handleMessageChange: vi.fn(),
+      handleComposerPaste: vi.fn(),
+      dismissAttachmentPastePrompt: vi.fn(),
+      openAttachmentPastePrompt: vi.fn(),
+      openComposerLinkPrompt: vi.fn(),
+      handleEditAttachmentLink: vi.fn(),
+      handleOpenAttachmentPastePromptLink: vi.fn(),
+      handleCopyAttachmentPastePromptLink: vi.fn(),
+      handleShortenAttachmentPastePromptLink: vi.fn(),
+      handleUseAttachmentPasteAsUrl: vi.fn(),
+      handleUseAttachmentPasteAsAttachment: vi.fn(),
+      handleAttachButtonClick: vi.fn(),
+      handleAttachImageClick: vi.fn(),
+      handleAttachDocumentClick: vi.fn(),
+      handleAttachAudioClick: vi.fn(),
+      handleImageFileChange: vi.fn(),
+      handleDocumentFileChange: vi.fn(),
+      handleAudioFileChange: vi.fn(),
+      cancelLoadingComposerAttachment: vi.fn(),
+      removePendingComposerAttachment: vi.fn(),
+      queueComposerImage: vi.fn(() => true),
+      closeComposerImagePreview: vi.fn(),
     },
-    pendingComposerAttachments: [],
-    previewComposerImageAttachment: undefined,
-    isComposerImageExpanded: false,
-    isComposerImageExpandedVisible: false,
-    openImageActionsAttachmentId: null,
-    imageActionsMenuPosition: null,
-    pdfCompressionMenuPosition: null,
-    imageActions: [],
-    pdfCompressionLevelActions: [],
-  },
-  documentPreview: {
-    composerDocumentPreviewUrl: null,
-    composerDocumentPreviewName: '',
-    isComposerDocumentPreviewVisible: false,
-  },
-  refs: {
-    messageInputRef: { current: null },
-    composerContainerRef: { current: null },
-    attachButtonRef: { current: null },
-    attachModalRef: { current: null },
-    attachmentPastePromptRef: { current: null },
-    imageInputRef: { current: null },
-    documentInputRef: { current: null },
-    audioInputRef: { current: null },
-    imageActionsButtonRef: { current: null },
-    imageActionsMenuRef: { current: null },
-    pdfCompressionMenuRef: { current: null },
-  },
-  actions: {
-    onMessageChange: vi.fn(),
-    onKeyDown: vi.fn(),
-    onPaste: vi.fn(),
-    onDismissAttachmentPastePrompt: vi.fn(),
-    onOpenAttachmentPastePrompt: vi.fn(),
-    onOpenComposerLinkPrompt: vi.fn(),
-    onEditAttachmentLink: vi.fn(),
-    onOpenAttachmentPastePromptLink: vi.fn(),
-    onCopyAttachmentPastePromptLink: vi.fn(),
-    onShortenAttachmentPastePromptLink: vi.fn(),
-    onUseAttachmentPasteAsUrl: vi.fn(),
-    onUseAttachmentPasteAsAttachment: vi.fn(),
-    onSendMessage: vi.fn(),
-    onAttachButtonClick: vi.fn(),
-    onAttachImageClick: vi.fn(),
-    onAttachDocumentClick: vi.fn(),
-    onAttachAudioClick: vi.fn(),
-    onImageFileChange: vi.fn(),
-    onDocumentFileChange: vi.fn(),
-    onAudioFileChange: vi.fn(),
-    onCancelEditMessage: vi.fn(),
-    onFocusEditingTargetMessage: vi.fn(),
-    onOpenComposerImagePreview: vi.fn(),
-    onCloseComposerImagePreview: vi.fn(),
-    onCancelLoadingComposerAttachment: vi.fn(),
-    onRemovePendingComposerAttachment: vi.fn(),
-    onQueueComposerImage: vi.fn(() => true),
-    onCloseComposerDocumentPreview: vi.fn(),
-    onOpenDocumentAttachmentInPortal: vi.fn(),
-    onClosePdfCompressionMenu: vi.fn(),
-    onToggleImageActionsMenu: vi.fn(),
-  },
-});
+    previews: {
+      openImageActionsAttachmentId: null,
+      imageActionsMenuPosition: null,
+      pdfCompressionMenuPosition: null,
+      imageActions: [],
+      pdfCompressionLevelActions: [],
+      imageActionsButtonRef: { current: null },
+      imageActionsMenuRef: { current: null },
+      pdfCompressionMenuRef: { current: null },
+      handleToggleImageActionsMenu: vi.fn(),
+      composerDocumentPreviewUrl: null,
+      composerDocumentPreviewName: '',
+      isComposerDocumentPreviewVisible: false,
+      closeComposerDocumentPreview: vi.fn(),
+    },
+    mutations: {
+      handleKeyPress: vi.fn(),
+      handleSendMessage: vi.fn(),
+      handleCancelEditMessage: vi.fn(),
+    },
+    refs: {
+      messageInputRef: { current: null },
+      composerContainerRef: { current: null },
+    },
+    viewport: {
+      focusEditingTargetMessage: vi.fn(),
+    },
+  }) as unknown as ComposerRuntime;
 
 describe('ComposerPanel', () => {
   beforeEach(() => {
@@ -183,13 +180,13 @@ describe('ComposerPanel', () => {
   });
 
   it('passes first-item preselection behavior into the composer attachment popup', () => {
-    const model = buildComposerModel();
-    model.attachments.openImageActionsAttachmentId = 'pending-image-1';
-    model.attachments.imageActionsMenuPosition = {
+    const runtime = buildComposerRuntime();
+    runtime.previews.openImageActionsAttachmentId = 'pending-image-1';
+    runtime.previews.imageActionsMenuPosition = {
       top: 48,
       left: 64,
     };
-    model.attachments.imageActions = [
+    runtime.previews.imageActions = [
       {
         label: 'Buka',
         icon: <span>icon</span>,
@@ -202,11 +199,11 @@ describe('ComposerPanel', () => {
       },
     ];
 
-    render(<ComposerPanel model={model} />);
+    render(<ComposerPanel runtime={runtime} />);
 
     expect(mockPopupMenuContent).toHaveBeenCalledWith(
       expect.objectContaining({
-        actions: model.attachments.imageActions,
+        actions: runtime.previews.imageActions,
         enableArrowNavigation: true,
         autoFocusFirstItem: true,
       })
@@ -214,13 +211,13 @@ describe('ComposerPanel', () => {
   });
 
   it('passes recommended preselection into the pdf compression submenu popup', () => {
-    const model = buildComposerModel();
-    model.attachments.openImageActionsAttachmentId = 'pending-pdf-1';
-    model.attachments.pdfCompressionMenuPosition = {
+    const runtime = buildComposerRuntime();
+    runtime.previews.openImageActionsAttachmentId = 'pending-pdf-1';
+    runtime.previews.pdfCompressionMenuPosition = {
       top: 72,
       left: 32,
     };
-    model.attachments.pdfCompressionLevelActions = [
+    runtime.previews.pdfCompressionLevelActions = [
       {
         label: 'Extreme',
         icon: <span>icon</span>,
@@ -238,11 +235,11 @@ describe('ComposerPanel', () => {
       },
     ];
 
-    render(<ComposerPanel model={model} />);
+    render(<ComposerPanel runtime={runtime} />);
 
     expect(mockPopupMenuContent).toHaveBeenCalledWith(
       expect.objectContaining({
-        actions: model.attachments.pdfCompressionLevelActions,
+        actions: runtime.previews.pdfCompressionLevelActions,
         enableArrowNavigation: true,
         initialPreselectedIndex: 1,
       })
@@ -250,9 +247,9 @@ describe('ComposerPanel', () => {
   });
 
   it('renders each hoverable attachment link as a separate inline anchor', () => {
-    const model = buildComposerModel();
+    const runtime = buildComposerRuntime();
 
-    render(<ComposerPanel model={model} />);
+    render(<ComposerPanel runtime={runtime} />);
 
     const links = screen.getAllByRole('link');
 
@@ -265,15 +262,15 @@ describe('ComposerPanel', () => {
 
     fireEvent.mouseEnter(links[0]);
 
-    expect(model.actions.onOpenAttachmentPastePrompt).toHaveBeenCalledWith(
-      model.attachments.linkPrompt.hoverableCandidates[0]
+    expect(runtime.composer.openAttachmentPastePrompt).toHaveBeenCalledWith(
+      runtime.composer.hoverableAttachmentCandidates[0]
     );
   });
 
   it('places the caret at the clicked inline url position', () => {
-    const model = buildComposerModel();
+    const runtime = buildComposerRuntime();
 
-    render(<ComposerPanel model={model} />);
+    render(<ComposerPanel runtime={runtime} />);
 
     const firstLink = screen.getAllByRole('link')[0]!;
     const textNode = firstLink.firstChild;
@@ -295,23 +292,24 @@ describe('ComposerPanel', () => {
     fireEvent.mouseDown(firstLink, { clientX: 16, clientY: 8 });
     fireEvent.click(firstLink, { detail: 1 });
 
-    expect(model.actions.onEditAttachmentLink).toHaveBeenCalledWith(
-      model.attachments.linkPrompt.hoverableCandidates[0],
+    expect(runtime.composer.handleEditAttachmentLink).toHaveBeenCalledWith(
+      runtime.composer.hoverableAttachmentCandidates[0],
       {
         selectionStart: 8,
         selectionEnd: 8,
       }
     );
-    expect(model.actions.onEditAttachmentLink).toHaveBeenCalledTimes(1);
+    expect(runtime.composer.handleEditAttachmentLink).toHaveBeenCalledTimes(1);
   });
 
   it('renders the attachment link popover without shorten action for shared links', () => {
-    const model = buildComposerModel();
-    model.attachments.linkPrompt.url = 'https://shrtlink.works/bwdrrk3ugm';
-    model.attachments.linkPrompt.isAttachmentCandidate = true;
-    model.attachments.linkPrompt.isShortenable = false;
+    const runtime = buildComposerRuntime();
+    runtime.composer.attachmentPastePromptUrl =
+      'https://shrtlink.works/bwdrrk3ugm';
+    runtime.composer.isAttachmentPastePromptAttachmentCandidate = true;
+    runtime.composer.isAttachmentPastePromptShortenable = false;
 
-    render(<ComposerPanel model={model} />);
+    render(<ComposerPanel runtime={runtime} />);
 
     const firstLink = screen.getAllByRole('link')[0]!;
     Object.defineProperty(firstLink, 'getBoundingClientRect', {
@@ -341,22 +339,22 @@ describe('ComposerPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Buka' }));
 
     expect(
-      model.actions.onOpenAttachmentPastePromptLink
+      runtime.composer.handleOpenAttachmentPastePromptLink
     ).toHaveBeenCalledOnce();
 
     fireEvent.click(screen.getByRole('button', { name: 'Salin' }));
 
     expect(
-      model.actions.onCopyAttachmentPastePromptLink
+      runtime.composer.handleCopyAttachmentPastePromptLink
     ).toHaveBeenCalledOnce();
   });
 
   it('renders plain message domains without a protocol as inline links', () => {
-    const model = buildComposerModel();
-    model.state.message = 'github.com';
-    model.attachments.linkPrompt.hoverableCandidates = [];
+    const runtime = buildComposerRuntime();
+    runtime.composer.message = 'github.com';
+    runtime.composer.hoverableAttachmentCandidates = [];
 
-    render(<ComposerPanel model={model} />);
+    render(<ComposerPanel runtime={runtime} />);
 
     const link = screen.getByRole('link', {
       name: 'github.com',
@@ -366,22 +364,22 @@ describe('ComposerPanel', () => {
 
     fireEvent.mouseEnter(link);
 
-    expect(model.actions.onOpenComposerLinkPrompt).toHaveBeenCalledWith({
+    expect(runtime.composer.openComposerLinkPrompt).toHaveBeenCalledWith({
       url: 'https://github.com/',
       pastedText: 'github.com',
       rangeStart: 0,
       rangeEnd: 10,
     });
-    expect(model.actions.onOpenAttachmentPastePrompt).not.toHaveBeenCalled();
+    expect(runtime.composer.openAttachmentPastePrompt).not.toHaveBeenCalled();
   });
 
   it('renders the generic link popover without shorten or paste-as actions', () => {
-    const model = buildComposerModel();
-    model.state.message = 'github.com';
-    model.attachments.linkPrompt.hoverableCandidates = [];
-    model.attachments.linkPrompt.url = 'https://github.com/';
+    const runtime = buildComposerRuntime();
+    runtime.composer.message = 'github.com';
+    runtime.composer.hoverableAttachmentCandidates = [];
+    runtime.composer.attachmentPastePromptUrl = 'https://github.com/';
 
-    render(<ComposerPanel model={model} />);
+    render(<ComposerPanel runtime={runtime} />);
 
     const link = screen.getByRole('link', {
       name: 'github.com',
@@ -412,15 +410,15 @@ describe('ComposerPanel', () => {
   });
 
   it('renders the shorten action for direct chat asset links', () => {
-    const model = buildComposerModel();
-    model.state.message =
+    const runtime = buildComposerRuntime();
+    runtime.composer.message =
       'https://example.com/storage/v1/object/sign/chat/images/channel/user-1_photo.png?token=abc';
-    model.attachments.linkPrompt.hoverableCandidates = [];
-    model.attachments.linkPrompt.url =
+    runtime.composer.hoverableAttachmentCandidates = [];
+    runtime.composer.attachmentPastePromptUrl =
       'https://example.com/storage/v1/object/sign/chat/images/channel/user-1_photo.png?token=abc';
-    model.attachments.linkPrompt.isShortenable = true;
+    runtime.composer.isAttachmentPastePromptShortenable = true;
 
-    render(<ComposerPanel model={model} />);
+    render(<ComposerPanel runtime={runtime} />);
 
     const link = screen.getByRole('link', {
       name: 'https://example.com/storage/v1/object/sign/chat/images/channel/user-1_photo.png?token=abc',
@@ -443,17 +441,17 @@ describe('ComposerPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Shorten link' }));
 
     expect(
-      model.actions.onShortenAttachmentPastePromptLink
+      runtime.composer.handleShortenAttachmentPastePromptLink
     ).toHaveBeenCalledOnce();
   });
 
   it('keeps the hovered link node stable when paste-as actions become available', () => {
-    const initialModel = buildComposerModel();
-    initialModel.state.message = 'github.com';
-    initialModel.attachments.linkPrompt.hoverableCandidates = [];
-    initialModel.attachments.linkPrompt.url = 'https://github.com/';
+    const initialRuntime = buildComposerRuntime();
+    initialRuntime.composer.message = 'github.com';
+    initialRuntime.composer.hoverableAttachmentCandidates = [];
+    initialRuntime.composer.attachmentPastePromptUrl = 'https://github.com/';
 
-    const { rerender } = render(<ComposerPanel model={initialModel} />);
+    const { rerender } = render(<ComposerPanel runtime={initialRuntime} />);
 
     const initialLink = screen.getByRole('link', {
       name: 'github.com',
@@ -476,11 +474,11 @@ describe('ComposerPanel', () => {
 
     expect(screen.queryByText('Tempel sebagai')).toBeNull();
 
-    const upgradedModel = buildComposerModel();
-    upgradedModel.state.message = 'github.com';
-    upgradedModel.attachments.linkPrompt.url = 'https://github.com/';
-    upgradedModel.attachments.linkPrompt.isAttachmentCandidate = true;
-    upgradedModel.attachments.linkPrompt.hoverableCandidates = [
+    const upgradedRuntime = buildComposerRuntime();
+    upgradedRuntime.composer.message = 'github.com';
+    upgradedRuntime.composer.attachmentPastePromptUrl = 'https://github.com/';
+    upgradedRuntime.composer.isAttachmentPastePromptAttachmentCandidate = true;
+    upgradedRuntime.composer.hoverableAttachmentCandidates = [
       {
         id: 'candidate-github',
         url: 'https://github.com/',
@@ -490,7 +488,7 @@ describe('ComposerPanel', () => {
       },
     ];
 
-    rerender(<ComposerPanel model={upgradedModel} />);
+    rerender(<ComposerPanel runtime={upgradedRuntime} />);
 
     const upgradedLink = screen.getByRole('link', {
       name: 'github.com',

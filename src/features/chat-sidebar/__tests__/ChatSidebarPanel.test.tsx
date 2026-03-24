@@ -218,13 +218,15 @@ vi.mock('../hooks/useChatViewport', () => ({
 vi.mock('../components/ChatHeader', () => {
   return {
     default: function MockChatHeader({
-      model,
+      runtime,
     }: {
-      model: Record<string, unknown> & { onClose: () => void };
+      runtime: Record<string, unknown> & {
+        actions: { handleClose: () => void };
+      };
     }) {
-      renderedChildProps.header = model;
+      renderedChildProps.header = runtime;
       return (
-        <button onClick={model.onClose} type="button">
+        <button onClick={runtime.actions.handleClose} type="button">
           close chat
         </button>
       );
@@ -235,11 +237,11 @@ vi.mock('../components/ChatHeader', () => {
 vi.mock('../components/MessagesPane', () => {
   return {
     default: function MockMessagesPane({
-      model,
+      runtime,
     }: {
-      model: Record<string, unknown>;
+      runtime: Record<string, unknown>;
     }) {
-      renderedChildProps.messages = model;
+      renderedChildProps.messages = runtime;
       return <div>messages pane</div>;
     },
   };
@@ -248,11 +250,11 @@ vi.mock('../components/MessagesPane', () => {
 vi.mock('../components/ComposerPanel', () => {
   return {
     default: function MockComposerPanel({
-      model,
+      runtime,
     }: {
-      model: Record<string, unknown>;
+      runtime: Record<string, unknown>;
     }) {
-      renderedChildProps.composer = model;
+      renderedChildProps.composer = runtime;
       return <div>composer panel</div>;
     },
   };
@@ -287,7 +289,7 @@ describe('ChatSidebarPanel', () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
-  it('wires derived controller props into the rendered child components', () => {
+  it('wires runtime slices into the rendered child components', () => {
     render(
       <ChatSidebarPanel
         isOpen
@@ -303,34 +305,34 @@ describe('ChatSidebarPanel', () => {
 
     expect(renderedChildProps.header).toEqual(
       expect.objectContaining({
-        isSearchMode: false,
-        isSelectionMode: false,
-        selectedMessageCount: 0,
         targetUser: expect.objectContaining({
           id: 'user-b',
           name: 'Gudang',
+        }),
+        interaction: expect.objectContaining({
+          isMessageSearchMode: false,
+          isSelectionMode: false,
+          selectedVisibleMessages: [],
         }),
       })
     );
     expect(renderedChildProps.messages).toEqual(
       expect.objectContaining({
-        state: expect.objectContaining({
+        session: expect.objectContaining({
           loading: false,
           messages: [],
-          showScrollToBottom: false,
         }),
-        interaction: expect.objectContaining({
-          isSelectionMode: false,
+        viewport: expect.objectContaining({
+          hasNewMessages: false,
+          isAtBottom: true,
         }),
       })
     );
     expect(renderedChildProps.composer).toEqual(
       expect.objectContaining({
-        state: expect.objectContaining({
+        composer: expect.objectContaining({
           message: '',
           isMessageInputMultiline: false,
-        }),
-        attachments: expect.objectContaining({
           isAttachModalOpen: false,
         }),
       })

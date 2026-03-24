@@ -2,16 +2,19 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useEffect } from 'react';
 import Button from '@/components/button';
 import { getInitials, getInitialsColor } from '@/utils/avatar';
-import type { MessagesPaneModel } from '../../models';
+import type { ChatMessage } from '../../data/chatSidebarGateway';
+import type { ChatSidebarRuntimeState } from '../../hooks/useChatSidebarRuntimeState';
 import { getAttachmentFileName } from '../../utils/attachment';
 
+type ForwardingRuntime = Pick<ChatSidebarRuntimeState, 'mutations'>;
+
 interface MessageForwardPickerProps {
-  model: MessagesPaneModel['forwarding'];
+  runtime: ForwardingRuntime;
 }
 
 const getForwardSummary = (
-  targetMessage: MessagesPaneModel['forwarding']['targetMessage'],
-  captionMessage: MessagesPaneModel['forwarding']['captionMessage']
+  targetMessage: ChatMessage | null,
+  captionMessage: ChatMessage | null
 ) => {
   if (!targetMessage) {
     return '';
@@ -30,35 +33,40 @@ const getForwardSummary = (
   return captionText ? `${attachmentLabel} · ${captionText}` : attachmentLabel;
 };
 
-export const MessageForwardPicker = ({ model }: MessageForwardPickerProps) => {
+export const MessageForwardPicker = ({
+  runtime,
+}: MessageForwardPickerProps) => {
   const {
-    isOpen,
-    targetMessage,
-    captionMessage,
-    availableUsers,
-    selectedRecipientIds,
-    isDirectoryLoading,
-    directoryError,
-    hasMoreDirectoryUsers,
-    isSubmitting,
-    onClose,
-    onToggleRecipient,
-    onRetryLoadDirectory,
-    onLoadMoreDirectoryUsers,
-    onSubmit,
-  } = model;
+    isForwardPickerOpen,
+    forwardTargetMessage,
+    forwardCaptionMessage,
+    availableForwardRecipients,
+    selectedForwardRecipientIds,
+    isForwardDirectoryLoading,
+    forwardDirectoryError,
+    hasMoreForwardDirectoryUsers,
+    isSubmittingForwardMessage,
+    handleCloseForwardMessagePicker,
+    handleToggleForwardRecipient,
+    handleRetryLoadForwardDirectory,
+    handleLoadMoreForwardDirectoryUsers,
+    handleSubmitForwardMessage,
+  } = runtime.mutations;
 
-  const selectedRecipientCount = selectedRecipientIds.size;
-  const summary = getForwardSummary(targetMessage, captionMessage);
+  const selectedRecipientCount = selectedForwardRecipientIds.size;
+  const summary = getForwardSummary(
+    forwardTargetMessage,
+    forwardCaptionMessage
+  );
 
   useEffect(() => {
-    if (!isOpen) {
+    if (!isForwardPickerOpen) {
       return;
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        onClose();
+        handleCloseForwardMessagePicker();
       }
     };
 
@@ -67,18 +75,18 @@ export const MessageForwardPicker = ({ model }: MessageForwardPickerProps) => {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [handleCloseForwardMessagePicker, isForwardPickerOpen]);
 
   return (
     <AnimatePresence>
-      {isOpen && targetMessage ? (
+      {isForwardPickerOpen && forwardTargetMessage ? (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.18, ease: 'easeOut' }}
           className="absolute inset-0 z-[82] flex items-center justify-center bg-slate-950/15 px-4 py-6 backdrop-blur-[1px]"
-          onClick={onClose}
+          onClick={handleCloseForwardMessagePicker}
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: 12 }}
@@ -111,18 +119,19 @@ export const MessageForwardPicker = ({ model }: MessageForwardPickerProps) => {
               </div>
 
               <div className="max-h-72 space-y-1 overflow-y-auto pr-1">
-                {isDirectoryLoading && availableUsers.length === 0 ? (
+                {isForwardDirectoryLoading &&
+                availableForwardRecipients.length === 0 ? (
                   <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-4 text-center text-sm text-slate-500">
                     Memuat daftar pengguna...
                   </div>
                 ) : null}
 
-                {directoryError ? (
+                {forwardDirectoryError ? (
                   <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-xs text-amber-800">
-                    <p>{directoryError}</p>
+                    <p>{forwardDirectoryError}</p>
                     <button
                       type="button"
-                      onClick={onRetryLoadDirectory}
+                      onClick={handleRetryLoadForwardDirectory}
                       className="mt-2 rounded-full border border-amber-200 bg-white px-2.5 py-1 font-medium text-amber-700 transition-colors hover:bg-amber-100"
                     >
                       Coba lagi
@@ -130,31 +139,37 @@ export const MessageForwardPicker = ({ model }: MessageForwardPickerProps) => {
                   </div>
                 ) : null}
 
-                {!isDirectoryLoading &&
-                availableUsers.length === 0 &&
-                !directoryError ? (
+                {!isForwardDirectoryLoading &&
+                availableForwardRecipients.length === 0 &&
+                !forwardDirectoryError ? (
                   <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-4 text-center text-sm text-slate-500">
                     Tidak ada pengguna lain yang tersedia.
                   </div>
                 ) : null}
 
-                {availableUsers.map(availableUser => {
-                  const isSelected = selectedRecipientIds.has(availableUser.id);
+                {availableForwardRecipients.map(availableUser => {
+                  const isSelected = selectedForwardRecipientIds.has(
+                    availableUser.id
+                  );
 
                   return (
                     <button
                       key={availableUser.id}
                       type="button"
                       onClick={() => {
-                        if (!isSubmitting) {
-                          onToggleRecipient(availableUser.id);
+                        if (!isSubmittingForwardMessage) {
+                          handleToggleForwardRecipient(availableUser.id);
                         }
                       }}
                       className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2 text-left transition-colors ${
                         isSelected
                           ? 'border-emerald-300 bg-emerald-50'
                           : 'border-slate-200 bg-white hover:bg-slate-50'
-                      } ${isSubmitting ? 'cursor-default opacity-70' : 'cursor-pointer'}`}
+                      } ${
+                        isSubmittingForwardMessage
+                          ? 'cursor-default opacity-70'
+                          : 'cursor-pointer'
+                      }`}
                     >
                       {availableUser.profilephoto ? (
                         <img
@@ -195,14 +210,16 @@ export const MessageForwardPicker = ({ model }: MessageForwardPickerProps) => {
                 })}
               </div>
 
-              {hasMoreDirectoryUsers && !directoryError ? (
+              {hasMoreForwardDirectoryUsers && !forwardDirectoryError ? (
                 <button
                   type="button"
-                  onClick={onLoadMoreDirectoryUsers}
-                  disabled={isDirectoryLoading || isSubmitting}
+                  onClick={handleLoadMoreForwardDirectoryUsers}
+                  disabled={
+                    isForwardDirectoryLoading || isSubmittingForwardMessage
+                  }
                   className="mt-3 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 disabled:cursor-default disabled:opacity-60"
                 >
-                  {isDirectoryLoading
+                  {isForwardDirectoryLoading
                     ? 'Memuat pengguna...'
                     : 'Muat lebih banyak'}
                 </button>
@@ -214,21 +231,21 @@ export const MessageForwardPicker = ({ model }: MessageForwardPickerProps) => {
                 type="button"
                 variant="text"
                 withUnderline={false}
-                onClick={onClose}
-                disabled={isSubmitting}
+                onClick={handleCloseForwardMessagePicker}
+                disabled={isSubmittingForwardMessage}
               >
                 Batal
               </Button>
               <Button
                 type="button"
-                size="sm"
                 onClick={() => {
-                  void onSubmit();
+                  void handleSubmitForwardMessage();
                 }}
-                isLoading={isSubmitting}
-                disabled={selectedRecipientCount === 0}
+                disabled={
+                  selectedRecipientCount === 0 || isSubmittingForwardMessage
+                }
               >
-                Kirim
+                {isSubmittingForwardMessage ? 'Mengirim...' : 'Teruskan'}
               </Button>
             </div>
           </motion.div>

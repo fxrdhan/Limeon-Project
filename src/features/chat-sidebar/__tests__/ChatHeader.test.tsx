@@ -1,61 +1,80 @@
+import type { ComponentProps } from 'react';
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vite-plus/test';
 import ChatHeader from '../components/ChatHeader';
 
 describe('ChatHeader', () => {
-  const createModel = () => ({
-    targetUser: {
-      id: 'user-b',
-      name: 'Gudang',
-      email: 'gudang@example.com',
-      profilephoto: null,
-    },
-    displayTargetPhotoUrl: null,
-    isTargetOnline: false,
-    targetUserPresence: null,
-    targetUserPresenceError: null,
-    isSearchMode: false,
-    searchQuery: '',
-    searchState: 'idle' as const,
-    searchResultCount: 0,
-    activeSearchResultIndex: 0,
-    canNavigateSearchUp: false,
-    canNavigateSearchDown: false,
-    isSelectionMode: false,
-    selectedMessageCount: 0,
-    canDeleteSelectedMessages: false,
-    searchInputRef: { current: null },
-    onEnterSearchMode: vi.fn(),
-    onExitSearchMode: vi.fn(),
-    onEnterSelectionMode: vi.fn(),
-    onClearSelectedMessages: vi.fn(),
-    onExitSelectionMode: vi.fn(),
-    onSearchQueryChange: vi.fn(),
-    onNavigateSearchUp: vi.fn(),
-    onNavigateSearchDown: vi.fn(),
-    onFocusSearchInput: vi.fn(),
-    onCopySelectedMessages: vi.fn(),
-    onDeleteSelectedMessages: vi.fn(),
-    onClose: vi.fn(),
-    getInitials: (name: string) => name.slice(0, 2).toUpperCase(),
-    getInitialsColor: () => 'bg-slate-500',
-  });
+  const createRuntime = () =>
+    ({
+      targetUser: {
+        id: 'user-b',
+        name: 'Gudang',
+        email: 'gudang@example.com',
+        profilephoto: null,
+      },
+      displayTargetPhotoUrl: null,
+      session: {
+        isTargetOnline: false,
+        targetUserPresence: null,
+        targetUserPresenceError: null,
+      },
+      interaction: {
+        isMessageSearchMode: false,
+        messageSearchQuery: '',
+        messageSearchState: 'idle',
+        searchMatchedMessageIds: [],
+        activeSearchResultIndex: 0,
+        canNavigateSearchUp: false,
+        canNavigateSearchDown: false,
+        hasMoreSearchResults: false,
+        isSelectionMode: false,
+        selectedVisibleMessages: [],
+        canDeleteSelectedMessages: false,
+        searchInputRef: { current: null },
+        handleEnterMessageSearchMode: vi.fn(),
+        handleExitMessageSearchMode: vi.fn(),
+        handleEnterMessageSelectionMode: vi.fn(),
+        handleClearSelectedMessages: vi.fn(),
+        handleExitMessageSelectionMode: vi.fn(),
+        handleMessageSearchQueryChange: vi.fn(),
+        handleNavigateSearchUp: vi.fn(),
+        handleNavigateSearchDown: vi.fn(),
+        handleFocusSearchInput: vi.fn(),
+        handleCopySelectedMessages: vi.fn(),
+      },
+      actions: {
+        handleDeleteSelectedMessages: vi.fn(),
+        handleClose: vi.fn(),
+        getInitials: (name: string) => name.slice(0, 2).toUpperCase(),
+        getInitialsColor: () => 'bg-slate-500',
+      },
+    }) as unknown as ComponentProps<typeof ChatHeader>['runtime'];
 
   it('clears selected messages without exiting selection mode', () => {
-    const model = {
-      ...createModel(),
-      isSelectionMode: true,
-      selectedMessageCount: 3,
-    };
+    const runtime = createRuntime();
+    runtime.interaction.isSelectionMode = true;
+    runtime.interaction.selectedVisibleMessages = [
+      { id: 'message-1' },
+    ] as never[];
+    runtime.interaction.selectedVisibleMessages.push({
+      id: 'message-2',
+    } as never);
+    runtime.interaction.selectedVisibleMessages.push({
+      id: 'message-3',
+    } as never);
 
-    render(<ChatHeader model={model} />);
+    render(<ChatHeader runtime={runtime} />);
 
     fireEvent.click(
       screen.getByRole('button', { name: 'Batalkan semua pilihan' })
     );
 
-    expect(model.onClearSelectedMessages).toHaveBeenCalledOnce();
-    expect(model.onExitSelectionMode).not.toHaveBeenCalled();
+    expect(
+      runtime.interaction.handleClearSelectedMessages
+    ).toHaveBeenCalledOnce();
+    expect(
+      runtime.interaction.handleExitMessageSelectionMode
+    ).not.toHaveBeenCalled();
   });
 });

@@ -11,7 +11,7 @@ This feature is mounted once from the main shell and opened from the navbar.
 Keep the global store small. All conversation runtime lives inside the feature.
 
 - `hooks/useChatSidebarHost.ts`: boots chat runtime and syncs page-focus blocking with open state.
-- `hooks/useChatSidebarController.ts`: adapts runtime state into header, messages, and composer view models.
+- `index.tsx`: creates shared refs, resolves the DM channel id, loads the target photo, and passes focused runtime slices into each pane.
 - `hooks/useChatSidebarRuntimeState.ts`: top-level runtime composition for session, interaction modes, UI state, and mutations.
 - `hooks/useChatSession.ts`: owns conversation data, initial load, pagination, realtime recovery, presence, receipts, and cache sync.
 - `hooks/useChatInteractionModes.ts`: owns search, selection, copy, and per-message interaction state.
@@ -26,7 +26,23 @@ Start from the layer that matches the behavior you want to change.
 - Search and selection behavior: `hooks/useChatInteractionModes.ts`
 - Composer attachments, paste handling, and local previews: `hooks/useChatComposer.ts`, `hooks/useChatSidebarPreviewState.ts`
 - Message actions such as send/edit/delete/forward: `hooks/useChatConversationMutations.ts`
-- Render-only model shaping: `hooks/useChatSidebarController.ts`
+
+## State Ownership
+
+Follow this map before adding new chat state.
+
+- Shell-wide open/target state: `src/store/chatSidebarStore.ts`
+- Conversation and presence state from Supabase: `hooks/useChatSession.ts`
+- Search, selection, and per-message interaction state: `hooks/useChatInteractionModes.ts`
+- Composer text, edit mode, attach modal, and local attachment queues: `hooks/useChatComposer.ts`, `hooks/useChatComposerAttachments.ts`
+- Viewport scroll pinning, jump/highlight state, and message menu placement: `hooks/useChatViewport.ts`
+- Image/document preview portals and composer attachment action menus: `hooks/useChatSidebarPreviewState.ts`
+
+Persistence layers:
+
+- In-memory cache only: `utils/chatRuntimeCache.ts`
+- `localStorage`: `utils/chatRuntimeState.ts`, composer draft messages in `utils/composer-draft-persistence.ts`
+- IndexedDB: composer draft attachments in `utils/composer-draft-persistence.ts`, channel image asset cache in `utils/channel-image-asset-cache.ts`
 
 ## Data Boundaries
 

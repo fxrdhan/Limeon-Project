@@ -1,5 +1,5 @@
 import { findMessageLinks } from './message-search';
-import type { ComposerHoverableAttachmentCandidate } from '../models';
+import type { ComposerHoverableAttachmentCandidate } from '../types';
 
 export interface ComposerLinkOverlaySegment {
   candidate: ComposerHoverableAttachmentCandidate | null;

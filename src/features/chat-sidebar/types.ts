@@ -13,6 +13,21 @@ export interface PendingSendRegistration {
   isCancelled: () => boolean;
 }
 
+export interface ComposerHoverableAttachmentCandidate {
+  id: string;
+  url: string;
+  pastedText: string;
+  rangeStart: number;
+  rangeEnd: number;
+}
+
+export interface ComposerPromptableLink {
+  url: string;
+  pastedText: string;
+  rangeStart: number;
+  rangeEnd: number;
+}
+
 export type MenuPlacement = 'left' | 'right' | 'up' | 'down';
 export type MenuSideAnchor = 'top' | 'middle' | 'bottom';
 export type ComposerPendingFileKind = 'audio' | 'document';

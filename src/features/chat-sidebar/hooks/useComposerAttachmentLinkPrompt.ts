@@ -20,8 +20,8 @@ import { openInNewTab } from '../utils/message-file';
 import type {
   ComposerHoverableAttachmentCandidate,
   ComposerPromptableLink,
-} from '../models';
-import type { LoadingComposerAttachment } from '../types';
+  LoadingComposerAttachment,
+} from '../types';
 import {
   extractAttachmentComposerLinkFromMessageText,
   extractComposerLinkFromClipboard,

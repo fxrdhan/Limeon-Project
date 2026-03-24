@@ -9,7 +9,7 @@ import {
   MAX_MESSAGE_CHARS,
   MESSAGE_BOTTOM_GAP,
 } from '../constants';
-import type { MessagesPaneModel } from '../models';
+import type { ChatSidebarRuntimeState } from '../hooks/useChatSidebarRuntimeState';
 import {
   openChatFileInNewTab,
   resolveCopyableChatAssetUrl,
@@ -27,6 +27,23 @@ const CHAT_DATE_FORMATTER = new Intl.DateTimeFormat('id-ID', {
 });
 const COMPOSER_BOTTOM_OFFSET = 8;
 
+type MessagesPaneRuntime = Pick<
+  ChatSidebarRuntimeState,
+  | 'user'
+  | 'session'
+  | 'interaction'
+  | 'composer'
+  | 'viewport'
+  | 'refs'
+  | 'previews'
+  | 'mutations'
+  | 'actions'
+>;
+
+interface MessagesPaneProps {
+  runtime: MessagesPaneRuntime;
+}
+
 const formatMessageGroupDate = (value: string) => {
   const parsedDate = new Date(value);
 
@@ -37,54 +54,60 @@ const formatMessageGroupDate = (value: string) => {
   return CHAT_DATE_FORMATTER.format(parsedDate);
 };
 
-const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
-  const { state, menu, interaction, refs, previews, actions } = model;
-  const visibleMessages = state.messages.filter(
-    messageItem => !previews.captionMessageIds.has(messageItem.id)
+const MessagesPane = ({ runtime }: MessagesPaneProps) => {
+  const visibleMessages = runtime.session.messages.filter(
+    messageItem => !runtime.previews.captionMessageIds.has(messageItem.id)
   );
   const renderItems = buildMessageRenderItems({
     messages: visibleMessages,
-    captionMessagesByAttachmentId: previews.captionMessagesByAttachmentId,
-    getAttachmentFileKind: previews.getAttachmentFileKind,
+    captionMessagesByAttachmentId:
+      runtime.previews.captionMessagesByAttachmentId,
+    getAttachmentFileKind: runtime.actions.getAttachmentFileKind,
     enableDocumentBubbleGrouping:
-      !interaction.isSelectionMode && state.normalizedSearchQuery.length === 0,
+      !runtime.interaction.isSelectionMode &&
+      runtime.interaction.normalizedMessageSearchQuery.length === 0,
   });
-  const activeImageGroupPreviewMessage = previews.activeImageGroupPreviewId
-    ? state.messages.find(
-        messageItem => messageItem.id === previews.activeImageGroupPreviewId
+  const activeImageGroupPreviewMessage = runtime.previews
+    .activeImageGroupPreviewId
+    ? runtime.session.messages.find(
+        messageItem =>
+          messageItem.id === runtime.previews.activeImageGroupPreviewId
       ) || null
     : null;
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
       <div
-        ref={refs.messagesContainerRef}
+        ref={runtime.refs.messagesContainerRef}
         className="flex-1 overflow-x-hidden overflow-y-auto px-3 pt-20 transition-[padding-bottom] duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
         style={{
           overflowAnchor: 'none',
           paddingBottom: Math.max(
-            state.composerContainerHeight +
+            runtime.viewport.composerContainerHeight +
               COMPOSER_BOTTOM_OFFSET +
               MESSAGE_BOTTOM_GAP,
-            state.messageInputHeight + 84 + state.composerContextualOffset
+            runtime.composer.messageInputHeight +
+              84 +
+              runtime.composer.composerContextualOffset
           ),
         }}
-        onClick={menu.close}
+        onClick={runtime.viewport.closeMessageMenu}
         role="presentation"
       >
-        <div ref={refs.messagesContentRef}>
-          {state.loading && state.messages.length === 0 ? (
-            <div className="flex justify-center items-center py-8">
-              <div className="text-slate-400 text-sm">Memuat percakapan...</div>
+        <div ref={runtime.refs.messagesContentRef}>
+          {runtime.session.loading && runtime.session.messages.length === 0 ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-sm text-slate-400">Memuat percakapan...</div>
             </div>
-          ) : state.loadError && state.messages.length === 0 ? (
+          ) : runtime.session.loadError &&
+            runtime.session.messages.length === 0 ? (
             <div className="flex flex-col items-center gap-3 py-8 text-center">
               <div className="max-w-xs rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                {state.loadError}
+                {runtime.session.loadError}
               </div>
               <button
                 type="button"
-                onClick={actions.onRetryLoadMessages}
+                onClick={runtime.session.retryLoadMessages}
                 className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50"
               >
                 Coba lagi
@@ -92,13 +115,13 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
             </div>
           ) : (
             <LayoutGroup id="chat-message-menus">
-              {state.loadError ? (
+              {runtime.session.loadError ? (
                 <div className="pb-2">
                   <div className="flex items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
-                    <span>{state.loadError}</span>
+                    <span>{runtime.session.loadError}</span>
                     <button
                       type="button"
-                      onClick={actions.onRetryLoadMessages}
+                      onClick={runtime.session.retryLoadMessages}
                       className="rounded-full border border-amber-200 bg-white px-2.5 py-1 font-medium text-amber-700 transition-colors hover:bg-amber-100"
                     >
                       Muat ulang
@@ -106,25 +129,27 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
                   </div>
                 </div>
               ) : null}
-              {state.hasOlderMessages ? (
+
+              {runtime.session.hasOlderMessages ? (
                 <div className="flex flex-col items-center gap-1 pb-1">
                   <button
                     type="button"
-                    onClick={actions.onLoadOlderMessages}
-                    disabled={state.isLoadingOlderMessages}
+                    onClick={runtime.session.loadOlderMessages}
+                    disabled={runtime.session.isLoadingOlderMessages}
                     className="cursor-pointer rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-black transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {state.isLoadingOlderMessages
+                    {runtime.session.isLoadingOlderMessages
                       ? 'Memuat pesan sebelumnya...'
                       : 'Muat pesan sebelumnya'}
                   </button>
-                  {state.olderMessagesError ? (
+                  {runtime.session.olderMessagesError ? (
                     <p className="text-[11px] text-rose-600">
-                      {state.olderMessagesError}
+                      {runtime.session.olderMessagesError}
                     </p>
                   ) : null}
                 </div>
               ) : null}
+
               {renderItems.map((renderItem, index) => {
                 const messageItem = renderItem.anchorMessage;
                 const previousMessage =
@@ -173,43 +198,50 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
                           hasDateSeparatorBefore: shouldRenderDateSeparator,
                         },
                         interaction: {
-                          userId: state.user?.id,
-                          isSelectionMode: interaction.isSelectionMode,
-                          isSelected: interaction.selectedMessageIds.has(
-                            messageItem.id
-                          ),
-                          expandedMessageIds: interaction.expandedMessageIds,
-                          flashingMessageId: interaction.flashingMessageId,
+                          userId: runtime.user?.id,
+                          isSelectionMode: runtime.interaction.isSelectionMode,
+                          isSelected:
+                            runtime.interaction.selectedMessageIds.has(
+                              messageItem.id
+                            ),
+                          expandedMessageIds: runtime.refs.expandedMessageIds,
+                          flashingMessageId: runtime.viewport.flashingMessageId,
                           isFlashHighlightVisible:
-                            interaction.isFlashHighlightVisible,
-                          searchMatchedMessageIds:
-                            interaction.searchMatchedMessageIds,
-                          activeSearchMessageId:
-                            interaction.activeSearchMessageId,
+                            runtime.viewport.isFlashHighlightVisible,
+                          searchMatchedMessageIds: runtime.interaction
+                            .isMessageSearchMode
+                            ? runtime.interaction.searchMatchedMessageIdSet
+                            : new Set<string>(),
+                          activeSearchMessageId: runtime.interaction
+                            .isMessageSearchMode
+                            ? runtime.interaction.activeSearchMessageId
+                            : null,
                           maxMessageChars: MAX_MESSAGE_CHARS,
                           onToggleMessageSelection:
-                            interaction.onToggleMessageSelection,
-                          handleToggleExpand: interaction.onToggleExpand,
+                            runtime.interaction.handleToggleMessageSelection,
+                          handleToggleExpand: runtime.refs.handleToggleExpand,
                         },
                         menu: {
-                          openMessageId: menu.openMessageId,
-                          placement: menu.placement,
-                          sideAnchor: menu.sideAnchor,
-                          shouldAnimateOpen: menu.shouldAnimateOpen,
-                          transitionSourceId: menu.transitionSourceId,
-                          offsetX: menu.offsetX,
-                          toggle: menu.toggle,
+                          openMessageId: runtime.viewport.openMenuMessageId,
+                          placement: runtime.viewport.menuPlacement,
+                          sideAnchor: runtime.viewport.menuSideAnchor,
+                          shouldAnimateOpen:
+                            runtime.viewport.shouldAnimateMenuOpen,
+                          transitionSourceId:
+                            runtime.viewport.menuTransitionSourceId,
+                          offsetX: runtime.viewport.menuOffsetX,
+                          toggle: runtime.actions.toggleMessageMenu,
                         },
                         refs: {
-                          messageBubbleRefs: refs.messageBubbleRefs,
+                          messageBubbleRefs: runtime.refs.messageBubbleRefs,
                           initialMessageAnimationKeysRef:
-                            refs.initialMessageAnimationKeysRef,
+                            runtime.refs.initialMessageAnimationKeysRef,
                           initialOpenJumpAnimationKeysRef:
-                            refs.initialOpenJumpAnimationKeysRef,
+                            runtime.refs.initialOpenJumpAnimationKeysRef,
                         },
                         content: {
                           resolvedMessageUrl:
-                            previews.getImageMessageUrl(messageItem),
+                            runtime.previews.getImageMessageUrl(messageItem),
                           captionMessage: renderItem.captionMessage,
                           groupedDocumentMessages:
                             renderItem.kind === 'document-group'
@@ -219,27 +251,38 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
                             renderItem.kind === 'image-group'
                               ? renderItem.messages
                               : undefined,
-                          pdfMessagePreview: previews.getPdfMessagePreview(
-                            messageItem,
-                            previews.getAttachmentFileName(messageItem)
-                          ),
-                          getAttachmentFileName: previews.getAttachmentFileName,
-                          getAttachmentFileKind: previews.getAttachmentFileKind,
-                          getImageMessageUrl: previews.getImageMessageUrl,
-                          getPdfMessagePreview: previews.getPdfMessagePreview,
-                          normalizedSearchQuery: state.normalizedSearchQuery,
-                          openImageInPortal: previews.openImageInPortal,
+                          pdfMessagePreview:
+                            runtime.previews.getPdfMessagePreview(
+                              messageItem,
+                              runtime.actions.getAttachmentFileName(messageItem)
+                            ),
+                          getAttachmentFileName:
+                            runtime.actions.getAttachmentFileName,
+                          getAttachmentFileKind:
+                            runtime.actions.getAttachmentFileKind,
+                          getImageMessageUrl:
+                            runtime.previews.getImageMessageUrl,
+                          getPdfMessagePreview:
+                            runtime.previews.getPdfMessagePreview,
+                          normalizedSearchQuery:
+                            runtime.interaction.normalizedMessageSearchQuery,
+                          openImageInPortal: runtime.previews.openImageInPortal,
                           openImageGroupInPortal:
-                            previews.openImageGroupInPortal,
-                          openDocumentInPortal: previews.openDocumentInPortal,
+                            runtime.previews.openImageGroupInPortal,
+                          openDocumentInPortal:
+                            runtime.previews.openDocumentInPortal,
                         },
                         actions: {
-                          handleEditMessage: actions.handleEditMessage,
-                          handleCopyMessage: actions.handleCopyMessage,
-                          handleDownloadMessage: actions.handleDownloadMessage,
+                          handleEditMessage:
+                            runtime.mutations.handleEditMessage,
+                          handleCopyMessage:
+                            runtime.mutations.handleCopyMessage,
+                          handleDownloadMessage:
+                            runtime.mutations.handleDownloadMessage,
                           handleOpenForwardMessagePicker:
-                            actions.handleOpenForwardMessagePicker,
-                          handleDeleteMessage: actions.handleDeleteMessage,
+                            runtime.mutations.handleOpenForwardMessagePicker,
+                          handleDeleteMessage:
+                            runtime.mutations.handleDeleteMessage,
                         },
                       }}
                     />
@@ -248,18 +291,20 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
               })}
             </LayoutGroup>
           )}
-          <div ref={refs.messagesEndRef} />
+
+          <div ref={runtime.refs.messagesEndRef} />
         </div>
       </div>
 
-      {state.showScrollToBottom && state.messages.length > 0 ? (
+      {(runtime.viewport.hasNewMessages || !runtime.viewport.isAtBottom) &&
+      runtime.session.messages.length > 0 ? (
         <button
           type="button"
-          onClick={actions.onScrollToBottom}
+          onClick={runtime.viewport.scrollToBottom}
           aria-label="Scroll ke pesan terbaru"
           className="absolute left-1/2 z-20 flex h-8 w-8 -translate-x-1/2 cursor-pointer items-center justify-center rounded-xl bg-white text-black shadow-sm transition-colors hover:text-black/80"
           style={{
-            bottom: Math.max(state.composerContainerHeight + 24, 46),
+            bottom: Math.max(runtime.viewport.composerContainerHeight + 24, 46),
           }}
         >
           <TbArrowDown size={18} />
@@ -267,9 +312,9 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
       ) : null}
 
       <ImageExpandPreview
-        isOpen={previews.isImagePreviewOpen}
-        isVisible={previews.isImagePreviewVisible}
-        onClose={previews.closeImagePreview}
+        isOpen={runtime.previews.isImagePreviewOpen}
+        isVisible={runtime.previews.isImagePreviewVisible}
+        onClose={runtime.previews.closeImagePreview}
         animateScale={false}
         closeOnContentBackgroundClick={true}
         backdropClassName="z-[79] px-4 py-6"
@@ -280,36 +325,38 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
         onBackdropKeyDown={event => {
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();
-            previews.closeImagePreview();
+            runtime.previews.closeImagePreview();
           }
         }}
       >
         <ProgressiveImagePreview
-          fullSrc={previews.imagePreviewUrl}
-          backdropSrc={previews.imagePreviewBackdropUrl}
+          fullSrc={runtime.previews.imagePreviewUrl}
+          backdropSrc={runtime.previews.imagePreviewBackdropUrl}
           allowPointerPassthrough={true}
-          alt={previews.imagePreviewName || 'Preview gambar'}
+          alt={runtime.previews.imagePreviewName || 'Preview gambar'}
           className="h-[92vh] w-[92vw] box-border px-6 py-8"
           imageClassName="h-full w-full rounded-xl"
         />
       </ImageExpandPreview>
 
       <MultiImagePreviewPortal
-        isOpen={previews.imageGroupPreviewItems.length > 0}
-        isVisible={previews.isImageGroupPreviewVisible}
-        previewItems={previews.imageGroupPreviewItems}
-        activePreviewId={previews.activeImageGroupPreviewId}
+        isOpen={runtime.previews.imageGroupPreviewItems.length > 0}
+        isVisible={runtime.previews.isImageGroupPreviewVisible}
+        previewItems={runtime.previews.imageGroupPreviewItems}
+        activePreviewId={runtime.previews.activeImageGroupPreviewId}
         isActivePreviewForwardable={Boolean(
           activeImageGroupPreviewMessage &&
           !activeImageGroupPreviewMessage.id.startsWith('temp_')
         )}
-        onSelectPreview={previews.selectImageGroupPreviewItem}
+        onSelectPreview={runtime.previews.selectImageGroupPreviewItem}
         onDownloadActivePreview={() => {
           if (!activeImageGroupPreviewMessage) {
             return;
           }
 
-          void actions.handleDownloadMessage(activeImageGroupPreviewMessage);
+          void runtime.mutations.handleDownloadMessage(
+            activeImageGroupPreviewMessage
+          );
         }}
         onOpenActivePreviewInNewTab={() => {
           if (!activeImageGroupPreviewMessage) {
@@ -379,7 +426,9 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
             return;
           }
 
-          void actions.handleCopyMessage(activeImageGroupPreviewMessage);
+          void runtime.mutations.handleCopyMessage(
+            activeImageGroupPreviewMessage
+          );
         }}
         onForwardActivePreview={() => {
           if (
@@ -389,29 +438,25 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
             return;
           }
 
-          actions.handleOpenForwardMessagePicker(
+          runtime.mutations.handleOpenForwardMessagePicker(
             activeImageGroupPreviewMessage
           );
         }}
-        onClose={previews.closeImageGroupPreview}
+        onClose={runtime.previews.closeImageGroupPreview}
         backdropClassName="z-[80] px-4 py-6"
       />
 
       <DocumentPreviewPortal
-        isOpen={Boolean(previews.documentPreviewUrl)}
-        isVisible={previews.isDocumentPreviewVisible}
-        previewUrl={previews.documentPreviewUrl}
-        previewName={previews.documentPreviewName}
-        onClose={previews.closeDocumentPreview}
+        isOpen={Boolean(runtime.previews.documentPreviewUrl)}
+        isVisible={runtime.previews.isDocumentPreviewVisible}
+        previewUrl={runtime.previews.documentPreviewUrl}
+        previewName={runtime.previews.documentPreviewName}
+        onClose={runtime.previews.closeDocumentPreview}
         backdropClassName="z-[80] px-4 py-6"
         iframeTitle="Preview dokumen"
       />
     </div>
   );
 };
-
-const MessagesPane = ({ model }: { model: MessagesPaneModel }) => (
-  <MessagesPaneContent model={model} />
-);
 
 export default MessagesPane;

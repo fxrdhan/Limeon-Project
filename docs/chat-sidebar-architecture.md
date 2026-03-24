@@ -62,7 +62,7 @@ Isi dokumen ini bersifat deskriptif, bukan target refactor.
 ### 2.2 Close Flow
 
 - `ChatHeader` memanggil `onClose`.
-- `useChatSidebarController()` hanya meneruskan callback close dari host ke runtime action `handleClose`.
+- `ChatSidebarPanel` meneruskan callback close host langsung ke `useChatSidebarRuntimeState()`.
 - `useChatSidebarHost()` tetap menjadi owner shell state yang mengekspos `closeChat()` dari `chatSidebarStore`.
 - `useChatSidebarHost()` meng-set `pageFocusBlockStore.isBlocked` mengikuti status open chat sidebar.
 
@@ -105,15 +105,19 @@ Store ini bukan bagian internal chat sidebar, tetapi dipakai `Navbar` untuk:
 
 File: `src/features/chat-sidebar/index.tsx`
 
-`ChatSidebarPanel` hanya merender:
+`ChatSidebarPanel`:
 
 - `ChatHeader`
 - `MessagesPane`
 - `ComposerPanel`
 - `Toaster`
+- membuat shared DOM refs via `useChatSidebarRefs()`
+- menghitung `currentChannelId`
+- memanggil `useTargetProfilePhoto()`
+- membangun runtime panel via `useChatSidebarRuntimeState()`
+- meneruskan runtime slice yang dibutuhkan langsung ke tiap pane
 
-Seluruh orkestrasi runtime panel dibangun di `useChatSidebarController()`,
-tetapi lifecycle host sekarang dibatasi oleh dua entry hook feature:
+Lifecycle host tetap dibatasi oleh dua entry hook feature:
 
 - `useChatSidebarHost()` untuk wiring layout/runtime global
 - `useChatSidebarLauncher()` untuk wiring launcher/navbar
@@ -121,26 +125,7 @@ tetapi lifecycle host sekarang dibatasi oleh dua entry hook feature:
 
 ## 5) Hook Responsibilities
 
-### 5.1 `useChatSidebarController`
-
-File: `src/features/chat-sidebar/hooks/useChatSidebarController.ts`
-
-Tanggung jawab:
-
-- membuat ref DOM utama
-- membuat `currentChannelId` dari dua user dengan `generateChannelId()`
-- memanggil `useTargetProfilePhoto()`
-- mendelegasikan orkestrasi runtime panel ke `useChatSidebarRuntimeState()`
-- mendelegasikan pembentukan `headerModel`, `messagesModel`, dan `composerModel` ke hook per-pane
-- mengembalikan model yang sudah sempit untuk:
-  - `ChatHeader`
-  - `MessagesPane`
-  - `ComposerPanel`
-
-Hook ini tidak lagi menjadi owner utama semua wiring runtime panel. State lokal
-`expandedMessageIds` tetap dimiliki oleh `useChatSidebarRefs()`.
-
-### 5.1.a `useChatSidebarRuntimeState`
+### 5.1 `useChatSidebarRuntimeState`
 
 File: `src/features/chat-sidebar/hooks/useChatSidebarRuntimeState.ts`
 
@@ -153,7 +138,7 @@ Tanggung jawab:
 - compose `useChatViewport`
 - compose `useChatSidebarPreviewState`
 - sink callback ref untuk menu close / scroll-to-bottom
-- expose runtime objects yang dipakai controller untuk membentuk view model
+- expose runtime objects yang dipakai langsung oleh pane components
 - menjaga pemisahan ownership:
   - draft / attachment UI di `useChatComposer`
   - send / edit / delete / transfer message di `useChatConversationMutations`

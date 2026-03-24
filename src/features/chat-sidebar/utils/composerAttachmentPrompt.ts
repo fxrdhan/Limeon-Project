@@ -1,7 +1,7 @@
 import type {
   ComposerHoverableAttachmentCandidate,
   ComposerPromptableLink,
-} from '../models';
+} from '../types';
 
 export interface AttachmentPastePromptState {
   id: string;
