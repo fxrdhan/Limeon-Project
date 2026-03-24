@@ -84,7 +84,9 @@ export const useChatComposerSend = ({
   const { isImagePendingFile, syncPersistedImagePreview } =
     useChatImagePreviewSync({
       currentChannelId,
+      setMessages,
       isCurrentConversationScopeActive,
+      runInCurrentConversationScope,
     });
   const { sendImageMessage, sendFileMessage } = useChatAttachmentSend({
     user,

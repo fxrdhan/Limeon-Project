@@ -31,6 +31,9 @@ const { mockCreatePdfPreviewUploadArtifact, mockReadBlobAsDataUrl } =
     mockCreatePdfPreviewUploadArtifact: vi.fn(),
     mockReadBlobAsDataUrl: vi.fn(),
   }));
+const { mockCreateImagePreviewUploadArtifact } = vi.hoisted(() => ({
+  mockCreateImagePreviewUploadArtifact: vi.fn(),
+}));
 const { mockRemoteAssetService } = vi.hoisted(() => ({
   mockRemoteAssetService: {
     fetchRemoteAsset: vi.fn(),
@@ -57,6 +60,7 @@ vi.mock('../data/chatSidebarAssetsGateway', () => ({
   chatSidebarAssetsGateway: {
     uploadImage: mockGateway.uploadImage,
     uploadAttachment: mockGateway.uploadAttachment,
+    deleteAsset: vi.fn(),
   },
 }));
 
@@ -73,6 +77,10 @@ vi.mock('../utils/pdf-message-preview', async () => {
     readBlobAsDataUrl: mockReadBlobAsDataUrl,
   };
 });
+
+vi.mock('../utils/image-message-preview', () => ({
+  createImagePreviewUploadArtifact: mockCreateImagePreviewUploadArtifact,
+}));
 
 vi.mock('react-hot-toast', () => ({
   default: mockToast,
@@ -185,6 +193,11 @@ describe('useChatComposerSend', () => {
         revokeObjectURL: vi.fn(),
       })
     );
+    mockGateway.uploadAttachment.mockImplementation(
+      async (_file: File, path: string) => ({
+        path,
+      })
+    );
     mockGateway.fetchConversationMessages.mockResolvedValue({
       data: [],
       error: null,
@@ -212,6 +225,17 @@ describe('useChatComposerSend', () => {
     });
     mockReadBlobAsDataUrl.mockResolvedValue(
       'data:image/png;base64,cHJldmlldw=='
+    );
+    mockCreateImagePreviewUploadArtifact.mockImplementation(
+      async (_file: File, storagePath: string) => ({
+        previewFile: new File(['preview'], 'server-image-preview.webp', {
+          type: 'image/webp',
+        }),
+        previewStoragePath: storagePath.replace(
+          /^(images|documents)\//,
+          'previews/'
+        ),
+      })
     );
     mockRemoteAssetService.fetchRemoteAsset.mockResolvedValue({
       data: null,
@@ -1363,9 +1387,6 @@ describe('useChatComposerSend', () => {
   });
 
   it('converts a pasted image url draft into an image attachment send', async () => {
-    mockGateway.uploadAttachment.mockResolvedValue({
-      path: 'images/channel-1/user-a_image_attachment.png',
-    });
     mockGateway.createMessage.mockResolvedValue({
       data: buildMessage({
         id: 'server-image-attachment',
@@ -1433,7 +1454,6 @@ describe('useChatComposerSend', () => {
     });
 
     expect(mockGateway.uploadImage).not.toHaveBeenCalled();
-    expect(mockGateway.updateFilePreview).not.toHaveBeenCalled();
     expect(mockGateway.createMessage).toHaveBeenCalledWith(
       expect.objectContaining({
         receiver_id: 'user-b',
@@ -1443,12 +1463,20 @@ describe('useChatComposerSend', () => {
         ),
       })
     );
+    await waitFor(() => {
+      expect(mockGateway.updateFilePreview).toHaveBeenCalledWith(
+        'server-image-attachment',
+        expect.objectContaining({
+          file_preview_status: 'ready',
+          file_preview_url: expect.stringMatching(
+            /^previews\/channel-1\/user-a_image_.+\.(webp|jpg|png)$/
+          ),
+        })
+      );
+    });
   });
 
-  it('does not hand off optimistic image previews into the legacy image preview cache after send commit', async () => {
-    mockGateway.uploadAttachment.mockResolvedValue({
-      path: 'images/channel-1/user-a_image_commit.png',
-    });
+  it('persists image preview metadata during the send pipeline', async () => {
     mockGateway.createMessage.mockResolvedValue({
       data: buildMessage({
         id: 'server-image-commit',
@@ -1506,12 +1534,17 @@ describe('useChatComposerSend', () => {
       await result.current.handleSendMessage();
     });
 
-    expect(mockGateway.updateFilePreview).not.toHaveBeenCalledWith(
-      'server-image-commit',
-      expect.objectContaining({
-        file_preview_status: 'ready',
-      })
-    );
+    await waitFor(() => {
+      expect(mockGateway.updateFilePreview).toHaveBeenCalledWith(
+        'server-image-commit',
+        expect.objectContaining({
+          file_preview_status: 'ready',
+          file_preview_url: expect.stringMatching(
+            /^previews\/channel-1\/user-a_image_.+\.(webp|jpg|png)$/
+          ),
+        })
+      );
+    });
   });
 
   it('sends a pasted image url as plain text when the draft is marked to stay raw', async () => {

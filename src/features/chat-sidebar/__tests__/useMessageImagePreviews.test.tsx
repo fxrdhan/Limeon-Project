@@ -7,10 +7,12 @@ const {
   mockActivateChannelImageAssetScope,
   mockEnsureChannelImageAssetUrl,
   mockGetRuntimeChannelImageAssetUrl,
+  mockResolveChatAssetUrl,
 } = vi.hoisted(() => ({
   mockActivateChannelImageAssetScope: vi.fn(),
   mockEnsureChannelImageAssetUrl: vi.fn(),
   mockGetRuntimeChannelImageAssetUrl: vi.fn(),
+  mockResolveChatAssetUrl: vi.fn(),
 }));
 
 vi.mock('../utils/channel-image-asset-cache', () => ({
@@ -34,6 +36,7 @@ vi.mock('../utils/message-file', () => ({
   isDirectChatAssetUrl: vi.fn((url: string) =>
     /^(https?:\/\/|blob:|data:|\/)/i.test(url)
   ),
+  resolveChatAssetUrl: mockResolveChatAssetUrl,
 }));
 
 describe('useMessageImagePreviews', () => {
@@ -117,6 +120,7 @@ describe('useMessageImagePreviews', () => {
         `blob:${variant}-${message.id}`
     );
     mockGetRuntimeChannelImageAssetUrl.mockReturnValue(null);
+    mockResolveChatAssetUrl.mockResolvedValue(null);
   });
 
   it('prefetches full assets only for image bubbles visible in the viewport', async () => {
@@ -190,6 +194,42 @@ describe('useMessageImagePreviews', () => {
 
     expect(result.current.getImageMessageUrl(message)).toBe(
       'blob:runtime-full'
+    );
+  });
+
+  it('resolves persisted image preview assets before the full blob cache is ready', async () => {
+    const message = createMessage({
+      id: 'persisted-preview',
+      file_preview_url: 'previews/channel/persisted-preview.webp',
+    });
+    const props = createHookProps([message]);
+    props.messageBubbleRefs.current.set(
+      'persisted-preview',
+      createBubbleElement(32, 180)
+    );
+    mockEnsureChannelImageAssetUrl.mockImplementation(
+      async () =>
+        await new Promise<string>(resolve => {
+          window.setTimeout(() => {
+            resolve('blob:full-persisted-preview');
+          }, 300);
+        })
+    );
+    mockResolveChatAssetUrl.mockResolvedValue(
+      'https://signed.example/previews/channel/persisted-preview.webp'
+    );
+
+    const { result } = renderHook(() => useMessageImagePreviews(props));
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(90);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(mockEnsureChannelImageAssetUrl).not.toHaveBeenCalled();
+    expect(result.current.getImageMessageUrl(message)).toBe(
+      'https://signed.example/previews/channel/persisted-preview.webp'
     );
   });
 
