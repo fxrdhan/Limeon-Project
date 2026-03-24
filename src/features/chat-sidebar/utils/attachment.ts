@@ -1,11 +1,9 @@
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import type { ComposerPendingFileKind } from '../types';
 import {
-  CHAT_AUDIO_FOLDER,
-  CHAT_DOCUMENT_FOLDER,
-  CHAT_IMAGE_FOLDER,
-} from '../constants';
-import { createRuntimeId } from './runtime-id';
+  buildChatFileStoragePath,
+  buildChatImageStoragePath,
+} from '../../../../shared/chatAttachmentPaths';
 
 export const getAttachmentFileName = (targetMessage: ChatMessage) => {
   if (targetMessage.file_name) return targetMessage.file_name;
@@ -45,31 +43,24 @@ export const buildChatImagePath = (
   channelId: string,
   senderId: string,
   file: File
-) => {
-  const extensionFromName = file.name.split('.').pop()?.toLowerCase();
-  const extensionFromType = file.type.split('/')[1]?.toLowerCase();
-  const rawExtension = extensionFromName || extensionFromType || 'jpg';
-  const safeExtension = rawExtension.replace(/[^a-z0-9]/g, '') || 'jpg';
-  const safeChannelId = channelId.replace(/[^a-zA-Z0-9_-]/g, '_');
-  const uploadId = createRuntimeId('image');
-
-  return `${CHAT_IMAGE_FOLDER}/${safeChannelId}/${senderId}_${uploadId}.${safeExtension}`;
-};
+) =>
+  buildChatImageStoragePath({
+    channelId,
+    senderId,
+    fileName: file.name,
+    mimeType: file.type,
+  });
 
 export const buildChatFilePath = (
   channelId: string,
   senderId: string,
   file: File,
   fileKind: ComposerPendingFileKind
-) => {
-  const extensionFromName = file.name.split('.').pop()?.toLowerCase();
-  const extensionFromType = file.type.split('/')[1]?.toLowerCase();
-  const rawExtension = extensionFromName || extensionFromType || 'bin';
-  const safeExtension = rawExtension.replace(/[^a-z0-9]/g, '') || 'bin';
-  const safeChannelId = channelId.replace(/[^a-zA-Z0-9_-]/g, '_');
-  const baseFolder =
-    fileKind === 'audio' ? CHAT_AUDIO_FOLDER : CHAT_DOCUMENT_FOLDER;
-  const uploadId = createRuntimeId(fileKind);
-
-  return `${baseFolder}/${safeChannelId}/${senderId}_${uploadId}.${safeExtension}`;
-};
+) =>
+  buildChatFileStoragePath({
+    channelId,
+    senderId,
+    fileName: file.name,
+    mimeType: file.type,
+    fileKind,
+  });

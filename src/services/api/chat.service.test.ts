@@ -347,6 +347,10 @@ describe('chatService', () => {
       p_file_mime_type: null,
       p_file_size: null,
       p_file_storage_path: null,
+      p_file_preview_url: null,
+      p_file_preview_page_count: null,
+      p_file_preview_status: null,
+      p_file_preview_error: null,
     });
   });
 

@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase, supabaseUrl } from '@/lib/supabase';
 import type { PostgrestError } from '@supabase/supabase-js';
 import type { ServiceResponse } from '../base.service';
 import type {
@@ -6,10 +6,10 @@ import type {
   ChatSharedLinkResponse,
 } from '../../../../shared/chatFunctionContracts';
 
-const DEFAULT_CHAT_LINK_API_URL = 'https://shrtlink.works';
+const DEFAULT_CHAT_LINK_PUBLIC_URL = `${supabaseUrl.replace(/\/+$/, '')}/functions/v1/chat-link`;
 
 export const normalizeChatLinkApiUrl = (value?: string) =>
-  (value?.trim() || DEFAULT_CHAT_LINK_API_URL).replace(/\/+$/, '');
+  (value?.trim() || DEFAULT_CHAT_LINK_PUBLIC_URL).replace(/\/+$/, '');
 
 export const getChatLinkApiBaseUrl = () =>
   normalizeChatLinkApiUrl(
@@ -35,53 +35,15 @@ export const chatLinkService = {
     request: ChatSharedLinkCreateRequest
   ): Promise<ServiceResponse<ChatSharedLinkResponse>> {
     try {
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession();
-      const accessToken = session?.access_token?.trim();
+      const { data: payload, error } =
+        await supabase.functions.invoke<ChatSharedLinkResponse>('chat-link', {
+          body: request,
+        });
 
-      if (sessionError || !accessToken) {
+      if (error) {
         return {
           data: null,
-          error: buildChatLinkError(
-            sessionError?.message || 'Missing auth session',
-            '401'
-          ),
-        };
-      }
-
-      const chatLinkApiUrl = getChatLinkApiBaseUrl();
-      const response = await fetch(`${chatLinkApiUrl}/api/chat-link`, {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify(request),
-      });
-      const responseText = await response.text();
-      const payload = responseText
-        ? (() => {
-            try {
-              return JSON.parse(
-                responseText
-              ) as Partial<ChatSharedLinkResponse> & Record<string, unknown>;
-            } catch {
-              return null;
-            }
-          })()
-        : null;
-
-      if (!response.ok) {
-        return {
-          data: null,
-          error: buildChatLinkError(
-            typeof payload?.error === 'string'
-              ? payload.error
-              : `Chat link request failed with status ${response.status}`,
-            String(response.status)
-          ),
+          error: error as PostgrestError,
         };
       }
 

@@ -8,6 +8,7 @@ import type {
   ChatPdfPreviewRequest as SharedChatPdfPreviewRequest,
   ChatPdfPreviewResponse as SharedChatPdfPreviewResponse,
   ChatPdfPreviewStatus,
+  ChatForwardMessageResponse as SharedChatForwardMessageResponse,
   ChatSharedLinkResponse as SharedChatSharedLinkResponse,
   CleanupStoragePathsResponse as SharedCleanupStoragePathsResult,
   DeleteMessageThreadAndCleanupResponse as SharedDeleteMessageThreadAndCleanupResult,
@@ -146,5 +147,7 @@ export interface PersistChatPdfPreviewResult {
   message: ChatMessage;
   previewPersisted: boolean;
 }
+
+export type ChatForwardMessageResult = SharedChatForwardMessageResponse;
 
 export type ChatSharedLinkResult = SharedChatSharedLinkResponse;

@@ -1,59 +1,34 @@
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vite-plus/test';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
-const { mockGetSession } = vi.hoisted(() => ({
-  mockGetSession: vi.fn(),
+const { mockInvoke } = vi.hoisted(() => ({
+  mockInvoke: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase', () => ({
   supabase: {
-    auth: {
-      getSession: mockGetSession,
+    functions: {
+      invoke: mockInvoke,
     },
   },
+  supabaseUrl: 'https://example.supabase.co',
 }));
 
 describe('chatLinkService', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-    vi.stubGlobal('fetch', vi.fn());
   });
 
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  it('creates a shared link through the chat link worker with the current auth token', async () => {
-    mockGetSession.mockResolvedValue({
+  it('creates a shared link through the chat-link edge function', async () => {
+    mockInvoke.mockResolvedValue({
       data: {
-        session: {
-          access_token: 'access-token-123',
-        },
+        slug: 'abc123xyzt',
+        shortUrl:
+          'https://example.supabase.co/functions/v1/chat-link/abc123xyzt',
+        storagePath: 'images/channel/image.png',
       },
       error: null,
     });
-    vi.mocked(fetch).mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          slug: 'abc123xyzt',
-          shortUrl: 'https://shrtlink.works/abc123xyzt',
-          storagePath: 'images/channel/image.png',
-        }),
-        {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      )
-    );
 
     const { chatLinkService } = await import('./link.service');
 
@@ -61,20 +36,16 @@ describe('chatLinkService', () => {
       storagePath: 'images/channel/image.png',
     });
 
-    expect(fetch).toHaveBeenCalledWith('https://shrtlink.works/api/chat-link', {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        Authorization: 'Bearer access-token-123',
-      },
-      body: JSON.stringify({
+    expect(mockInvoke).toHaveBeenCalledWith('chat-link', {
+      body: {
         storagePath: 'images/channel/image.png',
-      }),
+      },
     });
     expect(result).toEqual({
       data: {
         slug: 'abc123xyzt',
-        shortUrl: 'https://shrtlink.works/abc123xyzt',
+        shortUrl:
+          'https://example.supabase.co/functions/v1/chat-link/abc123xyzt',
         storagePath: 'images/channel/image.png',
         targetUrl: null,
       },
@@ -82,50 +53,17 @@ describe('chatLinkService', () => {
     });
   });
 
-  it('returns a typed error when the auth session is missing', async () => {
-    mockGetSession.mockResolvedValue({
-      data: {
-        session: null,
-      },
-      error: null,
-    });
-
-    const { chatLinkService } = await import('./link.service');
-
-    const result = await chatLinkService.createSharedLink({
-      storagePath: 'images/channel/image.png',
-    });
-
-    expect(fetch).not.toHaveBeenCalled();
-    expect(result).toEqual({
+  it('surfaces edge function invocation errors', async () => {
+    mockInvoke.mockResolvedValue({
       data: null,
       error: {
         code: '401',
         details: '',
         hint: '',
-        message: 'Missing auth session',
-        name: 'PostgrestError',
+        message: 'Unauthorized',
+        name: 'FunctionsHttpError',
       },
     });
-  });
-
-  it('surfaces upstream worker errors', async () => {
-    mockGetSession.mockResolvedValue({
-      data: {
-        session: {
-          access_token: 'access-token-123',
-        },
-      },
-      error: null,
-    });
-    vi.mocked(fetch).mockResolvedValue(
-      new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-    );
 
     const { chatLinkService } = await import('./link.service');
 
@@ -140,35 +78,21 @@ describe('chatLinkService', () => {
         details: '',
         hint: '',
         message: 'Unauthorized',
-        name: 'PostgrestError',
+        name: 'FunctionsHttpError',
       },
     });
   });
 
   it('creates a shared link for a generic target url', async () => {
-    mockGetSession.mockResolvedValue({
+    mockInvoke.mockResolvedValue({
       data: {
-        session: {
-          access_token: 'access-token-123',
-        },
+        slug: 'link234xyz',
+        shortUrl:
+          'https://example.supabase.co/functions/v1/chat-link/link234xyz',
+        targetUrl: 'https://www.kaggle.com/datasets/sample',
       },
       error: null,
     });
-    vi.mocked(fetch).mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          slug: 'link234xyz',
-          shortUrl: 'https://shrtlink.works/link234xyz',
-          targetUrl: 'https://www.kaggle.com/datasets/sample',
-        }),
-        {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      )
-    );
 
     const { chatLinkService } = await import('./link.service');
 
@@ -176,20 +100,16 @@ describe('chatLinkService', () => {
       targetUrl: 'https://www.kaggle.com/datasets/sample',
     });
 
-    expect(fetch).toHaveBeenCalledWith('https://shrtlink.works/api/chat-link', {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        Authorization: 'Bearer access-token-123',
-      },
-      body: JSON.stringify({
+    expect(mockInvoke).toHaveBeenCalledWith('chat-link', {
+      body: {
         targetUrl: 'https://www.kaggle.com/datasets/sample',
-      }),
+      },
     });
     expect(result).toEqual({
       data: {
         slug: 'link234xyz',
-        shortUrl: 'https://shrtlink.works/link234xyz',
+        shortUrl:
+          'https://example.supabase.co/functions/v1/chat-link/link234xyz',
         storagePath: null,
         targetUrl: 'https://www.kaggle.com/datasets/sample',
       },
@@ -197,30 +117,16 @@ describe('chatLinkService', () => {
     });
   });
 
-  it('passes messageId to the chat link worker for attachment-linked requests', async () => {
-    mockGetSession.mockResolvedValue({
+  it('passes messageId to the edge function for attachment-linked requests', async () => {
+    mockInvoke.mockResolvedValue({
       data: {
-        session: {
-          access_token: 'access-token-123',
-        },
+        slug: 'msg123xyzt',
+        shortUrl:
+          'https://example.supabase.co/functions/v1/chat-link/msg123xyzt',
+        storagePath: 'documents/channel/report.pdf',
       },
       error: null,
     });
-    vi.mocked(fetch).mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          slug: 'msg123xyzt',
-          shortUrl: 'https://shrtlink.works/msg123xyzt',
-          storagePath: 'documents/channel/report.pdf',
-        }),
-        {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      )
-    );
 
     const { chatLinkService } = await import('./link.service');
 
@@ -228,15 +134,10 @@ describe('chatLinkService', () => {
       messageId: '4a2558e0-91f4-4b7c-830e-8388e6f3050d',
     });
 
-    expect(fetch).toHaveBeenCalledWith('https://shrtlink.works/api/chat-link', {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        Authorization: 'Bearer access-token-123',
-      },
-      body: JSON.stringify({
+    expect(mockInvoke).toHaveBeenCalledWith('chat-link', {
+      body: {
         messageId: '4a2558e0-91f4-4b7c-830e-8388e6f3050d',
-      }),
+      },
     });
   });
 });

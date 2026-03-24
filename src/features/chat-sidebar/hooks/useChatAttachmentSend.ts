@@ -9,6 +9,13 @@ import {
 } from '../data/chatSidebarGateway';
 import { useChatAttachmentCleanup } from './useChatAttachmentCleanup';
 import { buildChatFilePath, buildChatImagePath } from '../utils/attachment';
+import {
+  buildFailedAttachmentPreviewFields,
+  buildReadyImagePreviewFields,
+  buildReadyPdfPreviewFields,
+  prepareImagePreviewPersistence,
+  preparePdfPreviewPersistence,
+} from '../utils/attachment-preview-persistence';
 import { chatRuntimeCache } from '../utils/chatRuntimeCache';
 import { mapPersistedMessageForDisplay } from '../utils/conversation-sync';
 import { buildPdfMessagePreviewCacheKey } from '../utils/pdf-message-preview';
@@ -205,6 +212,16 @@ export const useChatAttachmentSend = ({
       }
 
       const imagePath = buildChatImagePath(currentChannelId, user.id, file);
+      const preparedImagePreview = await prepareImagePreviewPersistence(
+        file,
+        imagePath
+      ).catch(error => {
+        console.error('Error preparing chat image preview:', error);
+        return null;
+      });
+      let imagePreviewFields = buildFailedAttachmentPreviewFields(
+        'Thumbnail gambar tidak tersedia'
+      );
 
       return sendAttachmentMessage({
         tempIdPrefix: 'temp_image',
@@ -233,18 +250,42 @@ export const useChatAttachmentSend = ({
           receiver_name: targetUser.name || 'Unknown',
           stableKey,
         }),
-        uploadAsset: async () =>
-          chatSidebarAssetsGateway.uploadAttachment(
+        uploadAsset: async () => {
+          const { path } = await chatSidebarAssetsGateway.uploadAttachment(
             file,
             imagePath,
             file.type || undefined
-          ),
+          );
+          const additionalStoragePaths: string[] = [];
+
+          if (preparedImagePreview) {
+            try {
+              const { path: previewPath } =
+                await chatSidebarAssetsGateway.uploadAttachment(
+                  preparedImagePreview.file,
+                  preparedImagePreview.storagePath,
+                  preparedImagePreview.file.type || undefined
+                );
+
+              additionalStoragePaths.push(previewPath);
+              imagePreviewFields = buildReadyImagePreviewFields(previewPath);
+            } catch (error) {
+              console.error('Error uploading chat image preview:', error);
+            }
+          }
+
+          return {
+            path,
+            additionalStoragePaths,
+          };
+        },
         createPersistedMessage: async () =>
           chatSidebarMessagesGateway.createMessage({
             receiver_id: targetUser.id,
             message: imagePath,
             message_type: 'image',
             file_storage_path: imagePath,
+            ...imagePreviewFields,
           }),
         mapPersistedMessage: (persistedMessage, _uploadedPath, stableKey) =>
           mapPersistedMessageForDisplay(
@@ -306,6 +347,45 @@ export const useChatAttachmentSend = ({
           : 'Gagal mengirim dokumen';
       const shouldPersistImagePreview = isImagePendingFile(pendingFile);
       const shouldPersistPdfPreview = isPdfPendingFile(pendingFile);
+      const preparedImagePreview = shouldPersistImagePreview
+        ? await prepareImagePreviewPersistence(
+            pendingFile.file,
+            filePath
+          ).catch(error => {
+            console.error(
+              'Error preparing chat document image preview:',
+              error
+            );
+            return null;
+          })
+        : null;
+      const preparedPdfPreview = shouldPersistPdfPreview
+        ? await preparePdfPreviewPersistence(pendingFile.file, filePath).catch(
+            error => {
+              console.error('Error preparing chat PDF preview:', error);
+              return null;
+            }
+          )
+        : null;
+      let filePreviewFields =
+        shouldPersistImagePreview || shouldPersistPdfPreview
+          ? buildFailedAttachmentPreviewFields(
+              shouldPersistImagePreview
+                ? 'Thumbnail gambar tidak tersedia'
+                : 'Preview dokumen tidak tersedia'
+            )
+          : null;
+      const resolvedPdfPendingFile =
+        preparedPdfPreview &&
+        (!pendingFile.pdfCoverUrl || !pendingFile.pdfPageCount)
+          ? {
+              ...pendingFile,
+              pdfCoverUrl:
+                pendingFile.pdfCoverUrl ?? preparedPdfPreview.coverDataUrl,
+              pdfPageCount:
+                pendingFile.pdfPageCount ?? preparedPdfPreview.pageCount,
+            }
+          : pendingFile;
 
       return sendAttachmentMessage({
         tempIdPrefix: 'temp_file',
@@ -340,14 +420,58 @@ export const useChatAttachmentSend = ({
           stableKey,
         }),
         onBeforeAppendOptimistic: optimisticMessage => {
-          seedLocalPdfPreviewCache(optimisticMessage, pendingFile);
+          seedLocalPdfPreviewCache(optimisticMessage, resolvedPdfPendingFile);
         },
-        uploadAsset: async () =>
-          chatSidebarAssetsGateway.uploadAttachment(
+        uploadAsset: async () => {
+          const { path } = await chatSidebarAssetsGateway.uploadAttachment(
             pendingFile.file,
             filePath,
             pendingFile.mimeType || undefined
-          ),
+          );
+          const additionalStoragePaths: string[] = [];
+
+          if (preparedImagePreview) {
+            try {
+              const { path: previewPath } =
+                await chatSidebarAssetsGateway.uploadAttachment(
+                  preparedImagePreview.file,
+                  preparedImagePreview.storagePath,
+                  preparedImagePreview.file.type || undefined
+                );
+
+              additionalStoragePaths.push(previewPath);
+              filePreviewFields = buildReadyImagePreviewFields(previewPath);
+            } catch (error) {
+              console.error(
+                'Error uploading chat document image preview:',
+                error
+              );
+            }
+          }
+
+          if (preparedPdfPreview) {
+            try {
+              const { path: previewPath } =
+                await chatSidebarAssetsGateway.uploadPdfPreview(
+                  preparedPdfPreview.file,
+                  preparedPdfPreview.storagePath
+                );
+
+              additionalStoragePaths.push(previewPath);
+              filePreviewFields = buildReadyPdfPreviewFields(
+                previewPath,
+                preparedPdfPreview.pageCount
+              );
+            } catch (error) {
+              console.error('Error uploading chat PDF preview:', error);
+            }
+          }
+
+          return {
+            path,
+            additionalStoragePaths,
+          };
+        },
         createPersistedMessage: async () =>
           chatSidebarMessagesGateway.createMessage({
             receiver_id: targetUser.id,
@@ -358,6 +482,7 @@ export const useChatAttachmentSend = ({
             file_mime_type: pendingFile.mimeType,
             file_size: pendingFile.file.size,
             file_storage_path: filePath,
+            ...filePreviewFields,
           }),
         mapPersistedMessage: (persistedMessage, _uploadedPath, stableKey) =>
           mapPersistedMessageForDisplay(
@@ -398,7 +523,7 @@ export const useChatAttachmentSend = ({
             return;
           }
 
-          seedLocalPdfPreviewCache(realMessage, pendingFile);
+          seedLocalPdfPreviewCache(realMessage, resolvedPdfPendingFile);
           await syncPersistedPdfPreview({
             realMessage: {
               ...realMessage,
@@ -407,7 +532,7 @@ export const useChatAttachmentSend = ({
               file_mime_type: pendingFile.mimeType,
               file_storage_path: realMessage.file_storage_path || filePath,
             },
-            pendingFile,
+            pendingFile: resolvedPdfPendingFile,
           });
         },
       });

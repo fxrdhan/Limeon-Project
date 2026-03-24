@@ -1,6 +1,7 @@
 import type { ServiceResponse } from '@/services/api/base.service';
 import {
   chatCleanupService,
+  chatForwardService,
   chatLinkService,
   chatMessagesService,
   chatPresenceService,
@@ -15,6 +16,7 @@ import {
   type EditChatMessageTextInput,
   type PersistChatPdfPreviewInput,
   type ChatSharedLinkResult,
+  type ChatForwardMessageResult,
   type UserPresenceUpdateInput,
 } from '@/services/api/chat.service';
 
@@ -32,6 +34,7 @@ export type {
   PersistChatPdfPreviewInput,
   PersistChatPdfPreviewResult,
   ChatSharedLinkResult,
+  ChatForwardMessageResult,
 } from '@/services/api/chat.service';
 
 export type { RealtimeChannel } from '@supabase/supabase-js';
@@ -143,6 +146,15 @@ export const chatSidebarCleanupGateway = {
   },
   retryChatCleanupFailures() {
     return chatCleanupService.retryChatCleanupFailures();
+  },
+};
+
+export const chatSidebarForwardGateway = {
+  forwardMessage(request: {
+    messageId: string;
+    recipientIds: string[];
+  }): Promise<ServiceResponse<ChatForwardMessageResult>> {
+    return chatForwardService.forwardMessage(request);
   },
 };
 

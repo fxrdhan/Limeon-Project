@@ -98,6 +98,10 @@ export const buildCreateChatMessageRpcArgs = (
   p_file_mime_type: payload.file_mime_type ?? null,
   p_file_size: payload.file_size ?? null,
   p_file_storage_path: payload.file_storage_path ?? null,
+  p_file_preview_url: payload.file_preview_url ?? null,
+  p_file_preview_page_count: payload.file_preview_page_count ?? null,
+  p_file_preview_status: payload.file_preview_status ?? null,
+  p_file_preview_error: payload.file_preview_error ?? null,
 });
 
 export const buildEditChatMessageTextRpcArgs = (

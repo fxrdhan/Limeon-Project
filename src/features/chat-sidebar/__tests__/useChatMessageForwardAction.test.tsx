@@ -13,9 +13,7 @@ const {
   mockToast,
   mockPresenceRoster,
   mockMessagesGateway,
-  mockCleanupGateway,
-  mockAssetsGateway,
-  mockPreviewGateway,
+  mockForwardGateway,
 } = vi.hoisted(() => ({
   mockToast: {
     error: vi.fn(),
@@ -38,18 +36,8 @@ const {
   mockMessagesGateway: {
     createMessage: vi.fn(),
   },
-  mockCleanupGateway: {
-    cleanupStoragePaths: vi.fn(),
-    deleteMessageThreadAndCleanup: vi.fn(),
-  },
-  mockAssetsGateway: {
-    uploadImage: vi.fn(),
-    uploadAttachment: vi.fn(),
-    downloadAsset: vi.fn(),
-    createSignedAssetUrl: vi.fn(),
-  },
-  mockPreviewGateway: {
-    persistPdfPreview: vi.fn(),
+  mockForwardGateway: {
+    forwardMessage: vi.fn(),
   },
 }));
 
@@ -63,12 +51,7 @@ vi.mock('@/hooks/presence/usePresenceRoster', () => ({
 
 vi.mock('../data/chatSidebarGateway', () => ({
   chatSidebarMessagesGateway: mockMessagesGateway,
-  chatSidebarCleanupGateway: mockCleanupGateway,
-  chatSidebarPreviewGateway: mockPreviewGateway,
-}));
-
-vi.mock('../data/chatSidebarAssetsGateway', () => ({
-  chatSidebarAssetsGateway: mockAssetsGateway,
+  chatSidebarForwardGateway: mockForwardGateway,
 }));
 
 const buildUser = (overrides: Partial<ForwardUser> = {}): ForwardUser => ({
@@ -149,29 +132,11 @@ describe('useChatMessageForwardAction', () => {
       }),
       error: null,
     });
-    mockCleanupGateway.cleanupStoragePaths.mockResolvedValue({
-      data: { failedStoragePaths: [] },
-      error: null,
-    });
-    mockCleanupGateway.deleteMessageThreadAndCleanup.mockResolvedValue({
-      data: { deletedMessageIds: [], failedStoragePaths: [] },
-      error: null,
-    });
-    mockAssetsGateway.uploadImage.mockImplementation(
-      async (_file: File, storagePath: string) => ({
-        path: storagePath,
-      })
-    );
-    mockAssetsGateway.uploadAttachment.mockImplementation(
-      async (_file: File, storagePath: string) => ({
-        path: storagePath,
-      })
-    );
-    mockAssetsGateway.downloadAsset.mockResolvedValue(
-      new Blob(['lampiran'], { type: 'text/plain' })
-    );
-    mockPreviewGateway.persistPdfPreview.mockResolvedValue({
-      data: null,
+    mockForwardGateway.forwardMessage.mockResolvedValue({
+      data: {
+        forwardedRecipientIds: ['user-c'],
+        failedRecipientIds: [],
+      },
       error: null,
     });
   });
@@ -233,7 +198,7 @@ describe('useChatMessageForwardAction', () => {
     expect(closeMessageMenu).toHaveBeenCalledOnce();
   });
 
-  it('duplicates forwarded attachment uploads and recreates the attachment caption thread', async () => {
+  it('forwards attachment threads through the backend forwarding gateway', async () => {
     const attachmentMessage = buildMessage({
       id: 'message-file',
       message: 'documents/channel/report.txt',
@@ -251,27 +216,6 @@ describe('useChatMessageForwardAction', () => {
       reply_to_id: 'message-file',
       message_relation_kind: 'attachment_caption',
     });
-    mockMessagesGateway.createMessage
-      .mockResolvedValueOnce({
-        data: buildMessage({
-          id: 'forwarded-file',
-          sender_id: 'user-a',
-          receiver_id: 'user-c',
-          message_type: 'file',
-        }),
-        error: null,
-      })
-      .mockResolvedValueOnce({
-        data: buildMessage({
-          id: 'forwarded-caption',
-          sender_id: 'user-a',
-          receiver_id: 'user-c',
-          message_type: 'text',
-          reply_to_id: 'forwarded-file',
-        }),
-        error: null,
-      });
-
     const { result } = renderHook(() =>
       useChatMessageForwardAction({
         user: buildUser(),
@@ -293,34 +237,11 @@ describe('useChatMessageForwardAction', () => {
       await result.current.submitForwardMessage();
     });
 
-    expect(mockAssetsGateway.downloadAsset).toHaveBeenCalledWith(
-      'documents/channel/report.txt'
-    );
-    expect(mockAssetsGateway.uploadAttachment).toHaveBeenCalledWith(
-      expect.any(File),
-      expect.stringContaining('documents/dm_user-a_user-c/'),
-      'text/plain'
-    );
-    expect(mockMessagesGateway.createMessage).toHaveBeenNthCalledWith(1, {
-      receiver_id: 'user-c',
-      message: expect.stringContaining('documents/dm_user-a_user-c/'),
-      message_type: 'file',
-      file_name: 'report.txt',
-      file_kind: 'document',
-      file_mime_type: 'text/plain',
-      file_size: 8,
-      file_storage_path: expect.stringContaining('documents/dm_user-a_user-c/'),
+    expect(mockForwardGateway.forwardMessage).toHaveBeenCalledWith({
+      messageId: 'message-file',
+      recipientIds: ['user-c'],
     });
-    expect(mockMessagesGateway.createMessage).toHaveBeenNthCalledWith(
-      2,
-      expect.objectContaining({
-        receiver_id: 'user-c',
-        message: 'catatan penting',
-        message_type: 'text',
-        reply_to_id: 'forwarded-file',
-        message_relation_kind: 'attachment_caption',
-      })
-    );
+    expect(mockMessagesGateway.createMessage).not.toHaveBeenCalled();
     expect(mockToast.success).toHaveBeenCalledWith(
       'Pesan berhasil diteruskan',
       expect.objectContaining({

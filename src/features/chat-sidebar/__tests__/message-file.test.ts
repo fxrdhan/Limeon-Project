@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
+import { buildChatSharedLinkShortUrl } from '../../../services/api/chat/link.service';
 import {
   fetchPdfBlobWithFallback,
   resetSignedChatAssetUrlCache,
@@ -13,6 +14,15 @@ const { mockStorageService, mockShareGateway } = vi.hoisted(() => ({
   mockShareGateway: {
     createSharedLink: vi.fn(),
   },
+}));
+
+vi.mock('@/lib/supabase', () => ({
+  supabase: {
+    functions: {
+      invoke: vi.fn(),
+    },
+  },
+  supabaseUrl: 'https://example.supabase.co',
 }));
 
 vi.mock('../data/chatSidebarAssetsGateway', () => ({
@@ -117,7 +127,7 @@ describe('message-file utils', () => {
       }
     );
 
-    expect(shortUrl).toBe('https://shrtlink.works/stak234abc');
+    expect(shortUrl).toBe(buildChatSharedLinkShortUrl('stak234abc'));
     expect(mockShareGateway.createSharedLink).not.toHaveBeenCalled();
   });
 });

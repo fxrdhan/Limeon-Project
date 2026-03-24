@@ -2,6 +2,7 @@ import {
   isImageFileExtensionOrMime,
   resolveFileExtension,
 } from './message-file';
+import { buildChatSharedLinkShortUrl } from '@/services/api/chat/link.service';
 import { chatRemoteAssetService } from '@/services/api/chat/remote-asset.service';
 import { findMessageLinks } from './message-search';
 
@@ -48,7 +49,6 @@ const IMAGE_MIME_BY_EXTENSION: Record<string, string> = {
 };
 const PDF_MIME_TYPE = 'application/pdf';
 const GOOGLE_DRIVE_HOSTNAMES = new Set(['drive.google.com']);
-const CHAT_SHARED_LINK_HOSTNAMES = new Set(['shrtlink.works']);
 const PDF_SIGNATURE = '%PDF-';
 const PDF_TITLE_PATTERN = /\/Title\s*\((.*?)\)/s;
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47] as const;
@@ -212,7 +212,7 @@ const extractGoogleDriveFileId = (url: string) => {
 const isChatSharedLinkUrl = (url: string) => {
   try {
     const parsedUrl = new URL(url);
-    if (!CHAT_SHARED_LINK_HOSTNAMES.has(parsedUrl.hostname.toLowerCase())) {
+    if (!getChatSharedLinkHostnames().has(parsedUrl.hostname.toLowerCase())) {
       return false;
     }
 
@@ -712,4 +712,17 @@ export const validateAttachmentComposerLink = async (url: string) => {
   } catch {
     return false;
   }
+};
+const getChatSharedLinkHostnames = () => {
+  const hostnames = new Set(['shrtlink.works']);
+
+  try {
+    hostnames.add(
+      new URL(buildChatSharedLinkShortUrl('23456789ab')).hostname.toLowerCase()
+    );
+  } catch {
+    // Ignore malformed runtime configuration and keep the legacy hostname.
+  }
+
+  return hostnames;
 };

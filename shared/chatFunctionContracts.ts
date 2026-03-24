@@ -119,6 +119,21 @@ export const CHAT_PDF_COMPRESS_DEFAULT_LEVEL: ChatPdfCompressionLevel =
   'recommended';
 export const CHAT_PDF_COMPRESS_MAX_BYTES = 50 * 1024 * 1024;
 
+export interface ChatForwardMessageRequest {
+  messageId: string;
+  recipientIds: string[];
+}
+
+export interface ChatForwardMessageRequestPayload {
+  messageId?: string;
+  recipientIds?: string[];
+}
+
+export interface ChatForwardMessageResponse {
+  failedRecipientIds: string[];
+  forwardedRecipientIds: string[];
+}
+
 export interface ChatSharedLinkCreateRequest {
   messageId?: string;
   storagePath?: string;

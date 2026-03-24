@@ -19,6 +19,7 @@ const { mockGateway, mockToast } = vi.hoisted(() => ({
     persistPdfPreview: vi.fn(),
     uploadImage: vi.fn(),
     uploadAttachment: vi.fn(),
+    uploadPdfPreview: vi.fn(),
     cleanupStoragePaths: vi.fn(),
   },
   mockToast: {
@@ -60,6 +61,7 @@ vi.mock('../data/chatSidebarAssetsGateway', () => ({
   chatSidebarAssetsGateway: {
     uploadImage: mockGateway.uploadImage,
     uploadAttachment: mockGateway.uploadAttachment,
+    uploadPdfPreview: mockGateway.uploadPdfPreview,
     deleteAsset: vi.fn(),
   },
 }));
@@ -194,6 +196,11 @@ describe('useChatComposerSend', () => {
       })
     );
     mockGateway.uploadAttachment.mockImplementation(
+      async (_file: File, path: string) => ({
+        path,
+      })
+    );
+    mockGateway.uploadPdfPreview.mockImplementation(
       async (_file: File, path: string) => ({
         path,
       })
@@ -578,6 +585,7 @@ describe('useChatComposerSend', () => {
 
     expect(mockGateway.cleanupStoragePaths).toHaveBeenCalledWith([
       'documents/channel/stok.pdf',
+      expect.stringMatching(/^previews\/channel-1\/user-a_document_.+\.png$/),
     ]);
     expect(mockToast.error).toHaveBeenCalledWith(
       'Pengiriman gagal dan file sementara tidak dapat dibersihkan',
@@ -636,13 +644,24 @@ describe('useChatComposerSend', () => {
     mockGateway.uploadAttachment.mockResolvedValue({
       path: 'documents/channel/stok.pdf',
     });
-    mockGateway.createMessage.mockResolvedValue({
+    mockGateway.createMessage.mockImplementation(async payload => ({
       data: buildMessage({
         id: 'server-file-2',
-        file_storage_path: 'documents/channel/stok.pdf',
+        message: String(payload.message),
+        file_storage_path: String(payload.file_storage_path),
+        file_preview_status:
+          payload.file_preview_status === 'ready' ? 'ready' : null,
+        file_preview_url:
+          typeof payload.file_preview_url === 'string'
+            ? payload.file_preview_url
+            : null,
+        file_preview_page_count:
+          typeof payload.file_preview_page_count === 'number'
+            ? payload.file_preview_page_count
+            : null,
       }),
       error: null,
-    });
+    }));
 
     const { registerPendingSend } = createPendingSendRegistry();
 
@@ -692,49 +711,53 @@ describe('useChatComposerSend', () => {
     expect(mockCreatePdfPreviewUploadArtifact).toHaveBeenCalledTimes(1);
     expect(mockCreatePdfPreviewUploadArtifact).toHaveBeenCalledWith(
       expect.any(File),
-      'server-file-2'
+      expect.stringMatching(/^user-a_document_/)
     );
-    expect(mockGateway.persistPdfPreview).toHaveBeenCalledTimes(1);
-    expect(mockGateway.persistPdfPreview).toHaveBeenCalledWith({
-      message_id: 'server-file-2',
-      preview_png_base64: 'cHJldmlldw==',
-      page_count: 2,
-    });
+    expect(mockGateway.uploadPdfPreview).toHaveBeenCalledWith(
+      expect.any(File),
+      expect.stringMatching(/^previews\/channel-1\/user-a_document_.+\.png$/)
+    );
+    expect(mockGateway.createMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        receiver_id: 'user-b',
+        message_type: 'file',
+        file_preview_status: 'ready',
+        file_preview_url: expect.stringMatching(
+          /^previews\/channel-1\/user-a_document_.+\.png$/
+        ),
+        file_preview_page_count: 2,
+      })
+    );
+    expect(mockGateway.persistPdfPreview).not.toHaveBeenCalled();
     expect(result.current.messages[0]?.file_preview_status).toBe('ready');
-    expect(result.current.messages[0]?.file_preview_url).toBe(
-      'previews/channel/server-file-preview.png'
+    expect(result.current.messages[0]?.file_preview_url).toMatch(
+      /^previews\/channel-1\/user-a_document_.+\.png$/
     );
     expect(result.current.messages[0]?.file_preview_page_count).toBe(2);
   });
 
-  it('reuses the composer pdf cover in bubble cache before persisted preview metadata finishes', async () => {
+  it('reuses the composer pdf cover in bubble cache after the send commits', async () => {
     mockGateway.uploadAttachment.mockResolvedValue({
       path: 'documents/channel/stok.pdf',
     });
-    mockGateway.createMessage.mockResolvedValue({
+    mockGateway.createMessage.mockImplementation(async payload => ({
       data: buildMessage({
         id: 'server-file-cache',
-        file_storage_path: 'documents/channel/stok.pdf',
+        message: String(payload.message),
+        file_storage_path: String(payload.file_storage_path),
+        file_preview_status:
+          payload.file_preview_status === 'ready' ? 'ready' : null,
+        file_preview_url:
+          typeof payload.file_preview_url === 'string'
+            ? payload.file_preview_url
+            : null,
+        file_preview_page_count:
+          typeof payload.file_preview_page_count === 'number'
+            ? payload.file_preview_page_count
+            : null,
       }),
       error: null,
-    });
-
-    let resolvePersistPdfPreview:
-      | ((value: {
-          data: {
-            previewPersisted: boolean;
-            message: ChatMessage;
-          };
-          error: null;
-        }) => void)
-      | undefined;
-
-    mockGateway.persistPdfPreview.mockImplementation(
-      () =>
-        new Promise(resolve => {
-          resolvePersistPdfPreview = resolve;
-        })
-    );
+    }));
 
     const { registerPendingSend } = createPendingSendRegistry();
 
@@ -776,11 +799,8 @@ describe('useChatComposerSend', () => {
       };
     });
 
-    let sendPromise: Promise<void> | undefined;
-
     await act(async () => {
-      sendPromise = result.current.handleSendMessage();
-      await Promise.resolve();
+      await result.current.handleSendMessage();
     });
 
     await waitFor(() => {
@@ -801,23 +821,7 @@ describe('useChatComposerSend', () => {
         pageCount: 3,
       })
     );
-
-    resolvePersistPdfPreview?.({
-      data: {
-        previewPersisted: true,
-        message: buildMessage({
-          id: 'server-file-cache',
-          file_preview_status: 'ready',
-          file_preview_url: 'previews/channel/server-file-cache.png',
-          file_preview_page_count: 2,
-        }),
-      },
-      error: null,
-    });
-
-    await act(async () => {
-      await sendPromise;
-    });
+    expect(mockGateway.persistPdfPreview).not.toHaveBeenCalled();
   });
 
   it('cancels a temp text send instead of letting the persisted row reappear', async () => {
@@ -1387,18 +1391,24 @@ describe('useChatComposerSend', () => {
   });
 
   it('converts a pasted image url draft into an image attachment send', async () => {
-    mockGateway.createMessage.mockResolvedValue({
+    mockGateway.createMessage.mockImplementation(async payload => ({
       data: buildMessage({
         id: 'server-image-attachment',
-        message: 'images/channel-1/user-a_image_attachment.png',
+        message: String(payload.message),
         message_type: 'image',
         file_name: undefined,
         file_kind: undefined,
         file_mime_type: 'image/png',
-        file_storage_path: 'images/channel-1/user-a_image_attachment.png',
+        file_storage_path: String(payload.file_storage_path),
+        file_preview_status:
+          payload.file_preview_status === 'ready' ? 'ready' : null,
+        file_preview_url:
+          typeof payload.file_preview_url === 'string'
+            ? payload.file_preview_url
+            : null,
       }),
       error: null,
-    });
+    }));
     mockRemoteAssetService.fetchRemoteAsset.mockResolvedValue({
       data: {
         blob: new Blob(['image'], { type: 'image/png' }),
@@ -1461,34 +1471,34 @@ describe('useChatComposerSend', () => {
         file_storage_path: expect.stringMatching(
           /^images\/channel-1\/user-a_image_.+\.png$/
         ),
+        file_preview_status: 'ready',
+        file_preview_url: expect.stringMatching(
+          /^previews\/channel-1\/user-a_image_.+\.(webp|jpg|png)$/
+        ),
       })
     );
-    await waitFor(() => {
-      expect(mockGateway.updateFilePreview).toHaveBeenCalledWith(
-        'server-image-attachment',
-        expect.objectContaining({
-          file_preview_status: 'ready',
-          file_preview_url: expect.stringMatching(
-            /^previews\/channel-1\/user-a_image_.+\.(webp|jpg|png)$/
-          ),
-        })
-      );
-    });
+    expect(mockGateway.updateFilePreview).not.toHaveBeenCalled();
   });
 
   it('persists image preview metadata during the send pipeline', async () => {
-    mockGateway.createMessage.mockResolvedValue({
+    mockGateway.createMessage.mockImplementation(async payload => ({
       data: buildMessage({
         id: 'server-image-commit',
-        message: 'images/channel-1/user-a_image_commit.png',
+        message: String(payload.message),
         message_type: 'image',
         file_name: undefined,
         file_kind: undefined,
         file_mime_type: 'image/png',
-        file_storage_path: 'images/channel-1/user-a_image_commit.png',
+        file_storage_path: String(payload.file_storage_path),
+        file_preview_status:
+          payload.file_preview_status === 'ready' ? 'ready' : null,
+        file_preview_url:
+          typeof payload.file_preview_url === 'string'
+            ? payload.file_preview_url
+            : null,
       }),
       error: null,
-    });
+    }));
 
     const { registerPendingSend } = createPendingSendRegistry();
 
@@ -1535,9 +1545,10 @@ describe('useChatComposerSend', () => {
     });
 
     await waitFor(() => {
-      expect(mockGateway.updateFilePreview).toHaveBeenCalledWith(
-        'server-image-commit',
+      expect(mockGateway.createMessage).toHaveBeenCalledWith(
         expect.objectContaining({
+          receiver_id: 'user-b',
+          message_type: 'image',
           file_preview_status: 'ready',
           file_preview_url: expect.stringMatching(
             /^previews\/channel-1\/user-a_image_.+\.(webp|jpg|png)$/
@@ -1545,6 +1556,7 @@ describe('useChatComposerSend', () => {
         })
       );
     });
+    expect(mockGateway.updateFilePreview).not.toHaveBeenCalled();
   });
 
   it('sends a pasted image url as plain text when the draft is marked to stay raw', async () => {

@@ -153,6 +153,10 @@ export interface ChatDatabase {
           p_file_kind?: string | null;
           p_file_mime_type?: string | null;
           p_file_name?: string | null;
+          p_file_preview_error?: string | null;
+          p_file_preview_page_count?: number | null;
+          p_file_preview_status?: string | null;
+          p_file_preview_url?: string | null;
           p_file_size?: number | null;
           p_file_storage_path?: string | null;
           p_message: string;

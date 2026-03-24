@@ -23,6 +23,7 @@ import {
 
 export interface PersistedAttachmentResult {
   uploadedStoragePath: string;
+  uploadedStoragePaths: string[];
   realMessage: ChatMessage | null;
   error: unknown;
 }
@@ -46,7 +47,10 @@ export interface SendAttachmentOptions {
     localPreviewUrl: string;
     timestamp: string;
   }) => ChatMessage;
-  uploadAsset: () => Promise<{ path: string }>;
+  uploadAsset: () => Promise<{
+    path: string;
+    additionalStoragePaths?: Array<string | null | undefined>;
+  }>;
   createPersistedMessage: (
     uploadedPath: string
   ) => Promise<{ data: ChatMessage | null; error: unknown }>;
@@ -113,13 +117,21 @@ export const persistAttachmentMessage = async ({
 > & {
   stableKey: string;
 }): Promise<PersistedAttachmentResult> => {
-  const { path: uploadedStoragePath } = await uploadAsset();
+  const uploadResult = await uploadAsset();
+  const uploadedStoragePath = uploadResult.path;
+  const uploadedStoragePaths = [
+    uploadedStoragePath,
+    ...(uploadResult.additionalStoragePaths ?? []),
+  ]
+    .map(storagePath => storagePath?.trim() || null)
+    .filter((storagePath): storagePath is string => Boolean(storagePath));
   const { data: persistedMessage, error } =
     await createPersistedMessage(uploadedStoragePath);
 
   if (error || !persistedMessage) {
     return {
       uploadedStoragePath,
+      uploadedStoragePaths,
       realMessage: null,
       error,
     };
@@ -127,6 +139,7 @@ export const persistAttachmentMessage = async ({
 
   return {
     uploadedStoragePath,
+    uploadedStoragePaths,
     realMessage: mapPersistedMessage(
       persistedMessage,
       uploadedStoragePath,
@@ -270,6 +283,7 @@ export const sendAttachmentThread = async (
   scheduleScrollMessagesToBottom();
 
   let uploadedStoragePath: string | null = null;
+  let uploadedStoragePaths: string[] = [];
 
   try {
     const persistedAttachment = await persistAttachmentMessage({
@@ -279,10 +293,11 @@ export const sendAttachmentThread = async (
       stableKey,
     });
     uploadedStoragePath = persistedAttachment.uploadedStoragePath;
+    uploadedStoragePaths = persistedAttachment.uploadedStoragePaths;
 
     if (!persistedAttachment.realMessage || persistedAttachment.error) {
       if (pendingSend.isCancelled()) {
-        await cleanupUncommittedStorageFiles([uploadedStoragePath]);
+        await cleanupUncommittedStorageFiles(uploadedStoragePaths);
         return null;
       }
 
@@ -297,7 +312,7 @@ export const sendAttachmentThread = async (
       }
 
       const didCleanupStorage = await cleanupUncommittedStorageFiles(
-        [uploadedStoragePath],
+        uploadedStoragePaths,
         {
           toastMessage:
             'Pengiriman gagal dan file sementara tidak dapat dibersihkan',
@@ -324,7 +339,7 @@ export const sendAttachmentThread = async (
       try {
         await rollbackPersistedAttachmentThread(
           realMessage.id,
-          [uploadedStoragePath],
+          uploadedStoragePaths,
           conversationScopeKey
         );
       } catch (rollbackError) {
@@ -352,7 +367,7 @@ export const sendAttachmentThread = async (
           try {
             await rollbackPersistedAttachmentThread(
               realMessage.id,
-              [uploadedStoragePath],
+              uploadedStoragePaths,
               conversationScopeKey
             );
           } catch (rollbackError) {
@@ -390,7 +405,7 @@ export const sendAttachmentThread = async (
         try {
           await rollbackPersistedAttachmentThread(
             realMessage.id,
-            [uploadedStoragePath],
+            uploadedStoragePaths,
             conversationScopeKey
           );
         } catch (rollbackError) {
@@ -445,7 +460,7 @@ export const sendAttachmentThread = async (
     }
 
     const didCleanupStorage = await cleanupUncommittedStorageFiles(
-      [uploadedStoragePath],
+      uploadedStoragePaths,
       {
         toastMessage:
           'Pengiriman gagal dan file sementara tidak dapat dibersihkan',
