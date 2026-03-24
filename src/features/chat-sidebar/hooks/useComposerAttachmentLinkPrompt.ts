@@ -24,6 +24,7 @@ import type {
 import type { LoadingComposerAttachment } from '../types';
 import {
   extractComposerLinkFromClipboard,
+  isChatSharedLinkUrl,
   validateAttachmentComposerLink,
 } from '../utils/composer-attachment-link';
 
@@ -128,9 +129,9 @@ export const useComposerAttachmentLinkPrompt = ({
     hoverableAttachmentCandidates.length === 1
       ? (hoverableAttachmentCandidates[0]?.url ?? null)
       : null;
-  const isAttachmentPastePromptShortenable = Boolean(
-    attachmentPastePrompt?.url
-  );
+  const isAttachmentPastePromptShortenable =
+    Boolean(attachmentPastePrompt?.url) &&
+    !isChatSharedLinkUrl(attachmentPastePrompt?.url ?? '');
 
   const clearAttachmentPasteState = useCallback(() => {
     attachmentPasteValidationScopeRef.current += 1;

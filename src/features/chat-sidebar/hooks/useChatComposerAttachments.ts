@@ -7,7 +7,7 @@ import { useComposerLoadingAttachments } from './useComposerLoadingAttachments';
 import { useComposerPendingAttachments } from './useComposerPendingAttachments';
 
 interface UseChatComposerAttachmentsProps {
-  currentChannelId: string | null;
+  currentChannelId?: string | null;
   editingMessageId: string | null;
   closeMessageMenu: () => void;
   messageInputRef: RefObject<HTMLTextAreaElement | null>;
@@ -16,7 +16,7 @@ interface UseChatComposerAttachmentsProps {
 }
 
 export const useChatComposerAttachments = ({
-  currentChannelId,
+  currentChannelId = null,
   editingMessageId,
   closeMessageMenu,
   messageInputRef,

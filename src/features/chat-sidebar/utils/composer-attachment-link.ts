@@ -209,7 +209,7 @@ const extractGoogleDriveFileId = (url: string) => {
   }
 };
 
-const isChatSharedLinkUrl = (url: string) => {
+export const isChatSharedLinkUrl = (url: string) => {
   try {
     const parsedUrl = new URL(url);
     if (!getChatSharedLinkHostnames().has(parsedUrl.hostname.toLowerCase())) {

@@ -1094,6 +1094,34 @@ describe('useChatComposerAttachments', () => {
     );
   });
 
+  it('does not offer shorten action for an existing chat shared link', () => {
+    const messageInput = document.createElement('textarea');
+    const shortUrl = 'https://shrtlink.works/bwdrrk3ugm';
+
+    const { result } = renderHook(() => {
+      const [message, setMessage] = useState(shortUrl);
+
+      return useChatComposerAttachments({
+        editingMessageId: null,
+        closeMessageMenu: vi.fn(),
+        messageInputRef: { current: messageInput },
+        message,
+        setMessage,
+      });
+    });
+
+    act(() => {
+      result.current.openComposerLinkPrompt({
+        url: shortUrl,
+        pastedText: shortUrl,
+        rangeStart: 0,
+        rangeEnd: shortUrl.length,
+      });
+    });
+
+    expect(result.current.isAttachmentPastePromptShortenable).toBe(false);
+  });
+
   it('shortens a generic external link through targetUrl', async () => {
     const messageInput = document.createElement('textarea');
     const genericUrl =

@@ -303,12 +303,12 @@ describe('ComposerPanel', () => {
     expect(model.actions.onEditAttachmentLink).toHaveBeenCalledTimes(1);
   });
 
-  it('renders the attachment link popover with action and paste sections', () => {
+  it('renders the attachment link popover without shorten action for shared links', () => {
     const model = buildComposerModel();
     model.attachments.attachmentPastePromptUrl =
       'https://shrtlink.works/bwdrrk3ugm';
     model.attachments.isAttachmentPastePromptAttachmentCandidate = true;
-    model.attachments.isAttachmentPastePromptShortenable = true;
+    model.attachments.isAttachmentPastePromptShortenable = false;
 
     render(<ComposerPanel model={model} />);
 
@@ -332,7 +332,7 @@ describe('ComposerPanel', () => {
     expect(screen.getByText('Aksi')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Buka' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Salin' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Shorten link' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Shorten link' })).toBeNull();
     expect(screen.getByText('Tempel sebagai')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'URL' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Attachment' })).toBeTruthy();
@@ -347,12 +347,6 @@ describe('ComposerPanel', () => {
 
     expect(
       model.actions.onCopyAttachmentPastePromptLink
-    ).toHaveBeenCalledOnce();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Shorten link' }));
-
-    expect(
-      model.actions.onShortenAttachmentPastePromptLink
     ).toHaveBeenCalledOnce();
   });
 
