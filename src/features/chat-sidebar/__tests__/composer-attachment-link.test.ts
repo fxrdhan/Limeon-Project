@@ -10,6 +10,7 @@ import {
   extractAttachmentComposerLinkFromMessageText,
   extractComposerLinkFromClipboard,
   fetchAttachmentComposerRemoteFile,
+  isChatSharedLinkUrl,
 } from '../utils/composer-attachment-link';
 
 const { mockRemoteAssetService } = vi.hoisted(() => ({
@@ -21,6 +22,16 @@ const { mockRemoteAssetService } = vi.hoisted(() => ({
 vi.mock('@/services/api/chat/remote-asset.service', () => ({
   chatRemoteAssetService: mockRemoteAssetService,
 }));
+
+vi.mock('@/services/api/chat/link.service', async () => {
+  const actual = await vi.importActual('@/services/api/chat/link.service');
+
+  return {
+    ...actual,
+    buildChatSharedLinkShortUrl: (slug: string) =>
+      `https://example.com/functions/v1/chat-link/${slug.trim().replace(/^\/+/, '')}`,
+  };
+});
 
 describe('composer-attachment-link', () => {
   beforeEach(() => {
@@ -40,6 +51,19 @@ describe('composer-attachment-link', () => {
       source: 'direct-url',
       url: 'https://shrtlink.works/bwdrrk3ugm',
     });
+  });
+
+  it('does not treat same-host storage asset urls as shared links', () => {
+    expect(
+      isChatSharedLinkUrl(
+        'https://example.com/functions/v1/chat-link/bwdrrk3ugm'
+      )
+    ).toBe(true);
+    expect(
+      isChatSharedLinkUrl(
+        'https://example.com/storage/v1/object/sign/chat/images/channel/user-1_photo.png?token=abc'
+      )
+    ).toBe(false);
   });
 
   it('keeps visible HTML anchor text when pasting a shared attachment link', () => {

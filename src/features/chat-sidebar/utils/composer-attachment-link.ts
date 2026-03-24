@@ -58,12 +58,19 @@ const GIF89A_SIGNATURE = 'GIF89a';
 const WEBP_RIFF_SIGNATURE = 'RIFF';
 const WEBP_SIGNATURE = 'WEBP';
 const BMP_SIGNATURE = 'BM';
+const CHAT_SHARED_LINK_SLUG_PATTERN = /^[23456789abcdefghjkmnpqrstuvwxyz]{10}$/;
 
 const normalizeMimeType = (mimeType?: string | null) =>
   mimeType?.split(';')[0]?.trim().toLowerCase() || '';
 
 const stripWrappingQuotes = (value: string) =>
   value.replace(/^['"]+|['"]+$/g, '').trim();
+
+const normalizeUrlPathSegments = (pathname: string) =>
+  pathname
+    .split('/')
+    .map(segment => segment.trim())
+    .filter(Boolean);
 
 const resolveComposerAttachmentUrl = (rawValue: string) => {
   const normalizedValue = stripWrappingQuotes(rawValue);
@@ -212,12 +219,21 @@ const extractGoogleDriveFileId = (url: string) => {
 export const isChatSharedLinkUrl = (url: string) => {
   try {
     const parsedUrl = new URL(url);
-    if (!getChatSharedLinkHostnames().has(parsedUrl.hostname.toLowerCase())) {
+    const pathSegments = normalizeUrlPathSegments(parsedUrl.pathname);
+    const slug = pathSegments[pathSegments.length - 1]?.toLowerCase() || '';
+    if (!CHAT_SHARED_LINK_SLUG_PATTERN.test(slug)) {
       return false;
     }
 
-    const normalizedPath = parsedUrl.pathname.replace(/^\/+|\/+$/g, '');
-    return normalizedPath.length > 0 && !normalizedPath.startsWith('api/');
+    const patterns = getChatSharedLinkPatterns();
+    return patterns.some(
+      ({ hostname, pathPrefixSegments }) =>
+        hostname === parsedUrl.hostname.toLowerCase() &&
+        pathSegments.length === pathPrefixSegments.length + 1 &&
+        pathPrefixSegments.every(
+          (segment, index) => segment === pathSegments[index]
+        )
+    );
   } catch {
     return false;
   }
@@ -713,16 +729,46 @@ export const validateAttachmentComposerLink = async (url: string) => {
     return false;
   }
 };
-const getChatSharedLinkHostnames = () => {
-  const hostnames = new Set(['shrtlink.works']);
-
+const buildChatSharedLinkPattern = (url: string) => {
   try {
-    hostnames.add(
-      new URL(buildChatSharedLinkShortUrl('23456789ab')).hostname.toLowerCase()
-    );
+    const parsedUrl = new URL(url);
+    const pathSegments = normalizeUrlPathSegments(parsedUrl.pathname);
+    const slug = pathSegments[pathSegments.length - 1]?.toLowerCase() || '';
+    if (!CHAT_SHARED_LINK_SLUG_PATTERN.test(slug)) {
+      return null;
+    }
+
+    return {
+      hostname: parsedUrl.hostname.toLowerCase(),
+      pathPrefixSegments: pathSegments.slice(0, -1),
+    };
   } catch {
-    // Ignore malformed runtime configuration and keep the legacy hostname.
+    return null;
+  }
+};
+
+const getChatSharedLinkPatterns = () => {
+  const patterns = new Map<
+    string,
+    {
+      hostname: string;
+      pathPrefixSegments: string[];
+    }
+  >();
+
+  for (const pattern of [
+    buildChatSharedLinkPattern('https://shrtlink.works/23456789ab'),
+    buildChatSharedLinkPattern(buildChatSharedLinkShortUrl('23456789ab')),
+  ]) {
+    if (!pattern) {
+      continue;
+    }
+
+    patterns.set(
+      `${pattern.hostname}/${pattern.pathPrefixSegments.join('/')}`,
+      pattern
+    );
   }
 
-  return hostnames;
+  return [...patterns.values()];
 };
