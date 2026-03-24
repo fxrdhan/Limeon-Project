@@ -23,6 +23,7 @@ import type {
 } from '../models';
 import type { LoadingComposerAttachment } from '../types';
 import {
+  extractAttachmentComposerLinkFromMessageText,
   extractComposerLinkFromClipboard,
   isChatSharedLinkUrl,
   validateAttachmentComposerLink,
@@ -523,9 +524,12 @@ export const useComposerAttachmentLinkPrompt = ({
   );
 
   const openComposerLinkPrompt = useCallback((link: ComposerPromptableLink) => {
+    const isAttachmentCandidate =
+      extractAttachmentComposerLinkFromMessageText(link.url) !== null;
+
     setAttachmentPastePrompt({
       id: `composer_link_prompt_${link.rangeStart}_${link.rangeEnd}`,
-      isAttachmentCandidate: false,
+      isAttachmentCandidate,
       url: link.url,
       pastedText: link.pastedText,
       rangeStart: link.rangeStart,

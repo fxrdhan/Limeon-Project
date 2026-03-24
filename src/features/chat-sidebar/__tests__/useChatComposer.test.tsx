@@ -310,6 +310,43 @@ describe('useChatComposer', () => {
     });
   });
 
+  it('tetap menampilkan aksi tempel sebagai untuk shared link setelah draft dipulihkan', async () => {
+    const closeMessageMenu = vi.fn();
+    const shortUrl = 'https://shrtlink.works/bwdrrk3ugm';
+    persistedComposerDraftMessages.set('channel-1', shortUrl);
+
+    const { result } = renderHook(() => {
+      const messageInputRef = useRef<HTMLTextAreaElement | null>(null);
+
+      return useChatComposer({
+        isOpen: true,
+        currentChannelId: 'channel-1',
+        messages: [],
+        closeMessageMenu,
+        messageInputRef,
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.message).toBe(shortUrl);
+    });
+
+    act(() => {
+      result.current.openComposerLinkPrompt({
+        url: shortUrl,
+        pastedText: shortUrl,
+        rangeStart: 0,
+        rangeEnd: shortUrl.length,
+      });
+    });
+
+    expect(result.current.attachmentPastePromptUrl).toBe(shortUrl);
+    expect(result.current.isAttachmentPastePromptAttachmentCandidate).toBe(
+      true
+    );
+    expect(result.current.isAttachmentPastePromptShortenable).toBe(false);
+  });
+
   it('memulihkan draft yang berbeda untuk tiap channel', async () => {
     const { result, rerender } = renderHook(
       ({ channelId }: { channelId: string }) => {

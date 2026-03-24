@@ -1094,7 +1094,7 @@ describe('useChatComposerAttachments', () => {
     );
   });
 
-  it('does not offer shorten action for an existing chat shared link', () => {
+  it('keeps shared links promptable as attachment candidates without offering shorten action', () => {
     const messageInput = document.createElement('textarea');
     const shortUrl = 'https://shrtlink.works/bwdrrk3ugm';
 
@@ -1119,6 +1119,9 @@ describe('useChatComposerAttachments', () => {
       });
     });
 
+    expect(result.current.isAttachmentPastePromptAttachmentCandidate).toBe(
+      true
+    );
     expect(result.current.isAttachmentPastePromptShortenable).toBe(false);
   });
 
