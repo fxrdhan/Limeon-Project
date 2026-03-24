@@ -153,7 +153,7 @@ const listChatMessagesPage = async (
       'id, message_type, file_mime_type, file_preview_url, file_storage_path, created_at'
     )
     .eq('message_type', messageType)
-    .order('created_at', { ascending: true })
+    .order('created_at', { ascending: false })
     .range(offset, offset + DEFAULT_PAGE_SIZE - 1);
 
   if (messageType === 'file') {
@@ -203,12 +203,12 @@ const loadPendingImageMessages = async ({
   }
 
   pendingMessages.sort((left, right) => {
-    const createdAtComparison = left.created_at.localeCompare(right.created_at);
+    const createdAtComparison = right.created_at.localeCompare(left.created_at);
     if (createdAtComparison !== 0) {
       return createdAtComparison;
     }
 
-    return left.id.localeCompare(right.id);
+    return right.id.localeCompare(left.id);
   });
 
   if (typeof limit === 'number') {

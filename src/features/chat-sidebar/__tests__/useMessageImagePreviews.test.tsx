@@ -6,11 +6,13 @@ import type { ChatMessage } from '../data/chatSidebarGateway';
 const {
   mockActivateChannelImageAssetScope,
   mockEnsureChannelImageAssetUrl,
+  mockGetCachedResolvedChatAssetUrl,
   mockGetRuntimeChannelImageAssetUrl,
   mockResolveChatAssetUrl,
 } = vi.hoisted(() => ({
   mockActivateChannelImageAssetScope: vi.fn(),
   mockEnsureChannelImageAssetUrl: vi.fn(),
+  mockGetCachedResolvedChatAssetUrl: vi.fn(),
   mockGetRuntimeChannelImageAssetUrl: vi.fn(),
   mockResolveChatAssetUrl: vi.fn(),
 }));
@@ -33,6 +35,7 @@ vi.mock('../utils/channel-image-asset-cache', () => ({
 }));
 
 vi.mock('../utils/message-file', () => ({
+  getCachedResolvedChatAssetUrl: mockGetCachedResolvedChatAssetUrl,
   isDirectChatAssetUrl: vi.fn((url: string) =>
     /^(https?:\/\/|blob:|data:|\/)/i.test(url)
   ),
@@ -120,6 +123,7 @@ describe('useMessageImagePreviews', () => {
         `blob:${variant}-${message.id}`
     );
     mockGetRuntimeChannelImageAssetUrl.mockReturnValue(null);
+    mockGetCachedResolvedChatAssetUrl.mockReturnValue(null);
     mockResolveChatAssetUrl.mockResolvedValue(null);
   });
 
@@ -195,6 +199,24 @@ describe('useMessageImagePreviews', () => {
     expect(result.current.getImageMessageUrl(message)).toBe(
       'blob:runtime-full'
     );
+  });
+
+  it('uses cached signed preview urls immediately on the first render', () => {
+    const message = createMessage({
+      id: 'cached-preview',
+      file_preview_url: 'previews/channel/cached-preview.fit-v2.webp',
+    });
+    const props = createHookProps([message]);
+    mockGetCachedResolvedChatAssetUrl.mockReturnValue(
+      'https://signed.example/previews/channel/cached-preview.fit-v2.webp'
+    );
+
+    const { result } = renderHook(() => useMessageImagePreviews(props));
+
+    expect(result.current.getImageMessageUrl(message)).toBe(
+      'https://signed.example/previews/channel/cached-preview.fit-v2.webp'
+    );
+    expect(mockEnsureChannelImageAssetUrl).not.toHaveBeenCalled();
   });
 
   it('resolves persisted image preview assets before the full blob cache is ready', async () => {

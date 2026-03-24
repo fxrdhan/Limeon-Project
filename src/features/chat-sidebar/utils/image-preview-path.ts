@@ -1,7 +1,16 @@
 const IMAGE_PREVIEW_ASPECT_VERSION_SUFFIX = '.fit-v2';
 
-const getPreviewExtension = (mimeType: string) =>
-  mimeType === 'image/webp' ? 'webp' : 'jpg';
+const getPreviewExtension = (mimeType: string) => {
+  if (mimeType === 'image/webp') {
+    return 'webp';
+  }
+
+  if (mimeType === 'image/png') {
+    return 'png';
+  }
+
+  return 'jpg';
+};
 
 export const buildImagePreviewStoragePath = (
   filePath: string,

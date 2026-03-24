@@ -15,11 +15,15 @@ import {
   applyConversationSnapshot,
   mergeLatestConversationPageWithExisting,
 } from '../utils/conversation-sync';
+import { isCacheableChannelImageMessage } from '../utils/channel-image-asset-cache';
 import { mapConversationMessagesForDisplay } from '../utils/message-display';
+import { resolveChatAssetUrl } from '../utils/message-file';
 import {
   replayPendingConversationRealtimeEvents,
   type PendingConversationRealtimeEvent,
 } from './useChatConversationRealtime';
+
+const INITIAL_IMAGE_PREVIEW_PRIME_LIMIT = 12;
 
 interface UseChatConversationInitialLoadProps {
   isOpen: boolean;
@@ -128,6 +132,30 @@ export const useChatConversationInitialLoad = ({
     };
 
     const loadMessages = async () => {
+      const primeRecentImagePreviewUrls = async (messages: ChatMessage[]) => {
+        const recentPreviewableMessages = [...messages]
+          .reverse()
+          .filter(
+            messageItem =>
+              isCacheableChannelImageMessage(messageItem) &&
+              Boolean(messageItem.file_preview_url?.trim())
+          )
+          .slice(0, INITIAL_IMAGE_PREVIEW_PRIME_LIMIT);
+
+        if (recentPreviewableMessages.length === 0) {
+          return;
+        }
+
+        await Promise.all(
+          recentPreviewableMessages.map(messageItem =>
+            resolveChatAssetUrl(
+              messageItem.file_preview_url!.trim(),
+              messageItem.file_preview_url!.trim()
+            ).catch(() => null)
+          )
+        );
+      };
+
       const cachedConversation =
         chatRuntimeCache.conversation.getFreshEntry(currentChannelId);
       const hasCachedConversation = Boolean(cachedConversation);
@@ -180,6 +208,10 @@ export const useChatConversationInitialLoad = ({
               : 'Gagal memuat percakapan'
           );
           return;
+        }
+
+        if (!hasCachedConversation) {
+          await primeRecentImagePreviewUrls(existingMessagesPage.messages);
         }
 
         const transformedMessages = hasCachedConversation

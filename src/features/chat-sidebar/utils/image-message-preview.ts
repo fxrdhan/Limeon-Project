@@ -2,48 +2,7 @@ import {
   IMAGE_MESSAGE_PREVIEW_OUTPUT_QUALITY,
   IMAGE_MESSAGE_PREVIEW_TARGET_SIZE,
 } from '../constants';
-
-const buildImagePreviewStoragePath = (
-  storagePath: string,
-  extension: string
-) => {
-  const normalizedStoragePath = storagePath.trim();
-  if (!normalizedStoragePath) {
-    return null;
-  }
-
-  const normalizedExtension =
-    extension.replace(/^\./, '').trim().toLowerCase() || 'webp';
-  const previewPath = normalizedStoragePath.replace(
-    /^(images|documents)\//,
-    'previews/'
-  );
-  const normalizedPreviewPath =
-    previewPath === normalizedStoragePath
-      ? `previews/${normalizedStoragePath.split('/').slice(1).join('/') || normalizedStoragePath}`
-      : previewPath;
-
-  if (/\.[^./]+$/.test(normalizedPreviewPath)) {
-    return normalizedPreviewPath.replace(
-      /\.[^./]+$/,
-      `.${normalizedExtension}`
-    );
-  }
-
-  return `${normalizedPreviewPath}.${normalizedExtension}`;
-};
-
-const resolvePreviewExtension = (mimeType: string) => {
-  if (mimeType === 'image/jpeg') {
-    return 'jpg';
-  }
-
-  if (mimeType === 'image/png') {
-    return 'png';
-  }
-
-  return 'webp';
-};
+import { buildImagePreviewStoragePath } from './image-preview-path';
 
 const loadImageElement = (file: Blob) =>
   new Promise<HTMLImageElement>((resolve, reject) => {
@@ -141,10 +100,9 @@ export const createImagePreviewUploadArtifact = async (
     return null;
   }
 
-  const previewExtension = resolvePreviewExtension(previewBlob.type);
   const previewStoragePath = buildImagePreviewStoragePath(
     storagePath,
-    previewExtension
+    previewBlob.type
   );
   if (!previewStoragePath) {
     return null;
@@ -153,7 +111,7 @@ export const createImagePreviewUploadArtifact = async (
   return {
     previewFile: new File(
       [previewBlob],
-      previewStoragePath.split('/').pop() || `preview.${previewExtension}`,
+      previewStoragePath.split('/').pop() || 'preview',
       {
         type: previewBlob.type,
         lastModified: Date.now(),

@@ -11,11 +11,13 @@ const { mockEnsureChannelImageAssetUrl, mockGetRuntimeChannelImageAssetUrl } =
 const {
   mockFetchChatFileBlobWithFallback,
   mockFetchPdfBlobWithFallback,
+  mockGetCachedResolvedChatAssetUrl,
   mockOpenDocumentPreview,
   mockResolveChatAssetUrl,
 } = vi.hoisted(() => ({
   mockFetchChatFileBlobWithFallback: vi.fn(),
   mockFetchPdfBlobWithFallback: vi.fn(),
+  mockGetCachedResolvedChatAssetUrl: vi.fn(),
   mockOpenDocumentPreview: vi.fn(),
   mockResolveChatAssetUrl: vi.fn(),
 }));
@@ -28,6 +30,7 @@ vi.mock('../utils/channel-image-asset-cache', () => ({
 vi.mock('../utils/message-file', () => ({
   fetchChatFileBlobWithFallback: mockFetchChatFileBlobWithFallback,
   fetchPdfBlobWithFallback: mockFetchPdfBlobWithFallback,
+  getCachedResolvedChatAssetUrl: mockGetCachedResolvedChatAssetUrl,
   isDirectChatAssetUrl: vi.fn((url: string) =>
     /^(https?:\/\/|blob:|data:|\/)/i.test(url)
   ),
@@ -66,6 +69,7 @@ describe('useMessagesPanePreviews', () => {
       ) => `blob:${variant}-${message.id}`
     );
     mockGetRuntimeChannelImageAssetUrl.mockReturnValue(null);
+    mockGetCachedResolvedChatAssetUrl.mockReturnValue(null);
     mockResolveChatAssetUrl.mockResolvedValue(null);
     mockFetchChatFileBlobWithFallback.mockResolvedValue(null);
     mockFetchPdfBlobWithFallback.mockResolvedValue(null);

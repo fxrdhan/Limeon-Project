@@ -297,6 +297,35 @@ export const resolveChatAssetUrlWithExpiry = async (
   }
 };
 
+export const getCachedResolvedChatAssetUrl = (
+  url: string,
+  storagePathHint?: string | null,
+  transform?: ChatAssetTransformOptions
+) => {
+  if (isDirectChatAssetUrl(url)) {
+    return url;
+  }
+
+  const storagePath =
+    storagePathHint?.trim() ||
+    extractChatStoragePath(url) ||
+    (!isDirectChatAssetUrl(url) ? url.trim() : null);
+  if (!storagePath) {
+    return null;
+  }
+
+  const signedAssetCacheKey = buildSignedChatAssetCacheKey(
+    storagePath,
+    transform
+  );
+  chatRuntimeCache.signedAssets.pruneExpired();
+
+  return (
+    chatRuntimeCache.signedAssets.getEntry(signedAssetCacheKey)?.signedUrl ??
+    null
+  );
+};
+
 export const resolveChatAssetUrl = async (
   url: string,
   storagePathHint?: string | null,

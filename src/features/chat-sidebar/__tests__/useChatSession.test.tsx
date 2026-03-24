@@ -29,6 +29,9 @@ const { createdChannels, mockChatService, mockRealtimeService } = vi.hoisted(
     },
   })
 );
+const { mockResolveChatAssetUrl } = vi.hoisted(() => ({
+  mockResolveChatAssetUrl: vi.fn(),
+}));
 
 vi.mock('@/services/api/chat.service', () => ({
   chatService: mockChatService,
@@ -40,6 +43,15 @@ vi.mock('@/services/api/chat.service', () => ({
 vi.mock('@/services/realtime/realtime.service', () => ({
   realtimeService: mockRealtimeService,
 }));
+
+vi.mock('../utils/message-file', async () => {
+  const actual = await vi.importActual('../utils/message-file');
+
+  return {
+    ...actual,
+    resolveChatAssetUrl: mockResolveChatAssetUrl,
+  };
+});
 
 const currentUser: UserDetails = {
   id: 'user-a',
@@ -130,6 +142,7 @@ describe('useChatSession', () => {
       data: [],
       error: null,
     });
+    mockResolveChatAssetUrl.mockResolvedValue(null);
     mockChatService.updateUserPresence.mockResolvedValue({
       data: [
         {
@@ -196,6 +209,48 @@ describe('useChatSession', () => {
 
     expect(mockChatService.updateUserPresence).not.toHaveBeenCalled();
     expect(mockChatService.insertUserPresence).not.toHaveBeenCalled();
+  });
+
+  it('primes recent image preview urls during the first uncached conversation load', async () => {
+    const initialMessageAnimationKeysRef = { current: new Set<string>() };
+    const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
+    mockChatService.fetchMessagesBetweenUsers.mockResolvedValue({
+      data: [
+        buildMessage({
+          id: 'image-1',
+          message: 'images/channel/image-1.png',
+          message_type: 'image',
+          file_mime_type: 'image/png',
+          file_storage_path: 'images/channel/image-1.png',
+          file_preview_url: 'previews/channel/image-1.fit-v2.webp',
+        }),
+      ],
+      error: null,
+    });
+    mockResolveChatAssetUrl.mockResolvedValue(
+      'https://signed.example/previews/channel/image-1.fit-v2.webp'
+    );
+
+    const { result } = renderHook(() =>
+      useChatSession({
+        isOpen: true,
+        user: currentUser,
+        targetUser,
+        currentChannelId: 'channel-1',
+        initialMessageAnimationKeysRef,
+        initialOpenJumpAnimationKeysRef,
+      })
+    );
+
+    await waitFor(() => {
+      expect(mockResolveChatAssetUrl).toHaveBeenCalledWith(
+        'previews/channel/image-1.fit-v2.webp',
+        'previews/channel/image-1.fit-v2.webp'
+      );
+    });
+    await waitFor(() => {
+      expect(result.current.messages).toHaveLength(1);
+    });
   });
 
   it('does not mutate current user presence on page lifecycle events', async () => {

@@ -4,6 +4,7 @@ import { useDocumentPreviewPortal } from './useDocumentPreviewPortal';
 import {
   fetchChatFileBlobWithFallback,
   fetchPdfBlobWithFallback,
+  getCachedResolvedChatAssetUrl,
   isDirectChatAssetUrl,
   resolveChatAssetUrl,
 } from '../utils/message-file';
@@ -92,6 +93,14 @@ const resolveInitialImagePreviewUrl = (
     if (runtimeFullUrl) {
       return runtimeFullUrl;
     }
+  }
+
+  const persistedPreviewUrl = message.file_preview_url?.trim() || null;
+  const cachedResolvedPreviewUrl = persistedPreviewUrl
+    ? getCachedResolvedChatAssetUrl(persistedPreviewUrl, persistedPreviewUrl)
+    : null;
+  if (cachedResolvedPreviewUrl) {
+    return cachedResolvedPreviewUrl;
   }
 
   if (isDirectChatAssetUrl(message.message)) {
