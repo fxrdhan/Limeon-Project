@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { useAuthStore } from '../../store/authStore';
+import type { DirectoryUser } from '../../store/createDirectoryStore';
 import { usePresenceDirectoryStore } from '../../store/presenceDirectoryStore';
 import { usePresenceStore } from '../../store/presenceStore';
 import type { UserDetails } from '../../types/database';
@@ -29,7 +30,6 @@ const buildDirectoryUser = (id: string, name: string) => ({
   name,
   email: `${id}@example.com`,
   profilephoto: null,
-  online_at: '2026-03-24T10:00:00.000Z',
 });
 
 describe('usePresenceRoster', () => {
@@ -90,12 +90,16 @@ describe('usePresenceRoster', () => {
 
     await waitFor(() => {
       expect(
-        firstRoster.result.current.portalOrderedUsers.map(user => user.id)
+        firstRoster.result.current.portalOrderedUsers.map(
+          (user: DirectoryUser) => user.id
+        )
       ).toEqual(['user-a', 'user-b', 'user-c']);
     });
 
     expect(
-      secondRoster.result.current.portalOrderedUsers.map(user => user.id)
+      secondRoster.result.current.portalOrderedUsers.map(
+        (user: DirectoryUser) => user.id
+      )
     ).toEqual(['user-a', 'user-b', 'user-c']);
 
     await act(async () => {
@@ -110,12 +114,16 @@ describe('usePresenceRoster', () => {
 
     await waitFor(() => {
       expect(
-        firstRoster.result.current.portalOrderedUsers.map(user => user.id)
+        firstRoster.result.current.portalOrderedUsers.map(
+          (user: DirectoryUser) => user.id
+        )
       ).toEqual(['user-a', 'user-b', 'user-c', 'user-d']);
     });
 
     expect(
-      secondRoster.result.current.portalOrderedUsers.map(user => user.id)
+      secondRoster.result.current.portalOrderedUsers.map(
+        (user: DirectoryUser) => user.id
+      )
     ).toEqual(['user-a', 'user-b', 'user-c', 'user-d']);
   });
 });

@@ -5,6 +5,7 @@ import {
   inferPreviewMimeTypeFromStoragePath,
   type ChatAttachmentFileKind,
 } from '../../../shared/chatAttachmentPaths.ts';
+import { computeDmChannelId } from '../../../shared/chatChannel.ts';
 import {
   buildPdfPreviewStoragePath,
 } from '../../../shared/chatStoragePaths.ts';
@@ -86,11 +87,6 @@ export interface ChatForwardRepository {
     message: ChatForwardInsertedMessageRecord | null;
   }>;
 }
-
-const computeDmChannelId = (userId1: string, userId2: string) => {
-  const sortedIds = [userId1, userId2].sort();
-  return `dm_${sortedIds[0]}_${sortedIds[1]}`;
-};
 
 const normalizeMessageId = (value?: string | null) => {
   const normalizedValue = value?.trim().toLowerCase() || '';

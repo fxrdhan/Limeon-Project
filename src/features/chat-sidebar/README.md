@@ -50,9 +50,9 @@ Frontend code should not query chat tables directly from components or hooks.
 
 - Feature gateway: `data/chatSidebarGateway.ts`
 - RPC services: `src/services/api/chat/messages.service.ts`, `src/services/api/chat/presence.service.ts`, `src/services/api/chat/directory.service.ts`
-- Edge Function services: `src/services/api/chat/cleanup.service.ts`, `src/services/api/chat/link.service.ts`, `src/services/api/chat/forward.service.ts`, `src/services/api/chat/preview.service.ts`, `src/services/api/chat/pdf-compress.service.ts`, `src/services/api/chat/remote-asset.service.ts`
+- Edge Function services: `src/services/api/chat/cleanup.service.ts`, `src/services/api/chat/link.service.ts`, `src/services/api/chat/forward.service.ts`, `src/services/api/chat/pdf-compress.service.ts`, `src/services/api/chat/remote-asset.service.ts`
 - Shared request/response contracts: `shared/chatFunctionContracts.ts`
-- Edge Function source: `supabase/functions/chat-cleanup`, `supabase/functions/chat-link`, `supabase/functions/chat-forward-message`, `supabase/functions/chat-pdf-preview`, `supabase/functions/chat-pdf-compress`, `supabase/functions/chat-remote-asset`
+- Edge Function source: `supabase/functions/chat-cleanup`, `supabase/functions/chat-link`, `supabase/functions/chat-forward-message`, `supabase/functions/chat-pdf-compress`, `supabase/functions/chat-remote-asset`
 
 ## Shared-Link Contract
 

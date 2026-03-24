@@ -21,7 +21,6 @@ const { mockToast, mockDirectoryRoster, mockForwardGateway } = vi.hoisted(
         name: string;
         email: string;
         profilephoto: string | null;
-        online_at: string;
       }>,
       isDirectoryLoading: false,
       directoryError: null as string | null,
@@ -97,21 +96,18 @@ describe('useChatMessageForwardAction', () => {
         name: 'Admin',
         email: 'admin@example.com',
         profilephoto: null,
-        online_at: '2026-03-18T09:00:00.000Z',
       },
       {
         id: 'user-b',
         name: 'Gudang',
         email: 'gudang@example.com',
         profilephoto: null,
-        online_at: '2026-03-18T09:00:00.000Z',
       },
       {
         id: 'user-c',
         name: 'Kasir',
         email: 'kasir@example.com',
         profilephoto: null,
-        online_at: '2026-03-18T09:00:00.000Z',
       },
     ];
     mockDirectoryRoster.isDirectoryLoading = false;

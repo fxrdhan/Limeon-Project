@@ -28,7 +28,7 @@ export const useChatRuntime = () => {
       }
 
       persistedPdfPreviews.forEach(({ messageId, preview }) => {
-        chatRuntime.cache.pdfPreviews.hydrate(messageId, preview);
+        chatRuntime.pdfPreviews.hydrate(messageId, preview);
       });
     };
 

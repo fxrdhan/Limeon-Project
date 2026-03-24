@@ -5,7 +5,6 @@ export type {
   ChatMessageInsertInput,
   CreateChatMessageInput,
   EditChatMessageTextInput,
-  ChatFilePreviewUpdateInput,
   DeleteMessageThreadAndCleanupResult,
   DeleteMessageThreadsAndCleanupResult,
   CleanupStoragePathsResult,
@@ -16,9 +15,8 @@ export type {
   ConversationSearchMessagesPage,
   UndeliveredIncomingMessageIdsPage,
   ConversationSearchContextOptions,
+  ChatDirectoryUser,
   ChatDirectoryUsersPage,
-  PersistChatPdfPreviewInput,
-  PersistChatPdfPreviewResult,
   ChatForwardMessageResult,
   ChatSharedLinkResult,
 } from './chat/types';
@@ -35,7 +33,6 @@ export {
   type ChatPdfCompressResult,
 } from './chat/pdf-compress.service';
 export { chatPresenceService } from './chat/presence.service';
-export { chatPreviewService } from './chat/preview.service';
 
 import { chatCleanupService } from './chat/cleanup.service';
 import { chatDirectoryService } from './chat/directory.service';
@@ -44,7 +41,6 @@ import { chatLinkService } from './chat/link.service';
 import { chatMessagesService } from './chat/messages.service';
 import { chatPdfCompressService } from './chat/pdf-compress.service';
 import { chatPresenceService } from './chat/presence.service';
-import { chatPreviewService } from './chat/preview.service';
 
 export const chatService = {
   ...chatMessagesService,
@@ -54,5 +50,4 @@ export const chatService = {
   ...chatLinkService,
   ...chatPdfCompressService,
   ...chatPresenceService,
-  ...chatPreviewService,
 };

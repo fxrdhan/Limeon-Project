@@ -7,12 +7,7 @@ import {
 } from 'react';
 import type { MutableRefObject } from 'react';
 import type { ChatMessage } from '../data/chatSidebarGateway';
-import {
-  activateChannelImageAssetScope,
-  ensureChannelImageAssetUrl,
-  getRuntimeChannelImageAssetUrl,
-  isCacheableChannelImageMessage,
-} from '../utils/channel-image-asset-cache';
+import { chatRuntime } from '../utils/chatRuntime';
 import {
   getCachedResolvedChatAssetUrl,
   isDirectChatAssetUrl,
@@ -138,7 +133,7 @@ export const useMessageImagePreviews = ({
       if (
         messageItem.channel_id !== normalizedChannelId ||
         messageItem.id.startsWith('temp_') ||
-        !isCacheableChannelImageMessage(messageItem)
+        !chatRuntime.imageAssets.isPreviewableMessage(messageItem)
       ) {
         return false;
       }
@@ -204,7 +199,7 @@ export const useMessageImagePreviews = ({
         visibleImageMessages,
         3,
         async messageItem => {
-          const resolvedAssetUrl = await ensureChannelImageAssetUrl(
+          const resolvedAssetUrl = await chatRuntime.imageAssets.ensureUrl(
             normalizedChannelId,
             messageItem,
             variant
@@ -296,7 +291,7 @@ export const useMessageImagePreviews = ({
       return;
     }
 
-    void activateChannelImageAssetScope(currentChannelId);
+    void chatRuntime.imageAssets.activateScope(currentChannelId);
   }, [currentChannelId]);
 
   useEffect(() => {
@@ -375,14 +370,14 @@ export const useMessageImagePreviews = ({
         | 'file_preview_url'
       >
     ) => {
-      if (!isCacheableChannelImageMessage(message)) {
+      if (!chatRuntime.imageAssets.isPreviewableMessage(message)) {
         return null;
       }
 
       const normalizedChannelId = currentChannelId?.trim() || null;
       const runtimeFullUrl =
         normalizedChannelId &&
-        getRuntimeChannelImageAssetUrl(normalizedChannelId, message.id, 'full');
+        chatRuntime.imageAssets.getUrl(normalizedChannelId, message.id, 'full');
       if (runtimeFullUrl) {
         return runtimeFullUrl;
       }
@@ -394,7 +389,7 @@ export const useMessageImagePreviews = ({
 
       const runtimeThumbnailUrl =
         normalizedChannelId &&
-        getRuntimeChannelImageAssetUrl(
+        chatRuntime.imageAssets.getUrl(
           normalizedChannelId,
           message.id,
           'thumbnail'

@@ -59,50 +59,6 @@ export interface RetryChatCleanupFailuresResponse {
   skippedCount: number;
 }
 
-export type ChatPdfPreviewStatus = 'pending' | 'ready' | 'failed';
-
-export interface ChatPdfPreviewRequest {
-  message_id: string;
-  preview_png_base64: string;
-  page_count: number;
-}
-
-export interface ChatPdfPreviewRequestPayload {
-  message_id?: string;
-  preview_png_base64?: string;
-  page_count?: number;
-}
-
-export interface ChatPdfPreviewMessagePayload {
-  id: string;
-  sender_id: string;
-  receiver_id?: string;
-  channel_id?: string;
-  message: string;
-  message_type: string;
-  created_at?: string;
-  updated_at?: string;
-  is_read?: boolean;
-  is_delivered?: boolean;
-  reply_to_id?: string | null;
-  message_relation_kind?: string | null;
-  file_name?: string | null;
-  file_kind?: string | null;
-  file_mime_type?: string | null;
-  file_size?: number | null;
-  file_storage_path?: string | null;
-  file_preview_url?: string | null;
-  file_preview_page_count?: number | null;
-  file_preview_status?: ChatPdfPreviewStatus | null;
-  file_preview_error?: string | null;
-  shared_link_slug?: string | null;
-}
-
-export interface ChatPdfPreviewResponse {
-  message: ChatPdfPreviewMessagePayload;
-  previewPersisted: boolean;
-}
-
 export interface ChatRemoteAssetRequest {
   url: string;
   fileNameSourceUrl?: string;

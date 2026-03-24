@@ -3,7 +3,7 @@ import toast from 'react-hot-toast';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
 import { type ChatMessage } from '../data/chatSidebarGateway';
 import type { PendingComposerFile } from '../types';
-import { seedChannelImageAssetsFromFile } from '../utils/channel-image-asset-cache';
+import { chatRuntime } from '../utils/chatRuntime';
 import {
   isImageFileExtensionOrMime,
   resolveFileExtension,
@@ -38,7 +38,7 @@ export const useChatImagePreviewSync = ({
 
       try {
         if (currentChannelId?.trim()) {
-          await seedChannelImageAssetsFromFile(
+          await chatRuntime.imageAssets.seedFromFile(
             currentChannelId,
             realMessage.id,
             file

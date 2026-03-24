@@ -4,11 +4,8 @@ import type {
   UserPresenceRow,
   UserPresenceUpdateRow,
 } from '@/types/supabase-chat';
-import type { OnlineUser } from '@/types';
+import type { DirectoryUser } from '@/store/createDirectoryStore';
 import type {
-  ChatPdfPreviewRequest as SharedChatPdfPreviewRequest,
-  ChatPdfPreviewResponse as SharedChatPdfPreviewResponse,
-  ChatPdfPreviewStatus,
   ChatForwardMessageResponse as SharedChatForwardMessageResponse,
   ChatSharedLinkResponse as SharedChatSharedLinkResponse,
   CleanupStoragePathsResponse as SharedCleanupStoragePathsResult,
@@ -88,13 +85,6 @@ export interface EditChatMessageTextInput {
   updated_at?: string;
 }
 
-export interface ChatFilePreviewUpdateInput {
-  file_preview_url?: string | null;
-  file_preview_page_count?: number | null;
-  file_preview_status?: ChatPdfPreviewStatus | null;
-  file_preview_error?: string | null;
-}
-
 export type DeleteMessageThreadAndCleanupResult =
   SharedDeleteMessageThreadAndCleanupResult;
 
@@ -140,18 +130,11 @@ export interface ConversationSearchContextOptions {
   afterLimit?: number;
 }
 
+export type ChatDirectoryUser = DirectoryUser;
+
 export interface ChatDirectoryUsersPage {
-  users: OnlineUser[];
+  users: ChatDirectoryUser[];
   hasMore: boolean;
-}
-
-export type PersistChatPdfPreviewInput = SharedChatPdfPreviewRequest;
-
-export type PersistChatPdfPreviewResponse = SharedChatPdfPreviewResponse;
-
-export interface PersistChatPdfPreviewResult {
-  message: ChatMessage;
-  previewPersisted: boolean;
 }
 
 export type ChatForwardMessageResult = SharedChatForwardMessageResponse;

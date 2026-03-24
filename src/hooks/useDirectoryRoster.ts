@@ -3,31 +3,34 @@ import type { StoreApi, UseBoundStore } from 'zustand';
 import { useAuthStore } from '@/store/authStore';
 import { usePresenceStore } from '@/store/presenceStore';
 import type { OnlineUser } from '@/types';
-import type { DirectoryStoreState } from '@/store/createDirectoryStore';
+import type {
+  DirectoryStoreState,
+  DirectoryUser,
+} from '@/store/createDirectoryStore';
 
 const DIRECTORY_CACHE_MAX_AGE_MS = 60_000;
-const EMPTY_DIRECTORY_USERS: OnlineUser[] = [];
+const EMPTY_DIRECTORY_USERS: DirectoryUser[] = [];
 
-interface UseDirectoryRosterOptions {
+interface UseDirectoryRosterOptions<TUser extends DirectoryUser> {
   shouldLoadDirectory?: boolean;
-  useDirectoryStore: UseBoundStore<StoreApi<DirectoryStoreState>>;
+  useDirectoryStore: UseBoundStore<StoreApi<DirectoryStoreState<TUser>>>;
   mergeUsers: (
     onlineUsersList: OnlineUser[],
-    directoryUsers: OnlineUser[]
-  ) => OnlineUser[];
-  moveCurrentUserToEdge: (
-    users: OnlineUser[],
+    directoryUsers: TUser[]
+  ) => DirectoryUser[];
+  moveCurrentUserToEdge: <TRosterUser extends { id: string }>(
+    users: TRosterUser[],
     currentUserId: string | undefined,
     placement: 'start' | 'end'
-  ) => OnlineUser[];
+  ) => TRosterUser[];
 }
 
-export const useDirectoryRoster = ({
+export const useDirectoryRoster = <TUser extends DirectoryUser>({
   shouldLoadDirectory = false,
   useDirectoryStore,
   mergeUsers,
   moveCurrentUserToEdge,
-}: UseDirectoryRosterOptions) => {
+}: UseDirectoryRosterOptions<TUser>) => {
   const { user } = useAuthStore();
   const { onlineUsers, onlineUsersList } = usePresenceStore();
   const activeDirectoryOwnerUserId = user?.id ?? null;
@@ -54,7 +57,7 @@ export const useDirectoryRoster = ({
     directoryOwnerUserId === activeDirectoryOwnerUserId;
   const resolvedDirectoryUsers = isActiveDirectoryOwner
     ? directoryUsers
-    : EMPTY_DIRECTORY_USERS;
+    : (EMPTY_DIRECTORY_USERS as TUser[]);
   const resolvedIsDirectoryLoading = isActiveDirectoryOwner
     ? isDirectoryLoading
     : false;

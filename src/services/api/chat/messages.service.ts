@@ -4,7 +4,6 @@ import type { ServiceResponse } from '../base.service';
 import {
   DEFAULT_CHAT_MESSAGES_PAGE_SIZE,
   type ChatMessage,
-  type ChatFilePreviewUpdateInput,
   type ConversationMessagesPage,
   type ConversationSearchContextOptions,
   type ConversationSearchMessagesOptions,
@@ -24,7 +23,6 @@ import {
   buildMarkChatMessageIdsAsDeliveredRpcArgs,
   buildMarkChatMessageIdsAsReadRpcArgs,
   buildSearchChatMessagesRpcArgs,
-  buildUpdateChatFilePreviewMetadataRpcArgs,
   CHAT_RPC_NAMES,
 } from './rpc-contract';
 import { toChatServiceError } from './contractErrors';
@@ -186,26 +184,6 @@ export const chatMessagesService = {
       const { data, error } = await supabase.rpc(
         CHAT_RPC_NAMES.editMessageText,
         buildEditChatMessageTextRpcArgs(id, payload)
-      );
-
-      if (error) {
-        return { data: null, error };
-      }
-
-      return { data: normalizeChatMessage(data), error: null };
-    } catch (error) {
-      return { data: null, error: toChatServiceError(error) };
-    }
-  },
-
-  async updateFilePreview(
-    id: string,
-    payload: ChatFilePreviewUpdateInput
-  ): Promise<ServiceResponse<ChatMessage>> {
-    try {
-      const { data, error } = await supabase.rpc(
-        CHAT_RPC_NAMES.updateFilePreviewMetadata,
-        buildUpdateChatFilePreviewMetadataRpcArgs(id, payload)
       );
 
       if (error) {

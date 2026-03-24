@@ -5,6 +5,21 @@ import * as pdfPreviewPersistence from './pdf-preview-persistence';
 export const chatRuntime = {
   cache: chatRuntimeCache,
   imageAssets: {
+    activateScope: (
+      ...args: Parameters<
+        typeof channelImageAssetCache.activateChannelImageAssetScope
+      >
+    ) => channelImageAssetCache.activateChannelImageAssetScope(...args),
+    ensureUrl: (
+      ...args: Parameters<
+        typeof channelImageAssetCache.ensureChannelImageAssetUrl
+      >
+    ) => channelImageAssetCache.ensureChannelImageAssetUrl(...args),
+    isPreviewableMessage: (
+      ...args: Parameters<
+        typeof channelImageAssetCache.isCacheableChannelImageMessage
+      >
+    ) => channelImageAssetCache.isCacheableChannelImageMessage(...args),
     deleteByMessageIds: (
       ...args: Parameters<
         typeof channelImageAssetCache.deleteChannelImageAssetsByMessageIds
@@ -27,6 +42,18 @@ export const chatRuntime = {
     ) => channelImageAssetCache.seedChannelImageAssetsFromFile(...args),
   },
   pdfPreviews: {
+    get: (...args: Parameters<typeof chatRuntimeCache.pdfPreviews.get>) =>
+      chatRuntimeCache.pdfPreviews.get(...args),
+    set: (...args: Parameters<typeof chatRuntimeCache.pdfPreviews.set>) =>
+      chatRuntimeCache.pdfPreviews.set(...args),
+    hydrate: (
+      ...args: Parameters<typeof chatRuntimeCache.pdfPreviews.hydrate>
+    ) => chatRuntimeCache.pdfPreviews.hydrate(...args),
+    pruneInactiveMessageIds: (
+      ...args: Parameters<
+        typeof chatRuntimeCache.pdfPreviews.pruneInactiveMessageIds
+      >
+    ) => chatRuntimeCache.pdfPreviews.pruneInactiveMessageIds(...args),
     loadPersistedEntry: (
       ...args: Parameters<
         typeof pdfPreviewPersistence.loadPersistedPdfPreviewEntry

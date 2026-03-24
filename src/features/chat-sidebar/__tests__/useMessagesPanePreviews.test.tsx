@@ -22,9 +22,13 @@ const {
   mockResolveChatAssetUrl: vi.fn(),
 }));
 
-vi.mock('../utils/channel-image-asset-cache', () => ({
-  ensureChannelImageAssetUrl: mockEnsureChannelImageAssetUrl,
-  getRuntimeChannelImageAssetUrl: mockGetRuntimeChannelImageAssetUrl,
+vi.mock('../utils/chatRuntime', () => ({
+  chatRuntime: {
+    imageAssets: {
+      ensureUrl: mockEnsureChannelImageAssetUrl,
+      getUrl: mockGetRuntimeChannelImageAssetUrl,
+    },
+  },
 }));
 
 vi.mock('../utils/message-file', () => ({

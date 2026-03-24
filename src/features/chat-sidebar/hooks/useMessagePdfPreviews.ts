@@ -117,7 +117,7 @@ export const useMessagePdfPreviews = ({
           continue;
         }
 
-        const cachedPreview = chatRuntime.cache.pdfPreviews.get(cacheKey);
+        const cachedPreview = chatRuntime.pdfPreviews.get(cacheKey);
         if (cachedPreview) {
           nextPreviews[message.id] = cachedPreview;
           hasChanges = true;
@@ -166,7 +166,7 @@ export const useMessagePdfPreviews = ({
           continue;
         }
 
-        if (chatRuntime.cache.pdfPreviews.get(cacheKey)) {
+        if (chatRuntime.pdfPreviews.get(cacheKey)) {
           hasChanges = true;
           continue;
         }
@@ -209,7 +209,7 @@ export const useMessagePdfPreviews = ({
       pdfPreviewRenderingIdsRef.current.delete(messageId);
     }
 
-    chatRuntime.cache.pdfPreviews.pruneInactiveMessageIds(activePdfMessageIds);
+    chatRuntime.pdfPreviews.pruneInactiveMessageIds(activePdfMessageIds);
   }, [
     clearPdfPreviewRetryTimer,
     getAttachmentFileKind,
@@ -231,7 +231,7 @@ export const useMessagePdfPreviews = ({
 
         const cacheKey = buildPdfMessagePreviewCacheKey(message, fileName);
         if (pdfMessagePreviews[message.id]?.cacheKey === cacheKey) return false;
-        if (chatRuntime.cache.pdfPreviews.get(cacheKey)) return false;
+        if (chatRuntime.pdfPreviews.get(cacheKey)) return false;
 
         return (
           resolvedPdfPreviewAssetEntries[message.id]?.cacheKey !== cacheKey
@@ -320,7 +320,7 @@ export const useMessagePdfPreviews = ({
 
         const cacheKey = buildPdfMessagePreviewCacheKey(message, fileName);
         if (pdfMessagePreviews[message.id]?.cacheKey === cacheKey) return false;
-        if (chatRuntime.cache.pdfPreviews.get(cacheKey)) return false;
+        if (chatRuntime.pdfPreviews.get(cacheKey)) return false;
         if (pdfPreviewRenderingIdsRef.current.has(message.id)) return false;
         if (pdfPreviewRetryTimersRef.current.has(message.id)) return false;
         if (
@@ -341,7 +341,7 @@ export const useMessagePdfPreviews = ({
       pendingMessage: ChatMessage,
       nextPreview: PdfMessagePreview
     ) => {
-      chatRuntime.cache.pdfPreviews.set(pendingMessage.id, nextPreview);
+      chatRuntime.pdfPreviews.set(pendingMessage.id, nextPreview);
       pdfPreviewRetryAttemptsRef.current.delete(pendingMessage.id);
       clearPdfPreviewRetryTimer(pendingMessage.id);
       setPdfMessagePreviews(previousPreviews => ({
@@ -421,7 +421,7 @@ export const useMessagePdfPreviews = ({
       }
 
       const cachedPreview = cacheKey
-        ? chatRuntime.cache.pdfPreviews.get(cacheKey)
+        ? chatRuntime.pdfPreviews.get(cacheKey)
         : undefined;
       if (cachedPreview) {
         return cachedPreview;

@@ -8,20 +8,14 @@ const {
   mockEnsureChannelImageAssetUrl,
   mockGetCachedResolvedChatAssetUrl,
   mockGetRuntimeChannelImageAssetUrl,
+  mockIsPreviewableChannelImageMessage,
   mockResolveChatAssetUrl,
 } = vi.hoisted(() => ({
   mockActivateChannelImageAssetScope: vi.fn(),
   mockEnsureChannelImageAssetUrl: vi.fn(),
   mockGetCachedResolvedChatAssetUrl: vi.fn(),
   mockGetRuntimeChannelImageAssetUrl: vi.fn(),
-  mockResolveChatAssetUrl: vi.fn(),
-}));
-
-vi.mock('../utils/channel-image-asset-cache', () => ({
-  activateChannelImageAssetScope: mockActivateChannelImageAssetScope,
-  ensureChannelImageAssetUrl: mockEnsureChannelImageAssetUrl,
-  getRuntimeChannelImageAssetUrl: mockGetRuntimeChannelImageAssetUrl,
-  isCacheableChannelImageMessage: vi.fn(
+  mockIsPreviewableChannelImageMessage: vi.fn(
     (
       message: Pick<
         ChatMessage,
@@ -32,6 +26,18 @@ vi.mock('../utils/channel-image-asset-cache', () => ({
       (message.message_type === 'file' &&
         message.file_mime_type?.startsWith('image/'))
   ),
+  mockResolveChatAssetUrl: vi.fn(),
+}));
+
+vi.mock('../utils/chatRuntime', () => ({
+  chatRuntime: {
+    imageAssets: {
+      activateScope: mockActivateChannelImageAssetScope,
+      ensureUrl: mockEnsureChannelImageAssetUrl,
+      getUrl: mockGetRuntimeChannelImageAssetUrl,
+      isPreviewableMessage: mockIsPreviewableChannelImageMessage,
+    },
+  },
 }));
 
 vi.mock('../utils/message-file', () => ({

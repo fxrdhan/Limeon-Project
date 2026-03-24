@@ -1,24 +1,12 @@
 import { LayoutGroup } from 'motion/react';
 import { Fragment } from 'react';
-import toast from 'react-hot-toast';
 import { TbArrowDown } from 'react-icons/tb';
-import ImageExpandPreview from '@/components/shared/image-expand-preview';
-import {
-  CHAT_COPY_LOADING_TOAST_DELAY_MS,
-  CHAT_SIDEBAR_TOASTER_ID,
-  MAX_MESSAGE_CHARS,
-  MESSAGE_BOTTOM_GAP,
-} from '../constants';
-import type { ChatSidebarRuntimeState } from '../hooks/useChatSidebarRuntimeState';
-import {
-  openChatFileInNewTab,
-  resolveCopyableChatAssetUrl,
-} from '../utils/message-file';
+import { MESSAGE_BOTTOM_GAP } from '../constants';
 import { buildMessageRenderItems } from '../utils/message-render-items';
-import DocumentPreviewPortal from './DocumentPreviewPortal';
-import MultiImagePreviewPortal from './MultiImagePreviewPortal';
-import ProgressiveImagePreview from './ProgressiveImagePreview';
+import { buildMessageItemModel } from './messages/buildMessageItemModel';
 import MessageItem from './messages/MessageItem';
+import type { MessagesPaneRuntime } from './messagesPaneRuntime';
+import { MessagesPanePreviewPortals } from './MessagesPanePreviewPortals';
 
 const CHAT_DATE_FORMATTER = new Intl.DateTimeFormat('id-ID', {
   day: 'numeric',
@@ -26,19 +14,7 @@ const CHAT_DATE_FORMATTER = new Intl.DateTimeFormat('id-ID', {
   year: 'numeric',
 });
 const COMPOSER_BOTTOM_OFFSET = 8;
-
-type MessagesPaneRuntime = Pick<
-  ChatSidebarRuntimeState,
-  | 'user'
-  | 'session'
-  | 'interaction'
-  | 'composer'
-  | 'viewport'
-  | 'refs'
-  | 'previews'
-  | 'mutations'
-  | 'actions'
->;
+const EMPTY_MESSAGE_IDS = new Set<string>();
 
 interface MessagesPaneProps {
   runtime: MessagesPaneRuntime;
@@ -73,6 +49,12 @@ const MessagesPane = ({ runtime }: MessagesPaneProps) => {
         messageItem =>
           messageItem.id === runtime.previews.activeImageGroupPreviewId
       ) || null
+    : null;
+  const searchMatchedMessageIds = runtime.interaction.isMessageSearchMode
+    ? runtime.interaction.searchMatchedMessageIdSet
+    : EMPTY_MESSAGE_IDS;
+  const activeSearchMessageId = runtime.interaction.isMessageSearchMode
+    ? runtime.interaction.activeSearchMessageId
     : null;
 
   return (
@@ -153,26 +135,25 @@ const MessagesPane = ({ runtime }: MessagesPaneProps) => {
               {renderItems.map((renderItem, index) => {
                 const messageItem = renderItem.anchorMessage;
                 const previousMessage =
-                  index > 0 ? renderItems[index - 1]?.anchorMessage : null;
+                  index > 0
+                    ? renderItems[index - 1]?.anchorMessage || null
+                    : null;
                 const nextMessage =
                   index < renderItems.length - 1
-                    ? renderItems[index + 1]?.anchorMessage
+                    ? renderItems[index + 1]?.anchorMessage || null
                     : null;
-                const currentMessageDate = new Date(
-                  messageItem.created_at
-                ).toDateString();
-                const previousMessageDate = previousMessage
-                  ? new Date(previousMessage.created_at).toDateString()
-                  : null;
-                const shouldRenderDateSeparator =
-                  index === 0 || previousMessageDate !== currentMessageDate;
-                const isGroupedWithPrevious =
-                  previousMessage?.sender_id === messageItem.sender_id &&
-                  previousMessageDate === currentMessageDate;
-                const isGroupedWithNext =
-                  nextMessage?.sender_id === messageItem.sender_id &&
-                  new Date(nextMessage.created_at).toDateString() ===
-                    currentMessageDate;
+                const messageModel = buildMessageItemModel({
+                  runtime,
+                  renderItem,
+                  index,
+                  previousMessage,
+                  nextMessage,
+                  searchMatchedMessageIds,
+                  activeSearchMessageId,
+                });
+                const shouldRenderDateSeparator = Boolean(
+                  messageModel.layout.hasDateSeparatorBefore
+                );
 
                 return (
                   <Fragment key={renderItem.key}>
@@ -188,104 +169,7 @@ const MessagesPane = ({ runtime }: MessagesPaneProps) => {
                       </div>
                     ) : null}
 
-                    <MessageItem
-                      model={{
-                        message: messageItem,
-                        layout: {
-                          isGroupedWithPrevious,
-                          isGroupedWithNext,
-                          isFirstVisibleMessage: index === 0,
-                          hasDateSeparatorBefore: shouldRenderDateSeparator,
-                        },
-                        interaction: {
-                          userId: runtime.user?.id,
-                          isSelectionMode: runtime.interaction.isSelectionMode,
-                          isSelected:
-                            runtime.interaction.selectedMessageIds.has(
-                              messageItem.id
-                            ),
-                          expandedMessageIds: runtime.refs.expandedMessageIds,
-                          flashingMessageId: runtime.viewport.flashingMessageId,
-                          isFlashHighlightVisible:
-                            runtime.viewport.isFlashHighlightVisible,
-                          searchMatchedMessageIds: runtime.interaction
-                            .isMessageSearchMode
-                            ? runtime.interaction.searchMatchedMessageIdSet
-                            : new Set<string>(),
-                          activeSearchMessageId: runtime.interaction
-                            .isMessageSearchMode
-                            ? runtime.interaction.activeSearchMessageId
-                            : null,
-                          maxMessageChars: MAX_MESSAGE_CHARS,
-                          onToggleMessageSelection:
-                            runtime.interaction.handleToggleMessageSelection,
-                          handleToggleExpand: runtime.refs.handleToggleExpand,
-                        },
-                        menu: {
-                          openMessageId: runtime.viewport.openMenuMessageId,
-                          placement: runtime.viewport.menuPlacement,
-                          sideAnchor: runtime.viewport.menuSideAnchor,
-                          shouldAnimateOpen:
-                            runtime.viewport.shouldAnimateMenuOpen,
-                          transitionSourceId:
-                            runtime.viewport.menuTransitionSourceId,
-                          offsetX: runtime.viewport.menuOffsetX,
-                          toggle: runtime.actions.toggleMessageMenu,
-                        },
-                        refs: {
-                          messageBubbleRefs: runtime.refs.messageBubbleRefs,
-                          initialMessageAnimationKeysRef:
-                            runtime.refs.initialMessageAnimationKeysRef,
-                          initialOpenJumpAnimationKeysRef:
-                            runtime.refs.initialOpenJumpAnimationKeysRef,
-                        },
-                        content: {
-                          resolvedMessageUrl:
-                            runtime.previews.getImageMessageUrl(messageItem),
-                          captionMessage: renderItem.captionMessage,
-                          groupedDocumentMessages:
-                            renderItem.kind === 'document-group'
-                              ? renderItem.messages
-                              : undefined,
-                          groupedImageMessages:
-                            renderItem.kind === 'image-group'
-                              ? renderItem.messages
-                              : undefined,
-                          pdfMessagePreview:
-                            runtime.previews.getPdfMessagePreview(
-                              messageItem,
-                              runtime.actions.getAttachmentFileName(messageItem)
-                            ),
-                          getAttachmentFileName:
-                            runtime.actions.getAttachmentFileName,
-                          getAttachmentFileKind:
-                            runtime.actions.getAttachmentFileKind,
-                          getImageMessageUrl:
-                            runtime.previews.getImageMessageUrl,
-                          getPdfMessagePreview:
-                            runtime.previews.getPdfMessagePreview,
-                          normalizedSearchQuery:
-                            runtime.interaction.normalizedMessageSearchQuery,
-                          openImageInPortal: runtime.previews.openImageInPortal,
-                          openImageGroupInPortal:
-                            runtime.previews.openImageGroupInPortal,
-                          openDocumentInPortal:
-                            runtime.previews.openDocumentInPortal,
-                        },
-                        actions: {
-                          handleEditMessage:
-                            runtime.mutations.handleEditMessage,
-                          handleCopyMessage:
-                            runtime.mutations.handleCopyMessage,
-                          handleDownloadMessage:
-                            runtime.mutations.handleDownloadMessage,
-                          handleOpenForwardMessagePicker:
-                            runtime.mutations.handleOpenForwardMessagePicker,
-                          handleDeleteMessage:
-                            runtime.mutations.handleDeleteMessage,
-                        },
-                      }}
-                    />
+                    <MessageItem model={messageModel} />
                   </Fragment>
                 );
               })}
@@ -310,150 +194,9 @@ const MessagesPane = ({ runtime }: MessagesPaneProps) => {
           <TbArrowDown size={18} />
         </button>
       ) : null}
-
-      <ImageExpandPreview
-        isOpen={runtime.previews.isImagePreviewOpen}
-        isVisible={runtime.previews.isImagePreviewVisible}
-        onClose={runtime.previews.closeImagePreview}
-        animateScale={false}
-        closeOnContentBackgroundClick={true}
-        backdropClassName="z-[79] px-4 py-6"
-        contentClassName="max-h-[92vh] max-w-[92vw] p-0"
-        backdropRole="button"
-        backdropTabIndex={0}
-        backdropAriaLabel="Tutup preview gambar"
-        onBackdropKeyDown={event => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            runtime.previews.closeImagePreview();
-          }
-        }}
-      >
-        <ProgressiveImagePreview
-          fullSrc={runtime.previews.imagePreviewUrl}
-          backdropSrc={runtime.previews.imagePreviewBackdropUrl}
-          allowPointerPassthrough={true}
-          alt={runtime.previews.imagePreviewName || 'Preview gambar'}
-          className="h-[92vh] w-[92vw] box-border px-6 py-8"
-          imageClassName="h-full w-full rounded-xl"
-        />
-      </ImageExpandPreview>
-
-      <MultiImagePreviewPortal
-        isOpen={runtime.previews.imageGroupPreviewItems.length > 0}
-        isVisible={runtime.previews.isImageGroupPreviewVisible}
-        previewItems={runtime.previews.imageGroupPreviewItems}
-        activePreviewId={runtime.previews.activeImageGroupPreviewId}
-        isActivePreviewForwardable={Boolean(
-          activeImageGroupPreviewMessage &&
-          !activeImageGroupPreviewMessage.id.startsWith('temp_')
-        )}
-        onSelectPreview={runtime.previews.selectImageGroupPreviewItem}
-        onDownloadActivePreview={() => {
-          if (!activeImageGroupPreviewMessage) {
-            return;
-          }
-
-          void runtime.mutations.handleDownloadMessage(
-            activeImageGroupPreviewMessage
-          );
-        }}
-        onOpenActivePreviewInNewTab={() => {
-          if (!activeImageGroupPreviewMessage) {
-            return;
-          }
-
-          void openChatFileInNewTab(
-            activeImageGroupPreviewMessage.message,
-            activeImageGroupPreviewMessage.file_storage_path,
-            activeImageGroupPreviewMessage.file_mime_type
-          );
-        }}
-        onCopyActivePreviewLink={() => {
-          if (!activeImageGroupPreviewMessage) {
-            return;
-          }
-
-          void (async () => {
-            const loadingToastId = 'chat-copy-image-link';
-            let didShowLoadingToast = false;
-            const loadingToastTimeout = window.setTimeout(() => {
-              didShowLoadingToast = true;
-              toast.loading('Menyiapkan link gambar...', {
-                id: loadingToastId,
-                toasterId: CHAT_SIDEBAR_TOASTER_ID,
-              });
-            }, CHAT_COPY_LOADING_TOAST_DELAY_MS);
-
-            try {
-              const copyableUrl = await resolveCopyableChatAssetUrl(
-                activeImageGroupPreviewMessage.message,
-                activeImageGroupPreviewMessage.file_storage_path,
-                {
-                  messageId: activeImageGroupPreviewMessage.id,
-                  sharedLinkSlug:
-                    activeImageGroupPreviewMessage.shared_link_slug,
-                }
-              );
-
-              if (!copyableUrl) {
-                throw new Error('Link gambar tidak tersedia');
-              }
-
-              await navigator.clipboard.writeText(copyableUrl);
-              window.clearTimeout(loadingToastTimeout);
-              toast.success('Link gambar berhasil disalin', {
-                id: didShowLoadingToast ? loadingToastId : undefined,
-                toasterId: CHAT_SIDEBAR_TOASTER_ID,
-              });
-            } catch (error) {
-              window.clearTimeout(loadingToastTimeout);
-              toast.error(
-                error instanceof Error
-                  ? error.message
-                  : 'Gagal menyalin link gambar',
-                {
-                  id: didShowLoadingToast ? loadingToastId : undefined,
-                  toasterId: CHAT_SIDEBAR_TOASTER_ID,
-                }
-              );
-              console.error('Failed to copy image link:', error);
-            }
-          })();
-        }}
-        onCopyActivePreviewImage={() => {
-          if (!activeImageGroupPreviewMessage) {
-            return;
-          }
-
-          void runtime.mutations.handleCopyMessage(
-            activeImageGroupPreviewMessage
-          );
-        }}
-        onForwardActivePreview={() => {
-          if (
-            !activeImageGroupPreviewMessage ||
-            activeImageGroupPreviewMessage.id.startsWith('temp_')
-          ) {
-            return;
-          }
-
-          runtime.mutations.handleOpenForwardMessagePicker(
-            activeImageGroupPreviewMessage
-          );
-        }}
-        onClose={runtime.previews.closeImageGroupPreview}
-        backdropClassName="z-[80] px-4 py-6"
-      />
-
-      <DocumentPreviewPortal
-        isOpen={Boolean(runtime.previews.documentPreviewUrl)}
-        isVisible={runtime.previews.isDocumentPreviewVisible}
-        previewUrl={runtime.previews.documentPreviewUrl}
-        previewName={runtime.previews.documentPreviewName}
-        onClose={runtime.previews.closeDocumentPreview}
-        backdropClassName="z-[80] px-4 py-6"
-        iframeTitle="Preview dokumen"
+      <MessagesPanePreviewPortals
+        runtime={runtime}
+        activeImageGroupPreviewMessage={activeImageGroupPreviewMessage}
       />
     </div>
   );

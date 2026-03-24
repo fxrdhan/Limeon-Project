@@ -14,10 +14,8 @@ const { mockGateway, mockToast } = vi.hoisted(() => ({
     fetchConversationMessages: vi.fn(),
     getMessageById: vi.fn(),
     createMessage: vi.fn(),
-    updateFilePreview: vi.fn(),
     deleteMessageThread: vi.fn(),
     deleteMessageThreadAndCleanup: vi.fn(),
-    persistPdfPreview: vi.fn(),
     uploadImage: vi.fn(),
     uploadAttachment: vi.fn(),
     uploadPdfPreview: vi.fn(),
@@ -46,15 +44,11 @@ vi.mock('@/services/api/chat.service', () => ({
   chatMessagesService: {
     fetchMessagesBetweenUsers: mockGateway.fetchConversationMessages,
     insertMessage: mockGateway.createMessage,
-    updateFilePreview: mockGateway.updateFilePreview,
     deleteMessageThread: mockGateway.deleteMessageThread,
   },
   chatCleanupService: {
     deleteMessageThreadAndCleanup: mockGateway.deleteMessageThreadAndCleanup,
     cleanupStoragePaths: mockGateway.cleanupStoragePaths,
-  },
-  chatPreviewService: {
-    persistPdfPreview: mockGateway.persistPdfPreview,
   },
 }));
 
@@ -88,15 +82,11 @@ vi.mock('../data/chatSidebarGateway', () => ({
       };
     },
     createMessage: mockGateway.createMessage,
-    updateFilePreview: mockGateway.updateFilePreview,
     deleteMessageThread: mockGateway.deleteMessageThread,
   },
   chatSidebarCleanupGateway: {
     deleteMessageThreadAndCleanup: mockGateway.deleteMessageThreadAndCleanup,
     cleanupStoragePaths: mockGateway.cleanupStoragePaths,
-  },
-  chatSidebarPreviewGateway: {
-    persistPdfPreview: mockGateway.persistPdfPreview,
   },
   chatSidebarAttachmentGateway: mockChatSidebarAttachmentGateway,
   chatSidebarShareGateway: {
@@ -252,15 +242,6 @@ describe('useChatComposerSend', () => {
         error: null,
       })
     );
-    mockGateway.updateFilePreview.mockImplementation(
-      async (messageId: string, payload: Partial<ChatMessage>) => ({
-        data: buildMessage({
-          id: messageId,
-          ...payload,
-        }),
-        error: null,
-      })
-    );
     mockGateway.cleanupStoragePaths.mockResolvedValue({
       data: {
         failedStoragePaths: [],
@@ -291,20 +272,6 @@ describe('useChatComposerSend', () => {
       data: null,
       error: null,
     });
-    mockGateway.persistPdfPreview.mockImplementation(
-      async ({ message_id }: { message_id: string }) => ({
-        data: {
-          previewPersisted: true,
-          message: buildMessage({
-            id: message_id,
-            file_preview_status: 'ready',
-            file_preview_url: 'previews/channel/server-file-preview.png',
-            file_preview_page_count: 2,
-          }),
-        },
-        error: null,
-      })
-    );
   });
 
   it('rolls back the persisted attachment thread when caption insert fails', async () => {
@@ -771,7 +738,6 @@ describe('useChatComposerSend', () => {
         file_preview_page_count: 2,
       })
     );
-    expect(mockGateway.persistPdfPreview).not.toHaveBeenCalled();
     expect(result.current.messages[0]?.file_preview_status).toBe('ready');
     expect(result.current.messages[0]?.file_preview_url).toMatch(
       /^previews\/channel-1\/user-a_document_.+\.png$/
@@ -864,7 +830,6 @@ describe('useChatComposerSend', () => {
         pageCount: 3,
       })
     );
-    expect(mockGateway.persistPdfPreview).not.toHaveBeenCalled();
   });
 
   it('cancels a temp text send instead of letting the persisted row reappear', async () => {
@@ -1520,7 +1485,6 @@ describe('useChatComposerSend', () => {
         ),
       })
     );
-    expect(mockGateway.updateFilePreview).not.toHaveBeenCalled();
   });
 
   it('persists image preview metadata during the send pipeline', async () => {
@@ -1599,7 +1563,6 @@ describe('useChatComposerSend', () => {
         })
       );
     });
-    expect(mockGateway.updateFilePreview).not.toHaveBeenCalled();
   });
 
   it('sends a pasted image url as plain text when the draft is marked to stay raw', async () => {

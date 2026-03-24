@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
-import { getRuntimeChannelImageAssetUrl } from '../utils/channel-image-asset-cache';
+import { chatRuntime } from '../utils/chatRuntime';
 import {
   getChatImagePreviewName,
   resolveImagePreviewResource as resolveChatImagePreviewResource,
@@ -190,7 +190,7 @@ export const useMessagesPaneImagePreviews = ({
 
       const normalizedChannelId = currentChannelId?.trim() || null;
       const runtimeFullPreviewUrl = normalizedChannelId
-        ? getRuntimeChannelImageAssetUrl(
+        ? chatRuntime.imageAssets.getUrl(
             normalizedChannelId,
             normalizedMessageId,
             'full'
@@ -279,7 +279,7 @@ export const useMessagesPaneImagePreviews = ({
       releaseImagePreviewObjectUrl();
       const normalizedChannelId = currentChannelId?.trim() || null;
       const runtimeFullPreviewUrl = normalizedChannelId
-        ? getRuntimeChannelImageAssetUrl(
+        ? chatRuntime.imageAssets.getUrl(
             normalizedChannelId,
             message.id,
             'full'
@@ -427,7 +427,7 @@ export const useMessagesPaneImagePreviews = ({
             : message.previewUrl || null;
         const normalizedChannelId = currentChannelId?.trim() || null;
         const runtimeFullPreviewUrl = normalizedChannelId
-          ? getRuntimeChannelImageAssetUrl(
+          ? chatRuntime.imageAssets.getUrl(
               normalizedChannelId,
               message.id,
               'full'
@@ -525,7 +525,7 @@ export const useMessagesPaneImagePreviews = ({
 
       const normalizedChannelId = currentChannelId?.trim() || null;
       const runtimeFullPreviewUrl = normalizedChannelId
-        ? getRuntimeChannelImageAssetUrl(normalizedChannelId, messageId, 'full')
+        ? chatRuntime.imageAssets.getUrl(normalizedChannelId, messageId, 'full')
         : null;
 
       const applyResolvedPreviewUrl = (resolvedPreviewUrl: string) => {

@@ -1,8 +1,5 @@
 import type { ChatMessage } from '../data/chatSidebarGateway';
-import {
-  ensureChannelImageAssetUrl,
-  getRuntimeChannelImageAssetUrl,
-} from './channel-image-asset-cache';
+import { chatRuntime } from './chatRuntime';
 import {
   fetchChatFileBlobWithFallback,
   fetchPdfBlobWithFallback,
@@ -71,7 +68,7 @@ export const resolveInitialImagePreviewUrl = (
 
   const normalizedChannelId = currentChannelId?.trim() || null;
   if (normalizedChannelId) {
-    const runtimeFullUrl = getRuntimeChannelImageAssetUrl(
+    const runtimeFullUrl = chatRuntime.imageAssets.getUrl(
       normalizedChannelId,
       message.id,
       'full'
@@ -112,7 +109,7 @@ export const resolveInitialImageThumbnailUrl = (
 
   const normalizedChannelId = currentChannelId?.trim() || null;
   if (normalizedChannelId) {
-    const runtimeThumbnailUrl = getRuntimeChannelImageAssetUrl(
+    const runtimeThumbnailUrl = chatRuntime.imageAssets.getUrl(
       normalizedChannelId,
       message.id,
       'thumbnail'
@@ -150,7 +147,7 @@ export const resolveImagePreviewResource = async ({
 }): Promise<ResolvedPreviewResource> => {
   const normalizedChannelId = currentChannelId?.trim() || null;
   if (normalizedChannelId) {
-    const cachedFullUrl = getRuntimeChannelImageAssetUrl(
+    const cachedFullUrl = chatRuntime.imageAssets.getUrl(
       normalizedChannelId,
       message.id,
       'full'
@@ -163,7 +160,7 @@ export const resolveImagePreviewResource = async ({
     }
 
     return {
-      previewUrl: await ensureChannelImageAssetUrl(
+      previewUrl: await chatRuntime.imageAssets.ensureUrl(
         normalizedChannelId,
         {
           ...message,

@@ -3,7 +3,7 @@ import toast from 'react-hot-toast';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
 import { type ChatMessage } from '../data/chatSidebarGateway';
 import type { PendingComposerFile } from '../types';
-import { chatRuntimeCache } from '../utils/chatRuntimeCache';
+import { chatRuntime } from '../utils/chatRuntime';
 import { buildPdfMessagePreviewCacheKey } from '../utils/pdf-message-preview';
 import { resolveFileExtension } from '../utils/message-file';
 
@@ -45,7 +45,7 @@ export const useChatPdfPreviewSync = ({
           realMessage,
           realMessage.file_name ?? pendingFile.fileName
         );
-        chatRuntimeCache.pdfPreviews.set(realMessage.id, {
+        chatRuntime.pdfPreviews.set(realMessage.id, {
           cacheKey,
           coverDataUrl: pdfCoverUrl,
           pageCount: Math.max(

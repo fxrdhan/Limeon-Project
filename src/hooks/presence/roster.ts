@@ -1,8 +1,9 @@
+import type { DirectoryUser } from '@/store/createDirectoryStore';
 import type { OnlineUser } from '@/types';
 
 export const mergePresenceUsers = (
   onlineUsersList: OnlineUser[],
-  allUsersList: OnlineUser[]
+  allUsersList: DirectoryUser[]
 ) => {
   if (allUsersList.length === 0) {
     return onlineUsersList;
@@ -14,8 +15,8 @@ export const mergePresenceUsers = (
   return [...onlineUsersList, ...offlineUsers];
 };
 
-export const moveCurrentUserToEdge = (
-  users: OnlineUser[],
+export const moveCurrentUserToEdge = <TUser extends { id: string }>(
+  users: TUser[],
   currentUserId: string | undefined,
   placement: 'start' | 'end'
 ) => {

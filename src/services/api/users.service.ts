@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import type { DirectoryUser } from '@/store/createDirectoryStore';
 import type { OnlineUser } from '@/types';
 import type { PostgrestError } from '@supabase/supabase-js';
 import type { ServiceResponse } from './base.service';
@@ -8,7 +9,7 @@ import {
 } from './chat/rpc-contract';
 
 export interface UserDirectoryPage {
-  users: OnlineUser[];
+  users: DirectoryUser[];
   hasMore: boolean;
 }
 
@@ -60,15 +61,8 @@ export class UsersService {
         return { data: null, error };
       }
 
-      const directoryRows = (data || []) as Array<
-        Pick<OnlineUser, 'id' | 'name' | 'email' | 'profilephoto'>
-      >;
-      const users: OnlineUser[] = directoryRows
-        .slice(0, pageSize)
-        .map(user => ({
-          ...user,
-          online_at: new Date().toISOString(),
-        }));
+      const directoryRows = (data || []) as DirectoryUser[];
+      const users = directoryRows.slice(0, pageSize);
 
       return {
         data: {

@@ -1,22 +1,35 @@
 import { create } from 'zustand';
-import type { OnlineUser } from '@/types';
 
 const DEFAULT_DIRECTORY_PAGE_SIZE = 30;
-const EMPTY_USERS: OnlineUser[] = [];
 
-export interface DirectoryPageData {
-  users: OnlineUser[];
+export interface DirectoryUser {
+  id: string;
+  name: string;
+  email: string;
+  profilephoto: string | null;
+}
+
+const EMPTY_USERS: DirectoryUser[] = [];
+
+export interface DirectoryPageData<
+  TUser extends DirectoryUser = DirectoryUser,
+> {
+  users: TUser[];
   hasMore: boolean;
 }
 
-export interface DirectoryPageResponse {
-  data: DirectoryPageData | null;
+export interface DirectoryPageResponse<
+  TUser extends DirectoryUser = DirectoryUser,
+> {
+  data: DirectoryPageData<TUser> | null;
   error: unknown;
 }
 
-export interface DirectoryStoreState {
+export interface DirectoryStoreState<
+  TUser extends DirectoryUser = DirectoryUser,
+> {
   ownerUserId: string | null;
-  directoryUsers: OnlineUser[];
+  directoryUsers: TUser[];
   isDirectoryLoading: boolean;
   directoryError: string | null;
   hasMoreDirectoryUsers: boolean;
@@ -27,39 +40,39 @@ export interface DirectoryStoreState {
   loadDirectoryPage: (ownerUserId: string, reset?: boolean) => Promise<void>;
 }
 
-interface CreateDirectoryStoreOptions {
+interface CreateDirectoryStoreOptions<TUser extends DirectoryUser> {
   getUsersPage: (
     pageSize: number,
     offset: number
-  ) => Promise<DirectoryPageResponse>;
+  ) => Promise<DirectoryPageResponse<TUser>>;
   pageSize?: number;
   errorMessage?: string;
   onLoadError?: (error: unknown) => void;
 }
 
-const mergeDirectoryUsers = (
-  previousUsers: OnlineUser[],
-  nextUsers: OnlineUser[]
+const mergeDirectoryUsers = <TUser extends DirectoryUser>(
+  previousUsers: TUser[],
+  nextUsers: TUser[]
 ) => {
   const mergedUsersById = new Map(previousUsers.map(user => [user.id, user]));
   nextUsers.forEach(user => {
     mergedUsersById.set(user.id, user);
   });
 
-  return [...mergedUsersById.values()];
+  return [...mergedUsersById.values()] as TUser[];
 };
 
-export const createDirectoryStore = ({
+export const createDirectoryStore = <TUser extends DirectoryUser>({
   getUsersPage,
   pageSize = DEFAULT_DIRECTORY_PAGE_SIZE,
   errorMessage = 'Gagal memuat daftar pengguna',
   onLoadError = error => {
     console.error('Error loading directory users:', error);
   },
-}: CreateDirectoryStoreOptions) =>
-  create<DirectoryStoreState>((set, get) => ({
+}: CreateDirectoryStoreOptions<TUser>) =>
+  create<DirectoryStoreState<TUser>>((set, get) => ({
     ownerUserId: null,
-    directoryUsers: EMPTY_USERS,
+    directoryUsers: EMPTY_USERS as TUser[],
     isDirectoryLoading: false,
     directoryError: null,
     hasMoreDirectoryUsers: true,
@@ -69,7 +82,7 @@ export const createDirectoryStore = ({
     resetDirectoryState: (ownerUserId = null) => {
       set(state => ({
         ownerUserId,
-        directoryUsers: EMPTY_USERS,
+        directoryUsers: EMPTY_USERS as TUser[],
         isDirectoryLoading: false,
         directoryError: null,
         hasMoreDirectoryUsers: true,
@@ -87,7 +100,7 @@ export const createDirectoryStore = ({
       const shouldResetState =
         reset || currentState.ownerUserId !== ownerUserId;
       const activeUsers = shouldResetState
-        ? EMPTY_USERS
+        ? (EMPTY_USERS as TUser[])
         : currentState.directoryUsers;
 
       if (!shouldResetState && !currentState.hasMoreDirectoryUsers) {

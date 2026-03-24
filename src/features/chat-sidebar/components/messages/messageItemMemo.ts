@@ -1,4 +1,4 @@
-import type { MessageItemModel } from './MessageItem';
+import type { MessageItemModel } from './messageItemTypes';
 
 const isMenuOpenForMessage = (model: MessageItemModel) =>
   model.menu.openMessageId === model.message.id;

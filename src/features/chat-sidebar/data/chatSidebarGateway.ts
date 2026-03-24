@@ -7,16 +7,13 @@ import {
   chatMessagesService,
   chatPdfCompressService,
   chatPresenceService,
-  chatPreviewService,
   type ChatMessage,
-  type ChatFilePreviewUpdateInput,
   type ConversationMessagesPage,
   type ConversationSearchContextOptions,
   type ConversationSearchMessagesOptions,
   type ConversationSearchMessagesPage,
   type CreateChatMessageInput,
   type EditChatMessageTextInput,
-  type PersistChatPdfPreviewInput,
   type ChatSharedLinkResult,
   type ChatForwardMessageResult,
   type UserPresenceUpdateInput,
@@ -32,6 +29,7 @@ export type {
   ChatMessage,
   CreateChatMessageInput,
   UserPresence,
+  ChatDirectoryUser,
   ConversationMessagesPage,
   ChatDirectoryUsersPage,
   ConversationSearchMessagesPage,
@@ -40,8 +38,6 @@ export type {
   CleanupStoragePathsResult,
   RetryChatCleanupFailuresResult,
   UndeliveredIncomingMessageIdsPage,
-  PersistChatPdfPreviewInput,
-  PersistChatPdfPreviewResult,
   ChatSharedLinkResult,
   ChatForwardMessageResult,
 } from '@/services/api/chat.service';
@@ -117,9 +113,6 @@ export const chatSidebarMessagesGateway = {
   },
   editTextMessage(id: string, payload: EditChatMessageTextInput) {
     return chatMessagesService.editTextMessage(id, payload);
-  },
-  updateFilePreview(id: string, payload: ChatFilePreviewUpdateInput) {
-    return chatMessagesService.updateFilePreview(id, payload);
   },
   markMessageIdsAsDelivered(messageIds: string[]) {
     return chatMessagesService.markMessageIdsAsDelivered(messageIds);
@@ -198,12 +191,6 @@ export const chatSidebarPresenceGateway = {
       accessToken,
       timestamp
     );
-  },
-};
-
-export const chatSidebarPreviewGateway = {
-  persistPdfPreview(payload: PersistChatPdfPreviewInput) {
-    return chatPreviewService.persistPdfPreview(payload);
   },
 };
 

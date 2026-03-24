@@ -13,11 +13,9 @@ import type {
   MarkChatMessageIdsAsReadRpcArgs,
   SearchChatMessagesRpcArgs,
   SyncUserPresenceOnExitRpcArgs,
-  UpdateChatFilePreviewMetadataRpcArgs,
   UpsertUserPresenceRpcArgs,
 } from '@/types/supabase-chat';
 import type {
-  ChatFilePreviewUpdateInput,
   ConversationSearchContextOptions,
   ConversationSearchMessagesOptions,
   CreateChatMessageInput,
@@ -40,7 +38,6 @@ export const CHAT_RPC_NAMES = {
   markMessageIdsAsRead: 'mark_chat_message_ids_as_read',
   searchMessages: 'search_chat_messages',
   syncUserPresenceOnExit: 'sync_user_presence_on_exit',
-  updateFilePreviewMetadata: 'update_chat_file_preview_metadata',
   upsertUserPresence: 'upsert_user_presence',
 } as const;
 
@@ -113,17 +110,6 @@ export const buildEditChatMessageTextRpcArgs = (
   p_message_id: id,
   p_message: payload.message,
   p_updated_at: payload.updated_at ?? new Date().toISOString(),
-});
-
-export const buildUpdateChatFilePreviewMetadataRpcArgs = (
-  id: string,
-  payload: ChatFilePreviewUpdateInput
-): UpdateChatFilePreviewMetadataRpcArgs => ({
-  p_message_id: id,
-  p_file_preview_url: payload.file_preview_url ?? null,
-  p_file_preview_page_count: payload.file_preview_page_count ?? null,
-  p_file_preview_status: payload.file_preview_status ?? null,
-  p_file_preview_error: payload.file_preview_error ?? null,
 });
 
 export const buildMarkChatMessageIdsAsDeliveredRpcArgs = (

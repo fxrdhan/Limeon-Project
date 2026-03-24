@@ -16,7 +16,7 @@ import {
   prepareImagePreviewPersistence,
   preparePdfPreviewPersistence,
 } from '../utils/attachment-preview-persistence';
-import { chatRuntimeCache } from '../utils/chatRuntimeCache';
+import { chatRuntime } from '../utils/chatRuntime';
 import { mapPersistedMessageForDisplay } from '../utils/conversation-sync';
 import { buildPdfMessagePreviewCacheKey } from '../utils/pdf-message-preview';
 import { sendAttachmentThread } from '../utils/attachment-thread-flow';
@@ -185,7 +185,7 @@ export const useChatAttachmentSend = ({
         pendingFile.fileName
       );
 
-      chatRuntimeCache.pdfPreviews.set(message.id, {
+      chatRuntime.pdfPreviews.set(message.id, {
         cacheKey,
         coverDataUrl: pdfCoverUrl,
         pageCount: Math.max(pendingFile.pdfPageCount ?? 1, 1),

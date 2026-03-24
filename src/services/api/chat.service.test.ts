@@ -210,45 +210,6 @@ describe('chatService', () => {
     });
   });
 
-  it('updates file preview metadata through the dedicated rpc', async () => {
-    const updatedMessage = buildRpcMessage({
-      id: 'file-1',
-      message: 'documents/dm_user-a_user-b/report.pdf',
-      message_type: 'file',
-      file_name: 'report.pdf',
-      file_storage_path: 'documents/dm_user-a_user-b/report.pdf',
-      file_preview_status: 'ready',
-      file_preview_url: 'previews/channel/file.png',
-      file_preview_page_count: 2,
-      file_preview_error: null,
-    });
-    mockRpc.mockResolvedValueOnce({
-      data: updatedMessage,
-      error: null,
-    });
-
-    const { chatService } = await import('./chat.service');
-
-    const result = await chatService.updateFilePreview('file-1', {
-      file_preview_status: 'ready',
-      file_preview_url: 'previews/channel/file.png',
-      file_preview_page_count: 2,
-      file_preview_error: null,
-    });
-
-    expect(mockRpc).toHaveBeenCalledWith('update_chat_file_preview_metadata', {
-      p_message_id: 'file-1',
-      p_file_preview_url: 'previews/channel/file.png',
-      p_file_preview_page_count: 2,
-      p_file_preview_status: 'ready',
-      p_file_preview_error: null,
-    });
-    expect(result).toEqual({
-      data: updatedMessage,
-      error: null,
-    });
-  });
-
   it('searches conversation matches through the dedicated rpc', async () => {
     const matchedMessages = [
       buildRpcMessage({
@@ -668,48 +629,5 @@ describe('chatService', () => {
       })
     );
     fetchSpy.mockRestore();
-  });
-
-  it('persists pdf preview metadata through the chat preview edge function', async () => {
-    const updatedMessage = buildRpcMessage({
-      id: 'file-1',
-      message: 'documents/dm_user-a_user-b/file-1.pdf',
-      message_type: 'file',
-      file_name: 'file-1.pdf',
-      file_storage_path: 'documents/dm_user-a_user-b/file-1.pdf',
-      file_preview_status: 'ready',
-      file_preview_url: 'previews/channel/file-1.png',
-      file_preview_page_count: 3,
-    });
-    mockInvoke.mockResolvedValueOnce({
-      data: {
-        message: updatedMessage,
-        previewPersisted: true,
-      },
-      error: null,
-    });
-
-    const { chatService } = await import('./chat.service');
-
-    const result = await chatService.persistPdfPreview({
-      message_id: 'file-1',
-      preview_png_base64: 'cHJldmlldw==',
-      page_count: 3,
-    });
-
-    expect(mockInvoke).toHaveBeenCalledWith('chat-pdf-preview', {
-      body: {
-        message_id: 'file-1',
-        preview_png_base64: 'cHJldmlldw==',
-        page_count: 3,
-      },
-    });
-    expect(result).toEqual({
-      data: {
-        message: updatedMessage,
-        previewPersisted: true,
-      },
-      error: null,
-    });
   });
 });
