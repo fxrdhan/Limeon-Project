@@ -3,10 +3,13 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import type { ChatForwardMessageRequestPayload } from '../../../shared/chatFunctionContracts.ts';
 import {
   forwardChatMessage,
+  type ChatForwardInsertMessagePayload,
   type ChatForwardRepository,
 } from './actions.ts';
 
 const CHAT_BUCKET = 'chat';
+const CHAT_CREATE_MESSAGE_RPC = 'create_chat_message';
+const CHAT_DELETE_MESSAGE_THREAD_RPC = 'delete_chat_message_thread';
 
 const buildCorsHeaders = (req: Request) => {
   const requestOrigin = req.headers.get('Origin');
@@ -32,10 +35,31 @@ const json = (req: Request, status: number, body: Record<string, unknown>) =>
     },
   });
 
+const buildCreateChatMessageRpcArgs = (
+  payload: ChatForwardInsertMessagePayload
+) => ({
+  p_receiver_id: payload.receiver_id,
+  p_message: payload.message,
+  p_message_type: payload.message_type,
+  p_reply_to_id: payload.reply_to_id ?? null,
+  p_message_relation_kind: payload.message_relation_kind ?? null,
+  p_file_name: payload.file_name ?? null,
+  p_file_kind: payload.file_kind ?? null,
+  p_file_mime_type: payload.file_mime_type ?? null,
+  p_file_size: payload.file_size ?? null,
+  p_file_storage_path: payload.file_storage_path ?? null,
+  p_file_preview_url: payload.file_preview_url ?? null,
+  p_file_preview_page_count: payload.file_preview_page_count ?? null,
+  p_file_preview_status: payload.file_preview_status ?? null,
+  p_file_preview_error: payload.file_preview_error ?? null,
+});
+
 const createChatForwardRepository = ({
   adminClient,
+  userClient,
 }: {
   adminClient: ReturnType<typeof createClient>;
+  userClient: ReturnType<typeof createClient>;
 }): ChatForwardRepository => ({
   async cleanupStoragePaths(storagePaths) {
     const normalizedStoragePaths = [...new Set(storagePaths)]
@@ -63,17 +87,16 @@ const createChatForwardRepository = ({
     };
   },
   async deleteMessageById(messageId) {
-    const { error } = await adminClient
-      .from('chat_messages')
-      .delete()
-      .eq('id', messageId);
+    const { error } = await userClient.rpc(CHAT_DELETE_MESSAGE_THREAD_RPC, {
+      p_message_id: messageId,
+    });
 
     if (error) {
       throw new Error(error.message);
     }
   },
   async getAccessibleMessage(messageId, userId) {
-    const { data, error } = await adminClient
+    const { data, error } = await userClient
       .from('chat_messages')
       .select(
         'id, sender_id, receiver_id, message, message_type, file_name, file_kind, file_mime_type, file_size, file_storage_path, file_preview_url, file_preview_page_count, file_preview_status, file_preview_error'
@@ -89,7 +112,7 @@ const createChatForwardRepository = ({
     };
   },
   async getAttachmentCaption(messageId, userId) {
-    const { data, error } = await adminClient
+    const { data, error } = await userClient
       .from('chat_messages')
       .select('id, message')
       .eq('reply_to_id', messageId)
@@ -103,14 +126,18 @@ const createChatForwardRepository = ({
     };
   },
   async insertMessage(payload) {
-    const { data, error } = await adminClient
-      .from('chat_messages')
-      .insert(payload)
-      .select('id')
-      .single();
+    const { data, error } = await userClient.rpc(
+      CHAT_CREATE_MESSAGE_RPC,
+      buildCreateChatMessageRpcArgs(payload)
+    );
 
     return {
-      message: data,
+      message:
+        data && typeof data.id === 'string'
+          ? {
+              id: data.id,
+            }
+          : null,
       error: error?.message ?? null,
     };
   },
@@ -129,10 +156,11 @@ Deno.serve(async req => {
   }
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   const authorizationHeader = req.headers.get('Authorization');
 
-  if (!supabaseUrl || !serviceRoleKey) {
+  if (!supabaseUrl || !anonKey || !serviceRoleKey) {
     return json(req, 500, { error: 'Missing Supabase environment variables' });
   }
 
@@ -142,6 +170,13 @@ Deno.serve(async req => {
 
   const accessToken = authorizationHeader.replace(/^Bearer\s+/i, '');
   const adminClient = createClient(supabaseUrl, serviceRoleKey);
+  const userClient = createClient(supabaseUrl, anonKey, {
+    global: {
+      headers: {
+        Authorization: authorizationHeader,
+      },
+    },
+  });
   const {
     data: { user },
     error: authError,
@@ -161,6 +196,7 @@ Deno.serve(async req => {
   const result = await forwardChatMessage({
     repository: createChatForwardRepository({
       adminClient,
+      userClient,
     }),
     userId: user.id,
     messageId: payload.messageId,

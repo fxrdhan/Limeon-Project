@@ -237,4 +237,119 @@ describe('useChatMessageForwardAction', () => {
       })
     );
   });
+
+  it('surfaces a toast and keeps the picker open when forwarding fails', async () => {
+    mockForwardGateway.forwardMessage.mockResolvedValueOnce({
+      data: null,
+      error: new Error('gateway down'),
+    });
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
+
+    const { result } = renderHook(() =>
+      useChatMessageForwardAction({
+        user: buildUser(),
+        targetUser: buildTargetUser(),
+        messages: [],
+        closeMessageMenu: vi.fn(),
+        reconcileCurrentConversationMessages: vi
+          .fn()
+          .mockResolvedValue(undefined),
+      })
+    );
+
+    act(() => {
+      result.current.openForwardPicker(
+        buildMessage({
+          id: 'message-error',
+          message: 'tolong cek stok',
+          message_type: 'text',
+        })
+      );
+      result.current.toggleForwardRecipient('user-b');
+    });
+
+    await act(async () => {
+      await result.current.submitForwardMessage();
+    });
+
+    expect(mockToast.error).toHaveBeenCalledWith(
+      'Gagal meneruskan pesan',
+      expect.objectContaining({
+        toasterId: 'chat-sidebar-toaster',
+      })
+    );
+    expect(result.current.isForwardPickerOpen).toBe(true);
+    expect(result.current.selectedForwardRecipientIds).toEqual(
+      new Set(['user-b'])
+    );
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'Failed to forward chat message',
+      expect.objectContaining({
+        messageId: 'message-error',
+        recipientIds: ['user-b'],
+      })
+    );
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('keeps the forward flow successful when conversation reconciliation fails after a successful submit', async () => {
+    mockForwardGateway.forwardMessage.mockResolvedValueOnce({
+      data: {
+        forwardedRecipientIds: ['user-b'],
+        failedRecipientIds: [],
+      },
+      error: null,
+    });
+    const reconcileCurrentConversationMessages = vi
+      .fn()
+      .mockRejectedValue(new Error('stale view'));
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
+
+    const { result } = renderHook(() =>
+      useChatMessageForwardAction({
+        user: buildUser(),
+        targetUser: buildTargetUser(),
+        messages: [],
+        closeMessageMenu: vi.fn(),
+        reconcileCurrentConversationMessages,
+      })
+    );
+
+    act(() => {
+      result.current.openForwardPicker(
+        buildMessage({
+          id: 'message-reconcile',
+          message: 'tolong cek stok',
+          message_type: 'text',
+        })
+      );
+      result.current.toggleForwardRecipient('user-b');
+    });
+
+    await act(async () => {
+      await result.current.submitForwardMessage();
+    });
+
+    expect(mockToast.success).toHaveBeenCalledWith(
+      'Pesan berhasil diteruskan',
+      expect.objectContaining({
+        toasterId: 'chat-sidebar-toaster',
+      })
+    );
+    expect(result.current.isForwardPickerOpen).toBe(false);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'Failed to reconcile current conversation after forwarding chat message',
+      expect.objectContaining({
+        messageId: 'message-reconcile',
+        targetUserId: 'user-b',
+      })
+    );
+
+    consoleErrorSpy.mockRestore();
+  });
 });

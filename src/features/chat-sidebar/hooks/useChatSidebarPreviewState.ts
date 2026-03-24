@@ -5,9 +5,8 @@ import type { ChatMessage } from '../data/chatSidebarGateway';
 import type { PendingComposerAttachment } from '../types';
 import type { AttachmentCaptionData } from '../utils/message-derivations';
 import type { VisibleBounds } from '../utils/viewport-visibility';
+import { useChatSidebarAssetPreviews } from './useChatSidebarAssetPreviews';
 import { useComposerAttachmentPreview } from './useComposerAttachmentPreview';
-import { useMessageImagePreviews } from './useMessageImagePreviews';
-import { useMessagePdfPreviews } from './useMessagePdfPreviews';
 import { useMessagesPanePreviews } from './useMessagesPanePreviews';
 
 interface UseChatSidebarPreviewStateProps {
@@ -53,16 +52,13 @@ export const useChatSidebarPreviewState = ({
   captionData,
 }: UseChatSidebarPreviewStateProps) => {
   const panePreviews = useMessagesPanePreviews({ currentChannelId });
-  const { getImageMessageUrl } = useMessageImagePreviews({
-    messages,
+  const assetPreviews = useChatSidebarAssetPreviews({
     currentChannelId,
+    messages,
     messagesContainerRef,
     chatHeaderContainerRef,
     messageBubbleRefs,
     getVisibleMessagesBounds,
-  });
-  const { getPdfMessagePreview } = useMessagePdfPreviews({
-    messages,
     getAttachmentFileName,
     getAttachmentFileKind,
   });
@@ -80,8 +76,7 @@ export const useChatSidebarPreviewState = ({
   return {
     ...panePreviews,
     ...composerAttachmentPreview,
-    getImageMessageUrl,
-    getPdfMessagePreview,
+    ...assetPreviews,
     captionMessagesByAttachmentId: captionData.captionMessagesByAttachmentId,
     captionMessageIds: captionData.captionMessageIds,
   };

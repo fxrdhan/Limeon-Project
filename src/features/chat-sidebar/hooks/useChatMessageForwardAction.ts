@@ -125,14 +125,33 @@ export const useChatMessageForwardAction = ({
       });
 
       if (error || !data) {
-        throw error ?? new Error('Failed to forward message');
+        console.error('Failed to forward chat message', {
+          error,
+          messageId: forwardDraft.message.id,
+          recipientIds,
+        });
+        toast.error('Gagal meneruskan pesan', {
+          toasterId: CHAT_SIDEBAR_TOASTER_ID,
+        });
+        return;
       }
 
       successfulRecipientIds.push(...data.forwardedRecipientIds);
       failedRecipientIds.push(...data.failedRecipientIds);
 
       if (targetUser?.id && successfulRecipientIds.includes(targetUser.id)) {
-        await reconcileCurrentConversationMessages();
+        try {
+          await reconcileCurrentConversationMessages();
+        } catch (error) {
+          console.error(
+            'Failed to reconcile current conversation after forwarding chat message',
+            {
+              error,
+              messageId: forwardDraft.message.id,
+              targetUserId: targetUser.id,
+            }
+          );
+        }
       }
 
       if (
@@ -163,6 +182,15 @@ export const useChatMessageForwardAction = ({
         return;
       }
 
+      toast.error('Gagal meneruskan pesan', {
+        toasterId: CHAT_SIDEBAR_TOASTER_ID,
+      });
+    } catch (error) {
+      console.error('Unexpected error while forwarding chat message', {
+        error,
+        messageId: forwardDraft.message.id,
+        recipientIds,
+      });
       toast.error('Gagal meneruskan pesan', {
         toasterId: CHAT_SIDEBAR_TOASTER_ID,
       });

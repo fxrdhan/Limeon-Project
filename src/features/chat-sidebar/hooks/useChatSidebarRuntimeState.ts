@@ -8,13 +8,11 @@ import {
 } from '../utils/attachment';
 import { useChatBulkDelete } from './useChatBulkDelete';
 import { useChatCaptionData } from './useChatCaptionData';
-import { useChatComposer } from './useChatComposer';
 import { useChatConversationMutations } from './useChatConversationMutations';
 import { useChatInteractionModes } from './useChatInteractionModes';
 import { useChatSession } from './useChatSession';
-import { useChatSidebarPreviewState } from './useChatSidebarPreviewState';
 import { useChatSidebarRefs } from './useChatSidebarRefs';
-import { useChatViewport } from './useChatViewport';
+import { useChatSidebarUiState } from './useChatSidebarUiState';
 
 interface UseChatSidebarRuntimeStateProps extends ChatSidebarPanelProps {
   user: UserDetails | null;
@@ -41,47 +39,6 @@ export const useChatSidebarRuntimeState = ({
     initialOpenJumpAnimationKeysRef: refs.initialOpenJumpAnimationKeysRef,
   });
 
-  const focusMessageComposer = useCallback(() => {
-    const textarea = refs.messageInputRef.current;
-    if (!textarea) return;
-
-    textarea.focus();
-    const cursorPosition = textarea.value.length;
-    textarea.setSelectionRange(cursorPosition, cursorPosition);
-  }, [refs.messageInputRef]);
-
-  const composer = useChatComposer({
-    isOpen,
-    currentChannelId,
-    messages: session.messages,
-    closeMessageMenu: refs.closeMessageMenu,
-    messageInputRef: refs.messageInputRef,
-  });
-
-  const mutations = useChatConversationMutations({
-    user,
-    targetUser,
-    currentChannelId,
-    messages: session.messages,
-    setMessages: session.setMessages,
-    message: composer.message,
-    setMessage: composer.setMessage,
-    editingMessageId: composer.editingMessageId,
-    rawAttachmentUrl: composer.rawAttachmentUrl,
-    setEditingMessageId: composer.setEditingMessageId,
-    pendingComposerAttachments: composer.pendingComposerAttachments,
-    clearPendingComposerAttachments: composer.clearPendingComposerAttachments,
-    restorePendingComposerAttachments:
-      composer.restorePendingComposerAttachments,
-    isComposerAttachmentLoading:
-      composer.isLoadingAttachmentComposerAttachments,
-    closeMessageMenu: refs.closeMessageMenu,
-    focusMessageComposer,
-    scheduleScrollMessagesToBottom: refs.scheduleScrollMessagesToBottom,
-    triggerSendSuccessGlow: composer.triggerSendSuccessGlow,
-    pendingImagePreviewUrlsRef: composer.pendingImagePreviewUrlsRef,
-  });
-
   const captionData = useChatCaptionData(session.messages);
 
   const interaction = useChatInteractionModes({
@@ -97,70 +54,49 @@ export const useChatSidebarRuntimeState = ({
     getAttachmentFileName,
   });
 
-  const viewport = useChatViewport({
+  const ui = useChatSidebarUiState({
     isOpen,
     currentChannelId,
     messages: session.messages,
+    loading: session.loading,
     userId: user?.id,
     targetUserId: targetUser?.id,
-    messagesCount: session.messages.length,
-    loading: session.loading,
-    messageInputHeight: composer.messageInputHeight,
-    composerContextualOffset: composer.composerContextualOffset,
-    isMessageInputMultiline: composer.isMessageInputMultiline,
-    pendingComposerAttachmentsCount:
-      composer.composerAttachmentPreviewItems.length,
     normalizedMessageSearchQuery: interaction.normalizedMessageSearchQuery,
     isMessageSearchMode: interaction.isMessageSearchMode,
     activeSearchMessageId: interaction.activeSearchMessageId,
     searchNavigationTick: interaction.searchNavigationTick,
-    editingMessageId: composer.editingMessageId,
-    focusMessageComposer,
     markMessageIdsAsRead: session.markMessageIdsAsRead,
-    messagesContainerRef: refs.messagesContainerRef,
-    messagesContentRef: refs.messagesContentRef,
-    messagesEndRef: refs.messagesEndRef,
-    composerContainerRef: refs.composerContainerRef,
-    chatHeaderContainerRef: refs.chatHeaderContainerRef,
-    messageBubbleRefs: refs.messageBubbleRefs,
-  });
-
-  refs.closeMessageMenuRef.current = viewport.closeMessageMenu;
-  refs.scheduleScrollMessagesToBottomRef.current =
-    viewport.scheduleScrollMessagesToBottom;
-
-  const previews = useChatSidebarPreviewState({
-    currentChannelId,
-    messages: session.messages,
-    messagesContainerRef: refs.messagesContainerRef,
-    chatHeaderContainerRef: refs.chatHeaderContainerRef,
-    messageBubbleRefs: refs.messageBubbleRefs,
-    getVisibleMessagesBounds: viewport.getVisibleMessagesBounds,
-    pendingComposerAttachments: composer.pendingComposerAttachments,
+    refs,
     closeMessageMenu: refs.closeMessageMenu,
-    handleAttachImageClick: composer.handleAttachImageClick,
-    handleAttachDocumentClick: composer.handleAttachDocumentClick,
-    compressPendingComposerImage: composer.compressPendingComposerImage,
-    compressPendingComposerPdf: composer.compressPendingComposerPdf,
-    removePendingComposerAttachment: composer.removePendingComposerAttachment,
-    openComposerImagePreview: composer.openComposerImagePreview,
     getAttachmentFileName,
     getAttachmentFileKind,
     captionData,
   });
 
-  const toggleMessageMenu = useCallback(
-    (
-      anchor: HTMLElement,
-      messageId: string,
-      preferredSide: 'left' | 'right'
-    ) => {
-      composer.closeAttachModal();
-      previews.closeImageActionsMenu();
-      viewport.toggleMessageMenu(anchor, messageId, preferredSide);
-    },
-    [composer, previews, viewport]
-  );
+  const mutations = useChatConversationMutations({
+    user,
+    targetUser,
+    currentChannelId,
+    messages: session.messages,
+    setMessages: session.setMessages,
+    message: ui.composer.message,
+    setMessage: ui.composer.setMessage,
+    editingMessageId: ui.composer.editingMessageId,
+    rawAttachmentUrl: ui.composer.rawAttachmentUrl,
+    setEditingMessageId: ui.composer.setEditingMessageId,
+    pendingComposerAttachments: ui.composer.pendingComposerAttachments,
+    clearPendingComposerAttachments:
+      ui.composer.clearPendingComposerAttachments,
+    restorePendingComposerAttachments:
+      ui.composer.restorePendingComposerAttachments,
+    isComposerAttachmentLoading:
+      ui.composer.isLoadingAttachmentComposerAttachments,
+    closeMessageMenu: refs.closeMessageMenu,
+    focusMessageComposer: ui.focusMessageComposer,
+    scheduleScrollMessagesToBottom: refs.scheduleScrollMessagesToBottom,
+    triggerSendSuccessGlow: ui.composer.triggerSendSuccessGlow,
+    pendingImagePreviewUrlsRef: ui.composer.pendingImagePreviewUrlsRef,
+  });
 
   const handleDeleteSelectedMessages = useChatBulkDelete({
     user,
@@ -178,21 +114,21 @@ export const useChatSidebarRuntimeState = ({
     targetUser,
     displayTargetPhotoUrl,
     session,
-    composer,
+    composer: ui.composer,
     mutations,
     interaction,
-    viewport,
-    previews,
+    viewport: ui.viewport,
+    previews: ui.previews,
     refs,
     actions: {
       getInitials,
       getInitialsColor,
       getAttachmentFileName,
       getAttachmentFileKind,
-      focusMessageComposer,
+      focusMessageComposer: ui.focusMessageComposer,
       handleDeleteSelectedMessages,
       handleClose,
-      toggleMessageMenu,
+      toggleMessageMenu: ui.toggleMessageMenu,
     },
   };
 };

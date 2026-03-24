@@ -41,8 +41,7 @@ export interface ChatForwardInsertedMessageRecord {
   id: string;
 }
 
-interface ChatForwardInsertMessagePayload {
-  channel_id: string;
+export interface ChatForwardInsertMessagePayload {
   file_kind?: ChatAttachmentFileKind | null;
   file_mime_type?: string | null;
   file_name?: string | null;
@@ -57,7 +56,6 @@ interface ChatForwardInsertMessagePayload {
   message_type: ForwardableMessageType;
   receiver_id: string;
   reply_to_id?: string | null;
-  sender_id: string;
 }
 
 export interface ChatForwardRepository {
@@ -317,9 +315,7 @@ const forwardAttachmentToRecipient = async ({
 
   try {
     const insertResult = await repository.insertMessage({
-      sender_id: userId,
       receiver_id: recipientId,
-      channel_id: channelId,
       message: destinationAttachmentPath,
       message_type: message.message_type,
       file_name: resolveForwardedFileName(message),
@@ -347,9 +343,7 @@ const forwardAttachmentToRecipient = async ({
     }
 
     const captionInsertResult = await repository.insertMessage({
-      sender_id: userId,
       receiver_id: recipientId,
-      channel_id: channelId,
       message: captionText,
       message_type: 'text',
       message_relation_kind: 'attachment_caption',
@@ -435,11 +429,8 @@ export const forwardChatMessage = async ({
   for (const recipientId of normalizedRecipientIds) {
     try {
       if (message.message_type === 'text') {
-        const channelId = computeDmChannelId(userId, recipientId);
         const insertResult = await repository.insertMessage({
-          sender_id: userId,
           receiver_id: recipientId,
-          channel_id: channelId,
           message: message.message,
           message_type: 'text',
         });
