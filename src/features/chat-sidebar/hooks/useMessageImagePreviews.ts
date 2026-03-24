@@ -181,8 +181,10 @@ export const useMessageImagePreviews = ({
   const prefetchVisibleImageAssets = useCallback(
     async ({
       requireMissingPersistedPreview = false,
+      variant = 'full',
     }: {
       requireMissingPersistedPreview?: boolean;
+      variant?: 'full' | 'thumbnail';
     } = {}) => {
       const normalizedChannelId = currentChannelId?.trim() || '';
       if (!normalizedChannelId) {
@@ -202,16 +204,26 @@ export const useMessageImagePreviews = ({
         visibleImageMessages,
         3,
         async messageItem => {
-          const previewUrl = await ensureChannelImageAssetUrl(
+          const resolvedAssetUrl = await ensureChannelImageAssetUrl(
             normalizedChannelId,
             messageItem,
-            'full'
+            variant
           );
-          setResolvedFullAssetUrl(messageItem.id, previewUrl);
+          if (variant === 'thumbnail') {
+            setResolvedPreviewAssetUrl(messageItem.id, resolvedAssetUrl);
+            return;
+          }
+
+          setResolvedFullAssetUrl(messageItem.id, resolvedAssetUrl);
         }
       );
     },
-    [collectVisibleImageMessages, currentChannelId, setResolvedFullAssetUrl]
+    [
+      collectVisibleImageMessages,
+      currentChannelId,
+      setResolvedFullAssetUrl,
+      setResolvedPreviewAssetUrl,
+    ]
   );
 
   const resolveVisibleImagePreviewAssetUrls = useCallback(async () => {
@@ -266,6 +278,7 @@ export const useMessageImagePreviews = ({
         resolveVisibleImagePreviewAssetUrls(),
         prefetchVisibleImageAssets({
           requireMissingPersistedPreview: true,
+          variant: 'thumbnail',
         }),
       ]);
     }, IMAGE_PREFETCH_DEBOUNCE_MS);
@@ -377,6 +390,17 @@ export const useMessageImagePreviews = ({
       const resolvedFullAssetUrl = resolvedFullAssetUrlsByMessageId[message.id];
       if (resolvedFullAssetUrl) {
         return resolvedFullAssetUrl;
+      }
+
+      const runtimeThumbnailUrl =
+        normalizedChannelId &&
+        getRuntimeChannelImageAssetUrl(
+          normalizedChannelId,
+          message.id,
+          'thumbnail'
+        );
+      if (runtimeThumbnailUrl) {
+        return runtimeThumbnailUrl;
       }
 
       const resolvedPreviewAssetUrl =

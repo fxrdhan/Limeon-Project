@@ -1,6 +1,7 @@
 import { resetChannelImageAssetCache } from '@/features/chat-sidebar/utils/channel-image-asset-cache';
 import { chatRuntimeCache } from '@/features/chat-sidebar/utils/chatRuntimeCache';
 import { resetPersistedPdfPreviewCache } from '@/features/chat-sidebar/utils/pdf-preview-persistence';
+import { CHAT_RUNTIME_INDEXED_DB_NAME_LIST } from '@/features/chat-sidebar/utils/runtime-persistence';
 import { resetPharmacyQueryPersistence } from '@/lib/indexedDBPersistence';
 import { queryClient } from '@/lib/queryClient';
 import { supabase } from '@/lib/supabase';
@@ -9,9 +10,7 @@ import { resetImageCache } from '@/utils/imageCache';
 
 const KNOWN_INDEXED_DB_NAMES = [
   'pharmasys-cache',
-  'pharmasys-chat-composer-drafts',
-  'pharmasys-chat-preview-cache',
-  'pharmasys-chat-channel-image-assets',
+  ...CHAT_RUNTIME_INDEXED_DB_NAME_LIST,
 ];
 
 const getIndexedDbFactory = () => {

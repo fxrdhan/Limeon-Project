@@ -29,7 +29,7 @@ const renderCanvasBlob = (
     canvas.toBlob(resolve, mimeType, quality);
   });
 
-const renderImagePreviewBlob = async (file: Blob) => {
+export const createImagePreviewBlob = async (file: Blob) => {
   if (typeof document === 'undefined') {
     return null;
   }
@@ -95,7 +95,7 @@ export const createImagePreviewUploadArtifact = async (
   file: Blob,
   storagePath: string
 ) => {
-  const previewBlob = await renderImagePreviewBlob(file);
+  const previewBlob = await createImagePreviewBlob(file);
   if (!previewBlob) {
     return null;
   }

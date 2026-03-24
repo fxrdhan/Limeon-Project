@@ -110,12 +110,61 @@ const resolveInitialImagePreviewUrl = (
   return null;
 };
 
+const resolveInitialImageThumbnailUrl = (
+  message: PreviewableMessage,
+  currentChannelId: string | null,
+  preferredPreviewUrl?: string | null
+) => {
+  const normalizedPreferredPreviewUrl = preferredPreviewUrl?.trim() || null;
+  if (
+    normalizedPreferredPreviewUrl &&
+    (normalizedPreferredPreviewUrl.startsWith('blob:') ||
+      normalizedPreferredPreviewUrl === message.message.trim())
+  ) {
+    return normalizedPreferredPreviewUrl;
+  }
+
+  const normalizedChannelId = currentChannelId?.trim() || null;
+  if (normalizedChannelId) {
+    const runtimeThumbnailUrl = getRuntimeChannelImageAssetUrl(
+      normalizedChannelId,
+      message.id,
+      'thumbnail'
+    );
+    if (runtimeThumbnailUrl) {
+      return runtimeThumbnailUrl;
+    }
+  }
+
+  const persistedPreviewUrl = message.file_preview_url?.trim() || null;
+  const cachedResolvedPreviewUrl = persistedPreviewUrl
+    ? getCachedResolvedChatAssetUrl(persistedPreviewUrl, persistedPreviewUrl)
+    : null;
+  if (cachedResolvedPreviewUrl) {
+    return cachedResolvedPreviewUrl;
+  }
+
+  if (persistedPreviewUrl && isDirectChatAssetUrl(persistedPreviewUrl)) {
+    return persistedPreviewUrl;
+  }
+
+  return resolveInitialImagePreviewUrl(
+    message,
+    currentChannelId,
+    normalizedPreferredPreviewUrl
+  );
+};
+
 const resolveInitialImageGroupThumbnailUrl = (
   message: PreviewableMessage,
   currentChannelId: string | null,
   preferredPreviewUrl?: string | null
 ) =>
-  resolveInitialImagePreviewUrl(message, currentChannelId, preferredPreviewUrl);
+  resolveInitialImageThumbnailUrl(
+    message,
+    currentChannelId,
+    preferredPreviewUrl
+  );
 
 export const useMessagesPanePreviews = ({
   currentChannelId,

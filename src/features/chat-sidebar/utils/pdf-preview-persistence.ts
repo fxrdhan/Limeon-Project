@@ -1,7 +1,13 @@
 import { PDF_MESSAGE_PREVIEW_CACHE_MAX_ENTRIES } from '../constants';
 import type { PdfMessagePreviewCacheEntry } from './chatRuntimeCache';
+import {
+  CHAT_RUNTIME_INDEXED_DB_NAMES,
+  closeRuntimeIndexedDb,
+  deleteRuntimeIndexedDb,
+  openRuntimeIndexedDb,
+} from './runtime-persistence';
 
-const PDF_PREVIEW_CACHE_DB_NAME = 'pharmasys-chat-preview-cache';
+const PDF_PREVIEW_CACHE_DB_NAME = CHAT_RUNTIME_INDEXED_DB_NAMES.pdfPreviewCache;
 const PDF_PREVIEW_CACHE_DB_VERSION = 1;
 const PDF_PREVIEW_CACHE_STORE_NAME = 'pdf-previews';
 const PDF_PREVIEW_CACHE_KEY_INDEX = 'cacheKey';
@@ -48,20 +54,13 @@ const getPdfPreviewCacheDb = async (): Promise<IDBDatabase | null> => {
   }
 
   if (!pdfPreviewCacheDbPromise) {
-    pdfPreviewCacheDbPromise = new Promise(resolve => {
-      const request = window.indexedDB.open(
-        PDF_PREVIEW_CACHE_DB_NAME,
-        PDF_PREVIEW_CACHE_DB_VERSION
-      );
-
-      request.onerror = () => {
+    pdfPreviewCacheDbPromise = openRuntimeIndexedDb({
+      dbName: PDF_PREVIEW_CACHE_DB_NAME,
+      version: PDF_PREVIEW_CACHE_DB_VERSION,
+      onOpenError: () => {
         pdfPreviewCacheDbPromise = null;
-        resolve(null);
-      };
-
-      request.onupgradeneeded = event => {
-        const database = (event.target as IDBOpenDBRequest).result;
-
+      },
+      onUpgrade: database => {
         if (!database.objectStoreNames.contains(PDF_PREVIEW_CACHE_STORE_NAME)) {
           const store = database.createObjectStore(
             PDF_PREVIEW_CACHE_STORE_NAME,
@@ -81,11 +80,7 @@ const getPdfPreviewCacheDb = async (): Promise<IDBDatabase | null> => {
             PDF_PREVIEW_CACHE_UPDATED_AT_INDEX
           );
         }
-      };
-
-      request.onsuccess = () => {
-        resolve(request.result);
-      };
+      },
     });
   }
 
@@ -310,21 +305,7 @@ export const resetPersistedPdfPreviewCache = async () => {
     return;
   }
 
-  try {
-    const database = pdfPreviewCacheDbPromise
-      ? await pdfPreviewCacheDbPromise
-      : null;
-    database?.close();
-  } catch {
-    // ignore
-  } finally {
-    pdfPreviewCacheDbPromise = null;
-  }
-
-  await new Promise<void>(resolve => {
-    const request = window.indexedDB.deleteDatabase(PDF_PREVIEW_CACHE_DB_NAME);
-    request.onsuccess = () => resolve();
-    request.onerror = () => resolve();
-    request.onblocked = () => resolve();
-  });
+  await closeRuntimeIndexedDb(pdfPreviewCacheDbPromise);
+  pdfPreviewCacheDbPromise = null;
+  await deleteRuntimeIndexedDb(PDF_PREVIEW_CACHE_DB_NAME);
 };

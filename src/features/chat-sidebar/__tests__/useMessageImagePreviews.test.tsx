@@ -127,7 +127,7 @@ describe('useMessageImagePreviews', () => {
     mockResolveChatAssetUrl.mockResolvedValue(null);
   });
 
-  it('prefetches full assets only for image bubbles visible in the viewport', async () => {
+  it('prefetches thumbnail assets first for image bubbles visible in the viewport', async () => {
     const visibleMessage = createMessage({
       id: 'visible-image',
     });
@@ -163,7 +163,7 @@ describe('useMessageImagePreviews', () => {
       expect.objectContaining({
         id: 'visible-image',
       }),
-      'full'
+      'thumbnail'
     );
     expect(mockEnsureChannelImageAssetUrl).not.toHaveBeenCalledWith(
       'dm_user-a_user-b',
@@ -173,7 +173,7 @@ describe('useMessageImagePreviews', () => {
       expect.anything()
     );
     expect(result.current.getImageMessageUrl(visibleMessage)).toBe(
-      'blob:full-visible-image'
+      'blob:thumbnail-visible-image'
     );
     expect(result.current.getImageMessageUrl(hiddenMessage)).toBeNull();
   });

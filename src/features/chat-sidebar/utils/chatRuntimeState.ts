@@ -1,4 +1,5 @@
 import type { ChatMessage } from '../data/chatSidebarGateway';
+import { CHAT_RUNTIME_LOCAL_STORAGE_KEYS } from './runtime-persistence';
 
 type RuntimeListener = () => void;
 
@@ -94,7 +95,7 @@ function createRuntimePersistentStore<T>({
 export const conversationCacheStore = new Map<string, ConversationCacheEntry>();
 
 export const pendingReadReceiptsStore = createRuntimePersistentStore({
-  storageKey: 'chat-pending-read-receipts',
+  storageKey: CHAT_RUNTIME_LOCAL_STORAGE_KEYS.pendingReadReceipts,
   storage: 'local',
   initialValue: () => new Map<string, Set<string>>(),
   serialize: value =>

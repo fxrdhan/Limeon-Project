@@ -1,10 +1,17 @@
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import {
+  CHAT_RUNTIME_INDEXED_DB_NAMES,
+  closeRuntimeIndexedDb,
+  deleteRuntimeIndexedDb,
+  openRuntimeIndexedDb,
+} from './runtime-persistence';
+import {
   fetchChatFileBlobWithFallback,
   isDirectChatAssetUrl,
   isImageFileExtensionOrMime,
   resolveFileExtension,
 } from './message-file';
+import { createImagePreviewBlob } from './image-message-preview';
 
 export type ChannelImageAssetVariant = 'thumbnail' | 'full';
 
@@ -15,6 +22,7 @@ type CacheableImageMessage = Pick<
   | 'message_type'
   | 'file_name'
   | 'file_mime_type'
+  | 'file_preview_url'
   | 'file_storage_path'
 >;
 
@@ -38,7 +46,8 @@ interface RuntimeChannelImageAssetRecord {
   variant: ChannelImageAssetVariant;
 }
 
-const CHANNEL_IMAGE_ASSET_DB_NAME = 'pharmasys-chat-channel-image-assets';
+const CHANNEL_IMAGE_ASSET_DB_NAME =
+  CHAT_RUNTIME_INDEXED_DB_NAMES.channelImageAssets;
 const CHANNEL_IMAGE_ASSET_DB_VERSION = 1;
 const CHANNEL_IMAGE_ASSET_STORE_NAME = 'channel-image-assets';
 const CHANNEL_IMAGE_ASSET_CHANNEL_INDEX = 'channelId';
@@ -69,10 +78,6 @@ const buildChannelImageAssetKey = (
   variant: ChannelImageAssetVariant
 ) => `${channelId}::${messageId}::${variant}`;
 
-const getEffectiveChannelImageAssetVariant = (
-  variant: ChannelImageAssetVariant
-): ChannelImageAssetVariant => (variant === 'thumbnail' ? 'full' : variant);
-
 const revokeRuntimeChannelImageAssetEntry = (
   assetKey: string,
   store = runtimeChannelImageAssets
@@ -92,20 +97,13 @@ const getChannelImageAssetDb = async (): Promise<IDBDatabase | null> => {
   }
 
   if (!channelImageAssetDbPromise) {
-    channelImageAssetDbPromise = new Promise(resolve => {
-      const request = window.indexedDB.open(
-        CHANNEL_IMAGE_ASSET_DB_NAME,
-        CHANNEL_IMAGE_ASSET_DB_VERSION
-      );
-
-      request.onerror = () => {
+    channelImageAssetDbPromise = openRuntimeIndexedDb({
+      dbName: CHANNEL_IMAGE_ASSET_DB_NAME,
+      version: CHANNEL_IMAGE_ASSET_DB_VERSION,
+      onOpenError: () => {
         channelImageAssetDbPromise = null;
-        resolve(null);
-      };
-
-      request.onupgradeneeded = event => {
-        const database = (event.target as IDBOpenDBRequest).result;
-
+      },
+      onUpgrade: database => {
         if (
           database.objectStoreNames.contains(CHANNEL_IMAGE_ASSET_STORE_NAME)
         ) {
@@ -127,11 +125,7 @@ const getChannelImageAssetDb = async (): Promise<IDBDatabase | null> => {
           CHANNEL_IMAGE_ASSET_CHANNEL_INDEX,
           'variant',
         ]);
-      };
-
-      request.onsuccess = () => {
-        resolve(request.result);
-      };
+      },
     });
   }
 
@@ -397,6 +391,28 @@ const resolveFullChannelImageAssetBlob = async (
     message.file_mime_type
   );
 
+const resolveThumbnailChannelImageAssetBlob = async (
+  message: CacheableImageMessage
+) => {
+  const persistedPreviewPath = message.file_preview_url?.trim() || null;
+  if (persistedPreviewPath) {
+    const previewBlob = await fetchChatFileBlobWithFallback(
+      persistedPreviewPath,
+      persistedPreviewPath
+    );
+    if (previewBlob) {
+      return previewBlob;
+    }
+  }
+
+  const fullBlob = await resolveFullChannelImageAssetBlob(message);
+  if (!fullBlob) {
+    return null;
+  }
+
+  return (await createImagePreviewBlob(fullBlob)) || fullBlob;
+};
+
 export const isCacheableChannelImageMessage = (
   message: Pick<
     ChatMessage,
@@ -435,11 +451,10 @@ export const getRuntimeChannelImageAssetUrl = (
     return null;
   }
 
-  const effectiveVariant = getEffectiveChannelImageAssetVariant(variant);
   const assetKey = buildChannelImageAssetKey(
     normalizedChannelId,
     normalizedMessageId,
-    effectiveVariant
+    variant
   );
   const runtimeEntry = runtimeChannelImageAssets.get(assetKey) ?? null;
   if (!runtimeEntry) {
@@ -468,22 +483,17 @@ export const loadCachedChannelImageAssetUrl = async (
     return null;
   }
 
-  const effectiveVariant = getEffectiveChannelImageAssetVariant(variant);
   const existingRuntimeUrl = getRuntimeChannelImageAssetUrl(
     normalizedChannelId,
     normalizedMessageId,
-    effectiveVariant
+    variant
   );
   if (existingRuntimeUrl) {
     return existingRuntimeUrl;
   }
 
   const record = await readPersistedChannelImageAssetRecord(
-    buildChannelImageAssetKey(
-      normalizedChannelId,
-      normalizedMessageId,
-      effectiveVariant
-    )
+    buildChannelImageAssetKey(normalizedChannelId, normalizedMessageId, variant)
   );
   if (!record) {
     return null;
@@ -504,11 +514,10 @@ export const ensureChannelImageAssetUrl = async (
     return null;
   }
 
-  const effectiveVariant = getEffectiveChannelImageAssetVariant(variant);
   const existingRuntimeUrl = getRuntimeChannelImageAssetUrl(
     normalizedChannelId,
     normalizedMessageId,
-    effectiveVariant
+    variant
   );
   if (existingRuntimeUrl) {
     return existingRuntimeUrl;
@@ -517,7 +526,7 @@ export const ensureChannelImageAssetUrl = async (
   const assetKey = buildChannelImageAssetKey(
     normalizedChannelId,
     normalizedMessageId,
-    effectiveVariant
+    variant
   );
   const pendingAssetLoad = pendingChannelImageAssetLoads.get(assetKey);
   if (pendingAssetLoad) {
@@ -528,13 +537,16 @@ export const ensureChannelImageAssetUrl = async (
     const persistedUrl = await loadCachedChannelImageAssetUrl(
       normalizedChannelId,
       normalizedMessageId,
-      effectiveVariant
+      variant
     );
     if (persistedUrl) {
       return persistedUrl;
     }
 
-    const resolvedBlob = await resolveFullChannelImageAssetBlob(message);
+    const resolvedBlob =
+      variant === 'thumbnail'
+        ? await resolveThumbnailChannelImageAssetBlob(message)
+        : await resolveFullChannelImageAssetBlob(message);
 
     if (!resolvedBlob) {
       const fallbackMessageUrl = message.message.trim();
@@ -553,7 +565,7 @@ export const ensureChannelImageAssetUrl = async (
     return await persistChannelImageAssetBlob(
       normalizedChannelId,
       normalizedMessageId,
-      effectiveVariant,
+      variant,
       resolvedBlob
     );
   })();
@@ -590,10 +602,19 @@ export const seedChannelImageAssetsFromFile = async (
     'full',
     file
   );
+  const thumbnailBlob = await createImagePreviewBlob(file);
+  const thumbnailUrl = thumbnailBlob
+    ? await persistChannelImageAssetBlob(
+        normalizedChannelId,
+        normalizedMessageId,
+        'thumbnail',
+        thumbnailBlob
+      )
+    : fullUrl;
 
   return {
     fullUrl,
-    thumbnailUrl: fullUrl,
+    thumbnailUrl,
   };
 };
 
@@ -686,27 +707,12 @@ export const resetChannelImageAssetCache = async () => {
 
   runtimeChannelImageAssets.clear();
 
-  try {
-    const database = channelImageAssetDbPromise
-      ? await channelImageAssetDbPromise
-      : null;
-    database?.close();
-  } catch {
-    // ignore
-  } finally {
-    channelImageAssetDbPromise = null;
-  }
+  await closeRuntimeIndexedDb(channelImageAssetDbPromise);
+  channelImageAssetDbPromise = null;
 
   if (!canUseIndexedDb()) {
     return;
   }
 
-  await new Promise<void>(resolve => {
-    const request = window.indexedDB.deleteDatabase(
-      CHANNEL_IMAGE_ASSET_DB_NAME
-    );
-    request.onsuccess = () => resolve();
-    request.onerror = () => resolve();
-    request.onblocked = () => resolve();
-  });
+  await deleteRuntimeIndexedDb(CHANNEL_IMAGE_ASSET_DB_NAME);
 };
