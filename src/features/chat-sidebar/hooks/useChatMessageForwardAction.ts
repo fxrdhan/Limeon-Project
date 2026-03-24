@@ -1,5 +1,4 @@
 import { useCallback, useMemo, useState } from 'react';
-import { usePresenceRoster } from '@/hooks/presence/usePresenceRoster';
 import toast from 'react-hot-toast';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
 import {
@@ -7,6 +6,7 @@ import {
   type ChatMessage,
 } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
+import { useChatDirectoryRoster } from './useChatDirectoryRoster';
 
 interface ForwardMessageDraft {
   message: ChatMessage;
@@ -55,7 +55,7 @@ export const useChatMessageForwardAction = ({
     hasMoreDirectoryUsers,
     retryLoadDirectory,
     loadMoreDirectoryUsers,
-  } = usePresenceRoster(Boolean(forwardDraft));
+  } = useChatDirectoryRoster(Boolean(forwardDraft));
 
   const availableRecipients = useMemo(
     () => portalOrderedUsers.filter(portalUser => portalUser.id !== user?.id),

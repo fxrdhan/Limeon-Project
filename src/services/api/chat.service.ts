@@ -16,6 +16,7 @@ export type {
   ConversationSearchMessagesPage,
   UndeliveredIncomingMessageIdsPage,
   ConversationSearchContextOptions,
+  ChatDirectoryUsersPage,
   PersistChatPdfPreviewInput,
   PersistChatPdfPreviewResult,
   ChatForwardMessageResult,
@@ -25,6 +26,7 @@ export type {
 export { DEFAULT_CHAT_MESSAGES_PAGE_SIZE } from './chat/types';
 
 export { chatMessagesService } from './chat/messages.service';
+export { chatDirectoryService } from './chat/directory.service';
 export { chatCleanupService } from './chat/cleanup.service';
 export { chatForwardService } from './chat/forward.service';
 export { chatLinkService } from './chat/link.service';
@@ -36,6 +38,7 @@ export { chatPresenceService } from './chat/presence.service';
 export { chatPreviewService } from './chat/preview.service';
 
 import { chatCleanupService } from './chat/cleanup.service';
+import { chatDirectoryService } from './chat/directory.service';
 import { chatForwardService } from './chat/forward.service';
 import { chatLinkService } from './chat/link.service';
 import { chatMessagesService } from './chat/messages.service';
@@ -45,6 +48,7 @@ import { chatPreviewService } from './chat/preview.service';
 
 export const chatService = {
   ...chatMessagesService,
+  ...chatDirectoryService,
   ...chatCleanupService,
   ...chatForwardService,
   ...chatLinkService,

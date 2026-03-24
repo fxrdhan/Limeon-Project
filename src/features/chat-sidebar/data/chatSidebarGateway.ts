@@ -1,6 +1,7 @@
 import type { ServiceResponse } from '@/services/api/base.service';
 import {
   chatCleanupService,
+  chatDirectoryService,
   chatForwardService,
   chatLinkService,
   chatMessagesService,
@@ -25,6 +26,7 @@ export type {
   CreateChatMessageInput,
   UserPresence,
   ConversationMessagesPage,
+  ChatDirectoryUsersPage,
   ConversationSearchMessagesPage,
   DeleteMessageThreadAndCleanupResult,
   DeleteMessageThreadsAndCleanupResult,
@@ -131,6 +133,12 @@ export const chatSidebarMessagesGateway = {
   },
   deleteMessageThread(id: string) {
     return chatMessagesService.deleteMessageThread(id);
+  },
+};
+
+export const chatSidebarDirectoryGateway = {
+  getUsersPage(limit?: number, offset?: number) {
+    return chatDirectoryService.getUsersPage(limit, offset);
   },
 };
 

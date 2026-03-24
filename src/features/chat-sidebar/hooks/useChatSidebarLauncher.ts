@@ -1,13 +1,13 @@
 import { useCallback } from 'react';
-import { usePresenceRoster } from '@/hooks/presence/usePresenceRoster';
 import { useChatSidebarStore } from '@/store/chatSidebarStore';
 import type { ChatTargetUser } from '@/types';
+import { useChatDirectoryRoster } from './useChatDirectoryRoster';
 
 export const useChatSidebarLauncher = (shouldLoadDirectory = false) => {
   const toggleChatForUser = useChatSidebarStore(
     state => state.toggleChatForUser
   );
-  const presenceRoster = usePresenceRoster(shouldLoadDirectory);
+  const directoryRoster = useChatDirectoryRoster(shouldLoadDirectory);
 
   const openChatForUser = useCallback(
     (targetUser: ChatTargetUser) => {
@@ -17,7 +17,7 @@ export const useChatSidebarLauncher = (shouldLoadDirectory = false) => {
   );
 
   return {
-    ...presenceRoster,
+    ...directoryRoster,
     openChatForUser,
   };
 };

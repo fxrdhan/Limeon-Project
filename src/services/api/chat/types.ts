@@ -4,6 +4,7 @@ import type {
   UserPresenceRow,
   UserPresenceUpdateRow,
 } from '@/types/supabase-chat';
+import type { OnlineUser } from '@/types';
 import type {
   ChatPdfPreviewRequest as SharedChatPdfPreviewRequest,
   ChatPdfPreviewResponse as SharedChatPdfPreviewResponse,
@@ -137,6 +138,11 @@ export interface UndeliveredIncomingMessageIdsPage {
 export interface ConversationSearchContextOptions {
   beforeLimit?: number;
   afterLimit?: number;
+}
+
+export interface ChatDirectoryUsersPage {
+  users: OnlineUser[];
+  hasMore: boolean;
 }
 
 export type PersistChatPdfPreviewInput = SharedChatPdfPreviewRequest;

@@ -9,13 +9,13 @@ type ForwardUser = {
   name: string;
 };
 
-const { mockToast, mockPresenceRoster, mockForwardGateway } = vi.hoisted(
+const { mockToast, mockDirectoryRoster, mockForwardGateway } = vi.hoisted(
   () => ({
     mockToast: {
       error: vi.fn(),
       success: vi.fn(),
     },
-    mockPresenceRoster: {
+    mockDirectoryRoster: {
       portalOrderedUsers: [] as Array<{
         id: string;
         name: string;
@@ -39,8 +39,8 @@ vi.mock('react-hot-toast', () => ({
   default: mockToast,
 }));
 
-vi.mock('@/hooks/presence/usePresenceRoster', () => ({
-  usePresenceRoster: () => mockPresenceRoster,
+vi.mock('../hooks/useChatDirectoryRoster', () => ({
+  useChatDirectoryRoster: () => mockDirectoryRoster,
 }));
 
 vi.mock('../data/chatSidebarGateway', () => ({
@@ -91,7 +91,7 @@ const buildMessage = (overrides: Partial<ChatMessage> = {}): ChatMessage => ({
 describe('useChatMessageForwardAction', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockPresenceRoster.portalOrderedUsers = [
+    mockDirectoryRoster.portalOrderedUsers = [
       {
         id: 'user-a',
         name: 'Admin',
@@ -114,9 +114,9 @@ describe('useChatMessageForwardAction', () => {
         online_at: '2026-03-18T09:00:00.000Z',
       },
     ];
-    mockPresenceRoster.isDirectoryLoading = false;
-    mockPresenceRoster.directoryError = null;
-    mockPresenceRoster.hasMoreDirectoryUsers = false;
+    mockDirectoryRoster.isDirectoryLoading = false;
+    mockDirectoryRoster.directoryError = null;
+    mockDirectoryRoster.hasMoreDirectoryUsers = false;
     mockForwardGateway.forwardMessage.mockResolvedValue({
       data: null,
       error: null,

@@ -31,6 +31,7 @@ export { usersService } from './users.service';
 export { customerLevelsService } from './customerLevels.service';
 export {
   chatService,
+  chatDirectoryService,
   chatMessagesService,
   chatCleanupService,
   chatPdfCompressService,
