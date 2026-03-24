@@ -130,6 +130,7 @@ export const useChatViewport = ({
     loading,
     messageInputHeight,
     composerContextualOffset,
+    composerContainerHeight,
     getVisibleMessagesBounds,
     messagesContainerRef,
     messagesEndRef,

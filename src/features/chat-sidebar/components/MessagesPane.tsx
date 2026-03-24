@@ -7,6 +7,7 @@ import {
   CHAT_COPY_LOADING_TOAST_DELAY_MS,
   CHAT_SIDEBAR_TOASTER_ID,
   MAX_MESSAGE_CHARS,
+  MESSAGE_BOTTOM_GAP,
 } from '../constants';
 import type { MessagesPaneModel } from '../models';
 import {
@@ -24,6 +25,7 @@ const CHAT_DATE_FORMATTER = new Intl.DateTimeFormat('id-ID', {
   month: 'long',
   year: 'numeric',
 });
+const COMPOSER_BOTTOM_OFFSET = 8;
 
 const formatMessageGroupDate = (value: string) => {
   const parsedDate = new Date(value);
@@ -60,8 +62,12 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
         className="flex-1 overflow-x-hidden overflow-y-auto px-3 pt-20 transition-[padding-bottom] duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
         style={{
           overflowAnchor: 'none',
-          paddingBottom:
-            state.messageInputHeight + 84 + state.composerContextualOffset,
+          paddingBottom: Math.max(
+            state.composerContainerHeight +
+              COMPOSER_BOTTOM_OFFSET +
+              MESSAGE_BOTTOM_GAP,
+            state.messageInputHeight + 84 + state.composerContextualOffset
+          ),
         }}
         onClick={menu.close}
         role="presentation"

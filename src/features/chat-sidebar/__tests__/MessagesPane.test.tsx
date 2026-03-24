@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vite-plus/test';
 import type { MessagesPaneModel } from '../models';
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import MessagesPane from '../components/MessagesPane';
+import { MESSAGE_BOTTOM_GAP } from '../constants';
 
 vi.mock('@/components/shared/image-expand-preview', () => ({
   default: ({
@@ -184,5 +185,44 @@ describe('MessagesPane', () => {
     fireEvent.click(previewContent);
 
     expect(closeImagePreview).toHaveBeenCalledTimes(1);
+  });
+
+  it('reserves scroll space from the measured composer height so the last bubble keeps a gap above it', () => {
+    const model = createModel({
+      state: {
+        messages: [
+          {
+            id: 'message-1',
+            sender_id: 'user-a',
+            receiver_id: 'user-b',
+            message: 'Halo',
+            created_at: '2026-03-24T08:00:00.000Z',
+            updated_at: '2026-03-24T08:00:00.000Z',
+            is_read: true,
+            is_deleted: false,
+            type: 'text',
+            file_name: null,
+            file_size: null,
+            storage_path: null,
+            thumbnail_path: null,
+            mime_type: null,
+            metadata: null,
+            reply_to_message_id: null,
+          },
+        ],
+        composerContainerHeight: 128,
+        messageInputHeight: 22,
+        composerContextualOffset: 0,
+      },
+    });
+
+    const { container } = render(<MessagesPane model={model} />);
+
+    const messagesViewport = container.querySelector('[role="presentation"]');
+
+    expect(messagesViewport).not.toBeNull();
+    expect((messagesViewport as HTMLDivElement).style.paddingBottom).toBe(
+      `${128 + 8 + MESSAGE_BOTTOM_GAP}px`
+    );
   });
 });

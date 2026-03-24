@@ -19,6 +19,7 @@ interface UseChatViewportScrollProps {
   loading: boolean;
   messageInputHeight: number;
   composerContextualOffset: number;
+  composerContainerHeight: number;
   getVisibleMessagesBounds: () => VisibleBounds | null;
   messagesContainerRef: RefObject<HTMLDivElement | null>;
   messagesEndRef: RefObject<HTMLDivElement | null>;
@@ -33,6 +34,7 @@ export const useChatViewportScroll = ({
   loading,
   messageInputHeight,
   composerContextualOffset,
+  composerContainerHeight,
   getVisibleMessagesBounds,
   messagesContainerRef,
   messagesEndRef,
@@ -43,42 +45,59 @@ export const useChatViewportScroll = ({
   const [hasNewMessages, setHasNewMessages] = useState(false);
 
   const atTopVisibilityRef = useRef(true);
+  const isAtBottomRef = useRef(true);
   const shouldPinToBottomOnOpenRef = useRef(false);
+  const shouldMaintainBottomDuringComposerResizeRef = useRef(false);
   const scrollToBottomAnimationFrameRef = useRef<number | null>(null);
+  const composerResizeBottomSyncDeadlineRef = useRef<number | null>(null);
+  const composerResizeBottomSyncTimeoutRef = useRef<number | null>(null);
   const previousMessagesCountRef = useRef<number | null>(null);
   const previousLatestMessageIdRef = useRef<string | null>(null);
+  const previousComposerContainerHeightRef = useRef<number | null>(null);
+
+  const getBottomScrollMetrics = useCallback(() => {
+    const container = messagesContainerRef.current;
+    const endMarker = messagesEndRef.current;
+    const bounds = getVisibleMessagesBounds();
+    if (!container || !endMarker || !bounds) return null;
+
+    const hiddenBottom = Math.max(
+      0,
+      bounds.containerRect.bottom - bounds.visibleBottom
+    );
+    const visibleHeight = container.clientHeight - hiddenBottom;
+    if (visibleHeight <= 0) return null;
+
+    const endTopInContent =
+      endMarker.getBoundingClientRect().top -
+      bounds.containerRect.top +
+      container.scrollTop;
+    const rawTargetScrollTop =
+      endTopInContent - Math.max(visibleHeight - MESSAGE_BOTTOM_GAP, 0);
+    const maxScrollTop = Math.max(
+      0,
+      container.scrollHeight - container.clientHeight
+    );
+
+    return {
+      container,
+      endTopInContent,
+      targetScrollTop: Math.min(Math.max(rawTargetScrollTop, 0), maxScrollTop),
+      visibleHeight,
+    };
+  }, [getVisibleMessagesBounds, messagesContainerRef, messagesEndRef]);
 
   const scrollMessagesToBottom = useCallback(
     (behavior: ScrollBehavior) => {
-      const container = messagesContainerRef.current;
-      const endMarker = messagesEndRef.current;
-      const bounds = getVisibleMessagesBounds();
-      if (!container || !endMarker || !bounds) return;
+      const metrics = getBottomScrollMetrics();
+      if (!metrics) return;
 
-      const hiddenBottom = Math.max(
-        0,
-        bounds.containerRect.bottom - bounds.visibleBottom
-      );
-      const visibleHeight = container.clientHeight - hiddenBottom;
-      if (visibleHeight <= 0) return;
-
-      const endTopInContent =
-        endMarker.getBoundingClientRect().top -
-        bounds.containerRect.top +
-        container.scrollTop;
-      const targetScrollTop =
-        endTopInContent - Math.max(visibleHeight - MESSAGE_BOTTOM_GAP, 0);
-      const maxScrollTop = Math.max(
-        0,
-        container.scrollHeight - container.clientHeight
-      );
-
-      container.scrollTo({
-        top: Math.min(Math.max(targetScrollTop, 0), maxScrollTop),
+      metrics.container.scrollTo({
+        top: metrics.targetScrollTop,
         behavior,
       });
     },
-    [getVisibleMessagesBounds, messagesContainerRef, messagesEndRef]
+    [getBottomScrollMetrics]
   );
 
   const scheduleScrollMessagesToBottom = useCallback(() => {
@@ -93,33 +112,56 @@ export const useChatViewportScroll = ({
     scrollToBottomAnimationFrameRef.current = null;
   }, []);
 
+  const cancelComposerResizeBottomSync = useCallback(() => {
+    if (composerResizeBottomSyncTimeoutRef.current !== null) {
+      window.clearTimeout(composerResizeBottomSyncTimeoutRef.current);
+      composerResizeBottomSyncTimeoutRef.current = null;
+    }
+
+    composerResizeBottomSyncDeadlineRef.current = null;
+  }, []);
+
+  const maintainBottomDuringComposerResize = useCallback(() => {
+    shouldMaintainBottomDuringComposerResizeRef.current = true;
+    composerResizeBottomSyncDeadlineRef.current = Date.now() + 260;
+    isAtBottomRef.current = true;
+    setIsAtBottom(true);
+    setHasNewMessages(false);
+    scrollMessagesToBottom('auto');
+
+    if (composerResizeBottomSyncTimeoutRef.current !== null) {
+      return;
+    }
+
+    const step = () => {
+      scrollMessagesToBottom('auto');
+
+      if (
+        composerResizeBottomSyncDeadlineRef.current !== null &&
+        Date.now() < composerResizeBottomSyncDeadlineRef.current
+      ) {
+        composerResizeBottomSyncTimeoutRef.current = window.setTimeout(
+          step,
+          16
+        );
+        return;
+      }
+
+      scrollMessagesToBottom('auto');
+      scheduleVisibleUnreadReadReceipts();
+      shouldMaintainBottomDuringComposerResizeRef.current = false;
+      composerResizeBottomSyncTimeoutRef.current = null;
+      composerResizeBottomSyncDeadlineRef.current = null;
+    };
+
+    composerResizeBottomSyncTimeoutRef.current = window.setTimeout(step, 16);
+  }, [scheduleVisibleUnreadReadReceipts, scrollMessagesToBottom]);
+
   const animateScrollToBottom = useCallback(() => {
-    const container = messagesContainerRef.current;
-    const endMarker = messagesEndRef.current;
-    const bounds = getVisibleMessagesBounds();
-    if (!container || !endMarker || !bounds) return;
+    const metrics = getBottomScrollMetrics();
+    if (!metrics) return;
 
-    const hiddenBottom = Math.max(
-      0,
-      bounds.containerRect.bottom - bounds.visibleBottom
-    );
-    const visibleHeight = container.clientHeight - hiddenBottom;
-    if (visibleHeight <= 0) return;
-
-    const endTopInContent =
-      endMarker.getBoundingClientRect().top -
-      bounds.containerRect.top +
-      container.scrollTop;
-    const rawTargetScrollTop =
-      endTopInContent - Math.max(visibleHeight - MESSAGE_BOTTOM_GAP, 0);
-    const maxScrollTop = Math.max(
-      0,
-      container.scrollHeight - container.clientHeight
-    );
-    const targetScrollTop = Math.min(
-      Math.max(rawTargetScrollTop, 0),
-      maxScrollTop
-    );
+    const { container, targetScrollTop } = metrics;
     const startScrollTop = container.scrollTop;
     const distance = targetScrollTop - startScrollTop;
 
@@ -150,22 +192,16 @@ export const useChatViewportScroll = ({
     };
 
     scrollToBottomAnimationFrameRef.current = requestAnimationFrame(step);
-  }, [
-    cancelScrollToBottomAnimation,
-    getVisibleMessagesBounds,
-    messagesContainerRef,
-    messagesEndRef,
-  ]);
+  }, [cancelScrollToBottomAnimation, getBottomScrollMetrics]);
 
   const checkIfAtBottom = useCallback(() => {
-    if (messagesContainerRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } =
-        messagesContainerRef.current;
-      return Math.abs(scrollHeight - scrollTop - clientHeight) <= 100;
+    const metrics = getBottomScrollMetrics();
+    if (metrics) {
+      return metrics.targetScrollTop - metrics.container.scrollTop <= 100;
     }
 
     return true;
-  }, [messagesContainerRef]);
+  }, [getBottomScrollMetrics]);
 
   const checkIfAtTop = useCallback(() => {
     if (messagesContainerRef.current) {
@@ -184,6 +220,7 @@ export const useChatViewportScroll = ({
       const atBottom = checkIfAtBottom();
       const atTop = checkIfAtTop();
       atTopVisibilityRef.current = atTop;
+      isAtBottomRef.current = atBottom;
       setIsAtBottom(atBottom);
       setIsAtTop(atTop);
       scheduleVisibleUnreadReadReceipts();
@@ -213,12 +250,42 @@ export const useChatViewportScroll = ({
       cancelAnimationFrameFn?.(rafId);
     };
   }, [
+    composerContainerHeight,
     composerContextualOffset,
     handleScroll,
     isOpen,
     messageInputHeight,
     messagesCount,
     scheduleVisibleUnreadReadReceipts,
+  ]);
+
+  useLayoutEffect(() => {
+    const previousComposerContainerHeight =
+      previousComposerContainerHeightRef.current;
+    previousComposerContainerHeightRef.current = composerContainerHeight;
+
+    const shouldMaintainBottom =
+      shouldMaintainBottomDuringComposerResizeRef.current ||
+      isAtBottomRef.current;
+
+    if (
+      !isOpen ||
+      !currentChannelId ||
+      shouldPinToBottomOnOpenRef.current ||
+      previousComposerContainerHeight === null ||
+      previousComposerContainerHeight === composerContainerHeight ||
+      !shouldMaintainBottom
+    ) {
+      return;
+    }
+
+    shouldMaintainBottomDuringComposerResizeRef.current = true;
+    maintainBottomDuringComposerResize();
+  }, [
+    composerContainerHeight,
+    currentChannelId,
+    isOpen,
+    maintainBottomDuringComposerResize,
   ]);
 
   useEffect(() => {
@@ -260,6 +327,7 @@ export const useChatViewportScroll = ({
     if (!isOpen || !shouldPinToBottomOnOpenRef.current) return;
 
     scrollMessagesToBottom('auto');
+    isAtBottomRef.current = true;
     setIsAtBottom(true);
     const atTop = checkIfAtTop();
     atTopVisibilityRef.current = atTop;
@@ -294,25 +362,30 @@ export const useChatViewportScroll = ({
     shouldPinToBottomOnOpenRef.current = true;
     previousMessagesCountRef.current = null;
     previousLatestMessageIdRef.current = null;
+    isAtBottomRef.current = true;
     setIsAtBottom(true);
     setHasNewMessages(false);
 
     return () => {
       shouldPinToBottomOnOpenRef.current = false;
+      shouldMaintainBottomDuringComposerResizeRef.current = false;
+      cancelComposerResizeBottomSync();
     };
-  }, [currentChannelId, isOpen]);
+  }, [cancelComposerResizeBottomSync, currentChannelId, isOpen]);
 
   useEffect(
     () => () => {
       cancelScrollToBottomAnimation();
+      cancelComposerResizeBottomSync();
     },
-    [cancelScrollToBottomAnimation]
+    [cancelComposerResizeBottomSync, cancelScrollToBottomAnimation]
   );
 
   const scrollToBottom = useCallback(() => {
     animateScrollToBottom();
     scheduleVisibleUnreadReadReceipts();
     setHasNewMessages(false);
+    isAtBottomRef.current = true;
     setIsAtBottom(true);
   }, [animateScrollToBottom, scheduleVisibleUnreadReadReceipts]);
 
