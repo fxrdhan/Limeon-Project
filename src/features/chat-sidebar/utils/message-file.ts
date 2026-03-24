@@ -1,7 +1,6 @@
 import type { ComposerPendingFileKind } from '../types';
 import { chatSidebarAssetsGateway } from '../data/chatSidebarAssetsGateway';
 import { chatSidebarShareGateway } from '../data/chatSidebarGateway';
-import { buildChatSharedLinkShortUrl } from '@/services/api/chat/link.service';
 import type { TransformOptions } from '@supabase/storage-js';
 import {
   buildPdfPreviewStoragePath,
@@ -105,7 +104,7 @@ const buildCopyableChatSharedLinkUrl = (sharedLinkSlug?: string | null) => {
     return null;
   }
 
-  return buildChatSharedLinkShortUrl(normalizedSharedLinkSlug);
+  return chatSidebarShareGateway.buildShortUrl(normalizedSharedLinkSlug);
 };
 
 const pendingCopyableChatAssetRequests = new Map<

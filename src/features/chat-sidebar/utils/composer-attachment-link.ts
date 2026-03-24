@@ -1,9 +1,11 @@
 import {
+  chatSidebarAttachmentGateway,
+  chatSidebarShareGateway,
+} from '../data/chatSidebarGateway';
+import {
   isImageFileExtensionOrMime,
   resolveFileExtension,
 } from './message-file';
-import { buildChatSharedLinkShortUrl } from '@/services/api/chat/link.service';
-import { chatRemoteAssetService } from '@/services/api/chat/remote-asset.service';
 import { findMessageLinks } from './message-search';
 
 export interface AttachmentComposerLinkMatch {
@@ -646,7 +648,7 @@ export const fetchAttachmentComposerRemoteFile = async (
 ): Promise<AttachmentComposerRemoteFile | null> => {
   const normalizedUrl = normalizeAttachmentRemoteAssetUrl(url);
   const remoteAsset = (
-    await chatRemoteAssetService.fetchRemoteAsset(normalizedUrl, {
+    await chatSidebarAttachmentGateway.fetchRemoteAsset(normalizedUrl, {
       fileNameSourceUrl: url,
     })
   ).data;
@@ -758,7 +760,9 @@ const getChatSharedLinkPatterns = () => {
 
   for (const pattern of [
     buildChatSharedLinkPattern('https://shrtlink.works/23456789ab'),
-    buildChatSharedLinkPattern(buildChatSharedLinkShortUrl('23456789ab')),
+    buildChatSharedLinkPattern(
+      chatSidebarShareGateway.buildShortUrl('23456789ab')
+    ),
   ]) {
     if (!pattern) {
       continue;

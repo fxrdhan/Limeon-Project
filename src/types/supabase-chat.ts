@@ -60,6 +60,11 @@ export type ListActiveUserPresenceSinceRpcArgs =
 export type ListActiveUserPresenceSinceRpcReturn =
   ChatFunctionReturn<'list_active_user_presence_since'>;
 
+export type ListChatDirectoryUsersRpcArgs =
+  ChatFunctionArgs<'list_chat_directory_users'>;
+export type ListChatDirectoryUsersRpcReturn =
+  ChatFunctionReturn<'list_chat_directory_users'>;
+
 export type ListUndeliveredIncomingMessageIdsRpcArgs =
   ChatFunctionArgs<'list_undelivered_incoming_message_ids'>;
 export type ListUndeliveredIncomingMessageIdsRpcReturn =

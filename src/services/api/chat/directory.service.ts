@@ -1,7 +1,11 @@
 import { supabase } from '@/lib/supabase';
 import type { OnlineUser } from '@/types';
-import type { PostgrestError } from '@supabase/supabase-js';
 import type { ServiceResponse } from '../base.service';
+import { toChatServiceError } from './contractErrors';
+import {
+  buildListChatDirectoryUsersRpcArgs,
+  CHAT_RPC_NAMES,
+} from './rpc-contract';
 import type { ChatDirectoryUsersPage } from './types';
 
 export const chatDirectoryService = {
@@ -12,10 +16,10 @@ export const chatDirectoryService = {
     const pageSize = Math.max(1, limit);
 
     try {
-      const { data, error } = await supabase.rpc('list_chat_directory_users', {
-        p_limit: pageSize + 1,
-        p_offset: Math.max(0, offset),
-      });
+      const { data, error } = await supabase.rpc(
+        CHAT_RPC_NAMES.listChatDirectoryUsers,
+        buildListChatDirectoryUsersRpcArgs(pageSize + 1, Math.max(0, offset))
+      );
 
       if (error) {
         return { data: null, error };
@@ -40,7 +44,7 @@ export const chatDirectoryService = {
         error: null,
       };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toChatServiceError(error) };
     }
   },
 };

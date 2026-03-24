@@ -5,6 +5,7 @@ import {
   chatForwardService,
   chatLinkService,
   chatMessagesService,
+  chatPdfCompressService,
   chatPresenceService,
   chatPreviewService,
   type ChatMessage,
@@ -20,6 +21,12 @@ import {
   type ChatForwardMessageResult,
   type UserPresenceUpdateInput,
 } from '@/services/api/chat.service';
+import { buildChatSharedLinkShortUrl } from '@/services/api/chat/link.service';
+import {
+  chatRemoteAssetService,
+  type ChatRemoteAssetResult,
+} from '@/services/api/chat/remote-asset.service';
+import type { ChatPdfCompressResult } from '@/services/api/chat/pdf-compress.service';
 
 export type {
   ChatMessage,
@@ -38,6 +45,8 @@ export type {
   ChatSharedLinkResult,
   ChatForwardMessageResult,
 } from '@/services/api/chat.service';
+export type { ChatPdfCompressResult } from '@/services/api/chat/pdf-compress.service';
+export type { ChatRemoteAssetResult } from '@/services/api/chat/remote-asset.service';
 
 export type { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -198,7 +207,25 @@ export const chatSidebarPreviewGateway = {
   },
 };
 
+export const chatSidebarAttachmentGateway = {
+  fetchRemoteAsset(
+    url: string,
+    options?: { fileNameSourceUrl?: string | null }
+  ): Promise<ServiceResponse<ChatRemoteAssetResult>> {
+    return chatRemoteAssetService.fetchRemoteAsset(url, options);
+  },
+  compressPdf(
+    file: File,
+    options?: Parameters<typeof chatPdfCompressService.compressPdf>[1]
+  ): Promise<ServiceResponse<ChatPdfCompressResult>> {
+    return chatPdfCompressService.compressPdf(file, options);
+  },
+};
+
 export const chatSidebarShareGateway = {
+  buildShortUrl(slug: string) {
+    return buildChatSharedLinkShortUrl(slug);
+  },
   createSharedLink(request: {
     messageId?: string;
     storagePath?: string;

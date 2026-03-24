@@ -7,6 +7,7 @@ import type {
   GetChatMessageByIdRpcArgs,
   GetUserPresenceRpcArgs,
   ListActiveUserPresenceSinceRpcArgs,
+  ListChatDirectoryUsersRpcArgs,
   ListUndeliveredIncomingMessageIdsRpcArgs,
   MarkChatMessageIdsAsDeliveredRpcArgs,
   MarkChatMessageIdsAsReadRpcArgs,
@@ -33,6 +34,7 @@ export const CHAT_RPC_NAMES = {
   getMessageById: 'get_chat_message_by_id',
   getUserPresence: 'get_user_presence',
   listActiveUserPresenceSince: 'list_active_user_presence_since',
+  listChatDirectoryUsers: 'list_chat_directory_users',
   listUndeliveredIncomingMessageIds: 'list_undelivered_incoming_message_ids',
   markMessageIdsAsDelivered: 'mark_chat_message_ids_as_delivered',
   markMessageIdsAsRead: 'mark_chat_message_ids_as_read',
@@ -180,4 +182,12 @@ export const buildListActiveUserPresenceSinceRpcArgs = (
   since: string
 ): ListActiveUserPresenceSinceRpcArgs => ({
   p_since: since,
+});
+
+export const buildListChatDirectoryUsersRpcArgs = (
+  limit?: number,
+  offset?: number
+): ListChatDirectoryUsersRpcArgs => ({
+  p_limit: limit,
+  p_offset: offset ?? 0,
 });

@@ -18,16 +18,22 @@ const { mockRemoteAssetService } = vi.hoisted(() => ({
     fetchRemoteAsset: vi.fn(),
   },
 }));
-
-vi.mock('@/services/api/chat/remote-asset.service', () => ({
-  chatRemoteAssetService: mockRemoteAssetService,
+const { mockShareGateway } = vi.hoisted(() => ({
+  mockShareGateway: {
+    buildShortUrl: vi.fn(
+      (slug: string) =>
+        `https://example.com/functions/v1/chat-link/${slug.trim().replace(/^\/+/, '')}`
+    ),
+  },
 }));
 
-vi.mock('@/services/api/chat/link.service', async () => {
-  const actual = await vi.importActual('@/services/api/chat/link.service');
+vi.mock('../data/chatSidebarGateway', () => ({
+  chatSidebarAttachmentGateway: mockRemoteAssetService,
+  chatSidebarShareGateway: mockShareGateway,
+}));
 
+vi.mock('@/services/api/chat/link.service', () => {
   return {
-    ...actual,
     buildChatSharedLinkShortUrl: (slug: string) =>
       `https://example.com/functions/v1/chat-link/${slug.trim().replace(/^\/+/, '')}`,
   };

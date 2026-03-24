@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { chatPdfCompressService } from '@/services/api/chat/pdf-compress.service';
 import {
   CHAT_PDF_COMPRESS_DEFAULT_LEVEL,
   CHAT_PDF_COMPRESS_MAX_BYTES,
 } from '../../../../shared/chatFunctionContracts';
+import { chatSidebarAttachmentGateway } from '../data/chatSidebarGateway';
 import {
   CHAT_SIDEBAR_TOASTER_ID,
   MAX_PENDING_COMPOSER_ATTACHMENTS,
@@ -257,7 +257,7 @@ export const useComposerLoadingAttachments = ({
         abortController
       );
 
-      const result = await chatPdfCompressService.compressPdf(
+      const result = await chatSidebarAttachmentGateway.compressPdf(
         targetAttachment.file,
         {
           compressionLevel,

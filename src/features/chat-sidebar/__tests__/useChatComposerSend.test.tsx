@@ -12,6 +12,7 @@ import { buildPdfMessagePreviewCacheKey } from '../utils/pdf-message-preview';
 const { mockGateway, mockToast } = vi.hoisted(() => ({
   mockGateway: {
     fetchConversationMessages: vi.fn(),
+    getMessageById: vi.fn(),
     createMessage: vi.fn(),
     updateFilePreview: vi.fn(),
     deleteMessageThread: vi.fn(),
@@ -35,8 +36,8 @@ const { mockCreatePdfPreviewUploadArtifact, mockReadBlobAsDataUrl } =
 const { mockCreateImagePreviewUploadArtifact } = vi.hoisted(() => ({
   mockCreateImagePreviewUploadArtifact: vi.fn(),
 }));
-const { mockRemoteAssetService } = vi.hoisted(() => ({
-  mockRemoteAssetService: {
+const { mockChatSidebarAttachmentGateway } = vi.hoisted(() => ({
+  mockChatSidebarAttachmentGateway: {
     fetchRemoteAsset: vi.fn(),
   },
 }));
@@ -66,8 +67,42 @@ vi.mock('../data/chatSidebarAssetsGateway', () => ({
   },
 }));
 
-vi.mock('@/services/api/chat/remote-asset.service', () => ({
-  chatRemoteAssetService: mockRemoteAssetService,
+vi.mock('../data/chatSidebarGateway', () => ({
+  chatSidebarMessagesGateway: {
+    getMessageById: mockGateway.getMessageById,
+    fetchConversationMessages: async (
+      ...args: Parameters<typeof mockGateway.fetchConversationMessages>
+    ) => {
+      const result = await mockGateway.fetchConversationMessages(...args);
+
+      if (!Array.isArray(result.data)) {
+        return result;
+      }
+
+      return {
+        ...result,
+        data: {
+          messages: result.data,
+          hasMore: false,
+        },
+      };
+    },
+    createMessage: mockGateway.createMessage,
+    updateFilePreview: mockGateway.updateFilePreview,
+    deleteMessageThread: mockGateway.deleteMessageThread,
+  },
+  chatSidebarCleanupGateway: {
+    deleteMessageThreadAndCleanup: mockGateway.deleteMessageThreadAndCleanup,
+    cleanupStoragePaths: mockGateway.cleanupStoragePaths,
+  },
+  chatSidebarPreviewGateway: {
+    persistPdfPreview: mockGateway.persistPdfPreview,
+  },
+  chatSidebarAttachmentGateway: mockChatSidebarAttachmentGateway,
+  chatSidebarShareGateway: {
+    createSharedLink: vi.fn(),
+    buildShortUrl: vi.fn((slug: string) => `https://shrtlink.works/${slug}`),
+  },
 }));
 
 vi.mock('../utils/pdf-message-preview', async () => {
@@ -209,6 +244,14 @@ describe('useChatComposerSend', () => {
       data: [],
       error: null,
     });
+    mockGateway.getMessageById.mockImplementation(
+      async (messageId: string) => ({
+        data: buildMessage({
+          id: messageId,
+        }),
+        error: null,
+      })
+    );
     mockGateway.updateFilePreview.mockImplementation(
       async (messageId: string, payload: Partial<ChatMessage>) => ({
         data: buildMessage({
@@ -244,7 +287,7 @@ describe('useChatComposerSend', () => {
         ),
       })
     );
-    mockRemoteAssetService.fetchRemoteAsset.mockResolvedValue({
+    mockChatSidebarAttachmentGateway.fetchRemoteAsset.mockResolvedValue({
       data: null,
       error: null,
     });
@@ -1409,7 +1452,7 @@ describe('useChatComposerSend', () => {
       }),
       error: null,
     }));
-    mockRemoteAssetService.fetchRemoteAsset.mockResolvedValue({
+    mockChatSidebarAttachmentGateway.fetchRemoteAsset.mockResolvedValue({
       data: {
         blob: new Blob(['image'], { type: 'image/png' }),
         contentDisposition: null,
@@ -1610,7 +1653,9 @@ describe('useChatComposerSend', () => {
       await result.current.handleSendMessage();
     });
 
-    expect(mockRemoteAssetService.fetchRemoteAsset).not.toHaveBeenCalled();
+    expect(
+      mockChatSidebarAttachmentGateway.fetchRemoteAsset
+    ).not.toHaveBeenCalled();
     expect(mockGateway.uploadImage).not.toHaveBeenCalled();
     expect(mockGateway.uploadAttachment).not.toHaveBeenCalled();
     expect(mockGateway.createMessage).toHaveBeenCalledWith(
@@ -1638,7 +1683,7 @@ describe('useChatComposerSend', () => {
       }),
       error: null,
     });
-    mockRemoteAssetService.fetchRemoteAsset.mockResolvedValue({
+    mockChatSidebarAttachmentGateway.fetchRemoteAsset.mockResolvedValue({
       data: {
         blob: new Blob(['pdf'], { type: 'application/pdf' }),
         contentDisposition: 'attachment; filename="invoice.pdf"',
@@ -1725,7 +1770,7 @@ describe('useChatComposerSend', () => {
       }),
       error: null,
     });
-    mockRemoteAssetService.fetchRemoteAsset.mockResolvedValue({
+    mockChatSidebarAttachmentGateway.fetchRemoteAsset.mockResolvedValue({
       data: {
         blob: new Blob(['%PDF-1.4\n1 0 obj\n<</Title (Job Desk Minggu 4)>>'], {
           type: 'application/octet-stream',
@@ -1774,7 +1819,9 @@ describe('useChatComposerSend', () => {
       await result.current.handleSendMessage();
     });
 
-    expect(mockRemoteAssetService.fetchRemoteAsset).toHaveBeenCalledWith(
+    expect(
+      mockChatSidebarAttachmentGateway.fetchRemoteAsset
+    ).toHaveBeenCalledWith(
       'https://drive.google.com/uc?export=download&id=113Z7cPJCdAwGg8emnZfw0aCix4YeS_lH',
       {
         fileNameSourceUrl:

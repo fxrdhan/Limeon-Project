@@ -10,11 +10,6 @@ const { mockToast } = vi.hoisted(() => ({
     success: vi.fn(),
   },
 }));
-const { mockRemoteAssetService } = vi.hoisted(() => ({
-  mockRemoteAssetService: {
-    fetchRemoteAsset: vi.fn(),
-  },
-}));
 const { mockFetchAttachmentComposerRemoteFile } = vi.hoisted(() => ({
   mockFetchAttachmentComposerRemoteFile: vi.fn(),
 }));
@@ -24,8 +19,8 @@ const { mockValidateAttachmentComposerLink } = vi.hoisted(() => ({
 const { mockRenderPdfPreviewDataUrl } = vi.hoisted(() => ({
   mockRenderPdfPreviewDataUrl: vi.fn(),
 }));
-const { mockChatPdfCompressService } = vi.hoisted(() => ({
-  mockChatPdfCompressService: {
+const { mockChatSidebarAttachmentGateway } = vi.hoisted(() => ({
+  mockChatSidebarAttachmentGateway: {
     compressPdf: vi.fn(),
   },
 }));
@@ -103,12 +98,12 @@ vi.mock('react-hot-toast', () => ({
   default: mockToast,
 }));
 
-vi.mock('@/services/api/chat/remote-asset.service', () => ({
-  chatRemoteAssetService: mockRemoteAssetService,
-}));
-
-vi.mock('@/services/api/chat/pdf-compress.service', () => ({
-  chatPdfCompressService: mockChatPdfCompressService,
+vi.mock('../data/chatSidebarGateway', () => ({
+  chatSidebarAttachmentGateway: mockChatSidebarAttachmentGateway,
+  chatSidebarShareGateway: {
+    createSharedLink: vi.fn(),
+    buildShortUrl: vi.fn((slug: string) => `https://shrtlink.works/${slug}`),
+  },
 }));
 
 vi.mock('../utils/pdf-preview', () => ({
@@ -168,14 +163,10 @@ describe('useChatComposer', () => {
         revokeObjectURL: vi.fn(),
       })
     );
-    mockRemoteAssetService.fetchRemoteAsset.mockResolvedValue({
-      data: null,
-      error: null,
-    });
     mockFetchAttachmentComposerRemoteFile.mockResolvedValue(null);
     mockValidateAttachmentComposerLink.mockResolvedValue(true);
     mockRenderPdfPreviewDataUrl.mockResolvedValue(null);
-    mockChatPdfCompressService.compressPdf.mockResolvedValue({
+    mockChatSidebarAttachmentGateway.compressPdf.mockResolvedValue({
       data: {
         file: new File(['compressed-pdf'], 'stok-kompres.pdf', {
           type: 'application/pdf',
@@ -508,7 +499,7 @@ describe('useChatComposer', () => {
           error: null;
         }) => void)
       | undefined;
-    mockChatPdfCompressService.compressPdf.mockImplementationOnce(
+    mockChatSidebarAttachmentGateway.compressPdf.mockImplementationOnce(
       () =>
         new Promise(resolve => {
           resolveCompression = resolve;

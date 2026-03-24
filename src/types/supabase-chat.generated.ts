@@ -1,4 +1,5 @@
 // Generated from the Supabase chat schema on 2026-03-24.
+// Chat schema migration baseline: 20260324183000.
 // Refresh this file from Supabase whenever the chat contract changes.
 
 export interface ChatDatabase {
@@ -235,6 +236,15 @@ export interface ChatDatabase {
       list_active_user_presence_since: {
         Args: { p_since: string };
         Returns: ChatDatabase['public']['Tables']['user_presence']['Row'][];
+      };
+      list_chat_directory_users: {
+        Args: { p_limit?: number | null; p_offset?: number | null };
+        Returns: {
+          email: string;
+          id: string;
+          name: string;
+          profilephoto: string | null;
+        }[];
       };
       list_undelivered_incoming_message_ids: {
         Args: { p_limit?: number | null; p_offset?: number | null };

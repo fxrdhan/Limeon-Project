@@ -2,6 +2,10 @@ import { supabase } from '@/lib/supabase';
 import type { OnlineUser } from '@/types';
 import type { PostgrestError } from '@supabase/supabase-js';
 import type { ServiceResponse } from './base.service';
+import {
+  buildListChatDirectoryUsersRpcArgs,
+  CHAT_RPC_NAMES,
+} from './chat/rpc-contract';
 
 export interface UserDirectoryPage {
   users: OnlineUser[];
@@ -47,10 +51,10 @@ export class UsersService {
     const pageSize = Math.max(1, limit);
 
     try {
-      const { data, error } = await supabase.rpc('list_chat_directory_users', {
-        p_limit: pageSize + 1,
-        p_offset: Math.max(0, offset),
-      });
+      const { data, error } = await supabase.rpc(
+        CHAT_RPC_NAMES.listChatDirectoryUsers,
+        buildListChatDirectoryUsersRpcArgs(pageSize + 1, Math.max(0, offset))
+      );
 
       if (error) {
         return { data: null, error };
