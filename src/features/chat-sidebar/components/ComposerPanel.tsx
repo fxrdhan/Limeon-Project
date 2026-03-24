@@ -10,13 +10,9 @@ import {
 import PopupMenuContent from '@/components/image-manager/PopupMenuContent';
 import PopupMenuPopover from '@/components/shared/popup-menu-popover';
 import {
-  TbArrowUpRight,
   TbArrowUp,
-  TbCopy,
   TbFileDescription,
-  TbLink,
   TbMusic,
-  TbPaperclip,
   TbPhoto,
   TbPlus,
 } from 'react-icons/tb';
@@ -33,160 +29,24 @@ import {
   COMPOSER_SYNC_LAYOUT_TRANSITION,
   SEND_SUCCESS_GLOW_DURATION,
 } from '../constants';
-import { findMessageLinks } from '../utils/message-search';
 import type {
   ComposerHoverableAttachmentCandidate,
   ComposerPanelModel,
 } from '../models';
+import {
+  buildComposerLinkOverlaySegments,
+  getComposerLinkSelectionOffset,
+  type ComposerLinkOverlaySegment,
+} from '../utils/composerLinkOverlay';
 import DocumentPreviewPortal from './DocumentPreviewPortal';
 import ComposerAttachmentPreviewList from './composer/ComposerAttachmentPreviewList';
 import ComposerEditBanner from './composer/ComposerEditBanner';
-
-interface ComposerLinkOverlaySegment {
-  candidate: ComposerHoverableAttachmentCandidate | null;
-  href: string | null;
-  key: string;
-  rangeEnd?: number;
-  rangeStart?: number;
-  text: string;
-}
-
-type DocumentWithCaretRange = Document & {
-  caretRangeFromPoint?: (x: number, y: number) => Range | null;
-};
+import { ComposerLinkPromptPopover } from './composer/ComposerLinkPromptPopover';
 
 const ATTACHMENT_LINK_PROMPT_MIN_WIDTH = 156;
 const ATTACHMENT_LINK_PROMPT_EDGE_MARGIN = 16;
-const ATTACHMENT_PROMPT_BUTTON_CLASS_NAME =
-  'flex w-full cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-left text-sm font-medium text-black transition-colors hover:bg-slate-100';
-const ATTACHMENT_PROMPT_SECTION_LABEL_CLASS_NAME =
-  'px-2.5 pb-1 pt-1.5 text-[11px] font-medium tracking-[0.03em] text-slate-500';
 const CHAT_POPOVER_ICON_CLASS_NAME =
   '[&>svg]:!text-black hover:[&>svg]:!text-black data-[preselected=true]:[&>svg]:!text-black';
-
-const buildComposerLinkOverlaySegments = ({
-  candidates,
-  message,
-}: {
-  candidates: ComposerHoverableAttachmentCandidate[];
-  message: string;
-}) => {
-  const sortedCandidates = [...candidates].sort(
-    (leftCandidate, rightCandidate) =>
-      leftCandidate.rangeStart - rightCandidate.rangeStart
-  );
-  const messageLinks = findMessageLinks(message)
-    .filter(
-      messageLink =>
-        !sortedCandidates.some(
-          candidate =>
-            messageLink.rangeStart < candidate.rangeEnd &&
-            messageLink.rangeEnd > candidate.rangeStart
-        )
-    )
-    .map(messageLink => ({
-      candidate: null,
-      href: messageLink.href,
-      key: `link_${messageLink.rangeStart}_${messageLink.rangeEnd}`,
-      rangeEnd: messageLink.rangeEnd,
-      rangeStart: messageLink.rangeStart,
-      text: messageLink.text,
-    }));
-  const sortedOverlayLinks = [
-    ...sortedCandidates.map(candidate => ({
-      candidate,
-      href: candidate.url,
-      key: `link_${candidate.rangeStart}_${candidate.rangeEnd}`,
-      rangeEnd: candidate.rangeEnd,
-      rangeStart: candidate.rangeStart,
-      text: message.slice(candidate.rangeStart, candidate.rangeEnd),
-    })),
-    ...messageLinks,
-  ].sort(
-    (leftLink, rightLink) =>
-      leftLink.rangeStart - rightLink.rangeStart ||
-      leftLink.rangeEnd - rightLink.rangeEnd
-  );
-
-  if (sortedOverlayLinks.length === 0) {
-    return [];
-  }
-
-  const segments: ComposerLinkOverlaySegment[] = [];
-  let currentIndex = 0;
-
-  for (const overlayLink of sortedOverlayLinks) {
-    if (overlayLink.rangeEnd <= currentIndex) {
-      continue;
-    }
-
-    if (overlayLink.rangeStart > currentIndex) {
-      segments.push({
-        candidate: null,
-        href: null,
-        key: `text_${currentIndex}_${overlayLink.rangeStart}`,
-        text: message.slice(currentIndex, overlayLink.rangeStart),
-      });
-    }
-
-    segments.push({
-      candidate: overlayLink.candidate,
-      href: overlayLink.href,
-      key: overlayLink.key,
-      rangeEnd: overlayLink.rangeEnd,
-      rangeStart: overlayLink.rangeStart,
-      text: message.slice(overlayLink.rangeStart, overlayLink.rangeEnd),
-    });
-    currentIndex = overlayLink.rangeEnd;
-  }
-
-  if (currentIndex < message.length) {
-    segments.push({
-      candidate: null,
-      href: null,
-      key: `text_${currentIndex}_${message.length}`,
-      text: message.slice(currentIndex),
-    });
-  }
-
-  return segments;
-};
-
-const getComposerLinkSelectionOffset = (
-  anchorElement: HTMLAnchorElement,
-  clientX: number,
-  clientY: number
-) => {
-  if (typeof document === 'undefined') {
-    return anchorElement.textContent?.length ?? 0;
-  }
-
-  const maxOffset = anchorElement.textContent?.length ?? 0;
-  const buildOffsetFromRange = (targetNode: Node, targetOffset: number) => {
-    const range = document.createRange();
-    range.setStart(anchorElement, 0);
-    range.setEnd(targetNode, targetOffset);
-    return Math.max(0, Math.min(maxOffset, range.toString().length));
-  };
-
-  const caretPosition = document.caretPositionFromPoint?.(clientX, clientY);
-  if (caretPosition && anchorElement.contains(caretPosition.offsetNode)) {
-    return buildOffsetFromRange(caretPosition.offsetNode, caretPosition.offset);
-  }
-
-  const caretRange = (document as DocumentWithCaretRange).caretRangeFromPoint?.(
-    clientX,
-    clientY
-  );
-  if (caretRange && anchorElement.contains(caretRange.startContainer)) {
-    return buildOffsetFromRange(
-      caretRange.startContainer,
-      caretRange.startOffset
-    );
-  }
-
-  return maxOffset;
-};
 
 const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
   const { state, attachments, documentPreview, refs, actions } = model;
@@ -493,120 +353,24 @@ const ComposerPanelContent = ({ model }: { model: ComposerPanelModel }) => {
                 )
               : null}
 
-            {typeof document !== 'undefined' &&
-            attachments.attachmentPastePromptUrl &&
-            attachmentPromptPosition
-              ? createPortal(
-                  <div
-                    className="fixed z-[120]"
-                    style={{
-                      top: attachmentPromptPosition.top,
-                      left: attachmentPromptPosition.left,
-                      transform: 'translate(-50%, calc(-100% - 10px))',
-                    }}
-                  >
-                    <PopupMenuPopover isOpen className="origin-bottom">
-                      <div
-                        ref={refs.attachmentPastePromptRef}
-                        className="rounded-xl border border-slate-200 bg-white px-0.5 py-0.5 shadow-[0_-10px_15px_-3px_rgba(15,23,42,0.10),0_-4px_6px_-4px_rgba(15,23,42,0.10)]"
-                        style={{ minWidth: ATTACHMENT_LINK_PROMPT_MIN_WIDTH }}
-                        onClick={event => event.stopPropagation()}
-                        onMouseEnter={clearAttachmentPromptCloseTimer}
-                        onMouseLeave={scheduleAttachmentPromptClose}
-                        role="dialog"
-                        aria-label="Aksi link composer"
-                      >
-                        <div
-                          className={ATTACHMENT_PROMPT_SECTION_LABEL_CLASS_NAME}
-                        >
-                          Aksi
-                        </div>
-                        <button
-                          type="button"
-                          onClick={actions.onOpenAttachmentPastePromptLink}
-                          className={ATTACHMENT_PROMPT_BUTTON_CLASS_NAME}
-                        >
-                          <TbArrowUpRight
-                            className="h-4 w-4 text-black"
-                            aria-hidden="true"
-                          />
-                          <span>Buka</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={actions.onCopyAttachmentPastePromptLink}
-                          className={ATTACHMENT_PROMPT_BUTTON_CLASS_NAME}
-                        >
-                          <TbCopy
-                            className="h-4 w-4 text-black"
-                            aria-hidden="true"
-                          />
-                          <span>Salin</span>
-                        </button>
-                        {attachments.isAttachmentPastePromptShortenable ? (
-                          <button
-                            type="button"
-                            onClick={actions.onShortenAttachmentPastePromptLink}
-                            className={ATTACHMENT_PROMPT_BUTTON_CLASS_NAME}
-                          >
-                            <TbLink
-                              className="h-4 w-4 text-black"
-                              aria-hidden="true"
-                            />
-                            <span>Shorten link</span>
-                          </button>
-                        ) : null}
-                        <AnimatePresence initial={false}>
-                          {attachments.isAttachmentPastePromptAttachmentCandidate ? (
-                            <motion.div
-                              key="attachment-paste-actions"
-                              initial={{ height: 0, opacity: 0, y: -4 }}
-                              animate={{ height: 'auto', opacity: 1, y: 0 }}
-                              exit={{ height: 0, opacity: 0, y: -4 }}
-                              transition={{ duration: 0.18, ease: 'easeOut' }}
-                              className="overflow-hidden"
-                            >
-                              <div className="mx-1 my-0.5 h-px bg-slate-200" />
-                              <div
-                                className={
-                                  ATTACHMENT_PROMPT_SECTION_LABEL_CLASS_NAME
-                                }
-                              >
-                                Tempel sebagai
-                              </div>
-                              <button
-                                type="button"
-                                onClick={actions.onUseAttachmentPasteAsUrl}
-                                className={ATTACHMENT_PROMPT_BUTTON_CLASS_NAME}
-                              >
-                                <TbLink
-                                  className="h-4 w-4 text-black"
-                                  aria-hidden="true"
-                                />
-                                <span>URL</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={
-                                  actions.onUseAttachmentPasteAsAttachment
-                                }
-                                className={ATTACHMENT_PROMPT_BUTTON_CLASS_NAME}
-                              >
-                                <TbPaperclip
-                                  className="h-4 w-4 text-black"
-                                  aria-hidden="true"
-                                />
-                                <span>Attachment</span>
-                              </button>
-                            </motion.div>
-                          ) : null}
-                        </AnimatePresence>
-                      </div>
-                    </PopupMenuPopover>
-                  </div>,
-                  document.body
-                )
-              : null}
+            <ComposerLinkPromptPopover
+              isOpen={Boolean(
+                attachments.attachmentPastePromptUrl && attachmentPromptPosition
+              )}
+              position={attachmentPromptPosition}
+              isAttachmentCandidate={
+                attachments.isAttachmentPastePromptAttachmentCandidate
+              }
+              isShortenable={attachments.isAttachmentPastePromptShortenable}
+              promptRef={refs.attachmentPastePromptRef}
+              onCopyLink={actions.onCopyAttachmentPastePromptLink}
+              onMouseEnter={clearAttachmentPromptCloseTimer}
+              onMouseLeave={scheduleAttachmentPromptClose}
+              onOpenLink={actions.onOpenAttachmentPastePromptLink}
+              onShortenLink={actions.onShortenAttachmentPastePromptLink}
+              onUseAsAttachment={actions.onUseAttachmentPasteAsAttachment}
+              onUseAsUrl={actions.onUseAttachmentPasteAsUrl}
+            />
 
             <motion.div
               layout

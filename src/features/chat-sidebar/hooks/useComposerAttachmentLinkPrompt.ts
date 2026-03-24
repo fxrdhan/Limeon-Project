@@ -28,6 +28,15 @@ import {
   isChatSharedLinkUrl,
   validateAttachmentComposerLink,
 } from '../utils/composer-attachment-link';
+import {
+  buildAttachmentPastePrompt,
+  buildComposerLinkPromptState,
+  buildHoverableAttachmentCandidates,
+  createAttachmentPasteCandidateId,
+  replacePromptRangeWithText,
+  type AttachmentPastePromptState,
+  type PastedAttachmentCandidate,
+} from '../utils/composerAttachmentPrompt';
 
 interface UseComposerAttachmentLinkPromptProps {
   closeAttachModal: () => void;
@@ -50,21 +59,6 @@ interface UseComposerAttachmentLinkPromptProps {
   ) => LoadingComposerAttachment | null;
   setMessage: Dispatch<SetStateAction<string>>;
   resetKey?: string | null;
-}
-
-interface AttachmentPastePromptState {
-  id: string;
-  isAttachmentCandidate: boolean;
-  url: string;
-  pastedText: string;
-  rangeStart: number;
-  rangeEnd: number;
-}
-
-interface PastedAttachmentCandidate {
-  id: string;
-  pastedText: string;
-  url: string;
 }
 
 export const useComposerAttachmentLinkPrompt = ({
@@ -102,29 +96,11 @@ export const useComposerAttachmentLinkPrompt = ({
     [messageInputRef]
   );
 
-  const hoverableAttachmentCandidates = useMemo(() => {
-    let searchStart = 0;
-
-    return pastedAttachmentCandidates.flatMap(candidate => {
-      const rangeStart = message.indexOf(candidate.pastedText, searchStart);
-      if (rangeStart < 0) {
-        return [];
-      }
-
-      const rangeEnd = rangeStart + candidate.pastedText.length;
-      searchStart = rangeEnd;
-
-      return [
-        {
-          id: candidate.id,
-          url: candidate.url,
-          pastedText: candidate.pastedText,
-          rangeStart,
-          rangeEnd,
-        } satisfies ComposerHoverableAttachmentCandidate,
-      ];
-    });
-  }, [message, pastedAttachmentCandidates]);
+  const hoverableAttachmentCandidates = useMemo(
+    () =>
+      buildHoverableAttachmentCandidates(message, pastedAttachmentCandidates),
+    [message, pastedAttachmentCandidates]
+  );
 
   const hoverableAttachmentUrl =
     hoverableAttachmentCandidates.length === 1
@@ -202,9 +178,7 @@ export const useComposerAttachmentLinkPrompt = ({
       setMessage(nextMessage);
       focusComposerSelection(insertedRangeEnd);
 
-      const candidateId = `attachment_link_candidate_${Date.now()}_${Math.random()
-        .toString(36)
-        .slice(2, 8)}`;
+      const candidateId = createAttachmentPasteCandidateId();
       const attachmentCandidate = {
         id: candidateId,
         pastedText,
@@ -252,11 +226,13 @@ export const useComposerAttachmentLinkPrompt = ({
             return currentPrompt;
           }
 
-          return {
-            ...currentPrompt,
-            id: candidateId,
+          return buildAttachmentPastePrompt({
+            candidate: {
+              ...currentPrompt,
+              id: candidateId,
+            },
             isAttachmentCandidate: true,
-          };
+          });
         });
       })();
     },
@@ -365,21 +341,13 @@ export const useComposerAttachmentLinkPrompt = ({
       return;
     }
 
-    setMessage(currentMessage => {
-      const pastedSegment = currentMessage.slice(
-        promptState.rangeStart,
-        promptState.rangeEnd
-      );
-      if (pastedSegment !== promptState.pastedText) {
-        return currentMessage;
-      }
-
-      return (
-        currentMessage.slice(0, promptState.rangeStart) +
-        shortUrl +
-        currentMessage.slice(promptState.rangeEnd)
-      );
-    });
+    setMessage(currentMessage =>
+      replacePromptRangeWithText({
+        currentMessage,
+        promptState,
+        nextText: shortUrl,
+      })
+    );
     setPastedAttachmentCandidates(currentCandidates =>
       currentCandidates.map(candidate =>
         candidate.id === promptState.id
@@ -423,20 +391,13 @@ export const useComposerAttachmentLinkPrompt = ({
       return;
     }
 
-    setMessage(currentMessage => {
-      const pastedSegment = currentMessage.slice(
-        promptState.rangeStart,
-        promptState.rangeEnd
-      );
-      if (pastedSegment !== promptState.pastedText) {
-        return currentMessage;
-      }
-
-      return (
-        currentMessage.slice(0, promptState.rangeStart) +
-        currentMessage.slice(promptState.rangeEnd)
-      );
-    });
+    setMessage(currentMessage =>
+      replacePromptRangeWithText({
+        currentMessage,
+        promptState,
+        nextText: '',
+      })
+    );
     setPastedAttachmentCandidates(currentCandidates =>
       currentCandidates.filter(candidate => candidate.id !== promptState.id)
     );
@@ -511,30 +472,23 @@ export const useComposerAttachmentLinkPrompt = ({
         return;
       }
 
-      setAttachmentPastePrompt({
-        id: resolvedCandidate.id,
-        isAttachmentCandidate: true,
-        url: resolvedCandidate.url,
-        pastedText: resolvedCandidate.pastedText,
-        rangeStart: resolvedCandidate.rangeStart,
-        rangeEnd: resolvedCandidate.rangeEnd,
-      });
+      setAttachmentPastePrompt(
+        buildAttachmentPastePrompt({
+          candidate: resolvedCandidate,
+          isAttachmentCandidate: true,
+        })
+      );
     },
     [hoverableAttachmentCandidates]
   );
 
   const openComposerLinkPrompt = useCallback((link: ComposerPromptableLink) => {
-    const isAttachmentCandidate =
-      extractAttachmentComposerLinkFromMessageText(link.url) !== null;
-
-    setAttachmentPastePrompt({
-      id: `composer_link_prompt_${link.rangeStart}_${link.rangeEnd}`,
-      isAttachmentCandidate,
-      url: link.url,
-      pastedText: link.pastedText,
-      rangeStart: link.rangeStart,
-      rangeEnd: link.rangeEnd,
-    });
+    setAttachmentPastePrompt(
+      buildComposerLinkPromptState(
+        link,
+        extractAttachmentComposerLinkFromMessageText(link.url) !== null
+      )
+    );
   }, []);
 
   useLayoutEffect(() => {
