@@ -1,6 +1,4 @@
-import { resetChannelImageAssetCache } from '@/features/chat-sidebar/utils/channel-image-asset-cache';
-import { chatRuntimeCache } from '@/features/chat-sidebar/utils/chatRuntimeCache';
-import { resetPersistedPdfPreviewCache } from '@/features/chat-sidebar/utils/pdf-preview-persistence';
+import { chatRuntime } from '@/features/chat-sidebar/utils/chatRuntime';
 import { CHAT_RUNTIME_INDEXED_DB_NAME_LIST } from '@/features/chat-sidebar/utils/runtime-persistence';
 import { resetPharmacyQueryPersistence } from '@/lib/indexedDBPersistence';
 import { queryClient } from '@/lib/queryClient';
@@ -75,10 +73,10 @@ const clearCacheStorage = async () => {
 
 const resetRuntimeStores = () => {
   useInvoiceUploadStore.getState().clearCachedInvoiceFile();
-  chatRuntimeCache.conversation.reset();
-  chatRuntimeCache.readReceipts.reset();
-  chatRuntimeCache.signedAssets.reset();
-  chatRuntimeCache.pdfPreviews.reset();
+  chatRuntime.cache.conversation.reset();
+  chatRuntime.cache.readReceipts.reset();
+  chatRuntime.cache.signedAssets.reset();
+  chatRuntime.cache.pdfPreviews.reset();
 };
 
 export const clearClientBrowserState = async () => {
@@ -122,8 +120,8 @@ export const clearClientBrowserState = async () => {
   await Promise.all([
     resetImageCache(),
     resetPharmacyQueryPersistence(),
-    resetPersistedPdfPreviewCache(),
-    resetChannelImageAssetCache(),
+    chatRuntime.pdfPreviews.resetPersisted(),
+    chatRuntime.imageAssets.reset(),
     clearCacheStorage(),
   ]);
 

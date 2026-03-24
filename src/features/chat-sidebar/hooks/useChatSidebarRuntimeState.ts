@@ -132,3 +132,7 @@ export const useChatSidebarRuntimeState = ({
     },
   };
 };
+
+export type ChatSidebarRuntimeState = ReturnType<
+  typeof useChatSidebarRuntimeState
+>;

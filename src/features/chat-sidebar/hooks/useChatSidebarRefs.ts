@@ -54,3 +54,5 @@ export const useChatSidebarRefs = () => {
     handleToggleExpand,
   };
 };
+
+export type ChatSidebarRefs = ReturnType<typeof useChatSidebarRefs>;

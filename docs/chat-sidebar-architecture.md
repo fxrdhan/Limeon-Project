@@ -62,7 +62,8 @@ Isi dokumen ini bersifat deskriptif, bukan target refactor.
 ### 2.2 Close Flow
 
 - `ChatHeader` memanggil `onClose`.
-- `useChatSidebarController` langsung memanggil `chatSidebarStore.closeChat()`.
+- `useChatSidebarController()` hanya meneruskan callback close dari host ke runtime action `handleClose`.
+- `useChatSidebarHost()` tetap menjadi owner shell state yang mengekspos `closeChat()` dari `chatSidebarStore`.
 - `useChatSidebarHost()` meng-set `pageFocusBlockStore.isBlocked` mengikuti status open chat sidebar.
 
 ## 3) Global State Ownership
@@ -116,6 +117,7 @@ tetapi lifecycle host sekarang dibatasi oleh dua entry hook feature:
 
 - `useChatSidebarHost()` untuk wiring layout/runtime global
 - `useChatSidebarLauncher()` untuk wiring launcher/navbar
+- `useDirectoryRoster()` dan `createDirectoryStore()` untuk primitive shared roster directory
 
 ## 5) Hook Responsibilities
 
@@ -129,7 +131,7 @@ Tanggung jawab:
 - membuat `currentChannelId` dari dua user dengan `generateChannelId()`
 - memanggil `useTargetProfilePhoto()`
 - mendelegasikan orkestrasi runtime panel ke `useChatSidebarRuntimeState()`
-- membentuk `headerModel`, `messagesModel`, dan `composerModel` dari runtime state
+- mendelegasikan pembentukan `headerModel`, `messagesModel`, dan `composerModel` ke hook per-pane
 - mengembalikan model yang sudah sempit untuk:
   - `ChatHeader`
   - `MessagesPane`
@@ -218,8 +220,18 @@ File: `src/features/chat-sidebar/hooks/useChatSidebarLauncher.ts`
 
 Tanggung jawab:
 
-- combine `usePresenceRoster()` dengan aksi launcher chat sidebar
+- combine `useChatDirectoryRoster()` dengan aksi launcher chat sidebar
+- `useChatDirectoryRoster()` memakai primitive shared `useDirectoryRoster()` dan store factory `createDirectoryStore()`
 - memberi boundary feature-specific untuk `Navbar`
+
+### 5.4.c `chatRuntime`
+
+File: `src/features/chat-sidebar/utils/chatRuntime.ts`
+
+Tanggung jawab:
+
+- menjadi boundary tunggal untuk runtime cache chat, cache image asset runtime, dan persistence preview PDF
+- dipakai oleh `useChatRuntime()`, `useMessagePdfPreviews()`, dan logout cleanup agar hook tingkat atas tidak perlu mengimpor beberapa singleton runtime terpisah
 
 ### 5.5 `useChatSessionReceipts`
 

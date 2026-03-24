@@ -2,8 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
 import { chatSidebarCleanupGateway } from '../data/chatSidebarGateway';
-import { chatRuntimeCache } from '../utils/chatRuntimeCache';
-import { loadPersistedPdfPreviewEntries } from '../utils/pdf-preview-persistence';
+import { chatRuntime } from '../utils/chatRuntime';
 import { useChatIncomingDeliveries } from './useChatIncomingDeliveries';
 import { useChatRuntimeReadReceipts } from './useChatRuntimeReadReceipts';
 
@@ -22,13 +21,14 @@ export const useChatRuntime = () => {
     let isCancelled = false;
 
     const hydratePersistedPdfPreviews = async () => {
-      const persistedPdfPreviews = await loadPersistedPdfPreviewEntries();
+      const persistedPdfPreviews =
+        await chatRuntime.pdfPreviews.loadPersistedEntries();
       if (isCancelled || persistedPdfPreviews.length === 0) {
         return;
       }
 
       persistedPdfPreviews.forEach(({ messageId, preview }) => {
-        chatRuntimeCache.pdfPreviews.hydrate(messageId, preview);
+        chatRuntime.cache.pdfPreviews.hydrate(messageId, preview);
       });
     };
 
