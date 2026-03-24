@@ -14,6 +14,7 @@
     "format": "bunx vp fmt . --write",
     "format:check": "bunx vp fmt . --check",
     "check": "bunx vp check",
+    "check:chat-schema": "bun scripts/check-chat-schema-types.mjs",
     "preview": "bunx vp preview",
     "test": "bunx vp test watch",
     "test:ui": "bunx vp test --ui",
