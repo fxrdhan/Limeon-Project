@@ -20,52 +20,95 @@ const baseMessage = {
 };
 
 const createModel = (
-  overrides: Partial<MessageItemModel> = {}
-): MessageItemModel => ({
-  message: baseMessage,
-  resolvedMessageUrl: null,
-  userId: 'user-a',
-  isGroupedWithPrevious: false,
-  isGroupedWithNext: false,
-  isFirstVisibleMessage: true,
-  isSelectionMode: false,
-  isSelected: false,
-  openMenuMessageId: null,
-  menuPlacement: 'up',
-  menuSideAnchor: 'middle',
-  shouldAnimateMenuOpen: false,
-  menuTransitionSourceId: null,
-  menuOffsetX: 0,
-  expandedMessageIds: new Set<string>(),
-  flashingMessageId: null,
-  isFlashHighlightVisible: false,
-  searchMatchedMessageIds: new Set<string>(),
-  activeSearchMessageId: null,
-  maxMessageChars: 500,
-  messageBubbleRefs: { current: new Map() },
-  initialMessageAnimationKeysRef: { current: new Set() },
-  initialOpenJumpAnimationKeysRef: { current: new Set() },
-  captionMessage: undefined,
-  pdfMessagePreview: undefined,
-  groupedImageMessages: undefined,
-  onToggleMessageSelection: () => {},
-  toggleMessageMenu: () => {},
-  handleToggleExpand: () => {},
-  handleEditMessage: () => {},
-  handleCopyMessage: async () => {},
-  handleDownloadMessage: async () => {},
-  handleOpenForwardMessagePicker: () => {},
-  handleDeleteMessage: async () => true,
-  getAttachmentFileName: () => '',
-  getAttachmentFileKind: () => 'document',
-  getImageMessageUrl: () => null,
-  getPdfMessagePreview: () => undefined,
-  normalizedSearchQuery: '',
-  openImageInPortal: async () => {},
-  openImageGroupInPortal: async () => {},
-  openDocumentInPortal: async () => {},
-  ...overrides,
-});
+  overrides: Partial<
+    Omit<
+      MessageItemModel,
+      'layout' | 'interaction' | 'menu' | 'refs' | 'content' | 'actions'
+    >
+  > & {
+    layout?: Partial<MessageItemModel['layout']>;
+    interaction?: Partial<MessageItemModel['interaction']>;
+    menu?: Partial<MessageItemModel['menu']>;
+    refs?: Partial<MessageItemModel['refs']>;
+    content?: Partial<MessageItemModel['content']>;
+    actions?: Partial<MessageItemModel['actions']>;
+  } = {}
+): MessageItemModel => {
+  const {
+    layout,
+    interaction,
+    menu,
+    refs,
+    content,
+    actions,
+    ...rootOverrides
+  } = overrides;
+
+  return {
+    message: baseMessage,
+    layout: {
+      isGroupedWithPrevious: false,
+      isGroupedWithNext: false,
+      isFirstVisibleMessage: true,
+      ...layout,
+    },
+    interaction: {
+      userId: 'user-a',
+      isSelectionMode: false,
+      isSelected: false,
+      expandedMessageIds: new Set<string>(),
+      flashingMessageId: null,
+      isFlashHighlightVisible: false,
+      searchMatchedMessageIds: new Set<string>(),
+      activeSearchMessageId: null,
+      maxMessageChars: 500,
+      onToggleMessageSelection: () => {},
+      handleToggleExpand: () => {},
+      ...interaction,
+    },
+    menu: {
+      openMessageId: null,
+      placement: 'up',
+      sideAnchor: 'middle',
+      shouldAnimateOpen: false,
+      transitionSourceId: null,
+      offsetX: 0,
+      toggle: () => {},
+      ...menu,
+    },
+    refs: {
+      messageBubbleRefs: { current: new Map() },
+      initialMessageAnimationKeysRef: { current: new Set() },
+      initialOpenJumpAnimationKeysRef: { current: new Set() },
+      ...refs,
+    },
+    content: {
+      resolvedMessageUrl: null,
+      captionMessage: undefined,
+      groupedDocumentMessages: undefined,
+      groupedImageMessages: undefined,
+      pdfMessagePreview: undefined,
+      getAttachmentFileName: () => '',
+      getAttachmentFileKind: () => 'document',
+      getImageMessageUrl: () => null,
+      getPdfMessagePreview: () => undefined,
+      normalizedSearchQuery: '',
+      openImageInPortal: async () => {},
+      openImageGroupInPortal: async () => {},
+      openDocumentInPortal: async () => {},
+      ...content,
+    },
+    actions: {
+      handleEditMessage: () => {},
+      handleCopyMessage: async () => {},
+      handleDownloadMessage: async () => {},
+      handleOpenForwardMessagePicker: () => {},
+      handleDeleteMessage: async () => true,
+      ...actions,
+    },
+    ...rootOverrides,
+  };
+};
 
 describe('MessageItem', () => {
   it('renders multiple document attachments in a single bubble without preview covers', () => {
@@ -97,8 +140,11 @@ describe('MessageItem', () => {
       <MessageItem
         model={createModel({
           message: groupedMessages[1],
-          groupedDocumentMessages: groupedMessages,
-          getAttachmentFileName: targetMessage => targetMessage.file_name || '',
+          content: {
+            groupedDocumentMessages: groupedMessages,
+            getAttachmentFileName: targetMessage =>
+              targetMessage.file_name || '',
+          },
         })}
       />
     );
@@ -122,8 +168,10 @@ describe('MessageItem', () => {
       <MessageItem
         model={createModel({
           message: groupedMessages[3],
-          groupedImageMessages: groupedMessages,
-          getImageMessageUrl: targetMessage => targetMessage.message,
+          content: {
+            groupedImageMessages: groupedMessages,
+            getImageMessageUrl: targetMessage => targetMessage.message,
+          },
         })}
       />
     );
@@ -150,8 +198,10 @@ describe('MessageItem', () => {
       <MessageItem
         model={createModel({
           message: groupedMessages[5],
-          groupedImageMessages: groupedMessages,
-          getImageMessageUrl: targetMessage => targetMessage.message,
+          content: {
+            groupedImageMessages: groupedMessages,
+            getImageMessageUrl: targetMessage => targetMessage.message,
+          },
         })}
       />
     );
@@ -175,10 +225,14 @@ describe('MessageItem', () => {
       <MessageItem
         model={createModel({
           message: groupedMessages[3],
-          groupedImageMessages: groupedMessages,
-          openMenuMessageId: 'image-4',
-          getImageMessageUrl: targetMessage => targetMessage.message,
-          openImageGroupInPortal,
+          menu: {
+            openMessageId: 'image-4',
+          },
+          content: {
+            groupedImageMessages: groupedMessages,
+            getImageMessageUrl: targetMessage => targetMessage.message,
+            openImageGroupInPortal,
+          },
         })}
       />
     );
@@ -240,16 +294,19 @@ describe('MessageItem', () => {
       <MessageItem
         model={createModel({
           message: groupedMessages[1],
-          groupedDocumentMessages: groupedMessages,
-          getAttachmentFileName: targetMessage => targetMessage.file_name || '',
-          getPdfMessagePreview: targetMessage =>
-            targetMessage.id === 'file-1'
-              ? {
-                  cacheKey: 'pdf-preview-1',
-                  coverDataUrl: 'data:image/png;base64,preview',
-                  pageCount: 2,
-                }
-              : undefined,
+          content: {
+            groupedDocumentMessages: groupedMessages,
+            getAttachmentFileName: targetMessage =>
+              targetMessage.file_name || '',
+            getPdfMessagePreview: targetMessage =>
+              targetMessage.id === 'file-1'
+                ? {
+                    cacheKey: 'pdf-preview-1',
+                    coverDataUrl: 'data:image/png;base64,preview',
+                    pageCount: 2,
+                  }
+                : undefined,
+          },
         })}
       />
     );

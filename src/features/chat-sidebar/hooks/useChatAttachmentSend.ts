@@ -25,6 +25,8 @@ import type {
   PendingComposerFile,
   PendingSendRegistration,
 } from '../types';
+import { useChatImagePreviewSync } from './useChatImagePreviewSync';
+import { useChatPdfPreviewSync } from './useChatPdfPreviewSync';
 
 interface ChatAttachmentMutationScope {
   conversationScopeKey: string | null;
@@ -50,16 +52,6 @@ interface UseChatAttachmentSendProps {
   pendingImagePreviewUrlsRef: MutableRefObject<Map<string, string>>;
   registerPendingSend: (tempMessageId: string) => PendingSendRegistration;
   mutationScope: ChatAttachmentMutationScope;
-  isImagePendingFile: (pendingFile: PendingComposerFile) => boolean;
-  isPdfPendingFile: (pendingFile: PendingComposerFile) => boolean;
-  syncPersistedImagePreview: (context: {
-    realMessage: ChatMessage;
-    file: File;
-  }) => Promise<void>;
-  syncPersistedPdfPreview: (context: {
-    realMessage: ChatMessage;
-    pendingFile: PendingComposerFile;
-  }) => Promise<void>;
 }
 
 export const useChatAttachmentSend = ({
@@ -73,10 +65,6 @@ export const useChatAttachmentSend = ({
   pendingImagePreviewUrlsRef,
   registerPendingSend,
   mutationScope,
-  isImagePendingFile,
-  isPdfPendingFile,
-  syncPersistedImagePreview,
-  syncPersistedPdfPreview,
 }: UseChatAttachmentSendProps) => {
   const {
     conversationScopeKey,
@@ -85,6 +73,14 @@ export const useChatAttachmentSend = ({
     reconcileCurrentConversationMessages,
     runInCurrentConversationScope,
   } = mutationScope;
+  const { isPdfPendingFile, syncPersistedPdfPreview } = useChatPdfPreviewSync({
+    isCurrentConversationScopeActive,
+  });
+  const { isImagePendingFile, syncPersistedImagePreview } =
+    useChatImagePreviewSync({
+      currentChannelId,
+      isCurrentConversationScopeActive,
+    });
   const {
     deleteUploadedStorageFilesOrThrow,
     rollbackPersistedAttachmentThread,

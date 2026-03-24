@@ -9,37 +9,31 @@ type ForwardUser = {
   name: string;
 };
 
-const {
-  mockToast,
-  mockPresenceRoster,
-  mockMessagesGateway,
-  mockForwardGateway,
-} = vi.hoisted(() => ({
-  mockToast: {
-    error: vi.fn(),
-    success: vi.fn(),
-  },
-  mockPresenceRoster: {
-    portalOrderedUsers: [] as Array<{
-      id: string;
-      name: string;
-      email: string;
-      profilephoto: string | null;
-      online_at: string;
-    }>,
-    isDirectoryLoading: false,
-    directoryError: null as string | null,
-    hasMoreDirectoryUsers: false,
-    retryLoadDirectory: vi.fn(),
-    loadMoreDirectoryUsers: vi.fn(),
-  },
-  mockMessagesGateway: {
-    createMessage: vi.fn(),
-  },
-  mockForwardGateway: {
-    forwardMessage: vi.fn(),
-  },
-}));
+const { mockToast, mockPresenceRoster, mockForwardGateway } = vi.hoisted(
+  () => ({
+    mockToast: {
+      error: vi.fn(),
+      success: vi.fn(),
+    },
+    mockPresenceRoster: {
+      portalOrderedUsers: [] as Array<{
+        id: string;
+        name: string;
+        email: string;
+        profilephoto: string | null;
+        online_at: string;
+      }>,
+      isDirectoryLoading: false,
+      directoryError: null as string | null,
+      hasMoreDirectoryUsers: false,
+      retryLoadDirectory: vi.fn(),
+      loadMoreDirectoryUsers: vi.fn(),
+    },
+    mockForwardGateway: {
+      forwardMessage: vi.fn(),
+    },
+  })
+);
 
 vi.mock('react-hot-toast', () => ({
   default: mockToast,
@@ -50,7 +44,6 @@ vi.mock('@/hooks/presence/usePresenceRoster', () => ({
 }));
 
 vi.mock('../data/chatSidebarGateway', () => ({
-  chatSidebarMessagesGateway: mockMessagesGateway,
   chatSidebarForwardGateway: mockForwardGateway,
 }));
 
@@ -124,28 +117,24 @@ describe('useChatMessageForwardAction', () => {
     mockPresenceRoster.isDirectoryLoading = false;
     mockPresenceRoster.directoryError = null;
     mockPresenceRoster.hasMoreDirectoryUsers = false;
-    mockMessagesGateway.createMessage.mockResolvedValue({
-      data: buildMessage({
-        id: 'persisted-1',
-        sender_id: 'user-a',
-        receiver_id: 'user-b',
-      }),
-      error: null,
-    });
     mockForwardGateway.forwardMessage.mockResolvedValue({
-      data: {
-        forwardedRecipientIds: ['user-c'],
-        failedRecipientIds: [],
-      },
+      data: null,
       error: null,
     });
   });
 
-  it('forwards text messages to every selected recipient and refreshes the current conversation when needed', async () => {
+  it('forwards text messages through the backend gateway and refreshes the current conversation when needed', async () => {
     const reconcileCurrentConversationMessages = vi
       .fn()
       .mockResolvedValue(undefined);
     const closeMessageMenu = vi.fn();
+    mockForwardGateway.forwardMessage.mockResolvedValueOnce({
+      data: {
+        forwardedRecipientIds: ['user-b', 'user-c'],
+        failedRecipientIds: [],
+      },
+      error: null,
+    });
 
     const { result } = renderHook(() =>
       useChatMessageForwardAction({
@@ -176,16 +165,9 @@ describe('useChatMessageForwardAction', () => {
       await result.current.submitForwardMessage();
     });
 
-    expect(mockMessagesGateway.createMessage).toHaveBeenCalledTimes(2);
-    expect(mockMessagesGateway.createMessage).toHaveBeenNthCalledWith(1, {
-      receiver_id: 'user-b',
-      message: 'tolong cek stok',
-      message_type: 'text',
-    });
-    expect(mockMessagesGateway.createMessage).toHaveBeenNthCalledWith(2, {
-      receiver_id: 'user-c',
-      message: 'tolong cek stok',
-      message_type: 'text',
+    expect(mockForwardGateway.forwardMessage).toHaveBeenCalledWith({
+      messageId: 'message-text',
+      recipientIds: ['user-b', 'user-c'],
     });
     expect(reconcileCurrentConversationMessages).toHaveBeenCalledOnce();
     expect(mockToast.success).toHaveBeenCalledWith(
@@ -199,6 +181,13 @@ describe('useChatMessageForwardAction', () => {
   });
 
   it('forwards attachment threads through the backend forwarding gateway', async () => {
+    mockForwardGateway.forwardMessage.mockResolvedValueOnce({
+      data: {
+        forwardedRecipientIds: ['user-c'],
+        failedRecipientIds: [],
+      },
+      error: null,
+    });
     const attachmentMessage = buildMessage({
       id: 'message-file',
       message: 'documents/channel/report.txt',
@@ -241,7 +230,6 @@ describe('useChatMessageForwardAction', () => {
       messageId: 'message-file',
       recipientIds: ['user-c'],
     });
-    expect(mockMessagesGateway.createMessage).not.toHaveBeenCalled();
     expect(mockToast.success).toHaveBeenCalledWith(
       'Pesan berhasil diteruskan',
       expect.objectContaining({

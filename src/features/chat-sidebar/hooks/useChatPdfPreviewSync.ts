@@ -1,4 +1,3 @@
-import type { Dispatch, SetStateAction } from 'react';
 import { useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
@@ -9,9 +8,7 @@ import { buildPdfMessagePreviewCacheKey } from '../utils/pdf-message-preview';
 import { resolveFileExtension } from '../utils/message-file';
 
 interface UseChatPdfPreviewSyncProps {
-  setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
   isCurrentConversationScopeActive: () => boolean;
-  runInCurrentConversationScope: (effect: () => void) => boolean;
 }
 
 export const useChatPdfPreviewSync = ({

@@ -4,7 +4,6 @@ import toast from 'react-hot-toast';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
 import {
   chatSidebarForwardGateway,
-  chatSidebarMessagesGateway,
   type ChatMessage,
 } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
@@ -98,21 +97,6 @@ export const useChatMessageForwardAction = ({
     });
   }, []);
 
-  const sendForwardedTextMessage = useCallback(
-    async (recipientId: string, messageText: string) => {
-      const { data, error } = await chatSidebarMessagesGateway.createMessage({
-        receiver_id: recipientId,
-        message: messageText,
-        message_type: 'text',
-      });
-
-      if (error || !data) {
-        throw error ?? new Error('Failed to create forwarded text message');
-      }
-    },
-    []
-  );
-
   const submitForwardMessage = useCallback(async () => {
     if (!forwardDraft || !user) {
       return;
@@ -135,36 +119,17 @@ export const useChatMessageForwardAction = ({
     const failedRecipientIds: string[] = [];
 
     try {
-      if (forwardDraft.message.message_type === 'text') {
-        for (const recipient of recipientsToSend) {
-          try {
-            await sendForwardedTextMessage(
-              recipient.id,
-              forwardDraft.message.message
-            );
-            successfulRecipientIds.push(recipient.id);
-          } catch (error) {
-            console.error('Failed to forward message:', {
-              error,
-              recipientId: recipient.id,
-              messageId: forwardDraft.message.id,
-            });
-            failedRecipientIds.push(recipient.id);
-          }
-        }
-      } else {
-        const { data, error } = await chatSidebarForwardGateway.forwardMessage({
-          messageId: forwardDraft.message.id,
-          recipientIds: recipientsToSend.map(recipient => recipient.id),
-        });
+      const { data, error } = await chatSidebarForwardGateway.forwardMessage({
+        messageId: forwardDraft.message.id,
+        recipientIds: recipientsToSend.map(recipient => recipient.id),
+      });
 
-        if (error || !data) {
-          throw error ?? new Error('Failed to forward attachment message');
-        }
-
-        successfulRecipientIds.push(...data.forwardedRecipientIds);
-        failedRecipientIds.push(...data.failedRecipientIds);
+      if (error || !data) {
+        throw error ?? new Error('Failed to forward message');
       }
+
+      successfulRecipientIds.push(...data.forwardedRecipientIds);
+      failedRecipientIds.push(...data.failedRecipientIds);
 
       if (targetUser?.id && successfulRecipientIds.includes(targetUser.id)) {
         await reconcileCurrentConversationMessages();
@@ -209,7 +174,6 @@ export const useChatMessageForwardAction = ({
     forwardDraft,
     reconcileCurrentConversationMessages,
     selectedRecipientIds,
-    sendForwardedTextMessage,
     targetUser?.id,
     user,
   ]);

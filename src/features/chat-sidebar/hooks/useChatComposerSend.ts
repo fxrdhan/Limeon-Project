@@ -9,8 +9,6 @@ import {
 } from '../utils/composer-attachment-link';
 import { buildPendingFileComposerAttachment } from '../utils/pending-composer-attachment';
 import { useChatAttachmentSend } from './useChatAttachmentSend';
-import { useChatImagePreviewSync } from './useChatImagePreviewSync';
-import { useChatPdfPreviewSync } from './useChatPdfPreviewSync';
 import { sendTextChatMessage } from '../utils/text-message-send';
 import type {
   ChatSidebarPanelTargetUser,
@@ -76,18 +74,6 @@ export const useChatComposerSend = ({
     reconcileCurrentConversationMessages,
     runInCurrentConversationScope,
   } = mutationScope;
-  const { isPdfPendingFile, syncPersistedPdfPreview } = useChatPdfPreviewSync({
-    setMessages,
-    isCurrentConversationScopeActive,
-    runInCurrentConversationScope,
-  });
-  const { isImagePendingFile, syncPersistedImagePreview } =
-    useChatImagePreviewSync({
-      currentChannelId,
-      setMessages,
-      isCurrentConversationScopeActive,
-      runInCurrentConversationScope,
-    });
   const { sendImageMessage, sendFileMessage } = useChatAttachmentSend({
     user,
     targetUser,
@@ -99,10 +85,6 @@ export const useChatComposerSend = ({
     pendingImagePreviewUrlsRef,
     registerPendingSend,
     mutationScope,
-    isImagePendingFile,
-    isPdfPendingFile,
-    syncPersistedImagePreview,
-    syncPersistedPdfPreview,
   });
 
   const sendTextMessage = useCallback(

@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 import type { ChatMessage } from '../../data/chatSidebarGateway';
 import type { MenuPlacement, MenuSideAnchor } from '../../types';
+import { getChatImagePreviewName } from '../../utils/message-preview-assets';
 import { renderHighlightedText } from '../../utils/message-search';
 import { MessageActionPopover } from './MessageActionPopover';
 import {
@@ -74,20 +75,6 @@ interface MessageImageAttachmentGroupContentProps {
 }
 
 const MAX_VISIBLE_IMAGE_GROUP_TILES = 4;
-
-const getImagePreviewName = (message: ChatMessage, fallbackIndex: number) => {
-  const explicitName = message.file_name?.trim();
-  if (explicitName) {
-    return explicitName;
-  }
-
-  const pathName = message.message.split('/').pop()?.split('?')[0]?.trim();
-  if (pathName) {
-    return pathName;
-  }
-
-  return `Gambar ${fallbackIndex + 1}`;
-};
 
 export const MessageImageAttachmentGroupContent = ({
   messages,
@@ -172,7 +159,7 @@ export const MessageImageAttachmentGroupContent = ({
   const imageTiles = visibleMessages.map((message, index) => ({
     message,
     resolvedMessageUrl: getImageMessageUrl(message),
-    previewName: getImagePreviewName(message, index),
+    previewName: getChatImagePreviewName(message, index),
     isOverflowTile:
       hiddenImageCount > 0 && index === visibleMessages.length - 1,
   }));
@@ -186,7 +173,7 @@ export const MessageImageAttachmentGroupContent = ({
         isPdfFileMessage: false,
         fileKind: 'document',
         fileName:
-          getImagePreviewName(
+          getChatImagePreviewName(
             representativeMessage,
             messages.length > 0 ? messages.length - 1 : 0
           ) || 'Gambar',

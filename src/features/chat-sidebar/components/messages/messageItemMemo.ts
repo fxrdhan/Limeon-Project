@@ -1,13 +1,13 @@
 import type { MessageItemModel } from './MessageItem';
 
 const isMenuOpenForMessage = (model: MessageItemModel) =>
-  model.openMenuMessageId === model.message.id;
+  model.menu.openMessageId === model.message.id;
 
 const isMenuTransitionSourceForMessage = (model: MessageItemModel) =>
-  model.menuTransitionSourceId === model.message.id;
+  model.menu.transitionSourceId === model.message.id;
 
 const isFlashingMessage = (model: MessageItemModel) =>
-  model.flashingMessageId === model.message.id;
+  model.interaction.flashingMessageId === model.message.id;
 
 export const areMessageItemPropsEqual = (
   previousProps: { model: MessageItemModel },
@@ -26,46 +26,55 @@ export const areMessageItemPropsEqual = (
   const previousMenuTransitionSource =
     isMenuTransitionSourceForMessage(previousModel);
   const nextMenuTransitionSource = isMenuTransitionSourceForMessage(nextModel);
-  const previousHasOpenMenu = Boolean(previousModel.openMenuMessageId);
-  const nextHasOpenMenu = Boolean(nextModel.openMenuMessageId);
+  const previousHasOpenMenu = Boolean(previousModel.menu.openMessageId);
+  const nextHasOpenMenu = Boolean(nextModel.menu.openMessageId);
   const previousFlashingMessage = isFlashingMessage(previousModel);
   const nextFlashingMessage = isFlashingMessage(nextModel);
 
   return (
     previousModel.message === nextModel.message &&
-    previousModel.resolvedMessageUrl === nextModel.resolvedMessageUrl &&
-    previousModel.userId === nextModel.userId &&
-    previousModel.isGroupedWithPrevious === nextModel.isGroupedWithPrevious &&
-    previousModel.isGroupedWithNext === nextModel.isGroupedWithNext &&
-    previousModel.isFirstVisibleMessage === nextModel.isFirstVisibleMessage &&
-    previousModel.hasDateSeparatorBefore === nextModel.hasDateSeparatorBefore &&
-    previousModel.isSelectionMode === nextModel.isSelectionMode &&
-    previousModel.isSelected === nextModel.isSelected &&
+    previousModel.content.resolvedMessageUrl ===
+      nextModel.content.resolvedMessageUrl &&
+    previousModel.interaction.userId === nextModel.interaction.userId &&
+    previousModel.layout.isGroupedWithPrevious ===
+      nextModel.layout.isGroupedWithPrevious &&
+    previousModel.layout.isGroupedWithNext ===
+      nextModel.layout.isGroupedWithNext &&
+    previousModel.layout.isFirstVisibleMessage ===
+      nextModel.layout.isFirstVisibleMessage &&
+    previousModel.layout.hasDateSeparatorBefore ===
+      nextModel.layout.hasDateSeparatorBefore &&
+    previousModel.interaction.isSelectionMode ===
+      nextModel.interaction.isSelectionMode &&
+    previousModel.interaction.isSelected === nextModel.interaction.isSelected &&
     previousHasOpenMenu === nextHasOpenMenu &&
     previousMenuOpen === nextMenuOpen &&
     previousMenuTransitionSource === nextMenuTransitionSource &&
-    previousModel.menuPlacement === nextModel.menuPlacement &&
-    previousModel.menuSideAnchor === nextModel.menuSideAnchor &&
-    previousModel.shouldAnimateMenuOpen === nextModel.shouldAnimateMenuOpen &&
-    previousModel.menuOffsetX === nextModel.menuOffsetX &&
-    previousModel.expandedMessageIds.has(messageId) ===
-      nextModel.expandedMessageIds.has(messageId) &&
+    previousModel.menu.placement === nextModel.menu.placement &&
+    previousModel.menu.sideAnchor === nextModel.menu.sideAnchor &&
+    previousModel.menu.shouldAnimateOpen === nextModel.menu.shouldAnimateOpen &&
+    previousModel.menu.offsetX === nextModel.menu.offsetX &&
+    previousModel.interaction.expandedMessageIds.has(messageId) ===
+      nextModel.interaction.expandedMessageIds.has(messageId) &&
     previousFlashingMessage === nextFlashingMessage &&
-    previousModel.isFlashHighlightVisible ===
-      nextModel.isFlashHighlightVisible &&
-    previousModel.searchMatchedMessageIds.has(messageId) ===
-      nextModel.searchMatchedMessageIds.has(messageId) &&
-    (previousModel.activeSearchMessageId === messageId) ===
-      (nextModel.activeSearchMessageId === messageId) &&
-    previousModel.maxMessageChars === nextModel.maxMessageChars &&
-    previousModel.captionMessage === nextModel.captionMessage &&
-    previousModel.groupedDocumentMessages ===
-      nextModel.groupedDocumentMessages &&
-    previousModel.groupedImageMessages === nextModel.groupedImageMessages &&
-    previousModel.normalizedSearchQuery === nextModel.normalizedSearchQuery &&
-    previousModel.pdfMessagePreview?.coverDataUrl ===
-      nextModel.pdfMessagePreview?.coverDataUrl &&
-    previousModel.pdfMessagePreview?.pageCount ===
-      nextModel.pdfMessagePreview?.pageCount
+    previousModel.interaction.isFlashHighlightVisible ===
+      nextModel.interaction.isFlashHighlightVisible &&
+    previousModel.interaction.searchMatchedMessageIds.has(messageId) ===
+      nextModel.interaction.searchMatchedMessageIds.has(messageId) &&
+    (previousModel.interaction.activeSearchMessageId === messageId) ===
+      (nextModel.interaction.activeSearchMessageId === messageId) &&
+    previousModel.interaction.maxMessageChars ===
+      nextModel.interaction.maxMessageChars &&
+    previousModel.content.captionMessage === nextModel.content.captionMessage &&
+    previousModel.content.groupedDocumentMessages ===
+      nextModel.content.groupedDocumentMessages &&
+    previousModel.content.groupedImageMessages ===
+      nextModel.content.groupedImageMessages &&
+    previousModel.content.normalizedSearchQuery ===
+      nextModel.content.normalizedSearchQuery &&
+    previousModel.content.pdfMessagePreview?.coverDataUrl ===
+      nextModel.content.pdfMessagePreview?.coverDataUrl &&
+    previousModel.content.pdfMessagePreview?.pageCount ===
+      nextModel.content.pdfMessagePreview?.pageCount
   );
 };

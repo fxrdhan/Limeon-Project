@@ -1,4 +1,3 @@
-import type { Dispatch, SetStateAction } from 'react';
 import { useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
@@ -12,9 +11,7 @@ import {
 
 interface UseChatImagePreviewSyncProps {
   currentChannelId: string | null;
-  setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
   isCurrentConversationScopeActive: () => boolean;
-  runInCurrentConversationScope: (effect: () => void) => boolean;
 }
 
 export const useChatImagePreviewSync = ({

@@ -166,68 +166,81 @@ const MessagesPaneContent = ({ model }: { model: MessagesPaneModel }) => {
                     <MessageItem
                       model={{
                         message: messageItem,
-                        resolvedMessageUrl:
-                          previews.getImageMessageUrl(messageItem),
-                        userId: state.user?.id,
-                        isGroupedWithPrevious,
-                        isGroupedWithNext,
-                        isFirstVisibleMessage: index === 0,
-                        hasDateSeparatorBefore: shouldRenderDateSeparator,
-                        isSelectionMode: interaction.isSelectionMode,
-                        isSelected: interaction.selectedMessageIds.has(
-                          messageItem.id
-                        ),
-                        openMenuMessageId: menu.openMessageId,
-                        menuPlacement: menu.placement,
-                        menuSideAnchor: menu.sideAnchor,
-                        shouldAnimateMenuOpen: menu.shouldAnimateOpen,
-                        menuTransitionSourceId: menu.transitionSourceId,
-                        menuOffsetX: menu.offsetX,
-                        expandedMessageIds: interaction.expandedMessageIds,
-                        flashingMessageId: interaction.flashingMessageId,
-                        isFlashHighlightVisible:
-                          interaction.isFlashHighlightVisible,
-                        searchMatchedMessageIds:
-                          interaction.searchMatchedMessageIds,
-                        activeSearchMessageId:
-                          interaction.activeSearchMessageId,
-                        maxMessageChars: MAX_MESSAGE_CHARS,
-                        messageBubbleRefs: refs.messageBubbleRefs,
-                        initialMessageAnimationKeysRef:
-                          refs.initialMessageAnimationKeysRef,
-                        initialOpenJumpAnimationKeysRef:
-                          refs.initialOpenJumpAnimationKeysRef,
-                        captionMessage: renderItem.captionMessage,
-                        groupedDocumentMessages:
-                          renderItem.kind === 'document-group'
-                            ? renderItem.messages
-                            : undefined,
-                        groupedImageMessages:
-                          renderItem.kind === 'image-group'
-                            ? renderItem.messages
-                            : undefined,
-                        pdfMessagePreview: previews.getPdfMessagePreview(
-                          messageItem,
-                          previews.getAttachmentFileName(messageItem)
-                        ),
-                        onToggleMessageSelection:
-                          interaction.onToggleMessageSelection,
-                        toggleMessageMenu: menu.toggle,
-                        handleToggleExpand: interaction.onToggleExpand,
-                        handleEditMessage: actions.handleEditMessage,
-                        handleCopyMessage: actions.handleCopyMessage,
-                        handleDownloadMessage: actions.handleDownloadMessage,
-                        handleOpenForwardMessagePicker:
-                          actions.handleOpenForwardMessagePicker,
-                        handleDeleteMessage: actions.handleDeleteMessage,
-                        getAttachmentFileName: previews.getAttachmentFileName,
-                        getAttachmentFileKind: previews.getAttachmentFileKind,
-                        getImageMessageUrl: previews.getImageMessageUrl,
-                        getPdfMessagePreview: previews.getPdfMessagePreview,
-                        normalizedSearchQuery: state.normalizedSearchQuery,
-                        openImageInPortal: previews.openImageInPortal,
-                        openImageGroupInPortal: previews.openImageGroupInPortal,
-                        openDocumentInPortal: previews.openDocumentInPortal,
+                        layout: {
+                          isGroupedWithPrevious,
+                          isGroupedWithNext,
+                          isFirstVisibleMessage: index === 0,
+                          hasDateSeparatorBefore: shouldRenderDateSeparator,
+                        },
+                        interaction: {
+                          userId: state.user?.id,
+                          isSelectionMode: interaction.isSelectionMode,
+                          isSelected: interaction.selectedMessageIds.has(
+                            messageItem.id
+                          ),
+                          expandedMessageIds: interaction.expandedMessageIds,
+                          flashingMessageId: interaction.flashingMessageId,
+                          isFlashHighlightVisible:
+                            interaction.isFlashHighlightVisible,
+                          searchMatchedMessageIds:
+                            interaction.searchMatchedMessageIds,
+                          activeSearchMessageId:
+                            interaction.activeSearchMessageId,
+                          maxMessageChars: MAX_MESSAGE_CHARS,
+                          onToggleMessageSelection:
+                            interaction.onToggleMessageSelection,
+                          handleToggleExpand: interaction.onToggleExpand,
+                        },
+                        menu: {
+                          openMessageId: menu.openMessageId,
+                          placement: menu.placement,
+                          sideAnchor: menu.sideAnchor,
+                          shouldAnimateOpen: menu.shouldAnimateOpen,
+                          transitionSourceId: menu.transitionSourceId,
+                          offsetX: menu.offsetX,
+                          toggle: menu.toggle,
+                        },
+                        refs: {
+                          messageBubbleRefs: refs.messageBubbleRefs,
+                          initialMessageAnimationKeysRef:
+                            refs.initialMessageAnimationKeysRef,
+                          initialOpenJumpAnimationKeysRef:
+                            refs.initialOpenJumpAnimationKeysRef,
+                        },
+                        content: {
+                          resolvedMessageUrl:
+                            previews.getImageMessageUrl(messageItem),
+                          captionMessage: renderItem.captionMessage,
+                          groupedDocumentMessages:
+                            renderItem.kind === 'document-group'
+                              ? renderItem.messages
+                              : undefined,
+                          groupedImageMessages:
+                            renderItem.kind === 'image-group'
+                              ? renderItem.messages
+                              : undefined,
+                          pdfMessagePreview: previews.getPdfMessagePreview(
+                            messageItem,
+                            previews.getAttachmentFileName(messageItem)
+                          ),
+                          getAttachmentFileName: previews.getAttachmentFileName,
+                          getAttachmentFileKind: previews.getAttachmentFileKind,
+                          getImageMessageUrl: previews.getImageMessageUrl,
+                          getPdfMessagePreview: previews.getPdfMessagePreview,
+                          normalizedSearchQuery: state.normalizedSearchQuery,
+                          openImageInPortal: previews.openImageInPortal,
+                          openImageGroupInPortal:
+                            previews.openImageGroupInPortal,
+                          openDocumentInPortal: previews.openDocumentInPortal,
+                        },
+                        actions: {
+                          handleEditMessage: actions.handleEditMessage,
+                          handleCopyMessage: actions.handleCopyMessage,
+                          handleDownloadMessage: actions.handleDownloadMessage,
+                          handleOpenForwardMessagePicker:
+                            actions.handleOpenForwardMessagePicker,
+                          handleDeleteMessage: actions.handleDeleteMessage,
+                        },
                       }}
                     />
                   </Fragment>

@@ -1,36 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useDocumentPreviewPortal } from './useDocumentPreviewPortal';
-import {
-  fetchChatFileBlobWithFallback,
-  fetchPdfBlobWithFallback,
-  getCachedResolvedChatAssetUrl,
-  isDirectChatAssetUrl,
-  resolveChatAssetUrl,
-} from '../utils/message-file';
-import type { ChatMessage } from '../data/chatSidebarGateway';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
+import { getRuntimeChannelImageAssetUrl } from '../utils/channel-image-asset-cache';
 import {
-  ensureChannelImageAssetUrl,
-  getRuntimeChannelImageAssetUrl,
-} from '../utils/channel-image-asset-cache';
-
-type PreviewableMessage = Pick<
-  ChatMessage,
-  'id' | 'message' | 'file_storage_path' | 'file_mime_type' | 'file_preview_url'
->;
-
-type PreviewableImageGroupMessage = Pick<
-  ChatMessage,
-  | 'id'
-  | 'message'
-  | 'file_storage_path'
-  | 'file_mime_type'
-  | 'file_name'
-  | 'file_preview_url'
-> & {
-  previewUrl?: string | null;
-};
+  getChatImagePreviewName,
+  resolveDocumentPreviewResource,
+  resolveImagePreviewResource as resolveChatImagePreviewResource,
+  resolveInitialImagePreviewUrl,
+  resolveInitialImageThumbnailUrl,
+  type PreviewableDocumentMessage,
+  type PreviewableImageGroupMessage,
+  type PreviewableMessage,
+} from '../utils/message-preview-assets';
 
 type ImagePreviewState = {
   backdropUrl: string | null;
@@ -50,121 +32,6 @@ type ImagePreviewIntrinsicDimensions = {
   width: number;
   height: number;
 };
-
-const getImagePreviewName = (
-  message: PreviewableImageGroupMessage,
-  fallbackIndex: number
-) => {
-  const explicitName = message.file_name?.trim();
-  if (explicitName) {
-    return explicitName;
-  }
-
-  const pathName = message.message.split('/').pop()?.split('?')[0]?.trim();
-  if (pathName) {
-    return pathName;
-  }
-
-  return `Gambar ${fallbackIndex + 1}`;
-};
-
-const resolveInitialImagePreviewUrl = (
-  message: PreviewableMessage,
-  currentChannelId: string | null,
-  preferredPreviewUrl?: string | null,
-  _preferredPreviewIntrinsicDimensions?: ImagePreviewIntrinsicDimensions | null
-) => {
-  const normalizedPreferredPreviewUrl = preferredPreviewUrl?.trim() || null;
-  if (
-    normalizedPreferredPreviewUrl &&
-    (normalizedPreferredPreviewUrl.startsWith('blob:') ||
-      normalizedPreferredPreviewUrl === message.message.trim())
-  ) {
-    return normalizedPreferredPreviewUrl;
-  }
-
-  const normalizedChannelId = currentChannelId?.trim() || null;
-  if (normalizedChannelId) {
-    const runtimeFullUrl = getRuntimeChannelImageAssetUrl(
-      normalizedChannelId,
-      message.id,
-      'full'
-    );
-    if (runtimeFullUrl) {
-      return runtimeFullUrl;
-    }
-  }
-
-  const persistedPreviewUrl = message.file_preview_url?.trim() || null;
-  const cachedResolvedPreviewUrl = persistedPreviewUrl
-    ? getCachedResolvedChatAssetUrl(persistedPreviewUrl, persistedPreviewUrl)
-    : null;
-  if (cachedResolvedPreviewUrl) {
-    return cachedResolvedPreviewUrl;
-  }
-
-  if (isDirectChatAssetUrl(message.message)) {
-    return message.message;
-  }
-
-  return null;
-};
-
-const resolveInitialImageThumbnailUrl = (
-  message: PreviewableMessage,
-  currentChannelId: string | null,
-  preferredPreviewUrl?: string | null
-) => {
-  const normalizedPreferredPreviewUrl = preferredPreviewUrl?.trim() || null;
-  if (
-    normalizedPreferredPreviewUrl &&
-    (normalizedPreferredPreviewUrl.startsWith('blob:') ||
-      normalizedPreferredPreviewUrl === message.message.trim())
-  ) {
-    return normalizedPreferredPreviewUrl;
-  }
-
-  const normalizedChannelId = currentChannelId?.trim() || null;
-  if (normalizedChannelId) {
-    const runtimeThumbnailUrl = getRuntimeChannelImageAssetUrl(
-      normalizedChannelId,
-      message.id,
-      'thumbnail'
-    );
-    if (runtimeThumbnailUrl) {
-      return runtimeThumbnailUrl;
-    }
-  }
-
-  const persistedPreviewUrl = message.file_preview_url?.trim() || null;
-  const cachedResolvedPreviewUrl = persistedPreviewUrl
-    ? getCachedResolvedChatAssetUrl(persistedPreviewUrl, persistedPreviewUrl)
-    : null;
-  if (cachedResolvedPreviewUrl) {
-    return cachedResolvedPreviewUrl;
-  }
-
-  if (persistedPreviewUrl && isDirectChatAssetUrl(persistedPreviewUrl)) {
-    return persistedPreviewUrl;
-  }
-
-  return resolveInitialImagePreviewUrl(
-    message,
-    currentChannelId,
-    normalizedPreferredPreviewUrl
-  );
-};
-
-const resolveInitialImageGroupThumbnailUrl = (
-  message: PreviewableMessage,
-  currentChannelId: string | null,
-  preferredPreviewUrl?: string | null
-) =>
-  resolveInitialImageThumbnailUrl(
-    message,
-    currentChannelId,
-    preferredPreviewUrl
-  );
 
 export const useMessagesPanePreviews = ({
   currentChannelId,
@@ -259,70 +126,11 @@ export const useMessagesPanePreviews = ({
   }, [releaseImageGroupPreviewObjectUrls]);
 
   const resolveImagePreviewResource = useCallback(
-    async (message: PreviewableMessage) => {
-      const normalizedChannelId = currentChannelId?.trim() || null;
-      if (normalizedChannelId) {
-        const cachedFullUrl = getRuntimeChannelImageAssetUrl(
-          normalizedChannelId,
-          message.id,
-          'full'
-        );
-        if (cachedFullUrl) {
-          return {
-            previewUrl: cachedFullUrl,
-            revokeOnClose: false,
-          };
-        }
-
-        return {
-          previewUrl: await ensureChannelImageAssetUrl(
-            normalizedChannelId,
-            {
-              ...message,
-              message_type: 'image',
-            },
-            'full'
-          ),
-          revokeOnClose: false,
-        };
-      }
-
-      let nextPreviewUrl: string | null = null;
-      let revokeOnClose = false;
-
-      try {
-        const signedUrl = await resolveChatAssetUrl(
-          message.message,
-          message.file_storage_path
-        );
-        if (signedUrl) {
-          nextPreviewUrl = signedUrl;
-        } else {
-          const imageBlob = await fetchChatFileBlobWithFallback(
-            message.message,
-            message.file_storage_path,
-            message.file_mime_type
-          );
-
-          if (imageBlob) {
-            nextPreviewUrl = URL.createObjectURL(imageBlob);
-            revokeOnClose = true;
-          }
-        }
-      } catch {
-        nextPreviewUrl = null;
-        revokeOnClose = false;
-      }
-
-      if (!nextPreviewUrl && isDirectChatAssetUrl(message.message)) {
-        nextPreviewUrl = message.message;
-      }
-
-      return {
-        previewUrl: nextPreviewUrl,
-        revokeOnClose,
-      };
-    },
+    async (message: PreviewableMessage) =>
+      await resolveChatImagePreviewResource({
+        currentChannelId,
+        message,
+      }),
     [currentChannelId]
   );
 
@@ -439,7 +247,7 @@ export const useMessagesPanePreviews = ({
         }
 
         imageGroupPreviewResolvedIdsRef.current.add(normalizedMessageId);
-        const previewName = getImagePreviewName(
+        const previewName = getChatImagePreviewName(
           imageGroupEntry.message,
           imageGroupEntry.index
         );
@@ -571,7 +379,7 @@ export const useMessagesPanePreviews = ({
       messages: PreviewableImageGroupMessage[],
       initialMessageId?: string | null,
       initialPreviewUrl?: string | null,
-      initialPreviewIntrinsicDimensions?: ImagePreviewIntrinsicDimensions | null
+      _initialPreviewIntrinsicDimensions?: ImagePreviewIntrinsicDimensions | null
     ) => {
       if (messages.length === 0) {
         return;
@@ -606,8 +414,7 @@ export const useMessagesPanePreviews = ({
         resolveInitialImagePreviewUrl(
           activePreviewMessage,
           currentChannelId,
-          initialPreviewUrl || activePreviewMessage.previewUrl || null,
-          initialPreviewIntrinsicDimensions
+          initialPreviewUrl || activePreviewMessage.previewUrl || null
         );
 
       if (activePreviewMessage && !seededActivePreviewUrl) {
@@ -639,7 +446,7 @@ export const useMessagesPanePreviews = ({
 
         return {
           id: message.id,
-          thumbnailUrl: resolveInitialImageGroupThumbnailUrl(
+          thumbnailUrl: resolveInitialImageThumbnailUrl(
             message,
             currentChannelId,
             preferredPreviewUrl
@@ -647,17 +454,14 @@ export const useMessagesPanePreviews = ({
           previewUrl: resolveInitialImagePreviewUrl(
             message,
             currentChannelId,
-            preferredPreviewUrl,
-            message.id === nextActivePreviewId
-              ? initialPreviewIntrinsicDimensions
-              : null
+            preferredPreviewUrl
           ),
           fullPreviewUrl:
             runtimeFullPreviewUrl ||
             (message.id === nextActivePreviewId
               ? seededActivePreviewUrl || null
               : null),
-          previewName: getImagePreviewName(message, index),
+          previewName: getChatImagePreviewName(message, index),
         };
       });
       setImageGroupPreviewItems(nextPreviewItems);
@@ -697,7 +501,7 @@ export const useMessagesPanePreviews = ({
 
   const openDocumentInPortal = useCallback(
     async (
-      message: Pick<ChatMessage, 'message' | 'file_storage_path'>,
+      message: PreviewableDocumentMessage,
       previewName: string,
       forcePdfMime = false
     ) => {
@@ -708,64 +512,20 @@ export const useMessagesPanePreviews = ({
         await openDocumentPreview({
           previewName,
           resolvePreviewUrl: async () => {
-            if (!forcePdfMime && isDirectChatAssetUrl(message.message)) {
-              return {
-                previewUrl: message.message,
-                revokeOnClose: false,
-              };
+            const resolvedPreviewResource =
+              await resolveDocumentPreviewResource({
+                forcePdfMime,
+                message,
+              });
+
+            if (!resolvedPreviewResource.previewUrl) {
+              throw new Error('Document preview is unavailable');
             }
 
-            const resolvedAssetUrl = await resolveChatAssetUrl(
-              message.message,
-              message.file_storage_path
-            );
-            if (resolvedAssetUrl) {
-              return {
-                previewUrl: resolvedAssetUrl,
-                revokeOnClose: false,
-              };
-            }
-
-            if (!forcePdfMime) {
-              try {
-                const fileBlob = await fetchChatFileBlobWithFallback(
-                  message.message,
-                  message.file_storage_path
-                );
-                if (fileBlob) {
-                  return {
-                    previewUrl: URL.createObjectURL(fileBlob),
-                    revokeOnClose: true,
-                  };
-                }
-              } catch {
-                // Fall back to PDF/blob checks below.
-              }
-            }
-
-            try {
-              const pdfBlob = await fetchPdfBlobWithFallback(
-                message.message,
-                message.file_storage_path
-              );
-              if (pdfBlob) {
-                return {
-                  previewUrl: URL.createObjectURL(pdfBlob),
-                  revokeOnClose: true,
-                };
-              }
-            } catch {
-              // Fall back to a direct URL only when the payload is already usable.
-            }
-
-            if (isDirectChatAssetUrl(message.message)) {
-              return {
-                previewUrl: message.message,
-                revokeOnClose: false,
-              };
-            }
-
-            throw new Error('Document preview is unavailable');
+            return {
+              previewUrl: resolvedPreviewResource.previewUrl,
+              revokeOnClose: resolvedPreviewResource.revokeOnClose,
+            };
           },
         });
       } catch {

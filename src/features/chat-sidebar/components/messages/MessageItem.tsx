@@ -17,47 +17,53 @@ import { getMessageMenuClasses } from './messageItemUtils';
 import { areMessageItemPropsEqual } from './messageItemMemo';
 import { buildMessageItemDerivations } from './messageItemDerivations';
 
-export interface MessageItemModel {
-  message: ChatMessage;
-  resolvedMessageUrl: string | null;
-  userId?: string;
+export interface MessageItemLayoutModel {
   isGroupedWithPrevious: boolean;
   isGroupedWithNext: boolean;
   isFirstVisibleMessage: boolean;
   hasDateSeparatorBefore?: boolean;
+}
+
+export interface MessageItemInteractionModel {
+  userId?: string;
   isSelectionMode: boolean;
   isSelected: boolean;
-  openMenuMessageId: string | null;
-  menuPlacement: MenuPlacement;
-  menuSideAnchor: MenuSideAnchor;
-  shouldAnimateMenuOpen: boolean;
-  menuTransitionSourceId: string | null;
-  menuOffsetX: number;
   expandedMessageIds: Set<string>;
   flashingMessageId: string | null;
   isFlashHighlightVisible: boolean;
   searchMatchedMessageIds: Set<string>;
   activeSearchMessageId: string | null;
   maxMessageChars: number;
-  messageBubbleRefs: MutableRefObject<Map<string, HTMLDivElement>>;
-  initialMessageAnimationKeysRef: MutableRefObject<Set<string>>;
-  initialOpenJumpAnimationKeysRef: MutableRefObject<Set<string>>;
-  captionMessage?: ChatMessage;
-  groupedDocumentMessages?: ChatMessage[];
-  groupedImageMessages?: ChatMessage[];
-  pdfMessagePreview?: PdfMessagePreview;
   onToggleMessageSelection: (messageId: string) => void;
-  toggleMessageMenu: (
+  handleToggleExpand: (messageId: string) => void;
+}
+
+export interface MessageItemMenuModel {
+  openMessageId: string | null;
+  placement: MenuPlacement;
+  sideAnchor: MenuSideAnchor;
+  shouldAnimateOpen: boolean;
+  transitionSourceId: string | null;
+  offsetX: number;
+  toggle: (
     anchor: HTMLElement,
     messageId: string,
     preferredSide: 'left' | 'right'
   ) => void;
-  handleToggleExpand: (messageId: string) => void;
-  handleEditMessage: (targetMessage: ChatMessage) => void;
-  handleCopyMessage: (targetMessage: ChatMessage) => Promise<void>;
-  handleDownloadMessage: (targetMessage: ChatMessage) => Promise<void>;
-  handleOpenForwardMessagePicker: (targetMessage: ChatMessage) => void;
-  handleDeleteMessage: (targetMessage: ChatMessage) => Promise<boolean>;
+}
+
+export interface MessageItemRefsModel {
+  messageBubbleRefs: MutableRefObject<Map<string, HTMLDivElement>>;
+  initialMessageAnimationKeysRef: MutableRefObject<Set<string>>;
+  initialOpenJumpAnimationKeysRef: MutableRefObject<Set<string>>;
+}
+
+export interface MessageItemContentModel {
+  resolvedMessageUrl: string | null;
+  captionMessage?: ChatMessage;
+  groupedDocumentMessages?: ChatMessage[];
+  groupedImageMessages?: ChatMessage[];
+  pdfMessagePreview?: PdfMessagePreview;
   getAttachmentFileName: (targetMessage: ChatMessage) => string;
   getAttachmentFileKind: (
     targetMessage: ChatMessage
@@ -118,44 +124,65 @@ export interface MessageItemModel {
   ) => Promise<void>;
 }
 
+export interface MessageItemActionsModel {
+  handleEditMessage: (targetMessage: ChatMessage) => void;
+  handleCopyMessage: (targetMessage: ChatMessage) => Promise<void>;
+  handleDownloadMessage: (targetMessage: ChatMessage) => Promise<void>;
+  handleOpenForwardMessagePicker: (targetMessage: ChatMessage) => void;
+  handleDeleteMessage: (targetMessage: ChatMessage) => Promise<boolean>;
+}
+
+export interface MessageItemModel {
+  message: ChatMessage;
+  layout: MessageItemLayoutModel;
+  interaction: MessageItemInteractionModel;
+  menu: MessageItemMenuModel;
+  refs: MessageItemRefsModel;
+  content: MessageItemContentModel;
+  actions: MessageItemActionsModel;
+}
+
 const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
+  const { message, layout, interaction, menu, refs, content, actions } = model;
   const {
-    message,
-    resolvedMessageUrl,
-    userId,
     isGroupedWithPrevious,
     isGroupedWithNext,
     isFirstVisibleMessage,
     hasDateSeparatorBefore,
+  } = layout;
+  const {
+    userId,
     isSelectionMode,
     isSelected,
-    openMenuMessageId,
-    menuPlacement,
-    menuSideAnchor,
-    shouldAnimateMenuOpen,
-    menuTransitionSourceId,
-    menuOffsetX,
     expandedMessageIds,
     flashingMessageId,
     isFlashHighlightVisible,
     searchMatchedMessageIds,
     activeSearchMessageId,
     maxMessageChars,
+    onToggleMessageSelection,
+    handleToggleExpand,
+  } = interaction;
+  const {
+    openMessageId,
+    placement,
+    sideAnchor,
+    shouldAnimateOpen,
+    transitionSourceId,
+    offsetX,
+    toggle,
+  } = menu;
+  const {
     messageBubbleRefs,
     initialMessageAnimationKeysRef,
     initialOpenJumpAnimationKeysRef,
+  } = refs;
+  const {
+    resolvedMessageUrl,
     captionMessage,
     groupedDocumentMessages,
     groupedImageMessages,
     pdfMessagePreview,
-    onToggleMessageSelection,
-    toggleMessageMenu,
-    handleToggleExpand,
-    handleEditMessage,
-    handleCopyMessage,
-    handleDownloadMessage,
-    handleOpenForwardMessagePicker,
-    handleDeleteMessage,
     getAttachmentFileName,
     getAttachmentFileKind,
     getImageMessageUrl,
@@ -164,7 +191,14 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
     openImageInPortal,
     openImageGroupInPortal,
     openDocumentInPortal,
-  } = model;
+  } = content;
+  const {
+    handleEditMessage,
+    handleCopyMessage,
+    handleDownloadMessage,
+    handleOpenForwardMessagePicker,
+    handleDeleteMessage,
+  } = actions;
   const isDocumentAttachmentGroup = (groupedDocumentMessages?.length ?? 0) > 1;
   const isImageAttachmentGroup = (groupedImageMessages?.length ?? 0) > 1;
   const isAttachmentGroup = isDocumentAttachmentGroup || isImageAttachmentGroup;
@@ -203,8 +237,8 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
     message,
     resolvedMessageUrl,
     userId,
-    openMenuMessageId,
-    menuTransitionSourceId,
+    openMenuMessageId: openMessageId,
+    menuTransitionSourceId: transitionSourceId,
     flashingMessageId,
     isFlashHighlightVisible,
     searchMatchedMessageIds,
@@ -251,8 +285,8 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
         damping: 24,
       };
   const { sidePlacementClass, sideArrowAnchorClass } = getMessageMenuClasses(
-    menuPlacement,
-    menuSideAnchor
+    placement,
+    sideAnchor
   );
   const rowSpacingClass =
     isFirstVisibleMessage || hasDateSeparatorBefore
@@ -323,12 +357,12 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
           captionMessage={captionMessage}
           isSelectionMode={isSelectionMode}
           isHighlightedBubble={isFlashingTarget}
-          openMenuMessageId={openMenuMessageId}
-          menuPlacement={menuPlacement}
-          menuSideAnchor={menuSideAnchor}
-          menuOffsetX={menuOffsetX}
-          shouldAnimateMenuOpen={shouldAnimateMenuOpen}
-          toggleMessageMenu={toggleMessageMenu}
+          openMenuMessageId={openMessageId}
+          menuPlacement={placement}
+          menuSideAnchor={sideAnchor}
+          menuOffsetX={offsetX}
+          shouldAnimateMenuOpen={shouldAnimateOpen}
+          toggleMessageMenu={toggle}
           getImageMessageUrl={getImageMessageUrl}
           openImageGroupInPortal={openImageGroupInPortal}
           handleCopyMessage={handleCopyMessage}
@@ -342,12 +376,12 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
           userId={userId}
           captionMessage={captionMessage}
           isHighlightedBubble={isFlashingTarget}
-          openMenuMessageId={openMenuMessageId}
-          menuPlacement={menuPlacement}
-          menuSideAnchor={menuSideAnchor}
-          menuOffsetX={menuOffsetX}
-          shouldAnimateMenuOpen={shouldAnimateMenuOpen}
-          toggleMessageMenu={toggleMessageMenu}
+          openMenuMessageId={openMessageId}
+          menuPlacement={placement}
+          menuSideAnchor={sideAnchor}
+          menuOffsetX={offsetX}
+          shouldAnimateMenuOpen={shouldAnimateOpen}
+          toggleMessageMenu={toggle}
           getAttachmentFileName={getAttachmentFileName}
           getPdfMessagePreview={getPdfMessagePreview}
           openImageInPortal={openImageInPortal}
@@ -414,8 +448,8 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
         isMenuOpen ? 'z-10' : isMenuTransitionSource ? 'z-[9]' : 'z-0'
       } ${
         !isSelectionMode &&
-        openMenuMessageId &&
-        !bubbleMessageIds.includes(openMenuMessageId)
+        openMessageId &&
+        !bubbleMessageIds.includes(openMessageId)
           ? 'blur-[2px] brightness-95'
           : ''
       } ${isSelectionMode ? 'group cursor-pointer' : ''}`}
@@ -456,7 +490,7 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
               onClick={event => {
                 if (isSelectionMode) return;
                 event.stopPropagation();
-                toggleMessageMenu(
+                toggle(
                   event.currentTarget,
                   message.id,
                   isCurrentUser ? 'left' : 'right'
@@ -471,7 +505,7 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
                     onToggleMessageSelection(message.id);
                     return;
                   }
-                  toggleMessageMenu(
+                  toggle(
                     event.currentTarget,
                     message.id,
                     isCurrentUser ? 'left' : 'right'
@@ -487,9 +521,9 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
             <MessageActionPopover
               isOpen={!isSelectionMode && isMenuOpen}
               menuId={message.id}
-              shouldAnimateMenuOpen={shouldAnimateMenuOpen}
-              menuPlacement={menuPlacement}
-              menuOffsetX={menuOffsetX}
+              shouldAnimateMenuOpen={shouldAnimateOpen}
+              menuPlacement={placement}
+              menuOffsetX={offsetX}
               sidePlacementClass={sidePlacementClass}
               sideArrowAnchorClass={sideArrowAnchorClass}
               actions={menuActions}
