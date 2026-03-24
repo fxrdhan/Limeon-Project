@@ -5,62 +5,135 @@ import type {
   ChatMessageType,
   UserPresence,
 } from './types';
+import { invariantChatContract } from './contractErrors';
 
-const DEFAULT_TIMESTAMP = '1970-01-01T00:00:00.000Z';
+const getRequiredNonEmptyString = (
+  value: string | null | undefined,
+  fieldName: string
+): string => {
+  invariantChatContract(
+    typeof value === 'string' && value.trim().length > 0,
+    `Chat contract violation: ${fieldName} is required.`
+  );
 
-const normalizeTimestamp = (
+  return value;
+};
+
+const getRequiredString = (
+  value: string | null | undefined,
+  fieldName: string
+): string => {
+  invariantChatContract(
+    typeof value === 'string',
+    `Chat contract violation: ${fieldName} must be a string.`
+  );
+
+  return value;
+};
+
+const getRequiredTimestamp = (
+  fieldName: string,
   ...candidates: Array<string | null | undefined>
-) => {
-  for (const candidate of candidates) {
-    if (typeof candidate === 'string' && candidate.trim().length > 0) {
-      return candidate;
-    }
-  }
+): string => {
+  const timestampCandidate = candidates.find(
+    candidate => typeof candidate === 'string' && candidate.trim().length > 0
+  );
 
-  return DEFAULT_TIMESTAMP;
+  invariantChatContract(
+    timestampCandidate,
+    `Chat contract violation: ${fieldName} is required.`
+  );
+
+  return timestampCandidate;
 };
 
 const normalizeChatMessageType = (
   value: string | null | undefined
 ): ChatMessageType => {
-  if (value === 'image' || value === 'file') {
+  if (value === 'text' || value === 'image' || value === 'file') {
     return value;
   }
 
-  return 'text';
+  invariantChatContract(
+    false,
+    'Chat contract violation: message_type must be text, image, or file.'
+  );
 };
 
 const normalizeChatMessageRelationKind = (
   value: string | null | undefined
 ): ChatMessageRelationKind | null => {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
   if (value === 'attachment_caption') {
     return value;
   }
 
-  return null;
+  invariantChatContract(
+    false,
+    'Chat contract violation: message_relation_kind is invalid.'
+  );
+};
+
+const normalizeChatFileKind = (value: string | null | undefined) => {
+  if (value === null || value === undefined) {
+    return undefined;
+  }
+
+  if (value === 'audio' || value === 'document') {
+    return value;
+  }
+
+  invariantChatContract(
+    false,
+    'Chat contract violation: file_kind is invalid.'
+  );
+};
+
+const normalizeChatPreviewStatus = (value: string | null | undefined) => {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  if (value === 'pending' || value === 'ready' || value === 'failed') {
+    return value;
+  }
+
+  invariantChatContract(
+    false,
+    'Chat contract violation: file_preview_status is invalid.'
+  );
 };
 
 export const normalizeChatMessage = (
   message: Partial<ChatMessageRow> | null | undefined
 ): ChatMessage | null => {
-  if (!message?.id) {
+  if (message === null || message === undefined) {
     return null;
   }
 
-  const normalizedCreatedAt = normalizeTimestamp(
+  const normalizedCreatedAt = getRequiredTimestamp(
+    'created_at',
     message.created_at,
     message.updated_at
   );
+  const normalizedUpdatedAt = getRequiredTimestamp(
+    'updated_at',
+    message.updated_at,
+    normalizedCreatedAt
+  );
 
   return {
-    id: message.id,
-    sender_id: message.sender_id ?? '',
-    receiver_id: message.receiver_id ?? '',
-    channel_id: message.channel_id ?? '',
-    message: message.message ?? '',
+    id: getRequiredNonEmptyString(message.id, 'id'),
+    sender_id: getRequiredNonEmptyString(message.sender_id, 'sender_id'),
+    receiver_id: getRequiredNonEmptyString(message.receiver_id, 'receiver_id'),
+    channel_id: getRequiredNonEmptyString(message.channel_id, 'channel_id'),
+    message: getRequiredString(message.message, 'message'),
     reply_to_id: message.reply_to_id ?? null,
     created_at: normalizedCreatedAt,
-    updated_at: normalizeTimestamp(message.updated_at, normalizedCreatedAt),
+    updated_at: normalizedUpdatedAt,
     is_read: Boolean(message.is_read),
     is_delivered:
       typeof message.is_delivered === 'boolean' ? message.is_delivered : false,
@@ -69,10 +142,7 @@ export const normalizeChatMessage = (
       message.message_relation_kind
     ),
     file_name: message.file_name ?? null,
-    file_kind:
-      message.file_kind === 'audio' || message.file_kind === 'document'
-        ? message.file_kind
-        : undefined,
+    file_kind: normalizeChatFileKind(message.file_kind),
     file_mime_type: message.file_mime_type ?? null,
     file_size: typeof message.file_size === 'number' ? message.file_size : null,
     file_storage_path: message.file_storage_path ?? null,
@@ -81,12 +151,9 @@ export const normalizeChatMessage = (
       typeof message.file_preview_page_count === 'number'
         ? message.file_preview_page_count
         : null,
-    file_preview_status:
-      message.file_preview_status === 'pending' ||
-      message.file_preview_status === 'ready' ||
-      message.file_preview_status === 'failed'
-        ? message.file_preview_status
-        : null,
+    file_preview_status: normalizeChatPreviewStatus(
+      message.file_preview_status
+    ),
     file_preview_error: message.file_preview_error ?? null,
     shared_link_slug: message.shared_link_slug ?? null,
   };
@@ -95,10 +162,18 @@ export const normalizeChatMessage = (
 export const normalizeChatMessages = (
   messages: Array<Partial<ChatMessageRow>> | null | undefined
 ) =>
-  (messages ?? []).flatMap(message => {
-    const normalizedMessage = normalizeChatMessage(message);
-    return normalizedMessage ? [normalizedMessage] : [];
-  });
+  (messages ?? [])
+    .map((message, messageIndex) => {
+      invariantChatContract(
+        message !== null && message !== undefined,
+        `Chat contract violation: messages[${messageIndex}] is required.`
+      );
+
+      return normalizeChatMessage(message);
+    })
+    .flatMap(normalizedMessage =>
+      normalizedMessage ? [normalizedMessage] : []
+    );
 
 export const normalizeRealtimeChatMessage = (
   message: Partial<ChatMessageRow> | null | undefined
@@ -116,15 +191,19 @@ export const extractRealtimeChatMessageId = (
 export const normalizeUserPresence = (
   presence: Partial<UserPresenceRow> | null | undefined
 ): UserPresence | null => {
-  if (!presence?.user_id) {
+  if (presence === null || presence === undefined) {
     return null;
   }
 
   return {
-    id: presence.id ?? '',
-    user_id: presence.user_id,
+    id: getRequiredNonEmptyString(presence.id, 'presence.id'),
+    user_id: getRequiredNonEmptyString(presence.user_id, 'presence.user_id'),
     is_online: Boolean(presence.is_online),
-    last_seen: normalizeTimestamp(presence.last_seen, presence.updated_at),
+    last_seen: getRequiredTimestamp(
+      'presence.last_seen',
+      presence.last_seen,
+      presence.updated_at
+    ),
     last_chat_opened: presence.last_chat_opened ?? null,
     updated_at: presence.updated_at ?? null,
   };
@@ -133,7 +212,12 @@ export const normalizeUserPresence = (
 export const normalizeUserPresenceList = (
   presences: Array<Partial<UserPresenceRow>> | null | undefined
 ) =>
-  (presences ?? []).flatMap(presence => {
+  (presences ?? []).flatMap((presence, presenceIndex) => {
+    invariantChatContract(
+      presence !== null && presence !== undefined,
+      `Chat contract violation: presences[${presenceIndex}] is required.`
+    );
+
     const normalizedPresence = normalizeUserPresence(presence);
     return normalizedPresence ? [normalizedPresence] : [];
   });

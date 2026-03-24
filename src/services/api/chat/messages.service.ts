@@ -27,6 +27,7 @@ import {
   buildUpdateChatFilePreviewMetadataRpcArgs,
   CHAT_RPC_NAMES,
 } from './rpc-contract';
+import { toChatServiceError } from './contractErrors';
 import { normalizeChatMessage, normalizeChatMessages } from './normalizers';
 
 export const chatMessagesService = {
@@ -46,7 +47,7 @@ export const chatMessagesService = {
         error: null,
       };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toChatServiceError(error) };
     }
   },
 
@@ -87,7 +88,7 @@ export const chatMessagesService = {
         error: null,
       };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toChatServiceError(error) };
     }
   },
 
@@ -133,7 +134,7 @@ export const chatMessagesService = {
         error: null,
       };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toChatServiceError(error) };
     }
   },
 
@@ -154,7 +155,7 @@ export const chatMessagesService = {
 
       return { data: normalizeChatMessages(data || []), error: null };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toChatServiceError(error) };
     }
   },
 
@@ -173,7 +174,7 @@ export const chatMessagesService = {
 
       return { data: normalizeChatMessage(data), error: null };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toChatServiceError(error) };
     }
   },
 
@@ -193,7 +194,7 @@ export const chatMessagesService = {
 
       return { data: normalizeChatMessage(data), error: null };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toChatServiceError(error) };
     }
   },
 
@@ -213,7 +214,7 @@ export const chatMessagesService = {
 
       return { data: normalizeChatMessage(data), error: null };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toChatServiceError(error) };
     }
   },
 
@@ -234,7 +235,7 @@ export const chatMessagesService = {
 
       return { data: normalizeChatMessages(data || []), error: null };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toChatServiceError(error) };
     }
   },
 
@@ -255,7 +256,7 @@ export const chatMessagesService = {
 
       return { data: normalizeChatMessages(data || []), error: null };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toChatServiceError(error) };
     }
   },
 

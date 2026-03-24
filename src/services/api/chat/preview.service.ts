@@ -6,6 +6,7 @@ import type {
   PersistChatPdfPreviewResponse,
   PersistChatPdfPreviewResult,
 } from './types';
+import { toChatServiceError } from './contractErrors';
 import { normalizeChatMessage } from './normalizers';
 
 export const chatPreviewService = {
@@ -35,7 +36,7 @@ export const chatPreviewService = {
         error: null,
       };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toChatServiceError(error) };
     }
   },
 };

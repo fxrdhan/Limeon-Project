@@ -150,6 +150,27 @@ describe('chatService', () => {
     });
   });
 
+  it('surfaces malformed chat message payloads instead of inventing defaults', async () => {
+    mockRpc.mockResolvedValueOnce({
+      data: buildRpcMessage({
+        sender_id: null,
+      }),
+      error: null,
+    });
+
+    const { chatService } = await import('./chat.service');
+
+    const result = await chatService.getMessageById('message-1');
+
+    expect(result.data).toBeNull();
+    expect(result.error).toEqual(
+      expect.objectContaining({
+        code: 'CHAT_CONTRACT_INVALID',
+        message: 'Chat contract violation: sender_id is required.',
+      })
+    );
+  });
+
   it('fetches conversation pages through the deterministic pagination rpc', async () => {
     const rpcMessages = [
       buildRpcMessage({
@@ -471,6 +492,29 @@ describe('chatService', () => {
       data: presence,
       error: null,
     });
+  });
+
+  it('surfaces malformed presence payloads instead of inventing ids or timestamps', async () => {
+    mockRpc.mockResolvedValueOnce({
+      data: buildRpcPresence({
+        id: null,
+        last_seen: null,
+        updated_at: null,
+      }),
+      error: null,
+    });
+
+    const { chatService } = await import('./chat.service');
+
+    const result = await chatService.getUserPresence('user-a');
+
+    expect(result.data).toBeNull();
+    expect(result.error).toEqual(
+      expect.objectContaining({
+        code: 'CHAT_CONTRACT_INVALID',
+        message: 'Chat contract violation: presence.id is required.',
+      })
+    );
   });
 
   it('pages undelivered incoming message ids through the dedicated rpc', async () => {

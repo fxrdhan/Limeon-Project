@@ -1,5 +1,4 @@
 import { supabase, supabaseAnonKey, supabaseUrl } from '@/lib/supabase';
-import type { PostgrestError } from '@supabase/supabase-js';
 import type { ServiceResponse } from '../base.service';
 import type {
   PresenceSyncResult,
@@ -17,6 +16,7 @@ import {
   normalizeUserPresence,
   normalizeUserPresenceList,
 } from './normalizers';
+import { toChatServiceError } from './contractErrors';
 
 const USER_PRESENCE_EXIT_RPC = CHAT_RPC_NAMES.syncUserPresenceOnExit;
 
@@ -39,7 +39,7 @@ const syncUserPresenceExitRpc = async (
 
     return { data: normalizeUserPresence(data), error: null };
   } catch (error) {
-    return { data: null, error: error as PostgrestError };
+    return { data: null, error: toChatServiceError(error) };
   }
 };
 
@@ -59,7 +59,7 @@ export const chatPresenceService = {
 
       return { data: normalizeUserPresence(data), error: null };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toChatServiceError(error) };
     }
   },
 
@@ -79,7 +79,7 @@ export const chatPresenceService = {
 
       return { data: normalizeUserPresence(data), error: null };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toChatServiceError(error) };
     }
   },
 
@@ -128,7 +128,7 @@ export const chatPresenceService = {
 
       return { data: normalizeUserPresenceList(data || []), error: null };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toChatServiceError(error) };
     }
   },
 
