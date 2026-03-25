@@ -155,7 +155,7 @@ Tanggung jawab:
 
 - state `messages`
 - state `loading`
-- fetch percakapan awal via `chatSidebarGateway.fetchConversationMessages()`
+- fetch percakapan awal via `chatSidebarMessagesGateway.fetchConversationMessages()`
 - mapping display name via `mapConversationMessagesForDisplay()`
 - optimistic-message reconciliation terhadap message `temp_*`
 - subscription realtime conversation channel `chat_<channelId>`
@@ -167,7 +167,8 @@ Tanggung jawab:
 
 Cache percakapan disimpan di shared module cache:
 
-- `sharedConversationCache: Map<string, ConversationCacheEntry>`
+- `chatRuntimeCache.conversation`
+- backing store: `conversationCacheStore: Map<string, ConversationCacheEntry>`
 
 Cache ini hidup lintas mount panel, tetap dibatasi TTL dan max entries.
 
@@ -190,7 +191,8 @@ Tanggung jawab:
 
 - subscribe incoming inserts untuk delivery receipt via channel `incoming_messages_<userId>`
 - berjalan di level `useChatSidebarHost()` melalui `useChatRuntime()`, tidak bergantung pada chat sidebar sedang open
-- mark incoming message sebagai delivered via RPC per-ID
+- queue batch delivery receipt dan backfill `list_undelivered_incoming_message_ids`
+  saat channel subscribe berhasil
 
 ### 5.4.a `useChatSidebarHost`
 
@@ -222,6 +224,17 @@ Tanggung jawab:
 - menjadi boundary tunggal untuk runtime cache chat, cache image asset runtime, dan persistence preview PDF
 - dipakai oleh `useChatRuntime()`, `useMessagePdfPreviews()`, dan logout cleanup agar hook tingkat atas tidak perlu mengimpor beberapa singleton runtime terpisah
 
+### 5.4.d `useChatRuntimeReadReceipts`
+
+File: `src/features/chat-sidebar/hooks/useChatRuntimeReadReceipts.ts`
+
+Tanggung jawab:
+
+- flush antrean read receipt lintas conversation dari `chatRuntimeCache.readReceipts`
+- kirim batch ke RPC `mark_chat_message_ids_as_read`
+- retry otomatis bila sinkronisasi gagal
+- kirim keepalive saat tab hidden / page unload agar receipt tidak mudah hilang saat user keluar halaman
+
 ### 5.5 `useChatSessionReceipts`
 
 File: `src/features/chat-sidebar/hooks/useChatSessionReceipts.ts`
@@ -229,10 +242,11 @@ File: `src/features/chat-sidebar/hooks/useChatSessionReceipts.ts`
 Tanggung jawab:
 
 - merge update receipt ke `messages`
-- dedup concurrent delivery/read update by message id
-- memanggil RPC:
-  - `mark_chat_message_ids_as_delivered`
-  - `mark_chat_message_ids_as_read`
+- queue delivery receipt via `useChatReceiptMutationQueue()`
+- optimistic mark read ke state lokal dan enqueue message id ke runtime read-receipt queue
+- RPC yang dipakai:
+  - `mark_chat_message_ids_as_delivered` langsung dari queue delivery
+  - `mark_chat_message_ids_as_read` diflush terpisah oleh `useChatRuntimeReadReceipts()`
 
 ### 5.6 `useChatComposer`
 
@@ -260,6 +274,8 @@ Tanggung jawab:
 
 - state attach modal
 - state `pendingComposerAttachments`
+- persist draft attachment per-channel via IndexedDB
+- prune persisted draft attachment yang stale atau melewati byte budget saat hydrate/save
 - image preview composer
 - replace existing attachment
 - render preview cover PDF untuk attachment lokal
@@ -298,6 +314,7 @@ File: `src/features/chat-sidebar/hooks/useChatComposerSend.ts`
 
 Tanggung jawab:
 
+- own send-plan untuk text, attachment-link, dan queued attachment draft
 - optimistic send untuk:
   - text
   - image
@@ -306,13 +323,22 @@ Tanggung jawab:
 - create message row di `chat_messages`
 - generate dan upload preview PNG untuk PDF
 - create caption text message untuk attachment bila ada caption
+- clear persisted attachment draft setelah attachment send berhasil, sementara restore gagal tetap menulis ulang draft queue dari state composer
+
+Boundary internal:
+
+- `useChatComposerSend()` sekarang menentukan kapan text dikirim sendiri, kapan caption ditempel ke attachment terakhir, dan kapan draft attachment harus dipulihkan
+- `useChatAttachmentSend()` menjadi boundary tunggal untuk mengirim satu attachment image/file ke thread optimistic + persistence pipeline
 
 Temp id pattern yang dipakai:
 
-- text: `temp_<timestamp>`
-- image: `temp_image_<timestamp>`
-- file: `temp_file_<timestamp>`
-- caption attachment: `temp_caption_<timestamp>`
+- text: `temp_<runtime-id>`
+- image: `temp_image_<runtime-id>`
+- file: `temp_file_<runtime-id>`
+- caption attachment: `temp_caption_<runtime-id>`
+
+`runtime-id` saat ini dibuat oleh `createRuntimeId(prefix)` dan biasanya berbasis
+`crypto.randomUUID()` bila tersedia.
 
 ### 5.10 `useChatInteractionModes`
 
@@ -454,12 +480,20 @@ File:
 
 Gateway dipisah jadi dua boundary:
 
-- `chatSidebarGateway`
+- `chatSidebarMessagesGateway`
   - message RPC
-  - presence RPC
-  - cleanup / Edge Function bridge
+- `chatSidebarDirectoryGateway`
   - directory RPC
-  - forward / share / remote asset / PDF compress bridge
+- `chatSidebarCleanupGateway`
+  - cleanup / Edge Function bridge
+- `chatSidebarForwardGateway`
+  - forward bridge
+- `chatSidebarPresenceGateway`
+  - presence RPC
+- `chatSidebarAttachmentGateway`
+  - remote asset fetch + PDF compress bridge
+- `chatSidebarShareGateway`
+  - shared-link bridge
 - `chatSidebarAssetsGateway`
   - upload image
   - upload document / audio
@@ -514,10 +548,10 @@ Konstanta storage:
 
 Path builder:
 
-- image: `images/<safeChannelId>/<senderId>_<timestamp>.<ext>`
+- image: `images/<safeChannelId>/<senderId>_image_<runtime-id>.<ext>`
 - file:
-  - `audio/<safeChannelId>/<senderId>_<timestamp>.<ext>`
-  - `documents/<safeChannelId>/<senderId>_<timestamp>.<ext>`
+  - `audio/<safeChannelId>/<senderId>_audio_<runtime-id>.<ext>`
+  - `documents/<safeChannelId>/<senderId>_document_<runtime-id>.<ext>`
 
 PDF preview path:
 
@@ -679,7 +713,8 @@ Runtime:
 
 1. `useChatSession` fetch page percakapan via RPC `fetch_chat_messages_page`.
 2. Row dimap ke display form (`sender_name`, `receiver_name`).
-3. Message incoming yang belum delivered ditandai delivered via RPC per-ID.
+3. Message incoming yang belum delivered diantrikan ke queue delivery runtime,
+   lalu dikirim batch via `mark_chat_message_ids_as_delivered`.
 
 ### 11.2 Text send
 
@@ -717,7 +752,10 @@ Runtime:
 ### 11.6 Read receipt
 
 - `useChatViewport` menghitung bubble incoming yang terlihat di viewport.
-- Bubble incoming yang visible dan unread dikirim ke RPC `mark_chat_message_ids_as_read`.
+- `useChatSessionReceipts` menandai bubble itu sebagai read di state lokal dan
+  mengantrekan message id ke `chatRuntimeCache.readReceipts`.
+- `useChatRuntimeReadReceipts` mengirim batch antrean itu ke RPC
+  `mark_chat_message_ids_as_read`, termasuk keepalive saat tab hidden / unload.
 
 ## 12) Search and Selection Rules
 

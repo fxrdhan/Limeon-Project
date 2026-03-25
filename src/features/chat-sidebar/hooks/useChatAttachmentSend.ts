@@ -22,11 +22,13 @@ import { buildPdfMessagePreviewCacheKey } from '../utils/pdf-message-preview';
 import { sendAttachmentThread } from '../utils/attachment-thread-flow';
 import type {
   ChatSidebarPanelTargetUser,
+  PendingComposerAttachment,
   PendingComposerFile,
   PendingSendRegistration,
 } from '../types';
 import { useChatImagePreviewSync } from './useChatImagePreviewSync';
 import { useChatPdfPreviewSync } from './useChatPdfPreviewSync';
+import type { AttachmentComposerRemoteFile } from '../utils/composer-attachment-link';
 
 interface ChatAttachmentMutationScope {
   conversationScopeKey: string | null;
@@ -53,6 +55,11 @@ interface UseChatAttachmentSendProps {
   registerPendingSend: (tempMessageId: string) => PendingSendRegistration;
   mutationScope: ChatAttachmentMutationScope;
 }
+
+export type SendableComposerAttachment =
+  | AttachmentComposerRemoteFile
+  | PendingComposerAttachment
+  | PendingComposerFile;
 
 export const useChatAttachmentSend = ({
   user,
@@ -547,8 +554,21 @@ export const useChatAttachmentSend = ({
     ]
   );
 
+  const sendComposerAttachment = useCallback(
+    async (
+      attachment: SendableComposerAttachment,
+      captionText?: string
+    ): Promise<string | null> => {
+      if (attachment.fileKind === 'image') {
+        return sendImageMessage(attachment.file, captionText);
+      }
+
+      return sendFileMessage(attachment as PendingComposerFile, captionText);
+    },
+    [sendFileMessage, sendImageMessage]
+  );
+
   return {
-    sendImageMessage,
-    sendFileMessage,
+    sendComposerAttachment,
   };
 };

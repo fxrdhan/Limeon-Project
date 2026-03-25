@@ -4,11 +4,16 @@ import toast from 'react-hot-toast';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
 import { type ChatMessage } from '../data/chatSidebarGateway';
 import {
+  type AttachmentComposerRemoteFile,
   extractAttachmentComposerLinkFromMessageText,
   fetchAttachmentComposerRemoteFile,
 } from '../utils/composer-attachment-link';
 import { buildPendingFileComposerAttachment } from '../utils/pending-composer-attachment';
-import { useChatAttachmentSend } from './useChatAttachmentSend';
+import { clearPersistedComposerDraftAttachments } from '../utils/composer-draft-persistence';
+import {
+  useChatAttachmentSend,
+  type SendableComposerAttachment,
+} from './useChatAttachmentSend';
 import { sendTextChatMessage } from '../utils/text-message-send';
 import type {
   ChatSidebarPanelTargetUser,
@@ -50,6 +55,49 @@ interface UseChatComposerSendProps {
   mutationScope: ChatComposerSendMutationScope;
 }
 
+const buildRemoteComposerAttachment = (
+  attachmentRemoteFile: AttachmentComposerRemoteFile
+): SendableComposerAttachment => {
+  if (attachmentRemoteFile.fileKind === 'image') {
+    return attachmentRemoteFile;
+  }
+
+  const pendingAttachment = buildPendingFileComposerAttachment(
+    attachmentRemoteFile.file,
+    'document'
+  );
+
+  return {
+    file: pendingAttachment.file,
+    fileName: pendingAttachment.fileName,
+    fileTypeLabel: pendingAttachment.fileTypeLabel,
+    fileKind: 'document' as const,
+    mimeType: pendingAttachment.mimeType,
+    pdfCoverUrl: pendingAttachment.pdfCoverUrl,
+    pdfPageCount: pendingAttachment.pdfPageCount,
+  };
+};
+
+const buildPendingAttachmentSendPlan = (
+  attachments: PendingComposerAttachment[],
+  messageText: string
+) => {
+  const shouldAttachCaption =
+    attachments.length > 0 && messageText.trim().length > 0;
+  const lastAttachmentIndex = attachments.length - 1;
+
+  return {
+    shouldAttachCaption,
+    jobs: attachments.map((attachment, attachmentIndex) => ({
+      attachment,
+      captionText:
+        shouldAttachCaption && attachmentIndex === lastAttachmentIndex
+          ? messageText
+          : undefined,
+    })),
+  };
+};
+
 export const useChatComposerSend = ({
   user,
   targetUser,
@@ -74,7 +122,7 @@ export const useChatComposerSend = ({
     reconcileCurrentConversationMessages,
     runInCurrentConversationScope,
   } = mutationScope;
-  const { sendImageMessage, sendFileMessage } = useChatAttachmentSend({
+  const { sendComposerAttachment } = useChatAttachmentSend({
     user,
     targetUser,
     currentChannelId,
@@ -143,27 +191,9 @@ export const useChatComposerSend = ({
           return false;
         }
 
-        const didSend =
-          attachmentRemoteFile.fileKind === 'image'
-            ? await sendImageMessage(attachmentRemoteFile.file)
-            : await sendFileMessage(
-                (() => {
-                  const pendingAttachment = buildPendingFileComposerAttachment(
-                    attachmentRemoteFile.file,
-                    'document'
-                  );
-
-                  return {
-                    file: pendingAttachment.file,
-                    fileName: pendingAttachment.fileName,
-                    fileTypeLabel: pendingAttachment.fileTypeLabel,
-                    fileKind: 'document' as const,
-                    mimeType: pendingAttachment.mimeType,
-                    pdfCoverUrl: pendingAttachment.pdfCoverUrl,
-                    pdfPageCount: pendingAttachment.pdfPageCount,
-                  };
-                })()
-              );
+        const didSend = await sendComposerAttachment(
+          buildRemoteComposerAttachment(attachmentRemoteFile)
+        );
 
         if (!didSend && isCurrentConversationScopeActive()) {
           setMessage(currentMessage =>
@@ -185,10 +215,71 @@ export const useChatComposerSend = ({
         return false;
       }
     },
+    [isCurrentConversationScopeActive, sendComposerAttachment, setMessage]
+  );
+
+  const sendPendingComposerAttachments = useCallback(
+    async (
+      attachmentsToSend: PendingComposerAttachment[],
+      messageText: string
+    ) => {
+      const sendPlan = buildPendingAttachmentSendPlan(
+        attachmentsToSend,
+        messageText
+      );
+
+      if (sendPlan.shouldAttachCaption) {
+        setMessage('');
+      }
+
+      clearPendingComposerAttachments();
+
+      const attachmentResults = await Promise.all(
+        sendPlan.jobs.map(async ({ attachment, captionText }) => ({
+          pendingAttachment: attachment,
+          sentAttachmentMessageId: await sendComposerAttachment(
+            attachment,
+            captionText
+          ),
+        }))
+      );
+      const failedAttachments = attachmentResults
+        .filter(attachmentResult => !attachmentResult.sentAttachmentMessageId)
+        .map(attachmentResult => attachmentResult.pendingAttachment);
+
+      if (failedAttachments.length > 0) {
+        if (isCurrentConversationScopeActive()) {
+          restorePendingComposerAttachments(failedAttachments);
+        }
+
+        const didCaptionAttachmentFail =
+          sendPlan.shouldAttachCaption &&
+          !attachmentResults[attachmentResults.length - 1]
+            ?.sentAttachmentMessageId;
+
+        if (didCaptionAttachmentFail && isCurrentConversationScopeActive()) {
+          setMessage(messageText);
+        }
+
+        return {
+          didSendAllAttachments: false,
+          shouldAttachCaption: sendPlan.shouldAttachCaption,
+        };
+      }
+
+      await clearPersistedComposerDraftAttachments(currentChannelId);
+
+      return {
+        didSendAllAttachments: true,
+        shouldAttachCaption: sendPlan.shouldAttachCaption,
+      };
+    },
     [
+      clearPendingComposerAttachments,
+      currentChannelId,
       isCurrentConversationScopeActive,
-      sendFileMessage,
-      sendImageMessage,
+      restorePendingComposerAttachments,
+      sendComposerAttachment,
       setMessage,
     ]
   );
@@ -223,88 +314,36 @@ export const useChatComposerSend = ({
         return;
       }
 
-      const shouldAttachCaption =
-        hasPendingAttachments && messageText.length > 0;
-
-      if (shouldAttachCaption) {
-        setMessage('');
-      }
-
       if (hasPendingAttachments) {
-        clearPendingComposerAttachments();
-        const lastAttachmentIndex = attachmentsToSend.length - 1;
-        const attachmentResults = await Promise.all(
-          attachmentsToSend.map(async (pendingAttachment, attachmentIndex) => {
-            const captionForAttachment =
-              shouldAttachCaption && attachmentIndex === lastAttachmentIndex
-                ? messageText
-                : undefined;
-            const sentAttachmentMessageId =
-              pendingAttachment.fileKind === 'image'
-                ? await sendImageMessage(
-                    pendingAttachment.file,
-                    captionForAttachment
-                  )
-                : await sendFileMessage(
-                    {
-                      file: pendingAttachment.file,
-                      fileName: pendingAttachment.fileName,
-                      fileTypeLabel: pendingAttachment.fileTypeLabel,
-                      fileKind: pendingAttachment.fileKind,
-                      mimeType: pendingAttachment.mimeType,
-                      pdfCoverUrl: pendingAttachment.pdfCoverUrl,
-                      pdfPageCount: pendingAttachment.pdfPageCount,
-                    },
-                    captionForAttachment
-                  );
-
-            return {
-              pendingAttachment,
-              sentAttachmentMessageId,
-            };
-          })
+        const attachmentSendResult = await sendPendingComposerAttachments(
+          attachmentsToSend,
+          messageText
         );
-        const failedAttachments = attachmentResults
-          .filter(attachmentResult => !attachmentResult.sentAttachmentMessageId)
-          .map(attachmentResult => attachmentResult.pendingAttachment);
 
-        if (failedAttachments.length > 0) {
-          if (isCurrentConversationScopeActive()) {
-            restorePendingComposerAttachments(failedAttachments);
-          }
+        if (!attachmentSendResult.didSendAllAttachments) {
+          return;
+        }
 
-          const didCaptionAttachmentFail =
-            shouldAttachCaption &&
-            !attachmentResults[lastAttachmentIndex]?.sentAttachmentMessageId;
-
-          if (didCaptionAttachmentFail && isCurrentConversationScopeActive()) {
-            setMessage(messageText);
-          }
-
+        if (attachmentSendResult.shouldAttachCaption) {
           return;
         }
       }
 
-      if (messageText && !shouldAttachCaption) {
+      if (messageText) {
         await sendTextMessage(messageText);
       }
     } finally {
       isSendingRef.current = false;
     }
   }, [
-    clearPendingComposerAttachments,
     currentChannelId,
     editingMessageId,
-    isCurrentConversationScopeActive,
     message,
     pendingComposerAttachments,
     rawAttachmentUrl,
-    restorePendingComposerAttachments,
     sendAttachmentMessage,
-    sendFileMessage,
-    sendImageMessage,
+    sendPendingComposerAttachments,
     sendTextMessage,
-    setMessage,
     targetUser,
     user,
   ]);

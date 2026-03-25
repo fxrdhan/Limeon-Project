@@ -39,6 +39,9 @@ const { mockChatSidebarAttachmentGateway } = vi.hoisted(() => ({
     fetchRemoteAsset: vi.fn(),
   },
 }));
+const { mockClearPersistedComposerDraftAttachments } = vi.hoisted(() => ({
+  mockClearPersistedComposerDraftAttachments: vi.fn(),
+}));
 
 vi.mock('@/services/api/chat.service', () => ({
   chatMessagesService: {
@@ -107,6 +110,11 @@ vi.mock('../utils/pdf-message-preview', async () => {
 
 vi.mock('../utils/image-message-preview', () => ({
   createImagePreviewUploadArtifact: mockCreateImagePreviewUploadArtifact,
+}));
+
+vi.mock('../utils/composer-draft-persistence', () => ({
+  clearPersistedComposerDraftAttachments:
+    mockClearPersistedComposerDraftAttachments,
 }));
 
 vi.mock('react-hot-toast', () => ({
@@ -272,6 +280,7 @@ describe('useChatComposerSend', () => {
       data: null,
       error: null,
     });
+    mockClearPersistedComposerDraftAttachments.mockResolvedValue(undefined);
   });
 
   it('rolls back the persisted attachment thread when caption insert fails', async () => {
@@ -415,6 +424,63 @@ describe('useChatComposerSend', () => {
       expect.objectContaining({ id: 'pending-1', fileName: 'stok-1.pdf' }),
       expect.objectContaining({ id: 'pending-2', fileName: 'stok-2.pdf' }),
     ]);
+    expect(mockClearPersistedComposerDraftAttachments).not.toHaveBeenCalled();
+  });
+
+  it('clears persisted attachment drafts after a successful attachment send', async () => {
+    mockGateway.uploadAttachment.mockResolvedValue({
+      path: 'documents/channel/stok.pdf',
+    });
+    mockGateway.createMessage.mockResolvedValue({
+      data: buildMessage({
+        id: 'server-file-success',
+        message: 'documents/channel/stok.pdf',
+        message_type: 'file',
+        file_name: 'stok.pdf',
+        file_kind: 'document',
+        file_mime_type: 'application/pdf',
+        file_storage_path: 'documents/channel/stok.pdf',
+      }),
+      error: null,
+    });
+
+    const { registerPendingSend } = createPendingSendRegistry();
+
+    const { result } = renderHook(() => {
+      const [, setMessages] = useState<ChatMessage[]>([]);
+      const [draftMessage, setDraftMessage] = useState('');
+      const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
+
+      return useComposerSendWithMutationScope({
+        user: { id: 'user-a', name: 'Admin' },
+        targetUser: {
+          id: 'user-b',
+          name: 'Gudang',
+          email: 'gudang@example.com',
+          profilephoto: null,
+        },
+        currentChannelId: 'channel-1',
+        message: draftMessage,
+        setMessage: setDraftMessage,
+        editingMessageId: null,
+        pendingComposerAttachments: [buildPendingAttachment()],
+        clearPendingComposerAttachments: vi.fn(),
+        restorePendingComposerAttachments: vi.fn(),
+        setMessages,
+        scheduleScrollMessagesToBottom: vi.fn(),
+        triggerSendSuccessGlow: vi.fn(),
+        pendingImagePreviewUrlsRef,
+        registerPendingSend,
+      });
+    });
+
+    await act(async () => {
+      await result.current.handleSendMessage();
+    });
+
+    expect(mockClearPersistedComposerDraftAttachments).toHaveBeenCalledWith(
+      'channel-1'
+    );
   });
 
   it('appends multiple document attachments optimistically before upload resolves', async () => {
