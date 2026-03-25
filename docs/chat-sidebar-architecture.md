@@ -22,6 +22,10 @@ Isi dokumen ini bersifat deskriptif, bukan target refactor.
   - `src/services/api/chat.service.ts`
   - `src/services/api/storage.service.ts`
   - `src/services/realtime/realtime.service.ts`
+  - `shared/chatAttachmentPaths.ts`
+  - `shared/chatStoragePaths.ts`
+  - `shared/chatFunctionContracts.ts`
+  - `shared/chatChannel.ts`
 - Database objects verified from Supabase:
   - `public.chat_messages`
   - `public.user_presence`
@@ -365,10 +369,13 @@ File: `src/features/chat-sidebar/hooks/useMessagePdfPreviews.ts`
 
 Tanggung jawab:
 
-- generate fallback preview PDF untuk message file yang belum punya `file_preview_url`
-- trigger backfill persistence untuk preview PDF milik sender saat metadata belum lengkap
-- cache preview di memory
+- resolve preview PDF persisted dari storage bila `file_preview_url` tersedia
+- hydrate preview PDF dari IndexedDB cache bila sudah pernah dirender
+- generate fallback preview PDF di client untuk message file yang belum punya preview siap pakai
+- cache preview di memory + IndexedDB
 - retry render hingga 3 kali
+
+Hook ini saat ini tidak menulis balik metadata preview PDF ke Supabase.
 
 ## 6) Component Responsibilities
 
@@ -451,6 +458,8 @@ Gateway dipisah jadi dua boundary:
   - message RPC
   - presence RPC
   - cleanup / Edge Function bridge
+  - directory RPC
+  - forward / share / remote asset / PDF compress bridge
 - `chatSidebarAssetsGateway`
   - upload image
   - upload document / audio
@@ -467,18 +476,17 @@ Dengan pemisahan ini, hook dan util chat sidebar tidak lagi memanggil `StorageSe
 
 File: `src/services/api/chat.service.ts`
 
-Method:
+`chatService` sekarang berperan sebagai barrel export.
+Implementasi konkret berada di:
 
-- `fetchMessagesBetweenUsers(userId, targetUserId, channelId?)`
-- `insertMessage(payload)`
-- `updateMessage(id, payload)`
-- `markMessagesAsRead(senderId, receiverId, channelId?)`
-- `markMessagesAsDelivered(senderId, receiverId, channelId?)`
-- `markMessageIdsAsDelivered(messageIds)`
-- `markMessageIdsAsRead(messageIds)`
-- `deleteMessage(id)`
-- `deleteMessageThread(id)`
-- `getUserPresence(userId)`
+- `src/services/api/chat/messages.service.ts`
+- `src/services/api/chat/presence.service.ts`
+- `src/services/api/chat/directory.service.ts`
+- `src/services/api/chat/cleanup.service.ts`
+- `src/services/api/chat/forward.service.ts`
+- `src/services/api/chat/link.service.ts`
+- `src/services/api/chat/remote-asset.service.ts`
+- `src/services/api/chat/pdf-compress.service.ts`
 
 #### `StorageService`
 
@@ -529,8 +537,8 @@ Kolom yang tersedia:
 
 - `id uuid primary key`
 - `sender_id uuid not null`
-- `receiver_id uuid nullable`
-- `channel_id text nullable`
+- `receiver_id uuid not null`
+- `channel_id text not null`
 - `message text not null`
 - `message_type varchar default 'text'`
 - `created_at timestamptz default now()`
@@ -547,6 +555,8 @@ Kolom yang tersedia:
 - `file_preview_status varchar nullable`
 - `file_preview_error text nullable`
 - `is_delivered boolean default false`
+- `message_relation_kind text nullable`
+- `shared_link_slug text nullable`
 
 Foreign key:
 
@@ -575,8 +585,12 @@ Foreign key:
 
 - `SELECT`: user dapat melihat row bila `sender_id = auth.uid()` atau `receiver_id = auth.uid()`
 - `INSERT`: user dapat insert row bila `sender_id = auth.uid()`
-- `UPDATE`: user dapat update row bila `sender_id = auth.uid()`
 - `DELETE`: user dapat delete row bila `sender_id = auth.uid()`
+
+Catatan:
+
+- saat ini tidak ada policy `UPDATE` langsung pada `chat_messages`
+- update message text / preview metadata / receipt dilakukan lewat RPC `SECURITY DEFINER`
 
 #### `user_presence`
 
@@ -584,6 +598,16 @@ Foreign key:
 - `INSERT`: user hanya bisa insert row miliknya sendiri
 - `UPDATE`: user hanya bisa update row miliknya sendiri
 - `DELETE`: user hanya bisa delete row miliknya sendiri
+
+#### `chat_shared_links`
+
+- hanya `service_role` yang punya policy `ALL`
+- akses user biasa ke shared link dimediasi lewat Edge Function `chat-link`
+
+#### `chat_storage_cleanup_failures`
+
+- `SELECT`: authenticated user hanya bisa melihat row dengan `requested_by = auth.uid()`
+- insert / update / resolve dilakukan lewat Edge Function `chat-cleanup` menggunakan service role
 
 ### 9.4 Active RPC Functions
 
@@ -669,20 +693,19 @@ Runtime:
 1. Buat object URL lokal untuk preview.
 2. Buat optimistic image message.
 3. Upload file ke storage bucket `chat`.
-4. Insert row `message_type = 'image'`.
-5. Jika ada caption, insert text row kedua dengan `reply_to_id = image_message.id`.
+4. Jika thumbnail image berhasil dibuat, upload juga preview ke storage `previews/...`.
+5. Insert row `message_type = 'image'` via RPC `create_chat_message`, termasuk metadata preview bila tersedia.
+6. Jika ada caption, insert text row kedua dengan `reply_to_id = image_message.id`.
 
 ### 11.4 File send
 
 1. Buat object URL lokal untuk preview.
 2. Buat optimistic file message.
 3. Upload file ke storage bucket `chat`.
-4. Insert row `message_type = 'file'`.
-5. Jika file PDF:
-   - jadwalkan background sync preview PNG
-   - upload PNG preview ke storage
-   - update row `file_preview_*`
-6. Jika ada caption, insert text row kedua dengan `reply_to_id = file_message.id`.
+4. Jika file image-like atau PDF punya preview lokal, upload preview ke storage `previews/...`.
+5. Insert row `message_type = 'file'` via RPC `create_chat_message`, termasuk `file_preview_*` bila preview sudah siap.
+6. Cache preview lokal PDF / image dipanaskan di runtime client setelah commit.
+7. Jika ada caption, insert text row kedua dengan `reply_to_id = file_message.id`.
 
 ### 11.5 Delete
 
@@ -715,29 +738,16 @@ Implementasi:
 
 ## 13) Current Test Footprint
 
-Test file yang ada saat ini:
+Test coverage untuk feature ini sudah cukup luas dan tidak lagi terbatas pada
+beberapa file inti saja. Area yang saat ini punya coverage mencakup:
 
-- `ChatHeader.test.tsx`
-- `ChatSidebarPanel.test.tsx`
-- `message-derivations.test.ts`
-- `pdf-message-preview-cache.test.ts`
-- `pdf-preview.test.ts`
-- `useChatComposer.test.tsx`
-- `useChatComposerActions.test.tsx`
-- `useChatInteractionModes.test.tsx`
-- `useChatSession.test.tsx`
-
-Area yang sudah dicakup:
-
-- header presence freshness
-- panel wiring
-- caption/search/selection derivation
-- PDF preview cache
-- PDF renderer wrapper
-- composer reset on channel switch
-- composer action failure recovery
-- interaction mode state
-- session stale fetch + realtime fallback
+- panel wiring dan integration flow
+- session initial load / cache / realtime / pagination / receipts
+- composer state, attachment queue, link prompt, dan send flow
+- transfer / forward / delete / update message actions
+- message item derivation, rendering, dan preview portals
+- image preview cache, PDF preview cache, dan runtime read receipt sync
+- search / selection / viewport interaction modes
 
 ## 14) Current-State Notes
 
@@ -748,4 +758,5 @@ Area yang sudah dicakup:
 - Conversation cache chat sidebar sekarang shared di level feature module, bukan lagi ref lokal per instance `useChatSession`.
 - Delivery receipt incoming sekarang hidup di level layout aplikasi, tidak bergantung pada panel chat open.
 - Fallback PDF storage sekarang lewat data access layer, bukan import Supabase langsung dari util feature.
+- Repo tidak lagi menyimpan Edge Function `chat-pdf-preview`; preview metadata attachment yang aktif dipersist saat send lewat `create_chat_message`, lalu preview lokal disimpan di runtime cache/sidebar cache.
 - `ChatSidebar` wrapper memakai width responsif berdasarkan viewport, dengan target desktop `420px`.

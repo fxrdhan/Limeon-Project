@@ -1,11 +1,12 @@
 import { supabase } from '@/lib/supabase';
 import type { ServiceResponse } from '../base.service';
 import { toChatServiceError } from './contractErrors';
+import { normalizeChatDirectoryUsers } from './normalizers';
 import {
   buildListChatDirectoryUsersRpcArgs,
   CHAT_RPC_NAMES,
 } from './rpc-contract';
-import type { ChatDirectoryUser, ChatDirectoryUsersPage } from './types';
+import type { ChatDirectoryUsersPage } from './types';
 
 export const chatDirectoryService = {
   async getUsersPage(
@@ -24,7 +25,7 @@ export const chatDirectoryService = {
         return { data: null, error };
       }
 
-      const directoryRows = (data || []) as ChatDirectoryUser[];
+      const directoryRows = normalizeChatDirectoryUsers(data || []);
       const users = directoryRows.slice(0, pageSize);
 
       return {

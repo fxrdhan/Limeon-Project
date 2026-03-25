@@ -69,20 +69,34 @@ describe('useChatConversationPagination', () => {
           profilephoto: null,
         },
         currentChannelId: 'channel-1',
-        getActiveSessionToken: () => activeSessionToken,
-        isSessionTokenActive: sessionToken =>
-          sessionToken === activeSessionToken,
+        conversationSession: {
+          getActiveSessionToken: () => activeSessionToken,
+          isSessionTokenActive: sessionToken =>
+            sessionToken === activeSessionToken,
+          oldestLoadedMessageCreatedAtRef: {
+            current: '2026-03-09T09:00:00.000Z',
+          },
+          oldestLoadedMessageIdRef: {
+            current: 'message-10',
+          },
+          searchContextMessageIdsRef: {
+            current: new Set<string>(),
+          },
+          hasCompletedInitialOpenLoadRef: {
+            current: true,
+          },
+          activeSessionTokenRef: {
+            current: activeSessionToken,
+          },
+          isInitialConversationLoadPendingRef: {
+            current: false,
+          },
+          pendingConversationRealtimeEventsRef: {
+            current: [],
+          },
+        },
         hasOlderMessages: true,
         isLoadingOlderMessages: false,
-        oldestLoadedMessageCreatedAtRef: {
-          current: '2026-03-09T09:00:00.000Z',
-        },
-        oldestLoadedMessageIdRef: {
-          current: 'message-10',
-        },
-        searchContextMessageIdsRef: {
-          current: new Set<string>(),
-        },
         setMessages,
         setHasOlderMessages,
         setIsLoadingOlderMessages,

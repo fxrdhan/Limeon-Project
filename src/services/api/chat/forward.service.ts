@@ -1,17 +1,12 @@
 import { supabase } from '@/lib/supabase';
-import type { PostgrestError } from '@supabase/supabase-js';
 import type { ServiceResponse } from '../base.service';
 import type {
   ChatForwardMessageRequest,
   ChatForwardMessageResponse,
 } from '../../../../shared/chatFunctionContracts';
 import type { ChatForwardMessageResult } from './types';
-
-const normalizeRecipientIds = (recipientIds: string[] | null | undefined) =>
-  [...new Set(recipientIds ?? [])].filter(
-    (recipientId): recipientId is string =>
-      typeof recipientId === 'string' && recipientId.trim().length > 0
-  );
+import { toChatServiceError } from './contractErrors';
+import { normalizeChatForwardMessageResult } from './normalizers';
 
 export const chatForwardService = {
   async forwardMessage(
@@ -27,20 +22,15 @@ export const chatForwardService = {
         );
 
       if (error) {
-        return { data: null, error: error as PostgrestError };
+        return { data: null, error: toChatServiceError(error) };
       }
 
       return {
-        data: {
-          forwardedRecipientIds: normalizeRecipientIds(
-            data?.forwardedRecipientIds
-          ),
-          failedRecipientIds: normalizeRecipientIds(data?.failedRecipientIds),
-        },
+        data: normalizeChatForwardMessageResult(data),
         error: null,
       };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toChatServiceError(error) };
     }
   },
 };

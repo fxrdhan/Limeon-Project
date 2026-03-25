@@ -1,5 +1,4 @@
 import { supabase } from '@/lib/supabase';
-import type { PostgrestError } from '@supabase/supabase-js';
 import type { ServiceResponse } from '../base.service';
 import type {
   CleanupStoragePathsResult,
@@ -7,6 +6,13 @@ import type {
   DeleteMessageThreadsAndCleanupResult,
   RetryChatCleanupFailuresResult,
 } from './types';
+import { toChatServiceError } from './contractErrors';
+import {
+  normalizeCleanupStoragePathsResult,
+  normalizeDeleteMessageThreadAndCleanupResult,
+  normalizeDeleteMessageThreadsAndCleanupResult,
+  normalizeRetryChatCleanupFailuresResult,
+} from './normalizers';
 import type {
   CleanupStoragePathsRequest,
   DeleteMessageThreadAndCleanupRequest,
@@ -14,17 +20,10 @@ import type {
   RetryChatCleanupFailuresRequest,
 } from '../../../../shared/chatFunctionContracts';
 
-const normalizeStoragePaths = (
-  storagePaths: Array<string | null | undefined>
-) =>
-  [...new Set(storagePaths)]
-    .map(storagePath => storagePath?.trim() || null)
-    .filter((storagePath): storagePath is string => Boolean(storagePath));
-
-const normalizeMessageIds = (messageIds: Array<string | null | undefined>) =>
-  [...new Set(messageIds)]
-    .map(messageId => messageId?.trim() || null)
-    .filter((messageId): messageId is string => Boolean(messageId));
+const normalizeRequestStringList = (values: Array<string | null | undefined>) =>
+  [...new Set(values)]
+    .map(value => value?.trim() || null)
+    .filter((value): value is string => Boolean(value));
 
 export const chatCleanupService = {
   async deleteMessageThreadAndCleanup(
@@ -44,37 +43,22 @@ export const chatCleanupService = {
         );
 
       if (error) {
-        return { data: null, error: error as PostgrestError };
+        return { data: null, error: toChatServiceError(error) };
       }
 
       return {
-        data: {
-          deletedMessageIds: Array.isArray(data?.deletedMessageIds)
-            ? data.deletedMessageIds.filter(
-                deletedMessageId =>
-                  typeof deletedMessageId === 'string' &&
-                  deletedMessageId.length > 0
-              )
-            : [],
-          failedStoragePaths: Array.isArray(data?.failedStoragePaths)
-            ? data.failedStoragePaths.filter(
-                failedStoragePath =>
-                  typeof failedStoragePath === 'string' &&
-                  failedStoragePath.length > 0
-              )
-            : [],
-        },
+        data: normalizeDeleteMessageThreadAndCleanupResult(data),
         error: null,
       };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toChatServiceError(error) };
     }
   },
 
   async deleteMessageThreadsAndCleanup(
     messageIds: Array<string | null | undefined>
   ): Promise<ServiceResponse<DeleteMessageThreadsAndCleanupResult>> {
-    const normalizedMessageIds = normalizeMessageIds(messageIds);
+    const normalizedMessageIds = normalizeRequestStringList(messageIds);
 
     if (normalizedMessageIds.length === 0) {
       return {
@@ -103,36 +87,22 @@ export const chatCleanupService = {
         );
 
       if (error) {
-        return { data: null, error: error as PostgrestError };
+        return { data: null, error: toChatServiceError(error) };
       }
 
       return {
-        data: {
-          deletedMessageIds: normalizeMessageIds(data?.deletedMessageIds ?? []),
-          deletedTargetMessageIds: normalizeMessageIds(
-            data?.deletedTargetMessageIds ?? []
-          ),
-          failedTargetMessageIds: normalizeMessageIds(
-            data?.failedTargetMessageIds ?? []
-          ),
-          cleanupWarningTargetMessageIds: normalizeMessageIds(
-            data?.cleanupWarningTargetMessageIds ?? []
-          ),
-          failedStoragePaths: normalizeStoragePaths(
-            data?.failedStoragePaths ?? []
-          ),
-        },
+        data: normalizeDeleteMessageThreadsAndCleanupResult(data),
         error: null,
       };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toChatServiceError(error) };
     }
   },
 
   async cleanupStoragePaths(
     storagePaths: Array<string | null | undefined>
   ): Promise<ServiceResponse<CleanupStoragePathsResult>> {
-    const normalizedStoragePaths = normalizeStoragePaths(storagePaths);
+    const normalizedStoragePaths = normalizeRequestStringList(storagePaths);
 
     if (normalizedStoragePaths.length === 0) {
       return {
@@ -157,23 +127,15 @@ export const chatCleanupService = {
         );
 
       if (error) {
-        return { data: null, error: error as PostgrestError };
+        return { data: null, error: toChatServiceError(error) };
       }
 
       return {
-        data: {
-          failedStoragePaths: Array.isArray(data?.failedStoragePaths)
-            ? data.failedStoragePaths.filter(
-                failedStoragePath =>
-                  typeof failedStoragePath === 'string' &&
-                  failedStoragePath.length > 0
-              )
-            : [],
-        },
+        data: normalizeCleanupStoragePathsResult(data),
         error: null,
       };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toChatServiceError(error) };
     }
   },
 
@@ -193,22 +155,15 @@ export const chatCleanupService = {
         );
 
       if (error) {
-        return { data: null, error: error as PostgrestError };
+        return { data: null, error: toChatServiceError(error) };
       }
 
       return {
-        data: {
-          resolvedCount:
-            typeof data?.resolvedCount === 'number' ? data.resolvedCount : 0,
-          remainingCount:
-            typeof data?.remainingCount === 'number' ? data.remainingCount : 0,
-          skippedCount:
-            typeof data?.skippedCount === 'number' ? data.skippedCount : 0,
-        },
+        data: normalizeRetryChatCleanupFailuresResult(data),
         error: null,
       };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toChatServiceError(error) };
     }
   },
 };

@@ -1,4 +1,3 @@
-import type { MutableRefObject } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { useCallback } from 'react';
 import type { UserDetails } from '@/types/database';
@@ -9,19 +8,16 @@ import {
 } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
 import { mapConversationMessageForDisplay } from '../utils/conversation-sync';
+import type { ChatConversationSessionState } from './useChatConversationSessionState';
 
 interface UseChatConversationPaginationProps {
   isOpen: boolean;
   user: UserDetails | null;
   targetUser?: ChatSidebarPanelTargetUser;
   currentChannelId: string | null;
-  getActiveSessionToken: () => number;
-  isSessionTokenActive: (sessionToken: number) => boolean;
+  conversationSession: ChatConversationSessionState;
   hasOlderMessages: boolean;
   isLoadingOlderMessages: boolean;
-  oldestLoadedMessageCreatedAtRef: MutableRefObject<string | null>;
-  oldestLoadedMessageIdRef: MutableRefObject<string | null>;
-  searchContextMessageIdsRef: MutableRefObject<Set<string>>;
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
   setHasOlderMessages: Dispatch<SetStateAction<boolean>>;
   setIsLoadingOlderMessages: Dispatch<SetStateAction<boolean>>;
@@ -33,19 +29,23 @@ export const useChatConversationPagination = ({
   user,
   targetUser,
   currentChannelId,
-  getActiveSessionToken,
-  isSessionTokenActive,
+  conversationSession,
   hasOlderMessages,
   isLoadingOlderMessages,
-  oldestLoadedMessageCreatedAtRef,
-  oldestLoadedMessageIdRef,
-  searchContextMessageIdsRef,
   setMessages,
   setHasOlderMessages,
   setIsLoadingOlderMessages,
   setOlderMessagesError,
-}: UseChatConversationPaginationProps) =>
-  useCallback(async () => {
+}: UseChatConversationPaginationProps) => {
+  const {
+    getActiveSessionToken,
+    isSessionTokenActive,
+    oldestLoadedMessageCreatedAtRef,
+    oldestLoadedMessageIdRef,
+    searchContextMessageIdsRef,
+  } = conversationSession;
+
+  return useCallback(async () => {
     if (
       !isOpen ||
       !user ||
@@ -147,3 +147,4 @@ export const useChatConversationPagination = ({
     targetUser,
     user,
   ]);
+};

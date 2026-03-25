@@ -53,11 +53,6 @@ supabase/functions/chat-cleanup/*
 !supabase/functions/chat-cleanup/index.ts
 !supabase/functions/chat-cleanup/actions.ts
 !supabase/functions/chat-cleanup/actions.test.ts
-!supabase/functions/chat-pdf-preview/
-supabase/functions/chat-pdf-preview/*
-!supabase/functions/chat-pdf-preview/index.ts
-!supabase/functions/chat-pdf-preview/actions.ts
-!supabase/functions/chat-pdf-preview/actions.test.ts
 !supabase/functions/confirm-invoice/
 supabase/functions/confirm-invoice/*
 !supabase/functions/confirm-invoice/index.ts

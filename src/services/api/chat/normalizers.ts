@@ -1,8 +1,15 @@
+import type { DirectoryUser } from '@/store/createDirectoryStore';
 import type { ChatMessageRow, UserPresenceRow } from '@/types/supabase-chat';
 import type {
+  ChatDirectoryUser,
+  ChatForwardMessageResult,
   ChatMessage,
   ChatMessageRelationKind,
   ChatMessageType,
+  CleanupStoragePathsResult,
+  DeleteMessageThreadAndCleanupResult,
+  DeleteMessageThreadsAndCleanupResult,
+  RetryChatCleanupFailuresResult,
   UserPresence,
 } from './types';
 import { invariantChatContract } from './contractErrors';
@@ -31,6 +38,30 @@ const getRequiredString = (
   return value;
 };
 
+const getOptionalString = (
+  value: string | null | undefined,
+  fieldName: string
+) => {
+  invariantChatContract(
+    value === null || value === undefined || typeof value === 'string',
+    `Chat contract violation: ${fieldName} must be a string or null.`
+  );
+
+  return value ?? null;
+};
+
+const getRequiredNonNegativeNumber = (
+  value: number | null | undefined,
+  fieldName: string
+) => {
+  invariantChatContract(
+    typeof value === 'number' && Number.isFinite(value) && value >= 0,
+    `Chat contract violation: ${fieldName} must be a non-negative number.`
+  );
+
+  return value;
+};
+
 const getRequiredTimestamp = (
   fieldName: string,
   ...candidates: Array<string | null | undefined>
@@ -45,6 +76,26 @@ const getRequiredTimestamp = (
   );
 
   return timestampCandidate;
+};
+
+const normalizeStringList = (
+  values: Array<string | null | undefined> | null | undefined,
+  fieldName: string
+) => {
+  invariantChatContract(
+    values === null || values === undefined || Array.isArray(values),
+    `Chat contract violation: ${fieldName} must be an array.`
+  );
+
+  return [...new Set(values ?? [])].flatMap((value, valueIndex) => {
+    invariantChatContract(
+      value === null || value === undefined || typeof value === 'string',
+      `Chat contract violation: ${fieldName}[${valueIndex}] must be a string.`
+    );
+
+    const normalizedValue = value?.trim();
+    return normalizedValue ? [normalizedValue] : [];
+  });
 };
 
 const normalizeChatMessageType = (
@@ -221,3 +272,111 @@ export const normalizeUserPresenceList = (
     const normalizedPresence = normalizeUserPresence(presence);
     return normalizedPresence ? [normalizedPresence] : [];
   });
+
+export const normalizeChatDirectoryUser = (
+  user: Partial<DirectoryUser> | null | undefined
+): ChatDirectoryUser | null => {
+  if (user === null || user === undefined) {
+    return null;
+  }
+
+  return {
+    id: getRequiredNonEmptyString(user.id, 'directory_user.id'),
+    name: getRequiredString(user.name, 'directory_user.name'),
+    email: getRequiredString(user.email, 'directory_user.email'),
+    profilephoto: getOptionalString(
+      user.profilephoto,
+      'directory_user.profilephoto'
+    ),
+  };
+};
+
+export const normalizeChatDirectoryUsers = (
+  users: Array<Partial<DirectoryUser>> | null | undefined
+) =>
+  (users ?? []).flatMap((user, userIndex) => {
+    invariantChatContract(
+      user !== null && user !== undefined,
+      `Chat contract violation: directory_users[${userIndex}] is required.`
+    );
+
+    const normalizedUser = normalizeChatDirectoryUser(user);
+    return normalizedUser ? [normalizedUser] : [];
+  });
+
+export const normalizeDeleteMessageThreadAndCleanupResult = (
+  result: Partial<DeleteMessageThreadAndCleanupResult> | null | undefined
+): DeleteMessageThreadAndCleanupResult => ({
+  deletedMessageIds: normalizeStringList(
+    result?.deletedMessageIds,
+    'cleanup.deletedMessageIds'
+  ),
+  failedStoragePaths: normalizeStringList(
+    result?.failedStoragePaths,
+    'cleanup.failedStoragePaths'
+  ),
+});
+
+export const normalizeDeleteMessageThreadsAndCleanupResult = (
+  result: Partial<DeleteMessageThreadsAndCleanupResult> | null | undefined
+): DeleteMessageThreadsAndCleanupResult => ({
+  deletedMessageIds: normalizeStringList(
+    result?.deletedMessageIds,
+    'cleanup.deletedMessageIds'
+  ),
+  deletedTargetMessageIds: normalizeStringList(
+    result?.deletedTargetMessageIds,
+    'cleanup.deletedTargetMessageIds'
+  ),
+  failedTargetMessageIds: normalizeStringList(
+    result?.failedTargetMessageIds,
+    'cleanup.failedTargetMessageIds'
+  ),
+  cleanupWarningTargetMessageIds: normalizeStringList(
+    result?.cleanupWarningTargetMessageIds,
+    'cleanup.cleanupWarningTargetMessageIds'
+  ),
+  failedStoragePaths: normalizeStringList(
+    result?.failedStoragePaths,
+    'cleanup.failedStoragePaths'
+  ),
+});
+
+export const normalizeCleanupStoragePathsResult = (
+  result: Partial<CleanupStoragePathsResult> | null | undefined
+): CleanupStoragePathsResult => ({
+  failedStoragePaths: normalizeStringList(
+    result?.failedStoragePaths,
+    'cleanup.failedStoragePaths'
+  ),
+});
+
+export const normalizeRetryChatCleanupFailuresResult = (
+  result: Partial<RetryChatCleanupFailuresResult> | null | undefined
+): RetryChatCleanupFailuresResult => ({
+  resolvedCount: getRequiredNonNegativeNumber(
+    result?.resolvedCount,
+    'cleanup.resolvedCount'
+  ),
+  remainingCount: getRequiredNonNegativeNumber(
+    result?.remainingCount,
+    'cleanup.remainingCount'
+  ),
+  skippedCount: getRequiredNonNegativeNumber(
+    result?.skippedCount,
+    'cleanup.skippedCount'
+  ),
+});
+
+export const normalizeChatForwardMessageResult = (
+  result: Partial<ChatForwardMessageResult> | null | undefined
+): ChatForwardMessageResult => ({
+  forwardedRecipientIds: normalizeStringList(
+    result?.forwardedRecipientIds,
+    'forward.forwardedRecipientIds'
+  ),
+  failedRecipientIds: normalizeStringList(
+    result?.failedRecipientIds,
+    'forward.failedRecipientIds'
+  ),
+});

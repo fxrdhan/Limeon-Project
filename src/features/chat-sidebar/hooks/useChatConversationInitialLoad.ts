@@ -21,10 +21,8 @@ import {
 } from '../utils/channel-image-asset-cache';
 import { mapConversationMessagesForDisplay } from '../utils/message-display';
 import { resolveChatAssetUrl } from '../utils/message-file';
-import {
-  replayPendingConversationRealtimeEvents,
-  type PendingConversationRealtimeEvent,
-} from './useChatConversationRealtime';
+import { replayPendingConversationRealtimeEvents } from './useChatConversationRealtime';
+import type { ChatConversationSessionState } from './useChatConversationSessionState';
 
 const INITIAL_IMAGE_PREVIEW_PRIME_LIMIT = 12;
 const INITIAL_CACHED_IMAGE_ASSET_PRIME_LIMIT = 8;
@@ -43,15 +41,7 @@ interface UseChatConversationInitialLoadProps {
   setHasOlderMessages: Dispatch<SetStateAction<boolean>>;
   setIsLoadingOlderMessages: Dispatch<SetStateAction<boolean>>;
   setOlderMessagesError: Dispatch<SetStateAction<string | null>>;
-  hasCompletedInitialOpenLoadRef: MutableRefObject<boolean>;
-  activeSessionTokenRef: MutableRefObject<number>;
-  oldestLoadedMessageCreatedAtRef: MutableRefObject<string | null>;
-  oldestLoadedMessageIdRef: MutableRefObject<string | null>;
-  isInitialConversationLoadPendingRef: MutableRefObject<boolean>;
-  pendingConversationRealtimeEventsRef: MutableRefObject<
-    PendingConversationRealtimeEvent[]
-  >;
-  searchContextMessageIdsRef: MutableRefObject<Set<string>>;
+  conversationSession: ChatConversationSessionState;
   initialMessageAnimationKeysRef: MutableRefObject<Set<string>>;
   initialOpenJumpAnimationKeysRef: MutableRefObject<Set<string>>;
   markConversationRecoverySuccess: () => void;
@@ -74,18 +64,22 @@ export const useChatConversationInitialLoad = ({
   setHasOlderMessages,
   setIsLoadingOlderMessages,
   setOlderMessagesError,
-  hasCompletedInitialOpenLoadRef,
-  activeSessionTokenRef,
-  oldestLoadedMessageCreatedAtRef,
-  oldestLoadedMessageIdRef,
-  isInitialConversationLoadPendingRef,
-  pendingConversationRealtimeEventsRef,
-  searchContextMessageIdsRef,
+  conversationSession,
   initialMessageAnimationKeysRef,
   initialOpenJumpAnimationKeysRef,
   markConversationRecoverySuccess,
   markMessageIdsAsDelivered,
 }: UseChatConversationInitialLoadProps) => {
+  const {
+    hasCompletedInitialOpenLoadRef,
+    activeSessionTokenRef,
+    oldestLoadedMessageCreatedAtRef,
+    oldestLoadedMessageIdRef,
+    isInitialConversationLoadPendingRef,
+    pendingConversationRealtimeEventsRef,
+    searchContextMessageIdsRef,
+  } = conversationSession;
+
   useEffect(() => {
     const activeSearchContextMessageIds = searchContextMessageIdsRef.current;
 

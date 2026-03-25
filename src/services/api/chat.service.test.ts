@@ -74,6 +74,16 @@ const buildRpcPresence = (
   ...overrides,
 });
 
+const buildDirectoryUser = (
+  overrides: Record<string, unknown> = {}
+): Record<string, unknown> => ({
+  id: 'user-b',
+  name: 'Gudang',
+  email: 'gudang@example.com',
+  profilephoto: null,
+  ...overrides,
+});
+
 describe('chatService', () => {
   beforeEach(() => {
     vi.resetModules();
@@ -364,6 +374,71 @@ describe('chatService', () => {
     });
   });
 
+  it('loads directory users through the dedicated rpc and enforces the user contract', async () => {
+    mockRpc.mockResolvedValueOnce({
+      data: [
+        buildDirectoryUser({
+          id: 'user-b',
+          name: 'Gudang',
+        }),
+        buildDirectoryUser({
+          id: 'user-c',
+          name: 'Kasir',
+        }),
+      ],
+      error: null,
+    });
+
+    const { chatService } = await import('./chat.service');
+
+    const result = await chatService.getUsersPage(2, 0);
+
+    expect(mockRpc).toHaveBeenCalledWith('list_chat_directory_users', {
+      p_limit: 3,
+      p_offset: 0,
+    });
+    expect(result).toEqual({
+      data: {
+        users: [
+          buildDirectoryUser({
+            id: 'user-b',
+            name: 'Gudang',
+          }),
+          buildDirectoryUser({
+            id: 'user-c',
+            name: 'Kasir',
+          }),
+        ],
+        hasMore: false,
+      },
+      error: null,
+    });
+  });
+
+  it('surfaces malformed directory payloads instead of accepting incomplete users', async () => {
+    mockRpc.mockResolvedValueOnce({
+      data: [
+        buildDirectoryUser({
+          email: null,
+        }),
+      ],
+      error: null,
+    });
+
+    const { chatService } = await import('./chat.service');
+
+    const result = await chatService.getUsersPage(30, 0);
+
+    expect(result.data).toBeNull();
+    expect(result.error).toEqual(
+      expect.objectContaining({
+        code: 'CHAT_CONTRACT_INVALID',
+        message:
+          'Chat contract violation: directory_user.email must be a string.',
+      })
+    );
+  });
+
   it('uses the edge cleanup function once when deleting multiple threads', async () => {
     mockInvoke.mockResolvedValueOnce({
       data: {
@@ -561,6 +636,30 @@ describe('chatService', () => {
       },
       error: null,
     });
+  });
+
+  it('surfaces malformed cleanup retry payloads instead of defaulting numeric counters', async () => {
+    mockInvoke.mockResolvedValueOnce({
+      data: {
+        resolvedCount: '2',
+        remainingCount: 0,
+        skippedCount: 1,
+      },
+      error: null,
+    });
+
+    const { chatService } = await import('./chat.service');
+
+    const result = await chatService.retryChatCleanupFailures();
+
+    expect(result.data).toBeNull();
+    expect(result.error).toEqual(
+      expect.objectContaining({
+        code: 'CHAT_CONTRACT_INVALID',
+        message:
+          'Chat contract violation: cleanup.resolvedCount must be a non-negative number.',
+      })
+    );
   });
 
   it('starts keepalive and fallback update through the page-exit helper', async () => {

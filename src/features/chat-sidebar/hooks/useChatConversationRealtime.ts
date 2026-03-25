@@ -1,4 +1,4 @@
-import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import { useEffect, useRef } from 'react';
 import type { UserDetails } from '@/types/database';
 import { realtimeService } from '@/services/realtime/realtime.service';
@@ -15,20 +15,10 @@ import {
   isConversationMessageForPair,
   reconcileInsertedConversationMessage,
 } from '../utils/conversation-sync';
-
-export type PendingConversationRealtimeEvent =
-  | {
-      type: 'insert';
-      message: ChatMessage;
-    }
-  | {
-      type: 'update';
-      message: Partial<ChatMessage> & { id: string };
-    }
-  | {
-      type: 'delete';
-      messageId: string;
-    };
+import type {
+  ChatConversationSessionState,
+  PendingConversationRealtimeEvent,
+} from './useChatConversationSessionState';
 
 export const replayPendingConversationRealtimeEvents = ({
   previousMessages,
@@ -71,10 +61,7 @@ interface UseChatConversationRealtimeProps {
   targetUser?: ChatSidebarPanelTargetUser;
   currentChannelId: string | null;
   recoveryTick: number;
-  isInitialConversationLoadPendingRef: MutableRefObject<boolean>;
-  pendingConversationRealtimeEventsRef: MutableRefObject<
-    PendingConversationRealtimeEvent[]
-  >;
+  conversationSession: ChatConversationSessionState;
   mapMessageForActiveConversation: (messageItem: ChatMessage) => ChatMessage;
   applyMessageUpdate: (
     updatedMessage: Partial<ChatMessage> & { id: string }
@@ -91,8 +78,7 @@ export const useChatConversationRealtime = ({
   targetUser,
   currentChannelId,
   recoveryTick,
-  isInitialConversationLoadPendingRef,
-  pendingConversationRealtimeEventsRef,
+  conversationSession,
   mapMessageForActiveConversation,
   applyMessageUpdate,
   setMessages,
@@ -100,6 +86,10 @@ export const useChatConversationRealtime = ({
   markConversationRecoverySuccess,
   scheduleConversationRecovery,
 }: UseChatConversationRealtimeProps) => {
+  const {
+    isInitialConversationLoadPendingRef,
+    pendingConversationRealtimeEventsRef,
+  } = conversationSession;
   const conversationChannelRef = useRef<RealtimeChannel | null>(null);
 
   useEffect(() => {
