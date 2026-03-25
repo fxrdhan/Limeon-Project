@@ -58,6 +58,12 @@ supabase/functions/chat-pdf-preview/*
 !supabase/functions/chat-pdf-preview/index.ts
 !supabase/functions/chat-pdf-preview/actions.ts
 !supabase/functions/chat-pdf-preview/actions.test.ts
+!supabase/functions/confirm-invoice/
+supabase/functions/confirm-invoice/*
+!supabase/functions/confirm-invoice/index.ts
+!supabase/functions/extract-invoice/
+supabase/functions/extract-invoice/*
+!supabase/functions/extract-invoice/index.ts
 !supabase/functions/chat-forward-message/
 supabase/functions/chat-forward-message/*
 !supabase/functions/chat-forward-message/index.ts
@@ -67,6 +73,12 @@ supabase/functions/chat-remote-asset/*
 !supabase/functions/chat-remote-asset/index.ts
 !supabase/functions/chat-remote-asset/actions.ts
 !supabase/functions/chat-remote-asset/actions.test.ts
+!supabase/functions/metrics/
+supabase/functions/metrics/*
+!supabase/functions/metrics/index.ts
+!supabase/functions/regenerate-invoice/
+supabase/functions/regenerate-invoice/*
+!supabase/functions/regenerate-invoice/index.ts
 
 # gemini-cli settings
 .gemini/
