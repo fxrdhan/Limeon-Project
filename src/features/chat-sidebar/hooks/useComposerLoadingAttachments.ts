@@ -13,7 +13,10 @@ import type {
   LoadingComposerAttachment,
   PendingComposerAttachment,
 } from '../types';
-import { fetchAttachmentComposerRemoteFile } from '../utils/composer-attachment-link';
+import {
+  type AttachmentComposerRemoteFile,
+  fetchAttachmentComposerRemoteFile,
+} from '../utils/composer-attachment-link';
 import { isPdfComposerAttachment } from '../utils/pending-composer-attachment';
 
 interface UseComposerLoadingAttachmentsProps {
@@ -327,11 +330,13 @@ export const useComposerLoadingAttachments = ({
   const queueAttachmentComposerLink = useCallback(
     async (
       attachmentLink: string,
-      loadingAttachment: LoadingComposerAttachment
+      loadingAttachment: LoadingComposerAttachment,
+      prefetchedRemoteFile?: AttachmentComposerRemoteFile | null
     ) => {
       try {
         const attachmentRemoteFile =
-          await fetchAttachmentComposerRemoteFile(attachmentLink);
+          prefetchedRemoteFile ??
+          (await fetchAttachmentComposerRemoteFile(attachmentLink));
         const isLoadingAttachmentActive =
           loadingComposerAttachmentsRef.current.some(
             attachment => attachment.id === loadingAttachment.id

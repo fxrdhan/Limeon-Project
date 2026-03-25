@@ -1,12 +1,17 @@
-import { describe, expect, it } from "vite-plus/test";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import {
   buildChatRemoteAssetRequestHeaders,
   extractRemoteHtmlTitle,
   isHtmlLikeRemoteAssetMimeType,
+  validateResolvedChatRemoteAssetUrl,
   resolveChatRemoteAssetUrl,
 } from "./actions.ts";
 
 describe("chat-remote-asset actions", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("accepts public https asset urls", () => {
     expect(
       resolveChatRemoteAssetUrl({
@@ -48,6 +53,46 @@ describe("chat-remote-asset actions", () => {
       error: "Forbidden",
       status: 403,
       url: null,
+    });
+  });
+
+  it("rejects hostnames that resolve to private ips", async () => {
+    vi.stubGlobal("Deno", {
+      resolveDns: vi.fn(async (_query: string, recordType: "A" | "AAAA") =>
+        recordType === "A" ? ["10.0.0.8"] : []
+      ),
+    });
+
+    await expect(
+      validateResolvedChatRemoteAssetUrl(
+        "https://example.com/assets/receipt.png"
+      )
+    ).resolves.toEqual({
+      error: "Forbidden",
+      status: 403,
+      url: null,
+    });
+  });
+
+  it("accepts hostnames that resolve only to public ips", async () => {
+    vi.stubGlobal("Deno", {
+      resolveDns: vi.fn(async (_query: string, recordType: "A" | "AAAA") => {
+        if (recordType === "A") {
+          return ["93.184.216.34"];
+        }
+
+        throw new Error("No AAAA record");
+      }),
+    });
+
+    await expect(
+      validateResolvedChatRemoteAssetUrl(
+        "https://example.com/assets/receipt.png"
+      )
+    ).resolves.toEqual({
+      error: null,
+      status: 200,
+      url: "https://example.com/assets/receipt.png",
     });
   });
 

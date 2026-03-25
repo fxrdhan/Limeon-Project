@@ -592,6 +592,12 @@ Kolom yang tersedia:
 - `message_relation_kind text nullable`
 - `shared_link_slug text nullable`
 
+Catatan:
+
+- untuk attachment (`message_type = 'image' | 'file'`), `shared_link_slug`
+  saat ini diisi otomatis oleh trigger database `assign_chat_message_shared_link`
+  yang juga memastikan row terkait ada di `public.chat_shared_links`
+
 Foreign key:
 
 - `sender_id -> public.users.id`
@@ -730,7 +736,9 @@ Runtime:
 3. Upload file ke storage bucket `chat`.
 4. Jika thumbnail image berhasil dibuat, upload juga preview ke storage `previews/...`.
 5. Insert row `message_type = 'image'` via RPC `create_chat_message`, termasuk metadata preview bila tersedia.
-6. Jika ada caption, insert text row kedua dengan `reply_to_id = image_message.id`.
+6. Trigger database juga memastikan attachment punya `shared_link_slug` dan row
+   aktif di `chat_shared_links`.
+7. Jika ada caption, insert text row kedua dengan `reply_to_id = image_message.id`.
 
 ### 11.4 File send
 
@@ -739,8 +747,10 @@ Runtime:
 3. Upload file ke storage bucket `chat`.
 4. Jika file image-like atau PDF punya preview lokal, upload preview ke storage `previews/...`.
 5. Insert row `message_type = 'file'` via RPC `create_chat_message`, termasuk `file_preview_*` bila preview sudah siap.
-6. Cache preview lokal PDF / image dipanaskan di runtime client setelah commit.
-7. Jika ada caption, insert text row kedua dengan `reply_to_id = file_message.id`.
+6. Trigger database juga memastikan attachment punya `shared_link_slug` dan row
+   aktif di `chat_shared_links`.
+7. Cache preview lokal PDF / image dipanaskan di runtime client setelah commit.
+8. Jika ada caption, insert text row kedua dengan `reply_to_id = file_message.id`.
 
 ### 11.5 Delete
 

@@ -685,7 +685,7 @@ describe('useChatComposerAttachments', () => {
   });
 
   it('keeps a pasted generic link as a plain composer link when background validation rejects attachment support', async () => {
-    mockValidateAttachmentComposerLink.mockResolvedValue(false);
+    mockFetchAttachmentComposerRemoteFile.mockResolvedValueOnce(null);
 
     const { result } = renderHook(() => {
       const [message, setMessage] = useState('');
@@ -715,7 +715,7 @@ describe('useChatComposerAttachments', () => {
     });
 
     await waitFor(() => {
-      expect(mockValidateAttachmentComposerLink).toHaveBeenCalledWith(
+      expect(mockFetchAttachmentComposerRemoteFile).toHaveBeenCalledWith(
         'https://github.com/'
       );
     });
@@ -725,7 +725,13 @@ describe('useChatComposerAttachments', () => {
   });
 
   it('promotes a pasted generic link into an attachment candidate after background validation succeeds', async () => {
-    mockValidateAttachmentComposerLink.mockResolvedValue(true);
+    mockFetchAttachmentComposerRemoteFile.mockResolvedValueOnce({
+      file: new File(['image'], 'github-preview.png', {
+        type: 'image/png',
+      }),
+      fileKind: 'image',
+      sourceUrl: 'https://github.com/',
+    });
 
     const { result } = renderHook(() => {
       const [message, setMessage] = useState('');
@@ -762,6 +768,67 @@ describe('useChatComposerAttachments', () => {
         })
       );
     });
+  });
+
+  it('reuses the background-fetched remote file when converting a generic pasted link into an attachment', async () => {
+    mockFetchAttachmentComposerRemoteFile.mockResolvedValue({
+      file: new File(['image'], 'github-preview.png', {
+        type: 'image/png',
+      }),
+      fileKind: 'image',
+      sourceUrl: 'https://github.com/',
+    });
+
+    const { result } = renderHook(() => {
+      const [message, setMessage] = useState('');
+
+      return {
+        message,
+        ...useChatComposerAttachments({
+          editingMessageId: null,
+          closeMessageMenu: vi.fn(),
+          messageInputRef: { current: null },
+          message,
+          setMessage,
+        }),
+      };
+    });
+
+    act(() => {
+      result.current.handleComposerPaste(
+        buildComposerPasteEvent({
+          text: 'github.com',
+        })
+      );
+    });
+
+    await waitFor(() => {
+      expect(result.current.hoverableAttachmentCandidates).toHaveLength(1);
+    });
+
+    act(() => {
+      result.current.openAttachmentPastePrompt();
+    });
+
+    act(() => {
+      result.current.handleUseAttachmentPasteAsAttachment();
+    });
+
+    await waitFor(() => {
+      expect(result.current.pendingComposerAttachments).toHaveLength(1);
+      expect(result.current.pendingComposerAttachments[0]).toEqual(
+        expect.objectContaining({
+          fileKind: 'image',
+          fileName: 'github-preview.png',
+          mimeType: 'image/png',
+        })
+      );
+    });
+
+    expect(mockFetchAttachmentComposerRemoteFile).toHaveBeenCalledTimes(1);
+    expect(mockFetchAttachmentComposerRemoteFile).toHaveBeenCalledWith(
+      'https://github.com/'
+    );
   });
 
   it('keeps the pasted link as raw url when the user chooses URL', async () => {

@@ -23,10 +23,11 @@ import type {
   LoadingComposerAttachment,
 } from '../types';
 import {
+  type AttachmentComposerRemoteFile,
   extractAttachmentComposerLinkFromMessageText,
   extractComposerLinkFromClipboard,
+  fetchAttachmentComposerRemoteFile,
   isChatSharedLinkUrl,
-  validateAttachmentComposerLink,
 } from '../utils/composer-attachment-link';
 import {
   buildAttachmentPastePrompt,
@@ -45,7 +46,8 @@ interface UseComposerAttachmentLinkPromptProps {
   messageInputRef: RefObject<HTMLTextAreaElement | null>;
   queueAttachmentComposerLink: (
     attachmentLink: string,
-    loadingAttachment: LoadingComposerAttachment
+    loadingAttachment: LoadingComposerAttachment,
+    prefetchedRemoteFile?: AttachmentComposerRemoteFile | null
   ) => Promise<boolean>;
   queueComposerImage: (file: File) => boolean;
   queueLoadingComposerAttachment: (
@@ -74,6 +76,9 @@ export const useComposerAttachmentLinkPrompt = ({
 }: UseComposerAttachmentLinkPromptProps) => {
   const attachmentPastePromptRef = useRef<HTMLDivElement>(null);
   const attachmentPasteValidationScopeRef = useRef(0);
+  const validatedAttachmentRemoteFilesRef = useRef(
+    new Map<string, AttachmentComposerRemoteFile>()
+  );
   const [attachmentPastePrompt, setAttachmentPastePrompt] =
     useState<AttachmentPastePromptState | null>(null);
   const [pastedAttachmentCandidates, setPastedAttachmentCandidates] = useState<
@@ -112,6 +117,7 @@ export const useComposerAttachmentLinkPrompt = ({
 
   const clearAttachmentPasteState = useCallback(() => {
     attachmentPasteValidationScopeRef.current += 1;
+    validatedAttachmentRemoteFilesRef.current.clear();
     setAttachmentPastePrompt(null);
     setPastedAttachmentCandidates([]);
     setRawAttachmentUrl(null);
@@ -196,16 +202,26 @@ export const useComposerAttachmentLinkPrompt = ({
       }
 
       void (async () => {
-        const isAttachmentCandidate = await validateAttachmentComposerLink(
-          pastedLink.url
-        );
+        let attachmentRemoteFile: AttachmentComposerRemoteFile | null = null;
+        try {
+          attachmentRemoteFile = await fetchAttachmentComposerRemoteFile(
+            pastedLink.url
+          );
+        } catch {
+          return;
+        }
+
         if (
-          !isAttachmentCandidate ||
+          !attachmentRemoteFile ||
           validationScope !== attachmentPasteValidationScopeRef.current
         ) {
           return;
         }
 
+        validatedAttachmentRemoteFilesRef.current.set(
+          candidateId,
+          attachmentRemoteFile
+        );
         setPastedAttachmentCandidates(currentCandidates => {
           if (
             currentCandidates.some(candidate => candidate.id === candidateId)
@@ -231,7 +247,7 @@ export const useComposerAttachmentLinkPrompt = ({
               ...currentPrompt,
               id: candidateId,
             },
-            isAttachmentCandidate: true,
+            isAttachmentCandidate: Boolean(attachmentRemoteFile),
           });
         });
       })();
@@ -380,6 +396,8 @@ export const useComposerAttachmentLinkPrompt = ({
     }
 
     const promptState = attachmentPastePrompt;
+    const prefetchedRemoteFile =
+      validatedAttachmentRemoteFilesRef.current.get(promptState.id) ?? null;
     const restoreCandidateIndex = pastedAttachmentCandidates.findIndex(
       candidate => candidate.id === promptState.id
     );
@@ -408,8 +426,14 @@ export const useComposerAttachmentLinkPrompt = ({
     void (async () => {
       const didQueue = await queueAttachmentComposerLink(
         promptState.url,
-        loadingAttachment
+        loadingAttachment,
+        prefetchedRemoteFile
       );
+      if (didQueue) {
+        validatedAttachmentRemoteFilesRef.current.delete(promptState.id);
+        return;
+      }
+
       if (!didQueue) {
         setMessage(currentMessage => {
           const safeRangeStart = Math.min(

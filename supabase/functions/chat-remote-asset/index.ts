@@ -2,9 +2,13 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import type { ChatRemoteAssetRequestPayload } from "../../../shared/chatFunctionContracts.ts";
 import {
+  CHAT_REMOTE_ASSET_FETCH_TIMEOUT_MS,
+  CHAT_REMOTE_ASSET_MAX_REDIRECTS,
   buildChatRemoteAssetRequestHeaders,
   extractRemoteHtmlTitle,
+  isChatRemoteAssetRedirectStatus,
   isHtmlLikeRemoteAssetMimeType,
+  validateResolvedChatRemoteAssetUrl,
   resolveChatRemoteAssetUrl,
 } from "./actions.ts";
 
@@ -33,6 +37,88 @@ const json = (req: Request, status: number, body: Record<string, unknown>) =>
       ...buildCorsHeaders(req),
     },
   });
+
+const fetchValidatedRemoteAssetResponse = async ({
+  url,
+  accept,
+  failureMessage,
+}: {
+  url: string;
+  accept: string;
+  failureMessage: string;
+}) => {
+  let currentUrl = url;
+
+  for (
+    let redirectCount = 0;
+    redirectCount <= CHAT_REMOTE_ASSET_MAX_REDIRECTS;
+    redirectCount += 1
+  ) {
+    const validatedRequest = await validateResolvedChatRemoteAssetUrl(currentUrl);
+    if (!validatedRequest.url) {
+      return {
+        error: validatedRequest.error ?? failureMessage,
+        response: null,
+        sourceUrl: null,
+        status: validatedRequest.status,
+      };
+    }
+
+    let remoteResponse: Response;
+    try {
+      remoteResponse = await fetch(validatedRequest.url, {
+        headers: buildChatRemoteAssetRequestHeaders(accept),
+        redirect: "manual",
+        signal: AbortSignal.timeout(CHAT_REMOTE_ASSET_FETCH_TIMEOUT_MS),
+      });
+    } catch (error) {
+      console.error("Failed to fetch remote chat asset", error);
+      return {
+        error: failureMessage,
+        response: null,
+        sourceUrl: null,
+        status: 502,
+      };
+    }
+
+    if (!isChatRemoteAssetRedirectStatus(remoteResponse.status)) {
+      return {
+        error: null,
+        response: remoteResponse,
+        sourceUrl: validatedRequest.url,
+        status: 200,
+      };
+    }
+
+    const location = remoteResponse.headers.get("location");
+    if (!location) {
+      return {
+        error: "Remote server returned an invalid redirect",
+        response: null,
+        sourceUrl: null,
+        status: 502,
+      };
+    }
+
+    try {
+      currentUrl = new URL(location, validatedRequest.url).toString();
+    } catch {
+      return {
+        error: "Remote server returned an invalid redirect",
+        response: null,
+        sourceUrl: null,
+        status: 502,
+      };
+    }
+  }
+
+  return {
+    error: "Remote server redirected too many times",
+    response: null,
+    sourceUrl: null,
+    status: 502,
+  };
+};
 
 Deno.serve(async req => {
   if (req.method === "OPTIONS") {
@@ -99,19 +185,18 @@ Deno.serve(async req => {
     });
   }
 
-  let remoteResponse: Response;
-  try {
-    remoteResponse = await fetch(resolvedAssetRequest.url, {
-      headers: buildChatRemoteAssetRequestHeaders(
-        "image/*,application/pdf,application/octet-stream;q=0.9,*/*;q=0.1"
-      ),
-      redirect: "follow",
-      signal: AbortSignal.timeout(15_000),
+  const remoteAssetResponse = await fetchValidatedRemoteAssetResponse({
+    url: resolvedAssetRequest.url,
+    accept:
+      "image/*,application/pdf,application/octet-stream;q=0.9,*/*;q=0.1",
+    failureMessage: "Failed to fetch remote asset",
+  });
+  if (!remoteAssetResponse.response) {
+    return json(req, remoteAssetResponse.status, {
+      error: remoteAssetResponse.error ?? "Failed to fetch remote asset",
     });
-  } catch (error) {
-    console.error("Failed to fetch remote chat asset", error);
-    return json(req, 502, { error: "Failed to fetch remote asset" });
   }
+  const remoteResponse = remoteAssetResponse.response;
 
   if (!remoteResponse.ok) {
     return json(req, 502, {
@@ -139,15 +224,14 @@ Deno.serve(async req => {
     resolvedFileNameSourceRequest.url !== resolvedAssetRequest.url
   ) {
     try {
-      const titleResponse = await fetch(resolvedFileNameSourceRequest.url, {
-        headers: buildChatRemoteAssetRequestHeaders(
-          "text/html,application/xhtml+xml;q=0.9,*/*;q=0.1"
-        ),
-        redirect: "follow",
-        signal: AbortSignal.timeout(15_000),
+      const titleResponseResult = await fetchValidatedRemoteAssetResponse({
+        url: resolvedFileNameSourceRequest.url,
+        accept: "text/html,application/xhtml+xml;q=0.9,*/*;q=0.1",
+        failureMessage: "Failed to fetch remote asset title",
       });
+      const titleResponse = titleResponseResult.response;
 
-      if (titleResponse.ok) {
+      if (titleResponse?.ok) {
         const titleResponseType = titleResponse.headers.get("content-type");
         if (isHtmlLikeRemoteAssetMimeType(titleResponseType)) {
           fileNameHint = extractRemoteHtmlTitle(await titleResponse.text());
@@ -169,7 +253,7 @@ Deno.serve(async req => {
       ...(fileNameHint ? { "X-Chat-Remote-File-Name": fileNameHint } : {}),
       "X-Chat-Remote-Content-Type": remoteContentType ?? "",
       "X-Chat-Remote-Source-Url":
-        remoteResponse.url || resolvedAssetRequest.url,
+        remoteAssetResponse.sourceUrl ?? resolvedAssetRequest.url,
       ...buildCorsHeaders(req),
     },
   });
