@@ -6,6 +6,7 @@ import ChatHeader from './components/ChatHeader';
 import ComposerPanel from './components/ComposerPanel';
 import MessagesPane from './components/MessagesPane';
 import MessageForwardPicker from './components/messages/MessageForwardPicker';
+import { buildMessagesPaneRuntime } from './components/messagesPaneRuntime';
 import { CHAT_SIDEBAR_TOASTER_ID } from './constants';
 import { useChatSidebarRefs } from './hooks/useChatSidebarRefs';
 import { useChatSidebarRuntimeState } from './hooks/useChatSidebarRuntimeState';
@@ -30,6 +31,7 @@ const ChatSidebarPanel = memo(
       refs,
       displayTargetPhotoUrl,
     });
+    const messagesPaneRuntime = buildMessagesPaneRuntime(runtime);
 
     return (
       <motion.div
@@ -91,7 +93,7 @@ const ChatSidebarPanel = memo(
           </div>
 
           <div className="min-h-0 flex flex-1 flex-col">
-            <MessagesPane runtime={runtime} />
+            <MessagesPane runtime={messagesPaneRuntime} />
           </div>
 
           <ComposerPanel runtime={runtime} />

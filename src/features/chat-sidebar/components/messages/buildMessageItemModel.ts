@@ -1,11 +1,11 @@
 import { MAX_MESSAGE_CHARS } from '../../constants';
 import type { ChatMessage } from '../../data/chatSidebarGateway';
 import type { MessageRenderItem } from '../../utils/message-render-items';
-import type { MessagesPaneRuntime } from '../messagesPaneRuntime';
+import type { MessageItemRuntime } from '../messagesPaneRuntime';
 import type { MessageItemModel } from './messageItemTypes';
 
 interface BuildMessageItemModelOptions {
-  runtime: MessagesPaneRuntime;
+  runtime: MessageItemRuntime;
   renderItem: MessageRenderItem;
   index: number;
   previousMessage: ChatMessage | null;
@@ -46,62 +46,58 @@ export const buildMessageItemModel = ({
       hasDateSeparatorBefore: shouldRenderDateSeparator,
     },
     interaction: {
-      userId: runtime.user?.id,
-      isSelectionMode: runtime.interaction.isSelectionMode,
-      isSelected: runtime.interaction.selectedMessageIds.has(messageItem.id),
-      expandedMessageIds: runtime.refs.expandedMessageIds,
-      flashingMessageId: runtime.viewport.flashingMessageId,
-      isFlashHighlightVisible: runtime.viewport.isFlashHighlightVisible,
+      userId: runtime.userId,
+      isSelectionMode: runtime.isSelectionMode,
+      isSelected: runtime.selectedMessageIds.has(messageItem.id),
+      expandedMessageIds: runtime.expandedMessageIds,
+      flashingMessageId: runtime.flashingMessageId,
+      isFlashHighlightVisible: runtime.isFlashHighlightVisible,
       searchMatchedMessageIds,
       activeSearchMessageId,
       maxMessageChars: MAX_MESSAGE_CHARS,
-      onToggleMessageSelection:
-        runtime.interaction.handleToggleMessageSelection,
-      handleToggleExpand: runtime.refs.handleToggleExpand,
+      onToggleMessageSelection: runtime.handleToggleMessageSelection,
+      handleToggleExpand: runtime.handleToggleExpand,
     },
     menu: {
-      openMessageId: runtime.viewport.openMenuMessageId,
-      placement: runtime.viewport.menuPlacement,
-      sideAnchor: runtime.viewport.menuSideAnchor,
-      shouldAnimateOpen: runtime.viewport.shouldAnimateMenuOpen,
-      transitionSourceId: runtime.viewport.menuTransitionSourceId,
-      offsetX: runtime.viewport.menuOffsetX,
-      toggle: runtime.actions.toggleMessageMenu,
+      openMessageId: runtime.openMenuMessageId,
+      placement: runtime.menuPlacement,
+      sideAnchor: runtime.menuSideAnchor,
+      shouldAnimateOpen: runtime.shouldAnimateMenuOpen,
+      transitionSourceId: runtime.menuTransitionSourceId,
+      offsetX: runtime.menuOffsetX,
+      toggle: runtime.toggleMessageMenu,
     },
     refs: {
-      messageBubbleRefs: runtime.refs.messageBubbleRefs,
-      initialMessageAnimationKeysRef:
-        runtime.refs.initialMessageAnimationKeysRef,
-      initialOpenJumpAnimationKeysRef:
-        runtime.refs.initialOpenJumpAnimationKeysRef,
+      messageBubbleRefs: runtime.messageBubbleRefs,
+      initialMessageAnimationKeysRef: runtime.initialMessageAnimationKeysRef,
+      initialOpenJumpAnimationKeysRef: runtime.initialOpenJumpAnimationKeysRef,
     },
     content: {
-      resolvedMessageUrl: runtime.previews.getImageMessageUrl(messageItem),
+      resolvedMessageUrl: runtime.getImageMessageUrl(messageItem),
       captionMessage: renderItem.captionMessage,
       groupedDocumentMessages:
         renderItem.kind === 'document-group' ? renderItem.messages : undefined,
       groupedImageMessages:
         renderItem.kind === 'image-group' ? renderItem.messages : undefined,
-      pdfMessagePreview: runtime.previews.getPdfMessagePreview(
+      pdfMessagePreview: runtime.getPdfMessagePreview(
         messageItem,
-        runtime.actions.getAttachmentFileName(messageItem)
+        runtime.getAttachmentFileName(messageItem)
       ),
-      getAttachmentFileName: runtime.actions.getAttachmentFileName,
-      getAttachmentFileKind: runtime.actions.getAttachmentFileKind,
-      getImageMessageUrl: runtime.previews.getImageMessageUrl,
-      getPdfMessagePreview: runtime.previews.getPdfMessagePreview,
-      normalizedSearchQuery: runtime.interaction.normalizedMessageSearchQuery,
-      openImageInPortal: runtime.previews.openImageInPortal,
-      openImageGroupInPortal: runtime.previews.openImageGroupInPortal,
-      openDocumentInPortal: runtime.previews.openDocumentInPortal,
+      getAttachmentFileName: runtime.getAttachmentFileName,
+      getAttachmentFileKind: runtime.getAttachmentFileKind,
+      getImageMessageUrl: runtime.getImageMessageUrl,
+      getPdfMessagePreview: runtime.getPdfMessagePreview,
+      normalizedSearchQuery: runtime.normalizedMessageSearchQuery,
+      openImageInPortal: runtime.openImageInPortal,
+      openImageGroupInPortal: runtime.openImageGroupInPortal,
+      openDocumentInPortal: runtime.openDocumentInPortal,
     },
     actions: {
-      handleEditMessage: runtime.mutations.handleEditMessage,
-      handleCopyMessage: runtime.mutations.handleCopyMessage,
-      handleDownloadMessage: runtime.mutations.handleDownloadMessage,
-      handleOpenForwardMessagePicker:
-        runtime.mutations.handleOpenForwardMessagePicker,
-      handleDeleteMessage: runtime.mutations.handleDeleteMessage,
+      handleEditMessage: runtime.handleEditMessage,
+      handleCopyMessage: runtime.handleCopyMessage,
+      handleDownloadMessage: runtime.handleDownloadMessage,
+      handleOpenForwardMessagePicker: runtime.handleOpenForwardMessagePicker,
+      handleDeleteMessage: runtime.handleDeleteMessage,
     },
   };
 };

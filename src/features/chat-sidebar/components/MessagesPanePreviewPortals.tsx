@@ -5,7 +5,7 @@ import {
   CHAT_SIDEBAR_TOASTER_ID,
 } from '../constants';
 import type { ChatMessage } from '../data/chatSidebarGateway';
-import type { MessagesPaneRuntime } from './messagesPaneRuntime';
+import type { MessagesPanePreviewRuntime } from './messagesPaneRuntime';
 import {
   openChatFileInNewTab,
   resolveCopyableChatAssetUrl,
@@ -15,7 +15,7 @@ import MultiImagePreviewPortal from './MultiImagePreviewPortal';
 import ProgressiveImagePreview from './ProgressiveImagePreview';
 
 interface MessagesPanePreviewPortalsProps {
-  runtime: MessagesPaneRuntime;
+  runtime: MessagesPanePreviewRuntime;
   activeImageGroupPreviewMessage: ChatMessage | null;
 }
 
@@ -25,9 +25,9 @@ export const MessagesPanePreviewPortals = ({
 }: MessagesPanePreviewPortalsProps) => (
   <>
     <ImageExpandPreview
-      isOpen={runtime.previews.isImagePreviewOpen}
-      isVisible={runtime.previews.isImagePreviewVisible}
-      onClose={runtime.previews.closeImagePreview}
+      isOpen={runtime.isImagePreviewOpen}
+      isVisible={runtime.isImagePreviewVisible}
+      onClose={runtime.closeImagePreview}
       animateScale={false}
       closeOnContentBackgroundClick={true}
       backdropClassName="z-[79] px-4 py-6"
@@ -38,38 +38,36 @@ export const MessagesPanePreviewPortals = ({
       onBackdropKeyDown={event => {
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
-          runtime.previews.closeImagePreview();
+          runtime.closeImagePreview();
         }
       }}
     >
       <ProgressiveImagePreview
-        fullSrc={runtime.previews.imagePreviewUrl}
-        backdropSrc={runtime.previews.imagePreviewBackdropUrl}
+        fullSrc={runtime.imagePreviewUrl}
+        backdropSrc={runtime.imagePreviewBackdropUrl}
         allowPointerPassthrough={true}
-        alt={runtime.previews.imagePreviewName || 'Preview gambar'}
+        alt={runtime.imagePreviewName || 'Preview gambar'}
         className="h-[92vh] w-[92vw] box-border px-6 py-8"
         imageClassName="h-full w-full rounded-xl"
       />
     </ImageExpandPreview>
 
     <MultiImagePreviewPortal
-      isOpen={runtime.previews.imageGroupPreviewItems.length > 0}
-      isVisible={runtime.previews.isImageGroupPreviewVisible}
-      previewItems={runtime.previews.imageGroupPreviewItems}
-      activePreviewId={runtime.previews.activeImageGroupPreviewId}
+      isOpen={runtime.imageGroupPreviewItems.length > 0}
+      isVisible={runtime.isImageGroupPreviewVisible}
+      previewItems={runtime.imageGroupPreviewItems}
+      activePreviewId={runtime.activeImageGroupPreviewId}
       isActivePreviewForwardable={Boolean(
         activeImageGroupPreviewMessage &&
         !activeImageGroupPreviewMessage.id.startsWith('temp_')
       )}
-      onSelectPreview={runtime.previews.selectImageGroupPreviewItem}
+      onSelectPreview={runtime.selectImageGroupPreviewItem}
       onDownloadActivePreview={() => {
         if (!activeImageGroupPreviewMessage) {
           return;
         }
 
-        void runtime.mutations.handleDownloadMessage(
-          activeImageGroupPreviewMessage
-        );
+        void runtime.handleDownloadMessage(activeImageGroupPreviewMessage);
       }}
       onOpenActivePreviewInNewTab={() => {
         if (!activeImageGroupPreviewMessage) {
@@ -138,9 +136,7 @@ export const MessagesPanePreviewPortals = ({
           return;
         }
 
-        void runtime.mutations.handleCopyMessage(
-          activeImageGroupPreviewMessage
-        );
+        void runtime.handleCopyMessage(activeImageGroupPreviewMessage);
       }}
       onForwardActivePreview={() => {
         if (
@@ -150,20 +146,18 @@ export const MessagesPanePreviewPortals = ({
           return;
         }
 
-        runtime.mutations.handleOpenForwardMessagePicker(
-          activeImageGroupPreviewMessage
-        );
+        runtime.handleOpenForwardMessagePicker(activeImageGroupPreviewMessage);
       }}
-      onClose={runtime.previews.closeImageGroupPreview}
+      onClose={runtime.closeImageGroupPreview}
       backdropClassName="z-[80] px-4 py-6"
     />
 
     <DocumentPreviewPortal
-      isOpen={Boolean(runtime.previews.documentPreviewUrl)}
-      isVisible={runtime.previews.isDocumentPreviewVisible}
-      previewUrl={runtime.previews.documentPreviewUrl}
-      previewName={runtime.previews.documentPreviewName}
-      onClose={runtime.previews.closeDocumentPreview}
+      isOpen={Boolean(runtime.documentPreviewUrl)}
+      isVisible={runtime.isDocumentPreviewVisible}
+      previewUrl={runtime.documentPreviewUrl}
+      previewName={runtime.documentPreviewName}
+      onClose={runtime.closeDocumentPreview}
       backdropClassName="z-[80] px-4 py-6"
       iframeTitle="Preview dokumen"
     />

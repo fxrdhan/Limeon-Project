@@ -50,51 +50,38 @@ vi.mock('../components/messages/MessageItem', () => ({
 type MessagesPaneRuntime = ComponentProps<typeof MessagesPane>['runtime'];
 
 type MessagesPaneRuntimeOverrides = {
-  user?: Partial<MessagesPaneRuntime['user']>;
-  session?: Partial<MessagesPaneRuntime['session']>;
-  interaction?: Partial<MessagesPaneRuntime['interaction']>;
-  composer?: Partial<MessagesPaneRuntime['composer']>;
-  viewport?: Partial<MessagesPaneRuntime['viewport']>;
-  refs?: Partial<MessagesPaneRuntime['refs']>;
-  previews?: Partial<MessagesPaneRuntime['previews']>;
-  mutations?: Partial<MessagesPaneRuntime['mutations']>;
-  actions?: Partial<MessagesPaneRuntime['actions']>;
-};
+  itemRuntime?: Partial<MessagesPaneRuntime['itemRuntime']>;
+  previewRuntime?: Partial<MessagesPaneRuntime['previewRuntime']>;
+} & Partial<Omit<MessagesPaneRuntime, 'itemRuntime' | 'previewRuntime'>>;
 
 const createRuntime = (overrides: MessagesPaneRuntimeOverrides = {}) =>
-  ({
-    user: { id: 'user-a', name: 'Admin', ...overrides.user },
-    session: {
-      loading: false,
-      loadError: null,
-      messages: [],
-      hasOlderMessages: false,
-      isLoadingOlderMessages: false,
-      olderMessagesError: null,
-      loadOlderMessages: vi.fn(),
-      retryLoadMessages: vi.fn(),
-      ...overrides.session,
-    },
-    interaction: {
+  (({ itemRuntime, previewRuntime, ...runtimeOverrides }) => ({
+    messages: [],
+    loading: false,
+    loadError: null,
+    hasOlderMessages: false,
+    isLoadingOlderMessages: false,
+    olderMessagesError: null,
+    loadOlderMessages: vi.fn(),
+    retryLoadMessages: vi.fn(),
+    renderItems: [],
+    searchMatchedMessageIds: new Set<string>(),
+    activeSearchMessageId: null,
+    messagesContainerRef: createRef<HTMLDivElement>(),
+    messagesContentRef: createRef<HTMLDivElement>(),
+    messagesEndRef: createRef<HTMLDivElement>(),
+    paddingBottom: 0,
+    closeMessageMenu: vi.fn(),
+    hasNewMessages: false,
+    isAtBottom: true,
+    scrollToBottom: vi.fn(),
+    composerContainerHeight: 0,
+    activeImageGroupPreviewMessage: null,
+    itemRuntime: {
+      userId: 'user-a',
       isSelectionMode: false,
-      isMessageSearchMode: false,
-      normalizedMessageSearchQuery: '',
       selectedMessageIds: new Set<string>(),
-      searchMatchedMessageIdSet: new Set<string>(),
-      activeSearchMessageId: null,
-      handleToggleMessageSelection: vi.fn(),
-      ...overrides.interaction,
-    },
-    composer: {
-      messageInputHeight: 0,
-      composerContextualOffset: 0,
-      ...overrides.composer,
-    },
-    viewport: {
-      composerContainerHeight: 0,
-      hasNewMessages: false,
-      isAtBottom: true,
-      closeMessageMenu: vi.fn(),
+      expandedMessageIds: new Set<string>(),
       flashingMessageId: null,
       isFlashHighlightVisible: false,
       openMenuMessageId: null,
@@ -103,66 +90,56 @@ const createRuntime = (overrides: MessagesPaneRuntimeOverrides = {}) =>
       shouldAnimateMenuOpen: false,
       menuTransitionSourceId: null,
       menuOffsetX: 0,
-      scrollToBottom: vi.fn(),
-      ...overrides.viewport,
-    },
-    refs: {
-      expandedMessageIds: new Set<string>(),
-      messagesContainerRef: createRef<HTMLDivElement>(),
-      messagesContentRef: createRef<HTMLDivElement>(),
-      messagesEndRef: createRef<HTMLDivElement>(),
+      handleToggleMessageSelection: vi.fn(),
+      handleToggleExpand: vi.fn(),
+      toggleMessageMenu: vi.fn(),
       messageBubbleRefs: { current: new Map<string, HTMLDivElement>() },
       initialMessageAnimationKeysRef: { current: new Set<string>() },
       initialOpenJumpAnimationKeysRef: { current: new Set<string>() },
-      handleToggleExpand: vi.fn(),
-      ...overrides.refs,
-    },
-    previews: {
-      captionMessagesByAttachmentId: new Map<string, ChatMessage>(),
-      captionMessageIds: new Set<string>(),
       getImageMessageUrl: vi.fn(() => null),
       getPdfMessagePreview: vi.fn(() => undefined),
-      documentPreviewUrl: null,
-      documentPreviewName: '',
-      isDocumentPreviewVisible: false,
-      closeDocumentPreview: vi.fn(),
-      isImagePreviewOpen: false,
-      imagePreviewUrl: null,
-      imagePreviewBackdropUrl: null,
-      imagePreviewName: '',
-      isImagePreviewVisible: false,
-      closeImagePreview: vi.fn(),
-      imageGroupPreviewItems: [],
-      activeImageGroupPreviewId: null,
-      isImageGroupPreviewVisible: false,
-      closeImageGroupPreview: vi.fn(),
-      selectImageGroupPreviewItem: vi.fn(),
+      getAttachmentFileName: () => 'Lampiran',
+      getAttachmentFileKind: () => 'document',
+      normalizedMessageSearchQuery: '',
       openImageInPortal: vi.fn(async () => {}),
       openImageGroupInPortal: vi.fn(async () => {}),
       openDocumentInPortal: vi.fn(async () => {}),
-      ...overrides.previews,
-    },
-    mutations: {
       handleEditMessage: vi.fn(),
       handleCopyMessage: vi.fn(async () => {}),
       handleDownloadMessage: vi.fn(async () => {}),
       handleOpenForwardMessagePicker: vi.fn(),
       handleDeleteMessage: vi.fn(async () => true),
-      ...overrides.mutations,
+      ...itemRuntime,
     },
-    actions: {
-      getAttachmentFileName: () => 'Lampiran',
-      getAttachmentFileKind: () => 'document',
-      toggleMessageMenu: vi.fn(),
-      ...overrides.actions,
+    previewRuntime: {
+      isImagePreviewOpen: false,
+      isImagePreviewVisible: false,
+      closeImagePreview: vi.fn(),
+      imagePreviewUrl: null,
+      imagePreviewBackdropUrl: null,
+      imagePreviewName: '',
+      imageGroupPreviewItems: [],
+      activeImageGroupPreviewId: null,
+      isImageGroupPreviewVisible: false,
+      selectImageGroupPreviewItem: vi.fn(),
+      handleDownloadMessage: vi.fn(async () => {}),
+      handleCopyMessage: vi.fn(async () => {}),
+      handleOpenForwardMessagePicker: vi.fn(),
+      closeImageGroupPreview: vi.fn(),
+      documentPreviewUrl: null,
+      documentPreviewName: '',
+      isDocumentPreviewVisible: false,
+      closeDocumentPreview: vi.fn(),
+      ...previewRuntime,
     },
-  }) as unknown as MessagesPaneRuntime;
+    ...runtimeOverrides,
+  }))(overrides) as unknown as MessagesPaneRuntime;
 
 describe('MessagesPane', () => {
   it('closes the single-image preview when the empty content area is clicked', () => {
     const closeImagePreview = vi.fn();
     const runtime = createRuntime({
-      previews: {
+      previewRuntime: {
         isImagePreviewOpen: true,
         isImagePreviewVisible: true,
         imagePreviewUrl: 'https://example.com/full.png',
@@ -183,35 +160,11 @@ describe('MessagesPane', () => {
 
   it('reserves scroll space from the measured composer height so the last bubble keeps a gap above it', () => {
     const runtime = createRuntime({
-      session: {
-        messages: [
-          {
-            id: 'message-1',
-            sender_id: 'user-a',
-            receiver_id: 'user-b',
-            message: 'Halo',
-            created_at: '2026-03-24T08:00:00.000Z',
-            updated_at: '2026-03-24T08:00:00.000Z',
-            is_read: true,
-            is_deleted: false,
-            type: 'text',
-            file_name: null,
-            file_size: null,
-            storage_path: null,
-            thumbnail_path: null,
-            mime_type: null,
-            metadata: null,
-            reply_to_message_id: null,
-          },
-        ],
-      },
-      composer: {
-        messageInputHeight: 22,
-        composerContextualOffset: 0,
-      },
-      viewport: {
-        composerContainerHeight: 128,
-      },
+      messages: [
+        { id: 'message-1', message: 'Halo' } as unknown as ChatMessage,
+      ],
+      paddingBottom: 128 + 8 + MESSAGE_BOTTOM_GAP,
+      composerContainerHeight: 128,
     });
 
     const { container } = render(<MessagesPane runtime={runtime} />);
