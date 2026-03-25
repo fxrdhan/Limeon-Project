@@ -21,7 +21,13 @@ export const useChatIncomingDeliveries = () => {
   const incomingMessagesChannelRef = useRef<RealtimeChannel | null>(null);
   const queuedDeliveryMessageIdsRef = useRef<Set<string>>(new Set());
   const flushDeliveryTimeoutRef = useRef<number | null>(null);
+  const backfillRetryTimeoutRef = useRef<number | null>(null);
+  const isBackfillInFlightRef = useRef(false);
+  const deliveryScopeVersionRef = useRef(0);
   const flushQueuedDeliveryMessageIdsRef = useRef<() => Promise<void>>(
+    async () => {}
+  );
+  const backfillUndeliveredIncomingMessageIdsRef = useRef<() => Promise<void>>(
     async () => {}
   );
   const { recoveryTick, scheduleRecovery, markRecoverySuccess } =
@@ -59,6 +65,15 @@ export const useChatIncomingDeliveries = () => {
     },
     []
   );
+
+  const clearBackfillRetryTimer = useCallback(() => {
+    if (backfillRetryTimeoutRef.current === null) {
+      return;
+    }
+
+    window.clearTimeout(backfillRetryTimeoutRef.current);
+    backfillRetryTimeoutRef.current = null;
+  }, []);
 
   const flushQueuedDeliveryMessageIds = useCallback(async () => {
     if (flushDeliveryTimeoutRef.current !== null) {
@@ -107,8 +122,94 @@ export const useChatIncomingDeliveries = () => {
     [scheduleQueuedDeliveryFlush]
   );
 
+  const scheduleBackfillRetry = useCallback(() => {
+    if (backfillRetryTimeoutRef.current !== null || !user?.id) {
+      return;
+    }
+
+    backfillRetryTimeoutRef.current = window.setTimeout(() => {
+      backfillRetryTimeoutRef.current = null;
+      void backfillUndeliveredIncomingMessageIdsRef.current();
+    }, DELIVERY_RETRY_WINDOW_MS);
+  }, [user?.id]);
+
+  const backfillUndeliveredIncomingMessageIds = useCallback(async () => {
+    if (!user?.id || isBackfillInFlightRef.current) {
+      return;
+    }
+
+    const scopeVersion = deliveryScopeVersionRef.current;
+    isBackfillInFlightRef.current = true;
+    clearBackfillRetryTimer();
+
+    try {
+      const backfillMessageIds: string[] = [];
+      let offset = 0;
+      let hasMore = true;
+
+      while (hasMore) {
+        const { data: undeliveredPage, error } =
+          await chatSidebarMessagesGateway.listUndeliveredIncomingMessageIds({
+            limit: DELIVERY_BACKFILL_PAGE_SIZE,
+            offset,
+          });
+
+        if (scopeVersion !== deliveryScopeVersionRef.current) {
+          return;
+        }
+
+        if (error || !undeliveredPage) {
+          throw error ?? new Error('Missing undelivered incoming message page');
+        }
+
+        const nextMessageIds = undeliveredPage.messageIds || [];
+        if (nextMessageIds.length === 0) {
+          break;
+        }
+
+        backfillMessageIds.push(...nextMessageIds);
+        hasMore = undeliveredPage.hasMore ?? false;
+        offset += nextMessageIds.length;
+      }
+
+      if (scopeVersion !== deliveryScopeVersionRef.current) {
+        return;
+      }
+
+      queueDeliveryMessageIds(backfillMessageIds);
+    } catch (error) {
+      if (scopeVersion !== deliveryScopeVersionRef.current) {
+        return;
+      }
+
+      console.error('Error backfilling undelivered incoming messages:', error);
+      toast.error(
+        'Riwayat delivered chat belum tersinkron penuh. Akan dicoba lagi otomatis.',
+        {
+          id: CHAT_DELIVERY_SYNC_TOAST_ID,
+        }
+      );
+      scheduleBackfillRetry();
+    } finally {
+      if (scopeVersion === deliveryScopeVersionRef.current) {
+        isBackfillInFlightRef.current = false;
+      }
+    }
+  }, [
+    clearBackfillRetryTimer,
+    queueDeliveryMessageIds,
+    scheduleBackfillRetry,
+    user?.id,
+  ]);
+  backfillUndeliveredIncomingMessageIdsRef.current =
+    backfillUndeliveredIncomingMessageIds;
+
   useEffect(() => {
+    deliveryScopeVersionRef.current += 1;
+
     if (!user?.id) {
+      clearBackfillRetryTimer();
+      isBackfillInFlightRef.current = false;
       markRecoverySuccess();
       return;
     }
@@ -142,63 +243,12 @@ export const useChatIncomingDeliveries = () => {
     incomingMessagesChannel.subscribe(status => {
       if (status === 'SUBSCRIBED') {
         markRecoverySuccess();
-        void (async () => {
-          try {
-            const backfillMessageIds: string[] = [];
-            let offset = 0;
-            let hasMore = true;
-
-            while (hasMore) {
-              const { data: undeliveredPage, error } =
-                await chatSidebarMessagesGateway.listUndeliveredIncomingMessageIds(
-                  {
-                    limit: DELIVERY_BACKFILL_PAGE_SIZE,
-                    offset,
-                  }
-                );
-
-              if (error) {
-                console.error(
-                  'Error backfilling undelivered incoming messages:',
-                  error
-                );
-                toast.error(
-                  'Riwayat delivered chat belum tersinkron penuh. Coba buka ulang chat jika status belum sesuai.',
-                  {
-                    id: CHAT_DELIVERY_SYNC_TOAST_ID,
-                  }
-                );
-                return;
-              }
-
-              const nextMessageIds = undeliveredPage?.messageIds || [];
-              if (nextMessageIds.length === 0) {
-                break;
-              }
-
-              backfillMessageIds.push(...nextMessageIds);
-              hasMore = undeliveredPage?.hasMore ?? false;
-              offset += nextMessageIds.length;
-            }
-
-            queueDeliveryMessageIds(backfillMessageIds);
-          } catch (error) {
-            console.error(
-              'Caught error backfilling undelivered incoming messages:',
-              error
-            );
-            toast.error(
-              'Riwayat delivered chat belum tersinkron penuh. Coba buka ulang chat jika status belum sesuai.',
-              {
-                id: CHAT_DELIVERY_SYNC_TOAST_ID,
-              }
-            );
-          }
-        })();
+        void backfillUndeliveredIncomingMessageIdsRef.current();
       }
 
       if (status === 'CHANNEL_ERROR') {
         console.error('Failed to connect to incoming chat delivery channel');
+        clearBackfillRetryTimer();
         if (incomingMessagesChannelRef.current === incomingMessagesChannel) {
           incomingMessagesChannelRef.current = null;
           void realtimeService.removeChannel(incomingMessagesChannel);
@@ -215,6 +265,7 @@ export const useChatIncomingDeliveries = () => {
 
       if (status === 'TIMED_OUT') {
         console.error('Timed out while connecting to chat delivery channel');
+        clearBackfillRetryTimer();
         if (incomingMessagesChannelRef.current === incomingMessagesChannel) {
           incomingMessagesChannelRef.current = null;
           void realtimeService.removeChannel(incomingMessagesChannel);
@@ -232,10 +283,13 @@ export const useChatIncomingDeliveries = () => {
     const activeChannel = incomingMessagesChannel;
 
     return () => {
+      deliveryScopeVersionRef.current += 1;
       if (flushDeliveryTimeoutRef.current !== null) {
         window.clearTimeout(flushDeliveryTimeoutRef.current);
         flushDeliveryTimeoutRef.current = null;
       }
+      clearBackfillRetryTimer();
+      isBackfillInFlightRef.current = false;
       queuedDeliveryMessageIds.clear();
       void realtimeService.removeChannel(activeChannel);
       if (incomingMessagesChannelRef.current === activeChannel) {
@@ -243,8 +297,9 @@ export const useChatIncomingDeliveries = () => {
       }
     };
   }, [
-    markRecoverySuccess,
+    clearBackfillRetryTimer,
     queueDeliveryMessageIds,
+    markRecoverySuccess,
     recoveryTick,
     scheduleRecovery,
     user?.id,

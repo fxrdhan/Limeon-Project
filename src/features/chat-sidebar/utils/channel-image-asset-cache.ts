@@ -53,8 +53,10 @@ const CHANNEL_IMAGE_ASSET_STORE_NAME = 'channel-image-assets';
 const CHANNEL_IMAGE_ASSET_CHANNEL_INDEX = 'channelId';
 const CHANNEL_IMAGE_ASSET_CHANNEL_VARIANT_INDEX = 'channelVariant';
 const CHANNEL_IMAGE_ASSET_FULL_BUDGET_BYTES = 250 * 1024 * 1024;
+const CHANNEL_IMAGE_ASSET_SCOPE_RETENTION_LIMIT = 3;
 
 let activeChannelImageAssetScopeId: string | null = null;
+let retainedChannelImageAssetScopeIds: string[] = [];
 let channelImageAssetDbPromise: Promise<IDBDatabase | null> | null = null;
 
 const runtimeChannelImageAssets = new Map<
@@ -71,6 +73,34 @@ const normalizeChannelId = (channelId?: string | null) =>
 
 const normalizeMessageId = (messageId?: string | null) =>
   messageId?.trim() || null;
+
+export const buildRetainedChannelImageAssetScopeIds = ({
+  activeChannelId,
+  previousRetainedChannelIds = [],
+  retentionLimit = CHANNEL_IMAGE_ASSET_SCOPE_RETENTION_LIMIT,
+}: {
+  activeChannelId?: string | null;
+  previousRetainedChannelIds?: Array<string | null | undefined>;
+  retentionLimit?: number;
+}) => {
+  const normalizedActiveChannelId = normalizeChannelId(activeChannelId);
+  const normalizedPreviousChannelIds = previousRetainedChannelIds
+    .map(channelId => normalizeChannelId(channelId))
+    .filter((channelId): channelId is string => Boolean(channelId));
+
+  if (!normalizedActiveChannelId) {
+    return [...new Set(normalizedPreviousChannelIds)].slice(0, retentionLimit);
+  }
+
+  return [
+    ...new Set([
+      normalizedActiveChannelId,
+      ...normalizedPreviousChannelIds.filter(
+        channelId => channelId !== normalizedActiveChannelId
+      ),
+    ]),
+  ].slice(0, retentionLimit);
+};
 
 const buildChannelImageAssetKey = (
   channelId: string,
@@ -646,12 +676,19 @@ export const deleteChannelImageAssetsByMessageIds = async (
 };
 
 export const purgeChannelImageAssetsExcept = async (
-  retainedChannelId?: string | null
+  retainedChannelIds?: string | Array<string | null | undefined> | null
 ) => {
-  const normalizedRetainedChannelId = normalizeChannelId(retainedChannelId);
+  const normalizedRetainedChannelIds = new Set(
+    (Array.isArray(retainedChannelIds)
+      ? retainedChannelIds
+      : [retainedChannelIds]
+    )
+      .map(channelId => normalizeChannelId(channelId))
+      .filter((channelId): channelId is string => Boolean(channelId))
+  );
 
   for (const [assetKey, runtimeEntry] of runtimeChannelImageAssets) {
-    if (runtimeEntry.channelId === normalizedRetainedChannelId) {
+    if (normalizedRetainedChannelIds.has(runtimeEntry.channelId)) {
       continue;
     }
 
@@ -674,7 +711,7 @@ export const purgeChannelImageAssetsExcept = async (
     request.onsuccess = () => {
       ((request.result || []) as PersistedChannelImageAssetRecord[]).forEach(
         record => {
-          if (record.channelId === normalizedRetainedChannelId) {
+          if (normalizedRetainedChannelIds.has(record.channelId)) {
             return;
           }
 
@@ -694,11 +731,20 @@ export const activateChannelImageAssetScope = async (
 ) => {
   const normalizedChannelId = normalizeChannelId(channelId);
   activeChannelImageAssetScopeId = normalizedChannelId;
-  await purgeChannelImageAssetsExcept(normalizedChannelId);
+  if (!normalizedChannelId) {
+    return;
+  }
+
+  retainedChannelImageAssetScopeIds = buildRetainedChannelImageAssetScopeIds({
+    activeChannelId: normalizedChannelId,
+    previousRetainedChannelIds: retainedChannelImageAssetScopeIds,
+  });
+  await purgeChannelImageAssetsExcept(retainedChannelImageAssetScopeIds);
 };
 
 export const resetChannelImageAssetCache = async () => {
   activeChannelImageAssetScopeId = null;
+  retainedChannelImageAssetScopeIds = [];
   pendingChannelImageAssetLoads.clear();
 
   for (const assetKey of runtimeChannelImageAssets.keys()) {

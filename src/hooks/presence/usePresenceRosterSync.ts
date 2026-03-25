@@ -225,6 +225,7 @@ export const usePresenceRosterSync = ({
         if (rosterChannelRef.current === newChannel) {
           rosterChannelRef.current = null;
           setChannel(null);
+          applyOnlineRoster([]);
           void realtimeService.removeChannel(newChannel);
         }
         void scheduleRecovery();

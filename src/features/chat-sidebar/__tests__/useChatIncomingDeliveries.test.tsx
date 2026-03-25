@@ -215,6 +215,54 @@ describe('useChatIncomingDeliveries', () => {
     );
   });
 
+  it('retries failed undelivered backfills without waiting for a channel reconnect', async () => {
+    mockGateway.listUndeliveredIncomingMessageIds
+      .mockResolvedValueOnce({
+        data: null,
+        error: { message: 'temporary failure' },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          messageIds: ['message-legacy-retry'],
+          hasMore: false,
+        },
+        error: null,
+      });
+
+    renderHook(() => useChatIncomingDeliveries());
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(mockGateway.listUndeliveredIncomingMessageIds).toHaveBeenCalledTimes(
+      1
+    );
+    expect(mockRealtimeService.createChannel).toHaveBeenCalledTimes(1);
+    expect(mockGateway.markMessageIdsAsDelivered).not.toHaveBeenCalled();
+
+    await act(async () => {
+      vi.advanceTimersByTime(1_200);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(mockGateway.listUndeliveredIncomingMessageIds).toHaveBeenCalledTimes(
+      2
+    );
+    expect(mockRealtimeService.createChannel).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      vi.advanceTimersByTime(100);
+      await Promise.resolve();
+    });
+
+    expect(mockGateway.markMessageIdsAsDelivered).toHaveBeenCalledWith([
+      'message-legacy-retry',
+    ]);
+  });
+
   it('reconnects the delivery channel after a channel error', async () => {
     renderHook(() => useChatIncomingDeliveries());
 

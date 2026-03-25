@@ -318,10 +318,20 @@ describe('usePresence', () => {
 
     await flushPresenceEffects();
 
+    expect(usePresenceStore.getState().onlineUsers).toBe(2);
+    expect(usePresenceStore.getState().onlineUsersList).toHaveLength(2);
+
     expect(mockRealtimeService.createChannel).toHaveBeenCalledTimes(1);
 
     await act(async () => {
       rosterChannelStatusHandler?.('CHANNEL_ERROR');
+      await Promise.resolve();
+    });
+
+    expect(usePresenceStore.getState().onlineUsers).toBe(0);
+    expect(usePresenceStore.getState().onlineUsersList).toEqual([]);
+
+    await act(async () => {
       vi.advanceTimersByTime(800);
       await Promise.resolve();
       await Promise.resolve();

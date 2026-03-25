@@ -234,6 +234,104 @@ describe('useChatMessageSearchMode', () => {
     expect(result.current.hasMoreSearchResults).toBe(false);
   });
 
+  it('surfaces load-more failures and retries them on the next navigation attempt', async () => {
+    const searchableMessages = [
+      {
+        id: 'message-1',
+        created_at: '2026-03-10T08:00:00.000Z',
+      },
+      {
+        id: 'message-2',
+        created_at: '2026-03-10T08:01:00.000Z',
+      },
+      {
+        id: 'message-3',
+        created_at: '2026-03-10T08:02:00.000Z',
+      },
+    ];
+
+    mockChatSidebarMessagesGateway.searchConversationMessages
+      .mockResolvedValueOnce({
+        data: {
+          messages: searchableMessages.slice(0, 2),
+          hasMore: true,
+        },
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: null,
+        error: { message: 'temporary failure' },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          messages: [searchableMessages[2]],
+          hasMore: false,
+        },
+        error: null,
+      });
+
+    const { result } = renderHook(() =>
+      useChatMessageSearchMode({
+        isOpen: true,
+        currentChannelId: 'channel-1',
+        messages: searchableMessages,
+        mergeSearchContextMessages: vi.fn(),
+        user: {
+          id: 'user-a',
+          name: 'Admin',
+        },
+        targetUser: {
+          id: 'user-b',
+          name: 'Gudang',
+          email: 'gudang@example.com',
+        },
+      })
+    );
+
+    act(() => {
+      result.current.handleEnterMessageSearchMode();
+      result.current.handleMessageSearchQueryChange('stok');
+    });
+
+    await flushTimersAndPromises();
+
+    act(() => {
+      result.current.handleNavigateSearchDown();
+    });
+
+    expect(result.current.activeSearchMessageId).toBe('message-2');
+
+    await act(async () => {
+      result.current.handleNavigateSearchDown();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(result.current.searchMatchedMessageIds).toEqual([
+      'message-1',
+      'message-2',
+    ]);
+    expect(result.current.activeSearchMessageId).toBe('message-2');
+    expect(result.current.messageSearchState).toBe('error');
+    expect(result.current.hasMoreSearchResults).toBe(true);
+
+    await act(async () => {
+      result.current.handleNavigateSearchDown();
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(result.current.searchMatchedMessageIds).toEqual([
+      'message-1',
+      'message-2',
+      'message-3',
+    ]);
+    expect(result.current.activeSearchMessageId).toBe('message-3');
+    expect(result.current.messageSearchState).toBe('found');
+    expect(result.current.hasMoreSearchResults).toBe(false);
+  });
+
   it('wraps to the first search result after reaching the last loaded match', async () => {
     const searchableMessages = [
       {

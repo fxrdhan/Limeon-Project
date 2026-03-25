@@ -109,6 +109,7 @@ export const useChatMessageSearchResults = ({
 
       const requestId = activeSearchRequestIdRef.current;
       isLoadingMoreSearchResultsRef.current = true;
+      setSearchError(null);
 
       try {
         const { data: matchedMessagesPage, error } =
@@ -130,6 +131,7 @@ export const useChatMessageSearchResults = ({
           if (error) {
             console.error('Error loading more conversation matches:', error);
           }
+          setSearchError('Gagal memuat hasil pencarian berikutnya');
           return false;
         }
 
@@ -137,6 +139,7 @@ export const useChatMessageSearchResults = ({
           matchedMessagesPage.messages,
           matchedMessagesPage.hasMore
         );
+        setSearchError(null);
 
         const existingMessageIds = new Set(searchMatchedMessageIdsRef.current);
         const appendedMatchIds = matchedMessagesPage.messages
