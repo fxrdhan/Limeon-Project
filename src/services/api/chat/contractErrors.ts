@@ -15,6 +15,12 @@ export class ChatContractError extends Error {
 const isPostgrestError = (error: unknown): error is PostgrestError =>
   typeof error === 'object' &&
   error !== null &&
+  'code' in error &&
+  typeof error.code === 'string' &&
+  'details' in error &&
+  typeof error.details === 'string' &&
+  'hint' in error &&
+  typeof error.hint === 'string' &&
   'message' in error &&
   typeof error.message === 'string';
 

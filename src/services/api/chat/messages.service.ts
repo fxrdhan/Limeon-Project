@@ -1,5 +1,4 @@
 import { supabase, supabaseAnonKey, supabaseUrl } from '@/lib/supabase';
-import type { PostgrestError } from '@supabase/supabase-js';
 import type { ServiceResponse } from '../base.service';
 import {
   DEFAULT_CHAT_MESSAGES_PAGE_SIZE,
@@ -308,7 +307,7 @@ export const chatMessagesService = {
         error: null,
       };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toChatServiceError(error) };
     }
   },
 
@@ -334,7 +333,7 @@ export const chatMessagesService = {
         error: null,
       };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toChatServiceError(error) };
     }
   },
 };

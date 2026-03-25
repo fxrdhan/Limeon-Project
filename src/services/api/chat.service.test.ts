@@ -582,6 +582,40 @@ describe('chatService', () => {
     });
   });
 
+  it('normalizes thrown undelivered-message paging errors at the service boundary', async () => {
+    mockRpc.mockRejectedValueOnce(new Error('temporary rpc outage'));
+
+    const { chatService } = await import('./chat.service');
+
+    const result = await chatService.listUndeliveredIncomingMessageIds({
+      limit: 2,
+    });
+
+    expect(result).toEqual({
+      data: null,
+      error: expect.objectContaining({
+        code: 'CHAT_CONTRACT_INVALID',
+        message: 'temporary rpc outage',
+      }),
+    });
+  });
+
+  it('normalizes thrown thread deletion errors at the service boundary', async () => {
+    mockRpc.mockRejectedValueOnce(new Error('delete thread failed'));
+
+    const { chatService } = await import('./chat.service');
+
+    const result = await chatService.deleteMessageThread('message-1');
+
+    expect(result).toEqual({
+      data: null,
+      error: expect.objectContaining({
+        code: 'CHAT_CONTRACT_INVALID',
+        message: 'delete thread failed',
+      }),
+    });
+  });
+
   it('normalizes standard presence sync behind the rpc-based helper', async () => {
     mockRpc.mockResolvedValueOnce({
       data: buildRpcPresence({
