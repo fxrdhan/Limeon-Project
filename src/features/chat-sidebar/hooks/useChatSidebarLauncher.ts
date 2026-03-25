@@ -4,16 +4,14 @@ import type { ChatTargetUser } from '@/types';
 import { useChatDirectoryRoster } from './useChatDirectoryRoster';
 
 export const useChatSidebarLauncher = (shouldLoadDirectory = false) => {
-  const toggleChatForUser = useChatSidebarStore(
-    state => state.toggleChatForUser
-  );
+  const openChat = useChatSidebarStore(state => state.openChat);
   const directoryRoster = useChatDirectoryRoster(shouldLoadDirectory);
 
   const openChatForUser = useCallback(
     (targetUser: ChatTargetUser) => {
-      toggleChatForUser(targetUser);
+      openChat(targetUser);
     },
-    [toggleChatForUser]
+    [openChat]
   );
 
   return {
