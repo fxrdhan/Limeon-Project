@@ -30,28 +30,30 @@ const MessagesPane = ({ runtime }: MessagesPaneProps) => {
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
       <div
-        ref={runtime.messagesContainerRef}
+        ref={runtime.viewport.messagesContainerRef}
         className="flex-1 overflow-x-hidden overflow-y-auto px-3 pt-20 transition-[padding-bottom] duration-[220ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
         style={{
           overflowAnchor: 'none',
-          paddingBottom: runtime.paddingBottom,
+          paddingBottom: runtime.viewport.paddingBottom,
         }}
-        onClick={runtime.closeMessageMenu}
+        onClick={runtime.viewport.closeMessageMenu}
         role="presentation"
       >
-        <div ref={runtime.messagesContentRef}>
-          {runtime.loading && runtime.messages.length === 0 ? (
+        <div ref={runtime.viewport.messagesContentRef}>
+          {runtime.conversation.loading &&
+          runtime.conversation.messages.length === 0 ? (
             <div className="flex items-center justify-center py-8">
               <div className="text-sm text-slate-400">Memuat percakapan...</div>
             </div>
-          ) : runtime.loadError && runtime.messages.length === 0 ? (
+          ) : runtime.conversation.loadError &&
+            runtime.conversation.messages.length === 0 ? (
             <div className="flex flex-col items-center gap-3 py-8 text-center">
               <div className="max-w-xs rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                {runtime.loadError}
+                {runtime.conversation.loadError}
               </div>
               <button
                 type="button"
-                onClick={runtime.retryLoadMessages}
+                onClick={runtime.conversation.retryLoadMessages}
                 className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-50"
               >
                 Coba lagi
@@ -59,13 +61,13 @@ const MessagesPane = ({ runtime }: MessagesPaneProps) => {
             </div>
           ) : (
             <LayoutGroup id="chat-message-menus">
-              {runtime.loadError ? (
+              {runtime.conversation.loadError ? (
                 <div className="pb-2">
                   <div className="flex items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
-                    <span>{runtime.loadError}</span>
+                    <span>{runtime.conversation.loadError}</span>
                     <button
                       type="button"
-                      onClick={runtime.retryLoadMessages}
+                      onClick={runtime.conversation.retryLoadMessages}
                       className="rounded-full border border-amber-200 bg-white px-2.5 py-1 font-medium text-amber-700 transition-colors hover:bg-amber-100"
                     >
                       Muat ulang
@@ -74,44 +76,50 @@ const MessagesPane = ({ runtime }: MessagesPaneProps) => {
                 </div>
               ) : null}
 
-              {runtime.hasOlderMessages ? (
+              {runtime.conversation.history.hasOlderMessages ? (
                 <div className="flex flex-col items-center gap-1 pb-1">
                   <button
                     type="button"
-                    onClick={runtime.loadOlderMessages}
-                    disabled={runtime.isLoadingOlderMessages}
+                    onClick={runtime.conversation.history.loadOlderMessages}
+                    disabled={
+                      runtime.conversation.history.isLoadingOlderMessages
+                    }
                     className="cursor-pointer rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-black transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {runtime.isLoadingOlderMessages
+                    {runtime.conversation.history.isLoadingOlderMessages
                       ? 'Memuat pesan sebelumnya...'
                       : 'Muat pesan sebelumnya'}
                   </button>
-                  {runtime.olderMessagesError ? (
+                  {runtime.conversation.history.olderMessagesError ? (
                     <p className="text-[11px] text-rose-600">
-                      {runtime.olderMessagesError}
+                      {runtime.conversation.history.olderMessagesError}
                     </p>
                   ) : null}
                 </div>
               ) : null}
 
-              {runtime.renderItems.map((renderItem, index) => {
+              {runtime.conversation.renderItems.map((renderItem, index) => {
                 const messageItem = renderItem.anchorMessage;
                 const previousMessage =
                   index > 0
-                    ? runtime.renderItems[index - 1]?.anchorMessage || null
+                    ? runtime.conversation.renderItems[index - 1]
+                        ?.anchorMessage || null
                     : null;
                 const nextMessage =
-                  index < runtime.renderItems.length - 1
-                    ? runtime.renderItems[index + 1]?.anchorMessage || null
+                  index < runtime.conversation.renderItems.length - 1
+                    ? runtime.conversation.renderItems[index + 1]
+                        ?.anchorMessage || null
                     : null;
                 const messageModel = buildMessageItemModel({
-                  runtime: runtime.itemRuntime,
+                  runtime: runtime.item,
                   renderItem,
                   index,
                   previousMessage,
                   nextMessage,
-                  searchMatchedMessageIds: runtime.searchMatchedMessageIds,
-                  activeSearchMessageId: runtime.activeSearchMessageId,
+                  searchMatchedMessageIds:
+                    runtime.conversation.search.matchedMessageIds,
+                  activeSearchMessageId:
+                    runtime.conversation.search.activeMessageId,
                 });
                 const shouldRenderDateSeparator = Boolean(
                   messageModel.layout.hasDateSeparatorBefore
@@ -138,27 +146,29 @@ const MessagesPane = ({ runtime }: MessagesPaneProps) => {
             </LayoutGroup>
           )}
 
-          <div ref={runtime.messagesEndRef} />
+          <div ref={runtime.viewport.messagesEndRef} />
         </div>
       </div>
 
-      {(runtime.hasNewMessages || !runtime.isAtBottom) &&
-      runtime.messages.length > 0 ? (
+      {(runtime.viewport.hasNewMessages || !runtime.viewport.isAtBottom) &&
+      runtime.conversation.messages.length > 0 ? (
         <button
           type="button"
-          onClick={runtime.scrollToBottom}
+          onClick={runtime.viewport.scrollToBottom}
           aria-label="Scroll ke pesan terbaru"
           className="absolute left-1/2 z-20 flex h-8 w-8 -translate-x-1/2 cursor-pointer items-center justify-center rounded-xl bg-white text-black shadow-sm transition-colors hover:text-black/80"
           style={{
-            bottom: Math.max(runtime.composerContainerHeight + 24, 46),
+            bottom: Math.max(runtime.viewport.composerContainerHeight + 24, 46),
           }}
         >
           <TbArrowDown size={18} />
         </button>
       ) : null}
       <MessagesPanePreviewPortals
-        runtime={runtime.previewRuntime}
-        activeImageGroupPreviewMessage={runtime.activeImageGroupPreviewMessage}
+        runtime={runtime.previews}
+        activeImageGroupPreviewMessage={
+          runtime.previews.activeImageGroupPreviewMessage
+        }
       />
     </div>
   );

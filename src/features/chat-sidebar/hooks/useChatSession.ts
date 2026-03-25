@@ -1,4 +1,3 @@
-import { useRealtimeChannelRecovery } from '@/hooks/realtime/useRealtimeChannelRecovery';
 import type { UserDetails } from '@/types/database';
 import { useCallback, useState, type MutableRefObject } from 'react';
 import { type ChatMessage } from '../data/chatSidebarGateway';
@@ -9,11 +8,9 @@ import {
 } from '../utils/conversation-sync';
 import { useChatConversationCacheSync } from './useChatConversationCacheSync';
 import { useChatConversationInitialLoad } from './useChatConversationInitialLoad';
-import { useChatSessionPresence } from './useChatSessionPresence';
 import { useChatConversationRealtime } from './useChatConversationRealtime';
 import { useChatConversationPagination } from './useChatConversationPagination';
-import { useChatSessionReceipts } from './useChatSessionReceipts';
-import { useChatConversationSessionState } from './useChatConversationSessionState';
+import { useChatSessionEngine } from './useChatSessionEngine';
 
 interface UseChatSessionProps {
   isOpen: boolean;
@@ -56,14 +53,6 @@ export const useChatSession = ({
   );
   const [retryInitialLoadTick, setRetryInitialLoadTick] = useState(0);
 
-  const conversationSession = useChatConversationSessionState();
-
-  const {
-    recoveryTick: realtimeRecoveryTick,
-    scheduleRecovery: scheduleConversationRecovery,
-    markRecoverySuccess: markConversationRecoverySuccess,
-  } = useRealtimeChannelRecovery();
-
   const applyMessageUpdate = useCallback(
     (updatedMessage: Partial<ChatMessage> & { id: string }) => {
       setMessages(previousMessages =>
@@ -81,30 +70,15 @@ export const useChatSession = ({
     []
   );
 
-  const { isTargetOnline, targetUserPresence, targetUserPresenceError } =
-    useChatSessionPresence({
-      isOpen,
-      user,
-      targetUser,
-      currentChannelId,
-    });
-
-  const { markMessageIdsAsDelivered, markMessageIdsAsRead } =
-    useChatSessionReceipts({
-      applyMessageUpdate,
-      currentUserId: user?.id,
-      isSessionTokenActive: conversationSession.isSessionTokenActive,
-      receiptScopeResetKey:
-        isOpen && user && targetUser && currentChannelId
-          ? [
-              user.id,
-              targetUser.id,
-              currentChannelId,
-              retryInitialLoadTick,
-              realtimeRecoveryTick,
-            ].join('::')
-          : null,
-    });
+  const sessionEngine = useChatSessionEngine({
+    isOpen,
+    user,
+    targetUser,
+    currentChannelId,
+    retryInitialLoadTick,
+    applyMessageUpdate,
+  });
+  const { conversationSession } = sessionEngine;
 
   const mapMessageForActiveConversation = useCallback(
     (messageItem: ChatMessage) =>
@@ -204,14 +178,15 @@ export const useChatSession = ({
     user,
     targetUser,
     currentChannelId,
-    recoveryTick: realtimeRecoveryTick,
+    recoveryTick: sessionEngine.realtimeRecoveryTick,
     conversationSession,
     mapMessageForActiveConversation,
     applyMessageUpdate,
     setMessages,
     setLoadError,
-    markConversationRecoverySuccess,
-    scheduleConversationRecovery,
+    markConversationRecoverySuccess:
+      sessionEngine.markConversationRecoverySuccess,
+    scheduleConversationRecovery: sessionEngine.scheduleConversationRecovery,
   });
 
   useChatConversationInitialLoad({
@@ -220,7 +195,7 @@ export const useChatSession = ({
     targetUser,
     currentChannelId,
     retryInitialLoadTick,
-    realtimeRecoveryTick,
+    realtimeRecoveryTick: sessionEngine.realtimeRecoveryTick,
     setMessages,
     setLoading,
     setLoadError,
@@ -230,14 +205,10 @@ export const useChatSession = ({
     conversationSession,
     initialMessageAnimationKeysRef,
     initialOpenJumpAnimationKeysRef,
-    markConversationRecoverySuccess,
-    markMessageIdsAsDelivered,
+    markConversationRecoverySuccess:
+      sessionEngine.markConversationRecoverySuccess,
+    markMessageIdsAsDelivered: sessionEngine.markMessageIdsAsDelivered,
   });
-
-  const retryLoadMessages = useCallback(() => {
-    setLoadError(null);
-    setRetryInitialLoadTick(previousTick => previousTick + 1);
-  }, []);
 
   useChatConversationCacheSync({
     isOpen,
@@ -249,6 +220,11 @@ export const useChatSession = ({
     excludedMessageIdsRef: conversationSession.searchContextMessageIdsRef,
   });
 
+  const retryLoadMessages = useCallback(() => {
+    setLoadError(null);
+    setRetryInitialLoadTick(previousTick => previousTick + 1);
+  }, []);
+
   return {
     messages,
     setMessages,
@@ -259,10 +235,10 @@ export const useChatSession = ({
     olderMessagesError,
     loadOlderMessages,
     retryLoadMessages,
-    isTargetOnline,
-    targetUserPresence,
-    targetUserPresenceError,
-    markMessageIdsAsRead,
+    isTargetOnline: sessionEngine.isTargetOnline,
+    targetUserPresence: sessionEngine.targetUserPresence,
+    targetUserPresenceError: sessionEngine.targetUserPresenceError,
+    markMessageIdsAsRead: sessionEngine.markMessageIdsAsRead,
     mergeSearchContextMessages,
   };
 };

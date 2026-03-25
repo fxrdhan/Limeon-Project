@@ -318,15 +318,21 @@ describe('ChatSidebarPanel', () => {
     );
     expect(renderedChildProps.messages).toEqual(
       expect.objectContaining({
-        loading: false,
-        messages: [],
-        hasNewMessages: false,
-        isAtBottom: true,
-        itemRuntime: expect.objectContaining({
-          userId: 'user-a',
-          isSelectionMode: false,
+        conversation: expect.objectContaining({
+          loading: false,
+          messages: [],
         }),
-        previewRuntime: expect.objectContaining({
+        viewport: expect.objectContaining({
+          hasNewMessages: false,
+          isAtBottom: true,
+        }),
+        item: expect.objectContaining({
+          interaction: expect.objectContaining({
+            userId: 'user-a',
+            isSelectionMode: false,
+          }),
+        }),
+        previews: expect.objectContaining({
           isImagePreviewOpen: false,
           isDocumentPreviewVisible: false,
         }),
