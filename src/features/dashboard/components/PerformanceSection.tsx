@@ -6,11 +6,7 @@ import type {
   SalesPeakSummary,
   TopMedicineSummary,
 } from '../types';
-import {
-  InlineRefreshButton,
-  PanelMessage,
-  SectionHeader,
-} from './DashboardPrimitives';
+import { PanelMessage, SectionHeader } from './DashboardPrimitives';
 
 interface PerformanceSectionProps {
   salesData: SalesAnalyticsSummary | null | undefined;
@@ -19,8 +15,6 @@ interface PerformanceSectionProps {
   isTopMedicinesLoading: boolean;
   salesErrorMessage?: string | null;
   topMedicinesErrorMessage?: string | null;
-  onRefreshSales: () => void;
-  onRefreshTopMedicines: () => void;
 }
 
 const PerformanceSection: React.FC<PerformanceSectionProps> = ({
@@ -30,8 +24,6 @@ const PerformanceSection: React.FC<PerformanceSectionProps> = ({
   isTopMedicinesLoading,
   salesErrorMessage,
   topMedicinesErrorMessage,
-  onRefreshSales,
-  onRefreshTopMedicines,
 }) => {
   const salesChartData = React.useMemo(() => {
     if (!salesData) return { labels: [], datasets: [] };
@@ -78,17 +70,7 @@ const PerformanceSection: React.FC<PerformanceSectionProps> = ({
   return (
     <section className="grid gap-10 border-b border-slate-200 py-10 xl:grid-cols-12">
       <div className="space-y-8 xl:col-span-8 xl:border-r xl:border-slate-200 xl:pr-8">
-        <SectionHeader
-          eyebrow="Analytics"
-          title="Penjualan 7 Hari Terakhir"
-          description="Kurva pendapatan mingguan untuk melihat ritme harian dan momentum penjualan."
-          action={
-            <InlineRefreshButton
-              label="Refresh penjualan 7 hari terakhir"
-              onClick={onRefreshSales}
-            />
-          }
-        />
+        <SectionHeader eyebrow="Analytics" title="Penjualan 7 Hari Terakhir" />
 
         {isSalesLoading ? (
           <div className="space-y-6">
@@ -202,17 +184,7 @@ const PerformanceSection: React.FC<PerformanceSectionProps> = ({
       </div>
 
       <div className="space-y-8 xl:col-span-4 xl:pl-8">
-        <SectionHeader
-          eyebrow="Ranking"
-          title="5 Obat Terlaris"
-          description="Daftar produk paling aktif bergerak agar fokus replenishment dan display lebih jelas."
-          action={
-            <InlineRefreshButton
-              label="Refresh ranking obat terlaris"
-              onClick={onRefreshTopMedicines}
-            />
-          }
-        />
+        <SectionHeader eyebrow="Ranking" title="5 Obat Terlaris" />
 
         {isTopMedicinesLoading ? (
           <div className="space-y-5">
@@ -244,10 +216,6 @@ const PerformanceSection: React.FC<PerformanceSectionProps> = ({
                 <p className="mt-3 text-xl font-semibold tracking-tight text-slate-950">
                   {topMedicineLeader.name}
                 </p>
-                <p className="mt-2 text-sm text-slate-500">
-                  Terjual {topMedicineLeader.total_quantity} unit pada periode
-                  data terbaru.
-                </p>
               </div>
             ) : null}
 
@@ -272,9 +240,6 @@ const PerformanceSection: React.FC<PerformanceSectionProps> = ({
                       <div className="min-w-0">
                         <p className="truncate font-medium text-slate-900">
                           {item.name}
-                        </p>
-                        <p className="text-sm text-slate-500">
-                          Distribusi penjualan tertinggi
                         </p>
                       </div>
 

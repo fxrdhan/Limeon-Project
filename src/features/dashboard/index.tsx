@@ -1,4 +1,4 @@
-import React from 'react';
+import { useDashboardRealtime } from '@/hooks/realtime';
 import {
   useDashboardStats,
   useLowStockItems,
@@ -13,6 +13,8 @@ import PerformanceSection from './components/PerformanceSection';
 import type { LowStockItem, RecentTransaction } from './types';
 
 const DashboardNew = () => {
+  useDashboardRealtime();
+
   const statsQuery = useDashboardStats();
   const salesQuery = useSalesAnalytics(7);
   const topMedicinesQuery = useTopSellingMedicines(5);
@@ -30,35 +32,9 @@ const DashboardNew = () => {
   const isMonthlyRevenueLoading =
     monthlyRevenueQuery.isLoading && !monthlyRevenueQuery.data;
 
-  const isAnyFetching =
-    statsQuery.isFetching ||
-    salesQuery.isFetching ||
-    topMedicinesQuery.isFetching ||
-    lowStockQuery.isFetching ||
-    recentTransactionsQuery.isFetching ||
-    monthlyRevenueQuery.isFetching;
-
   const lowStockItems = (lowStockQuery.data || []) as LowStockItem[];
   const recentTransactions = (recentTransactionsQuery.data ||
     []) as RecentTransaction[];
-
-  const handleRefreshAll = React.useCallback(() => {
-    void Promise.all([
-      statsQuery.refetch(),
-      salesQuery.refetch(),
-      topMedicinesQuery.refetch(),
-      lowStockQuery.refetch(),
-      recentTransactionsQuery.refetch(),
-      monthlyRevenueQuery.refetch(),
-    ]);
-  }, [
-    lowStockQuery,
-    monthlyRevenueQuery,
-    recentTransactionsQuery,
-    salesQuery,
-    statsQuery,
-    topMedicinesQuery,
-  ]);
 
   return (
     <div className="pb-4">
@@ -72,8 +48,6 @@ const DashboardNew = () => {
         isSalesLoading={isSalesLoading}
         isRecentTransactionsLoading={isRecentTransactionsLoading}
         isMonthlyRevenueLoading={isMonthlyRevenueLoading}
-        isAnyFetching={isAnyFetching}
-        onRefreshAll={handleRefreshAll}
       />
 
       <PerformanceSection
@@ -83,12 +57,6 @@ const DashboardNew = () => {
         isTopMedicinesLoading={isTopMedicinesLoading}
         salesErrorMessage={salesQuery.error?.message}
         topMedicinesErrorMessage={topMedicinesQuery.error?.message}
-        onRefreshSales={() => {
-          void salesQuery.refetch();
-        }}
-        onRefreshTopMedicines={() => {
-          void topMedicinesQuery.refetch();
-        }}
       />
 
       <OperationsSection

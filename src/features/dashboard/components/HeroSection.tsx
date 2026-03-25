@@ -1,11 +1,9 @@
 import React from 'react';
-import Button from '@/components/button';
 import {
   TbAlertTriangle,
   TbArrowDown,
   TbArrowUp,
   TbBoxMultiple,
-  TbRefresh,
   TbShoppingBag,
   TbShoppingCart,
 } from 'react-icons/tb';
@@ -23,8 +21,6 @@ interface HeroSectionProps {
   isSalesLoading: boolean;
   isRecentTransactionsLoading: boolean;
   isMonthlyRevenueLoading: boolean;
-  isAnyFetching: boolean;
-  onRefreshAll: () => void;
 }
 
 const HeroSection: React.FC<HeroSectionProps> = ({
@@ -37,44 +33,15 @@ const HeroSection: React.FC<HeroSectionProps> = ({
   isSalesLoading,
   isRecentTransactionsLoading,
   isMonthlyRevenueLoading,
-  isAnyFetching,
-  onRefreshAll,
 }) => {
   return (
     <section className="border-b border-slate-200 pb-10">
       <div className="grid gap-10 xl:grid-cols-12">
         <div className="space-y-8 pt-2 xl:col-span-7">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-            <div className="max-w-2xl">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-600">
-                Operations Board
-              </p>
-              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 sm:text-[2.2rem]">
-                Dashboard Apotek
-              </h1>
-              <p className="mt-3 text-sm leading-6 text-slate-600">
-                Ikhtisar operasional harian untuk memantau ritme penjualan,
-                pembelian, inventori, dan transaksi yang butuh perhatian.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-4">
-              <span className="text-xs font-medium uppercase tracking-[0.14em] text-emerald-700">
-                Auto refresh aktif
-              </span>
-
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={onRefreshAll}
-                className="!gap-2 !rounded-full !bg-slate-900 !px-4 !py-2 !text-white shadow-none"
-              >
-                <TbRefresh
-                  className={`h-4 w-4 ${isAnyFetching ? 'animate-spin' : ''}`}
-                />
-                Refresh All
-              </Button>
-            </div>
+          <div className="max-w-2xl">
+            <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-[2.2rem]">
+              Dashboard Apotek
+            </h1>
           </div>
 
           <div className="grid gap-8 border-t border-slate-200 pt-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)] lg:items-end">
@@ -146,7 +113,6 @@ const HeroSection: React.FC<HeroSectionProps> = ({
             <MetricRailItem
               title="Total Penjualan"
               value={formatCurrency(stats?.totalSales || 0)}
-              meta="Akumulasi seluruh invoice penjualan yang sudah tercatat."
               icon={<TbShoppingBag className="h-6 w-6" />}
               accentClass="border-emerald-500"
               iconClass="text-emerald-700"
@@ -155,7 +121,6 @@ const HeroSection: React.FC<HeroSectionProps> = ({
             <MetricRailItem
               title="Total Pembelian"
               value={formatCurrency(stats?.totalPurchases || 0)}
-              meta="Total nilai pembelian untuk menjaga suplai inventori."
               icon={<TbShoppingCart className="h-6 w-6" />}
               accentClass="border-sky-500"
               iconClass="text-sky-700"
@@ -164,7 +129,6 @@ const HeroSection: React.FC<HeroSectionProps> = ({
             <MetricRailItem
               title="Total Obat"
               value={stats?.totalMedicines || 0}
-              meta="Jumlah SKU aktif yang saat ini tersedia di sistem."
               icon={<TbBoxMultiple className="h-6 w-6" />}
               accentClass="border-amber-500"
               iconClass="text-amber-700"
@@ -173,7 +137,6 @@ const HeroSection: React.FC<HeroSectionProps> = ({
             <MetricRailItem
               title="Stok Menipis"
               value={stats?.lowStockCount || 0}
-              meta="Item yang sudah masuk ambang restock dan perlu perhatian."
               icon={<TbAlertTriangle className="h-6 w-6" />}
               accentClass="border-rose-500"
               iconClass="text-rose-700"

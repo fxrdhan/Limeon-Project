@@ -24,11 +24,7 @@ const OperationsSection: React.FC<OperationsSectionProps> = ({
   return (
     <section className="grid gap-10 py-10 xl:grid-cols-12">
       <div className="space-y-8 xl:col-span-8 xl:border-r xl:border-slate-200 xl:pr-8">
-        <SectionHeader
-          eyebrow="Activity"
-          title="Transaksi Terbaru"
-          description="Feed transaksi terakhir untuk melihat arus penjualan dan pembelian tanpa membuka halaman detail."
-        />
+        <SectionHeader eyebrow="Activity" title="Transaksi Terbaru" />
 
         {isRecentTransactionsLoading ? (
           <div className="space-y-3">
@@ -103,11 +99,7 @@ const OperationsSection: React.FC<OperationsSectionProps> = ({
       </div>
 
       <div className="space-y-8 xl:col-span-4 xl:pl-8">
-        <SectionHeader
-          eyebrow="Restock"
-          title="Watchlist Stok Kritis"
-          description="Item dengan stok terendah untuk mempercepat prioritas pembelian ulang."
-        />
+        <SectionHeader eyebrow="Restock" title="Watchlist Stok Kritis" />
 
         {isLowStockLoading ? (
           <div className="space-y-3">
@@ -142,9 +134,9 @@ const OperationsSection: React.FC<OperationsSectionProps> = ({
                     <p className="truncate font-medium text-slate-900">
                       {item.name}
                     </p>
-                    <p className="mt-1 text-sm text-slate-500">
-                      {meta || 'Butuh pengecekan kategori dan kemasan'}
-                    </p>
+                    {meta ? (
+                      <p className="mt-1 text-sm text-slate-500">{meta}</p>
+                    ) : null}
                   </div>
 
                   <div className="text-left sm:text-right">

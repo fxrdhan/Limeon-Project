@@ -1,10 +1,9 @@
 import React from 'react';
-import { TbRefresh } from 'react-icons/tb';
 
 interface MetricRailItemProps {
   title: string;
   value: string | number;
-  meta: string;
+  meta?: string;
   icon: React.ReactNode;
   accentClass: string;
   iconClass: string;
@@ -39,7 +38,7 @@ export const MetricRailItem: React.FC<MetricRailItemProps> = ({
       <div className={`shrink-0 text-2xl ${iconClass}`}>{icon}</div>
     </div>
 
-    <p className="text-sm leading-6 text-slate-500">{meta}</p>
+    {meta ? <p className="text-sm leading-6 text-slate-500">{meta}</p> : null}
   </div>
 );
 
@@ -82,7 +81,7 @@ export const InfoChip: React.FC<InfoChipProps> = ({
 interface SectionHeaderProps {
   eyebrow: string;
   title: string;
-  description: string;
+  description?: string;
   action?: React.ReactNode;
 }
 
@@ -100,28 +99,12 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
       <h2 className="mt-2 text-xl font-semibold tracking-tight text-slate-950">
         {title}
       </h2>
-      <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>
+      {description ? (
+        <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>
+      ) : null}
     </div>
     {action}
   </div>
-);
-
-export const InlineRefreshButton = ({
-  onClick,
-  label,
-}: {
-  onClick: () => void;
-  label: string;
-}) => (
-  <button
-    type="button"
-    onClick={onClick}
-    aria-label={label}
-    className="inline-flex items-center gap-2 border-b border-slate-300 pb-1 text-sm font-medium text-slate-500 transition-colors hover:border-slate-900 hover:text-slate-900"
-  >
-    <TbRefresh className="h-4 w-4" />
-    Refresh
-  </button>
 );
 
 export const PanelMessage = ({

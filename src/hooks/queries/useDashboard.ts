@@ -12,8 +12,6 @@ export const useDashboardStats = (options?: { enabled?: boolean }) => {
       return result.data;
     },
     enabled: options?.enabled ?? true,
-    refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
-    staleTime: 2 * 60 * 1000, // Consider stale after 2 minutes
   });
 };
 
@@ -30,8 +28,6 @@ export const useSalesAnalytics = (
       return result.data;
     },
     enabled: options?.enabled ?? true,
-    refetchInterval: 10 * 60 * 1000, // Refetch every 10 minutes
-    staleTime: 5 * 60 * 1000, // Consider stale after 5 minutes
   });
 };
 
@@ -48,8 +44,6 @@ export const useTopSellingMedicines = (
       return result.data;
     },
     enabled: options?.enabled ?? true,
-    refetchInterval: 15 * 60 * 1000, // Refetch every 15 minutes
-    staleTime: 10 * 60 * 1000, // Consider stale after 10 minutes
   });
 };
 
@@ -66,8 +60,6 @@ export const useLowStockItems = (
       return result.data;
     },
     enabled: options?.enabled ?? true,
-    refetchInterval: 3 * 60 * 1000, // Refetch every 3 minutes (more frequent for alerts)
-    staleTime: 1 * 60 * 1000, // Consider stale after 1 minute
   });
 };
 
@@ -84,8 +76,6 @@ export const useRecentTransactions = (
       return result.data;
     },
     enabled: options?.enabled ?? true,
-    refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
-    staleTime: 2 * 60 * 1000, // Consider stale after 2 minutes
   });
 };
 
@@ -101,8 +91,6 @@ export const useMonthlyRevenueComparison = (options?: {
       return result.data;
     },
     enabled: options?.enabled ?? true,
-    refetchInterval: 60 * 60 * 1000, // Refetch every hour
-    staleTime: 30 * 60 * 1000, // Consider stale after 30 minutes
   });
 };
 

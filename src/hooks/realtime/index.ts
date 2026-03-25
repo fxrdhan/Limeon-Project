@@ -4,3 +4,4 @@
 export * from './useItemsSync';
 export * from './useItemModalRealtime';
 export * from './useSmartFormSync';
+export * from './useDashboardRealtime';
