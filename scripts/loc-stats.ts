@@ -1,4 +1,5 @@
 #!/usr/bin/env tsx
+/// <reference types="node" />
 
 import { execSync } from 'child_process';
 import { readFileSync } from 'fs';
@@ -110,7 +111,6 @@ function shouldExcludeFile(filePath: string): boolean {
     '.oxfmtrc',
     '.oxfmtrc.json',
     '.oxfmtrc.jsonc',
-    '.swcrc',
     '.yarnrc.yml',
     'package.json',
     'package-lock.json',

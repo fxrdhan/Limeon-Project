@@ -58,7 +58,7 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
-    exclude: [...configDefaults.exclude, 'playwright/**', 'test-results/**'],
+    exclude: [...configDefaults.exclude, 'test-results/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
@@ -75,7 +75,6 @@ export default defineConfig({
         '**/*.d.ts',
         '**/*.config.*',
         '**/mockData/**',
-        'src/playwright/**',
         'dist/',
         ...nonRuntimeCoverageFiles,
       ],

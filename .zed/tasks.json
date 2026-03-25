@@ -64,17 +64,5 @@
     "command": "bun run format:check",
     "use_new_terminal": false,
     "tags": ["format"]
-  },
-  {
-    "label": "tailwind:watch",
-    "command": "bun run tailwind:watch",
-    "use_new_terminal": true,
-    "tags": ["dev"]
-  },
-  {
-    "label": "tailwind:build",
-    "command": "bun run tailwind:build",
-    "use_new_terminal": false,
-    "tags": ["build"]
   }
 ]

@@ -228,7 +228,6 @@
   "src/hooks/ui/index.ts",
   "src/hooks/ui/useCacheFirstLoading.ts",
   "src/lib/indexedDBPersistence.ts",
-  "src/playwright/enhanced-search-harness.tsx",
   "src/schemas/index.ts",
   "src/schemas/manual/index.ts",
   "src/services/api/index.ts",
