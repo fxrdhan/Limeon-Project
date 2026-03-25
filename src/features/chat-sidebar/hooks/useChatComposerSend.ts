@@ -234,15 +234,20 @@ export const useChatComposerSend = ({
 
       clearPendingComposerAttachments();
 
-      const attachmentResults = await Promise.all(
-        sendPlan.jobs.map(async ({ attachment, captionText }) => ({
+      const attachmentResults: Array<{
+        pendingAttachment: PendingComposerAttachment;
+        sentAttachmentMessageId: string | null;
+      }> = [];
+
+      for (const { attachment, captionText } of sendPlan.jobs) {
+        attachmentResults.push({
           pendingAttachment: attachment,
           sentAttachmentMessageId: await sendComposerAttachment(
             attachment,
             captionText
           ),
-        }))
-      );
+        });
+      }
       const failedAttachments = attachmentResults
         .filter(attachmentResult => !attachmentResult.sentAttachmentMessageId)
         .map(attachmentResult => attachmentResult.pendingAttachment);

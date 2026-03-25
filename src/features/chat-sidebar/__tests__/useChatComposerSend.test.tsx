@@ -6,7 +6,6 @@ import type { PendingComposerAttachment } from '../types';
 import { useChatComposerSend } from '../hooks/useChatComposerSend';
 import { useChatMutationScope } from '../hooks/useChatMutationScope';
 import { chatRuntimeCache } from '../utils/chatRuntimeCache';
-import { buildMessageRenderItems } from '../utils/message-render-items';
 import { buildPdfMessagePreviewCacheKey } from '../utils/pdf-message-preview';
 
 const { mockGateway, mockToast } = vi.hoisted(() => ({
@@ -483,40 +482,61 @@ describe('useChatComposerSend', () => {
     );
   });
 
-  it('appends multiple document attachments optimistically before upload resolves', async () => {
+  it('sends queued attachments sequentially and keeps the caption on the last queued attachment', async () => {
     vi.stubGlobal(
       'URL',
       Object.assign(URL, {
         createObjectURL: vi
           .fn()
           .mockReturnValueOnce('blob:temp-upload-1')
-          .mockReturnValueOnce('blob:temp-upload-2')
-          .mockReturnValueOnce('blob:temp-upload-3'),
+          .mockReturnValueOnce('blob:temp-upload-2'),
         revokeObjectURL: vi.fn(),
       })
     );
 
     const uploadResolvers: Array<(value: { path: string }) => void> = [];
+    const startedUploads: string[] = [];
     mockGateway.uploadAttachment.mockImplementation(
-      () =>
+      (file: File) =>
         new Promise(resolve => {
+          startedUploads.push(file.name);
           uploadResolvers.push(resolve);
         })
     );
 
     let persistedMessageCount = 0;
     mockGateway.createMessage.mockImplementation(async payload => {
+      if (payload.message_relation_kind === 'attachment_caption') {
+        return {
+          data: buildMessage({
+            id: 'server-caption-1',
+            message: String(payload.message),
+            message_type: 'text',
+            reply_to_id: String(payload.reply_to_id),
+            file_name: null,
+            file_kind: null as unknown as ChatMessage['file_kind'],
+            file_mime_type: null,
+            file_size: null,
+            file_storage_path: null,
+          }),
+          error: null,
+        };
+      }
+
       persistedMessageCount += 1;
 
       return {
         data: buildMessage({
           id: `server-file-${persistedMessageCount}`,
-          message: payload.message,
+          message: String(payload.message),
           message_type: payload.message_type,
           file_name: payload.file_name ?? `stok-${persistedMessageCount}.pdf`,
           file_kind: payload.file_kind ?? 'document',
           file_mime_type: payload.file_mime_type ?? 'application/pdf',
-          file_storage_path: payload.file_storage_path,
+          file_storage_path:
+            typeof payload.file_storage_path === 'string'
+              ? payload.file_storage_path
+              : null,
         }),
         error: null,
       };
@@ -526,7 +546,7 @@ describe('useChatComposerSend', () => {
 
     const { result } = renderHook(() => {
       const [messages, setMessages] = useState<ChatMessage[]>([]);
-      const [draftMessage, setDraftMessage] = useState('');
+      const [draftMessage, setDraftMessage] = useState('stok opname');
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
       const send = useComposerSendWithMutationScope({
@@ -544,15 +564,17 @@ describe('useChatComposerSend', () => {
         pendingComposerAttachments: [
           buildPendingAttachment({
             id: 'pending-1',
+            file: new File(['pdf'], 'stok-1.pdf', {
+              type: 'application/pdf',
+            }),
             fileName: 'stok-1.pdf',
           }),
           buildPendingAttachment({
             id: 'pending-2',
+            file: new File(['pdf'], 'stok-2.pdf', {
+              type: 'application/pdf',
+            }),
             fileName: 'stok-2.pdf',
-          }),
-          buildPendingAttachment({
-            id: 'pending-3',
-            fileName: 'stok-3.pdf',
           }),
         ],
         clearPendingComposerAttachments: vi.fn(),
@@ -576,36 +598,51 @@ describe('useChatComposerSend', () => {
       await Promise.resolve();
     });
 
-    expect(result.current.messages).toHaveLength(3);
-    expect(result.current.messages.map(message => message.id)).toEqual([
-      expect.stringMatching(/^temp_file_/),
-      expect.stringMatching(/^temp_file_/),
-      expect.stringMatching(/^temp_file_/),
-    ]);
-
-    const renderItems = buildMessageRenderItems({
-      messages: result.current.messages,
-      captionMessagesByAttachmentId: new Map(),
-      getAttachmentFileKind: () => 'document',
-      enableDocumentBubbleGrouping: true,
-    });
-
-    expect(renderItems).toHaveLength(1);
-    expect(renderItems[0]?.kind).toBe('document-group');
-    expect(renderItems[0]?.messages).toHaveLength(3);
+    expect(startedUploads).toEqual(['stok-1.pdf']);
+    expect(mockGateway.uploadAttachment).toHaveBeenCalledTimes(1);
+    expect(result.current.messages).toHaveLength(1);
 
     await act(async () => {
       uploadResolvers[0]?.({
         path: 'documents/channel-1/user-a_document_stok-1.pdf',
       });
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(startedUploads).toEqual(['stok-1.pdf', 'stok-2.pdf']);
+      expect(mockGateway.uploadAttachment).toHaveBeenCalledTimes(2);
+    });
+
+    await act(async () => {
       uploadResolvers[1]?.({
         path: 'documents/channel-1/user-a_document_stok-2.pdf',
       });
-      uploadResolvers[2]?.({
-        path: 'documents/channel-1/user-a_document_stok-3.pdf',
-      });
       await sendPromise;
     });
+
+    expect(mockGateway.createMessage).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        message_type: 'file',
+        file_name: 'stok-1.pdf',
+      })
+    );
+    expect(mockGateway.createMessage).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        message_type: 'file',
+        file_name: 'stok-2.pdf',
+      })
+    );
+    expect(mockGateway.createMessage).toHaveBeenNthCalledWith(
+      3,
+      expect.objectContaining({
+        message_relation_kind: 'attachment_caption',
+        message: 'stok opname',
+        reply_to_id: 'server-file-2',
+      })
+    );
   });
 
   it('surfaces a cleanup warning when an uncommitted uploaded file cannot be deleted', async () => {
