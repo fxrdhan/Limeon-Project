@@ -4,6 +4,7 @@
 - This repo uses the native VitePlus toolchain. Prefer `vp` semantics and `bun run` project scripts over raw `vite` or `vitest` commands.
 - Always use Exa MCP to search for information on the web and scrape pages.
 - Always use Supabase MCP if you need understanding this project databases.
+- For any Supabase-related work, inspect `supabase/functions` and `supabase/migrations` first. Treat those paths as the source of truth for file-based changes so Edge Functions and migrations stay tracked in Git.
 
 # Guidelines:
 
@@ -11,6 +12,8 @@
 - When creating Git commits, use git-commit skills.
 - Development, build, lint, format, check, and test flows are routed through `vp`/VitePlus. Legacy script names such as `dev:vite` are wrappers around `vp`, not plain Vite CLI usage.
 - Testing in this project runs through VitePlus test tooling with Vitest-compatible APIs. Prefer `bun run test:agent` or `bun run test:agent:watch` when running tests. Use `bun run test:run` for regular local terminal output.
+- Do not make remote-only Supabase changes first. Update the relevant files under `supabase/functions` or `supabase/migrations`, confirm the intended changes are tracked by Git, then use Supabase MCP to deploy Edge Functions or apply migrations only when those local changes are ready.
+- If you need to inspect live database state such as tables, columns, schema definitions, RLS policies, or other metadata not represented in `supabase/`, use Supabase MCP.
 
 # Code Exploration
 
