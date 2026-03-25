@@ -8,6 +8,41 @@ import {
 import { renderPdfPreviewBlob, renderPdfPreviewDataUrl } from './pdf-preview';
 
 export const PDF_MESSAGE_PREVIEW_TARGET_WIDTH = 260;
+export interface ResolvedPdfMessagePreviewAssetEntry {
+  cacheKey: string;
+  coverUrl: string;
+  expiresAt: number | null;
+  pageCount: number;
+}
+
+export type PdfMessagePreview =
+  | PdfMessagePreviewCacheEntry
+  | ResolvedPdfMessagePreviewAssetEntry;
+
+export const getPdfMessagePreviewUrl = (
+  preview?: PdfMessagePreview | null,
+  now = Date.now()
+) => {
+  if (!preview) {
+    return null;
+  }
+
+  if ('coverUrl' in preview) {
+    if (preview.expiresAt !== null && preview.expiresAt <= now) {
+      return null;
+    }
+
+    return preview.coverUrl;
+  }
+
+  return preview.coverDataUrl;
+};
+
+export const isResolvedPdfMessagePreviewAssetFresh = (
+  preview?: ResolvedPdfMessagePreviewAssetEntry | null,
+  now = Date.now()
+) =>
+  Boolean(preview && (preview.expiresAt === null || preview.expiresAt > now));
 
 type PdfPreviewableMessage = Pick<
   ChatMessage,

@@ -8,6 +8,12 @@ import {
   type ChatMessage,
 } from '../data/chatSidebarGateway';
 import { useChatAttachmentCleanup } from './useChatAttachmentCleanup';
+import {
+  appendOptimisticAttachmentThread,
+  commitOptimisticAttachmentThread,
+  createOptimisticAttachmentThread,
+  removeOptimisticAttachmentThread,
+} from '../utils/attachment-send';
 import { buildChatFilePath, buildChatImagePath } from '../utils/attachment';
 import {
   buildFailedAttachmentPreviewFields,
@@ -19,7 +25,10 @@ import {
 import { chatRuntime } from '../utils/chatRuntime';
 import { mapPersistedMessageForDisplay } from '../utils/conversation-sync';
 import { buildPdfMessagePreviewCacheKey } from '../utils/pdf-message-preview';
-import { sendAttachmentThread } from '../utils/attachment-thread-flow';
+import {
+  markMessageAsAttachmentCaption,
+  toAttachmentCaptionInsertInput,
+} from '../utils/message-relations';
 import type {
   ChatSidebarPanelTargetUser,
   PendingComposerAttachment,
@@ -60,6 +69,153 @@ export type SendableComposerAttachment =
   | AttachmentComposerRemoteFile
   | PendingComposerAttachment
   | PendingComposerFile;
+
+interface PersistedAttachmentResult {
+  uploadedStoragePath: string;
+  uploadedStoragePaths: string[];
+  realMessage: ChatMessage | null;
+  error: unknown;
+}
+
+interface PersistedAttachmentCaptionResult {
+  mappedCaptionMessage: ChatMessage | null;
+  error: unknown;
+}
+
+interface SendAttachmentMessageOptions {
+  tempIdPrefix: string;
+  stableKeySuffix: string;
+  file: File;
+  captionText?: string;
+  sendFailureToast: string;
+  captionFailureToast: string;
+  shouldDelayPreviewCleanup?: boolean;
+  buildOptimisticMessage: (context: {
+    tempId: string;
+    stableKey: string;
+    localPreviewUrl: string;
+    timestamp: string;
+  }) => ChatMessage;
+  uploadAsset: () => Promise<{
+    path: string;
+    additionalStoragePaths?: Array<string | null | undefined>;
+  }>;
+  createPersistedMessage: (
+    uploadedPath: string
+  ) => Promise<{ data: ChatMessage | null; error: unknown }>;
+  mapPersistedMessage: (
+    persistedMessage: ChatMessage,
+    uploadedPath: string,
+    stableKey: string
+  ) => ChatMessage;
+  onBeforeAppendOptimistic?: (optimisticMessage: ChatMessage) => void;
+  onAfterCommit?: (
+    realMessage: ChatMessage,
+    stableKey: string,
+    uploadedPath: string,
+    conversationScopeKey: string | null,
+    tempId: string
+  ) => void | Promise<void>;
+}
+
+const persistAttachmentMessage = async ({
+  uploadAsset,
+  createPersistedMessage,
+  mapPersistedMessage,
+  stableKey,
+}: Pick<
+  SendAttachmentMessageOptions,
+  'uploadAsset' | 'createPersistedMessage' | 'mapPersistedMessage'
+> & {
+  stableKey: string;
+}): Promise<PersistedAttachmentResult> => {
+  const uploadResult = await uploadAsset();
+  const uploadedStoragePath = uploadResult.path;
+  const uploadedStoragePaths = [
+    uploadedStoragePath,
+    ...(uploadResult.additionalStoragePaths ?? []),
+  ]
+    .map(storagePath => storagePath?.trim() || null)
+    .filter((storagePath): storagePath is string => Boolean(storagePath));
+  const { data: persistedMessage, error } =
+    await createPersistedMessage(uploadedStoragePath);
+
+  if (error || !persistedMessage) {
+    return {
+      uploadedStoragePath,
+      uploadedStoragePaths,
+      realMessage: null,
+      error,
+    };
+  }
+
+  return {
+    uploadedStoragePath,
+    uploadedStoragePaths,
+    realMessage: mapPersistedMessage(
+      persistedMessage,
+      uploadedStoragePath,
+      stableKey
+    ),
+    error: null,
+  };
+};
+
+const persistAttachmentCaptionMessage = async ({
+  user,
+  targetUser,
+  currentChannelId,
+  realMessage,
+  normalizedCaptionText,
+  captionStableKey,
+}: {
+  user: {
+    id: string;
+    name: string;
+  } | null;
+  targetUser?: ChatSidebarPanelTargetUser;
+  currentChannelId: string | null;
+  realMessage: ChatMessage;
+  normalizedCaptionText: string;
+  captionStableKey: string;
+}): Promise<PersistedAttachmentCaptionResult> => {
+  if (!user || !targetUser || !currentChannelId) {
+    return {
+      mappedCaptionMessage: null,
+      error: new Error('Missing active chat participants'),
+    };
+  }
+
+  const { data: captionMessage, error } =
+    await chatSidebarMessagesGateway.createMessage(
+      toAttachmentCaptionInsertInput({
+        receiver_id: targetUser.id,
+        message: normalizedCaptionText,
+        message_type: 'text',
+        reply_to_id: realMessage.id,
+      })
+    );
+
+  if (error || !captionMessage) {
+    return {
+      mappedCaptionMessage: null,
+      error,
+    };
+  }
+
+  return {
+    mappedCaptionMessage: markMessageAsAttachmentCaption(
+      mapPersistedMessageForDisplay(
+        captionMessage,
+        user,
+        targetUser,
+        captionStableKey
+      ),
+      realMessage.id
+    ),
+    error: null,
+  };
+};
 
 export const useChatAttachmentSend = ({
   user,
@@ -133,28 +289,280 @@ export const useChatAttachmentSend = ({
   );
 
   const sendAttachmentMessage = useCallback(
-    async (options: Parameters<typeof sendAttachmentThread>[1]) =>
-      sendAttachmentThread(
-        {
-          user,
-          targetUser,
-          currentChannelId,
-          editingMessageId,
-          setMessages,
-          scheduleScrollMessagesToBottom,
-          triggerSendSuccessGlow,
-          pendingImagePreviewUrlsRef,
-          registerPendingSend,
-          conversationScopeKey,
-          isCurrentConversationScopeActive,
-          reconcileCurrentConversationMessages,
-          runInCurrentConversationScope,
-          cleanupUncommittedStorageFiles,
-          rollbackPersistedAttachmentThread,
-          releasePendingPreviewUrl,
-        },
-        options
-      ),
+    async ({
+      tempIdPrefix,
+      stableKeySuffix,
+      file,
+      captionText,
+      sendFailureToast,
+      captionFailureToast,
+      shouldDelayPreviewCleanup = false,
+      buildOptimisticMessage,
+      uploadAsset,
+      createPersistedMessage,
+      mapPersistedMessage,
+      onBeforeAppendOptimistic,
+      onAfterCommit,
+    }: SendAttachmentMessageOptions) => {
+      if (!user || !targetUser || !currentChannelId) {
+        return null;
+      }
+
+      if (editingMessageId) {
+        toast.error('Selesaikan edit pesan terlebih dahulu', {
+          toasterId: CHAT_SIDEBAR_TOASTER_ID,
+        });
+        return null;
+      }
+
+      const timestamp = new Date().toISOString();
+      const localPreviewUrl = URL.createObjectURL(file);
+      const optimisticThread = createOptimisticAttachmentThread({
+        tempIdPrefix,
+        stableKeySuffix,
+        captionText,
+        currentChannelId,
+        localPreviewUrl,
+        timestamp,
+        user,
+        targetUser,
+        buildOptimisticMessage,
+      });
+      const {
+        tempId,
+        stableKey,
+        normalizedCaptionText,
+        hasAttachmentCaption,
+        captionTempId,
+        captionStableKey,
+      } = optimisticThread;
+      const pendingSend = registerPendingSend(tempId);
+      pendingImagePreviewUrlsRef.current.set(tempId, localPreviewUrl);
+      onBeforeAppendOptimistic?.(optimisticThread.optimisticMessage);
+
+      setMessages(previousMessages =>
+        appendOptimisticAttachmentThread(previousMessages, optimisticThread)
+      );
+      triggerSendSuccessGlow();
+      scheduleScrollMessagesToBottom();
+
+      let uploadedStoragePath: string | null = null;
+      let uploadedStoragePaths: string[] = [];
+
+      try {
+        const persistedAttachment = await persistAttachmentMessage({
+          uploadAsset,
+          createPersistedMessage,
+          mapPersistedMessage,
+          stableKey,
+        });
+        uploadedStoragePath = persistedAttachment.uploadedStoragePath;
+        uploadedStoragePaths = persistedAttachment.uploadedStoragePaths;
+
+        if (!persistedAttachment.realMessage || persistedAttachment.error) {
+          if (pendingSend.isCancelled()) {
+            await cleanupUncommittedStorageFiles(uploadedStoragePaths);
+            return null;
+          }
+
+          if (
+            !pendingSend.isCancelled() &&
+            isCurrentConversationScopeActive()
+          ) {
+            setMessages(previousMessages =>
+              removeOptimisticAttachmentThread(
+                previousMessages,
+                tempId,
+                captionTempId
+              )
+            );
+          }
+
+          const didCleanupStorage = await cleanupUncommittedStorageFiles(
+            uploadedStoragePaths,
+            {
+              toastMessage:
+                'Pengiriman gagal dan file sementara tidak dapat dibersihkan',
+              shouldToast: !pendingSend.isCancelled(),
+            }
+          );
+
+          if (
+            didCleanupStorage &&
+            !pendingSend.isCancelled() &&
+            isCurrentConversationScopeActive()
+          ) {
+            toast.error(sendFailureToast, {
+              toasterId: CHAT_SIDEBAR_TOASTER_ID,
+            });
+          }
+
+          return null;
+        }
+
+        const realMessage = persistedAttachment.realMessage;
+
+        if (pendingSend.isCancelled()) {
+          try {
+            await rollbackPersistedAttachmentThread(
+              realMessage.id,
+              uploadedStoragePaths,
+              conversationScopeKey
+            );
+          } catch (rollbackError) {
+            console.error(
+              'Error cancelling temp attachment thread after persistence:',
+              rollbackError
+            );
+            await reconcileCurrentConversationMessages();
+          }
+          return null;
+        }
+
+        if (hasAttachmentCaption && captionTempId) {
+          const persistedCaption = await persistAttachmentCaptionMessage({
+            user,
+            targetUser,
+            currentChannelId,
+            realMessage,
+            normalizedCaptionText,
+            captionStableKey: captionStableKey!,
+          });
+
+          if (
+            !persistedCaption.error &&
+            persistedCaption.mappedCaptionMessage
+          ) {
+            if (pendingSend.isCancelled()) {
+              try {
+                await rollbackPersistedAttachmentThread(
+                  realMessage.id,
+                  uploadedStoragePaths,
+                  conversationScopeKey
+                );
+              } catch (rollbackError) {
+                console.error(
+                  'Error cancelling temp attachment thread after caption persistence:',
+                  rollbackError
+                );
+                await reconcileCurrentConversationMessages();
+              }
+              return null;
+            }
+
+            runInCurrentConversationScope(() => {
+              setMessages(previousMessages =>
+                commitOptimisticAttachmentThread({
+                  previousMessages,
+                  tempId,
+                  realMessage,
+                  captionTempId,
+                  mappedCaptionMessage: persistedCaption.mappedCaptionMessage,
+                })
+              );
+            });
+          } else {
+            if (
+              !pendingSend.isCancelled() &&
+              isCurrentConversationScopeActive()
+            ) {
+              setMessages(previousMessages =>
+                removeOptimisticAttachmentThread(
+                  previousMessages,
+                  tempId,
+                  captionTempId
+                )
+              );
+            }
+
+            try {
+              await rollbackPersistedAttachmentThread(
+                realMessage.id,
+                uploadedStoragePaths,
+                conversationScopeKey
+              );
+            } catch (rollbackError) {
+              console.error(
+                'Error rolling back attachment thread:',
+                rollbackError
+              );
+              await reconcileCurrentConversationMessages();
+            }
+
+            if (
+              !pendingSend.isCancelled() &&
+              isCurrentConversationScopeActive()
+            ) {
+              toast.error(captionFailureToast, {
+                toasterId: CHAT_SIDEBAR_TOASTER_ID,
+              });
+            }
+
+            return null;
+          }
+        } else {
+          runInCurrentConversationScope(() => {
+            setMessages(previousMessages =>
+              commitOptimisticAttachmentThread({
+                previousMessages,
+                tempId,
+                realMessage,
+                captionTempId: null,
+                mappedCaptionMessage: null,
+              })
+            );
+          });
+        }
+
+        if (uploadedStoragePath) {
+          await onAfterCommit?.(
+            realMessage,
+            stableKey,
+            uploadedStoragePath,
+            conversationScopeKey,
+            tempId
+          );
+        }
+
+        return realMessage.id;
+      } catch (error) {
+        console.error('Error sending attachment message:', error);
+
+        if (!pendingSend.isCancelled() && isCurrentConversationScopeActive()) {
+          setMessages(previousMessages =>
+            removeOptimisticAttachmentThread(
+              previousMessages,
+              tempId,
+              captionTempId
+            )
+          );
+        }
+
+        const didCleanupStorage = await cleanupUncommittedStorageFiles(
+          uploadedStoragePaths,
+          {
+            toastMessage:
+              'Pengiriman gagal dan file sementara tidak dapat dibersihkan',
+            shouldToast: !pendingSend.isCancelled(),
+          }
+        );
+
+        if (
+          didCleanupStorage &&
+          !pendingSend.isCancelled() &&
+          isCurrentConversationScopeActive()
+        ) {
+          toast.error(sendFailureToast, {
+            toasterId: CHAT_SIDEBAR_TOASTER_ID,
+          });
+        }
+
+        return null;
+      } finally {
+        pendingSend.complete();
+        releasePendingPreviewUrl(tempId, shouldDelayPreviewCleanup);
+      }
+    },
     [
       cleanupUncommittedStorageFiles,
       conversationScopeKey,

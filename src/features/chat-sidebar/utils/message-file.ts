@@ -55,6 +55,25 @@ export const isDirectChatAssetUrl = (url: string) =>
   /^(https?:\/\/|blob:|data:|\/)/i.test(url);
 
 export const SIGNED_CHAT_ASSET_URL_TTL_MS = 55 * 60 * 1000;
+export interface ResolvedChatAssetUrlEntry {
+  url: string;
+  expiresAt: number | null;
+}
+
+export const getFreshResolvedChatAssetUrl = (
+  entry?: ResolvedChatAssetUrlEntry | null,
+  now = Date.now()
+) => {
+  if (!entry) {
+    return null;
+  }
+
+  if (entry.expiresAt !== null && entry.expiresAt <= now) {
+    return null;
+  }
+
+  return entry.url;
+};
 
 export type ChatAssetTransformOptions = TransformOptions;
 const CHAT_SHARED_LINK_SLUG_PATTERN = /^[23456789abcdefghjkmnpqrstuvwxyz]{10}$/;
@@ -239,7 +258,7 @@ export const resolveChatAssetUrlWithExpiry = async (
   storagePathHint?: string | null,
   expiresInSeconds = 3600,
   transform?: ChatAssetTransformOptions
-) => {
+): Promise<ResolvedChatAssetUrlEntry | null> => {
   if (isDirectChatAssetUrl(url)) {
     return {
       url,
@@ -311,11 +330,10 @@ export const getCachedResolvedChatAssetUrl = (
     transform
   );
   chatRuntimeCache.signedAssets.pruneExpired();
+  const cachedSignedUrl =
+    chatRuntimeCache.signedAssets.getEntry(signedAssetCacheKey);
 
-  return (
-    chatRuntimeCache.signedAssets.getEntry(signedAssetCacheKey)?.signedUrl ??
-    null
-  );
+  return cachedSignedUrl?.signedUrl ?? null;
 };
 
 export const resolveChatAssetUrl = async (

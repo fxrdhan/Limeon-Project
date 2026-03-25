@@ -2,10 +2,16 @@ import type {
   PendingComposerAttachment,
   PendingComposerAttachmentKind,
 } from '../types';
-import { readRuntimeStorage, writeRuntimeStorage } from './chatRuntimeState';
+import {
+  deleteRuntimeStorage,
+  readRuntimeStorage,
+  writeRuntimeStorage,
+} from './chatRuntimeState';
 import {
   CHAT_RUNTIME_INDEXED_DB_NAMES,
   CHAT_RUNTIME_LOCAL_STORAGE_KEYS,
+  closeRuntimeIndexedDb,
+  deleteRuntimeIndexedDb,
   openRuntimeIndexedDb,
 } from './runtime-persistence';
 
@@ -536,4 +542,17 @@ export const clearPersistedComposerDraftAttachments = async (
   }
 
   await deletePersistedComposerDraftRecords(database, [normalizedChannelId]);
+};
+
+export const resetPersistedComposerDrafts = async () => {
+  deleteRuntimeStorage(COMPOSER_DRAFT_MESSAGES_STORAGE_KEY, 'local');
+
+  await closeRuntimeIndexedDb(composerDraftDbPromise);
+  composerDraftDbPromise = null;
+
+  if (!canUseIndexedDb()) {
+    return;
+  }
+
+  await deleteRuntimeIndexedDb(COMPOSER_DRAFT_ATTACHMENTS_DB_NAME);
 };

@@ -9,9 +9,11 @@ import type { MutableRefObject } from 'react';
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import { chatRuntime } from '../utils/chatRuntime';
 import {
+  getFreshResolvedChatAssetUrl,
   getCachedResolvedChatAssetUrl,
   isDirectChatAssetUrl,
-  resolveChatAssetUrl,
+  resolveChatAssetUrlWithExpiry,
+  type ResolvedChatAssetUrlEntry,
 } from '../utils/message-file';
 import {
   getVerticalVisibilityBounds,
@@ -62,30 +64,35 @@ export const useMessageImagePreviews = ({
   getVisibleMessagesBounds: () => VisibleBounds | null;
 }) => {
   const [
-    resolvedPreviewAssetUrlsByMessageId,
-    setResolvedPreviewAssetUrlsByMessageId,
-  ] = useState<Record<string, string>>({});
+    resolvedPreviewAssetEntriesByMessageId,
+    setResolvedPreviewAssetEntriesByMessageId,
+  ] = useState<Record<string, ResolvedChatAssetUrlEntry>>({});
   const [
     resolvedFullAssetUrlsByMessageId,
     setResolvedFullAssetUrlsByMessageId,
   ] = useState<Record<string, string>>({});
   const previewPrefetchTimeoutRef = useRef<number | null>(null);
   const fullPrefetchTimeoutRef = useRef<number | null>(null);
+  const previewAssetExpiryTimeoutRef = useRef<number | null>(null);
 
-  const setResolvedPreviewAssetUrl = useCallback(
-    (messageId: string, previewUrl: string | null) => {
-      if (!previewUrl) {
+  const setResolvedPreviewAssetEntry = useCallback(
+    (messageId: string, previewEntry: ResolvedChatAssetUrlEntry | null) => {
+      if (!previewEntry) {
         return;
       }
 
-      setResolvedPreviewAssetUrlsByMessageId(previousUrls => {
-        if (previousUrls[messageId] === previewUrl) {
-          return previousUrls;
+      setResolvedPreviewAssetEntriesByMessageId(previousEntries => {
+        const previousEntry = previousEntries[messageId];
+        if (
+          previousEntry?.url === previewEntry.url &&
+          previousEntry.expiresAt === previewEntry.expiresAt
+        ) {
+          return previousEntries;
         }
 
         return {
-          ...previousUrls,
-          [messageId]: previewUrl,
+          ...previousEntries,
+          [messageId]: previewEntry,
         };
       });
     },
@@ -205,7 +212,15 @@ export const useMessageImagePreviews = ({
             variant
           );
           if (variant === 'thumbnail') {
-            setResolvedPreviewAssetUrl(messageItem.id, resolvedAssetUrl);
+            setResolvedPreviewAssetEntry(
+              messageItem.id,
+              resolvedAssetUrl
+                ? {
+                    url: resolvedAssetUrl,
+                    expiresAt: null,
+                  }
+                : null
+            );
             return;
           }
 
@@ -217,7 +232,7 @@ export const useMessageImagePreviews = ({
       collectVisibleImageMessages,
       currentChannelId,
       setResolvedFullAssetUrl,
-      setResolvedPreviewAssetUrl,
+      setResolvedPreviewAssetEntry,
     ]
   );
 
@@ -225,9 +240,12 @@ export const useMessageImagePreviews = ({
     const visibleImageMessages = collectVisibleImageMessages().filter(
       messageItem => {
         const previewPath = messageItem.file_preview_url?.trim();
+        const resolvedPreviewEntry =
+          resolvedPreviewAssetEntriesByMessageId[messageItem.id];
+
         return Boolean(
           previewPath &&
-          !resolvedPreviewAssetUrlsByMessageId[messageItem.id] &&
+          !getFreshResolvedChatAssetUrl(resolvedPreviewEntry) &&
           !resolvedFullAssetUrlsByMessageId[messageItem.id]
         );
       }
@@ -245,18 +263,18 @@ export const useMessageImagePreviews = ({
           return;
         }
 
-        const resolvedPreviewUrl = await resolveChatAssetUrl(
+        const resolvedPreviewEntry = await resolveChatAssetUrlWithExpiry(
           previewPath,
           previewPath
         );
-        setResolvedPreviewAssetUrl(messageItem.id, resolvedPreviewUrl);
+        setResolvedPreviewAssetEntry(messageItem.id, resolvedPreviewEntry);
       }
     );
   }, [
     collectVisibleImageMessages,
     resolvedFullAssetUrlsByMessageId,
-    resolvedPreviewAssetUrlsByMessageId,
-    setResolvedPreviewAssetUrl,
+    resolvedPreviewAssetEntriesByMessageId,
+    setResolvedPreviewAssetEntry,
   ]);
 
   const scheduleVisibleImageAssetPrefetch = useCallback(() => {
@@ -285,7 +303,7 @@ export const useMessageImagePreviews = ({
   }, [prefetchVisibleImageAssets, resolveVisibleImagePreviewAssetUrls]);
 
   useEffect(() => {
-    setResolvedPreviewAssetUrlsByMessageId({});
+    setResolvedPreviewAssetEntriesByMessageId({});
     setResolvedFullAssetUrlsByMessageId({});
     if (!currentChannelId?.trim()) {
       return;
@@ -298,6 +316,23 @@ export const useMessageImagePreviews = ({
     const activeMessageIds = new Set(
       messages.map(messageItem => messageItem.id)
     );
+    const pruneResolvedPreviewEntries = (
+      previousEntries: Record<string, ResolvedChatAssetUrlEntry>
+    ): Record<string, ResolvedChatAssetUrlEntry> => {
+      let hasChanges = false;
+      const nextEntries: Record<string, ResolvedChatAssetUrlEntry> = {};
+
+      Object.entries(previousEntries).forEach(([messageId, previewEntry]) => {
+        if (!activeMessageIds.has(messageId)) {
+          hasChanges = true;
+          return;
+        }
+
+        nextEntries[messageId] = previewEntry;
+      });
+
+      return hasChanges ? nextEntries : previousEntries;
+    };
     const pruneResolvedUrls = (
       previousUrls: Record<string, string>
     ): Record<string, string> => {
@@ -316,9 +351,73 @@ export const useMessageImagePreviews = ({
       return hasChanges ? nextUrls : previousUrls;
     };
 
-    setResolvedPreviewAssetUrlsByMessageId(pruneResolvedUrls);
+    setResolvedPreviewAssetEntriesByMessageId(pruneResolvedPreviewEntries);
     setResolvedFullAssetUrlsByMessageId(pruneResolvedUrls);
   }, [messages]);
+
+  useEffect(() => {
+    if (previewAssetExpiryTimeoutRef.current !== null) {
+      window.clearTimeout(previewAssetExpiryTimeoutRef.current);
+      previewAssetExpiryTimeoutRef.current = null;
+    }
+
+    const nextExpiryAt = Object.values(
+      resolvedPreviewAssetEntriesByMessageId
+    ).reduce<number | null>((closestExpiryAt, previewEntry) => {
+      if (previewEntry.expiresAt === null) {
+        return closestExpiryAt;
+      }
+
+      if (
+        closestExpiryAt === null ||
+        previewEntry.expiresAt < closestExpiryAt
+      ) {
+        return previewEntry.expiresAt;
+      }
+
+      return closestExpiryAt;
+    }, null);
+
+    if (nextExpiryAt === null) {
+      return;
+    }
+
+    previewAssetExpiryTimeoutRef.current = window.setTimeout(
+      () => {
+        setResolvedPreviewAssetEntriesByMessageId(previousEntries => {
+          const now = Date.now();
+          let hasChanges = false;
+          const nextEntries: Record<string, ResolvedChatAssetUrlEntry> = {};
+
+          Object.entries(previousEntries).forEach(
+            ([messageId, previewEntry]) => {
+              if (!getFreshResolvedChatAssetUrl(previewEntry, now)) {
+                hasChanges = true;
+                return;
+              }
+
+              nextEntries[messageId] = previewEntry;
+            }
+          );
+
+          return hasChanges ? nextEntries : previousEntries;
+        });
+
+        scheduleVisibleImageAssetPrefetch();
+      },
+      Math.max(nextExpiryAt - Date.now(), 0) + 1
+    );
+
+    return () => {
+      if (previewAssetExpiryTimeoutRef.current !== null) {
+        window.clearTimeout(previewAssetExpiryTimeoutRef.current);
+        previewAssetExpiryTimeoutRef.current = null;
+      }
+    };
+  }, [
+    resolvedPreviewAssetEntriesByMessageId,
+    scheduleVisibleImageAssetPrefetch,
+  ]);
 
   useEffect(() => {
     scheduleVisibleImageAssetPrefetch();
@@ -354,6 +453,10 @@ export const useMessageImagePreviews = ({
       if (fullPrefetchTimeoutRef.current !== null) {
         window.clearTimeout(fullPrefetchTimeoutRef.current);
         fullPrefetchTimeoutRef.current = null;
+      }
+      if (previewAssetExpiryTimeoutRef.current !== null) {
+        window.clearTimeout(previewAssetExpiryTimeoutRef.current);
+        previewAssetExpiryTimeoutRef.current = null;
       }
     };
   }, []);
@@ -398,8 +501,9 @@ export const useMessageImagePreviews = ({
         return runtimeThumbnailUrl;
       }
 
-      const resolvedPreviewAssetUrl =
-        resolvedPreviewAssetUrlsByMessageId[message.id];
+      const resolvedPreviewAssetUrl = getFreshResolvedChatAssetUrl(
+        resolvedPreviewAssetEntriesByMessageId[message.id]
+      );
       if (resolvedPreviewAssetUrl) {
         return resolvedPreviewAssetUrl;
       }
@@ -431,7 +535,7 @@ export const useMessageImagePreviews = ({
     [
       currentChannelId,
       resolvedFullAssetUrlsByMessageId,
-      resolvedPreviewAssetUrlsByMessageId,
+      resolvedPreviewAssetEntriesByMessageId,
     ]
   );
 

@@ -188,6 +188,23 @@ export const writeRuntimeStorage = (
   }
 };
 
+export const deleteRuntimeStorage = (
+  storageKey: string,
+  storage: 'session' | 'local' = 'session'
+) => {
+  const runtimeStorage = getRuntimeStorage(storage);
+  if (!runtimeStorage) {
+    return false;
+  }
+
+  try {
+    runtimeStorage.removeItem(storageKey);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 export const notifyRuntimeListeners = (listeners: Set<RuntimeListener>) => {
   listeners.forEach(listener => {
     listener();

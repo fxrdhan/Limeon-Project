@@ -2,6 +2,9 @@ export const CHAT_RUNTIME_LOCAL_STORAGE_KEYS = {
   composerDraftMessages: 'chat-composer-draft-messages',
   pendingReadReceipts: 'chat-pending-read-receipts',
 } as const;
+export const CHAT_RUNTIME_LOCAL_STORAGE_KEY_LIST = Object.values(
+  CHAT_RUNTIME_LOCAL_STORAGE_KEYS
+);
 
 export const CHAT_RUNTIME_INDEXED_DB_NAMES = {
   channelImageAssets: 'pharmasys-chat-channel-image-assets',

@@ -1,4 +1,5 @@
 import type { MessageItemModel } from './messageItemTypes';
+import { getPdfMessagePreviewUrl } from '../../utils/pdf-message-preview';
 
 const isMenuOpenForMessage = (model: MessageItemModel) =>
   model.menu.openMessageId === model.message.id;
@@ -72,8 +73,8 @@ export const areMessageItemPropsEqual = (
       nextModel.content.groupedImageMessages &&
     previousModel.content.normalizedSearchQuery ===
       nextModel.content.normalizedSearchQuery &&
-    previousModel.content.pdfMessagePreview?.coverDataUrl ===
-      nextModel.content.pdfMessagePreview?.coverDataUrl &&
+    getPdfMessagePreviewUrl(previousModel.content.pdfMessagePreview) ===
+      getPdfMessagePreviewUrl(nextModel.content.pdfMessagePreview) &&
     previousModel.content.pdfMessagePreview?.pageCount ===
       nextModel.content.pdfMessagePreview?.pageCount
   );

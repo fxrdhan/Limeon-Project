@@ -1,22 +1,32 @@
-import { renderHook, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
+import { act, renderHook, waitFor } from '@testing-library/react';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vite-plus/test';
 import type { ChatMessage } from '../../../services/api/chat.service';
 import { useMessagePdfPreviews } from '../hooks/useMessagePdfPreviews';
 import { chatRuntimeCache } from '../utils/chatRuntimeCache';
-import { buildPdfMessagePreviewCacheKey } from '../utils/pdf-message-preview';
+import {
+  buildPdfMessagePreviewCacheKey,
+  getPdfMessagePreviewUrl,
+} from '../utils/pdf-message-preview';
 
 const {
   mockFetchChatFileBlobWithFallback,
   mockFetchPdfBlobWithFallback,
   mockRenderPdfPreviewDataUrl,
   mockLoadPersistedPdfPreviewEntry,
-  mockResolveChatAssetUrl,
+  mockResolveChatAssetUrlWithExpiry,
 } = vi.hoisted(() => ({
   mockFetchChatFileBlobWithFallback: vi.fn(),
   mockFetchPdfBlobWithFallback: vi.fn(),
   mockRenderPdfPreviewDataUrl: vi.fn(),
   mockLoadPersistedPdfPreviewEntry: vi.fn(),
-  mockResolveChatAssetUrl: vi.fn(),
+  mockResolveChatAssetUrlWithExpiry: vi.fn(),
 }));
 
 vi.mock('../utils/message-file', async () => {
@@ -25,7 +35,7 @@ vi.mock('../utils/message-file', async () => {
     ...actual,
     fetchChatFileBlobWithFallback: mockFetchChatFileBlobWithFallback,
     fetchPdfBlobWithFallback: mockFetchPdfBlobWithFallback,
-    resolveChatAssetUrl: mockResolveChatAssetUrl,
+    resolveChatAssetUrlWithExpiry: mockResolveChatAssetUrlWithExpiry,
   };
 });
 
@@ -72,7 +82,11 @@ describe('useMessagePdfPreviews', () => {
     mockLoadPersistedPdfPreviewEntry.mockResolvedValue(null);
     mockFetchPdfBlobWithFallback.mockResolvedValue(null);
     mockRenderPdfPreviewDataUrl.mockResolvedValue(null);
-    mockResolveChatAssetUrl.mockResolvedValue(null);
+    mockResolveChatAssetUrlWithExpiry.mockResolvedValue(null);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('loads cached persistent PDF previews before checking storage or rerendering the PDF', async () => {
@@ -119,9 +133,9 @@ describe('useMessagePdfPreviews', () => {
         'report.pdf'
       );
       expect(preview?.pageCount).toBe(5);
-      expect(preview?.coverDataUrl).toBe(
-        'data:image/png;base64,persistedpreview'
-      );
+      expect(
+        preview && 'coverDataUrl' in preview ? preview.coverDataUrl : null
+      ).toBe('data:image/png;base64,persistedpreview');
     });
 
     expect(mockFetchChatFileBlobWithFallback).not.toHaveBeenCalled();
@@ -150,7 +164,9 @@ describe('useMessagePdfPreviews', () => {
         'report.pdf'
       );
       expect(preview?.pageCount).toBe(3);
-      expect(preview?.coverDataUrl).toMatch(/^data:image\/png;base64,/);
+      expect(
+        preview && 'coverDataUrl' in preview ? preview.coverDataUrl : null
+      ).toMatch(/^data:image\/png;base64,/);
     });
 
     expect(mockFetchChatFileBlobWithFallback).toHaveBeenCalledWith(
@@ -164,9 +180,10 @@ describe('useMessagePdfPreviews', () => {
 
   it('uses a resolved preview asset url while the preview blob hydration is still pending', async () => {
     let resolvePreviewBlob: ((value: Blob | null) => void) | null = null;
-    mockResolveChatAssetUrl.mockResolvedValue(
-      'https://signed.example/previews/channel/report.png'
-    );
+    mockResolveChatAssetUrlWithExpiry.mockResolvedValue({
+      url: 'https://signed.example/previews/channel/report.png',
+      expiresAt: Date.now() + 60_000,
+    });
     mockFetchChatFileBlobWithFallback.mockImplementation(
       async () =>
         await new Promise<Blob | null>(resolve => {
@@ -189,7 +206,7 @@ describe('useMessagePdfPreviews', () => {
         message,
         'report.pdf'
       );
-      expect(preview?.coverDataUrl).toBe(
+      expect(getPdfMessagePreviewUrl(preview)).toBe(
         'https://signed.example/previews/channel/report.png'
       );
       expect(preview?.pageCount).toBe(3);
@@ -256,7 +273,11 @@ describe('useMessagePdfPreviews', () => {
         newestMessage,
         'report.pdf'
       );
-      expect(newestPreview?.coverDataUrl).toMatch(/^data:image\/png;base64,/);
+      expect(
+        newestPreview && 'coverDataUrl' in newestPreview
+          ? newestPreview.coverDataUrl
+          : null
+      ).toMatch(/^data:image\/png;base64,/);
     });
 
     await waitFor(() => {
@@ -264,12 +285,73 @@ describe('useMessagePdfPreviews', () => {
         oldestMessage,
         'report.pdf'
       );
-      expect(oldestPreview?.coverDataUrl).toMatch(/^data:image\/png;base64,/);
+      expect(
+        oldestPreview && 'coverDataUrl' in oldestPreview
+          ? oldestPreview.coverDataUrl
+          : null
+      ).toMatch(/^data:image\/png;base64,/);
     });
 
     expect(
       result.current.getPdfMessagePreview(middleMessage, 'report.pdf')
     ).toBeUndefined();
     expect(resolveSlowPreviewBlob).not.toBeNull();
+  });
+
+  it('refreshes expired resolved PDF preview urls before the blob preview finishes loading', async () => {
+    vi.useFakeTimers();
+
+    let resolvePreviewBlob: ((value: Blob | null) => void) | null = null;
+    const initialNow = Date.now();
+    mockResolveChatAssetUrlWithExpiry
+      .mockResolvedValueOnce({
+        url: 'https://signed.example/previews/channel/report-v1.png',
+        expiresAt: initialNow + 1_000,
+      })
+      .mockResolvedValueOnce({
+        url: 'https://signed.example/previews/channel/report-v2.png',
+        expiresAt: initialNow + 5_000,
+      });
+    mockFetchChatFileBlobWithFallback.mockImplementation(
+      async () =>
+        await new Promise<Blob | null>(resolve => {
+          resolvePreviewBlob = resolve;
+        })
+    );
+
+    const message = buildMessage({});
+    const { result } = renderHook(() =>
+      useMessagePdfPreviews({
+        messages: [message],
+        getAttachmentFileName: currentMessage =>
+          currentMessage.file_name || 'Lampiran',
+        getAttachmentFileKind: () => 'document',
+      })
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(
+      getPdfMessagePreviewUrl(
+        result.current.getPdfMessagePreview(message, 'report.pdf')
+      )
+    ).toBe('https://signed.example/previews/channel/report-v1.png');
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_100);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(mockResolveChatAssetUrlWithExpiry).toHaveBeenCalledTimes(2);
+    expect(resolvePreviewBlob).not.toBeNull();
+    expect(
+      getPdfMessagePreviewUrl(
+        result.current.getPdfMessagePreview(message, 'report.pdf')
+      )
+    ).toBe('https://signed.example/previews/channel/report-v2.png');
   });
 });

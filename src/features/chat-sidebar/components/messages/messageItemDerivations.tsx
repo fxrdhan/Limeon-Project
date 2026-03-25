@@ -9,6 +9,7 @@ import {
   isImageFileExtensionOrMime,
   resolveFileExtension,
 } from '../../utils/message-file';
+import { getPdfMessagePreviewUrl } from '../../utils/pdf-message-preview';
 import {
   buildCollapsedSearchSnippet,
   renderHighlightedText,
@@ -188,7 +189,9 @@ export const buildMessageItemDerivations = ({
       })()
     : null;
   const resolvedPdfPreviewUrl =
-    persistedPdfPreviewUrl || pdfMessagePreview?.coverDataUrl || null;
+    persistedPdfPreviewUrl ||
+    getPdfMessagePreviewUrl(pdfMessagePreview) ||
+    null;
   const resolvedPdfPageCount = isPdfFileMessage
     ? (message.file_preview_page_count ?? pdfMessagePreview?.pageCount)
     : null;

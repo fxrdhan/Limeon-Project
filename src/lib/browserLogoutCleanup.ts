@@ -1,5 +1,4 @@
-import { chatRuntime } from '@/features/chat-sidebar/utils/chatRuntime';
-import { CHAT_RUNTIME_INDEXED_DB_NAME_LIST } from '@/features/chat-sidebar/utils/runtime-persistence';
+import { chatRuntimePersistenceRegistry } from '@/features/chat-sidebar/utils/chatRuntimePersistenceRegistry';
 import { resetPharmacyQueryPersistence } from '@/lib/indexedDBPersistence';
 import { queryClient } from '@/lib/queryClient';
 import { supabase } from '@/lib/supabase';
@@ -8,7 +7,7 @@ import { resetImageCache } from '@/utils/imageCache';
 
 const KNOWN_INDEXED_DB_NAMES = [
   'pharmasys-cache',
-  ...CHAT_RUNTIME_INDEXED_DB_NAME_LIST,
+  ...chatRuntimePersistenceRegistry.indexedDbNames,
 ];
 
 const getIndexedDbFactory = () => {
@@ -73,10 +72,7 @@ const clearCacheStorage = async () => {
 
 const resetRuntimeStores = () => {
   useInvoiceUploadStore.getState().clearCachedInvoiceFile();
-  chatRuntime.cache.conversation.reset();
-  chatRuntime.cache.readReceipts.reset();
-  chatRuntime.cache.signedAssets.reset();
-  chatRuntime.cache.pdfPreviews.reset();
+  chatRuntimePersistenceRegistry.resetRuntimeState();
 };
 
 export const clearClientBrowserState = async () => {
@@ -120,8 +116,7 @@ export const clearClientBrowserState = async () => {
   await Promise.all([
     resetImageCache(),
     resetPharmacyQueryPersistence(),
-    chatRuntime.pdfPreviews.resetPersisted(),
-    chatRuntime.imageAssets.reset(),
+    chatRuntimePersistenceRegistry.resetPersistentState(),
     clearCacheStorage(),
   ]);
 

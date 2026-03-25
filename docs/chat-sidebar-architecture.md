@@ -12,11 +12,15 @@ Isi dokumen ini bersifat deskriptif, bukan target refactor.
 - Global UI state:
   - `src/store/chatSidebarStore.ts`
   - `src/store/pageFocusBlockStore.ts`
+  - `src/store/authStore.ts`
 - Feature:
   - `src/features/chat-sidebar/*`
   - `src/features/chat-sidebar/hooks/useChatSidebarHost.ts`
   - `src/features/chat-sidebar/hooks/useChatSidebarLauncher.ts`
   - `src/features/chat-sidebar/hooks/useChatIncomingDeliveries.ts`
+- Runtime/session cleanup:
+  - `src/lib/browserLogoutCleanup.ts`
+  - `src/lib/supabase.ts`
 - Data access:
   - `src/features/chat-sidebar/data/chatSidebarGateway.ts`
   - `src/services/api/chat.service.ts`
@@ -222,7 +226,8 @@ File: `src/features/chat-sidebar/utils/chatRuntime.ts`
 Tanggung jawab:
 
 - menjadi boundary tunggal untuk runtime cache chat, cache image asset runtime, dan persistence preview PDF
-- dipakai oleh `useChatRuntime()`, `useMessagePdfPreviews()`, dan logout cleanup agar hook tingkat atas tidak perlu mengimpor beberapa singleton runtime terpisah
+- dipakai oleh `useChatRuntime()`, `useMessagePdfPreviews()`, dan logout cleanup (`src/lib/browserLogoutCleanup.ts`) agar hook tingkat atas tidak perlu mengimpor beberapa singleton runtime terpisah
+- auth/session token yang dipakai runtime chat bersumber dari `useAuthStore()` dan client Supabase di `src/lib/supabase.ts`
 
 ### 5.4.d `useChatRuntimeReadReceipts`
 

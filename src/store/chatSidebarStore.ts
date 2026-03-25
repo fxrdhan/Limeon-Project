@@ -45,3 +45,10 @@ export const useChatSidebarStore = create<ChatSidebarState>(set => ({
 }));
 
 export const isChatSidebarOpen = () => useChatSidebarStore.getState().isOpen;
+
+export const resetChatSidebarStore = () => {
+  useChatSidebarStore.setState({
+    isOpen: false,
+    targetUser: undefined,
+  });
+};

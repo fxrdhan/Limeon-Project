@@ -11,6 +11,7 @@ import {
   isImageFileExtensionOrMime,
   resolveFileExtension,
 } from '../../utils/message-file';
+import { getPdfMessagePreviewUrl } from '../../utils/pdf-message-preview';
 import { renderHighlightedText } from '../../utils/message-search';
 import { MessageActionPopover } from './MessageActionPopover';
 import {
@@ -159,7 +160,7 @@ export const MessageDocumentAttachmentGroupContent = ({
       : null;
     const resolvedPdfPreviewUrl = isPdfFile
       ? persistedPdfPreviewUrl ||
-        getPdfMessagePreview(message, fileName)?.coverDataUrl ||
+        getPdfMessagePreviewUrl(getPdfMessagePreview(message, fileName)) ||
         null
       : null;
     const fileSizeLabel = formatFileSize(message.file_size);

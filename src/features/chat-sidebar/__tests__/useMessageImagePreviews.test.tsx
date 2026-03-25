@@ -9,7 +9,7 @@ const {
   mockGetCachedResolvedChatAssetUrl,
   mockGetRuntimeChannelImageAssetUrl,
   mockIsPreviewableChannelImageMessage,
-  mockResolveChatAssetUrl,
+  mockResolveChatAssetUrlWithExpiry,
 } = vi.hoisted(() => ({
   mockActivateChannelImageAssetScope: vi.fn(),
   mockEnsureChannelImageAssetUrl: vi.fn(),
@@ -26,7 +26,7 @@ const {
       (message.message_type === 'file' &&
         message.file_mime_type?.startsWith('image/'))
   ),
-  mockResolveChatAssetUrl: vi.fn(),
+  mockResolveChatAssetUrlWithExpiry: vi.fn(),
 }));
 
 vi.mock('../utils/chatRuntime', () => ({
@@ -40,13 +40,15 @@ vi.mock('../utils/chatRuntime', () => ({
   },
 }));
 
-vi.mock('../utils/message-file', () => ({
-  getCachedResolvedChatAssetUrl: mockGetCachedResolvedChatAssetUrl,
-  isDirectChatAssetUrl: vi.fn((url: string) =>
-    /^(https?:\/\/|blob:|data:|\/)/i.test(url)
-  ),
-  resolveChatAssetUrl: mockResolveChatAssetUrl,
-}));
+vi.mock('../utils/message-file', async () => {
+  const actual = await vi.importActual('../utils/message-file');
+
+  return {
+    ...actual,
+    getCachedResolvedChatAssetUrl: mockGetCachedResolvedChatAssetUrl,
+    resolveChatAssetUrlWithExpiry: mockResolveChatAssetUrlWithExpiry,
+  };
+});
 
 describe('useMessageImagePreviews', () => {
   const createMessage = (
@@ -130,7 +132,7 @@ describe('useMessageImagePreviews', () => {
     );
     mockGetRuntimeChannelImageAssetUrl.mockReturnValue(null);
     mockGetCachedResolvedChatAssetUrl.mockReturnValue(null);
-    mockResolveChatAssetUrl.mockResolvedValue(null);
+    mockResolveChatAssetUrlWithExpiry.mockResolvedValue(null);
   });
 
   it('prefetches thumbnail assets first for image bubbles visible in the viewport', async () => {
@@ -243,9 +245,10 @@ describe('useMessageImagePreviews', () => {
           }, 300);
         })
     );
-    mockResolveChatAssetUrl.mockResolvedValue(
-      'https://signed.example/previews/channel/persisted-preview.webp'
-    );
+    mockResolveChatAssetUrlWithExpiry.mockResolvedValue({
+      url: 'https://signed.example/previews/channel/persisted-preview.webp',
+      expiresAt: Date.now() + 60_000,
+    });
 
     const { result } = renderHook(() => useMessageImagePreviews(props));
 
@@ -272,6 +275,59 @@ describe('useMessageImagePreviews', () => {
 
     expect(result.current.getImageMessageUrl(message)).toBe(
       'https://example.com/images/direct-preview.png'
+    );
+  });
+
+  it('refreshes expired persisted preview urls for visible messages', async () => {
+    const message = createMessage({
+      id: 'expiring-preview',
+      file_preview_url: 'previews/channel/expiring-preview.webp',
+    });
+    const props = createHookProps([message]);
+    const initialNow = Date.now();
+
+    props.messageBubbleRefs.current.set(
+      'expiring-preview',
+      createBubbleElement(32, 180)
+    );
+    mockEnsureChannelImageAssetUrl.mockImplementation(
+      async () =>
+        await new Promise<string>(() => {
+          // Keep the full-image cache unresolved so the test exercises
+          // preview URL expiry instead of switching to the full blob URL.
+        })
+    );
+    mockResolveChatAssetUrlWithExpiry
+      .mockResolvedValueOnce({
+        url: 'https://signed.example/previews/channel/expiring-preview-1.webp',
+        expiresAt: initialNow + 1_000,
+      })
+      .mockResolvedValueOnce({
+        url: 'https://signed.example/previews/channel/expiring-preview-2.webp',
+        expiresAt: initialNow + 5_000,
+      });
+
+    const { result } = renderHook(() => useMessageImagePreviews(props));
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(90);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(result.current.getImageMessageUrl(message)).toBe(
+      'https://signed.example/previews/channel/expiring-preview-1.webp'
+    );
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_100);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(mockResolveChatAssetUrlWithExpiry).toHaveBeenCalledTimes(2);
+    expect(result.current.getImageMessageUrl(message)).toBe(
+      'https://signed.example/previews/channel/expiring-preview-2.webp'
     );
   });
 
