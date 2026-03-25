@@ -611,7 +611,8 @@ Aturan ekstraksi:
           return new Response(
             JSON.stringify({
               error: "Konfigurasi Gemini API bermasalah",
-              details: errorMessage,
+              details:
+                "Hubungi administrator untuk memperbarui konfigurasi layanan.",
               code: "GEMINI_API_KEY_REPORTED_LEAKED",
               tip: "Buat API key baru dan update secret GEMINI_API_KEY di Supabase, lalu deploy ulang Edge Function.",
             }),
@@ -628,7 +629,8 @@ Aturan ekstraksi:
         return new Response(
           JSON.stringify({
             error: "Terjadi kesalahan saat memproses gambar",
-            details: errorMessage,
+            details:
+              "Layanan tidak dapat memproses permintaan ini saat ini.",
             tip: "Coba lagi dengan gambar yang lebih kecil atau format yang berbeda",
           }),
           {
@@ -661,7 +663,8 @@ Aturan ekstraksi:
     return new Response(
       JSON.stringify({
         error: "Internal server error",
-        details: error.message,
+        details:
+          "Terjadi kesalahan internal. Silakan coba lagi beberapa saat lagi.",
       }),
       {
         status: 500,

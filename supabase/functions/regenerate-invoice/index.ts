@@ -349,7 +349,7 @@ Aturan ekstraksi:
 
         return new Response(JSON.stringify({
           error: 'Terjadi kesalahan saat memproses ulang gambar',
-          details: error.message,
+          details: 'Layanan tidak dapat memproses permintaan ini saat ini.',
           imageIdentifier
         }), {
           status: 500,
@@ -370,8 +370,7 @@ Aturan ekstraksi:
     console.error('Unexpected error:', error);
     return new Response(JSON.stringify({
       error: 'Internal server error',
-      details: error.message,
-      stack: error.stack
+      details: 'Terjadi kesalahan internal. Silakan coba lagi beberapa saat lagi.'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
