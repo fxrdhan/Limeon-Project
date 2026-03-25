@@ -1,8 +1,11 @@
-const fs = require('node:fs');
-const path = require('node:path');
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 
 const targetPath = path.join(
-  __dirname,
+  scriptDir,
   '..',
   'node_modules',
   'browserslist',

@@ -3,6 +3,16 @@ import { basename, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Client } from 'pg';
 
+interface TableColumnRow {
+  table_name: string;
+  column_name: string;
+  is_nullable: 'YES' | 'NO';
+}
+
+interface RpcRow {
+  proname: string;
+}
+
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const migrationsDir = resolve(repoRoot, 'supabase/migrations');
 const generatedTypesPath = resolve(
@@ -34,7 +44,7 @@ const REQUIRED_LIVE_CHAT_RPC_NAMES = [
 
 const getLatestChatMigrationBaseline = () => {
   const latestMigration = readdirSync(migrationsDir)
-    .map(fileName => {
+    .map((fileName): string | null => {
       const match = fileName.match(/^(\d{14})_(.+)\.sql$/);
       if (!match) {
         return null;
@@ -43,7 +53,7 @@ const getLatestChatMigrationBaseline = () => {
       const [, timestamp, slug] = match;
       return slug.includes('chat') ? timestamp : null;
     })
-    .filter(value => value !== null)
+    .filter((value): value is string => value !== null)
     .sort()
     .at(-1);
 
@@ -139,7 +149,7 @@ const verifyLiveSchema = async () => {
   await client.connect();
 
   try {
-    const { rows: tableColumns } = await client.query(`
+    const { rows: tableColumns } = await client.query<TableColumnRow>(`
       select table_name, column_name, is_nullable
       from information_schema.columns
       where table_schema = 'public'
@@ -149,7 +159,7 @@ const verifyLiveSchema = async () => {
         )
     `);
 
-    const getColumn = (tableName, columnName) =>
+    const getColumn = (tableName: string, columnName: string) =>
       tableColumns.find(
         tableColumn =>
           tableColumn.table_name === tableName &&
@@ -181,7 +191,7 @@ const verifyLiveSchema = async () => {
       );
     }
 
-    const { rows: rpcRows } = await client.query(
+    const { rows: rpcRows } = await client.query<RpcRow>(
       `
         select proname
         from pg_proc
@@ -191,9 +201,7 @@ const verifyLiveSchema = async () => {
       `,
       [REQUIRED_LIVE_CHAT_RPC_NAMES]
     );
-    const availableRpcNames = new Set(
-      rpcRows.map(rpcRow => String(rpcRow.proname))
-    );
+    const availableRpcNames = new Set(rpcRows.map(rpcRow => rpcRow.proname));
     const missingRpcNames = REQUIRED_LIVE_CHAT_RPC_NAMES.filter(
       rpcName => !availableRpcNames.has(rpcName)
     );

@@ -20,6 +20,7 @@
 *.tsx linguist-language=TypeScript
 *.js linguist-language=TypeScript
 *.scss linguist-language=TypeScript
+ts-to-zod.config.mjs linguist-language=TypeScript
 
 # Documentation (exclude from language stats)
 README* linguist-documentation

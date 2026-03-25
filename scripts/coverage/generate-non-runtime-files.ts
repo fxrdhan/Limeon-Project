@@ -1,19 +1,26 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+interface FileCoverage {
+  s?: Record<string, number>;
+  f?: Record<string, number>;
+  b?: Record<string, number[]>;
+}
+
 const COVERAGE_FILE = path.resolve('coverage/coverage-final.json');
 const OUTPUT_FILE = path.resolve('scripts/coverage/non-runtime-files.json');
 
 if (!fs.existsSync(COVERAGE_FILE)) {
   console.error('Coverage file not found:', COVERAGE_FILE);
-  console.error(
-    'Run: bunx vitest run --coverage --exclude src/test/all-modules-coverage.test.ts'
-  );
+  console.error('Run: bun run test:coverage');
   process.exit(1);
 }
 
-const coverage = JSON.parse(fs.readFileSync(COVERAGE_FILE, 'utf8'));
-const nonRuntimeFiles = [];
+const coverage = JSON.parse(fs.readFileSync(COVERAGE_FILE, 'utf8')) as Record<
+  string,
+  FileCoverage
+>;
+const nonRuntimeFiles: string[] = [];
 
 for (const [absPath, fileCoverage] of Object.entries(coverage)) {
   const filePath = absPath.replace(`${process.cwd()}/`, '');

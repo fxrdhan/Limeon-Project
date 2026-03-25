@@ -1,12 +1,25 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+interface FileCoverage {
+  s?: Record<string, number>;
+  f?: Record<string, number>;
+  b?: Record<string, number[]>;
+}
+
+interface CoverageViolation {
+  filePath: string;
+  statements: number;
+  functions: number;
+  branches: number;
+}
+
 const COVERAGE_FILE = path.resolve('coverage/coverage-final.json');
 const NON_RUNTIME_FILE = path.resolve(
   'scripts/coverage/non-runtime-files.json'
 );
 
-const isCoveredSourceFile = filePath => {
+const isCoveredSourceFile = (filePath: string) => {
   if (!filePath.startsWith('src/')) return false;
   if (filePath.startsWith('src/test/')) return false;
   if (filePath.startsWith('src/schemas/generated/')) return false;
@@ -21,7 +34,7 @@ const isCoveredSourceFile = filePath => {
   return true;
 };
 
-const percent = (covered, total) => {
+const percent = (covered: number, total: number) => {
   if (total === 0) return 100;
   return (covered / total) * 100;
 };
@@ -37,13 +50,16 @@ if (!fs.existsSync(NON_RUNTIME_FILE)) {
   process.exit(1);
 }
 
-const coverage = JSON.parse(fs.readFileSync(COVERAGE_FILE, 'utf8'));
-const nonRuntimeList = new Set(
-  JSON.parse(fs.readFileSync(NON_RUNTIME_FILE, 'utf8'))
+const coverage = JSON.parse(fs.readFileSync(COVERAGE_FILE, 'utf8')) as Record<
+  string,
+  FileCoverage
+>;
+const nonRuntimeList = new Set<string>(
+  JSON.parse(fs.readFileSync(NON_RUNTIME_FILE, 'utf8')) as string[]
 );
 
-const violations = [];
-const missingCoverageFiles = [];
+const violations: CoverageViolation[] = [];
+const missingCoverageFiles: string[] = [];
 const coveredFiles = new Set();
 
 const sourceFiles = fs
@@ -63,9 +79,9 @@ for (const [absPath, fileCoverage] of Object.entries(coverage)) {
   if (nonRuntimeList.has(filePath)) continue;
   coveredFiles.add(filePath);
 
-  const statements = Object.values(fileCoverage.s || {});
-  const functions = Object.values(fileCoverage.f || {});
-  const branches = Object.values(fileCoverage.b || {}).flat();
+  const statements = Object.values(fileCoverage.s ?? {});
+  const functions = Object.values(fileCoverage.f ?? {});
+  const branches = Object.values(fileCoverage.b ?? {}).flat();
 
   const statementPct = percent(
     statements.filter(hit => hit > 0).length,
