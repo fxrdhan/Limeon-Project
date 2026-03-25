@@ -67,7 +67,7 @@ const MainLayout = () => {
   }, [setIsLocked, setSidebarCollapsed]);
 
   return (
-    <div className="flex h-screen bg-slate-100 text-slate-800 relative">
+    <div className="relative flex h-screen bg-white text-slate-800">
       <Sidebar
         collapsed={sidebarCollapsed}
         isLocked={isLocked}
@@ -80,7 +80,7 @@ const MainLayout = () => {
         <Navbar sidebarCollapsed={sidebarCollapsed} />
 
         <div className="flex flex-1 overflow-hidden">
-          <main className="flex-1 overflow-y-auto p-4 text-slate-800">
+          <main className="flex-1 overflow-y-auto bg-white p-4 text-slate-800">
             <Outlet />
           </main>
 

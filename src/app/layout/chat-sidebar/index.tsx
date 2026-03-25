@@ -67,7 +67,7 @@ const ChatSidebar = ({ isOpen, onClose, targetUser }: ChatSidebarProps) => {
           style={{ maxWidth: '100vw' }}
           className={`h-full overflow-hidden ${
             isOpen
-              ? 'border-l border-slate-200 bg-transparent'
+              ? 'border-l border-slate-200 bg-slate-100'
               : 'border-l border-transparent bg-transparent pointer-events-none'
           }`}
         >

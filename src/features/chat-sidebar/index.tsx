@@ -38,7 +38,7 @@ const ChatSidebarPanel = memo(
         exit={{ opacity: 0, x: 16 }}
         transition={{ duration: 0.2, ease: 'easeOut' }}
         className={`relative h-full w-full select-none ${
-          isOpen ? '' : 'pointer-events-none'
+          isOpen ? 'bg-slate-100' : 'pointer-events-none bg-slate-100'
         }`}
         onClickCapture={runtime.viewport.handleChatPortalBackgroundClick}
       >
