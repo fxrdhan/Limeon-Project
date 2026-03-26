@@ -61,7 +61,8 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
     retryLoadDirectory,
     loadMoreDirectoryUsers,
     openChatForUser,
-  } = useChatSidebarLauncher(showPortal);
+    prefetchConversationForUser,
+  } = useChatSidebarLauncher(Boolean(user));
   const [hoveredUser, setHoveredUser] = useState<string | null>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const portalTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -305,8 +306,16 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                             ? 'cursor-pointer hover:bg-emerald-50'
                             : 'cursor-default hover:bg-slate-50'
                         }`}
-                        onMouseEnter={() => setHoveredUser(portalUser.id)}
+                        onMouseEnter={() => {
+                          setHoveredUser(portalUser.id);
+                          void prefetchConversationForUser(portalUser);
+                        }}
                         onMouseLeave={() => setHoveredUser(null)}
+                        onFocus={() => {
+                          setHoveredUser(portalUser.id);
+                          void prefetchConversationForUser(portalUser);
+                        }}
+                        onBlur={() => setHoveredUser(null)}
                         onClick={
                           portalUser.id !== user?.id
                             ? () => handleChatOpen(portalUser)
