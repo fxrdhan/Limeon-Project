@@ -1,5 +1,11 @@
 import React from 'react';
-import { Line } from '@/components/charts/LazyCharts';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from '@/components/ui/chart';
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { formatCurrency } from '../constants';
 import type {
   SalesAnalyticsSummary,
@@ -17,6 +23,32 @@ interface PerformanceSectionProps {
   topMedicinesErrorMessage?: string | null;
 }
 
+const salesChartConfig = {
+  revenue: {
+    label: 'Penjualan Harian',
+    color: '#0f766e',
+  },
+} satisfies ChartConfig;
+
+const compactCurrencyFormatter = new Intl.NumberFormat('id-ID', {
+  compactDisplay: 'short',
+  maximumFractionDigits: 1,
+  notation: 'compact',
+});
+
+const formatSalesDateTick = (value: string) => {
+  const [day, month] = value.split('/');
+
+  if (day && month) {
+    return `${day}/${month}`;
+  }
+
+  return value;
+};
+
+const formatCompactCurrency = (value: number) =>
+  `Rp${compactCurrencyFormatter.format(value)}`;
+
 const PerformanceSection: React.FC<PerformanceSectionProps> = ({
   salesData,
   topMedicines,
@@ -26,27 +58,14 @@ const PerformanceSection: React.FC<PerformanceSectionProps> = ({
   topMedicinesErrorMessage,
 }) => {
   const salesChartData = React.useMemo(() => {
-    if (!salesData) return { labels: [], datasets: [] };
+    if (!salesData) {
+      return [];
+    }
 
-    return {
-      labels: salesData.labels,
-      datasets: [
-        {
-          label: 'Penjualan Harian',
-          data: salesData.values,
-          borderColor: '#0f766e',
-          backgroundColor: 'rgba(15, 118, 110, 0.14)',
-          pointBackgroundColor: '#0f766e',
-          pointBorderColor: '#f8fafc',
-          pointBorderWidth: 2,
-          pointRadius: 4,
-          pointHoverRadius: 6,
-          borderWidth: 3,
-          fill: true,
-          tension: 0.35,
-        },
-      ],
-    };
+    return salesData.labels.map((label, index) => ({
+      date: label,
+      revenue: salesData.values[index] ?? 0,
+    }));
   }, [salesData]);
 
   const salesPeak = React.useMemo<SalesPeakSummary | null>(() => {
@@ -74,7 +93,7 @@ const PerformanceSection: React.FC<PerformanceSectionProps> = ({
 
         {isSalesLoading ? (
           <div className="space-y-6">
-            <div className="h-[320px] animate-pulse rounded-[24px] bg-slate-100" />
+            <div className="h-[320px] animate-pulse bg-slate-100" />
             <div className="grid gap-6 border-t border-slate-200 pt-6 sm:grid-cols-3">
               {Array.from({ length: 3 }).map((_, index) => (
                 <div key={index}>
@@ -88,67 +107,77 @@ const PerformanceSection: React.FC<PerformanceSectionProps> = ({
           <PanelMessage message={`Error: ${salesErrorMessage}`} tone="error" />
         ) : (
           <>
-            <div className="h-[320px]">
-              <Line
+            <ChartContainer
+              config={salesChartConfig}
+              className="min-h-[320px] w-full"
+            >
+              <AreaChart
+                accessibilityLayer
                 data={salesChartData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  interaction: {
-                    mode: 'index',
-                    intersect: false,
-                  },
-                  plugins: {
-                    legend: {
-                      display: false,
-                    },
-                    tooltip: {
-                      backgroundColor: '#0f172a',
-                      padding: 12,
-                      displayColors: false,
-                      callbacks: {
-                        label: function (context) {
-                          return formatCurrency(Number(context.raw));
-                        },
-                      },
-                    },
-                  },
-                  scales: {
-                    x: {
-                      grid: {
-                        display: false,
-                      },
-                      border: {
-                        display: false,
-                      },
-                      ticks: {
-                        color: '#64748b',
-                        font: {
-                          size: 11,
-                        },
-                      },
-                    },
-                    y: {
-                      beginAtZero: true,
-                      grid: {
-                        color: 'rgba(148, 163, 184, 0.18)',
-                        drawTicks: false,
-                      },
-                      border: {
-                        display: false,
-                      },
-                      ticks: {
-                        color: '#64748b',
-                        padding: 12,
-                        callback: function (value) {
-                          return formatCurrency(Number(value));
-                        },
-                      },
-                    },
-                  },
+                margin={{
+                  left: 8,
+                  right: 12,
+                  top: 8,
                 }}
-              />
-            </div>
+              >
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey="date"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                  minTickGap={24}
+                  tickFormatter={formatSalesDateTick}
+                />
+                <YAxis
+                  width={80}
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                  tickCount={4}
+                  tickFormatter={value => formatCompactCurrency(Number(value))}
+                />
+                <ChartTooltip
+                  cursor={false}
+                  content={
+                    <ChartTooltipContent
+                      labelFormatter={value => `Tanggal ${String(value)}`}
+                      formatter={value => (
+                        <div className="flex w-full items-center gap-2">
+                          <span
+                            className="size-2 rounded-full"
+                            style={{
+                              backgroundColor: salesChartConfig.revenue.color,
+                            }}
+                          />
+                          <span className="flex-1 text-slate-500">
+                            Penjualan Harian
+                          </span>
+                          <span className="font-mono font-medium tabular-nums text-slate-950">
+                            {formatCurrency(Number(value))}
+                          </span>
+                        </div>
+                      )}
+                    />
+                  }
+                />
+                <Area
+                  dataKey="revenue"
+                  type="natural"
+                  fill="var(--color-revenue)"
+                  fillOpacity={0.18}
+                  stroke="var(--color-revenue)"
+                  strokeWidth={2.5}
+                  dot={false}
+                  activeDot={{
+                    fill: 'var(--color-revenue)',
+                    r: 4,
+                    stroke: '#ffffff',
+                    strokeWidth: 2,
+                  }}
+                />
+              </AreaChart>
+            </ChartContainer>
 
             <div className="grid gap-6 border-t border-slate-200 pt-6 sm:grid-cols-3">
               <div>

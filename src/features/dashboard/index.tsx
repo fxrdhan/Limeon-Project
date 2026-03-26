@@ -37,7 +37,7 @@ const DashboardNew = () => {
     []) as RecentTransaction[];
 
   return (
-    <div className="pb-4">
+    <div className="w-full px-1 pb-6 pt-2 sm:px-2 lg:px-4">
       <HeroSection
         stats={statsQuery.data}
         monthlyRevenue={monthlyRevenueQuery.data}
