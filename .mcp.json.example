@@ -5,38 +5,38 @@
       "args": [
         "-y",
         "@supabase/mcp-server-supabase@latest",
-        "--read-only",
-        "--project-ref=your-project-ref"
+        "--project-ref=psqmckbtwqphcteymjil"
       ],
       "env": {
         "SUPABASE_ACCESS_TOKEN": "your-supabase-access-token"
-      }
-    },
-    "context7": {
-      "type": "http",
-      "url": "https://mcp.context7.com/mcp",
-      "headers": {
-        "CONTEXT7_API_KEY": "your-context7-api-key"
       }
     },
     "firecrawl-mcp": {
       "command": "npx",
       "args": ["-y", "firecrawl-mcp"],
       "env": {
-        "FIRECRAWL_API_KEY": "$API_KEY"
+        "FIRECRAWL_API_KEY": "your-firecrawl-api-key"
       }
     },
     "ag-mcp": {
       "command": "npx",
       "args": ["ag-mcp"]
     },
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["chrome-devtools-mcp@latest", "--headless=true"]
+    },
+    "exa": {
+      "type": "http",
+      "url": "https://mcp.exa.ai/mcp?exaApiKey=your-exa-api-key&tools=web_search_exa,web_search_advanced_exa,get_code_context_exa,crawling_exa,company_research_exa,people_search_exa,deep_researcher_start,deep_researcher_check,deep_search_exa"
+    },
+    "notion": {
+      "type": "http",
+      "url": "https://mcp.notion.com/mcp"
+    },
     "playwright": {
       "command": "npx",
-      "args": ["@playwright/mcp@latest"]
-    },
-    "mermaid-mcp": {
-      "url": "https://mcp.mermaidchart.com/mcp",
-      "type": "http"
+      "args": ["@playwright/mcp@latest", "--extension"]
     }
   }
 }

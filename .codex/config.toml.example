@@ -1,0 +1,69 @@
+#:schema https://developers.openai.com/codex/config-schema.json
+
+# Shared Codex defaults for this repository.
+# Generate the local project config with `bun run codex:seed`.
+
+model = "gpt-5.4"
+model_context_window = 1000000
+model_auto_compact_token_limit = 900000
+model_reasoning_effort = "xhigh"
+plan_mode_reasoning_effort = "xhigh"
+personality = "pragmatic"
+steer = true
+web_search = "disabled"
+suppress_unstable_features_warning = true
+approval_policy = "never"
+sandbox_mode = "danger-full-access"
+
+[agents.default]
+description = "General task executor"
+config_file = "agents/custom-default.toml"
+
+[agents.explorer]
+description = "Codebase explorer for read-heavy tasks."
+config_file = "agents/custom-explorer.toml"
+
+[features]
+unified_exec = true
+shell_snapshot = true
+collaboration_modes = true
+multi_agent = true
+
+[mcp_servers.supabase]
+command = "npx"
+args = [
+  "-y",
+  "@supabase/mcp-server-supabase@latest",
+  "--project-ref=psqmckbtwqphcteymjil",
+]
+enabled = true
+env_vars = ["SUPABASE_ACCESS_TOKEN"]
+
+[mcp_servers."firecrawl-mcp"]
+command = "npx"
+args = ["-y", "firecrawl-mcp"]
+enabled = false
+env_vars = ["FIRECRAWL_API_KEY"]
+
+[mcp_servers."ag-mcp"]
+command = "npx"
+args = ["ag-mcp"]
+enabled = false
+
+[mcp_servers.chrome-devtools]
+command = "npx"
+args = ["chrome-devtools-mcp@latest", "--headless=true"]
+enabled = false
+
+[mcp_servers.exa]
+url = __EXA_MCP_URL__
+enabled = true
+
+[mcp_servers.notion]
+url = "https://mcp.notion.com/mcp"
+enabled = false
+
+[mcp_servers.playwright]
+command = "npx"
+args = ["@playwright/mcp@latest", "--extension"]
+enabled = true

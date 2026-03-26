@@ -12,7 +12,6 @@ lerna-debug.log*
 
 # Dependency directories
 node_modules
-supabase/data/
 .env
 .yarn/cache
 .claude/
@@ -39,41 +38,9 @@ coverage
 CLAUDE.md
 .agent/
 
-# supabase
-supabase/
-!supabase/
-supabase/*
-!supabase/migrations/
-supabase/migrations/*
-!supabase/migrations/*.sql
-!supabase/functions/
-supabase/functions/*
-!supabase/functions/chat-cleanup/
-supabase/functions/chat-cleanup/*
-!supabase/functions/chat-cleanup/index.ts
-!supabase/functions/chat-cleanup/actions.ts
-!supabase/functions/chat-cleanup/actions.test.ts
-!supabase/functions/confirm-invoice/
-supabase/functions/confirm-invoice/*
-!supabase/functions/confirm-invoice/index.ts
-!supabase/functions/extract-invoice/
-supabase/functions/extract-invoice/*
-!supabase/functions/extract-invoice/index.ts
-!supabase/functions/chat-forward-message/
-supabase/functions/chat-forward-message/*
-!supabase/functions/chat-forward-message/index.ts
-!supabase/functions/chat-forward-message/actions.ts
-!supabase/functions/chat-remote-asset/
-supabase/functions/chat-remote-asset/*
-!supabase/functions/chat-remote-asset/index.ts
-!supabase/functions/chat-remote-asset/actions.ts
-!supabase/functions/chat-remote-asset/actions.test.ts
-!supabase/functions/metrics/
-supabase/functions/metrics/*
-!supabase/functions/metrics/index.ts
-!supabase/functions/regenerate-invoice/
-supabase/functions/regenerate-invoice/*
-!supabase/functions/regenerate-invoice/index.ts
+# supabase generated artifacts
+supabase/.temp/
+supabase/data/
 
 # gemini-cli settings
 .gemini/
@@ -82,9 +49,8 @@ GEMINI.md
 
 # MCP configuration (contains sensitive tokens)
 .mcp.json
-
-# opencode
-opencode.json
+.opencode.json
+.codex/config.toml
 
 # Playwright MCP snapshots (auto-generated logs)
 .playwright-mcp/

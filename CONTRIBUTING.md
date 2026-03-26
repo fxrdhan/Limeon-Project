@@ -30,12 +30,16 @@ By participating in this project, you agree to abide by our [Code of Conduct](CO
    bun install
    ```
 
+   This also seeds the local `.codex/config.toml` from the tracked project template.
+
 3. **Set up environment variables**
 
    ```bash
    cp .env.example .env
    # Edit .env with your Supabase credentials
    ```
+
+   If you use Codex, export `SUPABASE_ACCESS_TOKEN` and optionally `EXA_API_KEY` before starting a session. Codex only loads `.codex/config.toml` after you trust this repository.
 
 4. **Start the development server**
    ```bash
