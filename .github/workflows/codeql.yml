@@ -3,8 +3,34 @@ name: CodeQL
 on:
   push:
     branches: [main, develop]
+    paths:
+      - '.github/workflows/**'
+      - 'src/**'
+      - 'shared/**'
+      - 'scripts/**'
+      - 'supabase/functions/**'
+      - 'public/**'
+      - 'package.json'
+      - 'bun.lock'
+      - 'tsconfig*.json'
+      - 'vite.config.*'
+      - 'vitest.config.*'
+      - 'index.html'
   pull_request:
     branches: [main, develop]
+    paths:
+      - '.github/workflows/**'
+      - 'src/**'
+      - 'shared/**'
+      - 'scripts/**'
+      - 'supabase/functions/**'
+      - 'public/**'
+      - 'package.json'
+      - 'bun.lock'
+      - 'tsconfig*.json'
+      - 'vite.config.*'
+      - 'vitest.config.*'
+      - 'index.html'
   schedule:
     - cron: '23 3 * * 1'
   workflow_dispatch:
