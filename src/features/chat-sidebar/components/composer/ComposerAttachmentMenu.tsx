@@ -52,14 +52,14 @@ export const ComposerAttachmentMenu = ({
       aria-label="Lampirkan file"
       aria-expanded={isAttachModalOpen}
       aria-haspopup="dialog"
-      className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl text-slate-700 transition-colors hover:bg-slate-100"
+      className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl text-black transition-colors hover:bg-slate-100"
     >
       <motion.span
         animate={{ rotate: isAttachModalOpen ? 45 : 0 }}
         transition={{ duration: 0.16, ease: 'easeOut' }}
         className="flex items-center justify-center"
       >
-        <TbPlus size={20} />
+        <TbPlus size={20} className="text-black" />
       </motion.span>
     </motion.button>
 

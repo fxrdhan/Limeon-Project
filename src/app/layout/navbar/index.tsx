@@ -155,8 +155,8 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
   }, [clearPortalHoverTimeout]);
 
   return (
-    <nav className="bg-white px-4 py-3 sticky top-0 z-40 select-none">
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center">
+    <nav className="sticky top-0 z-40 box-border h-[73px] select-none border-b border-slate-200 bg-white px-4">
+      <div className="grid h-full grid-cols-[1fr_auto_1fr] items-center">
         <div className="flex items-center h-8">
           <h1 className="flex items-center" style={{ minHeight: '2em' }}>
             <span
