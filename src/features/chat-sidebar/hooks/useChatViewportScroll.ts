@@ -45,12 +45,14 @@ export const useChatViewportScroll = ({
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [isAtTop, setIsAtTop] = useState(true);
   const [hasNewMessages, setHasNewMessages] = useState(false);
+  const [isInitialOpenPinPending, setIsInitialOpenPinPending] = useState(false);
 
   const atTopVisibilityRef = useRef(true);
   const isAtBottomRef = useRef(true);
   const shouldPinToBottomOnOpenRef = useRef(false);
   const shouldMaintainBottomDuringComposerResizeRef = useRef(false);
   const scrollToBottomAnimationFrameRef = useRef<number | null>(null);
+  const initialOpenPinSettleAnimationFrameRef = useRef<number | null>(null);
   const composerResizeBottomSyncDeadlineRef = useRef<number | null>(null);
   const composerResizeBottomSyncTimeoutRef = useRef<number | null>(null);
   const previousMessagesCountRef = useRef<number | null>(null);
@@ -124,6 +126,12 @@ export const useChatViewportScroll = ({
     if (scrollToBottomAnimationFrameRef.current === null) return;
     cancelAnimationFrame(scrollToBottomAnimationFrameRef.current);
     scrollToBottomAnimationFrameRef.current = null;
+  }, []);
+
+  const cancelInitialOpenPinSettleAnimation = useCallback(() => {
+    if (initialOpenPinSettleAnimationFrameRef.current === null) return;
+    cancelAnimationFrame(initialOpenPinSettleAnimationFrameRef.current);
+    initialOpenPinSettleAnimationFrameRef.current = null;
   }, []);
 
   const cancelComposerResizeBottomSync = useCallback(() => {
@@ -397,8 +405,16 @@ export const useChatViewportScroll = ({
 
     if (!loading) {
       shouldPinToBottomOnOpenRef.current = false;
+      cancelInitialOpenPinSettleAnimation();
+      initialOpenPinSettleAnimationFrameRef.current = requestAnimationFrame(
+        () => {
+          setIsInitialOpenPinPending(false);
+          initialOpenPinSettleAnimationFrameRef.current = null;
+        }
+      );
     }
   }, [
+    cancelInitialOpenPinSettleAnimation,
     checkIfAtTop,
     composerContainerHeight,
     isOpen,
@@ -421,26 +437,40 @@ export const useChatViewportScroll = ({
   useEffect(() => {
     if (!isOpen || !currentChannelId) return;
 
+    cancelInitialOpenPinSettleAnimation();
     shouldPinToBottomOnOpenRef.current = true;
     previousMessagesCountRef.current = null;
     previousLatestMessageIdRef.current = null;
     isAtBottomRef.current = true;
     setIsAtBottom(true);
     setHasNewMessages(false);
+    setIsInitialOpenPinPending(true);
 
     return () => {
+      cancelInitialOpenPinSettleAnimation();
       shouldPinToBottomOnOpenRef.current = false;
       shouldMaintainBottomDuringComposerResizeRef.current = false;
       cancelComposerResizeBottomSync();
+      setIsInitialOpenPinPending(false);
     };
-  }, [cancelComposerResizeBottomSync, currentChannelId, isOpen]);
+  }, [
+    cancelComposerResizeBottomSync,
+    cancelInitialOpenPinSettleAnimation,
+    currentChannelId,
+    isOpen,
+  ]);
 
   useEffect(
     () => () => {
       cancelScrollToBottomAnimation();
       cancelComposerResizeBottomSync();
+      cancelInitialOpenPinSettleAnimation();
     },
-    [cancelComposerResizeBottomSync, cancelScrollToBottomAnimation]
+    [
+      cancelComposerResizeBottomSync,
+      cancelInitialOpenPinSettleAnimation,
+      cancelScrollToBottomAnimation,
+    ]
   );
 
   const scrollToBottom = useCallback(() => {
@@ -455,6 +485,7 @@ export const useChatViewportScroll = ({
     isAtBottom,
     isAtTop,
     hasNewMessages,
+    isInitialOpenPinPending,
     scheduleScrollMessagesToBottom,
     scrollToBottom,
   };

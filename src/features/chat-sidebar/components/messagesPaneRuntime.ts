@@ -96,6 +96,7 @@ export interface MessagesPaneViewportRuntime {
   messagesContentRef: ChatSidebarRuntimeState['refs']['messagesContentRef'];
   messagesEndRef: ChatSidebarRuntimeState['refs']['messagesEndRef'];
   paddingBottom: number;
+  isInitialOpenPinPending: boolean;
   closeMessageMenu: ChatSidebarRuntimeState['viewport']['closeMessageMenu'];
   hasNewMessages: ChatSidebarRuntimeState['viewport']['hasNewMessages'];
   isAtBottom: ChatSidebarRuntimeState['viewport']['isAtBottom'];
@@ -256,6 +257,7 @@ export const buildMessagesPaneRuntime = (
           84 +
           runtime.composer.composerContextualOffset
       ),
+      isInitialOpenPinPending: runtime.viewport.isInitialOpenPinPending,
       closeMessageMenu: runtime.viewport.closeMessageMenu,
       hasNewMessages: runtime.viewport.hasNewMessages,
       isAtBottom: runtime.viewport.isAtBottom,

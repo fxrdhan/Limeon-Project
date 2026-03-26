@@ -196,6 +196,7 @@ export const useChatViewport = ({
     isAtBottom: scroll.isAtBottom,
     isAtTop: scroll.isAtTop,
     hasNewMessages: scroll.hasNewMessages,
+    isInitialOpenPinPending: scroll.isInitialOpenPinPending,
     composerContainerHeight,
     openMenuMessageId: menu.openMenuMessageId,
     menuPlacement: menu.menuPlacement,

@@ -200,6 +200,7 @@ vi.mock('../hooks/useChatViewport', () => ({
     handleChatPortalBackgroundClick: vi.fn(),
     isAtTop: true,
     composerContainerHeight: 0,
+    isInitialOpenPinPending: false,
     openMenuMessageId: null,
     menuPlacement: 'up',
     menuSideAnchor: 'middle',
