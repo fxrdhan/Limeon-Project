@@ -30,6 +30,13 @@
     "playwright": {
       "command": "npx",
       "args": ["@playwright/mcp@latest", "--extension"]
+    },
+    "shadcn": {
+      "command": "npx",
+      "args": [
+        "shadcn@latest",
+        "mcp"
+      ]
     }
   }
 }

@@ -40,6 +40,15 @@
       "type": "local",
       "command": ["npx", "@playwright/mcp@latest", "--extension"],
       "enabled": true
+    },
+    "shadcn": {
+      "type": "local",
+      "command": [
+        "npx",
+        "shadcn@latest",
+        "mcp"
+      ],
+      "enabled": true
     }
   }
 }

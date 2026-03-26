@@ -29,6 +29,11 @@ shell_snapshot = true
 collaboration_modes = true
 multi_agent = true
 
+[mcp_servers.shadcn]
+command = "npx"
+args = ["shadcn@latest", "mcp"]
+startup_timeout_sec = 20
+
 [mcp_servers.supabase]
 command = "npx"
 args = [
