@@ -9,6 +9,7 @@ import {
 const { mockStorageService, mockShareGateway } = vi.hoisted(() => ({
   mockStorageService: {
     downloadFile: vi.fn(),
+    createSignedAssetUrl: vi.fn(),
   },
   mockShareGateway: {
     createSharedLink: vi.fn(),
@@ -28,7 +29,7 @@ vi.mock('@/lib/supabase', () => ({
 vi.mock('../data/chatSidebarAssetsGateway', () => ({
   chatSidebarAssetsGateway: {
     downloadAsset: mockStorageService.downloadFile,
-    createSignedAssetUrl: vi.fn(),
+    createSignedAssetUrl: mockStorageService.createSignedAssetUrl,
   },
 }));
 
@@ -128,5 +129,36 @@ describe('message-file utils', () => {
 
     expect(shortUrl).toBe('https://shrtlink.works/stak234abc');
     expect(mockShareGateway.createSharedLink).not.toHaveBeenCalled();
+  });
+
+  it('does not fall back to a signed storage url when short-link fallback is disabled', async () => {
+    mockShareGateway.createSharedLink.mockResolvedValue({
+      data: null,
+      error: {
+        code: '403',
+        details: '',
+        hint: '',
+        message: 'Forbidden',
+        name: 'FunctionsHttpError',
+      },
+    });
+    mockStorageService.createSignedAssetUrl.mockResolvedValue(
+      'https://example.supabase.co/storage/v1/object/sign/chat/images/channel/user-1_photo.png?token=abc'
+    );
+
+    const shortUrl = await resolveCopyableChatAssetUrl(
+      'images/channel/user-1_photo.png',
+      'images/channel/user-1_photo.png',
+      {
+        allowAssetUrlFallback: false,
+        messageId: 'file-1',
+      }
+    );
+
+    expect(shortUrl).toBeNull();
+    expect(mockShareGateway.createSharedLink).toHaveBeenCalledWith({
+      messageId: 'file-1',
+    });
+    expect(mockStorageService.createSignedAssetUrl).not.toHaveBeenCalled();
   });
 });

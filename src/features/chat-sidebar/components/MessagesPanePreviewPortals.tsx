@@ -101,6 +101,7 @@ export const MessagesPanePreviewPortals = ({
               activeImageGroupPreviewMessage.message,
               activeImageGroupPreviewMessage.file_storage_path,
               {
+                allowAssetUrlFallback: false,
                 messageId: activeImageGroupPreviewMessage.id,
                 sharedLinkSlug: activeImageGroupPreviewMessage.shared_link_slug,
               }

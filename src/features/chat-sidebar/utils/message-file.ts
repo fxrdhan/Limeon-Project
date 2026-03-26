@@ -358,9 +358,11 @@ export const resolveCopyableChatAssetUrl = async (
   options?: {
     messageId?: string | null;
     sharedLinkSlug?: string | null;
+    allowAssetUrlFallback?: boolean;
   }
 ) => {
   const normalizedUrl = url.trim();
+  const allowAssetUrlFallback = options?.allowAssetUrlFallback !== false;
   const shortUrlFromPayload = buildCopyableChatSharedLinkUrl(
     options?.sharedLinkSlug
   );
@@ -372,7 +374,9 @@ export const resolveCopyableChatAssetUrl = async (
   const storagePath = request?.storagePath ?? null;
 
   if (!storagePath) {
-    return isDirectChatAssetUrl(normalizedUrl) ? normalizedUrl : null;
+    return allowAssetUrlFallback && isDirectChatAssetUrl(normalizedUrl)
+      ? normalizedUrl
+      : null;
   }
 
   const shortUrl = await ensureCopyableChatSharedLink(
@@ -382,6 +386,10 @@ export const resolveCopyableChatAssetUrl = async (
   );
   if (shortUrl) {
     return shortUrl;
+  }
+
+  if (!allowAssetUrlFallback) {
+    return null;
   }
 
   const resolvedAssetUrl = storagePath

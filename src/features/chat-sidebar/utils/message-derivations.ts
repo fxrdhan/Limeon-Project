@@ -162,6 +162,7 @@ export const serializeSelectedMessages = async (
               messageItem.message,
               messageItem.file_storage_path,
               {
+                allowAssetUrlFallback: false,
                 messageId: messageItem.id,
                 sharedLinkSlug: messageItem.shared_link_slug,
               }

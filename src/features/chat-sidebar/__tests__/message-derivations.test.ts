@@ -189,6 +189,11 @@ describe('message-derivations', () => {
       getAttachmentFileName: messageItem => messageItem.file_name || 'Lampiran',
     });
 
+    expect(
+      mockResolveCopyableChatAssetUrl.mock.calls.every(
+        ([, , options]) => options?.allowAssetUrlFallback === false
+      )
+    ).toBe(true);
     expect(serialized).toContain('Admin: signed.example.com/chat/image.png');
     expect(serialized).toContain('Gudang: signed.example.com/chat/invoice.pdf');
     expect(serialized).toContain(
