@@ -2,7 +2,7 @@ name: PR Checks
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, edited]
 
 permissions:
   contents: read
@@ -43,7 +43,7 @@ jobs:
       - name: Check PR size
         run: |
           files_changed=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | wc -l)
-          lines_changed=$(git diff --stat origin/${{ github.base_ref }}...HEAD | tail -1 | awk '{print $4+$6}')
+          lines_changed=$(git diff --shortstat origin/${{ github.base_ref }}...HEAD | awk '{print ($4 ? $4 : 0) + ($6 ? $6 : 0)}')
 
           echo "Files changed: $files_changed"
           echo "Lines changed: $lines_changed"

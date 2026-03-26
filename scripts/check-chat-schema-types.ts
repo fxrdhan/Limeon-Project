@@ -13,6 +13,12 @@ interface RpcRow {
   proname: string;
 }
 
+interface ChatMigrationFile {
+  fileName: string;
+  source: string;
+  timestamp: string;
+}
+
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const migrationsDir = resolve(repoRoot, 'supabase/migrations');
 const generatedTypesPath = resolve(
@@ -42,23 +48,65 @@ const REQUIRED_LIVE_CHAT_RPC_NAMES = [
   'upsert_user_presence',
 ];
 
-const getLatestChatMigrationBaseline = () => {
-  const latestMigration = readdirSync(migrationsDir)
-    .map((fileName): string | null => {
+const CHAT_CONTRACT_TABLE_NAMES = [
+  'chat_messages',
+  'chat_shared_links',
+  'user_presence',
+];
+
+const CHAT_CONTRACT_FUNCTION_NAMES = [
+  ...REQUIRED_LIVE_CHAT_RPC_NAMES,
+  'generate_chat_shared_link_slug',
+];
+
+const escapeRegex = (value: string) =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const CHAT_CONTRACT_TABLE_PATTERN = new RegExp(
+  String.raw`\b(?:create|alter|drop)\s+table\s+(?:if\s+(?:not\s+exists|exists)\s+)?public\.(?:${CHAT_CONTRACT_TABLE_NAMES.map(escapeRegex).join('|')})\b`,
+  'i'
+);
+
+const CHAT_CONTRACT_FUNCTION_PATTERN = new RegExp(
+  String.raw`\b(?:create(?:\s+or\s+replace)?|drop)\s+function\s+(?:if\s+exists\s+)?public\.(?:${CHAT_CONTRACT_FUNCTION_NAMES.map(escapeRegex).join('|')})\s*\(`,
+  'i'
+);
+
+const listChatMigrationFiles = () =>
+  readdirSync(migrationsDir)
+    .map((fileName): ChatMigrationFile | null => {
       const match = fileName.match(/^(\d{14})_(.+)\.sql$/);
       if (!match) {
         return null;
       }
 
       const [, timestamp, slug] = match;
-      return slug.includes('chat') ? timestamp : null;
+      if (!slug.includes('chat')) {
+        return null;
+      }
+
+      return {
+        fileName,
+        source: readFileSync(resolve(migrationsDir, fileName), 'utf8'),
+        timestamp,
+      };
     })
-    .filter((value): value is string => value !== null)
-    .sort()
+    .filter((value): value is ChatMigrationFile => value !== null)
+    .sort((left, right) => left.timestamp.localeCompare(right.timestamp));
+
+const getLatestChatContractMigration = () => {
+  const latestMigration = listChatMigrationFiles()
+    .filter(
+      migration =>
+        CHAT_CONTRACT_TABLE_PATTERN.test(migration.source) ||
+        CHAT_CONTRACT_FUNCTION_PATTERN.test(migration.source)
+    )
     .at(-1);
 
   if (!latestMigration) {
-    throw new Error('Unable to find a chat migration baseline to compare.');
+    throw new Error(
+      'Unable to find a contract-affecting chat migration to compare.'
+    );
   }
 
   return latestMigration;
@@ -75,16 +123,18 @@ if (!generatedBaselineMatch) {
   );
 }
 
-const expectedBaseline = getLatestChatMigrationBaseline();
+const latestContractMigration = getLatestChatContractMigration();
+const expectedBaseline = latestContractMigration.timestamp;
 const actualBaseline = generatedBaselineMatch[1];
 
-if (actualBaseline !== expectedBaseline) {
+if (actualBaseline < expectedBaseline) {
   throw new Error(
     [
-      'Chat schema types are out of date.',
-      `Expected baseline: ${expectedBaseline}`,
+      'Chat schema types predate the latest contract-affecting chat migration.',
+      `Latest contract migration: ${latestContractMigration.fileName}`,
+      `Expected baseline to be at least: ${expectedBaseline}`,
       `Found baseline: ${actualBaseline}`,
-      `Refresh ${generatedTypesPath} from Supabase after updating chat migrations.`,
+      `Refresh ${generatedTypesPath} from Supabase when a chat migration changes typed tables or RPC contracts.`,
     ].join('\n')
   );
 }

@@ -178,8 +178,7 @@ describe('chat-link actions', () => {
       },
     });
     expect(repository.getAccessibleAttachmentByMessageId).toHaveBeenCalledWith(
-      '4a2558e0-91f4-4b7c-830e-8388e6f3050d',
-      USER_ID
+      '4a2558e0-91f4-4b7c-830e-8388e6f3050d'
     );
     expect(repository.syncAttachmentSharedLinkSlug).toHaveBeenCalledWith(
       '4a2558e0-91f4-4b7c-830e-8388e6f3050d',

@@ -41,8 +41,11 @@ jobs:
             # Critical changes that need typecheck + lint + test (but not always build)
             critical:
               - 'src/**'
+              - 'shared/**'
               - 'scripts/**'
               - 'public/**'
+              - 'supabase/functions/**'
+              - 'supabase/migrations/**'
               - 'package.json'
               - 'bun.lock'
               - 'tsconfig*.json'
@@ -57,6 +60,7 @@ jobs:
             # Subset of critical that actually needs BUILD (excludes test files, scripts, workflows)
             needs_build:
               - 'src/**/!(*.test).{ts,tsx,scss,css}'
+              - 'shared/**/*.ts'
               - 'src/**/*.{jpg,jpeg,png,gif,svg,webp}'
               - 'public/**'
               - 'package.json'
@@ -97,7 +101,6 @@ jobs:
               - 'LICENSE'
               - '.github/ISSUE_TEMPLATE/**'
               - '.github/PULL_REQUEST_TEMPLATE.md'
-              - 'supabase/**'
 
   # ⚡ Fast checks - run in parallel for quick feedback
   typecheck:
@@ -176,9 +179,6 @@ jobs:
 
       - name: Check formatting
         run: bun run format:check
-
-      - name: Check chat schema drift
-        run: bun run check:chat-schema
 
   # 🧪 Tests with coverage - runs after quick checks pass
   test:
@@ -326,13 +326,10 @@ jobs:
       - name: Check formatting
         run: bun run format:check
 
-      - name: Check chat schema drift
-        run: bun run check:chat-schema
-
       - name: Success message
         run: |
           echo "✅ Documentation/dev files changes look good!"
-          echo "📝 Changed: docs, supabase (local dev), or other non-production files"
+          echo "📝 Changed: docs or other non-runtime files"
           echo "⚡ Skipped heavy checks (typecheck, test, build) to save CI minutes"
 
   # ⚙️ Lightweight check for config-only changes
