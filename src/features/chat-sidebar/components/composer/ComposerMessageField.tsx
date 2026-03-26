@@ -255,7 +255,7 @@ export const ComposerMessageField = ({
           placeholder="Tulis pesan..."
           rows={1}
           style={{ height: `${messageInputHeight}px` }}
-          className={`w-full resize-none border-0 bg-transparent p-0 text-[15px] leading-[22px] placeholder:text-slate-500 focus:outline-hidden focus:ring-0 transition-[height] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          className={`block w-full resize-none border-0 bg-transparent p-0 text-[15px] leading-[22px] placeholder:text-slate-500 focus:outline-hidden focus:ring-0 transition-[height] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] ${
             shouldRenderComposerLinkOverlay
               ? 'relative z-0 text-transparent caret-slate-900'
               : 'text-slate-900'
