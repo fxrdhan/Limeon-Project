@@ -7,6 +7,7 @@ export interface DirectoryUser {
   name: string;
   email: string;
   profilephoto: string | null;
+  profilephoto_thumb?: string | null;
 }
 
 const EMPTY_USERS: DirectoryUser[] = [];

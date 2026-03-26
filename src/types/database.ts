@@ -225,6 +225,8 @@ export interface UserDetails {
   name: string;
   email: string;
   profilephoto: string | null;
+  profilephoto_thumb?: string | null;
+  profilephoto_path?: string | null;
   role: string;
 }
 

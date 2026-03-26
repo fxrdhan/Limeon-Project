@@ -1,14 +1,8 @@
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo, useRef } from 'react';
 import { motion } from 'motion/react';
 import { useAuthStore } from '@/store/authStore';
 import type { OnlineUser } from '@/types';
 import { getInitials, getInitialsColor } from '@/utils/avatar';
-import {
-  cacheImageBlob,
-  getCachedImageBlobUrl,
-  releaseCachedImageBlob,
-  setCachedImage,
-} from '@/utils/imageCache';
 
 interface AvatarStackProps {
   users: OnlineUser[];
@@ -47,52 +41,8 @@ const Avatar = memo(
       md: '-ml-2',
       lg: '-ml-3',
     };
-    const [displayImageUrl, setDisplayImageUrl] = useState<string | null>(null);
-    const profilePhotoUrl = user.profilephoto ?? null;
-    const cacheKey = `profile:${user.id}`;
-
-    useEffect(() => {
-      if (!profilePhotoUrl) return;
-      if (profilePhotoUrl.startsWith('http')) {
-        setCachedImage(cacheKey, profilePhotoUrl);
-      }
-    }, [cacheKey, profilePhotoUrl]);
-
-    useEffect(() => {
-      let isActive = true;
-
-      const resolveImage = async () => {
-        if (!profilePhotoUrl) {
-          if (isActive) setDisplayImageUrl(null);
-          return;
-        }
-
-        if (!profilePhotoUrl.startsWith('http')) {
-          if (isActive) setDisplayImageUrl(profilePhotoUrl);
-          return;
-        }
-
-        const cachedBlobUrl = await getCachedImageBlobUrl(profilePhotoUrl);
-        if (cachedBlobUrl) {
-          if (isActive) setDisplayImageUrl(cachedBlobUrl);
-          return;
-        }
-
-        const blobUrl = await cacheImageBlob(profilePhotoUrl);
-        if (isActive) {
-          setDisplayImageUrl(blobUrl || profilePhotoUrl);
-        }
-      };
-
-      void resolveImage();
-
-      return () => {
-        isActive = false;
-        if (profilePhotoUrl?.startsWith('http')) {
-          releaseCachedImageBlob(profilePhotoUrl);
-        }
-      };
-    }, [profilePhotoUrl]);
+    const profilePhotoUrl =
+      user.profilephoto_thumb ?? user.profilephoto ?? null;
 
     return (
       <motion.div
@@ -117,9 +67,9 @@ const Avatar = memo(
       `}
         title={`${user.name} - ${isOnline ? 'Online' : 'Offline'}`}
       >
-        {displayImageUrl ? (
+        {profilePhotoUrl ? (
           <img
-            src={displayImageUrl}
+            src={profilePhotoUrl}
             alt={user.name}
             className="w-full h-full object-cover"
             draggable={false}

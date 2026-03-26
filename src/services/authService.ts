@@ -13,7 +13,13 @@ import type { UserDetails } from '@/types';
 
 export type UserPublicFields = Pick<
   UserDetails,
-  'id' | 'name' | 'email' | 'role' | 'profilephoto'
+  | 'id'
+  | 'name'
+  | 'email'
+  | 'role'
+  | 'profilephoto'
+  | 'profilephoto_thumb'
+  | 'profilephoto_path'
 >;
 
 /**
@@ -89,14 +95,21 @@ export async function fetchUserById(
 /**
  * Update user's profile photo URL
  */
-export async function updateUserProfilePhotoUrl(
+export async function updateUserProfilePhotoAssets(
   userId: string,
-  publicUrl: string
-): Promise<void> {
-  const { error } = await apiAuthService.updateUserProfile(userId, {
-    profilephoto: publicUrl,
+  assets: {
+    profilephoto: string;
+    profilephoto_thumb: string | null;
+    profilephoto_path: string;
+  }
+): Promise<UserPublicFields | null> {
+  const { data, error } = await apiAuthService.updateUserProfile(userId, {
+    profilephoto: assets.profilephoto,
+    profilephoto_thumb: assets.profilephoto_thumb,
+    profilephoto_path: assets.profilephoto_path,
   });
   if (error) throw error;
+  return (data as UserPublicFields) ?? null;
 }
 
 /**
@@ -105,6 +118,8 @@ export async function updateUserProfilePhotoUrl(
 export async function clearUserProfilePhoto(userId: string): Promise<void> {
   const { error } = await apiAuthService.updateUserProfile(userId, {
     profilephoto: null,
+    profilephoto_thumb: null,
+    profilephoto_path: null,
   });
   if (error) throw error;
 }
@@ -142,7 +157,7 @@ const authService = {
   signInWithEmailPassword,
   signOut,
   fetchUserById,
-  updateUserProfilePhotoUrl,
+  updateUserProfilePhotoAssets,
   clearUserProfilePhoto,
   initializeAuth,
   onAuthStateChange,

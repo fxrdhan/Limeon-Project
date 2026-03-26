@@ -37,6 +37,7 @@
     "update-password": "bun scripts/update-user-password.ts",
     "update-password:help": "bun scripts/update-user-password.ts --help",
     "backfill:chat-image-previews": "bun scripts/backfill-chat-image-previews.ts",
+    "backfill:profile-photo-thumbnails": "bun scripts/backfill-profile-photo-thumbnails.ts",
     "export": "bun scripts/export.ts",
     "loc-stats": "bun scripts/loc-stats.ts",
     "codex:seed": "bun scripts/seed-codex.ts",

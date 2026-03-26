@@ -228,6 +228,8 @@ export const UserDetailsSchema = z.object({
   name: z.string(),
   email: z.string(),
   profilephoto: z.string().nullable(),
+  profilephoto_thumb: z.string().optional().nullable(),
+  profilephoto_path: z.string().optional().nullable(),
   role: z.string(),
 });
 

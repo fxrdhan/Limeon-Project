@@ -288,6 +288,10 @@ export const normalizeChatDirectoryUser = (
       user.profilephoto,
       'directory_user.profilephoto'
     ),
+    profilephoto_thumb: getOptionalString(
+      user.profilephoto_thumb,
+      'directory_user.profilephoto_thumb'
+    ),
   };
 };
 

@@ -25,7 +25,7 @@ export class UsersService {
     try {
       const { data, error } = await supabase
         .from('users')
-        .select('id, name, email, profilephoto')
+        .select('id, name, email, profilephoto, profilephoto_thumb')
         .in('id', normalizedUserIds)
         .order('name', { ascending: true });
 

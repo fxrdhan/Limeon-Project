@@ -341,12 +341,16 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                             className={`relative rounded-full shadow-sm w-8 h-8 shrink-0 overflow-hidden ${isOnline ? '' : 'opacity-50'}`}
                             title={`${portalUser.name} - ${isOnline ? 'Online' : 'Offline'}`}
                           >
-                            {portalUser.profilephoto ? (
+                            {portalUser.profilephoto_thumb ||
+                            portalUser.profilephoto ? (
                               <img
-                                src={portalUser.profilephoto}
+                                src={
+                                  portalUser.profilephoto_thumb ||
+                                  portalUser.profilephoto ||
+                                  ''
+                                }
                                 alt={portalUser.name}
                                 className="w-full h-full object-cover"
-                                loading="lazy"
                                 draggable={false}
                               />
                             ) : (

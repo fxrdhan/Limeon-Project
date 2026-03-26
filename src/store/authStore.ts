@@ -3,6 +3,8 @@ import authService from '@/services/authService';
 import { chatPresenceService } from '@/services/api/chat.service';
 import { StorageService } from '@/services/api/storage.service';
 import { clearClientBrowserState } from '@/lib/browserLogoutCleanup';
+import { PROFILE_PHOTO_BUCKET } from '../../shared/profilePhotoPaths';
+import { buildProfilePhotoUploadPlan } from '@/utils/profilePhoto';
 import type { AuthState } from '@/types';
 import type { Session } from '@supabase/supabase-js';
 
@@ -158,27 +160,65 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ error: null });
     try {
       if (user.profilephoto) {
-        const oldPath = StorageService.extractPathFromUrl(
-          user.profilephoto,
-          'profiles'
-        );
+        const oldPath =
+          user.profilephoto_path ||
+          StorageService.extractPathFromUrl(
+            user.profilephoto,
+            PROFILE_PHOTO_BUCKET
+          );
         if (oldPath) {
-          await StorageService.deleteEntityImage('profiles', oldPath);
+          await StorageService.deleteEntityImage(PROFILE_PHOTO_BUCKET, oldPath);
+        }
+      }
+      if (user.profilephoto_thumb) {
+        const oldThumbnailPath = StorageService.extractPathFromUrl(
+          user.profilephoto_thumb,
+          PROFILE_PHOTO_BUCKET
+        );
+        if (oldThumbnailPath) {
+          await StorageService.deleteEntityImage(
+            PROFILE_PHOTO_BUCKET,
+            oldThumbnailPath
+          );
         }
       }
 
-      const { publicUrl } = await StorageService.uploadEntityImage(
-        'profiles',
+      const uploadPlan = await buildProfilePhotoUploadPlan(user.id, file);
+      const { publicUrl } = await StorageService.uploadFile(
+        PROFILE_PHOTO_BUCKET,
+        file,
+        uploadPlan.originalPath
+      );
+      let thumbnailUrl: string | null = null;
+      if (uploadPlan.thumbnailFile && uploadPlan.thumbnailPath) {
+        const thumbnailUpload = await StorageService.uploadRawFile(
+          PROFILE_PHOTO_BUCKET,
+          uploadPlan.thumbnailFile,
+          uploadPlan.thumbnailPath,
+          uploadPlan.thumbnailFile.type
+        );
+        thumbnailUrl = thumbnailUpload.publicUrl;
+      }
+
+      const updatedUser = await authService.updateUserProfilePhotoAssets(
         user.id,
-        file
+        {
+          profilephoto: publicUrl,
+          profilephoto_thumb: thumbnailUrl,
+          profilephoto_path: uploadPlan.originalPath,
+        }
       );
 
-      await authService.updateUserProfilePhotoUrl(user.id, publicUrl);
-
-      set(state => ({
-        /* c8 ignore next */
-        user: state.user ? { ...state.user, profilephoto: publicUrl } : null,
-      }));
+      set({
+        user:
+          updatedUser ??
+          ({
+            ...user,
+            profilephoto: publicUrl,
+            profilephoto_thumb: thumbnailUrl,
+            profilephoto_path: uploadPlan.originalPath,
+          } as typeof user),
+      });
     } catch (error: unknown) {
       set({
         error:
@@ -200,12 +240,26 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       // Delete the current profile photo from storage if it exists
       if (user.profilephoto) {
-        const oldPath = StorageService.extractPathFromUrl(
-          user.profilephoto,
-          'profiles'
-        );
+        const oldPath =
+          user.profilephoto_path ||
+          StorageService.extractPathFromUrl(
+            user.profilephoto,
+            PROFILE_PHOTO_BUCKET
+          );
         if (oldPath) {
-          await StorageService.deleteEntityImage('profiles', oldPath);
+          await StorageService.deleteEntityImage(PROFILE_PHOTO_BUCKET, oldPath);
+        }
+      }
+      if (user.profilephoto_thumb) {
+        const oldThumbnailPath = StorageService.extractPathFromUrl(
+          user.profilephoto_thumb,
+          PROFILE_PHOTO_BUCKET
+        );
+        if (oldThumbnailPath) {
+          await StorageService.deleteEntityImage(
+            PROFILE_PHOTO_BUCKET,
+            oldThumbnailPath
+          );
         }
       }
 
@@ -214,7 +268,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // Update state
       set(state => ({
         /* c8 ignore next */
-        user: state.user ? { ...state.user, profilephoto: null } : null,
+        user: state.user
+          ? {
+              ...state.user,
+              profilephoto: null,
+              profilephoto_thumb: null,
+              profilephoto_path: null,
+            }
+          : null,
       }));
     } catch (error: unknown) {
       set({

@@ -171,9 +171,14 @@ export const MessageForwardPicker = ({
                           : 'cursor-pointer'
                       }`}
                     >
-                      {availableUser.profilephoto ? (
+                      {availableUser.profilephoto_thumb ||
+                      availableUser.profilephoto ? (
                         <img
-                          src={availableUser.profilephoto}
+                          src={
+                            availableUser.profilephoto_thumb ||
+                            availableUser.profilephoto ||
+                            ''
+                          }
                           alt={availableUser.name}
                           className="h-10 w-10 shrink-0 rounded-full object-cover"
                           draggable={false}

@@ -10,6 +10,7 @@ export interface ChatTargetUser {
   name: string;
   email: string;
   profilephoto?: string | null;
+  profilephoto_thumb?: string | null;
 }
 
 export interface SidebarProps {
