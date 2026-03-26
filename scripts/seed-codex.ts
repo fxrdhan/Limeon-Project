@@ -67,7 +67,7 @@ const seedCodexConfig = async () => {
   }
 
   console.log(
-    'Supabase and Firecrawl MCP tokens are forwarded from shell env vars when available.'
+    'Supabase MCP tokens are forwarded from shell env vars when available.'
   );
 };
 

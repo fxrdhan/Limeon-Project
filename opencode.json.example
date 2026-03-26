@@ -15,14 +15,6 @@
         "SUPABASE_ACCESS_TOKEN": "{env:SUPABASE_ACCESS_TOKEN}"
       }
     },
-    "firecrawl-mcp": {
-      "type": "local",
-      "command": ["npx", "-y", "firecrawl-mcp"],
-      "enabled": false,
-      "environment": {
-        "FIRECRAWL_API_KEY": "{env:FIRECRAWL_API_KEY}"
-      }
-    },
     "ag-mcp": {
       "type": "local",
       "command": ["npx", "ag-mcp"],
