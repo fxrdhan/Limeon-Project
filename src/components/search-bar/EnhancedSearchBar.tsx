@@ -3,6 +3,7 @@ import fuzzysort from 'fuzzysort';
 import React, {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -359,6 +360,7 @@ export const stepBackPatternValue = (
 
 const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   value,
+  stateScopeKey,
   onChange,
   onKeyDown,
   onFocus,
@@ -724,6 +726,27 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     setGroupEditingSelectorTarget(null);
     groupEditDraftRef.current = null;
   }, []);
+
+  useLayoutEffect(() => {
+    if (inputErrorTimeoutRef.current !== null) {
+      window.clearTimeout(inputErrorTimeoutRef.current);
+      inputErrorTimeoutRef.current = null;
+    }
+
+    handleClearPreservedState();
+    setEditingBadge(null);
+    setEditingGroupBadge(null);
+    setSelectedBadgeIndex(null);
+    setBadgeCount(0);
+    setPreviewColumn(null);
+    setPreviewOperator(null);
+    setShowInputError(false);
+    badgesRef.current = [];
+    interruptedSelectorRef.current = null;
+    insertTailRef.current = null;
+    deleteConfirmationCarryRef.current = false;
+    setIsInsertFlowActive(false);
+  }, [stateScopeKey, handleClearPreservedState]);
 
   // Try to restore confirmed pattern from preservedSearchMode
   // Returns true if restored (caller should return), false otherwise

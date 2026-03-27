@@ -1,6 +1,14 @@
 import { createTextColumn } from '@/components/ag-grid';
 import { ColDef, GridApi, GridReadyEvent } from 'ag-grid-community';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 // Components
@@ -25,14 +33,13 @@ import { useItemsManagement } from '@/hooks/data/useItemsManagement';
 import { useMasterDataManagement } from '@/hooks/data/useMasterDataManagement';
 import { useUnifiedSearch } from '@/hooks/data/useUnifiedSearch';
 import { restoreConfirmedPattern } from '@/components/search-bar/utils/patternRestoration';
+import { parseSearchValue } from '@/components/search-bar/utils/searchUtils';
 import { buildAdvancedFilterModel } from '@/utils/advancedFilterBuilder';
 import { useConfirmDialog } from '@/components/dialog-box';
 import {
   getOrderedSearchColumnsByEntity,
   getSearchColumnsByEntity,
 } from '@/utils/searchColumns';
-import { getSavedStateInfo, type TableType } from '@/utils/gridStateManager';
-import { deriveSearchPatternFromGridState } from './utils/advancedFilterToSearchPattern';
 import SupplierModals from './components/SupplierModals';
 import { useSupplierTab } from './hooks/useSupplierTab';
 import { useCustomerLevels } from '@/features/item-management/application/hooks/data/useCustomerLevels';
@@ -178,12 +185,6 @@ const OTHER_MASTER_DATA_CONFIG: Record<
     noDataMessage: 'Tidak ada data dokter yang ditemukan',
     searchNoDataMessage: 'Tidak ada dokter dengan kata kunci',
   },
-};
-
-const readGridStateForTab = (
-  tab: MasterDataType
-): ReturnType<typeof getSavedStateInfo> => {
-  return getSavedStateInfo(tab as TableType);
 };
 
 // Session storage utility
@@ -1531,61 +1532,6 @@ const ItemMasterNew = memo(() => {
     patientItemsPerPage,
   ]);
 
-  // Restore SearchBar badge UI per tab (session-scoped)
-  // Priority: explicit saved pattern → derive from grid_state_{tab}.advancedFilterModel
-  useEffect(() => {
-    const setSearch =
-      activeTab === 'items'
-        ? setItemSearch
-        : activeTab === 'suppliers'
-          ? setSupplierSearch
-          : activeTab === 'customers'
-            ? setCustomerSearch
-            : activeTab === 'patients'
-              ? setPatientSearch
-              : activeTab === 'doctors'
-                ? setDoctorSearch
-                : setEntitySearch;
-    const sessionKey = getItemMasterSearchSessionKey(activeTab);
-
-    let savedPattern: string | null = null;
-    try {
-      savedPattern = sessionStorage.getItem(sessionKey);
-    } catch {
-      // ignore
-    }
-
-    if (savedPattern && savedPattern.trim() !== '') {
-      setSearch(savedPattern);
-      return;
-    }
-
-    const gridState = readGridStateForTab(activeTab);
-    const derivedPattern = gridState
-      ? deriveSearchPatternFromGridState(gridState)
-      : null;
-
-    if (derivedPattern) {
-      try {
-        sessionStorage.setItem(sessionKey, derivedPattern);
-      } catch {
-        // ignore
-      }
-      setSearch(derivedPattern);
-      return;
-    }
-
-    setSearch('');
-  }, [
-    activeTab,
-    setCustomerSearch,
-    setDoctorSearch,
-    setEntitySearch,
-    setItemSearch,
-    setPatientSearch,
-    setSupplierSearch,
-  ]);
-
   // Cleanup grid API reference and pending tab changes on unmount
   useEffect(() => {
     return () => {
@@ -1928,12 +1874,6 @@ const ItemMasterNew = memo(() => {
       // This prevents the cascade: clearSearch → useSearchState → onFilterSearch(null)
       isTabSwitchingRef.current = true;
 
-      // Clear search UI when switching tabs - both DOM and React state
-      // Now safe because handleItemFilterSearch/handleEntityFilterSearch check the flag
-      if (searchInputRef.current) {
-        searchInputRef.current.value = '';
-      }
-
       // After navigation, aggressively return focus to SearchBar.
       // Clicking the tab leaves focus on the tab button; also, the SearchBar input
       // can re-mount during transitions, so we retry once after a short delay.
@@ -2197,6 +2137,7 @@ const ItemMasterNew = memo(() => {
           : isDoctorTab
             ? doctorSearchBarProps
             : entitySearchBarProps;
+  const activeSearchColumns = activeSearchBarProps.columns;
 
   const activeSearchValue = isItemTab
     ? itemSearch
@@ -2209,6 +2150,62 @@ const ItemMasterNew = memo(() => {
           : isDoctorTab
             ? doctorSearch
             : entitySearch;
+
+  // Restore SearchBar badge UI per tab from its dedicated session key.
+  // Using the explicit search key as the source of truth avoids badge leakage
+  // when AG Grid state is still transitioning during a tab switch.
+  useLayoutEffect(() => {
+    const setSearch =
+      activeTab === 'items'
+        ? setItemSearch
+        : activeTab === 'suppliers'
+          ? setSupplierSearch
+          : activeTab === 'customers'
+            ? setCustomerSearch
+            : activeTab === 'patients'
+              ? setPatientSearch
+              : activeTab === 'doctors'
+                ? setDoctorSearch
+                : setEntitySearch;
+    const sessionKey = getItemMasterSearchSessionKey(activeTab);
+
+    let savedPattern = '';
+    try {
+      savedPattern = sessionStorage.getItem(sessionKey)?.trim() ?? '';
+    } catch {
+      // ignore
+    }
+
+    setSearch(savedPattern);
+
+    if (!unifiedGridApi || unifiedGridApi.isDestroyed()) {
+      return;
+    }
+
+    if (!savedPattern) {
+      unifiedGridApi.setAdvancedFilterModel(null);
+      return;
+    }
+
+    const parsedSearch = parseSearchValue(savedPattern, activeSearchColumns);
+    const filterSearch = parsedSearch.isFilterMode
+      ? (parsedSearch.filterSearch ?? null)
+      : null;
+
+    unifiedGridApi.setAdvancedFilterModel(
+      buildAdvancedFilterModel(filterSearch)
+    );
+  }, [
+    activeSearchColumns,
+    activeTab,
+    setCustomerSearch,
+    setDoctorSearch,
+    setEntitySearch,
+    setItemSearch,
+    setPatientSearch,
+    setSupplierSearch,
+    unifiedGridApi,
+  ]);
 
   const activePlaceholder = isItemTab
     ? 'Cari item...'
@@ -2358,6 +2355,7 @@ const ItemMasterNew = memo(() => {
         <div className="flex items-center pt-8">
           <div className="grow">
             <SearchToolbar
+              searchScopeKey={activeTab}
               searchInputRef={
                 searchInputRef as React.RefObject<HTMLInputElement>
               }
@@ -2379,6 +2377,7 @@ const ItemMasterNew = memo(() => {
         {/* Unified EntityGrid */}
         <div>
           <EntityGrid
+            key={activeTab}
             activeTab={activeTab}
             itemsData={itemsManagement.data as ItemDataType[]}
             suppliersData={suppliersForDisplay}

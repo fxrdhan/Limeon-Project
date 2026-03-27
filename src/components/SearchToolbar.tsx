@@ -7,6 +7,7 @@ import { TbTablePlus } from 'react-icons/tb';
 
 interface SearchToolbarProps<T = unknown> {
   searchInputRef: React.RefObject<HTMLInputElement>;
+  searchScopeKey?: string;
   searchBarProps: {
     value: string;
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -36,6 +37,7 @@ interface SearchToolbarProps<T = unknown> {
 
 const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
   searchInputRef,
+  searchScopeKey,
   searchBarProps,
   search,
   placeholder,
@@ -106,6 +108,7 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
     <>
       <div className="flex items-center">
         <EnhancedSearchBar
+          stateScopeKey={searchScopeKey}
           inputRef={searchInputRef}
           {...searchBarProps}
           onKeyDown={handleKeyDown}

@@ -4,6 +4,7 @@ import {
   FirstDataRenderedEvent,
   GetMainMenuItems,
   GridApi,
+  GridState,
   GridReadyEvent,
   IRowNode,
   RowClickedEvent,
@@ -23,7 +24,11 @@ import { useDynamicGridHeight } from '@/hooks/ag-grid/useDynamicGridHeight';
 // Simple grid state utilities
 import * as gridStateManager from '@/utils/gridStateManager';
 import type { TableType } from '@/utils/gridStateManager';
-import type { MasterDataType } from '@/features/item-management/shared/types';
+import {
+  getItemMasterSearchSessionKey,
+  isMasterDataTab,
+  type MasterDataType,
+} from '@/features/item-management/shared/types';
 
 // Types
 import type {
@@ -160,39 +165,95 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
   const [gridApi, setGridApi] = useState<GridApi | null>(null);
   const dataGridRef = useRef<AgGridReact>(null);
   const [currentPageSize, setCurrentPageSize] = useState<number>(itemsPerPage);
-  const readSavedGridState = useCallback((tableType: TableType) => {
-    let stateFromHelper: unknown = undefined;
-    if ('loadSavedStateForInit' in gridStateManager) {
-      stateFromHelper = (
-        gridStateManager as {
-          loadSavedStateForInit: (table: TableType) => unknown;
-        }
-      ).loadSavedStateForInit(tableType);
-    }
-    if (!stateFromHelper && 'getSavedStateInfo' in gridStateManager) {
-      stateFromHelper = (
-        gridStateManager as {
-          getSavedStateInfo: (table: TableType) => unknown;
-        }
-      ).getSavedStateInfo(tableType);
-    }
-
-    if (stateFromHelper) {
-      return stateFromHelper;
-    }
-
-    const storageKey = `grid_state_${tableType}`;
-    const raw = sessionStorage.getItem(storageKey);
-    if (!raw) {
-      return undefined;
+  const hasPersistedSearchPattern = useCallback((tableType: TableType) => {
+    if (!isMasterDataTab(tableType)) {
+      return false;
     }
 
     try {
-      return JSON.parse(raw);
+      const savedPattern = sessionStorage.getItem(
+        getItemMasterSearchSessionKey(tableType)
+      );
+      return !!savedPattern?.trim();
     } catch {
-      return undefined;
+      return false;
     }
   }, []);
+
+  const sanitizeSavedGridState = useCallback(
+    (tableType: TableType, state: unknown): GridState | undefined => {
+      if (!state || typeof state !== 'object') {
+        return undefined;
+      }
+
+      if (hasPersistedSearchPattern(tableType)) {
+        return state as GridState;
+      }
+
+      const gridState = state as GridState;
+      const advancedFilterModel = gridState.filter?.advancedFilterModel;
+      if (advancedFilterModel == null) {
+        return gridState;
+      }
+
+      const sanitizedState: GridState = {
+        ...gridState,
+        filter: {
+          ...gridState.filter,
+          advancedFilterModel: undefined,
+        },
+      };
+
+      try {
+        sessionStorage.setItem(
+          `grid_state_${tableType}`,
+          JSON.stringify(sanitizedState)
+        );
+      } catch {
+        // ignore
+      }
+
+      return sanitizedState;
+    },
+    [hasPersistedSearchPattern]
+  );
+
+  const readSavedGridState = useCallback(
+    (tableType: TableType) => {
+      let stateFromHelper: unknown = undefined;
+      if ('loadSavedStateForInit' in gridStateManager) {
+        stateFromHelper = (
+          gridStateManager as {
+            loadSavedStateForInit: (table: TableType) => unknown;
+          }
+        ).loadSavedStateForInit(tableType);
+      }
+      if (!stateFromHelper && 'getSavedStateInfo' in gridStateManager) {
+        stateFromHelper = (
+          gridStateManager as {
+            getSavedStateInfo: (table: TableType) => unknown;
+          }
+        ).getSavedStateInfo(tableType);
+      }
+
+      if (stateFromHelper) {
+        return sanitizeSavedGridState(tableType, stateFromHelper);
+      }
+
+      const storageKey = `grid_state_${tableType}`;
+      const raw = sessionStorage.getItem(storageKey);
+      if (!raw) {
+        return undefined;
+      }
+
+      try {
+        return sanitizeSavedGridState(tableType, JSON.parse(raw));
+      } catch {
+        return undefined;
+      }
+    },
+    [sanitizeSavedGridState]
+  );
 
   const hasSavedGridState = useCallback(
     (tableType: TableType) => {
