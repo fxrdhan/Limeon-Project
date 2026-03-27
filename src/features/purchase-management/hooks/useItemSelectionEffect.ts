@@ -29,6 +29,7 @@ export const useItemSelectionEffect = ({
           discount: 0,
           subtotal: itemData.base_price,
           unit: itemData.unit?.name || itemData.base_unit || 'Unit',
+          unit_id: null,
           vat_percentage: 0,
           batch_no: null,
           expiry_date: null,

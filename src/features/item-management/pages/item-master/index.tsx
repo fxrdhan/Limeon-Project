@@ -111,8 +111,8 @@ const TAB_OPTIONS: SlidingSelectorOption<MasterDataType>[] = [
   {
     key: 'units',
     value: 'units',
-    defaultLabel: 'Satuan',
-    activeLabel: 'Satuan Item',
+    defaultLabel: 'Satuan Ukur',
+    activeLabel: 'Satuan Ukur',
   },
   {
     key: 'suppliers',

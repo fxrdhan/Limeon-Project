@@ -57,7 +57,8 @@ export default function PackageConversionInput({
     <div>
       <h3 className="text-lg font-medium mb-3">Tambah Konversi Kemasan</h3>
       <p className="text-sm text-slate-600 mb-2">
-        1 {baseUnit || 'Kemasan Dasar'} setara berapa kemasan turunan?
+        Masukkan berapa {baseUnit || 'satuan stok dasar'} yang ada dalam 1
+        kemasan turunan.
       </p>
       <div className="flex flex-row gap-4 mb-3">
         <FormField label="Kemasan Turunan" className="flex-1" required={true}>
@@ -82,7 +83,7 @@ export default function PackageConversionInput({
         <FormField
           label={
             formData.unit
-              ? `1 ${baseUnit || 'Kemasan Dasar'} = ? ${formData.unit}`
+              ? `1 ${formData.unit} = ? ${baseUnit || 'Satuan Dasar'}`
               : 'Nilai Konversi'
           }
           className="flex-1"

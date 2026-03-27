@@ -11,7 +11,7 @@ Real-time synchronization hook for Item Master data using Supabase realtime.
 - ✅ `items` - Main item data
 - ✅ `item_categories` - Item categories
 - ✅ `item_types` - Item types
-- ✅ `item_units` - Measurement units
+- ✅ `item_units` - Measurement units / satuan ukur
 - ✅ `item_packages` - Package types
 - ✅ `item_dosages` - Medicine dosages
 - ✅ `item_manufacturers` - Item manufacturers

@@ -46,12 +46,12 @@ export const usePackageConversion = (): UsePackageConversionReturn => {
       const calculatedBasePrice =
         packageConversion.base_price !== undefined
           ? packageConversion.base_price
-          : basePrice / packageConversion.conversion_rate;
+          : basePrice * packageConversion.conversion_rate;
 
       const calculatedSellPrice =
         packageConversion.sell_price !== undefined
           ? packageConversion.sell_price
-          : sellPrice / packageConversion.conversion_rate;
+          : sellPrice * packageConversion.conversion_rate;
 
       const newPackageConversion: PackageConversion = {
         id:
@@ -89,8 +89,8 @@ export const usePackageConversion = (): UsePackageConversionReturn => {
       return;
 
     const needsUpdate = packageConversions.some(uc => {
-      const newBasePrice = basePrice > 0 ? basePrice / uc.conversion_rate : 0;
-      const newSellPrice = sellPrice > 0 ? sellPrice / uc.conversion_rate : 0;
+      const newBasePrice = basePrice > 0 ? basePrice * uc.conversion_rate : 0;
+      const newSellPrice = sellPrice > 0 ? sellPrice * uc.conversion_rate : 0;
       return (
         Math.abs(uc.base_price - newBasePrice) > 0.001 ||
         Math.abs(uc.sell_price - newSellPrice) > 0.001
@@ -101,8 +101,8 @@ export const usePackageConversion = (): UsePackageConversionReturn => {
       setPackageConversions(prevConversions =>
         prevConversions.map(uc => ({
           ...uc,
-          base_price: basePrice > 0 ? basePrice / uc.conversion_rate : 0,
-          sell_price: sellPrice > 0 ? sellPrice / uc.conversion_rate : 0,
+          base_price: basePrice > 0 ? basePrice * uc.conversion_rate : 0,
+          sell_price: sellPrice > 0 ? sellPrice * uc.conversion_rate : 0,
         }))
       );
     }

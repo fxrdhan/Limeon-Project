@@ -8,7 +8,7 @@ import type {
   ItemManufacturer,
 } from '@/types/database';
 
-// Define ItemUnit type (same structure as Unit but for item_units table)
+// Measurement unit master (mg, mL, g, IU) stored in item_units
 export interface ItemUnit {
   id: string;
   code: string;
@@ -60,7 +60,7 @@ export class ItemPackageService extends BaseService<ItemPackage> {
   }
 }
 
-// Item Unit Service (for item_units table)
+// Measurement Unit Service (for item_units table)
 export class ItemUnitService extends BaseService<ItemUnit> {
   constructor() {
     super('item_units');

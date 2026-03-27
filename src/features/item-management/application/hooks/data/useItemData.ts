@@ -134,11 +134,11 @@ export const useItemData = ({
 
         const computedBase =
           fetchedFormData.base_price > 0 && rate > 0
-            ? fetchedFormData.base_price / rate
+            ? fetchedFormData.base_price * rate
             : baseFromDb;
         const computedSell =
           fetchedFormData.sell_price > 0 && rate > 0
-            ? fetchedFormData.sell_price / rate
+            ? fetchedFormData.sell_price * rate
             : sellFromDb;
 
         return {

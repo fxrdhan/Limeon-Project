@@ -43,10 +43,10 @@ interface DBPurchaseItem {
   discount: number;
   subtotal: number;
   unit: string;
+  unit_id?: string | null;
   vat_percentage: number;
   batch_no: string | null;
   expiry_date: string | null;
-  // Client-only helper for stock adjustments (not persisted in DB)
   unit_conversion_rate?: number;
   created_at?: string;
 }
@@ -224,6 +224,8 @@ export class PurchasesService extends BaseService<DBPurchase> {
           name: item.items?.name || '',
           code: item.items?.code || '',
         },
+        unit_id: item.unit_id ?? null,
+        unit_conversion_rate: Number(item.unit_conversion_rate) || 1,
       }));
 
       return { data: transformedItems, error: null };
@@ -248,6 +250,8 @@ export class PurchasesService extends BaseService<DBPurchase> {
         discount: item.discount,
         vat_percentage: item.vat_percentage,
         unit: item.unit,
+        unit_id: item.unit_id ?? null,
+        unit_conversion_rate: item.unit_conversion_rate ?? 1,
         batch_no: item.batch_no,
         expiry_date: item.expiry_date,
       }));

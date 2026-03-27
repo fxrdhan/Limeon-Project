@@ -73,11 +73,22 @@ export const resolveUnitPrice = (
   const conversion = resolveUnitConversion(conversions, unitId, unitName);
 
   if (conversion) {
+    const rate = normalizeNumber(conversion.conversion_rate) || 1;
+    const fallbackBasePrice =
+      normalizeNumber(item.base_price) > 0
+        ? normalizeNumber(item.base_price) * rate
+        : 0;
+    const fallbackSellPrice =
+      normalizeNumber(item.sell_price) > 0
+        ? normalizeNumber(item.sell_price) * rate
+        : 0;
+
     return {
       unitName: conversion.unit_name || item.base_unit || item.unit?.name || '',
-      basePrice: normalizeNumber(conversion.base_price),
-      baseSellPrice: normalizeNumber(conversion.sell_price),
-      conversionRate: normalizeNumber(conversion.conversion_rate),
+      basePrice: normalizeNumber(conversion.base_price) || fallbackBasePrice,
+      baseSellPrice:
+        normalizeNumber(conversion.sell_price) || fallbackSellPrice,
+      conversionRate: rate,
     };
   }
 

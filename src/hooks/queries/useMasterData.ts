@@ -331,7 +331,7 @@ export const usePackageMutations = () => {
   return { createPackage, updatePackage, deletePackage };
 };
 
-// Item Unit Hooks (for item_units table)
+// Measurement Unit Hooks (for item_units table)
 export const useItemUnits = (options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: QueryKeys.masterData.itemUnits.list(),
@@ -366,7 +366,7 @@ export const useItemUnitMutations = () => {
       return result.data;
     },
     onSuccess: () => {
-      toast.success('Satuan berhasil ditambahkan');
+      toast.success('Satuan ukur berhasil ditambahkan');
       const keysToInvalidate = getInvalidationKeys.masterData.itemUnits();
       keysToInvalidate.forEach((keySet: readonly string[]) => {
         void queryClient.invalidateQueries({ queryKey: keySet });
@@ -374,7 +374,7 @@ export const useItemUnitMutations = () => {
     },
     onError: error => {
       console.error('Error creating item unit:', error);
-      toast.error('Gagal menambahkan satuan');
+      toast.error('Gagal menambahkan satuan ukur');
     },
   });
 
@@ -394,7 +394,7 @@ export const useItemUnitMutations = () => {
     },
     onSuccess: (_data, variables) => {
       if (!variables.options?.silent) {
-        toast.success('Satuan berhasil diperbarui');
+        toast.success('Satuan ukur berhasil diperbarui');
       }
       const keysToInvalidate = getInvalidationKeys.masterData.itemUnits();
       keysToInvalidate.forEach((keySet: readonly string[]) => {
@@ -404,7 +404,7 @@ export const useItemUnitMutations = () => {
     onError: (error, variables) => {
       console.error('Error updating item unit:', error);
       if (!variables.options?.silent) {
-        toast.error('Gagal memperbarui satuan');
+        toast.error('Gagal memperbarui satuan ukur');
       }
     },
   });
@@ -416,7 +416,7 @@ export const useItemUnitMutations = () => {
       return result.data;
     },
     onSuccess: () => {
-      toast.success('Satuan berhasil dihapus');
+      toast.success('Satuan ukur berhasil dihapus');
       const keysToInvalidate = getInvalidationKeys.masterData.itemUnits();
       keysToInvalidate.forEach((keySet: readonly string[]) => {
         void queryClient.invalidateQueries({ queryKey: keySet });
@@ -424,7 +424,7 @@ export const useItemUnitMutations = () => {
     },
     onError: error => {
       console.error('Error deleting item unit:', error);
-      toast.error('Gagal menghapus satuan');
+      toast.error('Gagal menghapus satuan ukur');
     },
   });
 

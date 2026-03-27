@@ -200,11 +200,11 @@ const ItemModal: React.FC<ItemModalProps> = ({
 
           const computedBase =
             packageConversionHook.basePrice > 0 && rate > 0
-              ? packageConversionHook.basePrice / rate
+              ? packageConversionHook.basePrice * rate
               : baseFromDb;
           const computedSell =
             packageConversionHook.sellPrice > 0 && rate > 0
-              ? packageConversionHook.sellPrice / rate
+              ? packageConversionHook.sellPrice * rate
               : sellFromDb;
 
           return {

@@ -14,6 +14,7 @@ export interface PurchaseItem {
   discount: number;
   subtotal: number;
   unit: string;
+  unit_id?: string | null;
   vat_percentage: number;
   batch_no: string | null;
   expiry_date: string | null;

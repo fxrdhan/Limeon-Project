@@ -104,6 +104,7 @@ export const usePurchaseForm = ({
         batch_no: newItem.batch_no ?? null,
         expiry_date: newItem.expiry_date ?? null,
         unit: newItem.unit || 'Unit',
+        unit_id: newItem.unit_id ?? null,
         unit_conversion_rate: newItem.unit_conversion_rate ?? 1,
       },
     ];
@@ -216,8 +217,20 @@ export const usePurchaseForm = ({
           if (packageConversion) {
             price =
               packageConversion.base_price ||
-              itemData.base_price / packageConversion.conversion_rate;
+              itemData.base_price * packageConversion.conversion_rate;
             conversionRate = packageConversion.conversion_rate;
+
+            const discountAmount =
+              price * item.quantity * (item.discount / 100);
+
+            return {
+              ...item,
+              unit: unitName,
+              unit_id: packageConversion.to_unit_id || null,
+              price: price,
+              subtotal: price * item.quantity - discountAmount,
+              unit_conversion_rate: conversionRate,
+            };
           }
         }
 
@@ -226,6 +239,7 @@ export const usePurchaseForm = ({
         return {
           ...item,
           unit: unitName,
+          unit_id: null,
           price: price,
           subtotal: price * item.quantity - discountAmount,
           unit_conversion_rate: conversionRate,
@@ -274,6 +288,8 @@ export const usePurchaseForm = ({
         price: item.price,
         subtotal: item.subtotal,
         unit: item.unit,
+        unit_id: item.unit_id,
+        unit_conversion_rate: item.unit_conversion_rate,
         vat_percentage: item.vat_percentage,
         batch_no: item.batch_no,
         expiry_date: item.expiry_date,

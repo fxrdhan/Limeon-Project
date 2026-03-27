@@ -46,6 +46,8 @@ export interface SaleFormData {
     price: number;
     subtotal: number;
     unit_name?: string;
+    unit_id?: string;
+    unit_conversion_rate?: number;
   }[];
 }
 
