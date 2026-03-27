@@ -41,6 +41,8 @@
     "seed:item-master:price-list": "bun scripts/import-item-master-price-list.ts",
     "normalize:item-master:seed": "bun scripts/normalize-item-master-seed.ts",
     "enrich:item-types:sheet-pdfs": "bun scripts/enrich-item-types-from-sheet-pdfs.ts",
+    "enrich:item-categories:kegunaan": "bun scripts/enrich-item-categories-from-kegunaan.ts",
+    "export:missing-item-categories:csv": "bun scripts/export-missing-item-categories-csv.ts",
     "export": "bun scripts/export.ts",
     "loc-stats": "bun scripts/loc-stats.ts",
     "codex:seed": "bun scripts/seed-codex.ts",

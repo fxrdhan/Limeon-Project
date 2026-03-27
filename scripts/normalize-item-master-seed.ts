@@ -1,4 +1,6 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+/// <reference types="node" />
+
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 type SeedItem = {
@@ -9,16 +11,24 @@ type SeedItem = {
   code: string;
   description: string | null;
   dosage_id: string | null;
+  measurement_denominator_unit_id?: string | null;
+  measurement_denominator_value?: number | null;
+  measurement_unit_id?: string | null;
+  measurement_value?: number | null;
   fk_lookup: {
     category_code: string;
-    manufacturer_code?: string;
-    manufacturer_name: string;
-    package_code: string;
-    type_code: string;
     dosage_code?: string;
     dosage_name?: string;
+    manufacturer_code?: string;
+    manufacturer_name: string;
+    measurement_denominator_unit_code?: string;
+    measurement_denominator_unit_name?: string;
+    measurement_unit_code?: string;
+    measurement_unit_name?: string;
+    package_code: string;
     source_manufacturer_name?: string;
     source_name?: string;
+    type_code: string;
   };
   has_expiry_date: boolean;
   image_urls: string[];
@@ -56,12 +66,23 @@ type DosageGuess = {
   stripPatterns: RegExp[];
 };
 
-const DEFAULT_INPUT = path.resolve(
-  '/home/fxrdhan/Downloads/MASTER - PRICE LIST December 17, 2025 (1) - supabase-seed.json'
-);
+type MeasurementGuess = {
+  denominatorUnitCode?: string;
+  denominatorUnitName?: string;
+  denominatorValue?: number;
+  unitCode: string;
+  unitName: string;
+  value: number;
+};
+
 const DEFAULT_OUTPUT = path.resolve(
   '/home/fxrdhan/Downloads/MASTER - PRICE LIST December 17, 2025 (1) - supabase-seed.normalized.json'
 );
+const DEFAULT_INPUT = existsSync(DEFAULT_OUTPUT)
+  ? DEFAULT_OUTPUT
+  : path.resolve(
+      '/home/fxrdhan/Downloads/MASTER - PRICE LIST December 17, 2025 (1) - supabase-seed.json'
+    );
 
 const GENERIC_PATTERNS = [
   /\((?:GENERIK|GENERIC)\)/gi,
@@ -71,7 +92,48 @@ const GENERIC_PATTERNS = [
 const PACK_COUNT_PATTERNS = [
   /@\s*\d+(?:[.,]\d+)?\s*[A-Z]+/gi,
   /\b\d+\s*(?:TAB(?:LET)?|KAPLET|CAPSULE?|KAPSUL|BOTOL|BTL|AMP(?:OULE)?|VIAL|SACHET|SASET|STRIP|BOX|PACK|PCS)\b/gi,
+  /\b\d+\s*'?S\b/gi,
 ];
+
+const MEASUREMENT_PATTERNS = [
+  /\b\d+(?:[.,]\d+)?\s*(?:MG|MCG|G|KG|ML|L|IU|UCI)\s*\/\s*\d+(?:[.,]\d+)?\s*(?:MG|MCG|G|KG|ML|L|IU|UCI)\b/gi,
+  /\b\d+(?:[.,]\d+)?\s*(?:MG|MCG|G|KG|ML|L|IU|UCI)\b/gi,
+];
+
+const MEASUREMENT_UNITS = {
+  g: {
+    code: 'g',
+    name: 'GRAM',
+  },
+  iu: {
+    code: 'IU',
+    name: 'INTERNATIONAL UNITS',
+  },
+  kg: {
+    code: 'kg',
+    name: 'KILOGRAM',
+  },
+  l: {
+    code: 'L',
+    name: 'LITER',
+  },
+  mcg: {
+    code: 'mcg',
+    name: 'MICROGRAM',
+  },
+  mg: {
+    code: 'mg',
+    name: 'MILLIGRAM',
+  },
+  ml: {
+    code: 'mL',
+    name: 'MILLILITER',
+  },
+  uci: {
+    code: 'uCI',
+    name: 'MICROCURIE',
+  },
+} as const;
 
 const DOSAGE_RULES: Array<{
   code: string;
@@ -147,6 +209,7 @@ const DOSAGE_RULES: Array<{
       /\bKAPSUL\b/gi,
       /\bCAPSUL\b/gi,
       /\bCAPSULE\b/gi,
+      /\bCAPS\b/gi,
       /\bSOFTGEL\b/gi,
       /\bLICAPS\b/gi,
       /\bCAP\b/gi,
@@ -157,7 +220,13 @@ const DOSAGE_RULES: Array<{
     code: 'TAB',
     name: 'TABLET',
     priority: 81,
-    patterns: [/\bTABLET\b/gi, /\bTAB\b/gi, /\bKAPLET\b/gi, /\bCAPLET\b/gi],
+    patterns: [
+      /\bTABLETS?\b/gi,
+      /\bTABS?\b/gi,
+      /\bTAB\b/gi,
+      /\bKAPLET\b/gi,
+      /\bCAPLET\b/gi,
+    ],
   },
   {
     code: 'CRM',
@@ -376,29 +445,168 @@ const cleanupDelimiters = (value: string): string =>
     .replace(/[.,/-]+$/g, '')
     .trim();
 
+const shouldStripLeadingSkuToken = (token: string): boolean => {
+  if (/^\d{5,}$/.test(token)) {
+    return true;
+  }
+
+  return (
+    /^\d/.test(token) &&
+    token.length >= 6 &&
+    /[A-Za-z]/.test(token) &&
+    /\d/.test(token)
+  );
+};
+
+const normalizeSourceProductName = (sourceName: string): string => {
+  let nextName = normalizeWhitespace(sourceName)
+    .replace(/Â®/g, '')
+    .replace(/®/g, '')
+    .replace(/\b0NE\b/gi, 'ONE');
+
+  const [firstToken = ''] = nextName.split(' ');
+
+  if (shouldStripLeadingSkuToken(firstToken)) {
+    nextName = nextName.slice(firstToken.length).trim();
+  }
+
+  nextName = nextName
+    .replace(/\s*-\s*e-?cat\b/gi, ' ')
+    .replace(/\be-?cat\b/gi, ' ')
+    .replace(/([A-Za-z])\.(?=\d)/g, '$1 ')
+    .replace(/([A-Za-z])(\d)/g, '$1 $2')
+    .replace(/(\d)([A-Za-z])/g, '$1 $2')
+    .replace(
+      /\b(\d+(?:[.,]\d+)?)\s*[xX]\s*(\d+(?:[.,]\d+)?)\s*(cm|mm|m)\b/gi,
+      '$1 x $2 $3'
+    )
+    .replace(/\b(\d+(?:[.,]\d+)?)\s*[xX]\s*(\d+(?:[.,]\d+)?)\b/gi, '$1 x $2')
+    .replace(/\bFG\.?\s*(\d+(?:[.,]\d+)?)\b/gi, 'FG $1')
+    .replace(/\bCH\.?\s*(\d+(?:[.,]\d+)?)\b/gi, 'CH $1')
+    .replace(/\b(\d+(?:[.,]\d+)?)\s*(cm|mm|cc|gr|gsm|kg|lt)\b/gi, '$1 $2')
+    .replace(/\b(\d+(?:[.,]\d+)?)\s*(pcs)\b/gi, '$1 $2')
+    .replace(/\b3WAY\b/gi, '3-WAY')
+    .replace(/\bW\/O\b/gi, 'w/o')
+    .replace(/\s*&\s*/g, ' & ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+
+  if (/\bNBC\b/i.test(sourceName) && !/^NBC\b/i.test(nextName)) {
+    nextName = `NBC ${nextName}`.trim();
+  }
+
+  return cleanupDelimiters(nextName.replace(/\bNBC\b$/i, '').trim());
+};
+
+const normalizeRelianceName = (sourceName: string): string | null => {
+  const normalizedSource = normalizeWhitespace(sourceName)
+    .replace(/Â®/g, '')
+    .replace(/®/g, '');
+
+  if (!/\bRELIANCE\b/i.test(normalizedSource)) {
+    return null;
+  }
+
+  return cleanupDelimiters(
+    normalizedSource
+      .replace(/^\S+\s+(?=(?:AHLSTROM\s+)?RELIANCE\b)/i, '')
+      .replace(/\bAHLSTROM\b/gi, 'Ahlstrom')
+      .replace(/\bRELIANCE\b/gi, 'Reliance')
+      .replace(/\bSMS\b/gi, 'SMS')
+      .replace(/\bCREPE\b/gi, 'Crepe')
+      .replace(/\bTANDEM\b/gi, 'Tandem')
+      .replace(/\bGREEN\b/gi, 'Green')
+      .replace(/\bBLUE\b/gi, 'Blue')
+      .replace(/\b(\d+)\s*cm\s*x\s*(\d+)\s*cm\b/gi, '$1 x $2 cm')
+      .replace(/\b(\d+)\s*cmx\s*(\d+)\s*cm\b/gi, '$1 x $2 cm')
+      .replace(/\b(\d+)\s*[xX]\s*(\d+)\s*cm\b/gi, '$1 x $2 cm')
+      .replace(/\b(\d+)\s*[xX]\s*(\d+)\b/gi, '$1 x $2')
+      .replace(/\s*&\s*/g, ' & ')
+      .replace(/\s{2,}/g, ' ')
+      .trim()
+  );
+};
+
 const formatName = (value: string): string => {
   const lowerWords = new Set(['mg', 'mcg', 'ml', 'gr', 'g', 'iu', 'ui']);
+  const upperWords = new Map([
+    ['bpjs', 'BPJS'],
+    ['ch', 'CH'],
+    ['da', 'DA'],
+    ['fg', 'FG'],
+    ['hcg', 'HCG'],
+    ['hiv', 'HIV'],
+    ['iv', 'IV'],
+    ['nbc', 'NBC'],
+    ['pu', 'PU'],
+    ['rc', 'RC'],
+    ['sg', 'SG'],
+    ['sms', 'SMS'],
+    ['sp', 'SP'],
+    ['tc', 'TC'],
+    ['tp', 'TP'],
+    ['xc', 'XC'],
+  ]);
+  const formatAlphaWord = (word: string): string =>
+    word
+      .split('-')
+      .map(segment => {
+        if (!segment) {
+          return segment;
+        }
+
+        const lower = segment.toLowerCase();
+
+        if (upperWords.has(lower)) {
+          return upperWords.get(lower) ?? segment;
+        }
+
+        if (lowerWords.has(lower)) {
+          return lower;
+        }
+
+        return `${segment[0]?.toUpperCase() ?? ''}${segment.slice(1).toLowerCase()}`;
+      })
+      .join('-');
 
   return cleanupDelimiters(normalizeWhitespace(value))
     .split(' ')
     .map(word => {
       const lower = word.toLowerCase();
 
+      if (upperWords.has(lower)) {
+        return upperWords.get(lower) ?? word;
+      }
+
       if (lowerWords.has(lower)) {
         return lower;
       }
 
       if (/\d/.test(word)) {
-        return word.replace(/[A-Za-z]+/g, match =>
-          lowerWords.has(match.toLowerCase())
-            ? match.toLowerCase()
-            : `${match[0].toUpperCase()}${match.slice(1).toLowerCase()}`
+        return word.replace(
+          /[A-Za-z]+/g,
+          match =>
+            upperWords.get(match.toLowerCase()) ??
+            (lowerWords.has(match.toLowerCase())
+              ? match.toLowerCase()
+              : `${match[0].toUpperCase()}${match.slice(1).toLowerCase()}`)
         );
       }
 
-      return `${word[0]?.toUpperCase() ?? ''}${word.slice(1).toLowerCase()}`;
+      return formatAlphaWord(word);
     })
-    .join(' ');
+    .join(' ')
+    .replace(/\bI-face\b/g, 'I-Face')
+    .replace(/\bW\/o\b/g, 'w/o')
+    .replace(/\bCc\b/g, 'cc')
+    .replace(/\bCm\b/g, 'cm')
+    .replace(/\bGsm\b/g, 'gsm')
+    .replace(/\bGr\b/g, 'gr')
+    .replace(/\bKg\b/g, 'kg')
+    .replace(/\bLt\b/g, 'L')
+    .replace(/\bMm\b/g, 'mm')
+    .replace(/\bMl\b/g, 'mL')
+    .replace(/\b([A-Za-z]+-\d)\s+([A-Za-z]{2,})\b/g, '$1$2');
 };
 
 const findDosageGuess = (sourceName: string): DosageGuess | null => {
@@ -456,6 +664,7 @@ const cleanupName = (sourceName: string, guess: DosageGuess | null): string => {
   }
 
   nextName = stripPatterns(nextName, PACK_COUNT_PATTERNS);
+  nextName = stripPatterns(nextName, MEASUREMENT_PATTERNS);
 
   nextName = nextName
     .replace(
@@ -463,7 +672,9 @@ const cleanupName = (sourceName: string, guess: DosageGuess | null): string => {
       ' '
     )
     .replace(/\b(?:FORTE)\b/gi, ' ')
+    .replace(/@\s*\d+\s*'?S\b/gi, ' ')
     .replace(/@\s*\d+/g, ' ')
+    .replace(/\s*@\s*/g, ' ')
     .replace(
       /\b\d+\s*(?:ML|MG|MCG|GR|G)\s*\/\s*\d+\s*(?:ML|MG|MCG|GR|G)\b/gi,
       match => normalizeWhitespace(match)
@@ -471,6 +682,14 @@ const cleanupName = (sourceName: string, guess: DosageGuess | null): string => {
     .replace(/[()]+/g, ' ')
     .replace(/\s{2,}/g, ' ')
     .trim();
+
+  if (
+    /\b\d+\s*(?:TABLETS?|TABS?|TAB|KAPLET|CAPS?|CAPSULE|CAPSUL|KAPSUL)\b$/i.test(
+      sourceName
+    )
+  ) {
+    nextName = nextName.replace(/\b\d+\b$/g, '').trim();
+  }
 
   return cleanupDelimiters(nextName);
 };
@@ -495,6 +714,55 @@ const ensureFallbackName = (
   );
 };
 
+const parseMeasurementValue = (value: string): number =>
+  Number.parseFloat(value.replace(',', '.'));
+
+const resolveMeasurementUnit = (value: string) =>
+  MEASUREMENT_UNITS[value.toLowerCase() as keyof typeof MEASUREMENT_UNITS] ??
+  null;
+
+const findMeasurementGuess = (sourceName: string): MeasurementGuess | null => {
+  const ratioMatch = sourceName.match(
+    /\b(\d+(?:[.,]\d+)?)\s*(mcg|mg|g|kg|ml|l|iu|uci)\s*\/\s*(\d+(?:[.,]\d+)?)\s*(mcg|mg|g|kg|ml|l|iu|uci)\b/i
+  );
+
+  if (ratioMatch) {
+    const numeratorUnit = resolveMeasurementUnit(ratioMatch[2]);
+    const denominatorUnit = resolveMeasurementUnit(ratioMatch[4]);
+
+    if (numeratorUnit && denominatorUnit) {
+      return {
+        value: parseMeasurementValue(ratioMatch[1]),
+        unitCode: numeratorUnit.code,
+        unitName: numeratorUnit.name,
+        denominatorValue: parseMeasurementValue(ratioMatch[3]),
+        denominatorUnitCode: denominatorUnit.code,
+        denominatorUnitName: denominatorUnit.name,
+      };
+    }
+  }
+
+  const simpleMatch = sourceName.match(
+    /\b(\d+(?:[.,]\d+)?)\s*(mcg|mg|g|kg|ml|l|iu|uci)\b/i
+  );
+
+  if (!simpleMatch) {
+    return null;
+  }
+
+  const unit = resolveMeasurementUnit(simpleMatch[2]);
+
+  if (!unit) {
+    return null;
+  }
+
+  return {
+    value: parseMeasurementValue(simpleMatch[1]),
+    unitCode: unit.code,
+    unitName: unit.name,
+  };
+};
+
 const main = () => {
   const { help, inputPath, outputPath } = parseArgs();
 
@@ -510,9 +778,11 @@ const main = () => {
   const source = JSON.parse(readFileSync(inputPath, 'utf8')) as SeedFile;
 
   const dosageCounts = new Map<string, number>();
+  const measurementCounts = new Map<string, number>();
   let changedNames = 0;
   let guessedDosages = 0;
   let changedManufacturers = 0;
+  let guessedMeasurements = 0;
   const normalizedManufacturerNames = [
     ...new Set(
       source.items.map(item =>
@@ -525,20 +795,26 @@ const main = () => {
   );
 
   const normalizedItems = source.items.map(item => {
-    const sourceName = normalizeWhitespace(item.name);
+    const sourceName = normalizeWhitespace(
+      item.fk_lookup.source_name ?? item.name
+    );
+    const normalizedSourceName = normalizeSourceProductName(sourceName);
     const sourceManufacturerName = normalizeWhitespace(
-      item.fk_lookup.manufacturer_name
+      item.fk_lookup.source_manufacturer_name ??
+        item.fk_lookup.manufacturer_name
     );
     const normalizedManufacturerName = normalizeManufacturerName(
       sourceManufacturerName
     );
-    const guess = findDosageGuess(sourceName);
+    const guess = findDosageGuess(normalizedSourceName);
+    const measurementGuess = findMeasurementGuess(sourceName);
+    const relianceName = normalizeRelianceName(sourceName);
     const cleanedName = ensureFallbackName(
-      cleanupName(sourceName, guess),
-      sourceName,
+      cleanupName(normalizedSourceName, guess),
+      normalizedSourceName,
       guess
     );
-    const formattedName = formatName(cleanedName);
+    const formattedName = relianceName ?? formatName(cleanedName);
 
     if (formattedName !== sourceName) {
       changedNames += 1;
@@ -553,13 +829,31 @@ const main = () => {
       dosageCounts.set(guess.code, (dosageCounts.get(guess.code) || 0) + 1);
     }
 
+    if (measurementGuess) {
+      guessedMeasurements += 1;
+      measurementCounts.set(
+        measurementGuess.unitCode,
+        (measurementCounts.get(measurementGuess.unitCode) || 0) + 1
+      );
+    }
+
     return {
       ...item,
+      measurement_denominator_unit_id: null,
+      measurement_denominator_value: measurementGuess?.denominatorValue ?? null,
+      measurement_unit_id: null,
+      measurement_value: measurementGuess?.value ?? null,
       name: formattedName,
       fk_lookup: {
         ...item.fk_lookup,
         manufacturer_code: manufacturerCodeMap.get(normalizedManufacturerName),
         manufacturer_name: normalizedManufacturerName,
+        measurement_denominator_unit_code:
+          measurementGuess?.denominatorUnitCode,
+        measurement_denominator_unit_name:
+          measurementGuess?.denominatorUnitName,
+        measurement_unit_code: measurementGuess?.unitCode,
+        measurement_unit_name: measurementGuess?.unitName,
         dosage_code: guess?.code,
         dosage_name: guess?.name,
         source_manufacturer_name: sourceManufacturerName,
@@ -585,9 +879,12 @@ const main = () => {
         'Resolve item_manufacturers.code from fk_lookup.manufacturer_code when seeding manufacturer master data.',
         'Resolve package_id from fk_lookup.package_code via item_packages.code.',
         'Resolve dosage_id from fk_lookup.dosage_code via item_dosages.code when available.',
+        'Resolve measurement_unit_id from fk_lookup.measurement_unit_code via item_units.code when available.',
+        'Resolve measurement_denominator_unit_id from fk_lookup.measurement_denominator_unit_code via item_units.code when available.',
         'Resolve category_id and type_id from fk_lookup.category_code and fk_lookup.type_code.',
-        'name is normalized to remove packaging and dosage-form tokens while preserving strength text such as 500 mg.',
-        'manufacturer_name is normalized to a canonical uppercase company name without punctuation drift.',
+        'name is normalized to remove packaging, dosage-form, and measurement tokens while preserving original source_name.',
+        'measurement_value and measurement_unit fields are inferred from source_name when values like 500 mg, 100 mL, or 125 mg/5 mL are present.',
+        'manufacturer_name is normalized to a canonical company name without punctuation drift.',
         'Original source product text is preserved in fk_lookup.source_name.',
         'Original source manufacturer text is preserved in fk_lookup.source_manufacturer_name.',
       ],
@@ -602,6 +899,11 @@ const main = () => {
       (left, right) => right[1] - left[1] || left[0].localeCompare(right[0])
     )
     .slice(0, 10);
+  const topMeasurements = [...measurementCounts.entries()]
+    .sort(
+      (left, right) => right[1] - left[1] || left[0].localeCompare(right[0])
+    )
+    .slice(0, 10);
 
   console.log(`Input file      : ${inputPath}`);
   console.log(`Output file     : ${outputPath}`);
@@ -609,8 +911,12 @@ const main = () => {
   console.log(`Names changed   : ${changedNames}`);
   console.log(`Mfrs changed    : ${changedManufacturers}`);
   console.log(`Dosage inferred : ${guessedDosages}`);
+  console.log(`Measure inferred: ${guessedMeasurements}`);
   console.log(
     `Top dosage codes: ${topDosages.map(([code, count]) => `${code}=${count}`).join(', ')}`
+  );
+  console.log(
+    `Top measure code: ${topMeasurements.map(([code, count]) => `${code}=${count}`).join(', ')}`
   );
 };
 
