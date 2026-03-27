@@ -32,13 +32,13 @@ type GroupRow = {
 };
 
 const DEFAULT_INPUT = path.resolve(
-  '/home/fxrdhan/Downloads/MASTER - PRICE LIST December 17, 2025 (1) - supabase-seed.normalized.json'
+  '/home/fxrdhan/Downloads/item-master-seed.json'
 );
 const DEFAULT_GROUP_OUTPUT = path.resolve(
-  '/home/fxrdhan/Downloads/MASTER - PRICE LIST December 17, 2025 (1) - missing-categories-groups.csv'
+  '/home/fxrdhan/Downloads/item-master-missing-categories-groups.csv'
 );
 const DEFAULT_ITEM_OUTPUT = path.resolve(
-  '/home/fxrdhan/Downloads/MASTER - PRICE LIST December 17, 2025 (1) - missing-categories-items.csv'
+  '/home/fxrdhan/Downloads/item-master-missing-categories-items.csv'
 );
 
 const parseArgs = () => {

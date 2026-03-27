@@ -19,7 +19,7 @@ type SeedFile = {
 };
 
 const DEFAULT_INPUT = path.resolve(
-  '/home/fxrdhan/Downloads/MASTER - PRICE LIST December 17, 2025 (1) - supabase-seed.normalized.json'
+  '/home/fxrdhan/Downloads/item-master-seed.json'
 );
 const DEFAULT_PDF_DIR = path.resolve('/tmp/tmp.soJY4oCstj');
 

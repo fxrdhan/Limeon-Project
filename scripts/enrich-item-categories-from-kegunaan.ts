@@ -42,10 +42,10 @@ type UnmappedGroup = {
 };
 
 const DEFAULT_INPUT = path.resolve(
-  '/home/fxrdhan/Downloads/MASTER - PRICE LIST December 17, 2025 (1) - supabase-seed.normalized.json'
+  '/home/fxrdhan/Downloads/item-master-seed.json'
 );
 const DEFAULT_REPORT = path.resolve(
-  '/home/fxrdhan/Downloads/MASTER - PRICE LIST December 17, 2025 (1) - category-mapping-report.json'
+  '/home/fxrdhan/Downloads/item-master-category-mapping-report.json'
 );
 
 const NON_DRUG_TYPE_CODES = new Set(['ALK', 'CCP', 'COS', 'PKR', 'PPG', 'UKN']);

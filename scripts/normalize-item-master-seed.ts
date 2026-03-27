@@ -76,13 +76,11 @@ type MeasurementGuess = {
 };
 
 const DEFAULT_OUTPUT = path.resolve(
-  '/home/fxrdhan/Downloads/MASTER - PRICE LIST December 17, 2025 (1) - supabase-seed.normalized.json'
+  '/home/fxrdhan/Downloads/item-master-seed.json'
 );
 const DEFAULT_INPUT = existsSync(DEFAULT_OUTPUT)
   ? DEFAULT_OUTPUT
-  : path.resolve(
-      '/home/fxrdhan/Downloads/MASTER - PRICE LIST December 17, 2025 (1) - supabase-seed.json'
-    );
+  : path.resolve('/home/fxrdhan/Downloads/item-master-seed.raw.json');
 
 const GENERIC_PATTERNS = [
   /\((?:GENERIK|GENERIC)\)/gi,
