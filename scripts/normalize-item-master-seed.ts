@@ -3,7 +3,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
-type SeedItem = {
+export type SeedItem = {
   barcode: string | null;
   base_price: number;
   base_unit: string | null;
@@ -17,6 +17,7 @@ type SeedItem = {
   measurement_value?: number | null;
   fk_lookup: {
     category_code: string;
+    category_name?: string;
     dosage_code?: string;
     dosage_name?: string;
     manufacturer_code?: string;
@@ -26,9 +27,11 @@ type SeedItem = {
     measurement_unit_code?: string;
     measurement_unit_name?: string;
     package_code: string;
+    package_name?: string;
     source_manufacturer_name?: string;
     source_name?: string;
     type_code: string;
+    type_name?: string;
   };
   has_expiry_date: boolean;
   image_urls: string[];
@@ -46,7 +49,7 @@ type SeedItem = {
   type_id: string | null;
 };
 
-type SeedFile = {
+export type SeedFile = {
   source: {
     file_name: string;
     generated_at: string;
@@ -75,6 +78,14 @@ type MeasurementGuess = {
   value: number;
 };
 
+type PackageConversionSeed = {
+  base_price: number;
+  conversion_rate: number;
+  sell_price: number;
+  to_unit_id: null;
+  unit_name: string;
+};
+
 const DEFAULT_OUTPUT = path.resolve(
   '/home/fxrdhan/Downloads/item-master-seed.json'
 );
@@ -90,16 +101,28 @@ const GENERIC_PATTERNS = [
 const PACK_COUNT_PATTERNS = [
   /@\s*\d+(?:[.,]\d+)?\s*[A-Z]+/gi,
   /\b\d+\s*(?:TAB(?:LET)?|KAPLET|CAPSULE?|KAPSUL|BOTOL|BTL|AMP(?:OULE)?|VIAL|SACHET|SASET|STRIP|BOX|PACK|PCS)\b/gi,
-  /\b\d+\s*'?S\b/gi,
+  /\b\d+\s*[`']?S\b/gi,
 ];
 
 const MEASUREMENT_PATTERNS = [
-  /\b\d+(?:[.,]\d+)?\s*(?:MG|MCG|G|KG|ML|L|IU|UCI)\s*\/\s*\d+(?:[.,]\d+)?\s*(?:MG|MCG|G|KG|ML|L|IU|UCI)\b/gi,
-  /\b\d+(?:[.,]\d+)?\s*(?:MG|MCG|G|KG|ML|L|IU|UCI)\b/gi,
+  /\b\d+(?:[.,]\d+)?\s*(?:MG|MCG|G|GR|GRAM|KG|ML|L|IU|UCI)\s*\/\s*\d+(?:[.,]\d+)?\s*(?:MG|MCG|G|GR|GRAM|KG|ML|L|IU|UCI)\b/gi,
+  /\b\d+(?:[.,]\d+)?\s*(?:MG|MCG|G|GR|GRAM|KG|ML|L|IU|UCI)\b/gi,
 ];
 
 const MEASUREMENT_UNITS = {
   g: {
+    code: 'g',
+    name: 'GRAM',
+  },
+  ga: {
+    code: 'GA',
+    name: 'GAUGE',
+  },
+  gr: {
+    code: 'g',
+    name: 'GRAM',
+  },
+  gram: {
     code: 'g',
     name: 'GRAM',
   },
@@ -208,6 +231,8 @@ const DOSAGE_RULES: Array<{
       /\bCAPSUL\b/gi,
       /\bCAPSULE\b/gi,
       /\bCAPS\b/gi,
+      /\bSOFT\s+CAPS?\b/gi,
+      /\bSOFT\b/gi,
       /\bSOFTGEL\b/gi,
       /\bLICAPS\b/gi,
       /\bCAP\b/gi,
@@ -310,9 +335,12 @@ const parseArgs = () => {
   };
 };
 
-const normalizeWhitespace = (value: string): string =>
+const unique = <T>(values: T[]): T[] => [...new Set(values)];
+
+export const normalizeWhitespace = (value: string): string =>
   value
     .replace(/\u00a0/g, ' ')
+    .replace(/`/g, "'")
     .replace(/\s+/g, ' ')
     .trim();
 
@@ -338,7 +366,7 @@ const toTitleCase = (value: string): string =>
     })
     .join(' ');
 
-const normalizeManufacturerName = (value: string): string =>
+export const normalizeManufacturerName = (value: string): string =>
   toTitleCase(
     normalizeWhitespace(value)
       .toUpperCase()
@@ -456,7 +484,7 @@ const shouldStripLeadingSkuToken = (token: string): boolean => {
   );
 };
 
-const normalizeSourceProductName = (sourceName: string): string => {
+export const normalizeSourceProductName = (sourceName: string): string => {
   let nextName = normalizeWhitespace(sourceName)
     .replace(/Â®/g, '')
     .replace(/®/g, '')
@@ -496,7 +524,7 @@ const normalizeSourceProductName = (sourceName: string): string => {
   return cleanupDelimiters(nextName.replace(/\bNBC\b$/i, '').trim());
 };
 
-const normalizeRelianceName = (sourceName: string): string | null => {
+export const normalizeRelianceName = (sourceName: string): string | null => {
   const normalizedSource = normalizeWhitespace(sourceName)
     .replace(/Â®/g, '')
     .replace(/®/g, '');
@@ -525,7 +553,7 @@ const normalizeRelianceName = (sourceName: string): string | null => {
   );
 };
 
-const formatName = (value: string): string => {
+export const formatName = (value: string): string => {
   const lowerWords = new Set(['mg', 'mcg', 'ml', 'gr', 'g', 'iu', 'ui']);
   const upperWords = new Map([
     ['bpjs', 'BPJS'],
@@ -607,7 +635,7 @@ const formatName = (value: string): string => {
     .replace(/\b([A-Za-z]+-\d)\s+([A-Za-z]{2,})\b/g, '$1$2');
 };
 
-const findDosageGuess = (sourceName: string): DosageGuess | null => {
+export const findDosageGuess = (sourceName: string): DosageGuess | null => {
   let bestGuess: DosageGuess | null = null;
 
   for (const rule of DOSAGE_RULES) {
@@ -652,7 +680,10 @@ const findDosageGuess = (sourceName: string): DosageGuess | null => {
 const stripPatterns = (value: string, patterns: RegExp[]): string =>
   patterns.reduce((current, pattern) => current.replace(pattern, ' '), value);
 
-const cleanupName = (sourceName: string, guess: DosageGuess | null): string => {
+export const cleanupName = (
+  sourceName: string,
+  guess: DosageGuess | null
+): string => {
   let nextName = sourceName;
 
   nextName = stripPatterns(nextName, GENERIC_PATTERNS);
@@ -670,11 +701,12 @@ const cleanupName = (sourceName: string, guess: DosageGuess | null): string => {
       ' '
     )
     .replace(/\b(?:FORTE)\b/gi, ' ')
+    .replace(/\bBPJS(?:\s*-\s*[A-Z0-9]+|\s+[A-Z0-9]+)?\b/gi, ' ')
     .replace(/@\s*\d+\s*'?S\b/gi, ' ')
     .replace(/@\s*\d+/g, ' ')
     .replace(/\s*@\s*/g, ' ')
     .replace(
-      /\b\d+\s*(?:ML|MG|MCG|GR|G)\s*\/\s*\d+\s*(?:ML|MG|MCG|GR|G)\b/gi,
+      /\b\d+\s*(?:ML|MG|MCG|GR|G|GRAM)\s*\/\s*\d+\s*(?:ML|MG|MCG|GR|G|GRAM)\b/gi,
       match => normalizeWhitespace(match)
     )
     .replace(/[()]+/g, ' ')
@@ -692,7 +724,7 @@ const cleanupName = (sourceName: string, guess: DosageGuess | null): string => {
   return cleanupDelimiters(nextName);
 };
 
-const ensureFallbackName = (
+export const ensureFallbackName = (
   cleanedName: string,
   sourceName: string,
   guess: DosageGuess | null
@@ -719,9 +751,237 @@ const resolveMeasurementUnit = (value: string) =>
   MEASUREMENT_UNITS[value.toLowerCase() as keyof typeof MEASUREMENT_UNITS] ??
   null;
 
-const findMeasurementGuess = (sourceName: string): MeasurementGuess | null => {
+const GAUGE_CONTEXT_PATTERNS = [
+  /\bAIRWAY\b/gi,
+  /\bCANNULA\b/gi,
+  /\bCATH\b/gi,
+  /\bCATHETER\b/gi,
+  /\bFOLEY\b/gi,
+  /\bNEEDLE\b/gi,
+  /\bSCALP\b/gi,
+  /\bTRO-VENOCATH\b/gi,
+  /\bTRO-VENSITE\b/gi,
+  /\bVENOCATH\b/gi,
+  /\bVENSITE\b/gi,
+];
+
+const findGaugeMeasurementGuess = (
+  sourceName: string
+): MeasurementGuess | null => {
+  if (!GAUGE_CONTEXT_PATTERNS.some(pattern => pattern.test(sourceName))) {
+    return null;
+  }
+
+  const gaugeMatch = sourceName.match(/\b(\d+(?:[.,]\d+)?)\s*G\b/i);
+
+  if (!gaugeMatch) {
+    return null;
+  }
+
+  const gaugeUnit = resolveMeasurementUnit('ga');
+
+  if (!gaugeUnit) {
+    return null;
+  }
+
+  return {
+    value: parseMeasurementValue(gaugeMatch[1]),
+    unitCode: gaugeUnit.code,
+    unitName: gaugeUnit.name,
+  };
+};
+
+const roundPrice = (value: number): number =>
+  Number(value.toFixed(6).replace(/\.?0+$/, ''));
+
+export const findPackCount = (sourceName: string): number | null => {
+  const apostropheCountMatch = sourceName.match(/@\s*(\d+)\s*[']?S\b/i);
+
+  if (apostropheCountMatch) {
+    return Number.parseInt(apostropheCountMatch[1], 10);
+  }
+
+  const bareApostropheCountMatch = sourceName.match(/\b(\d+)\s*[']?S\b/i);
+
+  if (bareApostropheCountMatch) {
+    return Number.parseInt(bareApostropheCountMatch[1], 10);
+  }
+
+  const explicitUnitCountMatch = sourceName.match(
+    /@\s*(\d+)\s*(?:TAB(?:LET)?|KAPLET|CAPSULE?|KAPSUL|CAPS?|SOFTGEL|SOFT\s+CAPS?)\b/i
+  );
+
+  if (explicitUnitCountMatch) {
+    return Number.parseInt(explicitUnitCountMatch[1], 10);
+  }
+
+  const bareUnitCountMatch = sourceName.match(
+    /\b(\d+)\s*(?:TAB(?:LET)?|KAPLET|CAPSULE?|KAPSUL|CAPS?|SOFTGEL|SOFT\s+CAPS?)\b/i
+  );
+
+  if (bareUnitCountMatch) {
+    return Number.parseInt(bareUnitCountMatch[1], 10);
+  }
+
+  const bareAtCountMatch = sourceName.match(/@\s*(\d+)\b/i);
+
+  if (bareAtCountMatch) {
+    return Number.parseInt(bareAtCountMatch[1], 10);
+  }
+
+  const multiplierMatch = sourceName.match(/\b(\d+)\s*x\s*(\d+)\s*s\b/i);
+
+  if (multiplierMatch) {
+    return (
+      Number.parseInt(multiplierMatch[1], 10) *
+      Number.parseInt(multiplierMatch[2], 10)
+    );
+  }
+
+  return null;
+};
+
+const resolveBaseUnitName = (dosageCode?: string): string | null => {
+  switch (dosageCode) {
+    case 'CAP':
+      return 'CAPSULE';
+    case 'TAB':
+    case 'TFC':
+    case 'TCH':
+    case 'TEF':
+      return 'TABLET';
+    default:
+      return null;
+  }
+};
+
+const PACKAGE_CODE_OVERRIDES = new Map<string, string>([
+  ['0A0610', 'BLP'],
+  ['0J7000', 'VIA'],
+  ['0K1231', 'PAK'],
+  ['0R0860', 'AMP'],
+]);
+
+const normalizePackageCode = (
+  itemCode: string,
+  packageCode: string | undefined,
+  sourceName: string
+): string => {
+  const packageCodeOverride = PACKAGE_CODE_OVERRIDES.get(itemCode);
+
+  if (packageCodeOverride) {
+    return packageCodeOverride;
+  }
+
+  const normalizedPackageCode = normalizeWhitespace(
+    packageCode ?? ''
+  ).toUpperCase();
+  const normalizedSourceName = normalizeWhitespace(sourceName)
+    .toUpperCase()
+    .replace(/[`’]/g, "'");
+
+  if (
+    normalizedPackageCode === 'PCS' &&
+    /\bSAKURA\s+COLLAGEN\b/.test(normalizedSourceName) &&
+    /\bCREAM\b/.test(normalizedSourceName)
+  ) {
+    return 'JAR';
+  }
+
+  if (
+    normalizedPackageCode === 'PAK' &&
+    /\bJOINTMAX\b/.test(normalizedSourceName)
+  ) {
+    return 'BLP';
+  }
+
+  if (normalizedPackageCode === 'FLS') {
+    return 'BTL';
+  }
+
+  if (normalizedPackageCode === 'SAC') {
+    return 'POU';
+  }
+
+  if (normalizedPackageCode === 'ROL') {
+    return 'PKG';
+  }
+
+  if (
+    normalizedPackageCode === 'UNT' &&
+    /\bTABLET\b/.test(normalizedSourceName)
+  ) {
+    return 'BLP';
+  }
+
+  if (
+    normalizedPackageCode === 'STR' ||
+    /\bSTRIP\b/.test(normalizedSourceName)
+  ) {
+    return 'BLP';
+  }
+
+  if (/\bVIAL\b/.test(normalizedSourceName)) {
+    return 'VIA';
+  }
+
+  if (
+    /\bAMPOULE\b/.test(normalizedSourceName) ||
+    /\bAMPUL(?:E)?\b/.test(normalizedSourceName) ||
+    /@\s*\d+\s*AMP\b/.test(normalizedSourceName) ||
+    /\b\d+\s*AMP\b/.test(normalizedSourceName)
+  ) {
+    return 'AMP';
+  }
+
+  return normalizedPackageCode;
+};
+
+export const buildPackageStructure = (params: {
+  basePrice: number;
+  packageCode?: string;
+  packCount: number | null;
+  sellPrice: number;
+  dosageCode?: string;
+}): {
+  basePrice: number;
+  baseUnit: string | null;
+  packageConversions: PackageConversionSeed[];
+  sellPrice: number;
+} => {
+  const { basePrice, packageCode, packCount, sellPrice, dosageCode } = params;
+  const baseUnit = resolveBaseUnitName(dosageCode);
+
+  if (!baseUnit || packageCode !== 'BOX' || !packCount || packCount <= 1) {
+    return {
+      basePrice,
+      baseUnit: null,
+      packageConversions: [],
+      sellPrice,
+    };
+  }
+
+  return {
+    basePrice: roundPrice(basePrice / packCount),
+    baseUnit,
+    packageConversions: [
+      {
+        unit_name: 'BOX',
+        to_unit_id: null,
+        conversion_rate: packCount,
+        base_price: basePrice,
+        sell_price: sellPrice,
+      },
+    ],
+    sellPrice: roundPrice(sellPrice / packCount),
+  };
+};
+
+export const findMeasurementGuess = (
+  sourceName: string
+): MeasurementGuess | null => {
   const ratioMatch = sourceName.match(
-    /\b(\d+(?:[.,]\d+)?)\s*(mcg|mg|g|kg|ml|l|iu|uci)\s*\/\s*(\d+(?:[.,]\d+)?)\s*(mcg|mg|g|kg|ml|l|iu|uci)\b/i
+    /\b(\d+(?:[.,]\d+)?)\s*(mcg|mg|g|gr|gram|kg|ml|l|iu|uci)\s*\/\s*(\d+(?:[.,]\d+)?)\s*(mcg|mg|g|gr|gram|kg|ml|l|iu|uci)\b/i
   );
 
   if (ratioMatch) {
@@ -740,8 +1000,14 @@ const findMeasurementGuess = (sourceName: string): MeasurementGuess | null => {
     }
   }
 
+  const gaugeGuess = findGaugeMeasurementGuess(sourceName);
+
+  if (gaugeGuess) {
+    return gaugeGuess;
+  }
+
   const simpleMatch = sourceName.match(
-    /\b(\d+(?:[.,]\d+)?)\s*(mcg|mg|g|kg|ml|l|iu|uci)\b/i
+    /\b(\d+(?:[.,]\d+)?)\s*(mcg|mg|g|gr|gram|kg|ml|l|iu|uci)\b/i
   );
 
   if (!simpleMatch) {
@@ -761,33 +1027,30 @@ const findMeasurementGuess = (sourceName: string): MeasurementGuess | null => {
   };
 };
 
-const main = () => {
-  const { help, inputPath, outputPath } = parseArgs();
-
-  if (help) {
-    console.log(
-      `Usage: bun run normalize:item-master:seed [--input <path>] [--output <path>]`
-    );
-    console.log(`Default input : ${DEFAULT_INPUT}`);
-    console.log(`Default output: ${DEFAULT_OUTPUT}`);
-    return;
-  }
-
-  const source = JSON.parse(readFileSync(inputPath, 'utf8')) as SeedFile;
-
+export const normalizeSeedFile = (
+  source: SeedFile
+): {
+  changedManufacturers: number;
+  changedNames: number;
+  guessedDosages: number;
+  guessedMeasurements: number;
+  measurementCounts: Map<string, number>;
+  normalizedSeed: SeedFile;
+  packagedBaseUnits: number;
+  topDosages: Array<[string, number]>;
+} => {
   const dosageCounts = new Map<string, number>();
   const measurementCounts = new Map<string, number>();
   let changedNames = 0;
   let guessedDosages = 0;
   let changedManufacturers = 0;
   let guessedMeasurements = 0;
-  const normalizedManufacturerNames = [
-    ...new Set(
-      source.items.map(item =>
-        normalizeManufacturerName(item.fk_lookup.manufacturer_name)
-      )
-    ),
-  ];
+  let packagedBaseUnits = 0;
+  const normalizedManufacturerNames = unique(
+    source.items.map(item =>
+      normalizeManufacturerName(item.fk_lookup.manufacturer_name)
+    )
+  );
   const manufacturerCodeMap = buildManufacturerCodeMap(
     normalizedManufacturerNames
   );
@@ -806,6 +1069,12 @@ const main = () => {
     );
     const guess = findDosageGuess(normalizedSourceName);
     const measurementGuess = findMeasurementGuess(sourceName);
+    const packCount = findPackCount(sourceName);
+    const normalizedPackageCode = normalizePackageCode(
+      item.code,
+      item.fk_lookup.package_code,
+      sourceName
+    );
     const relianceName = normalizeRelianceName(sourceName);
     const cleanedName = ensureFallbackName(
       cleanupName(normalizedSourceName, guess),
@@ -813,6 +1082,13 @@ const main = () => {
       guess
     );
     const formattedName = relianceName ?? formatName(cleanedName);
+    const packageStructure = buildPackageStructure({
+      basePrice: item.base_price,
+      packageCode: normalizedPackageCode,
+      packCount,
+      sellPrice: item.sell_price,
+      dosageCode: guess?.code,
+    });
 
     if (formattedName !== sourceName) {
       changedNames += 1;
@@ -835,13 +1111,21 @@ const main = () => {
       );
     }
 
+    if (packageStructure.baseUnit) {
+      packagedBaseUnits += 1;
+    }
+
     return {
       ...item,
+      base_price: packageStructure.basePrice,
+      base_unit: packageStructure.baseUnit,
       measurement_denominator_unit_id: null,
       measurement_denominator_value: measurementGuess?.denominatorValue ?? null,
       measurement_unit_id: null,
       measurement_value: measurementGuess?.value ?? null,
       name: formattedName,
+      package_conversions: packageStructure.packageConversions,
+      sell_price: packageStructure.sellPrice,
       fk_lookup: {
         ...item.fk_lookup,
         manufacturer_code: manufacturerCodeMap.get(normalizedManufacturerName),
@@ -854,6 +1138,7 @@ const main = () => {
         measurement_unit_name: measurementGuess?.unitName,
         dosage_code: guess?.code,
         dosage_name: guess?.name,
+        package_code: normalizedPackageCode,
         source_manufacturer_name: sourceManufacturerName,
         source_name: sourceName,
       },
@@ -866,7 +1151,7 @@ const main = () => {
       normalized_at: new Date().toISOString(),
       schema_mode:
         'public.items insert columns + fk_lookup helper + normalized name/dosage',
-      notes: [
+      notes: unique([
         ...source.source.notes.filter(
           note =>
             !note.includes('Resolve category_id and type_id') &&
@@ -876,40 +1161,79 @@ const main = () => {
         'Resolve manufacturer_id from fk_lookup.manufacturer_name via item_manufacturers.name.',
         'Resolve item_manufacturers.code from fk_lookup.manufacturer_code when seeding manufacturer master data.',
         'Resolve package_id from fk_lookup.package_code via item_packages.code.',
+        'package_code is normalized from raw source UOM when the source_name gives a more specific package, such as STRIP->BLISTER PACK, certain INJEKSI items->AMPULE/VIAL, and Sakura Collagen cream->JAR.',
         'Resolve dosage_id from fk_lookup.dosage_code via item_dosages.code when available.',
         'Resolve measurement_unit_id from fk_lookup.measurement_unit_code via item_units.code when available.',
         'Resolve measurement_denominator_unit_id from fk_lookup.measurement_denominator_unit_code via item_units.code when available.',
         'Resolve category_id and type_id from fk_lookup.category_code and fk_lookup.type_code.',
         'name is normalized to remove packaging, dosage-form, and measurement tokens while preserving original source_name.',
-        'measurement_value and measurement_unit fields are inferred from source_name when values like 500 mg, 100 mL, or 125 mg/5 mL are present.',
+        'measurement_value and measurement_unit fields are inferred from source_name when values like 500 mg, 100 mL, 125 mg/5 mL, or 16G gauge are present.',
+        'For BOX items with explicit tablet/capsule counts, base_price and sell_price are rebased to the unit dasar and package_conversions keeps the BOX price.',
         'manufacturer_name is normalized to a canonical company name without punctuation drift.',
         'Original source product text is preserved in fk_lookup.source_name.',
         'Original source manufacturer text is preserved in fk_lookup.source_manufacturer_name.',
-      ],
+      ]),
     },
     items: normalizedItems,
   };
-
-  writeFileSync(outputPath, `${JSON.stringify(normalizedSource, null, 2)}\n`);
 
   const topDosages = [...dosageCounts.entries()]
     .sort(
       (left, right) => right[1] - left[1] || left[0].localeCompare(right[0])
     )
     .slice(0, 10);
+
+  return {
+    changedManufacturers,
+    changedNames,
+    guessedDosages,
+    guessedMeasurements,
+    measurementCounts,
+    normalizedSeed: normalizedSource,
+    packagedBaseUnits,
+    topDosages,
+  };
+};
+
+const main = () => {
+  const { help, inputPath, outputPath } = parseArgs();
+
+  if (help) {
+    console.log(
+      `Usage: bun run normalize:item-master:seed [--input <path>] [--output <path>]`
+    );
+    console.log(`Default input : ${DEFAULT_INPUT}`);
+    console.log(`Default output: ${DEFAULT_OUTPUT}`);
+    return;
+  }
+
+  const source = JSON.parse(readFileSync(inputPath, 'utf8')) as SeedFile;
+  const {
+    changedManufacturers,
+    changedNames,
+    guessedDosages,
+    guessedMeasurements,
+    measurementCounts,
+    normalizedSeed,
+    packagedBaseUnits,
+    topDosages,
+  } = normalizeSeedFile(source);
   const topMeasurements = [...measurementCounts.entries()]
     .sort(
       (left, right) => right[1] - left[1] || left[0].localeCompare(right[0])
     )
     .slice(0, 10);
 
+  writeFileSync(outputPath, `${JSON.stringify(normalizedSeed, null, 2)}\n`);
+
   console.log(`Input file      : ${inputPath}`);
   console.log(`Output file     : ${outputPath}`);
-  console.log(`Total items     : ${normalizedItems.length}`);
+  console.log(`Total items     : ${normalizedSeed.items.length}`);
   console.log(`Names changed   : ${changedNames}`);
   console.log(`Mfrs changed    : ${changedManufacturers}`);
   console.log(`Dosage inferred : ${guessedDosages}`);
   console.log(`Measure inferred: ${guessedMeasurements}`);
+  console.log(`Base units set  : ${packagedBaseUnits}`);
   console.log(
     `Top dosage codes: ${topDosages.map(([code, count]) => `${code}=${count}`).join(', ')}`
   );
@@ -918,4 +1242,6 @@ const main = () => {
   );
 };
 
-main();
+if (import.meta.main) {
+  main();
+}
