@@ -2430,7 +2430,6 @@ const ItemMasterNew = memo(() => {
                 : entityManager.closeAddModal
             }
             onSubmit={entityManager.handleSubmit}
-            onFieldAutosave={entityManager.handleFieldAutosave}
             initialData={entityManager.editingEntity}
             onDelete={
               entityManager.editingEntity

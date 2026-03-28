@@ -11,11 +11,10 @@ import toast from 'react-hot-toast';
 import Cropper from 'cropperjs';
 import { TbPhotoUp } from 'react-icons/tb';
 import { compressImageIfNeeded } from '@/utils/image';
-import { extractNumericValue } from '@/lib/formatters';
 import { formatItemDisplayName } from '@/lib/item-display';
 import { parseDisplayNameToMeasurement } from '@/lib/item-measurement-parser';
 import { QueryKeys } from '@/constants/queryKeys';
-import { useQueryClient, type QueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   cacheImageBlob,
   getCachedImageBlobUrl,
@@ -95,119 +94,8 @@ export const updateItemFields = async (
   if (error) throw error;
 };
 
-export const applyItemCacheUpdates = (
-  queryClient: QueryClient,
-  itemId: string,
-  updates: Record<string, unknown>
-) => {
-  const applyUpdates = (item: Record<string, unknown>) => {
-    const nextItem = { ...item };
-    Object.entries(updates).forEach(([key, value]) => {
-      if (key in nextItem) {
-        nextItem[key] = value;
-      }
-    });
-    return nextItem;
-  };
-
-  queryClient.setQueriesData(
-    { queryKey: QueryKeys.items.all },
-    (cachedData: unknown) => {
-      if (!cachedData) return cachedData;
-      if (Array.isArray(cachedData)) {
-        return cachedData.map(item =>
-          item && typeof item === 'object' && 'id' in item && item.id === itemId
-            ? applyUpdates(item as Record<string, unknown>)
-            : item
-        );
-      }
-      if (
-        typeof cachedData === 'object' &&
-        cachedData !== null &&
-        'id' in cachedData &&
-        cachedData.id === itemId
-      ) {
-        return applyUpdates(cachedData as Record<string, unknown>);
-      }
-      return cachedData;
-    }
-  );
-
-  queryClient.setQueriesData(
-    { queryKey: QueryKeys.items.detail(itemId) },
-    (cachedData: unknown) => {
-      if (
-        typeof cachedData === 'object' &&
-        cachedData !== null &&
-        'id' in cachedData &&
-        cachedData.id === itemId
-      ) {
-        return applyUpdates(cachedData as Record<string, unknown>);
-      }
-      return cachedData;
-    }
-  );
-};
-
-export const normalizeNullableValue = (value: string) => (value ? value : null);
 export const appendCacheBust = (url: string, token: string | number) =>
   url.includes('?') ? `${url}&t=${token}` : `${url}?t=${token}`;
-
-export const useDebouncedAutosave = ({
-  itemId,
-  isEditMode,
-  isViewingOldVersion,
-  delayMs = 600,
-  onSaved,
-}: {
-  itemId?: string;
-  isEditMode: boolean;
-  isViewingOldVersion: boolean;
-  delayMs?: number;
-  onSaved?: (updates: Record<string, unknown>) => void;
-}) => {
-  const timersRef = useRef<Record<string, number>>({});
-
-  useEffect(() => {
-    return () => {
-      Object.values(timersRef.current).forEach(timerId => {
-        window.clearTimeout(timerId);
-      });
-      timersRef.current = {};
-    };
-  }, []);
-
-  return useCallback(
-    (fieldOrUpdates: string | Record<string, unknown>, value?: unknown) => {
-      if (!itemId || !isEditMode || isViewingOldVersion) return;
-
-      const updates =
-        typeof fieldOrUpdates === 'string'
-          ? { [fieldOrUpdates]: value }
-          : fieldOrUpdates;
-      const persistedUpdates = { ...updates };
-      delete persistedUpdates.display_name;
-      const timerKey =
-        typeof fieldOrUpdates === 'string'
-          ? fieldOrUpdates
-          : Object.keys(updates).sort().join('|');
-      const existing = timersRef.current[timerKey];
-      if (existing) window.clearTimeout(existing);
-
-      timersRef.current[timerKey] = window.setTimeout(() => {
-        void updateItemFields(itemId, persistedUpdates)
-          .then(() => {
-            onSaved?.(updates);
-          })
-          .catch(error => {
-            console.error('Error autosaving item input:', error);
-            toast.error('Gagal menyimpan perubahan.');
-          });
-      }, delayMs);
-    },
-    [itemId, isEditMode, isViewingOldVersion, delayMs, onSaved]
-  );
-};
 
 // Header Section
 
@@ -250,9 +138,7 @@ const FormHeader: React.FC<{
 
 // Basic Info (Required) Section
 
-const BasicInfoRequiredSection: React.FC<BasicInfoRequiredProps> = ({
-  itemId,
-}) => {
+const BasicInfoRequiredSection: React.FC<BasicInfoRequiredProps> = () => {
   const {
     formData,
     categories,
@@ -268,7 +154,6 @@ const BasicInfoRequiredSection: React.FC<BasicInfoRequiredProps> = ({
 
   const { resetKey, isViewingOldVersion, isEditMode } = useItemUI();
   const { packageConversionHook } = useItemPrice();
-  const queryClient = useQueryClient();
 
   const {
     handleAddNewCategory,
@@ -277,27 +162,6 @@ const BasicInfoRequiredSection: React.FC<BasicInfoRequiredProps> = ({
     handleAddNewDosage,
     handleAddNewManufacturer,
   } = useItemModal();
-
-  const scheduleAutosave = useDebouncedAutosave({
-    itemId,
-    isEditMode,
-    isViewingOldVersion,
-    onSaved: updates => {
-      if (!itemId) return;
-      applyItemCacheUpdates(queryClient, itemId, updates);
-    },
-  });
-
-  const saveDropdownUpdate = useCallback(
-    (updates: Record<string, unknown>) => {
-      if (!itemId || !isEditMode || isViewingOldVersion) return;
-      void updateItemFields(itemId, updates).catch(error => {
-        console.error('Error autosaving item dropdown:', error);
-        toast.error('Gagal menyimpan perubahan.');
-      });
-    },
-    [itemId, isEditMode, isViewingOldVersion]
-  );
 
   // Transform database types to DropdownOption format
   const transformedCategories = categories.map(cat => ({
@@ -350,16 +214,11 @@ const BasicInfoRequiredSection: React.FC<BasicInfoRequiredProps> = ({
 
   const handleFieldChange = (field: string, value: boolean | string) => {
     if (field === 'is_medicine' && value === false) {
-      saveDropdownUpdate({
-        is_medicine: false,
-        has_expiry_date: false,
-      });
       updateFormData({
         is_medicine: value as boolean,
         has_expiry_date: false,
       });
     } else if (field === 'is_medicine') {
-      saveDropdownUpdate({ is_medicine: value as boolean });
       updateFormData({ is_medicine: value as boolean });
     } else if (field === 'code') {
       updateFormData({ code: value as string });
@@ -371,19 +230,6 @@ const BasicInfoRequiredSection: React.FC<BasicInfoRequiredProps> = ({
   ) => {
     if (e.target.name === 'name') {
       const parsed = parseDisplayNameToMeasurement(e.target.value, units);
-      const measurementUnit =
-        units.find(unit => unit.id === parsed.measurementUnitId) || null;
-      const measurementDenominatorUnit =
-        units.find(unit => unit.id === parsed.measurementDenominatorUnitId) ||
-        null;
-      const nextDisplayName = formatItemDisplayName({
-        name: parsed.name,
-        measurement_value: parsed.measurementValue ?? null,
-        measurement_unit: measurementUnit,
-        measurement_denominator_value:
-          parsed.measurementDenominatorValue ?? null,
-        measurement_denominator_unit: measurementDenominatorUnit,
-      });
       updateFormData({
         name: parsed.name,
         quantity: parsed.measurementValue ?? 0,
@@ -392,54 +238,27 @@ const BasicInfoRequiredSection: React.FC<BasicInfoRequiredProps> = ({
           parsed.measurementDenominatorValue ?? null,
         measurement_denominator_unit_id: parsed.measurementDenominatorUnitId,
       });
-
-      scheduleAutosave({
-        name: parsed.name,
-        measurement_value: parsed.measurementValue ?? null,
-        measurement_unit_id: parsed.measurementUnitId || null,
-        measurement_denominator_value:
-          parsed.measurementDenominatorValue ?? null,
-        measurement_denominator_unit_id:
-          parsed.measurementDenominatorUnitId || null,
-        display_name: nextDisplayName,
-      });
       return;
     }
 
     handleChange(e);
-    const { name, value } = e.target;
-    if (name !== 'name') {
-      scheduleAutosave(name, value);
-    }
   };
 
   const handleDropdownChange = (field: string, value: string) => {
-    const normalizedValue = normalizeNullableValue(value);
-
     if (field === 'category_id') {
       updateFormData({ category_id: value });
-      saveDropdownUpdate({ category_id: normalizedValue });
     } else if (field === 'type_id') {
       updateFormData({ type_id: value });
-      saveDropdownUpdate({ type_id: normalizedValue });
     } else if (field === 'package_id') {
       updateFormData({ package_id: value });
-      // Also update baseUnit for unit conversion synchronization
       const selectedPackage = packages.find(pkg => pkg.id === value);
-      const nextBaseUnit = selectedPackage?.name ?? null;
       if (selectedPackage) {
         packageConversionHook.setBaseUnit(selectedPackage.name);
       }
-      saveDropdownUpdate({
-        package_id: normalizedValue,
-        base_unit: nextBaseUnit,
-      });
     } else if (field === 'dosage_id') {
       updateFormData({ dosage_id: value });
-      saveDropdownUpdate({ dosage_id: normalizedValue });
     } else if (field === 'manufacturer_id') {
       updateFormData({ manufacturer_id: value });
-      saveDropdownUpdate({ manufacturer_id: normalizedValue });
     }
   };
 
@@ -489,41 +308,18 @@ const SettingsSection: React.FC<CollapsibleSectionProps> = ({
   onExpand,
   stackClassName,
   stackStyle,
-  itemId,
   onRequestNextSection,
 }) => {
   const { formData, updateFormData } = useItemForm();
-  const { isViewingOldVersion, isEditMode } = useItemUI();
-  const queryClient = useQueryClient();
-  const scheduleAutosave = useDebouncedAutosave({
-    itemId,
-    isEditMode,
-    isViewingOldVersion,
-    onSaved: updates => {
-      if (!itemId) return;
-      applyItemCacheUpdates(queryClient, itemId, updates);
-    },
-  });
+  const { isViewingOldVersion } = useItemUI();
 
   const minStockEditor = useInlineEditor({
     initialValue: (formData.min_stock || 0).toString(),
     onSave: value => {
       const parsedValue = parseInt(value.toString()) || 0;
       updateFormData({ min_stock: parsedValue });
-      scheduleAutosave('min_stock', parsedValue);
     },
   });
-
-  const saveDropdownUpdate = useCallback(
-    (updates: Record<string, unknown>) => {
-      if (!itemId || !isEditMode || isViewingOldVersion) return;
-      void updateItemFields(itemId, updates).catch(error => {
-        console.error('Error autosaving item dropdown:', error);
-        toast.error('Gagal menyimpan perubahan.');
-      });
-    },
-    [itemId, isEditMode, isViewingOldVersion]
-  );
 
   const handleFieldChange = (field: string, value: boolean | string) => {
     if (field === 'is_medicine' && value === false) {
@@ -534,10 +330,8 @@ const SettingsSection: React.FC<CollapsibleSectionProps> = ({
     } else if (field === 'is_medicine') {
       updateFormData({ is_medicine: value as boolean });
     } else if (field === 'is_active') {
-      saveDropdownUpdate({ is_active: value as boolean });
       updateFormData({ is_active: value as boolean });
     } else if (field === 'has_expiry_date') {
-      saveDropdownUpdate({ has_expiry_date: value as boolean });
       updateFormData({ has_expiry_date: value as boolean });
     } else if (field === 'min_stock') {
       updateFormData({ min_stock: parseInt(value as string) || 0 });
@@ -579,7 +373,6 @@ const PricingSection: React.FC<PricingSectionProps> = ({
   stackClassName,
   stackStyle,
   onLevelPricingToggle,
-  itemId,
 }) => {
   const { formData, updateFormData, handleChange } = useItemForm();
   const { packageConversionHook, displayBasePrice, displaySellPrice } =
@@ -594,17 +387,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({
   } = useCustomerLevels();
   const [showLevelPricing, setShowLevelPricing] = useState(false);
 
-  const { resetKey, isViewingOldVersion, isEditMode } = useItemUI();
-  const queryClient = useQueryClient();
-  const scheduleAutosave = useDebouncedAutosave({
-    itemId,
-    isEditMode,
-    isViewingOldVersion,
-    onSaved: updates => {
-      if (!itemId) return;
-      applyItemCacheUpdates(queryClient, itemId, updates);
-    },
-  });
+  const { resetKey, isViewingOldVersion } = useItemUI();
 
   useEffect(() => {
     onLevelPricingToggle?.(showLevelPricing);
@@ -650,12 +433,10 @@ const PricingSection: React.FC<PricingSectionProps> = ({
     const value = parseFloat(cleanValue) || 0;
     updateFormData(toPricingPatch({ sellPrice: value }));
     marginEditor.setValue((calcMargin || 0).toString());
-    scheduleAutosave('sell_price', value);
   };
 
   const handleBasePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     handleChange(e);
-    scheduleAutosave('base_price', extractNumericValue(e.target.value));
   };
 
   const customerLevelDiscounts = useMemo(
@@ -752,7 +533,6 @@ const PricingSection: React.FC<PricingSectionProps> = ({
       isLevelPricingActive={pricingFields.isLevelPricingActive}
       onLevelPricingActiveChange={active => {
         updateFormData(toPricingPatch({ isLevelPricingActive: active }));
-        scheduleAutosave('is_level_pricing_active', active);
       }}
     />
   );
@@ -765,14 +545,11 @@ const PackageConversionSection: React.FC<CollapsibleSectionProps> = ({
   onExpand,
   stackClassName,
   stackStyle,
-  itemId,
 }) => {
   const { packageConversionHook } = useItemPrice();
-  const { resetKey, isViewingOldVersion, isEditMode } = useItemUI();
-  const { setInitialPackageConversions } = useItemForm();
+  const { resetKey, isViewingOldVersion } = useItemUI();
   const realtime = useItemRealtime();
   const smartFormSync = realtime?.smartFormSync;
-  const pendingAutosaveRef = useRef(false);
 
   const packageConversionLogic = useConversionLogic({
     conversions: packageConversionHook.conversions,
@@ -788,39 +565,7 @@ const PackageConversionSection: React.FC<CollapsibleSectionProps> = ({
     if (!result.success && result.error) {
       return;
     }
-    pendingAutosaveRef.current = true;
   };
-
-  const persistConversions = useCallback(async () => {
-    if (!itemId || !isEditMode || isViewingOldVersion) return;
-
-    const payload = packageConversionHook.conversions.map(conversion => ({
-      unit_name: conversion.unit.name,
-      to_unit_id: conversion.to_unit_id,
-      conversion_rate: conversion.conversion_rate,
-      base_price: conversion.base_price,
-      sell_price: conversion.sell_price,
-    }));
-
-    try {
-      await updateItemFields(itemId, { package_conversions: payload });
-      setInitialPackageConversions(packageConversionHook.conversions);
-    } catch (error) {
-      console.error('Error autosaving item conversions:', error);
-    }
-  }, [
-    itemId,
-    isEditMode,
-    isViewingOldVersion,
-    packageConversionHook.conversions,
-    setInitialPackageConversions,
-  ]);
-
-  useEffect(() => {
-    if (!pendingAutosaveRef.current) return;
-    pendingAutosaveRef.current = false;
-    void persistConversions();
-  }, [persistConversions, packageConversionHook.conversions]);
 
   const handleConversionInteractionStart = useCallback(() => {
     smartFormSync?.registerActiveField('package_conversions');
@@ -834,7 +579,6 @@ const PackageConversionSection: React.FC<CollapsibleSectionProps> = ({
 
   const handleRemoveConversion = useCallback(
     (id: string) => {
-      pendingAutosaveRef.current = true;
       removePackageConversion(id);
     },
     [removePackageConversion]
@@ -843,7 +587,6 @@ const PackageConversionSection: React.FC<CollapsibleSectionProps> = ({
   const handleUpdateSellPrice = useCallback(
     (id: string, sellPrice: number) => {
       setConversions(prevConversions => {
-        pendingAutosaveRef.current = true;
         return prevConversions.map(conversion =>
           conversion.id === id
             ? { ...conversion, sell_price: sellPrice }
@@ -1302,27 +1045,10 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
     setIsLoadingImages(false);
   }, [buildSlotsFromUrls, formImageUrls, itemId, updateImageCache]);
 
-  const scheduleAutosave = useDebouncedAutosave({
-    itemId,
-    isEditMode,
-    isViewingOldVersion,
-    onSaved: updates => {
-      if (!itemId) return;
-      applyItemCacheUpdates(queryClient, itemId, updates);
-    },
-  });
-
   const handleOptionalChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     handleChange(e);
-
-    const { name, value } = e.target;
-    if (name === 'barcode') {
-      scheduleAutosave('barcode', value);
-    } else if (name === 'description') {
-      scheduleAutosave('description', value);
-    }
   };
 
   const getImageDimensions = useCallback((file: File) => {

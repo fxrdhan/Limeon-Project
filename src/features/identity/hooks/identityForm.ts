@@ -19,9 +19,6 @@ interface UseIdentityFormProps {
   initialNameFromSearch?: string;
   useInlineFieldActions?: boolean;
 }
-
-const FIELD_AUTOSAVE_DELAY_MS = 600;
-
 export const useIdentityForm = ({
   initialData,
   fields,
@@ -45,7 +42,6 @@ export const useIdentityForm = ({
   const [localData, setLocalData] =
     useState<Record<string, string | number | boolean | null>>(initialData);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const autosaveTimersRef = useRef<Record<string, number>>({});
   const inputRefs = useRef<
     Record<string, { el: HTMLInputElement | HTMLTextAreaElement | null }>
   >({});
@@ -57,61 +53,11 @@ export const useIdentityForm = ({
     setIsUploadingImage(false);
     setLoadingField({});
     setIsSubmitting(false);
-    Object.values(autosaveTimersRef.current).forEach(timerId => {
-      window.clearTimeout(timerId);
-    });
-    autosaveTimersRef.current = {};
     inputRefs.current = {};
     if (mode === 'add') {
       setLocalData(initialData);
     }
   }, [mode, initialData]);
-
-  useEffect(() => {
-    if (isOpen) return;
-    Object.values(autosaveTimersRef.current).forEach(timerId => {
-      window.clearTimeout(timerId);
-    });
-    autosaveTimersRef.current = {};
-  }, [isOpen]);
-
-  useEffect(() => {
-    return () => {
-      Object.values(autosaveTimersRef.current).forEach(timerId => {
-        window.clearTimeout(timerId);
-      });
-      autosaveTimersRef.current = {};
-    };
-  }, []);
-
-  const scheduleFieldAutosave = useCallback(
-    (key: string, value: string | number | boolean | null) => {
-      if (mode !== 'edit' || useInlineFieldActions || !onFieldSave || !isOpen) {
-        return;
-      }
-
-      const currentTimer = autosaveTimersRef.current[key];
-      if (currentTimer) {
-        window.clearTimeout(currentTimer);
-      }
-
-      autosaveTimersRef.current[key] = window.setTimeout(() => {
-        setLoadingField(prev => ({ ...prev, [key]: true }));
-        void onFieldSave(key, value)
-          .then(() => {
-            setLocalData(prev => ({ ...prev, [key]: value }));
-          })
-          .catch(error => {
-            console.error(`Error autosaving field ${key}:`, error);
-          })
-          .finally(() => {
-            setLoadingField(prev => ({ ...prev, [key]: false }));
-            delete autosaveTimersRef.current[key];
-          });
-      }, FIELD_AUTOSAVE_DELAY_MS);
-    },
-    [mode, useInlineFieldActions, onFieldSave, isOpen]
-  );
 
   useEffect(() => {
     if (isOpen) {
@@ -217,9 +163,8 @@ export const useIdentityForm = ({
         ...prev,
         [key]: value,
       }));
-      scheduleFieldAutosave(key, value);
     },
-    [scheduleFieldAutosave]
+    []
   );
 
   const handleSaveField = useCallback(
@@ -248,11 +193,6 @@ export const useIdentityForm = ({
   );
 
   const handleSaveAll = useCallback(async () => {
-    Object.values(autosaveTimersRef.current).forEach(timerId => {
-      window.clearTimeout(timerId);
-    });
-    autosaveTimersRef.current = {};
-
     setIsSubmitting(true);
     try {
       const dataToSave = { ...editValues };

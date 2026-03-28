@@ -15,7 +15,6 @@ import {
   useItemActions,
   useItemForm,
   useItemPrice,
-  useItemRealtime,
   useItemUI,
 } from '../../../shared/contexts/useItemFormContext';
 import type {
@@ -507,12 +506,6 @@ const ItemManagementContent: React.FC<{
   const form = useItemForm();
   const price = useItemPrice();
   const actions = useItemActions();
-  const realtime = useItemRealtime();
-  const isRealtimeConnected = Boolean(realtime?.isConnected);
-  const useOfflineUpdate = ui.isEditMode && !isRealtimeConnected;
-  const submitDisabledOverride =
-    ui.isEditMode && isRealtimeConnected ? true : undefined;
-  const updateText = useOfflineUpdate ? 'Update' : 'Tersimpan';
   const isEditSession = Boolean(itemId);
   const hasFormData =
     Boolean(form.formData.code?.trim()) ||
@@ -1119,8 +1112,7 @@ const ItemManagementContent: React.FC<{
         isDeleting: actions.deleteItemMutation?.isPending || false,
         isEditMode: ui.isEditMode,
         isDisabled: actions.finalDisabledState,
-        isSubmitDisabled: submitDisabledOverride,
-        updateText,
+        updateText: 'Simpan',
       }}
     />
   );

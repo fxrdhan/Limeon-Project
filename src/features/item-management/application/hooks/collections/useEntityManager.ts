@@ -287,13 +287,6 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
     [crudOperations]
   );
 
-  const handleFieldAutosave = useCallback(
-    async (entityId: string, updates: Record<string, unknown>) => {
-      await crudOperations.handleFieldAutosave(entityId, updates);
-    },
-    [crudOperations]
-  );
-
   // Delete handler
   const handleDelete = useCallback(
     async (entity: EntityData): Promise<void> => {
@@ -365,7 +358,6 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
     openEditModal,
     closeEditModal,
     handleSubmit,
-    handleFieldAutosave,
     handleDelete,
     handleSearch,
     handlePageChange,
