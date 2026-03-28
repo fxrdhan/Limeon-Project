@@ -77,7 +77,7 @@ export const useItemsManagement = (options?: UseItemsManagementOptions) => {
       searchTerm: search,
       matcher: (item, searchTermLower) => {
         return (
-          fuzzyMatch(item.name, searchTermLower) ||
+          fuzzyMatch(item.display_name || item.name, searchTermLower) ||
           (item.code && fuzzyMatch(item.code, searchTermLower)) ||
           (item.barcode && fuzzyMatch(item.barcode, searchTermLower)) ||
           (item.category?.name &&
@@ -96,7 +96,8 @@ export const useItemsManagement = (options?: UseItemsManagementOptions) => {
         );
       },
       scorer: (item, searchTermLower) => getScore(item, searchTermLower),
-      tieBreaker: (a, b) => a.name.localeCompare(b.name),
+      tieBreaker: (a, b) =>
+        (a.display_name || a.name).localeCompare(b.display_name || b.name),
     });
   }, [allData, search]);
 

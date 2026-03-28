@@ -140,6 +140,12 @@ export const prepareItemData = async (
     code: formData.code,
     is_medicine: formData.is_medicine,
     base_unit: baseUnit,
+    measurement_value: formData.quantity > 0 ? formData.quantity : null,
+    measurement_unit_id: formData.unit_id || null,
+    measurement_denominator_value:
+      formData.measurement_denominator_value ?? null,
+    measurement_denominator_unit_id:
+      formData.measurement_denominator_unit_id || null,
     has_expiry_date: formData.has_expiry_date,
     image_urls: formData.image_urls || [],
     package_conversions: conversions.map(uc => ({

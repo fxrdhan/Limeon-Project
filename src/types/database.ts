@@ -130,6 +130,7 @@ export interface Doctor {
 export interface Item {
   id: string;
   name: string;
+  display_name?: string;
   manufacturer: { id?: string; code?: string | null; name: string };
   code?: string;
   barcode?: string | null;
@@ -147,6 +148,10 @@ export interface Item {
   package: { name: string }; // Kemasan (dari item_packages)
   unit: { name: string }; // Satuan (dari base_unit string atau item_units)
   dosage?: { name: string };
+  measurement_value?: number | null;
+  measurement_unit?: UnitData | null;
+  measurement_denominator_value?: number | null;
+  measurement_denominator_unit?: UnitData | null;
 }
 
 export interface PackageConversion {
@@ -171,6 +176,7 @@ export interface DBPackageConversion {
 export interface DBItem {
   id: string;
   name: string;
+  display_name?: string;
   manufacturer_id?: string | null;
   code?: string;
   barcode?: string | null;
@@ -193,6 +199,10 @@ export interface DBItem {
   has_expiry_date?: boolean | null;
   is_medicine?: boolean | null;
   dosage_id?: string | null;
+  measurement_value?: number | null;
+  measurement_unit_id?: string | null;
+  measurement_denominator_value?: number | null;
+  measurement_denominator_unit_id?: string | null;
   item_categories?: { name: string }[] | null;
   item_types?: { name: string }[] | null;
   item_packages?: { name: string }[] | null;

@@ -591,14 +591,6 @@ const ItemManagementContent: React.FC<{
       dataSource && 'description' in dataSource
         ? ((dataSource.description as string) ?? '')
         : '';
-    const unitId =
-      dataSource && 'unit_id' in dataSource
-        ? ((dataSource.unit_id as string) ?? '')
-        : '';
-    const quantity =
-      dataSource && 'quantity' in dataSource
-        ? ((dataSource.quantity as number) ?? 0)
-        : 0;
     const basePrice = dataSource?.base_price ?? 0;
     const sellPrice = dataSource?.sell_price ?? 0;
     const fallbackConversions = Array.isArray(
@@ -612,10 +604,7 @@ const ItemManagementContent: React.FC<{
       price.packageConversionHook.conversions.length || fallbackConversions;
 
     const hasAdditionalInfo =
-      Boolean(barcode?.trim()) ||
-      Boolean(description?.trim()) ||
-      Boolean(unitId) ||
-      (quantity ?? 0) > 0;
+      Boolean(barcode?.trim()) || Boolean(description?.trim());
     const hasConversion = conversionCount > 0;
     const hasSettings =
       dataSource &&

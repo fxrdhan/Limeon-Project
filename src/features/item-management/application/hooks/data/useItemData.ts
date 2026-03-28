@@ -102,8 +102,16 @@ export const useItemData = ({
           itemRecord.has_expiry_date !== undefined
             ? (itemRecord.has_expiry_date as boolean)
             : false,
-        quantity: (itemRecord.quantity as number) || 0,
-        unit_id: (itemRecord.unit_id as string) || '',
+        quantity:
+          Number(itemRecord.measurement_value ?? itemRecord.quantity) || 0,
+        unit_id:
+          (itemRecord.measurement_unit_id as string) ||
+          (itemRecord.unit_id as string) ||
+          '',
+        measurement_denominator_value:
+          (itemRecord.measurement_denominator_value as number | null) ?? null,
+        measurement_denominator_unit_id:
+          (itemRecord.measurement_denominator_unit_id as string) || '',
         updated_at: itemRecord.updated_at as string | null | undefined,
         customer_level_discounts: customerLevelDiscounts,
       };

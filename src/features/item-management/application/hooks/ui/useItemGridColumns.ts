@@ -33,6 +33,8 @@ export const useItemGridColumns = () => {
           suppressAndOrCondition: false,
           caseSensitive: false,
         },
+        valueGetter: params =>
+          params.data?.display_name || params.data?.name || '-',
         suppressHeaderFilterButton: true,
       },
       'manufacturer.name': {

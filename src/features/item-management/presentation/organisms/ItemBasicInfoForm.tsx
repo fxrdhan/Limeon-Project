@@ -22,6 +22,7 @@ interface ItemBasicInfoFormProps {
   isEditMode: boolean;
   formData: {
     code: string;
+    display_name: string;
     name: string;
     manufacturer_id: string;
     is_medicine: boolean;
@@ -37,9 +38,7 @@ interface ItemBasicInfoFormProps {
   manufacturers: DropdownOption[];
   loading: boolean;
   disabled?: boolean;
-  onChange: (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => void;
+  onDisplayNameChange: (value: string) => void;
   onFieldChange: (field: string, value: boolean | string) => void;
   onDropdownChange: (field: string, value: string) => void;
   onAddNewCategory: (searchTerm?: string) => void;
@@ -61,7 +60,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
       manufacturers,
       loading,
       disabled = false,
-      onChange,
+      onDisplayNameChange,
       onFieldChange,
       onDropdownChange,
       onAddNewCategory,
@@ -76,7 +75,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
     const nameFieldHandlers = realtime?.smartFormSync?.getFieldHandlers('name');
 
     const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      onChange(e);
+      onDisplayNameChange(e.target.value);
       nameFieldHandlers?.onChange(e);
     };
 
@@ -167,7 +166,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
               <Input
                 name="name"
                 ref={ref}
-                value={formData.name}
+                value={formData.display_name}
                 tabIndex={1}
                 onChange={handleNameChange}
                 onFocus={handleNameFocus}

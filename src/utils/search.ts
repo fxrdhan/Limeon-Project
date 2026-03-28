@@ -55,7 +55,7 @@ export const fuzzySearchMatch = (
 };
 
 export const getScore = (item: Item, searchTermLower: string): number => {
-  const nameLower = item.name?.toLowerCase?.() ?? '';
+  const nameLower = (item.display_name || item.name)?.toLowerCase?.() ?? '';
   const codeLower = item.code?.toLowerCase?.() ?? '';
   const barcodeLower = item.barcode?.toLowerCase?.() ?? '';
   const categoryLower = item.category?.name?.toLowerCase?.() ?? '';

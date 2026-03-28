@@ -12,6 +12,8 @@ import Cropper from 'cropperjs';
 import { TbPhotoUp } from 'react-icons/tb';
 import { compressImageIfNeeded } from '@/utils/image';
 import { extractNumericValue } from '@/lib/formatters';
+import { formatItemDisplayName } from '@/lib/item-display';
+import { parseDisplayNameToMeasurement } from '@/lib/item-measurement-parser';
 import { QueryKeys } from '@/constants/queryKeys';
 import { useQueryClient, type QueryClient } from '@tanstack/react-query';
 import {
@@ -176,15 +178,24 @@ export const useDebouncedAutosave = ({
   }, []);
 
   return useCallback(
-    (field: string, value: unknown) => {
+    (fieldOrUpdates: string | Record<string, unknown>, value?: unknown) => {
       if (!itemId || !isEditMode || isViewingOldVersion) return;
 
-      const existing = timersRef.current[field];
+      const updates =
+        typeof fieldOrUpdates === 'string'
+          ? { [fieldOrUpdates]: value }
+          : fieldOrUpdates;
+      const persistedUpdates = { ...updates };
+      delete persistedUpdates.display_name;
+      const timerKey =
+        typeof fieldOrUpdates === 'string'
+          ? fieldOrUpdates
+          : Object.keys(updates).sort().join('|');
+      const existing = timersRef.current[timerKey];
       if (existing) window.clearTimeout(existing);
 
-      const updates = { [field]: value };
-      timersRef.current[field] = window.setTimeout(() => {
-        void updateItemFields(itemId, updates)
+      timersRef.current[timerKey] = window.setTimeout(() => {
+        void updateItemFields(itemId, persistedUpdates)
           .then(() => {
             onSaved?.(updates);
           })
@@ -247,6 +258,7 @@ const BasicInfoRequiredSection: React.FC<BasicInfoRequiredProps> = ({
     categories,
     types,
     packages,
+    units,
     dosages,
     manufacturers,
     loading,
@@ -266,6 +278,16 @@ const BasicInfoRequiredSection: React.FC<BasicInfoRequiredProps> = ({
     handleAddNewManufacturer,
   } = useItemModal();
 
+  const scheduleAutosave = useDebouncedAutosave({
+    itemId,
+    isEditMode,
+    isViewingOldVersion,
+    onSaved: updates => {
+      if (!itemId) return;
+      applyItemCacheUpdates(queryClient, itemId, updates);
+    },
+  });
+
   const saveDropdownUpdate = useCallback(
     (updates: Record<string, unknown>) => {
       if (!itemId || !isEditMode || isViewingOldVersion) return;
@@ -276,15 +298,6 @@ const BasicInfoRequiredSection: React.FC<BasicInfoRequiredProps> = ({
     },
     [itemId, isEditMode, isViewingOldVersion]
   );
-  const scheduleAutosave = useDebouncedAutosave({
-    itemId,
-    isEditMode,
-    isViewingOldVersion,
-    onSaved: updates => {
-      if (!itemId) return;
-      applyItemCacheUpdates(queryClient, itemId, updates);
-    },
-  });
 
   // Transform database types to DropdownOption format
   const transformedCategories = categories.map(cat => ({
@@ -323,6 +336,18 @@ const BasicInfoRequiredSection: React.FC<BasicInfoRequiredProps> = ({
     updated_at: manufacturer.updated_at,
   }));
 
+  const displayName = formatItemDisplayName({
+    name: formData.name || '',
+    measurement_value: formData.quantity || null,
+    measurement_unit: units.find(unit => unit.id === formData.unit_id) || null,
+    measurement_denominator_value:
+      formData.measurement_denominator_value ?? null,
+    measurement_denominator_unit:
+      units.find(
+        unit => unit.id === formData.measurement_denominator_unit_id
+      ) || null,
+  });
+
   const handleFieldChange = (field: string, value: boolean | string) => {
     if (field === 'is_medicine' && value === false) {
       saveDropdownUpdate({
@@ -344,11 +369,47 @@ const BasicInfoRequiredSection: React.FC<BasicInfoRequiredProps> = ({
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    handleChange(e);
+    if (e.target.name === 'name') {
+      const parsed = parseDisplayNameToMeasurement(e.target.value, units);
+      const measurementUnit =
+        units.find(unit => unit.id === parsed.measurementUnitId) || null;
+      const measurementDenominatorUnit =
+        units.find(unit => unit.id === parsed.measurementDenominatorUnitId) ||
+        null;
+      const nextDisplayName = formatItemDisplayName({
+        name: parsed.name,
+        measurement_value: parsed.measurementValue ?? null,
+        measurement_unit: measurementUnit,
+        measurement_denominator_value:
+          parsed.measurementDenominatorValue ?? null,
+        measurement_denominator_unit: measurementDenominatorUnit,
+      });
+      updateFormData({
+        name: parsed.name,
+        quantity: parsed.measurementValue ?? 0,
+        unit_id: parsed.measurementUnitId,
+        measurement_denominator_value:
+          parsed.measurementDenominatorValue ?? null,
+        measurement_denominator_unit_id: parsed.measurementDenominatorUnitId,
+      });
 
+      scheduleAutosave({
+        name: parsed.name,
+        measurement_value: parsed.measurementValue ?? null,
+        measurement_unit_id: parsed.measurementUnitId || null,
+        measurement_denominator_value:
+          parsed.measurementDenominatorValue ?? null,
+        measurement_denominator_unit_id:
+          parsed.measurementDenominatorUnitId || null,
+        display_name: nextDisplayName,
+      });
+      return;
+    }
+
+    handleChange(e);
     const { name, value } = e.target;
-    if (name === 'name') {
-      scheduleAutosave('name', value);
+    if (name !== 'name') {
+      scheduleAutosave(name, value);
     }
   };
 
@@ -388,6 +449,7 @@ const BasicInfoRequiredSection: React.FC<BasicInfoRequiredProps> = ({
       isEditMode={isEditMode}
       formData={{
         code: formData.code || '',
+        display_name: displayName,
         name: formData.name || '',
         manufacturer_id: formData.manufacturer_id || '',
         is_medicine: formData.is_medicine || false,
@@ -403,7 +465,12 @@ const BasicInfoRequiredSection: React.FC<BasicInfoRequiredProps> = ({
       manufacturers={transformedManufacturers}
       loading={loading}
       disabled={isViewingOldVersion}
-      onChange={handleInputChange}
+      onDisplayNameChange={value => {
+        const syntheticEvent = {
+          target: { name: 'name', value },
+        } as React.ChangeEvent<HTMLInputElement>;
+        handleInputChange(syntheticEvent);
+      }}
       onFieldChange={handleFieldChange}
       onDropdownChange={handleDropdownChange}
       onAddNewCategory={handleAddNewCategory}
@@ -816,8 +883,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
   stackClassName,
   stackStyle,
 }) => {
-  const { formData, units, loading, handleChange, updateFormData } =
-    useItemForm();
+  const { formData, loading, handleChange, updateFormData } = useItemForm();
   const { resetKey, isViewingOldVersion, isEditMode } = useItemUI();
   const queryClient = useQueryClient();
   const cacheKey = itemId ? `item-images:${itemId}` : null;
@@ -967,14 +1033,6 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
       }
     };
   }, [cropState]);
-
-  const transformedUnits = units.map(unit => ({
-    id: unit.id,
-    name: unit.name,
-    code: unit.code,
-    description: unit.description,
-    updated_at: unit.updated_at,
-  }));
 
   const buildSlotsFromUrls = buildSlotsFromUrlsWithItem;
 
@@ -1244,16 +1302,6 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
     setIsLoadingImages(false);
   }, [buildSlotsFromUrls, formImageUrls, itemId, updateImageCache]);
 
-  const saveDropdownUpdate = useCallback(
-    (updates: Record<string, unknown>) => {
-      if (!itemId || !isEditMode || isViewingOldVersion) return;
-      void updateItemFields(itemId, updates).catch(error => {
-        console.error('Error autosaving item dropdown:', error);
-        toast.error('Gagal menyimpan perubahan.');
-      });
-    },
-    [itemId, isEditMode, isViewingOldVersion]
-  );
   const scheduleAutosave = useDebouncedAutosave({
     itemId,
     isEditMode,
@@ -1264,13 +1312,6 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
     },
   });
 
-  const handleDropdownChange = (field: string, value: string) => {
-    if (field === 'unit_id') {
-      updateFormData({ unit_id: value });
-      saveDropdownUpdate({ unit_id: normalizeNullableValue(value) });
-    }
-  };
-
   const handleOptionalChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -1279,8 +1320,6 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
     const { name, value } = e.target;
     if (name === 'barcode') {
       scheduleAutosave('barcode', value);
-    } else if (name === 'quantity') {
-      scheduleAutosave('quantity', parseFloat(value) || 0);
     } else if (name === 'description') {
       scheduleAutosave('description', value);
     }
@@ -1734,19 +1773,14 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
         key={resetKey} // Force re-mount on reset to clear validation
         formData={{
           barcode: formData.barcode || '',
-          quantity: formData.quantity || 0,
-          unit_id: formData.unit_id || '',
           description: formData.description || '',
         }}
-        units={transformedUnits}
-        loading={loading}
         isExpanded={isExpanded}
         onExpand={onExpand}
         stackClassName={stackClassName}
         stackStyle={stackStyle}
         disabled={isViewingOldVersion}
         onChange={handleOptionalChange}
-        onDropdownChange={handleDropdownChange}
       />
     </div>
   );

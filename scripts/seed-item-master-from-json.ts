@@ -12,7 +12,7 @@ config({ path: path.resolve(process.cwd(), '.env') });
 const DEFAULT_INPUT = path.resolve(
   '/home/fxrdhan/Downloads/item-master-seed.json'
 );
-const BATCH_SIZE = 200;
+const BATCH_SIZE = 50;
 
 type LookupRecord = {
   code: string | null;
@@ -406,6 +406,11 @@ const main = async () => {
       package_conversions: item.package_conversions,
       barcode: item.barcode,
       dosage_id: item.dosage_id,
+      measurement_value: item.measurement_value ?? null,
+      measurement_unit_id: item.measurement_unit_id ?? null,
+      measurement_denominator_value: item.measurement_denominator_value ?? null,
+      measurement_denominator_unit_id:
+        item.measurement_denominator_unit_id ?? null,
       package_id: item.package_id,
       manufacturer_id: item.manufacturer_id,
       image_urls: item.image_urls,

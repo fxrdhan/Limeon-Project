@@ -5,6 +5,7 @@ import type { PostgrestError } from '@supabase/supabase-js';
 export interface DBItemWithRelations {
   id: string;
   name: string;
+  display_name?: string;
   code?: string;
   barcode?: string | null;
   image_urls?: string[] | null;
@@ -19,11 +20,21 @@ export interface DBItemWithRelations {
   package_id?: string;
   dosage_id?: string;
   manufacturer_id?: string;
+  measurement_value?: number | null;
+  measurement_unit_id?: string | null;
+  measurement_denominator_value?: number | null;
+  measurement_denominator_unit_id?: string | null;
   item_categories?: { id: string; code?: string; name: string } | null;
   item_types?: { id: string; code?: string; name: string } | null;
   item_packages?: { id: string; code?: string; name: string } | null;
   item_dosages?: { id: string; code?: string; name: string } | null;
   item_manufacturers?: { id: string; code?: string; name: string } | null;
+  measurement_unit?: { id: string; code?: string; name: string } | null;
+  measurement_denominator_unit?: {
+    id: string;
+    code?: string;
+    name: string;
+  } | null;
   is_level_pricing_active?: boolean | null;
   customer_level_discounts?:
     | { customer_level_id: string; discount_percentage: number }[]
@@ -51,6 +62,8 @@ export class ItemRepository {
     item_packages!inner(id, code, name),
     item_dosages(id, code, name),
     item_manufacturers!inner(id, code, name),
+    measurement_unit:item_units!items_measurement_unit_id_fkey(id, code, name),
+    measurement_denominator_unit:item_units!items_measurement_denominator_unit_id_fkey(id, code, name),
     customer_level_discounts(customer_level_id, discount_percentage)
   `;
 

@@ -6,6 +6,7 @@ import type {
   ItemManufacturer,
 } from '@/types/database';
 import type { DBItemWithRelations } from '../repositories/ItemRepository';
+import { formatItemDisplayName } from '@/lib/item-display';
 
 export class ItemTransformer {
   /**
@@ -79,11 +80,25 @@ export class ItemTransformer {
 
     return {
       ...dbItem,
+      display_name: formatItemDisplayName({
+        name: dbItem.name,
+        measurement_value: dbItem.measurement_value ?? null,
+        measurement_unit: dbItem.measurement_unit || null,
+        measurement_denominator_value:
+          dbItem.measurement_denominator_value ?? null,
+        measurement_denominator_unit:
+          dbItem.measurement_denominator_unit || null,
+      }),
       category: dbItem.item_categories || { name: '' },
       type: dbItem.item_types || { name: '' },
       package: dbItem.item_packages || { name: '' }, // Kemasan dari item_packages
       unit: { name: dbItem.base_unit || '' }, // Satuan dari base_unit string
       dosage: dbItem.item_dosages || { name: '' },
+      measurement_value: dbItem.measurement_value ?? null,
+      measurement_unit: dbItem.measurement_unit || null,
+      measurement_denominator_value:
+        dbItem.measurement_denominator_value ?? null,
+      measurement_denominator_unit: dbItem.measurement_denominator_unit || null,
       manufacturer: manufacturerInfo,
       package_conversions: packageConversions,
       base_unit: dbItem.base_unit || '', // base_unit tetap dari field base_unit
@@ -167,6 +182,7 @@ export class ItemTransformer {
   static createEmptyItem(): Partial<Item> {
     return {
       name: '',
+      display_name: '',
       code: '',
       barcode: '',
       stock: 0,
@@ -180,6 +196,10 @@ export class ItemTransformer {
       manufacturer: { id: '', code: undefined, name: '' },
       package_conversions: [],
       base_unit: '',
+      measurement_value: null,
+      measurement_unit: null,
+      measurement_denominator_value: null,
+      measurement_denominator_unit: null,
     };
   }
 
@@ -188,6 +208,7 @@ export class ItemTransformer {
    */
   static extractSearchableFields(item: Item): string[] {
     return [
+      item.display_name || '',
       item.name || '',
       item.code || '',
       item.barcode || '',

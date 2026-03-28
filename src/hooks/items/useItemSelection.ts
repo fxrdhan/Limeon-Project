@@ -26,7 +26,10 @@ export const useItemSelection = (options: UseItemSelectionOptions = {}) => {
     const matches = allItems
       .filter((item: Item) => {
         // Check if item matches search term in any field
-        const nameMatch = fuzzyMatch(item.name || '', searchTerm);
+        const nameMatch = fuzzyMatch(
+          item.display_name || item.name || '',
+          searchTerm
+        );
         const codeMatch = item.code ? fuzzyMatch(item.code, searchTerm) : false;
         const manufacturerMatch = item.manufacturer?.name
           ? fuzzyMatch(item.manufacturer.name, searchTerm)
@@ -50,7 +53,7 @@ export const useItemSelection = (options: UseItemSelectionOptions = {}) => {
   const handleSelectItem = (item: Item | null) => {
     setSelectedItem(item);
     if (item) {
-      setSearchItem(item.name);
+      setSearchItem(item.display_name || item.name);
       setShowItemDropdown(false);
     }
   };

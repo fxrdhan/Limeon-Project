@@ -409,7 +409,7 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
                       >
                         <div>
                           <span className="font-semibold">{item.code}</span> -{' '}
-                          {item.name}
+                          {item.display_name || item.name}
                         </div>
                         <div className="text-xs text-slate-500">
                           Harga:{' '}
