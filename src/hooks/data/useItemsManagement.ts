@@ -4,6 +4,7 @@ import { fuzzyMatch, getScore } from '@/utils/search';
 import { useEffect } from 'react';
 import type { Item } from '@/types/database';
 import { filterAndRank } from './searchCore';
+import { compareItemsByDisplayName } from '@/lib/item-sort';
 import {
   preloadImages,
   removeCachedImageSet,
@@ -70,7 +71,7 @@ export const useItemsManagement = (options?: UseItemsManagementOptions) => {
   // Filter items based on search query
   const filteredData = useMemo(() => {
     if (!search || search.trim() === '') {
-      return allData;
+      return [...(allData as Item[])].sort(compareItemsByDisplayName);
     }
 
     return filterAndRank<Item>({
@@ -97,8 +98,7 @@ export const useItemsManagement = (options?: UseItemsManagementOptions) => {
         );
       },
       scorer: (item, searchTermLower) => getScore(item, searchTermLower),
-      tieBreaker: (a, b) =>
-        (a.display_name || a.name).localeCompare(b.display_name || b.name),
+      tieBreaker: compareItemsByDisplayName,
     });
   }, [allData, search]);
 

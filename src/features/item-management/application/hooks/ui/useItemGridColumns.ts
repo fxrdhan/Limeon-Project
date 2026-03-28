@@ -8,6 +8,7 @@ import {
   formatCurrency,
   formatBaseCurrency,
 } from '@/components/ag-grid';
+import { compareItemNameStrings } from '@/lib/item-sort';
 import type { PackageConversion } from '@/types';
 export const useItemGridColumns = () => {
   const columnDefs: ColDef[] = useMemo(() => {
@@ -35,6 +36,11 @@ export const useItemGridColumns = () => {
         },
         valueGetter: params =>
           params.data?.display_name || params.data?.name || '-',
+        comparator: (valueA, valueB) =>
+          compareItemNameStrings(
+            typeof valueA === 'string' ? valueA : '',
+            typeof valueB === 'string' ? valueB : ''
+          ),
         suppressHeaderFilterButton: true,
       },
       'manufacturer.name': {

@@ -33,27 +33,21 @@ import {
   type SaveItemParams,
 } from './ItemMutationUtilities';
 
-const sortItemsByName = (items: Item[]) =>
-  [...items].sort((left, right) =>
-    (left.display_name || left.name).localeCompare(
-      right.display_name || right.name
-    )
-  );
-
-const upsertItemInCollection = (
+const mergeItemInCollection = (
   items: Item[] | undefined,
-  nextItem: Item
+  nextItem: Item,
+  action: 'create' | 'update'
 ): Item[] | undefined => {
   if (!Array.isArray(items)) return items;
 
   const existingIndex = items.findIndex(item => item.id === nextItem.id);
   if (existingIndex === -1) {
-    return sortItemsByName([...items, nextItem]);
+    return action === 'create' ? [...items, nextItem] : items;
   }
 
   const updated = [...items];
   updated[existingIndex] = nextItem;
-  return sortItemsByName(updated);
+  return updated;
 };
 
 interface UseAddItemMutationsProps {
@@ -182,11 +176,13 @@ export const useAddItemMutations = ({
       );
       queryClient.setQueriesData<Item[] | undefined>(
         { queryKey: QueryKeys.items.lists() },
-        currentItems => upsertItemInCollection(currentItems, result.item)
+        currentItems =>
+          mergeItemInCollection(currentItems, result.item, result.action)
       );
       queryClient.setQueriesData<Item[] | undefined>(
         { queryKey: [...QueryKeys.items.all, 'search'] },
-        currentItems => upsertItemInCollection(currentItems, result.item)
+        currentItems =>
+          mergeItemInCollection(currentItems, result.item, result.action)
       );
 
       onClose();
