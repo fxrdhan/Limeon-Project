@@ -168,7 +168,7 @@ export const useItemGridColumns = () => {
       package_conversions: {
         ...createTextColumn({
           field: 'package_conversions',
-          headerName: 'Kemasan Turunan',
+          headerName: 'Unit Jual',
 
           valueGetter: params => {
             const conversions = params.data?.package_conversions;

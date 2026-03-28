@@ -10,11 +10,13 @@ import {
 } from 'react-icons/tb';
 import { AnimatePresence, motion } from 'motion/react';
 import Switch from '@/components/switch';
+import Dropdown from '@/components/dropdown';
 import Input from '@/components/input';
 import FormField from '@/components/form-field';
 import Button from '@/components/button';
 import { formatRupiah } from '@/lib/formatters';
 import type { CustomerLevel } from '@/types/database';
+import type { DropdownOption } from '@/types/components';
 import {
   COLLAPSIBLE_SECTION_HEADER_CLASS,
   POPOVER_SURFACE_CLASS,
@@ -38,12 +40,15 @@ interface ItemPricingFormProps {
   };
   displayBasePrice: string;
   displaySellPrice: string;
+  baseUnitId: string;
   baseUnit: string;
+  baseUnitOptions: DropdownOption[];
   marginEditing: {
     isEditing: boolean;
     percentage: string;
   };
   calculatedMargin: number | null;
+  onBaseUnitChange: (value: string) => void;
   onBasePriceChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSellPriceChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onMarginChange: (percentage: string) => void;
@@ -88,9 +93,12 @@ export default function ItemPricingForm({
   formData,
   displayBasePrice,
   displaySellPrice,
+  baseUnitId,
   baseUnit,
+  baseUnitOptions,
   marginEditing,
   calculatedMargin,
+  onBaseUnitChange,
   onBasePriceChange,
   onSellPriceChange,
   onMarginChange,
@@ -557,7 +565,7 @@ export default function ItemPricingForm({
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
           {showLevelPricing
             ? 'Pengaturan Level Pelanggan'
-            : 'Harga Pokok & Jual'}
+            : 'Unit & Harga Dasar'}
         </h2>
         <div className="flex items-center gap-1">
           {showLevelPricing ? (
@@ -653,13 +661,29 @@ export default function ItemPricingForm({
                 data-section-content="true"
               >
                 <div className="grid grid-cols-2 gap-4">
-                  <FormField label="Kemasan Dasar">
-                    <Input
-                      type="text"
-                      value={baseUnit}
-                      readOnly={true}
-                      className="w-full"
-                    />
+                  <FormField label="Unit Dasar" required={true}>
+                    <div className="space-y-2">
+                      <Dropdown
+                        name="base_inventory_unit_id"
+                        value={baseUnitId}
+                        onChange={onBaseUnitChange}
+                        options={baseUnitOptions}
+                        placeholder="Pilih Unit Dasar"
+                        required
+                        validate={true}
+                        showValidationOnBlur={true}
+                        validationAutoHide={true}
+                        validationAutoHideDelay={3000}
+                        disabled={disabled}
+                      />
+                      <p className="text-xs text-slate-500">
+                        Harga pokok dan harga jual dihitung per{' '}
+                        <span className="font-semibold text-slate-700">
+                          {baseUnit || 'unit dasar'}
+                        </span>
+                        .
+                      </p>
+                    </div>
                   </FormField>
 
                   <PriceInput

@@ -118,6 +118,7 @@ export const prepareItemData = async (
   formData: ItemFormData,
   conversions: PackageConversion[],
   baseUnit: string,
+  baseInventoryUnitId: string,
   isUpdate: boolean = false
 ) => {
   // Use manufacturer_id FK directly - no name lookup needed!
@@ -140,6 +141,7 @@ export const prepareItemData = async (
     barcode: formData.barcode || null,
     code: formData.code,
     is_medicine: formData.is_medicine,
+    base_inventory_unit_id: baseInventoryUnitId || null,
     base_unit: baseUnit,
     measurement_value: formData.quantity > 0 ? formData.quantity : null,
     measurement_unit_id: formData.unit_id || null,
@@ -151,10 +153,10 @@ export const prepareItemData = async (
     image_urls: formData.image_urls || [],
     package_conversions: conversions.map(uc => ({
       unit_name: uc.unit.name,
-      to_unit_id: uc.to_unit_id,
-      conversion_rate: uc.conversion_rate,
-      base_price: uc.base_price,
-      sell_price: uc.sell_price,
+      to_unit_id: uc.inventory_unit_id || uc.to_unit_id,
+      conversion_rate: uc.factor_to_base || uc.conversion_rate,
+      base_price: uc.base_price_override ?? uc.base_price,
+      sell_price: uc.sell_price_override ?? uc.sell_price,
     })),
   };
 
@@ -268,6 +270,7 @@ export interface SaveItemParams {
   formData: ItemFormData;
   conversions: PackageConversion[];
   baseUnit: string;
+  baseInventoryUnitId: string;
   isEditMode: boolean;
   itemId?: string;
 }
@@ -292,6 +295,7 @@ export const saveItemBusinessLogic = async ({
   formData,
   conversions,
   baseUnit,
+  baseInventoryUnitId,
   isEditMode,
   itemId,
 }: SaveItemParams): Promise<SaveItemResult> => {
@@ -299,6 +303,97 @@ export const saveItemBusinessLogic = async ({
   const pendingImageUrls = Array.isArray(finalFormData.image_urls)
     ? finalFormData.image_urls
     : [];
+
+  const resolveInventoryUnitId = async (conversion: {
+    unit: { id: string; name: string; source_dosage_id?: string | null };
+    inventory_unit_id?: string;
+    to_unit_id?: string;
+  }) => {
+    const candidateId =
+      conversion.inventory_unit_id ||
+      conversion.to_unit_id ||
+      conversion.unit.id;
+
+    if (
+      candidateId.startsWith('dosage:') ||
+      (conversion.unit.source_dosage_id &&
+        !conversion.unit.id.match(/^[0-9a-f-]{36}$/i))
+    ) {
+      const dosageId =
+        conversion.unit.source_dosage_id || candidateId.replace(/^dosage:/, '');
+      const ensuredUnit = await itemDataService.ensureInventoryUnitFromDosage(
+        dosageId,
+        conversion.unit.name
+      );
+
+      if (ensuredUnit.error || !ensuredUnit.data) {
+        throw (
+          ensuredUnit.error || new Error('Gagal memastikan unit dari sediaan.')
+        );
+      }
+
+      return ensuredUnit.data.id;
+    }
+
+    return candidateId;
+  };
+
+  const resolvedBaseInventoryUnitId = baseInventoryUnitId
+    ? await resolveInventoryUnitId({
+        unit: {
+          id: baseInventoryUnitId,
+          name: baseUnit,
+          source_dosage_id: formData.dosage_id || null,
+        },
+        inventory_unit_id: baseInventoryUnitId,
+      })
+    : '';
+
+  const resolvedUnitIdMap = new Map<string, string>();
+  for (const conversion of conversions) {
+    const resolvedId = await resolveInventoryUnitId(conversion);
+    resolvedUnitIdMap.set(
+      conversion.inventory_unit_id ||
+        conversion.to_unit_id ||
+        conversion.unit.id,
+      resolvedId
+    );
+  }
+
+  const normalizedHierarchyEntries = [
+    {
+      inventory_unit_id: resolvedBaseInventoryUnitId,
+      parent_inventory_unit_id: null,
+      contains_quantity: 1,
+      factor_to_base: 1,
+      base_price_override: formData.base_price,
+      sell_price_override: formData.sell_price,
+    },
+    ...conversions.map(conversion => ({
+      inventory_unit_id:
+        resolvedUnitIdMap.get(
+          conversion.inventory_unit_id ||
+            conversion.to_unit_id ||
+            conversion.unit.id
+        ) ||
+        conversion.inventory_unit_id ||
+        conversion.to_unit_id,
+      parent_inventory_unit_id:
+        resolvedUnitIdMap.get(conversion.parent_inventory_unit_id || '') ||
+        (conversion.parent_inventory_unit_id === baseInventoryUnitId
+          ? resolvedBaseInventoryUnitId
+          : conversion.parent_inventory_unit_id) ||
+        resolvedBaseInventoryUnitId,
+      contains_quantity:
+        conversion.contains_quantity ||
+        conversion.factor_to_base ||
+        conversion.conversion_rate,
+      factor_to_base:
+        conversion.factor_to_base || conversion.conversion_rate || 1,
+      base_price_override: conversion.base_price_override ?? null,
+      sell_price_override: conversion.sell_price_override ?? null,
+    })),
+  ].filter(entry => entry.inventory_unit_id);
 
   // For new items, auto-generate the code
   if (!isEditMode) {
@@ -328,6 +423,7 @@ export const saveItemBusinessLogic = async ({
       finalFormData,
       conversions,
       baseUnit,
+      resolvedBaseInventoryUnitId,
       true
     );
     const { error: updateError } = await itemDataService.updateItemFields(
@@ -335,6 +431,14 @@ export const saveItemBusinessLogic = async ({
       itemUpdateData as Record<string, unknown>
     );
     if (updateError) throw updateError;
+
+    const { error: hierarchyError } =
+      await itemDataService.replaceItemUnitHierarchy(
+        itemId,
+        normalizedHierarchyEntries
+      );
+
+    if (hierarchyError) throw hierarchyError;
 
     if (pendingImageUrls.some(isTempImageUrl)) {
       await uploadPendingItemImages(itemId, pendingImageUrls);
@@ -389,6 +493,7 @@ export const saveItemBusinessLogic = async ({
       finalFormData,
       conversions,
       baseUnit,
+      resolvedBaseInventoryUnitId,
       false
     );
     const { data: insertedItem, error: mainError } =
@@ -397,6 +502,12 @@ export const saveItemBusinessLogic = async ({
     if (!insertedItem) {
       throw new Error('Gagal mendapatkan ID item baru setelah insert.');
     }
+    const { error: hierarchyError } =
+      await itemDataService.replaceItemUnitHierarchy(
+        insertedItem.id,
+        normalizedHierarchyEntries
+      );
+    if (hierarchyError) throw hierarchyError;
     if (pendingImageUrls.some(isTempImageUrl)) {
       await uploadPendingItemImages(insertedItem.id, pendingImageUrls);
     }

@@ -2,6 +2,7 @@ import { BaseService } from './base.service';
 import type {
   Category,
   MedicineType,
+  ItemInventoryUnit,
   ItemPackage,
   Supplier,
   ItemDosage,
@@ -56,6 +57,21 @@ export class ItemPackageService extends BaseService<ItemPackage> {
     return this.getAll({
       select: 'id, code, name, nci_code, description, created_at, updated_at',
       orderBy: { column: 'code', ascending: true },
+    });
+  }
+}
+
+// Inventory Unit Service (for item_inventory_units table)
+export class ItemInventoryUnitService extends BaseService<ItemInventoryUnit> {
+  constructor() {
+    super('item_inventory_units');
+  }
+
+  async getActiveInventoryUnits() {
+    return this.getAll({
+      select:
+        'id, code, name, kind, source_package_id, source_dosage_id, description, created_at, updated_at',
+      orderBy: { column: 'name', ascending: true },
     });
   }
 }
@@ -146,6 +162,7 @@ export class SupplierService extends BaseService<Supplier> {
 export const categoryService = new CategoryService();
 export const medicineTypeService = new MedicineTypeService();
 export const itemPackageService = new ItemPackageService();
+export const itemInventoryUnitService = new ItemInventoryUnitService();
 export const itemUnitService = new ItemUnitService();
 export const itemDosageService = new ItemDosageService();
 export const itemManufacturerService = new ItemManufacturerService();
@@ -156,27 +173,32 @@ export class MasterDataService {
   categories = categoryService;
   types = medicineTypeService;
   packages = itemPackageService;
+  inventoryUnits = itemInventoryUnitService;
   itemUnits = itemUnitService;
   suppliers = supplierService;
 
   // Bulk operations for master data
   async getAllMasterData() {
-    const [categories, types, packages, suppliers] = await Promise.all([
-      this.categories.getActiveCategories(),
-      this.types.getActiveTypes(),
-      this.packages.getActivePackages(),
-      this.suppliers.getActiveSuppliers(),
-    ]);
+    const [categories, types, packages, inventoryUnits, suppliers] =
+      await Promise.all([
+        this.categories.getActiveCategories(),
+        this.types.getActiveTypes(),
+        this.packages.getActivePackages(),
+        this.inventoryUnits.getActiveInventoryUnits(),
+        this.suppliers.getActiveSuppliers(),
+      ]);
 
     return {
       categories: categories.data || [],
       types: types.data || [],
       packages: packages.data || [],
+      inventoryUnits: inventoryUnits.data || [],
       suppliers: suppliers.data || [],
       errors: {
         categories: categories.error,
         types: types.error,
         packages: packages.error,
+        inventoryUnits: inventoryUnits.error,
         suppliers: suppliers.error,
       },
     };

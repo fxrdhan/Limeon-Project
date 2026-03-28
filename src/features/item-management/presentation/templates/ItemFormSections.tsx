@@ -36,6 +36,7 @@ import { useCustomerLevels } from '../../application/hooks/data';
 import { useInlineEditor } from '@/hooks/forms/useInlineEditor';
 import { itemDataService } from '../../infrastructure/itemData.service';
 import { itemStorageService } from '../../infrastructure/itemStorage.service';
+import { createInventoryUnitFromDosage } from '@/lib/item-units';
 import {
   toPricingFields,
   toPricingPatch,
@@ -247,10 +248,17 @@ const BasicInfoRequiredSection: React.FC<BasicInfoRequiredProps> = () => {
     } else if (field === 'type_id') {
       updateFormData({ type_id: value });
     } else if (field === 'package_id') {
-      updateFormData({ package_id: value });
+      updateFormData({
+        package_id: value,
+        base_inventory_unit_id: formData.base_inventory_unit_id || value,
+      });
       const selectedPackage = packages.find(pkg => pkg.id === value);
       if (selectedPackage) {
         packageConversionHook.setBaseUnit(selectedPackage.name);
+        if (!formData.base_inventory_unit_id) {
+          packageConversionHook.setBaseInventoryUnitId(selectedPackage.id);
+          packageConversionHook.setBaseUnitKind('packaging');
+        }
       }
     } else if (field === 'dosage_id') {
       updateFormData({ dosage_id: value });
@@ -371,7 +379,8 @@ const PricingSection: React.FC<PricingSectionProps> = ({
   stackStyle,
   onLevelPricingToggle,
 }) => {
-  const { formData, updateFormData, handleChange } = useItemForm();
+  const { formData, updateFormData, handleChange, dosages, packages } =
+    useItemForm();
   const { packageConversionHook, displayBasePrice, displaySellPrice } =
     useItemPrice();
 
@@ -406,6 +415,66 @@ const PricingSection: React.FC<PricingSectionProps> = ({
       }),
     [formData.base_price, formData.sell_price, formData.is_level_pricing_active]
   );
+
+  const selectedDosage = useMemo(
+    () =>
+      formData.dosage_id
+        ? dosages.find(dosage => dosage.id === formData.dosage_id) || null
+        : null,
+    [dosages, formData.dosage_id]
+  );
+
+  const dosageBackedUnit = useMemo(
+    () => createInventoryUnitFromDosage(selectedDosage),
+    [selectedDosage]
+  );
+
+  const baseUnitOptions = useMemo(() => {
+    const kindLabel = {
+      packaging: 'Kemasan',
+      retail_unit: 'Unit Ecer',
+      custom: 'Custom',
+    } as const;
+
+    const mergedUnits = [
+      ...packageConversionHook.availableUnits,
+      ...packages
+        .filter(
+          pkg =>
+            !packageConversionHook.availableUnits.some(
+              unit => unit.id === pkg.id
+            )
+        )
+        .map(pkg => ({
+          id: pkg.id,
+          name: pkg.name,
+          code: pkg.code,
+          description: pkg.description ?? null,
+          kind: 'packaging' as const,
+        })),
+    ];
+
+    const options = mergedUnits.map(unit => ({
+      id: unit.id,
+      name: unit.name,
+      description: unit.description ?? undefined,
+      metaLabel: kindLabel[unit.kind],
+    }));
+
+    if (
+      dosageBackedUnit &&
+      !options.some(option => option.name === dosageBackedUnit.name)
+    ) {
+      options.push({
+        id: dosageBackedUnit.id,
+        name: dosageBackedUnit.name,
+        description: dosageBackedUnit.description ?? undefined,
+        metaLabel: 'Unit Ecer',
+      });
+    }
+
+    return options.sort((left, right) => left.name.localeCompare(right.name));
+  }, [dosageBackedUnit, packageConversionHook.availableUnits, packages]);
 
   const { calculateProfitPercentage: calcMargin } = useItemPriceCalculations({
     basePrice: pricingFields.basePrice,
@@ -490,7 +559,9 @@ const PricingSection: React.FC<PricingSectionProps> = ({
       }}
       displayBasePrice={displayBasePrice}
       displaySellPrice={displaySellPrice}
+      baseUnitId={formData.base_inventory_unit_id || ''}
       baseUnit={packageConversionHook.baseUnit}
+      baseUnitOptions={baseUnitOptions}
       marginEditing={{
         isEditing: marginEditor.isEditing,
         percentage: marginEditor.value,
@@ -520,6 +591,32 @@ const PricingSection: React.FC<PricingSectionProps> = ({
       stackClassName={stackClassName}
       stackStyle={stackStyle}
       disabled={isViewingOldVersion}
+      onBaseUnitChange={value => {
+        const selectedUnit = [
+          ...packageConversionHook.availableUnits,
+          ...packages
+            .filter(
+              pkg =>
+                !packageConversionHook.availableUnits.some(
+                  unit => unit.id === pkg.id
+                )
+            )
+            .map(pkg => ({
+              id: pkg.id,
+              name: pkg.name,
+              code: pkg.code,
+              description: pkg.description ?? null,
+              kind: 'packaging' as const,
+            })),
+          ...(dosageBackedUnit ? [dosageBackedUnit] : []),
+        ].find(unit => unit.id === value);
+        if (!selectedUnit) return;
+
+        updateFormData({ base_inventory_unit_id: value });
+        packageConversionHook.setBaseInventoryUnitId(value);
+        packageConversionHook.setBaseUnit(selectedUnit.name);
+        packageConversionHook.setBaseUnitKind(selectedUnit.kind);
+      }}
       onBasePriceChange={handleBasePriceChange}
       onSellPriceChange={handleSellPriceChange}
       onMarginChange={marginEditor.setValue}
@@ -543,18 +640,50 @@ const PackageConversionSection: React.FC<CollapsibleSectionProps> = ({
   stackClassName,
   stackStyle,
 }) => {
+  const { formData, dosages, packages } = useItemForm();
   const { packageConversionHook } = useItemPrice();
   const { resetKey, isViewingOldVersion } = useItemUI();
   const realtime = useItemRealtime();
   const smartFormSync = realtime?.smartFormSync;
+  const selectedDosage = formData.dosage_id
+    ? dosages.find(dosage => dosage.id === formData.dosage_id) || null
+    : null;
+  const dosageBackedUnit = createInventoryUnitFromDosage(selectedDosage);
+  const availableInventoryUnits = useMemo(() => {
+    const units = [
+      ...packageConversionHook.availableUnits,
+      ...packages
+        .filter(
+          pkg =>
+            !packageConversionHook.availableUnits.some(
+              unit => unit.id === pkg.id
+            )
+        )
+        .map(pkg => ({
+          id: pkg.id,
+          name: pkg.name,
+          code: pkg.code,
+          description: pkg.description ?? null,
+          kind: 'packaging' as const,
+        })),
+    ];
+    if (
+      dosageBackedUnit &&
+      !units.some(unit => unit.name === dosageBackedUnit.name)
+    ) {
+      units.push(dosageBackedUnit);
+    }
+    return units;
+  }, [dosageBackedUnit, packageConversionHook.availableUnits, packages]);
 
   const packageConversionLogic = useConversionLogic({
     conversions: packageConversionHook.conversions,
-    availableUnits: packageConversionHook.availableUnits,
+    availableUnits: availableInventoryUnits,
     formData: packageConversionHook.packageConversionFormData,
     addPackageConversion: packageConversionHook.addPackageConversion,
     setFormData: packageConversionHook.setPackageConversionFormData,
     baseUnit: packageConversionHook.baseUnit,
+    baseInventoryUnitId: packageConversionHook.baseInventoryUnitId,
   });
 
   const handleAddConversion = () => {
@@ -598,7 +727,8 @@ const PackageConversionSection: React.FC<CollapsibleSectionProps> = ({
     <ItemPackageConversionManager
       key={resetKey} // Force re-mount on reset to clear validation and input states
       baseUnit={packageConversionHook.baseUnit}
-      availableUnits={packageConversionHook.availableUnits}
+      baseUnitId={packageConversionHook.baseInventoryUnitId}
+      availableUnits={availableInventoryUnits}
       conversions={packageConversionHook.conversions}
       formData={packageConversionHook.packageConversionFormData}
       isExpanded={isExpanded}

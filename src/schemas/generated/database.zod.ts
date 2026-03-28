@@ -45,6 +45,24 @@ export const ItemDosageSchema = z.object({
   updated_at: z.string().optional().nullable(),
 });
 
+export const InventoryUnitKindSchema = z.enum([
+  'packaging',
+  'retail_unit',
+  'custom',
+]);
+
+export const ItemInventoryUnitSchema = z.object({
+  id: z.string(),
+  code: z.string().optional(),
+  name: z.string(),
+  description: z.string().optional().nullable(),
+  kind: InventoryUnitKindSchema,
+  source_package_id: z.string().optional().nullable(),
+  source_dosage_id: z.string().optional().nullable(),
+  created_at: z.string().optional(),
+  updated_at: z.string().optional().nullable(),
+});
+
 export const ItemManufacturerSchema = z.object({
   id: z.string(),
   code: z.string().optional(),
@@ -134,7 +152,13 @@ export const PackageConversionSchema = z.object({
   unit_name: z.string(),
   to_unit_id: z.string(),
   id: z.string(),
-  unit: ItemPackageSchema,
+  inventory_unit_id: z.string().optional(),
+  parent_inventory_unit_id: z.string().optional().nullable(),
+  contains_quantity: z.number().optional(),
+  factor_to_base: z.number().optional(),
+  base_price_override: z.number().optional().nullable(),
+  sell_price_override: z.number().optional().nullable(),
+  unit: ItemInventoryUnitSchema,
   base_price: z.number(),
   sell_price: z.number(),
 });
@@ -146,6 +170,21 @@ export const DBPackageConversionSchema = z.object({
   conversion_rate: z.number(),
   base_price: z.number().optional(),
   sell_price: z.number().optional(),
+});
+
+export const ItemUnitHierarchyEntrySchema = z.object({
+  id: z.string(),
+  item_id: z.string().optional(),
+  inventory_unit_id: z.string(),
+  parent_inventory_unit_id: z.string().optional().nullable(),
+  contains_quantity: z.number(),
+  factor_to_base: z.number(),
+  base_price_override: z.number().optional().nullable(),
+  sell_price_override: z.number().optional().nullable(),
+  unit: ItemInventoryUnitSchema,
+  parent_unit: ItemInventoryUnitSchema.optional().nullable(),
+  base_price: z.number(),
+  sell_price: z.number(),
 });
 
 export const DBItemSchema = z.object({
@@ -162,9 +201,14 @@ export const DBItemSchema = z.object({
   package_conversions: z
     .union([z.string(), z.array(PackageConversionSchema)])
     .nullable(),
+  item_unit_hierarchy: z
+    .array(ItemUnitHierarchyEntrySchema)
+    .optional()
+    .nullable(),
   category_id: z.string().optional(),
   type_id: z.string().optional(),
   package_id: z.string().optional(),
+  base_inventory_unit_id: z.string().optional().nullable(),
   base_unit: z.string().optional().nullable(),
   min_stock: z.number().optional().nullable(),
   description: z.string().optional().nullable(),
@@ -199,6 +243,7 @@ export const DBItemSchema = z.object({
     )
     .optional()
     .nullable(),
+  base_inventory_unit: ItemInventoryUnitSchema.optional().nullable(),
 });
 
 export const RawPackageConversionSchema = z.object({
@@ -254,8 +299,10 @@ export const ItemSchema = z.object({
   is_level_pricing_active: z.boolean().optional(),
   stock: z.number(),
   package_id: z.string().optional(),
+  base_inventory_unit_id: z.string().optional().nullable(),
   base_unit: z.string().optional(),
   package_conversions: z.array(PackageConversionSchema),
+  inventory_units: z.array(ItemUnitHierarchyEntrySchema),
   customer_level_discounts: z.array(CustomerLevelDiscountSchema).optional(),
   category: z.object({
     name: z.string(),

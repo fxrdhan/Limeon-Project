@@ -15,6 +15,7 @@ import type { QueryKey } from '@tanstack/react-query';
 import type {
   ItemCategory,
   ItemTypeEntity,
+  ItemInventoryUnitEntity,
   ItemPackage,
   ItemDosageEntity,
   ItemManufacturerEntity,
@@ -23,6 +24,8 @@ import type {
   ItemCategoryUpdateInput,
   ItemTypeCreateInput,
   ItemTypeUpdateInput,
+  ItemInventoryUnitCreateInput,
+  ItemInventoryUnitUpdateInput,
   ItemUnitCreateInput,
   ItemUnitUpdateInput,
   ItemDosageCreateInput,
@@ -45,6 +48,7 @@ export type EntityTypeKey =
   | 'categories'
   | 'types'
   | 'packages'
+  | 'inventoryUnits'
   | 'units'
   | 'dosages'
   | 'manufacturers';
@@ -56,6 +60,7 @@ export type AnyEntity =
   | ItemCategory
   | ItemTypeEntity
   | ItemPackage
+  | ItemInventoryUnitEntity
   | ItemUnitEntity
   | ItemDosageEntity
   | ItemManufacturerEntity;
@@ -67,6 +72,7 @@ export type AnyCreateInput =
   | ItemCategoryCreateInput
   | ItemTypeCreateInput
   | ItemPackageCreateInput
+  | ItemInventoryUnitCreateInput
   | ItemUnitCreateInput
   | ItemDosageCreateInput
   | ItemManufacturerCreateInput;
@@ -78,6 +84,7 @@ export type AnyUpdateInput =
   | ItemCategoryUpdateInput
   | ItemTypeUpdateInput
   | ItemPackageUpdateInput
+  | ItemInventoryUnitUpdateInput
   | ItemUnitUpdateInput
   | ItemDosageUpdateInput
   | ItemManufacturerUpdateInput;
@@ -256,6 +263,40 @@ const PACKAGES_CONFIG: EntityConfig<
 };
 
 /**
+ * Inventory units entity configuration
+ */
+const INVENTORY_UNITS_CONFIG: EntityConfig<
+  ItemInventoryUnitEntity,
+  ItemInventoryUnitCreateInput,
+  ItemInventoryUnitUpdateInput
+> = {
+  query: {
+    tableName: 'item_inventory_units',
+    queryKey: QueryKeys.masterData.inventoryUnits.all,
+    selectFields:
+      'id, code, name, kind, source_package_id, source_dosage_id, description, created_at, updated_at',
+    orderByField: 'name',
+    entityDisplayName: 'unit stok/jual',
+    entityType: () => ({}) as ItemInventoryUnitEntity,
+  },
+  mutation: {
+    tableName: 'item_inventory_units',
+    queryKey: QueryKeys.masterData.inventoryUnits.all,
+    selectFields:
+      'id, code, name, kind, source_package_id, source_dosage_id, description, created_at, updated_at',
+    entityDisplayName: 'unit stok/jual',
+    createInputType: () => ({}) as ItemInventoryUnitCreateInput,
+    updateInputType: () => ({}) as ItemInventoryUnitUpdateInput,
+  },
+  external: {
+    dataHookImportPath: '@/hooks/queries/useMasterData',
+    dataHookName: 'useInventoryUnits',
+    mutationsHookImportPath: '@/hooks/queries/useMasterData',
+    mutationsHookName: 'useInventoryUnitMutations',
+  },
+};
+
+/**
  * Units entity configuration
  */
 const UNITS_CONFIG: EntityConfig<
@@ -365,6 +406,7 @@ export const ENTITY_CONFIGURATIONS = {
   categories: CATEGORIES_CONFIG,
   types: TYPES_CONFIG,
   packages: PACKAGES_CONFIG,
+  inventoryUnits: INVENTORY_UNITS_CONFIG,
   units: UNITS_CONFIG,
   dosages: DOSAGES_CONFIG,
   manufacturers: MANUFACTURERS_CONFIG,

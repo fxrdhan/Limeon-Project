@@ -13,6 +13,7 @@ import {
 import PurchaseItemRow from '@/features/purchase-management/components/purchase-form/PurchaseItemRow';
 import VatPercentageEditor from '@/features/purchase-management/components/purchase-form/VatPercentageEditor';
 import type { PurchaseItem, ItemSearchBarRef, Item } from '@/types';
+import { getItemUnitOptions } from '@/lib/item-units';
 
 interface PurchaseItemsSectionProps {
   searchItem: string;
@@ -71,28 +72,10 @@ const PurchaseItemsSection: React.FC<PurchaseItemsSectionProps> = ({
   const getUnitOptions = (itemId: string) => {
     const item = getItemById(itemId);
     if (!item) return [];
-
-    const baseOption = {
-      id: item.base_unit || 'Unit',
-      name: item.base_unit || 'Unit',
-    };
-
-    const conversions = item.package_conversions;
-    if (!conversions) return [baseOption];
-
-    const uniqueUnits = Array.from(
-      new Map(
-        conversions.map(uc => [
-          uc.to_unit_id,
-          {
-            id: uc.to_unit_id,
-            name: uc.unit_name,
-          },
-        ])
-      ).values()
-    );
-
-    return [baseOption, ...uniqueUnits];
+    return getItemUnitOptions(item).map(option => ({
+      id: option.id,
+      name: option.name,
+    }));
   };
 
   const handleVatCheckboxChange = (isChecked: boolean) => {

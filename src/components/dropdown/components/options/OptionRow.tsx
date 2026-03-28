@@ -143,11 +143,18 @@ const OptionRow: React.FC<OptionRowProps> = ({
       {withCheckbox && (
         <CheckboxIndicator isSelected={isSelected} isExpanded={shouldExpand} />
       )}
-      <span
-        className={`${baseTextClass} transition-all duration-200 text-left ${textStateClass}`}
-        title={willTruncate && !shouldExpand ? option.name : undefined}
-      >
-        {displayText}
+      <span className="flex min-w-0 flex-1 items-center gap-2">
+        <span
+          className={`${baseTextClass} transition-all duration-200 text-left ${textStateClass} min-w-0 flex-1`}
+          title={willTruncate && !shouldExpand ? option.name : undefined}
+        >
+          {displayText}
+        </span>
+        {option.metaLabel ? (
+          <span className="shrink-0 rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
+            {option.metaLabel}
+          </span>
+        ) : null}
       </span>
     </button>
   );

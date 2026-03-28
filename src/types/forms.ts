@@ -8,6 +8,7 @@ export interface FormData {
   type_id: string;
   category_id: string;
   package_id: string;
+  base_inventory_unit_id?: string;
   dosage_id: string;
   barcode: string;
   description: string;

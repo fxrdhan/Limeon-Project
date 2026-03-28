@@ -103,7 +103,7 @@ export const ItemListSkeleton = ({ rows = 8 }: { rows?: number }) => {
     { title: 'Kategori', className: 'w-[8%]' },
     { title: 'Jenis', className: 'w-[14%]' },
     { title: 'Kemasan', className: 'w-[6%]' },
-    { title: 'Kemasan Turunan', className: 'w-[10%]' },
+    { title: 'Unit Jual', className: 'w-[10%]' },
     { title: 'Harga Pokok', className: 'w-[10%] text-right' },
     { title: 'Harga Jual', className: 'w-[10%] text-right' },
     { title: 'Stok', className: 'w-[5%] text-center' },

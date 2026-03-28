@@ -14,7 +14,36 @@ export interface DBItemWithRelations {
   sell_price: number;
   stock: number;
   base_unit?: string; // Add missing base_unit field
+  base_inventory_unit_id?: string | null;
   package_conversions: unknown;
+  item_unit_hierarchy?: Array<{
+    id: string;
+    item_id?: string;
+    inventory_unit_id: string;
+    parent_inventory_unit_id?: string | null;
+    contains_quantity: number;
+    factor_to_base: number;
+    base_price_override?: number | null;
+    sell_price_override?: number | null;
+    inventory_unit?: {
+      id: string;
+      code?: string;
+      name: string;
+      kind: 'packaging' | 'retail_unit' | 'custom';
+      source_package_id?: string | null;
+      source_dosage_id?: string | null;
+      description?: string | null;
+    } | null;
+    parent_unit?: {
+      id: string;
+      code?: string;
+      name: string;
+      kind: 'packaging' | 'retail_unit' | 'custom';
+      source_package_id?: string | null;
+      source_dosage_id?: string | null;
+      description?: string | null;
+    } | null;
+  }> | null;
   category_id?: string;
   type_id?: string;
   package_id?: string;
@@ -29,6 +58,15 @@ export interface DBItemWithRelations {
   item_packages?: { id: string; code?: string; name: string } | null;
   item_dosages?: { id: string; code?: string; name: string } | null;
   item_manufacturers?: { id: string; code?: string; name: string } | null;
+  base_inventory_unit?: {
+    id: string;
+    code?: string;
+    name: string;
+    kind: 'packaging' | 'retail_unit' | 'custom';
+    source_package_id?: string | null;
+    source_dosage_id?: string | null;
+    description?: string | null;
+  } | null;
   measurement_unit?: { id: string; code?: string; name: string } | null;
   measurement_denominator_unit?: {
     id: string;
@@ -62,6 +100,43 @@ export class ItemRepository {
     item_packages!inner(id, code, name),
     item_dosages(id, code, name),
     item_manufacturers!inner(id, code, name),
+    base_inventory_unit:item_inventory_units!items_base_inventory_unit_id_fkey(
+      id,
+      code,
+      name,
+      kind,
+      source_package_id,
+      source_dosage_id,
+      description
+    ),
+    item_unit_hierarchy(
+      id,
+      item_id,
+      inventory_unit_id,
+      parent_inventory_unit_id,
+      contains_quantity,
+      factor_to_base,
+      base_price_override,
+      sell_price_override,
+      inventory_unit:item_inventory_units!item_unit_hierarchy_inventory_unit_id_fkey(
+        id,
+        code,
+        name,
+        kind,
+        source_package_id,
+        source_dosage_id,
+        description
+      ),
+      parent_unit:item_inventory_units!item_unit_hierarchy_parent_inventory_unit_id_fkey(
+        id,
+        code,
+        name,
+        kind,
+        source_package_id,
+        source_dosage_id,
+        description
+      )
+    ),
     measurement_unit:item_units!items_measurement_unit_id_fkey(id, code, name),
     measurement_denominator_unit:item_units!items_measurement_denominator_unit_id_fkey(id, code, name),
     customer_level_discounts(customer_level_id, discount_percentage)

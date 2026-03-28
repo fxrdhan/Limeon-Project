@@ -13,6 +13,7 @@ interface ButtonProps {
   mode?: DropdownMode;
   displayText: string;
   titleText?: string;
+  metaLabel?: string;
   isPlaceholder: boolean;
   isOpen: boolean;
   isClosing: boolean;
@@ -35,6 +36,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       mode = 'input',
       displayText,
       titleText,
+      metaLabel,
       isPlaceholder,
       isOpen,
       isClosing,
@@ -81,6 +83,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           <ButtonText
             displayText={displayText}
             titleText={titleText}
+            metaLabel={metaLabel}
             isPlaceholder={isPlaceholder}
             isExpanded={false}
           />
@@ -119,6 +122,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         <ButtonText
           displayText={displayText}
           titleText={titleText}
+          metaLabel={metaLabel}
           isPlaceholder={isPlaceholder}
           isExpanded={isExpanded}
         />

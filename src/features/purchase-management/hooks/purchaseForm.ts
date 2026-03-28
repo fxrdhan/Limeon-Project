@@ -11,11 +11,11 @@ import type {
   CompanyProfile,
   PurchaseFormData,
   PurchaseItem,
-  PackageConversion,
 } from '@/types';
 import { purchasesService } from '@/services/api/purchases.service';
 import { supplierService } from '@/services/api/masterData.service';
 import { companyProfileService } from '@/services/api/companyProfile.service';
+import { resolveItemUnitEntry } from '@/lib/item-units';
 
 interface UsePurchaseFormProps {
   initialInvoiceNumber?: string;
@@ -204,34 +204,24 @@ export const usePurchaseForm = ({
 
         let price = itemData.base_price;
         let conversionRate = 1;
+        let inventoryUnitId = itemData.base_inventory_unit_id || null;
 
-        if (unitName !== itemData.base_unit) {
-          const packageConversionsArray = Array.isArray(
-            itemData.package_conversions
-          )
-            ? itemData.package_conversions
-            : [];
-          const packageConversion = packageConversionsArray.find(
-            (uc: PackageConversion) => uc.unit.name === unitName
+        const selectedUnit =
+          resolveItemUnitEntry(
+            itemData.inventory_units || [],
+            item.inventory_unit_id,
+            unitName
+          ) ||
+          resolveItemUnitEntry(
+            itemData.inventory_units || [],
+            undefined,
+            unitName
           );
-          if (packageConversion) {
-            price =
-              packageConversion.base_price ||
-              itemData.base_price * packageConversion.conversion_rate;
-            conversionRate = packageConversion.conversion_rate;
 
-            const discountAmount =
-              price * item.quantity * (item.discount / 100);
-
-            return {
-              ...item,
-              unit: unitName,
-              unit_id: packageConversion.to_unit_id || null,
-              price: price,
-              subtotal: price * item.quantity - discountAmount,
-              unit_conversion_rate: conversionRate,
-            };
-          }
+        if (selectedUnit) {
+          price = selectedUnit.base_price || itemData.base_price;
+          conversionRate = selectedUnit.factor_to_base || 1;
+          inventoryUnitId = selectedUnit.inventory_unit_id || null;
         }
 
         const discountAmount = price * item.quantity * (item.discount / 100);
@@ -239,6 +229,7 @@ export const usePurchaseForm = ({
         return {
           ...item,
           unit: unitName,
+          inventory_unit_id: inventoryUnitId,
           unit_id: null,
           price: price,
           subtotal: price * item.quantity - discountAmount,

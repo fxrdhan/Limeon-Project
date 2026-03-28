@@ -3,15 +3,11 @@ import { formatRupiah } from '@/lib/formatters';
 import toast from 'react-hot-toast';
 import { logger } from '@/utils/logger';
 import { itemDataService } from '../../../infrastructure/itemData.service';
-import type {
-  ItemFormData,
-  DBPackageConversion,
-  PackageConversion,
-} from '../../../shared/types';
+import type { ItemFormData, PackageConversion } from '../../../shared/types';
 import type {
   CustomerLevelDiscount,
   Item,
-  ItemPackage,
+  ItemInventoryUnit,
 } from '@/types/database';
 
 interface UseItemDataProps {
@@ -22,16 +18,14 @@ interface UseItemDataProps {
     setInitialPackageConversions: (conversions: PackageConversion[]) => void;
     setDisplayBasePrice: (price: string) => void;
     setDisplaySellPrice: (price: string) => void;
-    packages: ItemPackage[];
   };
   packageConversionHook: {
     setBaseUnit: (unit: string) => void;
+    setBaseInventoryUnitId: (id: string) => void;
+    setBaseUnitKind: (kind: 'packaging' | 'retail_unit' | 'custom') => void;
     setBasePrice: (price: number) => void;
     setSellPrice: (price: number) => void;
     skipNextRecalculation: () => void;
-    conversions: PackageConversion[];
-    removePackageConversion: (id: string) => void;
-    addPackageConversion: (conversion: PackageConversion) => void;
     setConversions: (conversions: PackageConversion[]) => void;
   };
 }
@@ -74,6 +68,8 @@ export const useItemData = ({
         type_id: (itemRecord.type_id as string) || '',
         category_id: (itemRecord.category_id as string) || '',
         package_id: (itemRecord.package_id as string) || '',
+        base_inventory_unit_id:
+          (itemRecord.base_inventory_unit_id as string) || '',
         dosage_id: (itemRecord.dosage_id as string) || '',
         barcode: (itemRecord.barcode as string) || '',
         description: (itemRecord.description as string) || '',
@@ -119,48 +115,11 @@ export const useItemData = ({
       formState.setFormData(fetchedFormData);
       formState.setInitialFormData(fetchedFormData);
 
-      const parsedConversionsFromData = parsePackageConversions(
-        itemRecord.package_conversions
+      const normalizedConversions = mapItemUnitHierarchy(
+        itemRecord.item_unit_hierarchy ?? itemRecord.inventory_units,
+        fetchedFormData.base_price || 0,
+        fetchedFormData.sell_price || 0
       );
-      const hasUnitDetail = parsedConversionsFromData.every(conversion => {
-        return (
-          typeof conversion === 'object' &&
-          conversion !== null &&
-          'unit' in conversion &&
-          Boolean((conversion as PackageConversion).unit)
-        );
-      });
-
-      const mappedConversions = hasUnitDetail
-        ? (parsedConversionsFromData as PackageConversion[])
-        : mapPackageConversions(parsedConversionsFromData, formState.packages);
-
-      const normalizedConversions = mappedConversions.map(conversion => {
-        const rate = Number(conversion.conversion_rate) || 0;
-        const baseFromDb = Number(conversion.base_price) || 0;
-        const sellFromDb = Number(conversion.sell_price) || 0;
-
-        const computedBase =
-          fetchedFormData.base_price > 0 && rate > 0
-            ? fetchedFormData.base_price * rate
-            : baseFromDb;
-        const computedSell =
-          fetchedFormData.sell_price > 0 && rate > 0
-            ? fetchedFormData.sell_price * rate
-            : sellFromDb;
-
-        return {
-          ...conversion,
-          base_price:
-            baseFromDb === 0 && fetchedFormData.base_price > 0
-              ? computedBase
-              : baseFromDb,
-          sell_price:
-            sellFromDb === 0 && fetchedFormData.sell_price > 0
-              ? computedSell
-              : sellFromDb,
-        };
-      });
 
       formState.setInitialPackageConversions(normalizedConversions);
       formState.setDisplayBasePrice(
@@ -170,8 +129,21 @@ export const useItemData = ({
         formatRupiah(fetchedFormData.sell_price || 0)
       );
 
-      const baseUnit = (itemRecord.base_unit as string) || '';
+      const baseInventoryUnit = itemRecord.base_inventory_unit as
+        | ItemInventoryUnit
+        | undefined;
+      const baseUnit =
+        baseInventoryUnit?.name ||
+        ((itemRecord.unit as { name?: string } | undefined)?.name ?? '') ||
+        (itemRecord.base_unit as string) ||
+        '';
       packageConversionHook.setBaseUnit(baseUnit);
+      packageConversionHook.setBaseInventoryUnitId(
+        fetchedFormData.base_inventory_unit_id
+      );
+      packageConversionHook.setBaseUnitKind(
+        baseInventoryUnit?.kind || 'packaging'
+      );
       packageConversionHook.setBasePrice(fetchedFormData.base_price || 0);
       packageConversionHook.setSellPrice(fetchedFormData.sell_price || 0);
       packageConversionHook.skipNextRecalculation();
@@ -226,60 +198,53 @@ export const useItemData = ({
   };
 };
 
-/**
- * Parse package conversions from database format
- */
-function parsePackageConversions(
-  packageConversions: unknown
-): DBPackageConversion[] {
-  if (!packageConversions) return [];
-
-  try {
-    const parsed =
-      typeof packageConversions === 'string'
-        ? JSON.parse(packageConversions)
-        : packageConversions;
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (e) {
-    console.error('Error parsing package_conversions from DB:', e);
-    return [];
-  }
-}
-
-/**
- * Map database package conversions to UI format
- */
-function mapPackageConversions(
-  conversions: DBPackageConversion[],
-  packages: ItemPackage[]
+function mapItemUnitHierarchy(
+  hierarchyData: unknown,
+  basePrice: number,
+  sellPrice: number
 ): PackageConversion[] {
-  if (!Array.isArray(conversions)) return [];
+  if (!Array.isArray(hierarchyData)) return [];
 
-  return conversions.map((conv: DBPackageConversion) => {
-    const unitDetail =
-      packages.find(pkg => pkg.id === conv.to_unit_id) ||
-      packages.find(pkg => pkg.name === conv.unit_name);
+  return hierarchyData
+    .map(row => row as Record<string, unknown>)
+    .filter(row => Number(row.factor_to_base) > 1)
+    .map(row => {
+      const unit = row.inventory_unit as ItemInventoryUnit | undefined;
+      const factorToBase = Number(row.factor_to_base) || 1;
+      const basePriceOverride =
+        row.base_price_override != null
+          ? Number(row.base_price_override) || 0
+          : null;
+      const sellPriceOverride =
+        row.sell_price_override != null
+          ? Number(row.sell_price_override) || 0
+          : null;
 
-    const fallbackId =
-      conv.to_unit_id || unitDetail?.id || conv.unit_name || '';
-
-    return {
-      id:
-        conv.id ||
-        fallbackId ||
-        `${Date.now().toString()}-${Math.random().toString(36).slice(2, 9)}`,
-      unit_name: conv.unit_name,
-      to_unit_id: unitDetail ? unitDetail.id : conv.to_unit_id || '',
-      unit: unitDetail
-        ? { id: unitDetail.id, name: unitDetail.name }
-        : { id: conv.to_unit_id || '', name: conv.unit_name || 'Unknown Unit' },
-      conversion_rate: conv.conversion_rate || 0,
-      base_price: conv.base_price || 0,
-      sell_price: conv.sell_price || 0,
-    };
-  });
+      return {
+        id: (row.id as string) || (row.inventory_unit_id as string),
+        unit_name: unit?.name || '',
+        to_unit_id: (row.inventory_unit_id as string) || '',
+        inventory_unit_id: (row.inventory_unit_id as string) || '',
+        parent_inventory_unit_id:
+          (row.parent_inventory_unit_id as string | null) || null,
+        contains_quantity: Number(row.contains_quantity) || factorToBase,
+        factor_to_base: factorToBase,
+        conversion_rate: factorToBase,
+        base_price_override: basePriceOverride,
+        sell_price_override: sellPriceOverride,
+        unit: unit || {
+          id: (row.inventory_unit_id as string) || '',
+          name: '',
+          kind: 'custom',
+        },
+        base_price:
+          basePriceOverride != null
+            ? basePriceOverride
+            : basePrice * factorToBase,
+        sell_price:
+          sellPriceOverride != null
+            ? sellPriceOverride
+            : sellPrice * factorToBase,
+      };
+    });
 }
-
-/**
- * Initialize package conversion hook with database data
- */

@@ -19,6 +19,7 @@ import { useEntityQueries } from './GenericHookFactories';
 import type {
   ItemCategory,
   ItemTypeEntity,
+  ItemInventoryUnitEntity,
   ItemPackage,
   ItemDosageEntity,
   ItemManufacturerEntity,
@@ -36,6 +37,7 @@ export const useItemQueries = () => {
   const categoriesQuery = useEntityQueries.categories();
   const typesQuery = useEntityQueries.types();
   const packagesQuery = useEntityQueries.packages();
+  const inventoryUnitsQuery = useEntityQueries.inventoryUnits();
   const unitsQuery = useEntityQueries.units();
   const dosagesQuery = useEntityQueries.dosages();
   const manufacturersQuery = useEntityQueries.manufacturers();
@@ -45,6 +47,9 @@ export const useItemQueries = () => {
     categoriesData: categoriesQuery.data as ItemCategory[] | undefined,
     typesData: typesQuery.data as ItemTypeEntity[] | undefined,
     packagesData: packagesQuery.data as ItemPackage[] | undefined,
+    inventoryUnitsData: inventoryUnitsQuery.data as
+      | ItemInventoryUnitEntity[]
+      | undefined,
     unitsData: unitsQuery.data as ItemUnitEntity[] | undefined,
     dosagesData: dosagesQuery.data as ItemDosageEntity[] | undefined,
     manufacturersData: manufacturersQuery.data as
@@ -56,6 +61,7 @@ export const useItemQueries = () => {
       categories: categoriesQuery,
       types: typesQuery,
       packages: packagesQuery,
+      inventoryUnits: inventoryUnitsQuery,
       units: unitsQuery,
       dosages: dosagesQuery,
       manufacturers: manufacturersQuery,
@@ -66,6 +72,7 @@ export const useItemQueries = () => {
       categoriesQuery.isLoading ||
       typesQuery.isLoading ||
       packagesQuery.isLoading ||
+      inventoryUnitsQuery.isLoading ||
       unitsQuery.isLoading ||
       dosagesQuery.isLoading ||
       manufacturersQuery.isLoading,
@@ -74,6 +81,7 @@ export const useItemQueries = () => {
       categoriesQuery.isError ||
       typesQuery.isError ||
       packagesQuery.isError ||
+      inventoryUnitsQuery.isError ||
       unitsQuery.isError ||
       dosagesQuery.isError ||
       manufacturersQuery.isError,
@@ -82,6 +90,7 @@ export const useItemQueries = () => {
       categories: categoriesQuery.error,
       types: typesQuery.error,
       packages: packagesQuery.error,
+      inventoryUnits: inventoryUnitsQuery.error,
       units: unitsQuery.error,
       dosages: dosagesQuery.error,
       manufacturers: manufacturersQuery.error,
@@ -99,6 +108,7 @@ export const {
   categories: useCategoriesQuery,
   types: useTypesQuery,
   packages: usePackagesQuery,
+  inventoryUnits: useInventoryUnitsQuery,
   units: useUnitsQuery,
   dosages: useDosagesQuery,
   manufacturers: useManufacturersQuery,

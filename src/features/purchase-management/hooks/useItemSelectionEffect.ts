@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import type { PurchaseItem, Item } from '@/types';
+import { getBaseItemUnit } from '@/lib/item-units';
 
 interface UseItemSelectionEffectProps {
   selectedItem: Item | null;
@@ -20,6 +21,7 @@ export const useItemSelectionEffect = ({
     if (selectedItem) {
       const itemData = getItemById(selectedItem.id);
       if (itemData) {
+        const baseInventoryUnit = getBaseItemUnit(itemData);
         const newPurchaseItem: PurchaseItem = {
           id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
           item_id: itemData.id,
@@ -28,7 +30,15 @@ export const useItemSelectionEffect = ({
           price: itemData.base_price,
           discount: 0,
           subtotal: itemData.base_price,
-          unit: itemData.unit?.name || itemData.base_unit || 'Unit',
+          unit:
+            baseInventoryUnit?.unit.name ||
+            itemData.unit?.name ||
+            itemData.base_unit ||
+            'Unit',
+          inventory_unit_id:
+            baseInventoryUnit?.inventory_unit_id ||
+            itemData.base_inventory_unit_id ||
+            null,
           unit_id: null,
           vat_percentage: 0,
           batch_no: null,

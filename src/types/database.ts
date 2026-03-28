@@ -43,6 +43,20 @@ export interface ItemDosage {
   updated_at?: string | null;
 }
 
+export type InventoryUnitKind = 'packaging' | 'retail_unit' | 'custom';
+
+export interface ItemInventoryUnit {
+  id: string;
+  code?: string;
+  name: string;
+  description?: string | null;
+  kind: InventoryUnitKind;
+  source_package_id?: string | null;
+  source_dosage_id?: string | null;
+  created_at?: string;
+  updated_at?: string | null;
+}
+
 export interface ItemManufacturer {
   id: string;
   code?: string;
@@ -140,8 +154,10 @@ export interface Item {
   is_level_pricing_active?: boolean;
   stock: number;
   package_id?: string;
+  base_inventory_unit_id?: string | null;
   base_unit?: string;
   package_conversions: PackageConversion[];
+  inventory_units: ItemUnitHierarchyEntry[];
   customer_level_discounts?: CustomerLevelDiscount[];
   category: { name: string };
   type: { name: string };
@@ -159,7 +175,28 @@ export interface PackageConversion {
   unit_name: string;
   to_unit_id: string;
   id: string;
-  unit: ItemPackage;
+  inventory_unit_id?: string;
+  parent_inventory_unit_id?: string | null;
+  contains_quantity?: number;
+  factor_to_base?: number;
+  base_price_override?: number | null;
+  sell_price_override?: number | null;
+  unit: ItemInventoryUnit;
+  base_price: number;
+  sell_price: number;
+}
+
+export interface ItemUnitHierarchyEntry {
+  id: string;
+  item_id?: string;
+  inventory_unit_id: string;
+  parent_inventory_unit_id?: string | null;
+  contains_quantity: number;
+  factor_to_base: number;
+  base_price_override?: number | null;
+  sell_price_override?: number | null;
+  unit: ItemInventoryUnit;
+  parent_unit?: ItemInventoryUnit | null;
   base_price: number;
   sell_price: number;
 }
@@ -186,9 +223,11 @@ export interface DBItem {
   is_level_pricing_active?: boolean;
   stock: number;
   package_conversions: string | PackageConversion[] | null;
+  item_unit_hierarchy?: ItemUnitHierarchyEntry[] | null;
   category_id?: string;
   type_id?: string;
   package_id?: string;
+  base_inventory_unit_id?: string | null;
   base_unit?: string | null;
   min_stock?: number | null;
   description?: string | null;
@@ -206,6 +245,7 @@ export interface DBItem {
   item_categories?: { name: string }[] | null;
   item_types?: { name: string }[] | null;
   item_packages?: { name: string }[] | null;
+  base_inventory_unit?: ItemInventoryUnit | null;
 }
 
 export interface RawPackageConversion {

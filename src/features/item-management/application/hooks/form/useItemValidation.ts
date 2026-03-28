@@ -6,6 +6,7 @@ interface ValidationFormData {
   category_id: string;
   type_id: string;
   package_id: string;
+  base_inventory_unit_id: string;
   unit_id: string;
   dosage_id: string;
   manufacturer_id: string;
@@ -32,6 +33,7 @@ export const useItemFormValidation = ({
       !formData.category_id ||
       !formData.type_id ||
       !formData.package_id ||
+      !formData.base_inventory_unit_id ||
       !formData.dosage_id ||
       !formData.manufacturer_id ||
       !formData.base_price ||

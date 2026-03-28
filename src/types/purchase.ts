@@ -14,6 +14,7 @@ export interface PurchaseItem {
   discount: number;
   subtotal: number;
   unit: string;
+  inventory_unit_id?: string | null;
   unit_id?: string | null;
   vat_percentage: number;
   batch_no: string | null;

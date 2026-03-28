@@ -36,14 +36,7 @@ export const useAddItemEventHandlers = ({
   expiryCheckboxRef,
 }: AddItemEventHandlersProps) => {
   const handleSelectChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    const { name, value } = e.target;
     addItemForm.handleSelectChange(e);
-
-    if (name === 'unit_id' && value) {
-      const selectedUnit = addItemForm.units.find(unit => unit.id === value);
-      if (selectedUnit)
-        addItemForm.packageConversionHook.setBaseUnit(selectedUnit.name);
-    }
   };
 
   const handleDropdownChange = (name: string, value: string) => {

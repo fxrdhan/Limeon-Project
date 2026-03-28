@@ -8,6 +8,8 @@ export interface DropdownOption {
   name: string;
   code?: string;
   description?: string;
+  metaLabel?: string;
+  metaTone?: 'default' | 'info' | 'success' | 'warning';
   updated_at?: string | null;
 }
 

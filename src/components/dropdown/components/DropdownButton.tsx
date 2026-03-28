@@ -5,7 +5,7 @@ import type { DropdownMode } from '@/types';
 
 interface DropdownButtonProps {
   mode?: DropdownMode;
-  selectedOption?: { id: string; name: string };
+  selectedOption?: { id: string; name: string; metaLabel?: string };
   placeholder?: string;
   isOpen: boolean;
   isClosing: boolean;
@@ -62,6 +62,7 @@ const DropdownButton = forwardRef<HTMLButtonElement, DropdownButtonProps>(
         mode={mode}
         displayText={displayText}
         titleText={titleText}
+        metaLabel={selectedOption?.metaLabel}
         isPlaceholder={isPlaceholder}
         isOpen={isOpen}
         isClosing={isClosing}
