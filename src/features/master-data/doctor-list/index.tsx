@@ -256,7 +256,7 @@ const DoctorListNew = () => {
         isOpen={isAddModalOpen}
         onClose={handleCloseAddModal}
         onSave={async data => {
-          await handleModalSubmit({
+          return await handleModalSubmit({
             data: toDoctorPayload(data),
             id: undefined,
           });
@@ -278,7 +278,7 @@ const DoctorListNew = () => {
         isOpen={isEditModalOpen}
         onClose={handleCloseEditModal}
         onSave={async data => {
-          await handleModalSubmit({
+          return await handleModalSubmit({
             data: toDoctorPayload(data),
             id: editingItem?.id,
           });

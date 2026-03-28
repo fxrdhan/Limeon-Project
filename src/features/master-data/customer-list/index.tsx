@@ -202,7 +202,7 @@ const CustomerList = () => {
         isOpen={isAddModalOpen}
         onClose={handleCloseAddModal}
         onSave={async data => {
-          await handleModalSubmit({
+          return await handleModalSubmit({
             data: {
               name: String(data.name || ''),
               customer_level_id: String(
@@ -232,7 +232,7 @@ const CustomerList = () => {
         isOpen={isEditModalOpen}
         onClose={handleCloseEditModal}
         onSave={async data => {
-          await handleModalSubmit({
+          return await handleModalSubmit({
             id: editingItem?.id,
             data: {
               name: String(data.name || ''),

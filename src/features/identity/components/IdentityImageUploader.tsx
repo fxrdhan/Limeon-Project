@@ -13,6 +13,7 @@ import {
 const IdentityImageUploader: React.FC = () => {
   const {
     currentImageUrl,
+    pendingImageDelete,
     isUploadingImage,
     localData,
     mode,
@@ -33,9 +34,12 @@ const IdentityImageUploader: React.FC = () => {
   }, [localData?.id]);
   const [displayImageUrl, setDisplayImageUrl] = useState<string | null>(null);
   const cachedImageUrl = cacheKey ? getCachedImage(cacheKey) : null;
-  const sourceImageUrl =
-    currentImageUrl || cachedImageUrl || defaultImageUrl || null;
-  const hasImage = Boolean(currentImageUrl || cachedImageUrl);
+  const sourceImageUrl = pendingImageDelete
+    ? null
+    : currentImageUrl || cachedImageUrl || defaultImageUrl || null;
+  const hasImage = pendingImageDelete
+    ? false
+    : Boolean(currentImageUrl || cachedImageUrl);
 
   useEffect(() => {
     if (!cacheKey || !currentImageUrl) return;

@@ -298,7 +298,7 @@ export interface GenericIdentityModalProps {
   onClose: () => void;
   onSave?: (
     data: Record<string, string | number | boolean | null>
-  ) => Promise<void>;
+  ) => Promise<unknown>;
   onFieldSave?: (key: string, value: unknown) => Promise<void>;
   onImageSave?: (data: {
     entityId?: string;

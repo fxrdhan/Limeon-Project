@@ -6,7 +6,7 @@ interface UseIdentityFormProps {
   fields: FieldConfig[];
   onSave: (
     updatedData: Record<string, string | number | boolean | null>
-  ) => Promise<void>;
+  ) => Promise<unknown>;
   onFieldSave?: (key: string, value: unknown) => Promise<void>;
   onImageSave?: (data: {
     entityId?: string;
@@ -32,35 +32,58 @@ export const useIdentityForm = ({
   initialNameFromSearch,
   useInlineFieldActions = false,
 }: UseIdentityFormProps) => {
+  const isMountedRef = useRef(true);
   const [editMode, setEditMode] = useState<Record<string, boolean>>({});
   const [editValues, setEditValues] = useState<
     Record<string, string | number | boolean | null>
   >({});
-  const [currentImageUrl, setCurrentImageUrl] = useState(initialImageUrl);
+  const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(
+    initialImageUrl || null
+  );
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [loadingField, setLoadingField] = useState<Record<string, boolean>>({});
   const [localData, setLocalData] =
     useState<Record<string, string | number | boolean | null>>(initialData);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
+  const [pendingImageDelete, setPendingImageDelete] = useState(false);
   const inputRefs = useRef<
     Record<string, { el: HTMLInputElement | HTMLTextAreaElement | null }>
   >({});
+  const previewImageUrlRef = useRef<string | null>(null);
+
+  const revokePreviewImageUrl = useCallback(() => {
+    if (!previewImageUrlRef.current) return;
+    URL.revokeObjectURL(previewImageUrlRef.current);
+    previewImageUrlRef.current = null;
+  }, []);
 
   const resetInternalState = useCallback(() => {
     setEditMode({});
     setEditValues({});
-    setCurrentImageUrl(undefined);
+    revokePreviewImageUrl();
+    setCurrentImageUrl(null);
     setIsUploadingImage(false);
     setLoadingField({});
     setIsSubmitting(false);
+    setPendingImageFile(null);
+    setPendingImageDelete(false);
     inputRefs.current = {};
     if (mode === 'add') {
       setLocalData(initialData);
     }
-  }, [mode, initialData]);
+  }, [initialData, mode, revokePreviewImageUrl]);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      revokePreviewImageUrl();
+    };
+  }, [revokePreviewImageUrl]);
 
   useEffect(() => {
     if (isOpen) {
+      revokePreviewImageUrl();
       const initialEditState: Record<string, boolean> = {};
       const initialFormValues: Record<
         string,
@@ -88,7 +111,9 @@ export const useIdentityForm = ({
       setEditMode(initialEditState);
       setEditValues(initialFormValues);
       setLocalData(initialData);
-      setCurrentImageUrl(initialImageUrl);
+      setCurrentImageUrl(initialImageUrl || null);
+      setPendingImageFile(null);
+      setPendingImageDelete(false);
 
       if (mode === 'add' && initialNameFromSearch) {
         const nameFieldKey =
@@ -118,6 +143,7 @@ export const useIdentityForm = ({
     mode,
     initialNameFromSearch,
     useInlineFieldActions,
+    revokePreviewImageUrl,
   ]);
 
   const setInputRef = useCallback(
@@ -204,13 +230,65 @@ export const useIdentityForm = ({
           dataToSave.image_url = currentImageUrl;
         }
       }
-      await onSave(dataToSave);
+
+      const saveResult = await onSave(dataToSave);
+      const savedEntityId =
+        mode === 'edit'
+          ? String(initialData?.id || '')
+          : typeof saveResult === 'object' &&
+              saveResult !== null &&
+              'id' in saveResult &&
+              typeof saveResult.id === 'string'
+            ? saveResult.id
+            : '';
+
+      let nextImageUrl = currentImageUrl || null;
+
+      if (savedEntityId && pendingImageDelete && onImageDeleteProp) {
+        await onImageDeleteProp(savedEntityId);
+        nextImageUrl = null;
+      }
+
+      if (savedEntityId && pendingImageFile && onImageSaveProp) {
+        const uploadedUrl = await onImageSaveProp({
+          entityId: savedEntityId,
+          file: pendingImageFile,
+        });
+        if (typeof uploadedUrl === 'string' && uploadedUrl.trim() !== '') {
+          nextImageUrl = uploadedUrl;
+        }
+      }
+
+      if (isMountedRef.current) {
+        revokePreviewImageUrl();
+        setPendingImageFile(null);
+        setPendingImageDelete(false);
+        setCurrentImageUrl(nextImageUrl || null);
+        setLocalData(prev => ({
+          ...prev,
+          ...dataToSave,
+          image_url: nextImageUrl,
+        }));
+      }
     } catch (error) {
       console.error('Error menyimpan semua data:', error);
     } finally {
-      setIsSubmitting(false);
+      if (isMountedRef.current) {
+        setIsSubmitting(false);
+      }
     }
-  }, [onSave, editValues, mode, currentImageUrl]);
+  }, [
+    currentImageUrl,
+    editValues,
+    initialData?.id,
+    mode,
+    onImageDeleteProp,
+    onImageSaveProp,
+    onSave,
+    pendingImageDelete,
+    pendingImageFile,
+    revokePreviewImageUrl,
+  ]);
 
   const handleCancelEdit = useCallback(
     (key: string) => {
@@ -227,51 +305,41 @@ export const useIdentityForm = ({
     async (file: File) => {
       setIsUploadingImage(true);
       try {
-        if (mode === 'add') {
-          const tempUrl = URL.createObjectURL(file);
-          setCurrentImageUrl(tempUrl);
-        } else if (onImageSaveProp && initialData?.id) {
-          const uploadedUrl = await onImageSaveProp({
-            entityId: String(initialData.id),
-            file,
-          });
-          if (typeof uploadedUrl === 'string' && uploadedUrl.trim() !== '') {
-            setCurrentImageUrl(uploadedUrl);
-            setLocalData(prev => ({ ...prev, image_url: uploadedUrl }));
-          }
-        }
+        revokePreviewImageUrl();
+        const previewUrl = URL.createObjectURL(file);
+        previewImageUrlRef.current = previewUrl;
+        setCurrentImageUrl(previewUrl);
+        setPendingImageFile(file);
+        setPendingImageDelete(false);
       } catch (error) {
         console.error('Error pada handleImageUpload:', error);
       } finally {
         setIsUploadingImage(false);
       }
     },
-    [onImageSaveProp, mode, initialData]
+    [revokePreviewImageUrl]
   );
 
   const handleImageDeleteInternal = useCallback(async () => {
     setIsUploadingImage(true);
     try {
-      if (mode === 'add') {
-        setCurrentImageUrl(undefined);
-      } else if (onImageDeleteProp && initialData?.id) {
-        await onImageDeleteProp(String(initialData.id));
-        setCurrentImageUrl(undefined);
-        setLocalData(prev => ({ ...prev, image_url: null }));
-      }
+      revokePreviewImageUrl();
+      setPendingImageFile(null);
+      setCurrentImageUrl(null);
+      setPendingImageDelete(mode === 'edit' && Boolean(initialData?.id));
     } catch (error) {
       console.error('Error pada handleImageDeleteInternal:', error);
     } finally {
       setIsUploadingImage(false);
     }
-  }, [onImageDeleteProp, mode, initialData]);
+  }, [initialData?.id, mode, revokePreviewImageUrl]);
 
   const isDirty = useMemo(() => {
     if (mode !== 'edit' || useInlineFieldActions) {
       return true;
     }
 
-    return fields.some(field => {
+    const hasFieldChanges = fields.some(field => {
       const key = field.key;
       const currentValue = editValues[key];
       const savedValue = localData[key];
@@ -301,12 +369,23 @@ export const useIdentityForm = ({
 
       return normalizeValue(currentValue) !== normalizeValue(savedValue);
     });
-  }, [mode, useInlineFieldActions, fields, editValues, localData]);
+
+    return hasFieldChanges || pendingImageDelete || pendingImageFile !== null;
+  }, [
+    mode,
+    useInlineFieldActions,
+    fields,
+    editValues,
+    localData,
+    pendingImageDelete,
+    pendingImageFile,
+  ]);
 
   return {
     editMode,
     editValues,
     currentImageUrl,
+    pendingImageDelete,
     isUploadingImage,
     loadingField,
     isSubmitting,

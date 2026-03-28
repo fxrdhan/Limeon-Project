@@ -6,6 +6,7 @@ export interface IdentityModalContextValue {
   editMode: Record<string, boolean>;
   editValues: Record<string, string | number | boolean | null>;
   currentImageUrl: string | null;
+  pendingImageDelete: boolean;
   isUploadingImage: boolean;
   loadingField: Record<string, boolean>;
   isSubmitting: boolean;
