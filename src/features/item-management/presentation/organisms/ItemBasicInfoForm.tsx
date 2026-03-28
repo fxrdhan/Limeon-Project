@@ -1,4 +1,4 @@
-import { forwardRef, useMemo, useEffect } from 'react';
+import { forwardRef, useMemo, useEffect, useRef, useState } from 'react';
 import Input from '@/components/input';
 import Dropdown from '@/components/dropdown';
 import FormField from '@/components/form-field';
@@ -73,17 +73,39 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
   ) => {
     const realtime = useItemRealtime();
     const nameFieldHandlers = realtime?.smartFormSync?.getFieldHandlers('name');
+    const [isNameFocused, setIsNameFocused] = useState(false);
+    const [localDisplayName, setLocalDisplayName] = useState(
+      formData.display_name
+    );
+    const previousDisplayNameRef = useRef(formData.display_name);
+
+    useEffect(() => {
+      const previousDisplayName = previousDisplayNameRef.current;
+      const shouldSyncWhileFocused =
+        isNameFocused &&
+        (localDisplayName.length === 0 ||
+          localDisplayName === previousDisplayName);
+
+      if (!isNameFocused || shouldSyncWhileFocused) {
+        setLocalDisplayName(formData.display_name);
+      }
+      previousDisplayNameRef.current = formData.display_name;
+    }, [formData.display_name, isNameFocused, localDisplayName]);
 
     const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setLocalDisplayName(e.target.value);
       onDisplayNameChange(e.target.value);
       nameFieldHandlers?.onChange(e);
     };
 
     const handleNameFocus = () => {
+      setIsNameFocused(true);
       nameFieldHandlers?.onFocus();
     };
 
     const handleNameBlur = () => {
+      setIsNameFocused(false);
+      setLocalDisplayName(formData.display_name);
       nameFieldHandlers?.onBlur();
     };
 
@@ -166,7 +188,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
               <Input
                 name="name"
                 ref={ref}
-                value={formData.display_name}
+                value={isNameFocused ? localDisplayName : formData.display_name}
                 tabIndex={1}
                 onChange={handleNameChange}
                 onFocus={handleNameFocus}
