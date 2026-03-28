@@ -14,7 +14,7 @@
 
 import { logger } from '@/utils/logger';
 import type { ItemFormData, PackageConversion } from '../../../shared/types';
-import type { CustomerLevelDiscount } from '@/types/database';
+import type { CustomerLevelDiscount, Item } from '@/types/database';
 import { generateItemCodeWithSequence } from '../utils/useItemCodeGenerator';
 import {
   categoryService,
@@ -25,6 +25,7 @@ import {
 } from '@/services/api/masterData.service';
 import { itemDataService } from '../../../infrastructure/itemData.service';
 import { StorageService } from '@/services/api/storage.service';
+import { itemsService } from '@/services/api/items.service';
 
 const ITEM_IMAGE_BUCKET = 'item_images';
 
@@ -278,6 +279,7 @@ export interface SaveItemResult {
   action: 'create' | 'update';
   itemId: string;
   code: string;
+  item: Item;
 }
 
 /**
@@ -366,7 +368,18 @@ export const saveItemBusinessLogic = async ({
       itemId,
       action: 'update',
     });
-    return { action: 'update', itemId, code: finalFormData.code };
+    const { data: updatedItem, error: updatedItemError } =
+      await itemsService.getItemWithDetails(itemId);
+    if (updatedItemError || !updatedItem) {
+      throw updatedItemError || new Error('Gagal memuat item terbaru.');
+    }
+
+    return {
+      action: 'update',
+      itemId,
+      code: finalFormData.code,
+      item: updatedItem,
+    };
   } else {
     // Create new item
     finalFormData.image_urls = pendingImageUrls.filter(
@@ -391,10 +404,17 @@ export const saveItemBusinessLogic = async ({
       insertedItem.id,
       finalFormData.customer_level_discounts
     );
+    const { data: createdItem, error: createdItemError } =
+      await itemsService.getItemWithDetails(insertedItem.id);
+    if (createdItemError || !createdItem) {
+      throw createdItemError || new Error('Gagal memuat item terbaru.');
+    }
+
     return {
       action: 'create',
       itemId: insertedItem.id,
       code: finalFormData.code,
+      item: createdItem,
     };
   }
 };

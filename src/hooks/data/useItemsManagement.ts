@@ -47,6 +47,7 @@ export const useItemsManagement = (options?: UseItemsManagementOptions) => {
     error: queryError,
     isFetching,
     isPlaceholderData,
+    refetch,
   } = useItems({
     enabled,
     orderBy: { column: 'name', ascending: true },
@@ -116,6 +117,7 @@ export const useItemsManagement = (options?: UseItemsManagementOptions) => {
     queryError,
     isFetching,
     isPlaceholderData,
+    refetchItems: refetch,
 
     // Search state
     search,

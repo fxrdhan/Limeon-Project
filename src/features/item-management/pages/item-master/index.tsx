@@ -2416,6 +2416,7 @@ const ItemMasterNew = memo(() => {
           initialSearchQuery={currentSearchQueryForModal}
           isClosing={isItemModalClosing}
           setIsClosing={setIsItemModalClosing}
+          refetchItems={itemsManagement.refetchItems}
         />
       )}
 
