@@ -2463,7 +2463,7 @@ const ItemMasterNew = memo(() => {
         isOpen={isCustomerTab && isAddCustomerModalOpen}
         onClose={() => setIsAddCustomerModalOpen(false)}
         onSave={async data => {
-          await handleCustomerModalSubmit({
+          return await handleCustomerModalSubmit({
             data: toCustomerPayload(data),
           });
         }}
@@ -2485,7 +2485,7 @@ const ItemMasterNew = memo(() => {
         isOpen={isCustomerTab && isEditCustomerModalOpen}
         onClose={() => setIsEditCustomerModalOpen(false)}
         onSave={async data => {
-          await handleCustomerModalSubmit({
+          return await handleCustomerModalSubmit({
             id: editingCustomer?.id,
             data: toCustomerPayload(data),
           });
@@ -2521,7 +2521,7 @@ const ItemMasterNew = memo(() => {
         isOpen={isPatientTab && isAddPatientModalOpen}
         onClose={() => setIsAddPatientModalOpen(false)}
         onSave={async data => {
-          await handlePatientModalSubmit({
+          return await handlePatientModalSubmit({
             data: toPatientPayload(data),
             id: undefined,
           });
@@ -2543,7 +2543,7 @@ const ItemMasterNew = memo(() => {
         isOpen={isPatientTab && isEditPatientModalOpen}
         onClose={() => setIsEditPatientModalOpen(false)}
         onSave={async data => {
-          await handlePatientModalSubmit({
+          return await handlePatientModalSubmit({
             data: toPatientPayload(data),
             id: editingPatient?.id,
           });
@@ -2581,7 +2581,7 @@ const ItemMasterNew = memo(() => {
         isOpen={isDoctorTab && isAddDoctorModalOpen}
         onClose={() => setIsAddDoctorModalOpen(false)}
         onSave={async data => {
-          await handleDoctorModalSubmit({
+          return await handleDoctorModalSubmit({
             data: toDoctorPayload(data),
             id: undefined,
           });
@@ -2603,7 +2603,7 @@ const ItemMasterNew = memo(() => {
         isOpen={isDoctorTab && isEditDoctorModalOpen}
         onClose={() => setIsEditDoctorModalOpen(false)}
         onSave={async data => {
-          await handleDoctorModalSubmit({
+          return await handleDoctorModalSubmit({
             data: toDoctorPayload(data),
             id: editingDoctor?.id,
           });

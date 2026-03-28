@@ -319,6 +319,9 @@ export const saveItemBusinessLogic = async ({
       action: 'update',
     });
 
+    finalFormData.image_urls = pendingImageUrls.filter(
+      url => url && !isTempImageUrl(url)
+    );
     const itemUpdateData = await prepareItemData(
       finalFormData,
       conversions,
@@ -330,6 +333,10 @@ export const saveItemBusinessLogic = async ({
       itemUpdateData as Record<string, unknown>
     );
     if (updateError) throw updateError;
+
+    if (pendingImageUrls.some(isTempImageUrl)) {
+      await uploadPendingItemImages(itemId, pendingImageUrls);
+    }
 
     logger.debug('Item update acknowledged by Supabase', {
       component: 'ItemMutationUtilities',

@@ -85,7 +85,7 @@ const SupplierModals: React.FC<SupplierModalsProps> = ({
         isOpen={isActive && isAddSupplierModalOpen}
         onClose={closeAddSupplierModal}
         onSave={async data => {
-          await supplierMutations.createSupplier.mutateAsync({
+          const result = await supplierMutations.createSupplier.mutateAsync({
             name: String(data.name || ''),
             address: String(data.address || '') || null,
             phone: String(data.phone || '') || null,
@@ -94,6 +94,7 @@ const SupplierModals: React.FC<SupplierModalsProps> = ({
             image_url: String(data.image_url || '') || null,
           });
           closeAddSupplierModal();
+          return result;
         }}
         mode="add"
         initialNameFromSearch={
@@ -115,7 +116,7 @@ const SupplierModals: React.FC<SupplierModalsProps> = ({
         onClose={closeEditSupplierModal}
         onSave={async data => {
           if (!editingSupplier?.id) return;
-          await supplierMutations.updateSupplier.mutateAsync({
+          const result = await supplierMutations.updateSupplier.mutateAsync({
             id: editingSupplier.id,
             data: {
               name: String(data.name || ''),
@@ -126,6 +127,7 @@ const SupplierModals: React.FC<SupplierModalsProps> = ({
             },
           });
           closeEditSupplierModal();
+          return result;
         }}
         onFieldSave={async (key, value) => {
           if (!editingSupplier?.id) return;
