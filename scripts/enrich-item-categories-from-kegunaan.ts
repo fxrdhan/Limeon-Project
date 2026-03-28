@@ -52,6 +52,82 @@ const NON_DRUG_TYPE_CODES = new Set(['ALK', 'CCP', 'COS', 'PKR', 'PPG', 'UKN']);
 
 const CATEGORY_RULES: CategoryRule[] = [
   {
+    code: 'MDV',
+    patterns: [
+      /^ALAT KESEHATAN$/i,
+      /^ALAT KESEHATAN PERALATAN BEDAH DAN PERAWATAN LUKA$/i,
+      /^PERALATAN BEDAH UMUM DAN BEDAH PLASTIK$/i,
+      /^BENANG JAHIT BEDAH$/i,
+      /^OBAT ANESTESI DAN SEDIAAN BEDAH DAN PERAWATAN LUKA$/i,
+      /^PLESTER PENUTUP JERAWAT$/i,
+    ],
+  },
+  {
+    code: 'HHC',
+    patterns: [/^PELEMBUT DAN PEWANGI DAN DAN ATAU PELICIN KAIN$/i],
+  },
+  {
+    code: 'REP',
+    patterns: [/^PENCEGAH SERANGGA$/i],
+  },
+  {
+    code: 'DLP',
+    patterns: [
+      /^FARMASI ANTI KOLESTEROL$/i,
+      /^FARMASI DILIPIDEMIK$/i,
+      /^ANTIHIPERLIPIDEMIA$/i,
+    ],
+  },
+  {
+    code: 'CVS',
+    patterns: [
+      /^SISTEM KARDIOVASKULAR$/i,
+      /^SISTEM KARDIOVASULAR$/i,
+      /^SISTEM KARDIOVASKULAR DAN HEMATOPOIETIK$/i,
+      /^SISTEM KARDIOVASKULAR DAN HEMATOPOIETIN$/i,
+      /^SISTEM KARDIOVASKULAR DAN HOMOPOIETIK$/i,
+      /^SISTEM KARDIOVASKULAR DAN HEPATOBILIER$/i,
+      /^FARMASI KARDIOVASKULAR$/i,
+    ],
+  },
+  {
+    code: 'CNS',
+    patterns: [/^SISTEM SARAF PUSAT$/i],
+  },
+  {
+    code: 'GIH',
+    patterns: [
+      /^SISTEM GASTROINTESTINAL DAN HEPATOBILIER$/i,
+      /^SISTEM GASTROINTESTINAL$/i,
+      /^SISTEM GATROINTESTINAL$/i,
+      /^SISTEM PENCERNAAN$/i,
+    ],
+  },
+  {
+    code: 'RSP',
+    patterns: [/^SISTEM PERNAPASAN$/i, /^BATUK PILEK$/i, /^OBAT BATUK$/i],
+  },
+  {
+    code: 'TRD',
+    patterns: [/^OBAT TRADISIONAL$/i, /^JAMU$/i],
+  },
+  {
+    code: 'URO',
+    patterns: [/^SISTEM KEMIH KELAMIN$/i, /^TERAPI PEMBESARAN PROSTAT JINAK$/i],
+  },
+  {
+    code: 'MSK',
+    patterns: [/^SISTEM MUSKULOSKELETAL$/i, /^SISTEM MUKOSKELETAL$/i],
+  },
+  {
+    code: 'HRM',
+    patterns: [/^FARMASI HORMON$/i],
+  },
+  {
+    code: 'HTK',
+    patterns: [/^FARMASI ANTI ANEMIA$/i],
+  },
+  {
     code: 'UNK',
     patterns: [/^OTHER$/i],
   },
@@ -173,6 +249,10 @@ const CATEGORY_RULES: CategoryRule[] = [
     patterns: [/^FARMASI ANTIMIGRAIN$/i],
   },
   {
+    code: 'AVT',
+    patterns: [/^ANTIVERTIGO$/i],
+  },
+  {
     code: 'DEC',
     patterns: [/^FARMASI DEKONGESTAN$/i, /^DEKONGESTAN$/i],
   },
@@ -263,6 +343,7 @@ const CATEGORY_RULES: CategoryRule[] = [
     patterns: [
       /^ANTASIDA$/i,
       /^ANTASID DAN ANTIREFLUX$/i,
+      /^ANTASID DAN ANTIREFUX AGENT$/i,
       /^FARMASI GASTRITIS$/i,
     ],
   },
@@ -273,6 +354,10 @@ const CATEGORY_RULES: CategoryRule[] = [
   {
     code: 'ADI',
     patterns: [/^FARMASI ANTIDIARE$/i],
+  },
+  {
+    code: 'HMR',
+    patterns: [/^ANTIHEMOROID$/i],
   },
   {
     code: 'ELE',
@@ -287,6 +372,10 @@ const CATEGORY_RULES: CategoryRule[] = [
       /^MENGURANGI GEJALA PENGOBATAN OA DAN RA$/i,
       /^DEXKETOPROFEN TROMETAMOL$/i,
     ],
+  },
+  {
+    code: 'OST',
+    patterns: [/^OSTEOPOROSIS DAN RAKHITIS DAN HIPOPARATIROID$/i],
   },
 ];
 

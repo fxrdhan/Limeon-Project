@@ -3,7 +3,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { config } from 'dotenv';
 import { execFileSync } from 'node:child_process';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 import {
@@ -54,6 +54,20 @@ const DEFAULT_PDF = path.resolve(
   '/home/fxrdhan/Downloads/MASTER - PRICE LIST December 17, 2025 (1).pdf'
 );
 const DEFAULT_SHEET_PDF_DIR = path.resolve('/tmp/tmp.soJY4oCstj');
+const DEFAULT_MANUAL_PACKAGE_REVIEW = path.resolve(
+  '/home/fxrdhan/Downloads/missing-item-packages-review_completed.json'
+);
+const DEFAULT_MANUAL_DOSAGE_REVIEW = path.resolve(
+  '/home/fxrdhan/Downloads/missing-item-dosages-review-filled-final.json'
+);
+const DEFAULT_MANUAL_CATEGORY_REVIEW_PATHS = [
+  path.resolve(
+    '/home/fxrdhan/Downloads/missing-item-categories-none-na-review_filled.json'
+  ),
+  path.resolve(
+    '/home/fxrdhan/Downloads/missing-item-categories-remaining-review-mapped.json'
+  ),
+];
 
 const parseArgs = (): ParsedArgs => {
   const args = process.argv.slice(2);
@@ -674,6 +688,16 @@ const applyManualTypeAndCategoryOverrides = (seed: SeedFile): number => {
     '0U1370',
     '0U1380',
   ]);
+  const endocrineMetabolicAntidiabetesCodes = new Set([
+    '0J0930',
+    '0J6840',
+    '0W0620',
+    '0Y0040',
+    '0Y1660',
+    '0Y1670',
+    '0Y1680',
+    '0Y1690',
+  ]);
 
   for (const item of seed.items) {
     const sourceName = item.fk_lookup.source_name ?? '';
@@ -689,10 +713,216 @@ const applyManualTypeAndCategoryOverrides = (seed: SeedFile): number => {
       item.fk_lookup.type_code = 'ALK';
       item.fk_lookup.category_code = 'CON';
       overrideCount += 1;
+      continue;
+    }
+
+    if (endocrineMetabolicAntidiabetesCodes.has(item.code)) {
+      item.fk_lookup.category_code = 'ADB';
+      overrideCount += 1;
     }
   }
 
   return overrideCount;
+};
+
+const loadManualPackageOverrides = () => {
+  if (!existsSync(DEFAULT_MANUAL_PACKAGE_REVIEW)) {
+    return new Map<string, { packageCode: string; packageName?: string }>();
+  }
+
+  const review = JSON.parse(
+    readFileSync(DEFAULT_MANUAL_PACKAGE_REVIEW, 'utf8')
+  ) as {
+    items?: Array<{
+      code?: string;
+      manual_package_code?: string;
+      manual_package_name?: string;
+    }>;
+  };
+  const overrides = new Map<
+    string,
+    { packageCode: string; packageName?: string }
+  >();
+
+  for (const item of review.items ?? []) {
+    const code = item.code?.trim();
+    const packageCode = item.manual_package_code?.trim();
+    const packageName = item.manual_package_name?.trim();
+
+    if (!code || !packageCode) {
+      continue;
+    }
+
+    overrides.set(code, {
+      packageCode,
+      packageName: packageName || undefined,
+    });
+  }
+
+  return overrides;
+};
+
+const applyManualPackageOverrides = (
+  seed: SeedFile,
+  overrides: Map<string, { packageCode: string; packageName?: string }>
+): number => {
+  let appliedCount = 0;
+
+  for (const item of seed.items) {
+    const override = overrides.get(item.code);
+
+    if (!override) {
+      continue;
+    }
+
+    item.fk_lookup.package_code = override.packageCode;
+    if (override.packageName) {
+      item.fk_lookup.package_name = override.packageName;
+    }
+    appliedCount += 1;
+  }
+
+  return appliedCount;
+};
+
+const loadManualDosageOverrides = () => {
+  if (!existsSync(DEFAULT_MANUAL_DOSAGE_REVIEW)) {
+    return new Map<string, { dosageCode: string; dosageName?: string }>();
+  }
+
+  const review = JSON.parse(
+    readFileSync(DEFAULT_MANUAL_DOSAGE_REVIEW, 'utf8')
+  ) as {
+    items?: Array<{
+      code?: string;
+      manual_dosage_code?: string;
+      manual_dosage_name?: string;
+    }>;
+  };
+  const overrides = new Map<
+    string,
+    { dosageCode: string; dosageName?: string }
+  >();
+
+  for (const item of review.items ?? []) {
+    const code = item.code?.trim();
+    const dosageCode = item.manual_dosage_code?.trim();
+    const dosageName = item.manual_dosage_name?.trim();
+
+    if (!code || !dosageCode) {
+      continue;
+    }
+
+    overrides.set(code, {
+      dosageCode,
+      dosageName: dosageName || undefined,
+    });
+  }
+
+  return overrides;
+};
+
+const applyManualDosageOverrides = (
+  seed: SeedFile,
+  overrides: Map<string, { dosageCode: string; dosageName?: string }>
+): number => {
+  let appliedCount = 0;
+
+  for (const item of seed.items) {
+    const override = overrides.get(item.code);
+
+    if (!override) {
+      continue;
+    }
+
+    item.fk_lookup.dosage_code = override.dosageCode;
+    if (override.dosageName) {
+      item.fk_lookup.dosage_name = override.dosageName;
+    }
+    appliedCount += 1;
+  }
+
+  return appliedCount;
+};
+
+const loadManualCategoryOverrides = () => {
+  const overrides = new Map<
+    string,
+    { categoryCode: string; categoryName?: string }
+  >();
+
+  for (const reviewPath of DEFAULT_MANUAL_CATEGORY_REVIEW_PATHS) {
+    if (!existsSync(reviewPath)) {
+      continue;
+    }
+
+    const review = JSON.parse(readFileSync(reviewPath, 'utf8')) as {
+      items?: Array<{
+        code?: string;
+        manual_category_code?: string;
+        manual_category_name?: string;
+      }>;
+    };
+
+    for (const item of review.items ?? []) {
+      const code = item.code?.trim();
+      const categoryCode = item.manual_category_code?.trim();
+      const categoryName = item.manual_category_name?.trim();
+
+      if (!code || !categoryCode) {
+        continue;
+      }
+
+      overrides.set(code, {
+        categoryCode,
+        categoryName: categoryName || undefined,
+      });
+    }
+  }
+
+  return overrides;
+};
+
+const applyManualCategoryOverrides = (
+  seed: SeedFile,
+  overrides: Map<string, { categoryCode: string; categoryName?: string }>
+): number => {
+  let appliedCount = 0;
+
+  for (const item of seed.items) {
+    const override = overrides.get(item.code);
+
+    if (!override) {
+      continue;
+    }
+
+    item.fk_lookup.category_code = override.categoryCode;
+    if (override.categoryName) {
+      item.fk_lookup.category_name = override.categoryName;
+    }
+    appliedCount += 1;
+  }
+
+  return appliedCount;
+};
+
+const applyUnknownTypeFallback = (seed: SeedFile): number => {
+  let appliedCount = 0;
+
+  for (const item of seed.items) {
+    if (
+      item.fk_lookup.type_code !== 'PDF_IMPORT' &&
+      item.fk_lookup.type_code !== 'UKN'
+    ) {
+      continue;
+    }
+
+    item.fk_lookup.type_code = 'UNK';
+    item.fk_lookup.type_name = 'Unknown';
+    appliedCount += 1;
+  }
+
+  return appliedCount;
 };
 
 const uniqueNotes = (notes: string[]): string[] => [...new Set(notes)];
@@ -739,6 +969,9 @@ const main = async () => {
   const currentSeed = JSON.parse(readFileSync(inputPath, 'utf8')) as SeedFile;
   const measurementUnitIds = await loadMeasurementUnitIdMap(currentSeed);
   const helperNameMaps = await loadHelperNameMaps(currentSeed);
+  const manualPackageOverrides = loadManualPackageOverrides();
+  const manualDosageOverrides = loadManualDosageOverrides();
+  const manualCategoryOverrides = loadManualCategoryOverrides();
   const { indexByCode, rows } = parsePriceList(pdfPath);
   const rowsByCode = new Map(rows.map(row => [row.code, row] as const));
   const existingCodes = new Set(currentSeed.items.map(item => item.code));
@@ -781,6 +1014,19 @@ const main = async () => {
   const enrichedSeed = JSON.parse(readFileSync(outputPath, 'utf8')) as SeedFile;
   const inheritedCategoryCount = inheritSiblingCategories(enrichedSeed);
   const manualOverrideCount = applyManualTypeAndCategoryOverrides(enrichedSeed);
+  const manualPackageOverrideCount = applyManualPackageOverrides(
+    enrichedSeed,
+    manualPackageOverrides
+  );
+  const manualDosageOverrideCount = applyManualDosageOverrides(
+    enrichedSeed,
+    manualDosageOverrides
+  );
+  const manualCategoryOverrideCount = applyManualCategoryOverrides(
+    enrichedSeed,
+    manualCategoryOverrides
+  );
+  const unknownTypeFallbackCount = applyUnknownTypeFallback(enrichedSeed);
   const missingUnitCodes = resolveMeasurementUnitIds(
     enrichedSeed,
     measurementUnitIds
@@ -799,6 +1045,10 @@ const main = async () => {
     ...enrichedSeed.source.notes,
     `Inherited sibling category_code for ${inheritedCategoryCount} restored or still-unmapped variants on 2026-03-27.`,
     `Applied ${manualOverrideCount} manual type/category overrides for known brand families on 2026-03-27.`,
+    `Applied ${manualPackageOverrideCount} manual package overrides from completed package review on 2026-03-27.`,
+    `Applied ${manualDosageOverrideCount} manual dosage overrides from completed dosage review on 2026-03-28.`,
+    `Applied ${manualCategoryOverrideCount} manual category overrides from completed none/NA category review on 2026-03-28.`,
+    `Applied UNK fallback to ${unknownTypeFallbackCount} items still missing type mapping on 2026-03-28.`,
     'Resolved category/type/package/dosage helper names from current master data on 2026-03-27.',
     'Resolved measurement_unit_id and measurement_denominator_unit_id from existing live-mapped unit codes on 2026-03-27.',
   ]);

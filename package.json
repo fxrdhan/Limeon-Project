@@ -39,6 +39,7 @@
     "backfill:chat-image-previews": "bun scripts/backfill-chat-image-previews.ts",
     "backfill:profile-photo-thumbnails": "bun scripts/backfill-profile-photo-thumbnails.ts",
     "seed:item-master:price-list": "bun scripts/import-item-master-price-list.ts",
+    "seed:item-master:json": "bun scripts/seed-item-master-from-json.ts",
     "normalize:item-master:seed": "bun scripts/normalize-item-master-seed.ts",
     "enrich:item-types:sheet-pdfs": "bun scripts/enrich-item-types-from-sheet-pdfs.ts",
     "enrich:item-categories:kegunaan": "bun scripts/enrich-item-categories-from-kegunaan.ts",

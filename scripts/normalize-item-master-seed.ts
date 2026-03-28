@@ -858,7 +858,6 @@ const resolveBaseUnitName = (dosageCode?: string): string | null => {
 const PACKAGE_CODE_OVERRIDES = new Map<string, string>([
   ['0A0610', 'BLP'],
   ['0J7000', 'VIA'],
-  ['0K1231', 'PAK'],
   ['0R0860', 'AMP'],
 ]);
 
@@ -893,6 +892,10 @@ const normalizePackageCode = (
     /\bJOINTMAX\b/.test(normalizedSourceName)
   ) {
     return 'BLP';
+  }
+
+  if (normalizedPackageCode === 'PAK') {
+    return 'PKG';
   }
 
   if (normalizedPackageCode === 'FLS') {
