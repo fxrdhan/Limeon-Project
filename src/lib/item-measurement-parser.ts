@@ -10,7 +10,7 @@ export type ParsedMeasurementInput = {
 };
 
 const MEASUREMENT_PATTERN =
-  /\b(\d+(?:[.,]\d+)?)\s*(MG|MCG|G|GR|GRAM|KG|ML|L|IU|UCI|GA|GAUGE)(?:\s*\/\s*(\d+(?:[.,]\d+)?)\s*(MG|MCG|G|GR|GRAM|KG|ML|L|IU|UCI))?\b/i;
+  /(?<!\d)(\d+(?:[.,]\d+)?)\s*(MG|MCG|G|GR|GRAM|KG|ML|L|IU|UCI|GA|GAUGE)(?:\s*\/\s*(\d+(?:[.,]\d+)?)\s*(MG|MCG|G|GR|GRAM|KG|ML|L|IU|UCI))?\b/i;
 
 const UNIT_ALIASES: Record<string, string> = {
   g: 'g',
