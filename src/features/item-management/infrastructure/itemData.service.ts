@@ -240,14 +240,12 @@ export const itemDataService = {
       }
 
       const matchedByName = (unitsByName || []).find(
-        unit => unit.name.toLowerCase() === dosageName.toLowerCase()
+        unit =>
+          unit.name.toLowerCase() === dosageName.toLowerCase() &&
+          !unit.source_package_id
       );
 
       if (matchedByName) {
-        if (matchedByName.source_package_id) {
-          return { data: matchedByName as ItemInventoryUnit, error: null };
-        }
-
         if (!matchedByName.source_dosage_id) {
           const { data: updatedUnit, error: updateError } = await supabase
             .from('item_inventory_units')
@@ -271,7 +269,9 @@ export const itemDataService = {
           return { data: updatedUnit as ItemInventoryUnit, error: null };
         }
 
-        return { data: matchedByName as ItemInventoryUnit, error: null };
+        if (matchedByName.source_dosage_id === dosageId) {
+          return { data: matchedByName as ItemInventoryUnit, error: null };
+        }
       }
 
       const { data: insertedUnit, error: insertError } = await supabase

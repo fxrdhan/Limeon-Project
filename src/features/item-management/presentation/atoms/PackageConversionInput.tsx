@@ -5,6 +5,7 @@ import FormField from '@/components/form-field';
 import Input from '@/components/input';
 import type { PackageConversionLogicFormData } from '../../shared/types';
 import type { ItemInventoryUnit } from '@/types/database';
+import { getInventoryUnitMetaLabel } from '@/lib/item-units';
 
 interface LocalPackageConversionInputProps {
   baseUnit: string;
@@ -109,12 +110,7 @@ export default function PackageConversionInput({
             options={availableUnits.map(unit => ({
               id: unit.id,
               name: unit.name,
-              metaLabel:
-                unit.kind === 'packaging'
-                  ? 'Kemasan'
-                  : unit.kind === 'retail_unit'
-                    ? 'Unit Ecer'
-                    : 'Custom',
+              metaLabel: getInventoryUnitMetaLabel(unit),
             }))}
             placeholder="-- Pilih Unit --"
             required

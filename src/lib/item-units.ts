@@ -115,3 +115,45 @@ export const createInventoryUnitFromDosage = (
     source_dosage_id: dosage.id,
   };
 };
+
+export const getInventoryUnitMetaLabel = (
+  unit: Pick<
+    ItemInventoryUnit,
+    'kind' | 'source_package_id' | 'source_dosage_id'
+  >
+) => {
+  if (unit.source_dosage_id) return 'Sediaan';
+  if (unit.source_package_id || unit.kind === 'packaging') return 'Kemasan';
+  if (unit.kind === 'retail_unit') return 'Unit Ecer';
+  return 'Custom';
+};
+
+export const mergeInventoryUnitsWithDosagePreference = (
+  units: ItemInventoryUnit[],
+  dosageBackedUnit?: ItemInventoryUnit | null
+) => {
+  if (!dosageBackedUnit) return units;
+
+  const normalizedName = dosageBackedUnit.name.toLowerCase();
+  const hasLinkedDosageUnit = units.some(
+    unit => unit.source_dosage_id === dosageBackedUnit.source_dosage_id
+  );
+
+  const filteredUnits = units.filter(unit => {
+    const isSameName = unit.name.toLowerCase() === normalizedName;
+    const isPlainCustom =
+      unit.kind === 'custom' &&
+      !unit.source_package_id &&
+      !unit.source_dosage_id;
+
+    if (isSameName && isPlainCustom) {
+      return false;
+    }
+
+    return true;
+  });
+
+  return hasLinkedDosageUnit
+    ? filteredUnits
+    : [...filteredUnits, dosageBackedUnit];
+};

@@ -36,7 +36,11 @@ import { useCustomerLevels } from '../../application/hooks/data';
 import { useInlineEditor } from '@/hooks/forms/useInlineEditor';
 import { itemDataService } from '../../infrastructure/itemData.service';
 import { itemStorageService } from '../../infrastructure/itemStorage.service';
-import { createInventoryUnitFromDosage } from '@/lib/item-units';
+import {
+  createInventoryUnitFromDosage,
+  getInventoryUnitMetaLabel,
+  mergeInventoryUnitsWithDosagePreference,
+} from '@/lib/item-units';
 import {
   toPricingFields,
   toPricingPatch,
@@ -430,48 +434,34 @@ const PricingSection: React.FC<PricingSectionProps> = ({
   );
 
   const baseUnitOptions = useMemo(() => {
-    const kindLabel = {
-      packaging: 'Kemasan',
-      retail_unit: 'Unit Ecer',
-      custom: 'Custom',
-    } as const;
-
-    const mergedUnits = [
-      ...packageConversionHook.availableUnits,
-      ...packages
-        .filter(
-          pkg =>
-            !packageConversionHook.availableUnits.some(
-              unit => unit.id === pkg.id
-            )
-        )
-        .map(pkg => ({
-          id: pkg.id,
-          name: pkg.name,
-          code: pkg.code,
-          description: pkg.description ?? null,
-          kind: 'packaging' as const,
-        })),
-    ];
+    const mergedUnits = mergeInventoryUnitsWithDosagePreference(
+      [
+        ...packageConversionHook.availableUnits,
+        ...packages
+          .filter(
+            pkg =>
+              !packageConversionHook.availableUnits.some(
+                unit => unit.id === pkg.id
+              )
+          )
+          .map(pkg => ({
+            id: pkg.id,
+            name: pkg.name,
+            code: pkg.code,
+            description: pkg.description ?? null,
+            kind: 'packaging' as const,
+            source_package_id: pkg.id,
+          })),
+      ],
+      dosageBackedUnit
+    );
 
     const options = mergedUnits.map(unit => ({
       id: unit.id,
       name: unit.name,
       description: unit.description ?? undefined,
-      metaLabel: kindLabel[unit.kind],
+      metaLabel: getInventoryUnitMetaLabel(unit),
     }));
-
-    if (
-      dosageBackedUnit &&
-      !options.some(option => option.name === dosageBackedUnit.name)
-    ) {
-      options.push({
-        id: dosageBackedUnit.id,
-        name: dosageBackedUnit.name,
-        description: dosageBackedUnit.description ?? undefined,
-        metaLabel: 'Unit Ecer',
-      });
-    }
 
     return options.sort((left, right) => left.name.localeCompare(right.name));
   }, [dosageBackedUnit, packageConversionHook.availableUnits, packages]);
@@ -592,24 +582,27 @@ const PricingSection: React.FC<PricingSectionProps> = ({
       stackStyle={stackStyle}
       disabled={isViewingOldVersion}
       onBaseUnitChange={value => {
-        const selectedUnit = [
-          ...packageConversionHook.availableUnits,
-          ...packages
-            .filter(
-              pkg =>
-                !packageConversionHook.availableUnits.some(
-                  unit => unit.id === pkg.id
-                )
-            )
-            .map(pkg => ({
-              id: pkg.id,
-              name: pkg.name,
-              code: pkg.code,
-              description: pkg.description ?? null,
-              kind: 'packaging' as const,
-            })),
-          ...(dosageBackedUnit ? [dosageBackedUnit] : []),
-        ].find(unit => unit.id === value);
+        const selectedUnit = mergeInventoryUnitsWithDosagePreference(
+          [
+            ...packageConversionHook.availableUnits,
+            ...packages
+              .filter(
+                pkg =>
+                  !packageConversionHook.availableUnits.some(
+                    unit => unit.id === pkg.id
+                  )
+              )
+              .map(pkg => ({
+                id: pkg.id,
+                name: pkg.name,
+                code: pkg.code,
+                description: pkg.description ?? null,
+                kind: 'packaging' as const,
+                source_package_id: pkg.id,
+              })),
+          ],
+          dosageBackedUnit
+        ).find(unit => unit.id === value);
         if (!selectedUnit) return;
 
         updateFormData({ base_inventory_unit_id: value });
@@ -650,30 +643,27 @@ const PackageConversionSection: React.FC<CollapsibleSectionProps> = ({
     : null;
   const dosageBackedUnit = createInventoryUnitFromDosage(selectedDosage);
   const availableInventoryUnits = useMemo(() => {
-    const units = [
-      ...packageConversionHook.availableUnits,
-      ...packages
-        .filter(
-          pkg =>
-            !packageConversionHook.availableUnits.some(
-              unit => unit.id === pkg.id
-            )
-        )
-        .map(pkg => ({
-          id: pkg.id,
-          name: pkg.name,
-          code: pkg.code,
-          description: pkg.description ?? null,
-          kind: 'packaging' as const,
-        })),
-    ];
-    if (
-      dosageBackedUnit &&
-      !units.some(unit => unit.name === dosageBackedUnit.name)
-    ) {
-      units.push(dosageBackedUnit);
-    }
-    return units;
+    return mergeInventoryUnitsWithDosagePreference(
+      [
+        ...packageConversionHook.availableUnits,
+        ...packages
+          .filter(
+            pkg =>
+              !packageConversionHook.availableUnits.some(
+                unit => unit.id === pkg.id
+              )
+          )
+          .map(pkg => ({
+            id: pkg.id,
+            name: pkg.name,
+            code: pkg.code,
+            description: pkg.description ?? null,
+            kind: 'packaging' as const,
+            source_package_id: pkg.id,
+          })),
+      ],
+      dosageBackedUnit
+    );
   }, [dosageBackedUnit, packageConversionHook.availableUnits, packages]);
 
   const packageConversionLogic = useConversionLogic({
