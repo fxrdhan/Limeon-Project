@@ -65,7 +65,7 @@
     "google-auth-library": "^10.6.2",
     "googleapis": "^171.4.0",
     "motion": "^12.38.0",
-    "pdfjs-dist": "^5.5.207",
+    "pdfjs-dist": "^5.6.205",
     "react": "^19.2.4",
     "react-chartjs-2": "^5.3.1",
     "react-dom": "^19.2.4",
