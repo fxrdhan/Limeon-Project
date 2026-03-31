@@ -8,7 +8,7 @@ import { useDropdownContext } from '../hooks/useDropdownContext';
 import type { DropdownMenuProps } from '../types';
 
 const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
-  ({ leaveTimeoutRef, onSearchKeyDown }, ref) => {
+  ({ isFrozen = false, leaveTimeoutRef, onSearchKeyDown }, ref) => {
     const {
       isOpen,
       isClosing,
@@ -40,6 +40,7 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
     return (
       <MenuPortal
         ref={ref}
+        isFrozen={isFrozen}
         isOpen={isOpen}
         isClosing={isClosing}
         applyOpenStyles={applyOpenStyles}

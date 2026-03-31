@@ -1,6 +1,7 @@
 import { RefObject } from 'react';
 
 export interface DropdownMenuProps {
+  isFrozen?: boolean;
   leaveTimeoutRef: RefObject<NodeJS.Timeout | null>;
   onSearchKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
 }

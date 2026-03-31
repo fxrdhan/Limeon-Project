@@ -5,7 +5,6 @@ import React, {
   useEffect,
   useState,
 } from 'react';
-import { createPortal } from 'react-dom';
 import type { DropdownProps, CheckboxDropdownProps } from '@/types';
 import ValidationOverlay from '@/components/validation-overlay';
 import DropdownButton from './components/DropdownButton';
@@ -24,17 +23,8 @@ import { useFocusManagement } from './hooks/useFocusManagement';
 import { useScrollManagement } from './hooks/useScrollManagement';
 import { useDropdownEffects } from './hooks/useDropdownEffects';
 import { useHoverDetail } from './hooks/useHoverDetail';
-import { PORTAL_SURFACE_CLASS } from '@/styles/uiPrimitives';
 
 let pinnedDropdownName: string | null = null;
-
-interface FrozenDropdownSnapshot {
-  dropDirection: 'up' | 'down';
-  filteredOptions: Array<{ id: string; name: string; metaLabel?: string }>;
-  portalStyle: React.CSSProperties;
-  searchTerm: string;
-  value: string;
-}
 
 // Function overloads for different modes
 function Dropdown(props: DropdownProps): React.JSX.Element;
@@ -98,9 +88,9 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
   const optionsContainerRef = useRef<HTMLDivElement>(null);
   const pinnedOpenRef = useRef(false);
   const suppressFocusOnNextOpenRef = useRef(false);
+  const previousMenuFrozenRef = useRef(false);
+  const frozenValueRef = useRef<string | null>(null);
   const [isLocallyFrozen, setIsLocallyFrozen] = useState(false);
-  const [frozenSnapshot, setFrozenSnapshot] =
-    useState<FrozenDropdownSnapshot | null>(null);
 
   // Hooks
   const shouldKeepDropdownOpen = useCallback(
@@ -125,8 +115,9 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     shouldKeepOpen: shouldKeepDropdownOpen,
   });
   const isMenuFrozen = freezePersistedMenu || isLocallyFrozen;
-  const effectiveIsOpen = !isMenuFrozen && (isOpen || shouldKeepDropdownOpen());
+  const effectiveIsOpen = isOpen || shouldKeepDropdownOpen();
   const effectiveIsClosing = isClosing && !shouldKeepDropdownOpen();
+  const isPortalFrozen = isMenuFrozen && effectiveIsOpen;
 
   const pinDropdownOpen = useCallback(() => {
     pinnedOpenRef.current = true;
@@ -231,10 +222,9 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
         document.activeElement.blur();
       }
       pinDropdownOpen();
-      actualCloseDropdown(true);
       onAddNew(term);
     },
-    [actualCloseDropdown, clearPendingFocus, onAddNew, pinDropdownOpen]
+    [clearPendingFocus, onAddNew, pinDropdownOpen]
   );
 
   useEffect(() => {
@@ -244,41 +234,23 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
   }, [freezePersistedMenu, isLocallyFrozen]);
 
   useEffect(() => {
-    if (!persistOpen) {
-      setIsLocallyFrozen(false);
-      setFrozenSnapshot(null);
+    const wasFrozen = previousMenuFrozenRef.current;
+    previousMenuFrozenRef.current = isMenuFrozen;
+
+    if (!shouldKeepDropdownOpen()) {
+      frozenValueRef.current = null;
       return;
     }
 
-    if (!isMenuFrozen) return;
+    if (!wasFrozen && isMenuFrozen) {
+      frozenValueRef.current = typeof value === 'string' ? value : null;
+      return;
+    }
 
-    setFrozenSnapshot({
-      dropDirection,
-      filteredOptions: filteredOptions.map(option => {
-        const matchedOption = options.find(
-          originalOption => originalOption.id === option.id
-        );
-        return {
-          id: option.id,
-          name: option.name,
-          metaLabel: matchedOption?.metaLabel,
-        };
-      }),
-      portalStyle,
-      searchTerm,
-      value: typeof value === 'string' ? value : '',
-    });
-  }, [
-    dropDirection,
-    filteredOptions,
-    isMenuFrozen,
-    isLocallyFrozen,
-    options,
-    persistOpen,
-    portalStyle,
-    searchTerm,
-    value,
-  ]);
+    if (wasFrozen && !isMenuFrozen && frozenValueRef.current === value) {
+      frozenValueRef.current = null;
+    }
+  }, [isMenuFrozen, shouldKeepDropdownOpen, value]);
 
   const { expandedId, setExpandedId } = useTextExpansion({
     buttonRef,
@@ -365,6 +337,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
 
     const handlePointerDownOutside = (event: PointerEvent) => {
       if (!shouldKeepDropdownOpen()) return;
+      if (isMenuFrozen) return;
 
       const target = event.target;
       if (!(target instanceof Node)) return;
@@ -390,7 +363,12 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
         true
       );
     };
-  }, [closeDropdownAndReleasePin, effectiveIsOpen, shouldKeepDropdownOpen]);
+  }, [
+    closeDropdownAndReleasePin,
+    effectiveIsOpen,
+    isMenuFrozen,
+    shouldKeepDropdownOpen,
+  ]);
 
   useEffect(() => {
     if (!effectiveIsOpen || !shouldKeepDropdownOpen()) return;
@@ -399,17 +377,28 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     const isSelectedOptionVisible = filteredOptions.some(
       option => option.id === selectedOption.id
     );
+    const persistedValue = frozenValueRef.current;
+    const hasSelectionChangedWhilePersisted =
+      persistedValue !== null && persistedValue !== value;
 
-    if (!isSelectedOptionVisible) {
+    if (!isSelectedOptionVisible && hasSelectionChangedWhilePersisted) {
+      frozenValueRef.current = null;
       resetSearch();
+      return;
+    }
+
+    if (!isMenuFrozen && hasSelectionChangedWhilePersisted) {
+      frozenValueRef.current = null;
     }
   }, [
     filteredOptions,
     effectiveIsOpen,
+    isMenuFrozen,
     resetSearch,
     searchTerm,
     selectedOption,
     shouldKeepDropdownOpen,
+    value,
   ]);
 
   const resetSearchSafely = useCallback(() => {
@@ -467,7 +456,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     isEnabled: enableHoverDetail,
     hoverDelay: hoverDetailDelay,
     onFetchData: onFetchHoverDetail,
-    isDropdownOpen: effectiveIsOpen,
+    isDropdownOpen: effectiveIsOpen && !isPortalFrozen,
   });
 
   const handleSearchChangeWithHoverReset = useCallback(
@@ -613,6 +602,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
 
             <DropdownMenu
               ref={dropdownMenuRef}
+              isFrozen={isPortalFrozen}
               leaveTimeoutRef={leaveTimeoutRef}
               onSearchKeyDown={handleSearchBarKeyDown}
             />
@@ -631,53 +621,6 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
             isOpen={effectiveIsOpen}
           />
         )}
-        {isMenuFrozen && frozenSnapshot
-          ? createPortal(
-              <div
-                style={frozenSnapshot.portalStyle}
-                className={`${frozenSnapshot.dropDirection === 'down' ? 'origin-top' : 'origin-bottom'} ${PORTAL_SURFACE_CLASS} shadow-xl opacity-100 scale-100 pointer-events-none select-none`}
-              >
-                {searchList && (
-                  <div className="p-2 border-b border-slate-200 sticky top-0 z-10 bg-white">
-                    <input
-                      type="text"
-                      value={frozenSnapshot.searchTerm}
-                      readOnly
-                      className="w-full py-2 text-sm border rounded-xl min-w-0 pl-2 border-slate-300 bg-white text-slate-800"
-                    />
-                  </div>
-                )}
-                <div className="p-1 max-h-60 overflow-y-auto">
-                  {frozenSnapshot.filteredOptions.length > 0 ? (
-                    frozenSnapshot.filteredOptions.map(option => (
-                      <div
-                        key={option.id}
-                        className={`flex items-center w-full py-2 px-3 rounded-xl text-sm ${
-                          option.id === frozenSnapshot.value
-                            ? 'bg-slate-100 text-primary font-semibold'
-                            : 'text-slate-800'
-                        }`}
-                      >
-                        <span className="min-w-0 flex-1 truncate">
-                          {option.name}
-                        </span>
-                        {option.metaLabel ? (
-                          <span className="shrink-0 rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
-                            {option.metaLabel}
-                          </span>
-                        ) : null}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="px-3 py-4 text-sm text-slate-500">
-                      Tidak ada pilihan yang sesuai
-                    </div>
-                  )}
-                </div>
-              </div>,
-              document.body
-            )
-          : null}
         {enableHoverDetail && (
           <HoverDetailPortal
             isVisible={isHoverDetailVisible}
