@@ -295,6 +295,23 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
     [sanitizeSavedGridState]
   );
 
+  const readSavedPaginationEnabledState = useCallback(
+    (tableType: TableType) => {
+      if ('loadSavedPaginationEnabledState' in gridStateManager) {
+        return (
+          gridStateManager as {
+            loadSavedPaginationEnabledState: (
+              table: TableType
+            ) => boolean | undefined;
+          }
+        ).loadSavedPaginationEnabledState(tableType);
+      }
+
+      return undefined;
+    },
+    []
+  );
+
   const hasSavedGridState = useCallback(
     (tableType: TableType) => {
       if (typeof gridStateManager.hasSavedState === 'function') {
@@ -303,6 +320,32 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
       return Boolean(readSavedGridState(tableType));
     },
     [readSavedGridState]
+  );
+
+  const applySavedPaginationState = useCallback(
+    (
+      api: GridApi,
+      tableType: TableType,
+      savedState?: GridState,
+      fallbackPageSize = 25
+    ) => {
+      if (!api || api.isDestroyed()) {
+        return;
+      }
+
+      const savedPaginationEnabled = readSavedPaginationEnabledState(tableType);
+      const paginationEnabled = savedPaginationEnabled ?? true;
+
+      api.setGridOption('pagination', paginationEnabled);
+
+      if (paginationEnabled) {
+        api.setGridOption(
+          'paginationPageSize',
+          savedState?.pagination?.pageSize ?? fallbackPageSize
+        );
+      }
+    },
+    [readSavedPaginationEnabledState]
   );
 
   // 🎯 Load initial grid state for AG Grid's initialState prop
@@ -338,15 +381,33 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
   useEffect(() => {
     const tableType = activeTab as TableType;
 
-    // Skip initial mount (initialState handles it)
+    if (!gridApi || gridApi.isDestroyed()) {
+      return;
+    }
+
+    // Initial mount: initialState already restored the structural grid state,
+    // but pagination enabled/disabled still needs explicit sync.
     if (previousActiveTabRef.current === null) {
       previousActiveTabRef.current = tableType;
+      requestAnimationFrame(() => {
+        if (gridApi && !gridApi.isDestroyed()) {
+          applySavedPaginationState(
+            gridApi,
+            tableType,
+            initialGridState,
+            itemsPerPage
+          );
+        }
+      });
       return;
     }
 
     // Only apply state when tab actually changes
-    if (previousActiveTabRef.current !== tableType && gridApi) {
+    if (previousActiveTabRef.current !== tableType) {
       previousActiveTabRef.current = tableType;
+
+      gridApi.clearFocusedCell();
+      gridApi.clearCellSelection();
 
       const savedState = readSavedGridState(tableType);
 
@@ -355,18 +416,41 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
         requestAnimationFrame(() => {
           if (gridApi && !gridApi.isDestroyed()) {
             gridApi.setState(savedState);
+            applySavedPaginationState(
+              gridApi,
+              tableType,
+              savedState,
+              itemsPerPage
+            );
+            gridApi.clearFocusedCell();
+            gridApi.clearCellSelection();
           }
         });
       } else {
         // No saved state, autosize columns for first-time users
         requestAnimationFrame(() => {
           if (gridApi && !gridApi.isDestroyed()) {
+            applySavedPaginationState(
+              gridApi,
+              tableType,
+              undefined,
+              itemsPerPage
+            );
             gridApi.autoSizeAllColumns();
+            gridApi.clearFocusedCell();
+            gridApi.clearCellSelection();
           }
         });
       }
     }
-  }, [activeTab, gridApi, readSavedGridState]);
+  }, [
+    activeTab,
+    applySavedPaginationState,
+    gridApi,
+    initialGridState,
+    itemsPerPage,
+    readSavedGridState,
+  ]);
 
   // Column display mode for items (reference columns)
   const {
@@ -487,11 +571,22 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
         | Doctor
       >
     ) => {
+      const tableType = activeTab as TableType;
+      const savedState = readSavedGridState(tableType);
+
+      applySavedPaginationState(
+        params.api,
+        tableType,
+        savedState,
+        itemsPerPage
+      );
       setGridApi(params.api);
 
       // Sync current page size with grid
-      const gridPageSize = params.api.paginationGetPageSize();
-      setCurrentPageSize(gridPageSize);
+      const isPaginationEnabled = params.api.getGridOption('pagination');
+      setCurrentPageSize(
+        isPaginationEnabled ? params.api.paginationGetPageSize() : -1
+      );
 
       // Notify parent about grid API
       if (onGridApiReady) {
@@ -500,7 +595,14 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
 
       onGridReady(params);
     },
-    [onGridReady, onGridApiReady]
+    [
+      activeTab,
+      applySavedPaginationState,
+      itemsPerPage,
+      onGridApiReady,
+      onGridReady,
+      readSavedGridState,
+    ]
   );
 
   // Handle first data rendered - simple autosize for new grids
@@ -548,13 +650,23 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
 
     syncCurrentPageSize();
     gridApi.addEventListener('paginationChanged', syncCurrentPageSize);
+    if ('savePaginationEnabledState' in gridStateManager) {
+      (
+        gridStateManager as {
+          savePaginationEnabledState: (
+            api: GridApi,
+            table: TableType
+          ) => boolean;
+        }
+      ).savePaginationEnabledState(gridApi, activeTab as TableType);
+    }
 
     return () => {
       if (!gridApi.isDestroyed()) {
         gridApi.removeEventListener('paginationChanged', syncCurrentPageSize);
       }
     };
-  }, [gridApi]);
+  }, [activeTab, gridApi]);
 
   // Handle filter changes - notify parent for SearchBar sync
   const handleFilterChanged = useCallback(() => {

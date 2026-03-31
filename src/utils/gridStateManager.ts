@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 
 // Manual grid state management utilities
 const GRID_STATE_PREFIX = 'grid_state_';
+const GRID_PAGINATION_ENABLED_PREFIX = 'grid_pagination_enabled_';
 
 const getSessionStorage = (): Storage => {
   return sessionStorage;
@@ -26,6 +27,10 @@ const getStorageKey = (tableType: TableType): string => {
   return `${GRID_STATE_PREFIX}${tableType}`;
 };
 
+const getPaginationEnabledStorageKey = (tableType: TableType): string => {
+  return `${GRID_PAGINATION_ENABLED_PREFIX}${tableType}`;
+};
+
 const readGridStateRaw = (tableType: TableType): string | null => {
   const storageKey = getStorageKey(tableType);
 
@@ -36,6 +41,66 @@ const readGridStateRaw = (tableType: TableType): string | null => {
     // ignore
   }
   return null;
+};
+
+const readPaginationEnabledRaw = (tableType: TableType): string | null => {
+  const storageKey = getPaginationEnabledStorageKey(tableType);
+
+  try {
+    const sessionValue = getSessionStorage().getItem(storageKey);
+    if (sessionValue !== null) return sessionValue;
+  } catch {
+    // ignore
+  }
+  return null;
+};
+
+const stripTransientGridState = (state: GridState): GridState => ({
+  ...state,
+  focusedCell: undefined,
+  cellSelection: undefined,
+  rangeSelection: undefined,
+});
+
+const getPaginationEnabled = (gridApi: GridApi): boolean => {
+  return gridApi.getGridOption('pagination') !== false;
+};
+
+export const savePaginationEnabledState = (
+  gridApi: GridApi,
+  tableType: TableType
+): boolean => {
+  try {
+    if (!gridApi || gridApi.isDestroyed()) {
+      return false;
+    }
+
+    const storageKey = getPaginationEnabledStorageKey(tableType);
+    getSessionStorage().setItem(
+      storageKey,
+      JSON.stringify(getPaginationEnabled(gridApi))
+    );
+    return true;
+  } catch (error) {
+    console.error('Failed to save pagination enabled state:', error);
+    return false;
+  }
+};
+
+export const loadSavedPaginationEnabledState = (
+  tableType: TableType
+): boolean | undefined => {
+  try {
+    const raw = readPaginationEnabledRaw(tableType);
+    if (!raw) {
+      return undefined;
+    }
+
+    const parsed = JSON.parse(raw);
+    return typeof parsed === 'boolean' ? parsed : undefined;
+  } catch {
+    return undefined;
+  }
 };
 
 // Save current grid state to sessionStorage (including pagination state)
@@ -49,8 +114,9 @@ export const saveGridState = (
       return false;
     }
 
-    const currentState = gridApi.getState();
+    const currentState = stripTransientGridState(gridApi.getState());
     const storageKey = getStorageKey(tableType);
+    savePaginationEnabledState(gridApi, tableType);
 
     // Include pagination state for complete state persistence
     getSessionStorage().setItem(storageKey, JSON.stringify(currentState));
@@ -78,8 +144,9 @@ export const autoSaveGridState = (
       return false;
     }
 
-    const currentState = gridApi.getState();
+    const currentState = stripTransientGridState(gridApi.getState());
     const storageKey = getStorageKey(tableType);
+    savePaginationEnabledState(gridApi, tableType);
 
     // Include pagination state for complete state persistence
     getSessionStorage().setItem(storageKey, JSON.stringify(currentState));
@@ -147,10 +214,24 @@ export const restoreGridState = (
       return false;
     }
 
+    parsedState = stripTransientGridState(parsedState);
+    const savedPaginationEnabled = loadSavedPaginationEnabledState(tableType);
+
     // setState handles full state restoration including column order, sizing, and sort
     // Per AG Grid v34 docs: setState() includes columnOrder, columnSizing, and sort properties
     // No need for additional applyColumnState() call which would overwrite sort state
     gridApi.setState(parsedState);
+
+    if (savedPaginationEnabled !== undefined) {
+      gridApi.setGridOption('pagination', savedPaginationEnabled);
+
+      if (savedPaginationEnabled && parsedState.pagination?.pageSize) {
+        gridApi.setGridOption(
+          'paginationPageSize',
+          parsedState.pagination.pageSize
+        );
+      }
+    }
 
     // Only autosize if no column widths were restored (prevent flickering)
     const hasColumnWidths =
@@ -178,8 +259,11 @@ export const restoreGridState = (
 export const clearGridState = (tableType: TableType): boolean => {
   try {
     const storageKey = getStorageKey(tableType);
+    const paginationEnabledStorageKey =
+      getPaginationEnabledStorageKey(tableType);
     try {
       getSessionStorage().removeItem(storageKey);
+      getSessionStorage().removeItem(paginationEnabledStorageKey);
     } catch {
       // ignore
     }
@@ -249,8 +333,8 @@ export const loadSavedStateForInit = (
       return undefined;
     }
 
-    // Include pagination state for complete auto-restore
-    return parsedState;
+    // Include pagination state for complete auto-restore, excluding transient UI state
+    return stripTransientGridState(parsedState);
     /* c8 ignore start */
   } catch (error) {
     console.error(

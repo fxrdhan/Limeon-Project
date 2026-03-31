@@ -1516,19 +1516,24 @@ const ItemMasterNew = memo(() => {
 
   const activeItemsPerPage = useMemo(() => {
     if (isItemTab) return itemsManagement.itemsPerPage;
+    if (isItemEntityTab) return entityManager.itemsPerPage;
+    if (isSupplierTab) return 25;
     if (isCustomerTab) return customerItemsPerPage;
     if (isPatientTab) return patientItemsPerPage;
     if (isDoctorTab) return doctorItemsPerPage;
-    return itemsManagement.itemsPerPage;
+    return 25;
   }, [
     customerItemsPerPage,
     doctorItemsPerPage,
     isCustomerTab,
     isDoctorTab,
+    isItemEntityTab,
     isItemTab,
     isPatientTab,
-    itemsManagement.itemsPerPage,
+    isSupplierTab,
+    entityManager.itemsPerPage,
     patientItemsPerPage,
+    itemsManagement.itemsPerPage,
   ]);
 
   // Cleanup grid API reference and pending tab changes on unmount
