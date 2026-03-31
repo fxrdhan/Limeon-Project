@@ -7,6 +7,7 @@
   "license": "AGPL-3.0",
   "scripts": {
     "dev": "bunx vp dev",
+    "dev:strict": "bun scripts/dev-strict.ts",
     "dev:vite": "bunx vp dev",
     "build": "bunx vp build",
     "lint": "bunx vp lint . --deny-warnings",
@@ -14,6 +15,8 @@
     "format": "bunx vp fmt . --write",
     "format:check": "bunx vp fmt . --check",
     "check": "bunx vp check",
+    "typecheck": "bunx --bun tsc -b --noEmit",
+    "typecheck:watch": "bunx --bun tsc -b --noEmit --watch --preserveWatchOutput",
     "check:chat-schema": "bun scripts/check-chat-schema-types.ts",
     "check:chat-schema:live": "bun scripts/check-chat-schema-types.ts --require-live",
     "preview": "bunx vp preview",
