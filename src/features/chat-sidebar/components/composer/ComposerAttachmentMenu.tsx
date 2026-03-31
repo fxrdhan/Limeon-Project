@@ -79,7 +79,7 @@ export const ComposerAttachmentMenu = ({
             <button
               type="button"
               onClick={() => onAttachImageClick()}
-              className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-xl px-1.5 py-1.5 text-sm text-black transition-colors hover:bg-slate-100"
+              className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-lg px-1.5 py-1.5 text-sm text-black transition-colors hover:bg-slate-100"
             >
               <TbPhoto className="h-4 w-4 text-black" />
               <span>Gambar</span>
@@ -87,7 +87,7 @@ export const ComposerAttachmentMenu = ({
             <button
               type="button"
               onClick={() => onAttachDocumentClick()}
-              className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-xl py-1.5 pl-1.5 pr-3 text-sm text-black transition-colors hover:bg-slate-100"
+              className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-lg py-1.5 pl-1.5 pr-3 text-sm text-black transition-colors hover:bg-slate-100"
             >
               <TbFileDescription className="h-4 w-4 text-black" />
               <span>Dokumen</span>
@@ -95,7 +95,7 @@ export const ComposerAttachmentMenu = ({
             <button
               type="button"
               onClick={onAttachAudioClick}
-              className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-xl px-1.5 py-1.5 text-sm text-black transition-colors hover:bg-slate-100"
+              className="flex cursor-pointer items-center gap-2.5 whitespace-nowrap rounded-lg px-1.5 py-1.5 text-sm text-black transition-colors hover:bg-slate-100"
             >
               <TbMusic className="h-4 w-4 text-black" />
               <span>Audio</span>
