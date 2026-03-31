@@ -58,6 +58,7 @@ export const useEntityModalLogic = ({
   const [address, setAddress] = useState('');
   const [mode, setMode] = useState<ModalMode>('add');
   const [isClosing, setIsClosing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [historyData, setHistoryData] = useState({
     entityTable: '',
     entityId: '',
@@ -247,6 +248,7 @@ export const useEntityModalLogic = ({
       // Use setTimeout to avoid synchronous setState in effect
       setTimeout(() => {
         setIsClosing(false); // Reset closing state when opening
+        setIsSubmitting(false);
         const newMode = initialData ? 'edit' : 'add';
         setMode(newMode);
         setPreviousMode(newMode);
@@ -311,6 +313,9 @@ export const useEntityModalLogic = ({
       );
       return;
     }
+
+    setIsSubmitting(true);
+
     const submitData: {
       id?: string;
       code?: string;
@@ -340,6 +345,7 @@ export const useEntityModalLogic = ({
       // Only trigger closing animation after successful submit
       setIsClosing(true);
     } catch {
+      setIsSubmitting(false);
       // If submit fails, don't close the modal - let user retry
       // Error is already handled by the onSubmit handler
     }
@@ -540,7 +546,7 @@ export const useEntityModalLogic = ({
       mode,
     },
     action: {
-      isLoading,
+      isLoading: isLoading || isSubmitting,
       isDeleting,
     },
     history: {
