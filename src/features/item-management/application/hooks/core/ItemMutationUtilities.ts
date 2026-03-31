@@ -314,11 +314,7 @@ export const saveItemBusinessLogic = async ({
       conversion.to_unit_id ||
       conversion.unit.id;
 
-    if (
-      candidateId.startsWith('dosage:') ||
-      (conversion.unit.source_dosage_id &&
-        !conversion.unit.id.match(/^[0-9a-f-]{36}$/i))
-    ) {
+    if (candidateId.startsWith('dosage:') || conversion.unit.source_dosage_id) {
       const dosageId =
         conversion.unit.source_dosage_id || candidateId.replace(/^dosage:/, '');
       const ensuredUnit = await itemDataService.ensureInventoryUnitFromDosage(

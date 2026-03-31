@@ -138,22 +138,41 @@ export const mergeInventoryUnitsWithDosagePreference = (
   const hasLinkedDosageUnit = units.some(
     unit => unit.source_dosage_id === dosageBackedUnit.source_dosage_id
   );
+  const promotedUnits = units
+    .filter(unit => {
+      const isSameName = unit.name.toLowerCase() === normalizedName;
+      const isPlainCustom =
+        unit.kind === 'custom' &&
+        !unit.source_package_id &&
+        !unit.source_dosage_id;
 
-  const filteredUnits = units.filter(unit => {
-    const isSameName = unit.name.toLowerCase() === normalizedName;
-    const isPlainCustom =
-      unit.kind === 'custom' &&
-      !unit.source_package_id &&
-      !unit.source_dosage_id;
+      return !(hasLinkedDosageUnit && isSameName && isPlainCustom);
+    })
+    .map(unit => {
+      const isSameName = unit.name.toLowerCase() === normalizedName;
+      const isPlainCustom =
+        unit.kind === 'custom' &&
+        !unit.source_package_id &&
+        !unit.source_dosage_id;
 
-    if (isSameName && isPlainCustom) {
-      return false;
-    }
+      if (!hasLinkedDosageUnit && isSameName && isPlainCustom) {
+        return {
+          ...unit,
+          kind: 'retail_unit' as const,
+          source_dosage_id: dosageBackedUnit.source_dosage_id,
+        };
+      }
 
-    return true;
-  });
+      return unit;
+    });
 
-  return hasLinkedDosageUnit
-    ? filteredUnits
-    : [...filteredUnits, dosageBackedUnit];
+  const hasPromotedSameNameUnit = promotedUnits.some(
+    unit =>
+      unit.name.toLowerCase() === normalizedName &&
+      unit.source_dosage_id === dosageBackedUnit.source_dosage_id
+  );
+
+  return hasPromotedSameNameUnit
+    ? promotedUnits
+    : [...promotedUnits, dosageBackedUnit];
 };

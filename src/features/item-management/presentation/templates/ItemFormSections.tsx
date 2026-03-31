@@ -433,6 +433,34 @@ const PricingSection: React.FC<PricingSectionProps> = ({
     [selectedDosage]
   );
 
+  useEffect(() => {
+    if (!selectedDosage?.id || !selectedDosage.name) return;
+    if (
+      packageConversionHook.availableUnits.some(
+        unit => unit.source_dosage_id === selectedDosage.id
+      )
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void itemDataService
+      .ensureInventoryUnitFromDosage(selectedDosage.id, selectedDosage.name)
+      .then(result => {
+        if (cancelled || !result.data) return;
+        void packageConversionHook.refreshAvailableUnits();
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    packageConversionHook,
+    packageConversionHook.availableUnits,
+    selectedDosage,
+  ]);
+
   const baseUnitOptions = useMemo(() => {
     const mergedUnits = mergeInventoryUnitsWithDosagePreference(
       [

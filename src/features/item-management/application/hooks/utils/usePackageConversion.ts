@@ -26,17 +26,17 @@ export const usePackageConversion = (): UsePackageConversionReturn => {
     contains_quantity: 0,
   });
 
-  useEffect(() => {
-    const fetchUnits = async () => {
-      const { data } = await itemInventoryUnitService.getActiveInventoryUnits();
+  const refreshAvailableUnits = useCallback(async () => {
+    const { data } = await itemInventoryUnitService.getActiveInventoryUnits();
 
-      if (data) {
-        setAvailableUnits(data);
-      }
-    };
-
-    void fetchUnits();
+    if (data) {
+      setAvailableUnits(data);
+    }
   }, []);
+
+  useEffect(() => {
+    void refreshAvailableUnits();
+  }, [refreshAvailableUnits]);
 
   const addPackageConversion = useCallback(
     (
@@ -206,6 +206,8 @@ export const usePackageConversion = (): UsePackageConversionReturn => {
     recalculateBasePrices,
     skipNextRecalculation,
     availableUnits,
+    setAvailableUnits,
+    refreshAvailableUnits,
     resetConversions,
     setConversions: setPackageConversions,
   };

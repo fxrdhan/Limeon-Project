@@ -45,6 +45,8 @@ export interface UsePackageConversionReturn {
   recalculateBasePrices: () => void;
   skipNextRecalculation: () => void;
   availableUnits: ItemInventoryUnit[];
+  setAvailableUnits: React.Dispatch<React.SetStateAction<ItemInventoryUnit[]>>;
+  refreshAvailableUnits: () => Promise<void>;
   resetConversions: () => void;
   setConversions: React.Dispatch<React.SetStateAction<PackageConversion[]>>;
 }
