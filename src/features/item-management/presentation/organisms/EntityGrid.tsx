@@ -530,6 +530,32 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
     setCurrentPageSize(newPageSize);
   }, []);
 
+  useEffect(() => {
+    if (!gridApi || gridApi.isDestroyed()) {
+      return;
+    }
+
+    const syncCurrentPageSize = () => {
+      if (gridApi.isDestroyed()) {
+        return;
+      }
+
+      const isPaginationEnabled = gridApi.getGridOption('pagination');
+      setCurrentPageSize(
+        isPaginationEnabled ? gridApi.paginationGetPageSize() : -1
+      );
+    };
+
+    syncCurrentPageSize();
+    gridApi.addEventListener('paginationChanged', syncCurrentPageSize);
+
+    return () => {
+      if (!gridApi.isDestroyed()) {
+        gridApi.removeEventListener('paginationChanged', syncCurrentPageSize);
+      }
+    };
+  }, [gridApi]);
+
   // Handle filter changes - notify parent for SearchBar sync
   const handleFilterChanged = useCallback(() => {
     if (onFilterChanged && gridApi && !gridApi.isDestroyed()) {

@@ -2119,6 +2119,16 @@ const ItemMasterNew = memo(() => {
     ]
   );
 
+  useEffect(() => {
+    if (!unifiedGridApi || unifiedGridApi.isDestroyed()) {
+      return;
+    }
+
+    unifiedGridReadyHandler({
+      api: unifiedGridApi,
+    } as GridReadyEvent);
+  }, [activeTab, unifiedGridApi, unifiedGridReadyHandler]);
+
   const showTabSelector = isItemMasterTab(activeTab);
   const pageTitle =
     activeTab === 'suppliers'
@@ -2376,7 +2386,6 @@ const ItemMasterNew = memo(() => {
         {/* Unified EntityGrid */}
         <div>
           <EntityGrid
-            key={activeTab}
             activeTab={activeTab}
             itemsData={itemsManagement.data as ItemDataType[]}
             suppliersData={suppliersForDisplay}
