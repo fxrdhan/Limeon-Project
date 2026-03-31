@@ -26,6 +26,8 @@ import { useDropdownEffects } from './hooks/useDropdownEffects';
 import { useHoverDetail } from './hooks/useHoverDetail';
 import { PORTAL_SURFACE_CLASS } from '@/styles/uiPrimitives';
 
+let pinnedDropdownName: string | null = null;
+
 interface FrozenDropdownSnapshot {
   dropDirection: 'up' | 'down';
   filteredOptions: Array<{ id: string; name: string; metaLabel?: string }>;
@@ -94,13 +96,17 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
   const dropdownMenuRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const optionsContainerRef = useRef<HTMLDivElement>(null);
+  const pinnedOpenRef = useRef(false);
   const suppressFocusOnNextOpenRef = useRef(false);
   const [isLocallyFrozen, setIsLocallyFrozen] = useState(false);
   const [frozenSnapshot, setFrozenSnapshot] =
     useState<FrozenDropdownSnapshot | null>(null);
 
   // Hooks
-  const shouldKeepDropdownOpen = useCallback(() => persistOpen, [persistOpen]);
+  const shouldKeepDropdownOpen = useCallback(
+    () => persistOpen || pinnedOpenRef.current || pinnedDropdownName === name,
+    [name, persistOpen]
+  );
   const shouldSkipOpenFocus = useCallback(() => {
     const shouldSkip = suppressFocusOnNextOpenRef.current;
     suppressFocusOnNextOpenRef.current = false;
@@ -120,21 +126,35 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
   });
   const isMenuFrozen = freezePersistedMenu || isLocallyFrozen;
   const effectiveIsOpen = !isMenuFrozen && (isOpen || shouldKeepDropdownOpen());
-  const effectiveIsClosing = isClosing && !persistOpen;
+  const effectiveIsClosing = isClosing && !shouldKeepDropdownOpen();
 
-  const closeDropdownAndClearPersist = useCallback(() => {
+  const pinDropdownOpen = useCallback(() => {
+    pinnedOpenRef.current = true;
+    pinnedDropdownName = name;
+  }, [name]);
+
+  const releasePinnedOpen = useCallback(() => {
+    pinnedOpenRef.current = false;
+    if (pinnedDropdownName === name) {
+      pinnedDropdownName = null;
+    }
+  }, [name]);
+
+  const closeDropdownAndReleasePin = useCallback(() => {
     onPersistOpenClear?.();
+    releasePinnedOpen();
     actualCloseDropdown(true);
-  }, [actualCloseDropdown, onPersistOpenClear]);
+  }, [actualCloseDropdown, onPersistOpenClear, releasePinnedOpen]);
 
   const handleToggleDropdown = useCallback(
     (e: React.MouseEvent) => {
       if (effectiveIsOpen) {
         onPersistOpenClear?.();
+        releasePinnedOpen();
       }
       toggleDropdown(e);
     },
-    [effectiveIsOpen, onPersistOpenClear, toggleDropdown]
+    [effectiveIsOpen, onPersistOpenClear, releasePinnedOpen, toggleDropdown]
   );
 
   const {
@@ -176,7 +196,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
       searchList,
       touched,
       setTouched,
-      actualCloseDropdown: closeDropdownAndClearPersist,
+      actualCloseDropdown: closeDropdownAndReleasePin,
       shouldKeepOpen: shouldKeepDropdownOpen,
       shouldSkipOpenFocus,
       dropdownRef,
@@ -210,20 +230,22 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
       if (document.activeElement instanceof HTMLElement) {
         document.activeElement.blur();
       }
+      pinDropdownOpen();
       actualCloseDropdown(true);
       onAddNew(term);
     },
-    [actualCloseDropdown, clearPendingFocus, onAddNew]
+    [actualCloseDropdown, clearPendingFocus, onAddNew, pinDropdownOpen]
   );
 
   useEffect(() => {
-    if (persistOpen && freezePersistedMenu && isLocallyFrozen) {
+    if (freezePersistedMenu && isLocallyFrozen) {
       setIsLocallyFrozen(false);
     }
-  }, [freezePersistedMenu, isLocallyFrozen, persistOpen]);
+  }, [freezePersistedMenu, isLocallyFrozen]);
 
   useEffect(() => {
-    if (!persistOpen && !isLocallyFrozen) {
+    if (!persistOpen) {
+      setIsLocallyFrozen(false);
       setFrozenSnapshot(null);
       return;
     }
@@ -288,7 +310,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
         if (optionId && optionId.trim() !== '') {
           handleCloseValidation();
         }
-        closeDropdownAndClearPersist();
+        closeDropdownAndReleasePin();
         resetSearch();
         setTimeout(() => buttonRef.current?.focus(), 150);
       }
@@ -296,7 +318,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     [
       withCheckbox,
       allProps,
-      closeDropdownAndClearPersist,
+      closeDropdownAndReleasePin,
       handleCloseValidation,
       resetSearch,
       isCheckboxMode,
@@ -318,7 +340,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     searchTerm,
     onSelect: handleSelect,
     onAddNew: handleAddNewPreservingDropdown,
-    onCloseDropdown: closeDropdownAndClearPersist,
+    onCloseDropdown: closeDropdownAndReleasePin,
     onCloseValidation: handleCloseValidation,
     optionsContainerRef,
     autoHighlightOnOpen: mode !== 'text',
@@ -355,7 +377,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
         Boolean(target.closest('[role="dialog"][aria-modal="true"]'));
 
       if (!isInsideDropdown && !isInsideModal) {
-        closeDropdownAndClearPersist();
+        closeDropdownAndReleasePin();
       }
     };
 
@@ -368,7 +390,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
         true
       );
     };
-  }, [closeDropdownAndClearPersist, effectiveIsOpen, shouldKeepDropdownOpen]);
+  }, [closeDropdownAndReleasePin, effectiveIsOpen, shouldKeepDropdownOpen]);
 
   useEffect(() => {
     if (!effectiveIsOpen || !shouldKeepDropdownOpen()) return;
