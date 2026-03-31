@@ -81,6 +81,7 @@ const buildDirectoryUser = (
   name: 'Gudang',
   email: 'gudang@example.com',
   profilephoto: null,
+  profilephoto_thumb: null,
   ...overrides,
 });
 
