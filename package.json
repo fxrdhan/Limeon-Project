@@ -58,7 +58,7 @@
     "prepare": "husky && bun run codex:seed"
   },
   "dependencies": {
-    "@ag-grid-community/locale": "35.1.0",
+    "@ag-grid-community/locale": "35.2.0",
     "@headlessui/react": "^2.2.9",
     "@supabase/supabase-js": "^2.99.3",
     "@tanstack/react-query": "^5.95.2",
