@@ -838,6 +838,12 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
     () => (Array.isArray(formData.image_urls) ? formData.image_urls : []),
     [formData.image_urls]
   );
+  const areImageUrlsEqual = useCallback(
+    (left: string[], right: string[]) =>
+      left.length === right.length &&
+      left.every((value, index) => value === right[index]),
+    []
+  );
 
   const openCropper = useCallback((slotIndex: number, file: File) => {
     const reader = new FileReader();
@@ -1003,15 +1009,26 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
 
   const syncPendingImageUrls = useCallback(
     (slots: Array<{ url: string }>) => {
-      updateFormData({ image_urls: buildImageUrlsPayload(slots) });
+      const nextImageUrls = buildImageUrlsPayload(slots);
+      if (areImageUrlsEqual(formImageUrls, nextImageUrls)) return;
+      updateFormData({ image_urls: nextImageUrls });
     },
-    [buildImageUrlsPayload, updateFormData]
+    [areImageUrlsEqual, buildImageUrlsPayload, formImageUrls, updateFormData]
   );
 
   useEffect(() => {
     if (!isDraftMode) return;
-    updateFormData({ image_urls: buildImageUrlsPayload(imageSlots) });
-  }, [buildImageUrlsPayload, imageSlots, isDraftMode, updateFormData]);
+    const nextImageUrls = buildImageUrlsPayload(imageSlots);
+    if (areImageUrlsEqual(formImageUrls, nextImageUrls)) return;
+    updateFormData({ image_urls: nextImageUrls });
+  }, [
+    areImageUrlsEqual,
+    buildImageUrlsPayload,
+    formImageUrls,
+    imageSlots,
+    isDraftMode,
+    updateFormData,
+  ]);
 
   const handleBrokenImage = useCallback(
     (slotIndex: number) => {

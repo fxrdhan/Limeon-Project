@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { formatRupiah, extractNumericValue } from '@/lib/formatters';
 import { formatMarginPercentage } from '../../../shared/utils/PriceCalculator';
 import type { ItemFormData, PackageConversion } from '../../../shared/types';
@@ -101,7 +101,7 @@ export const useAddItemFormState = ({
   /**
    * Updates form data and synchronized display values
    */
-  const updateFormData = (newData: Partial<ItemFormData>) => {
+  const updateFormData = useCallback((newData: Partial<ItemFormData>) => {
     // Update display prices if price fields change
     if (newData.sell_price !== undefined) {
       setDisplaySellPrice(formatRupiah(newData.sell_price));
@@ -111,7 +111,7 @@ export const useAddItemFormState = ({
     }
 
     setFormData(prev => ({ ...prev, ...newData }));
-  };
+  }, []);
 
   /**
    * Handles form input changes with type-specific processing
