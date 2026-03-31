@@ -124,6 +124,38 @@ export default function ItemPackageConversionManager({
     [conversions]
   );
 
+  const resolveParentUnitName = useCallback(
+    (parentInventoryUnitId?: string | null) => {
+      if (!parentInventoryUnitId) {
+        return baseUnit || 'Unit Dasar';
+      }
+
+      if (parentInventoryUnitId === baseUnitId) {
+        return baseUnit || 'Unit Dasar';
+      }
+
+      const parentFromConversions = filteredConversions.find(
+        conversion =>
+          (conversion.inventory_unit_id ||
+            conversion.to_unit_id ||
+            conversion.unit.id) === parentInventoryUnitId
+      );
+      if (parentFromConversions?.unit?.name) {
+        return parentFromConversions.unit.name;
+      }
+
+      const parentFromAvailableUnits = availableUnits.find(
+        unit => unit.id === parentInventoryUnitId
+      );
+      if (parentFromAvailableUnits?.name) {
+        return parentFromAvailableUnits.name;
+      }
+
+      return baseUnit || 'Unit Dasar';
+    },
+    [availableUnits, baseUnit, baseUnitId, filteredConversions]
+  );
+
   const handleFirstDataRendered = useCallback(
     (event: FirstDataRenderedEvent) => {
       const api = event.api;
@@ -262,7 +294,8 @@ export default function ItemPackageConversionManager({
           field: 'parent_unit.name',
           headerName: 'Dalam',
           valueGetter: params =>
-            params.data?.parent_unit?.name || baseUnit || 'Unit Dasar',
+            params.data?.parent_unit?.name ||
+            resolveParentUnitName(params.data?.parent_inventory_unit_id),
         }),
         ...headerMenuDisabled,
         enableCellChangeFlash: false,
@@ -306,7 +339,7 @@ export default function ItemPackageConversionManager({
           ) : null,
       },
     ] as (ColDef | ColGroupDef)[];
-  }, [baseUnit, disabled, onRemoveConversion]);
+  }, [disabled, onRemoveConversion, resolveParentUnitName]);
 
   const focusFirstField = () => {
     const container = sectionRef.current?.querySelector<HTMLElement>(
