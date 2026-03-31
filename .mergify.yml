@@ -12,7 +12,6 @@ pull_request_rules:
     actions:
       merge:
         method: squash
-      delete_head_branch: {}
       comment:
         message: |
           ✅ Auto-merged by Mergify (docs/dev-only change)
@@ -28,7 +27,6 @@ pull_request_rules:
     actions:
       merge:
         method: squash
-      delete_head_branch: {}
       comment:
         message: |
           ✅ Auto-merged by Mergify (config-only change)
@@ -48,7 +46,6 @@ pull_request_rules:
     actions:
       merge:
         method: squash
-      delete_head_branch: {}
       comment:
         message: |
           ✅ Auto-merged by Mergify
@@ -69,7 +66,6 @@ pull_request_rules:
     actions:
       merge:
         method: squash
-      delete_head_branch: {}
       comment:
         message: |
           ✅ Auto-merged by Mergify (automerge label)
@@ -88,7 +84,6 @@ pull_request_rules:
     actions:
       merge:
         method: squash
-      delete_head_branch: {}
       comment:
         message: |
           ✅ Auto-merged by Mergify
