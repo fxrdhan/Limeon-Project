@@ -3,7 +3,6 @@ import { GridApi } from 'ag-grid-community';
 import { TbPlus } from 'react-icons/tb';
 
 import Button from '@/components/button';
-import { Card } from '@/components/card';
 import { ExportDropdown } from '@/components/export';
 import PageTitle from '@/components/page-title';
 import { AGGridPagination } from '@/components/pagination';
@@ -72,11 +71,11 @@ const MasterDataListPage: React.FC<MasterDataListPageProps> = ({
 
   return (
     <>
-      <Card
+      <div
         className={
           isFetching
-            ? 'opacity-75 transition-opacity duration-300 flex-1 flex flex-col'
-            : 'flex-1 flex flex-col'
+            ? 'opacity-75 transition-opacity duration-300 flex-1 flex flex-col p-6'
+            : 'flex-1 flex flex-col p-6'
         }
       >
         <div className="mb-6">
@@ -133,7 +132,7 @@ const MasterDataListPage: React.FC<MasterDataListPageProps> = ({
             />
           </>
         )}
-      </Card>
+      </div>
       {children}
     </>
   );

@@ -12,7 +12,6 @@ import {
 import { useLocation, useNavigate } from 'react-router-dom';
 
 // Components
-import { Card } from '@/components/card';
 import IdentityDataModal from '@/components/IdentityDataModal';
 import PageTitle from '@/components/page-title';
 import {
@@ -2326,7 +2325,7 @@ const ItemMasterNew = memo(() => {
   // Unified rendering - keep tabs always mounted for smooth animation
   return (
     <>
-      <Card>
+      <div className="flex-1 flex flex-col p-6">
         <div className="relative flex items-center justify-center mb-0 pt-0">
           <div className="absolute left-0 pb-4 pt-6">
             {showTabSelector && (
@@ -2403,7 +2402,7 @@ const ItemMasterNew = memo(() => {
             showGroupPanel={activeTab === 'items' ? showGroupPanel : true}
           />
         </div>
-      </Card>
+      </div>
 
       {/* Item Management Modal - only render for items tab */}
       {activeTab === 'items' && (
