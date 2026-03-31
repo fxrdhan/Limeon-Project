@@ -60,7 +60,7 @@
   "dependencies": {
     "@ag-grid-community/locale": "35.2.0",
     "@headlessui/react": "^2.2.9",
-    "@supabase/supabase-js": "^2.99.3",
+    "@supabase/supabase-js": "^2.100.1",
     "@tanstack/react-query": "^5.95.2",
     "ag-grid-enterprise": "35.1.0",
     "ag-grid-react": "35.1.0",
