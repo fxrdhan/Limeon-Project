@@ -109,6 +109,7 @@ export function generateRandomItemData(
     category_id: randomCategory.id,
     type_id: randomType.id,
     package_id: randomPackage.id,
+    base_inventory_unit_id: randomPackage.id,
     dosage_id: randomDosage.id,
     manufacturer_id: randomManufacturer.id,
     description: '',

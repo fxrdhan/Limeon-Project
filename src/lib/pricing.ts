@@ -2,7 +2,7 @@ import type {
   CustomerLevel,
   CustomerLevelDiscount,
   Item,
-  PackageConversion,
+  ItemUnitHierarchyEntry,
 } from '@/types/database';
 
 export interface PricingContext {
@@ -25,25 +25,22 @@ export interface PricingResult {
 const normalizeNumber = (value: number | string | null | undefined) =>
   Number(value) || 0;
 
-const resolveUnitConversion = (
-  conversions: PackageConversion[],
+const resolveInventoryUnit = (
+  units: ItemUnitHierarchyEntry[],
   unitId?: string | null,
   unitName?: string | null
 ) => {
-  if (!conversions.length) return null;
+  if (!units.length) return null;
 
   if (unitId) {
-    const byId = conversions.find(
-      conversion => conversion.to_unit_id === unitId
-    );
+    const byId = units.find(unit => unit.inventory_unit_id === unitId);
     if (byId) return byId;
   }
 
   if (unitName) {
     return (
-      conversions.find(
-        conversion =>
-          conversion.unit_name?.toLowerCase() === unitName.toLowerCase()
+      units.find(
+        unit => unit.unit.name?.toLowerCase() === unitName.toLowerCase()
       ) || null
     );
   }
@@ -67,17 +64,34 @@ export const resolveUnitPrice = (
   unitId?: string | null,
   unitName?: string | null
 ) => {
-  const conversions = Array.isArray(item.package_conversions)
-    ? item.package_conversions
+  const inventoryUnits = Array.isArray(item.inventory_units)
+    ? item.inventory_units
     : [];
-  const conversion = resolveUnitConversion(conversions, unitId, unitName);
+  const resolvedUnit = resolveInventoryUnit(inventoryUnits, unitId, unitName);
 
-  if (conversion) {
+  if (resolvedUnit) {
+    const factorToBase = normalizeNumber(resolvedUnit.factor_to_base) || 1;
+    const fallbackBasePrice =
+      normalizeNumber(item.base_price) > 0
+        ? normalizeNumber(item.base_price) * factorToBase
+        : 0;
+    const fallbackSellPrice =
+      normalizeNumber(item.sell_price) > 0
+        ? normalizeNumber(item.sell_price) * factorToBase
+        : 0;
+
     return {
-      unitName: conversion.unit_name || item.base_unit || item.unit?.name || '',
-      basePrice: normalizeNumber(conversion.base_price),
-      baseSellPrice: normalizeNumber(conversion.sell_price),
-      conversionRate: normalizeNumber(conversion.conversion_rate),
+      unitName:
+        resolvedUnit.unit.name || item.base_unit || item.unit?.name || '',
+      basePrice:
+        normalizeNumber(
+          resolvedUnit.base_price_override ?? resolvedUnit.base_price
+        ) || fallbackBasePrice,
+      baseSellPrice:
+        normalizeNumber(
+          resolvedUnit.sell_price_override ?? resolvedUnit.sell_price
+        ) || fallbackSellPrice,
+      conversionRate: factorToBase,
     };
   }
 

@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { StorageService } from '@/services/api/storage.service';
+import { buildProfilePhotoUploadPlan } from '@/utils/profilePhoto';
 import type { Session, User, AuthError } from '@supabase/supabase-js';
 import type { UserDetails } from '@/types/database';
 import type { PostgrestError } from '@supabase/supabase-js';
@@ -8,6 +9,9 @@ export interface AuthServiceResponse<T> {
   data: T | null;
   error: AuthError | PostgrestError | Error | null;
 }
+
+const USER_PROFILE_SELECT_COLUMNS =
+  'id, name, email, role, profilephoto, profilephoto_thumb, profilephoto_path';
 
 export class AuthService {
   // Get current session
@@ -37,7 +41,7 @@ export class AuthService {
     try {
       const { data, error } = await supabase
         .from('users')
-        .select('id, name, email, role, profilephoto')
+        .select(USER_PROFILE_SELECT_COLUMNS)
         .eq('id', userId)
         .single();
 
@@ -151,7 +155,7 @@ export class AuthService {
         .from('users')
         .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', userId)
-        .select('id, name, email, role, profilephoto')
+        .select(USER_PROFILE_SELECT_COLUMNS)
         .single();
 
       return { data, error };
@@ -164,36 +168,61 @@ export class AuthService {
   async updateProfilePhoto(
     userId: string,
     file: File,
-    currentPhotoUrl?: string
+    currentPhotoUrl?: string,
+    currentThumbnailUrl?: string | null,
+    currentPhotoPath?: string | null
   ): Promise<
     AuthServiceResponse<{
       user: UserDetails;
       photoUrl: string;
+      thumbnailUrl: string | null;
     }>
   > {
     try {
       // Delete old photo if exists
       if (currentPhotoUrl) {
-        const oldPath = StorageService.extractPathFromUrl(
-          currentPhotoUrl,
-          'profiles'
-        );
+        const oldPath =
+          currentPhotoPath ||
+          StorageService.extractPathFromUrl(currentPhotoUrl, 'profiles');
         if (oldPath) {
           await StorageService.deleteEntityImage('profiles', oldPath);
         }
       }
+      if (currentThumbnailUrl) {
+        const oldThumbnailPath = StorageService.extractPathFromUrl(
+          currentThumbnailUrl,
+          'profiles'
+        );
+        if (oldThumbnailPath) {
+          await StorageService.deleteEntityImage('profiles', oldThumbnailPath);
+        }
+      }
+
+      const uploadPlan = await buildProfilePhotoUploadPlan(userId, file);
 
       // Upload new photo
-      const { publicUrl } = await StorageService.uploadEntityImage(
+      const { publicUrl } = await StorageService.uploadFile(
         'profiles',
-        userId,
-        file
+        file,
+        uploadPlan.originalPath
       );
+      let thumbnailUrl: string | null = null;
+      if (uploadPlan.thumbnailFile && uploadPlan.thumbnailPath) {
+        const thumbnailUpload = await StorageService.uploadRawFile(
+          'profiles',
+          uploadPlan.thumbnailFile,
+          uploadPlan.thumbnailPath,
+          uploadPlan.thumbnailFile.type
+        );
+        thumbnailUrl = thumbnailUpload.publicUrl;
+      }
 
       // Update user record
       const { data: userData, error: updateError } =
         await this.updateUserProfile(userId, {
           profilephoto: publicUrl,
+          profilephoto_path: uploadPlan.originalPath,
+          profilephoto_thumb: thumbnailUrl,
         });
 
       if (updateError || !userData) {
@@ -204,6 +233,7 @@ export class AuthService {
         data: {
           user: userData,
           photoUrl: publicUrl,
+          thumbnailUrl,
         },
         error: null,
       };

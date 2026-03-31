@@ -4,6 +4,7 @@ import {
   FirstDataRenderedEvent,
   GetMainMenuItems,
   GridApi,
+  GridState,
   GridReadyEvent,
   IRowNode,
   RowClickedEvent,
@@ -23,7 +24,11 @@ import { useDynamicGridHeight } from '@/hooks/ag-grid/useDynamicGridHeight';
 // Simple grid state utilities
 import * as gridStateManager from '@/utils/gridStateManager';
 import type { TableType } from '@/utils/gridStateManager';
-import type { MasterDataType } from '@/features/item-management/shared/types';
+import {
+  getItemMasterSearchSessionKey,
+  isMasterDataTab,
+  type MasterDataType,
+} from '@/features/item-management/shared/types';
 
 // Types
 import type {
@@ -154,45 +159,158 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
   doesExternalFilterPass,
   onGridApiReady,
   onFilterChanged,
-  itemsPerPage = 20,
+  itemsPerPage = 25,
 }) {
   // Single grid API for all tabs
   const [gridApi, setGridApi] = useState<GridApi | null>(null);
   const dataGridRef = useRef<AgGridReact>(null);
   const [currentPageSize, setCurrentPageSize] = useState<number>(itemsPerPage);
-  const readSavedGridState = useCallback((tableType: TableType) => {
-    let stateFromHelper: unknown = undefined;
-    if ('loadSavedStateForInit' in gridStateManager) {
-      stateFromHelper = (
-        gridStateManager as {
-          loadSavedStateForInit: (table: TableType) => unknown;
-        }
-      ).loadSavedStateForInit(tableType);
-    }
-    if (!stateFromHelper && 'getSavedStateInfo' in gridStateManager) {
-      stateFromHelper = (
-        gridStateManager as {
-          getSavedStateInfo: (table: TableType) => unknown;
-        }
-      ).getSavedStateInfo(tableType);
-    }
-
-    if (stateFromHelper) {
-      return stateFromHelper;
-    }
-
-    const storageKey = `grid_state_${tableType}`;
-    const raw = sessionStorage.getItem(storageKey);
-    if (!raw) {
-      return undefined;
+  const hasPersistedSearchPattern = useCallback((tableType: TableType) => {
+    if (!isMasterDataTab(tableType)) {
+      return false;
     }
 
     try {
-      return JSON.parse(raw);
+      const savedPattern = sessionStorage.getItem(
+        getItemMasterSearchSessionKey(tableType)
+      );
+      return !!savedPattern?.trim();
     } catch {
-      return undefined;
+      return false;
     }
   }, []);
+
+  const sanitizeSavedGridState = useCallback(
+    (tableType: TableType, state: unknown): GridState | undefined => {
+      if (!state || typeof state !== 'object') {
+        return undefined;
+      }
+
+      const allowedPageSizes = new Set([25, 50, 100]);
+      if (hasPersistedSearchPattern(tableType)) {
+        const gridState = state as GridState;
+        const savedPageSize = gridState.pagination?.pageSize;
+        if (
+          savedPageSize === undefined ||
+          allowedPageSizes.has(savedPageSize)
+        ) {
+          return gridState;
+        }
+
+        const normalizedState: GridState = {
+          ...gridState,
+          pagination: {
+            ...gridState.pagination,
+            pageSize: 25,
+          },
+        };
+
+        try {
+          sessionStorage.setItem(
+            `grid_state_${tableType}`,
+            JSON.stringify(normalizedState)
+          );
+        } catch {
+          // ignore
+        }
+
+        return normalizedState;
+      }
+
+      const gridState = state as GridState;
+      const advancedFilterModel = gridState.filter?.advancedFilterModel;
+      const savedPageSize = gridState.pagination?.pageSize;
+      const normalizedPageSize =
+        savedPageSize === undefined || allowedPageSizes.has(savedPageSize)
+          ? savedPageSize
+          : 25;
+
+      if (advancedFilterModel == null && normalizedPageSize === savedPageSize) {
+        return gridState;
+      }
+
+      const sanitizedState: GridState = {
+        ...gridState,
+        pagination:
+          normalizedPageSize === savedPageSize
+            ? gridState.pagination
+            : {
+                ...gridState.pagination,
+                pageSize: normalizedPageSize,
+              },
+        filter: {
+          ...gridState.filter,
+          advancedFilterModel: undefined,
+        },
+      };
+
+      try {
+        sessionStorage.setItem(
+          `grid_state_${tableType}`,
+          JSON.stringify(sanitizedState)
+        );
+      } catch {
+        // ignore
+      }
+
+      return sanitizedState;
+    },
+    [hasPersistedSearchPattern]
+  );
+
+  const readSavedGridState = useCallback(
+    (tableType: TableType) => {
+      let stateFromHelper: unknown = undefined;
+      if ('loadSavedStateForInit' in gridStateManager) {
+        stateFromHelper = (
+          gridStateManager as {
+            loadSavedStateForInit: (table: TableType) => unknown;
+          }
+        ).loadSavedStateForInit(tableType);
+      }
+      if (!stateFromHelper && 'getSavedStateInfo' in gridStateManager) {
+        stateFromHelper = (
+          gridStateManager as {
+            getSavedStateInfo: (table: TableType) => unknown;
+          }
+        ).getSavedStateInfo(tableType);
+      }
+
+      if (stateFromHelper) {
+        return sanitizeSavedGridState(tableType, stateFromHelper);
+      }
+
+      const storageKey = `grid_state_${tableType}`;
+      const raw = sessionStorage.getItem(storageKey);
+      if (!raw) {
+        return undefined;
+      }
+
+      try {
+        return sanitizeSavedGridState(tableType, JSON.parse(raw));
+      } catch {
+        return undefined;
+      }
+    },
+    [sanitizeSavedGridState]
+  );
+
+  const readSavedPaginationEnabledState = useCallback(
+    (tableType: TableType) => {
+      if ('loadSavedPaginationEnabledState' in gridStateManager) {
+        return (
+          gridStateManager as {
+            loadSavedPaginationEnabledState: (
+              table: TableType
+            ) => boolean | undefined;
+          }
+        ).loadSavedPaginationEnabledState(tableType);
+      }
+
+      return undefined;
+    },
+    []
+  );
 
   const hasSavedGridState = useCallback(
     (tableType: TableType) => {
@@ -204,6 +322,45 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
     [readSavedGridState]
   );
 
+  const applySavedPaginationState = useCallback(
+    (
+      api: GridApi,
+      tableType: TableType,
+      savedState?: GridState,
+      fallbackPageSize = 25
+    ) => {
+      if (!api || api.isDestroyed()) {
+        return;
+      }
+
+      const savedPaginationEnabled = readSavedPaginationEnabledState(tableType);
+      const paginationEnabled = savedPaginationEnabled ?? true;
+
+      api.setGridOption('pagination', paginationEnabled);
+
+      if (paginationEnabled) {
+        api.setGridOption(
+          'paginationPageSize',
+          savedState?.pagination?.pageSize ?? fallbackPageSize
+        );
+      }
+    },
+    [readSavedPaginationEnabledState]
+  );
+
+  const syncPaginationUiState = useCallback((api: GridApi) => {
+    if (!api || api.isDestroyed()) {
+      return;
+    }
+
+    const isPaginationEnabled = api.getGridOption('pagination');
+    const nextPageSize = isPaginationEnabled ? api.paginationGetPageSize() : -1;
+
+    setCurrentPageSize(currentPageSize =>
+      currentPageSize === nextPageSize ? currentPageSize : nextPageSize
+    );
+  }, []);
+
   // 🎯 Load initial grid state for AG Grid's initialState prop
   // AG Grid Best Practice: Use initialState for initial restore
   const initialGridState = useMemo(() => {
@@ -212,8 +369,13 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
 
   // 💾 AG Grid Best Practice: Auto-save on state changes
   // Simple onStateUpdated handler - saves to sessionStorage automatically
+  const isApplyingTabStateRef = useRef(false);
   const handleStateUpdated = useCallback(() => {
     if (!gridApi || gridApi.isDestroyed()) {
+      return;
+    }
+
+    if (isApplyingTabStateRef.current) {
       return;
     }
 
@@ -237,15 +399,37 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
   useEffect(() => {
     const tableType = activeTab as TableType;
 
-    // Skip initial mount (initialState handles it)
+    if (!gridApi || gridApi.isDestroyed()) {
+      return;
+    }
+
+    // Initial mount: initialState already restored the structural grid state,
+    // but pagination enabled/disabled still needs explicit sync.
     if (previousActiveTabRef.current === null) {
       previousActiveTabRef.current = tableType;
+      isApplyingTabStateRef.current = true;
+      requestAnimationFrame(() => {
+        if (gridApi && !gridApi.isDestroyed()) {
+          applySavedPaginationState(
+            gridApi,
+            tableType,
+            initialGridState,
+            itemsPerPage
+          );
+          syncPaginationUiState(gridApi);
+        }
+        isApplyingTabStateRef.current = false;
+      });
       return;
     }
 
     // Only apply state when tab actually changes
-    if (previousActiveTabRef.current !== tableType && gridApi) {
+    if (previousActiveTabRef.current !== tableType) {
       previousActiveTabRef.current = tableType;
+      isApplyingTabStateRef.current = true;
+
+      gridApi.clearFocusedCell();
+      gridApi.clearCellSelection();
 
       const savedState = readSavedGridState(tableType);
 
@@ -254,18 +438,46 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
         requestAnimationFrame(() => {
           if (gridApi && !gridApi.isDestroyed()) {
             gridApi.setState(savedState);
+            applySavedPaginationState(
+              gridApi,
+              tableType,
+              savedState,
+              itemsPerPage
+            );
+            syncPaginationUiState(gridApi);
+            gridApi.clearFocusedCell();
+            gridApi.clearCellSelection();
           }
+          isApplyingTabStateRef.current = false;
         });
       } else {
         // No saved state, autosize columns for first-time users
         requestAnimationFrame(() => {
           if (gridApi && !gridApi.isDestroyed()) {
+            applySavedPaginationState(
+              gridApi,
+              tableType,
+              undefined,
+              itemsPerPage
+            );
+            syncPaginationUiState(gridApi);
             gridApi.autoSizeAllColumns();
+            gridApi.clearFocusedCell();
+            gridApi.clearCellSelection();
           }
+          isApplyingTabStateRef.current = false;
         });
       }
     }
-  }, [activeTab, gridApi, readSavedGridState]);
+  }, [
+    activeTab,
+    applySavedPaginationState,
+    gridApi,
+    initialGridState,
+    itemsPerPage,
+    readSavedGridState,
+    syncPaginationUiState,
+  ]);
 
   // Column display mode for items (reference columns)
   const {
@@ -386,11 +598,17 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
         | Doctor
       >
     ) => {
-      setGridApi(params.api);
+      const tableType = activeTab as TableType;
+      const savedState = readSavedGridState(tableType);
 
-      // Sync current page size with grid
-      const gridPageSize = params.api.paginationGetPageSize();
-      setCurrentPageSize(gridPageSize);
+      applySavedPaginationState(
+        params.api,
+        tableType,
+        savedState,
+        itemsPerPage
+      );
+      syncPaginationUiState(params.api);
+      setGridApi(params.api);
 
       // Notify parent about grid API
       if (onGridApiReady) {
@@ -399,7 +617,15 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
 
       onGridReady(params);
     },
-    [onGridReady, onGridApiReady]
+    [
+      activeTab,
+      applySavedPaginationState,
+      itemsPerPage,
+      onGridApiReady,
+      onGridReady,
+      readSavedGridState,
+      syncPaginationUiState,
+    ]
   );
 
   // Handle first data rendered - simple autosize for new grids
@@ -424,10 +650,47 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
   }, []);
 
   // Handle page size changes
-  const handlePageSizeChange = useCallback((newPageSize: number) => {
-    /* c8 ignore next */
-    setCurrentPageSize(newPageSize);
-  }, []);
+  const handlePageSizeChange = useCallback(
+    (newPageSize: number) => {
+      /* c8 ignore next */
+      setCurrentPageSize(newPageSize);
+
+      if (
+        gridApi &&
+        !gridApi.isDestroyed() &&
+        'savePaginationEnabledState' in gridStateManager
+      ) {
+        (
+          gridStateManager as {
+            savePaginationEnabledState: (
+              api: GridApi,
+              table: TableType
+            ) => boolean;
+          }
+        ).savePaginationEnabledState(gridApi, activeTab as TableType);
+      }
+    },
+    [activeTab, gridApi]
+  );
+
+  useEffect(() => {
+    if (!gridApi || gridApi.isDestroyed()) {
+      return;
+    }
+
+    const syncCurrentPageSize = () => {
+      syncPaginationUiState(gridApi);
+    };
+
+    syncCurrentPageSize();
+    gridApi.addEventListener('paginationChanged', syncCurrentPageSize);
+
+    return () => {
+      if (!gridApi.isDestroyed()) {
+        gridApi.removeEventListener('paginationChanged', syncCurrentPageSize);
+      }
+    };
+  }, [gridApi, syncPaginationUiState]);
 
   // Handle filter changes - notify parent for SearchBar sync
   const handleFilterChanged = useCallback(() => {

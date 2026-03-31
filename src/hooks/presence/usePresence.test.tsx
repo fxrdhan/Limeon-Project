@@ -188,6 +188,7 @@ describe('usePresence', () => {
         name: 'Admin',
         email: 'admin@example.com',
         profilephoto: 'https://example.com/admin.png',
+        profilephoto_thumb: null,
         online_at: expect.any(String),
       },
       {
@@ -195,6 +196,7 @@ describe('usePresence', () => {
         name: 'Gudang',
         email: 'gudang@example.com',
         profilephoto: 'https://example.com/gudang.png',
+        profilephoto_thumb: null,
         online_at: '2099-03-09T09:00:05.000Z',
       },
     ]);

@@ -113,13 +113,17 @@ export function useRandomItemCreation(
     const createItemPromise = async () => {
       // Generate random item data
       const { itemFormData } = generateRandomItemData(entities);
+      const selectedBaseUnit = entities.packages.find(
+        itemPackage => itemPackage.id === itemFormData.base_inventory_unit_id
+      );
 
       // Use business logic to create item with auto-generated code
       // manufacturer_id FK is already set in itemFormData, no separate update needed!
       const result = await saveItemBusinessLogic({
         formData: itemFormData,
         conversions: [], // No package conversions for testing data
-        baseUnit: '', // Will be determined by business logic
+        baseUnit: selectedBaseUnit?.name || '',
+        baseInventoryUnitId: itemFormData.base_inventory_unit_id,
         isEditMode: false,
       });
 

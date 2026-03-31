@@ -178,7 +178,7 @@ async function getGeminiResponse(imageBase64, mimeType, prompt) {
     throw new Error("GEMINI_API_KEY is not set");
   }
 
-  const MODEL_ID = "gemini-2.5-flash-lite";
+  const MODEL_ID = "gemini-3.1-flash-lite-preview";
   const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${GEMINI_API_KEY}`;
 
   const requestBody = {

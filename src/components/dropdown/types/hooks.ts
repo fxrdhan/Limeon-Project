@@ -28,6 +28,8 @@ export interface UseFocusManagementProps {
   touched: boolean;
   setTouched: (touched: boolean) => void;
   actualCloseDropdown: () => void;
+  shouldKeepOpen?: () => boolean;
+  shouldSkipOpenFocus?: () => boolean;
   dropdownRef: RefObject<HTMLDivElement | null>;
   dropdownMenuRef: RefObject<HTMLDivElement | null>;
   searchInputRef: RefObject<HTMLInputElement | null>;

@@ -74,6 +74,7 @@ export interface ColumnSelectorProps {
 
 export interface EnhancedSearchBarProps {
   value: string;
+  stateScopeKey?: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   onFocus?: (e: React.FocusEvent<HTMLInputElement>) => void;

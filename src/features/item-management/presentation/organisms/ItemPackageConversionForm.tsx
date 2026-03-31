@@ -23,7 +23,7 @@ import type {
   PackageConversion,
   PackageConversionLogicFormData,
 } from '../../shared/types';
-import type { ItemPackage } from '@/types/database';
+import type { ItemInventoryUnit } from '@/types/database';
 
 const DeleteButton = React.memo(
   ({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) => (
@@ -57,7 +57,8 @@ interface LocalItemPackageConversionManagerProps {
   stackClassName?: string;
   stackStyle?: React.CSSProperties;
   baseUnit: string;
-  availableUnits: ItemPackage[];
+  baseUnitId: string;
+  availableUnits: ItemInventoryUnit[];
   conversions: PackageConversion[];
   formData: PackageConversionLogicFormData;
   onFormDataChange: (data: PackageConversionLogicFormData) => void;
@@ -75,6 +76,7 @@ export default function ItemPackageConversionManager({
   stackClassName,
   stackStyle,
   baseUnit,
+  baseUnitId,
   availableUnits,
   conversions,
   formData,
@@ -96,18 +98,62 @@ export default function ItemPackageConversionManager({
   const filteredAvailableUnits = useMemo(
     () =>
       availableUnits
-        .filter(unit => unit.name !== baseUnit)
-        .filter(unit => !conversions.some(uc => uc.unit.name === unit.name)),
-    [availableUnits, baseUnit, conversions]
+        .filter(unit => unit.id !== baseUnitId)
+        .filter(
+          unit =>
+            !conversions.some(
+              uc =>
+                (uc.inventory_unit_id || uc.to_unit_id || uc.unit.id) ===
+                unit.id
+            )
+        ),
+    [availableUnits, baseUnitId, conversions]
   );
 
   const filteredConversions = useMemo(
     () =>
       conversions.filter(
         (uc, index, self) =>
-          index === self.findIndex(u => u.unit.name === uc.unit.name) && uc.unit
+          index ===
+            self.findIndex(
+              u =>
+                (u.inventory_unit_id || u.to_unit_id || u.unit.id) ===
+                (uc.inventory_unit_id || uc.to_unit_id || uc.unit.id)
+            ) && uc.unit
       ),
     [conversions]
+  );
+
+  const resolveParentUnitName = useCallback(
+    (parentInventoryUnitId?: string | null) => {
+      if (!parentInventoryUnitId) {
+        return baseUnit || 'Unit Dasar';
+      }
+
+      if (parentInventoryUnitId === baseUnitId) {
+        return baseUnit || 'Unit Dasar';
+      }
+
+      const parentFromConversions = filteredConversions.find(
+        conversion =>
+          (conversion.inventory_unit_id ||
+            conversion.to_unit_id ||
+            conversion.unit.id) === parentInventoryUnitId
+      );
+      if (parentFromConversions?.unit?.name) {
+        return parentFromConversions.unit.name;
+      }
+
+      const parentFromAvailableUnits = availableUnits.find(
+        unit => unit.id === parentInventoryUnitId
+      );
+      if (parentFromAvailableUnits?.name) {
+        return parentFromAvailableUnits.name;
+      }
+
+      return baseUnit || 'Unit Dasar';
+    },
+    [availableUnits, baseUnit, baseUnitId, filteredConversions]
   );
 
   const handleFirstDataRendered = useCallback(
@@ -229,16 +275,27 @@ export default function ItemPackageConversionManager({
       {
         ...createTextColumn({
           field: 'unit.name',
-          headerName: 'Turunan',
+          headerName: 'Unit',
         }),
         ...headerMenuDisabled,
         enableCellChangeFlash: false,
       },
       {
         ...createTextColumn({
-          field: 'conversion_rate',
-          headerName: 'Konversi',
+          field: 'contains_quantity',
+          headerName: 'Isi',
           cellStyle: { textAlign: 'center' },
+        }),
+        ...headerMenuDisabled,
+        enableCellChangeFlash: false,
+      },
+      {
+        ...createTextColumn({
+          field: 'parent_unit.name',
+          headerName: 'Dalam',
+          valueGetter: params =>
+            params.data?.parent_unit?.name ||
+            resolveParentUnitName(params.data?.parent_inventory_unit_id),
         }),
         ...headerMenuDisabled,
         enableCellChangeFlash: false,
@@ -282,7 +339,7 @@ export default function ItemPackageConversionManager({
           ) : null,
       },
     ] as (ColDef | ColGroupDef)[];
-  }, [disabled, onRemoveConversion]);
+  }, [disabled, onRemoveConversion, resolveParentUnitName]);
 
   const focusFirstField = () => {
     const container = sectionRef.current?.querySelector<HTMLElement>(
@@ -325,7 +382,7 @@ export default function ItemPackageConversionManager({
         aria-expanded={isExpanded}
       >
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
-          Konversi Kemasan
+          Struktur Unit Jual
         </h2>
         <TbChevronDown
           size={16}
@@ -352,7 +409,15 @@ export default function ItemPackageConversionManager({
               <div className="w-full">
                 <PackageConversionInput
                   baseUnit={baseUnit}
+                  baseUnitId={baseUnitId}
                   availableUnits={filteredAvailableUnits}
+                  existingUnits={filteredConversions.map(conversion => ({
+                    id:
+                      conversion.inventory_unit_id ||
+                      conversion.to_unit_id ||
+                      conversion.unit.id,
+                    name: conversion.unit.name,
+                  }))}
                   formData={formData}
                   onFormDataChange={onFormDataChange}
                   onAddConversion={onAddConversion}

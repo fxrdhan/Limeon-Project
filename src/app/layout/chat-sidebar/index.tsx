@@ -1,5 +1,5 @@
 import type { ChatTargetUser } from '@/types';
-import { AnimatePresence, motion } from 'motion/react';
+import { motion } from 'motion/react';
 import ChatSidebarPanel from '@/features/chat-sidebar';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -44,41 +44,35 @@ const ChatSidebar = ({ isOpen, onClose, targetUser }: ChatSidebarProps) => {
   }, []);
 
   const activeTargetUser = targetUser ?? persistedTargetUser;
-  const shouldRenderSidebar = isOpen || Boolean(activeTargetUser);
   const handleAnimationComplete = useCallback(() => {
     if (isOpen) return;
     setPersistedTargetUser(undefined);
   }, [isOpen]);
 
   return (
-    <AnimatePresence mode="wait">
-      {shouldRenderSidebar && (
-        <motion.aside
-          key="chat-sidebar"
-          initial={false}
-          animate={{
-            width: isOpen ? sidebarWidth : 0,
-            opacity: isOpen ? 1 : 0,
-          }}
-          exit={{ width: 0, opacity: 0 }}
-          transition={{ duration: 0.2, ease: 'easeOut' }}
-          onAnimationComplete={handleAnimationComplete}
-          aria-hidden={!isOpen}
-          style={{ maxWidth: '100vw' }}
-          className={`h-full overflow-hidden ${
-            isOpen
-              ? 'border-l border-slate-200 bg-slate-100'
-              : 'border-l border-transparent bg-transparent pointer-events-none'
-          }`}
-        >
-          <ChatSidebarPanel
-            isOpen={isOpen}
-            onClose={onClose}
-            targetUser={activeTargetUser}
-          />
-        </motion.aside>
-      )}
-    </AnimatePresence>
+    <motion.aside
+      key="chat-sidebar"
+      initial={false}
+      animate={{
+        width: isOpen ? sidebarWidth : 0,
+        opacity: isOpen ? 1 : 0,
+      }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
+      onAnimationComplete={handleAnimationComplete}
+      aria-hidden={!isOpen}
+      style={{ maxWidth: '100vw' }}
+      className={`h-full overflow-hidden ${
+        isOpen
+          ? 'border-l border-slate-200 bg-slate-100'
+          : 'border-l border-transparent bg-transparent pointer-events-none'
+      }`}
+    >
+      <ChatSidebarPanel
+        isOpen={isOpen}
+        onClose={onClose}
+        targetUser={activeTargetUser}
+      />
+    </motion.aside>
   );
 };
 

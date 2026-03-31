@@ -198,7 +198,7 @@ const SupplierListNew = () => {
         isOpen={isAddModalOpen}
         onClose={handleCloseAddModal}
         onSave={async data => {
-          await handleModalSubmit({
+          return await handleModalSubmit({
             data: toSupplierPayload(data),
             id: undefined,
           });
@@ -220,7 +220,7 @@ const SupplierListNew = () => {
         isOpen={isEditModalOpen}
         onClose={handleCloseEditModal}
         onSave={async data => {
-          await handleModalSubmit({
+          return await handleModalSubmit({
             data: toSupplierPayload(data),
             id: editingItem?.id,
           });

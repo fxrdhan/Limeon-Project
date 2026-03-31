@@ -61,7 +61,8 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
     retryLoadDirectory,
     loadMoreDirectoryUsers,
     openChatForUser,
-  } = useChatSidebarLauncher(showPortal);
+    prefetchConversationForUser,
+  } = useChatSidebarLauncher(Boolean(user));
   const [hoveredUser, setHoveredUser] = useState<string | null>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const portalTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -305,8 +306,16 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                             ? 'cursor-pointer hover:bg-emerald-50'
                             : 'cursor-default hover:bg-slate-50'
                         }`}
-                        onMouseEnter={() => setHoveredUser(portalUser.id)}
+                        onMouseEnter={() => {
+                          setHoveredUser(portalUser.id);
+                          void prefetchConversationForUser(portalUser);
+                        }}
                         onMouseLeave={() => setHoveredUser(null)}
+                        onFocus={() => {
+                          setHoveredUser(portalUser.id);
+                          void prefetchConversationForUser(portalUser);
+                        }}
+                        onBlur={() => setHoveredUser(null)}
                         onClick={
                           portalUser.id !== user?.id
                             ? () => handleChatOpen(portalUser)
@@ -341,12 +350,16 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
                             className={`relative rounded-full shadow-sm w-8 h-8 shrink-0 overflow-hidden ${isOnline ? '' : 'opacity-50'}`}
                             title={`${portalUser.name} - ${isOnline ? 'Online' : 'Offline'}`}
                           >
-                            {portalUser.profilephoto ? (
+                            {portalUser.profilephoto_thumb ||
+                            portalUser.profilephoto ? (
                               <img
-                                src={portalUser.profilephoto}
+                                src={
+                                  portalUser.profilephoto_thumb ||
+                                  portalUser.profilephoto ||
+                                  ''
+                                }
                                 alt={portalUser.name}
                                 className="w-full h-full object-cover"
-                                loading="lazy"
                                 draggable={false}
                               />
                             ) : (

@@ -15,6 +15,7 @@ import {
   useItemFormReset,
 } from '../form';
 import { useItemPricingLogic } from '../utils';
+import { createInventoryUnitFromDosage } from '@/lib/item-units';
 import type {
   ItemFormData,
   UseItemManagementProps,
@@ -94,7 +95,7 @@ export const useAddItemForm = ({
       isEditMode: formState.isEditMode,
       initialFormData: formState.initialFormData,
       initialPackageConversions: formState.initialPackageConversions,
-      units: formState.packages,
+      units: packageConversionHook.availableUnits,
     },
     packageConversionHook,
     cache,
@@ -130,9 +131,9 @@ export const useAddItemForm = ({
     formState.setInitialDataForForm(data);
 
     if (data) {
-      const baseUnitName =
-        formState.units.find(u => u.id === data.unit_id)?.name || '';
-      packageConversionHook.setBaseUnit(baseUnitName);
+      packageConversionHook.setBaseInventoryUnitId(
+        data.base_inventory_unit_id || ''
+      );
       packageConversionHook.setBasePrice(data.base_price || 0);
       packageConversionHook.setSellPrice(data.sell_price || 0);
     }
@@ -162,6 +163,8 @@ export const useAddItemForm = ({
           );
           setInitialDataForForm({
             ...updatedCacheData.formData,
+            base_inventory_unit_id:
+              updatedCacheData.formData.base_inventory_unit_id || '',
             quantity: updatedCacheData.formData.quantity ?? 0,
             unit_id: updatedCacheData.formData.unit_id ?? '',
           });
@@ -217,20 +220,47 @@ export const useAddItemForm = ({
   }, [formState.formData.sell_price, packageConversionHook]);
 
   useEffect(() => {
-    if (!formState.isEditMode) return;
-    if (packageConversionHook.baseUnit) return;
+    if (
+      packageConversionHook.baseUnit &&
+      packageConversionHook.baseInventoryUnitId
+    )
+      return;
     if (!formState.formData.package_id) return;
+    if (formState.formData.base_inventory_unit_id) return;
 
     const selectedPackage = formState.packages.find(
       pkg => pkg.id === formState.formData.package_id
     );
     if (selectedPackage?.name) {
       packageConversionHook.setBaseUnit(selectedPackage.name);
+      packageConversionHook.setBaseInventoryUnitId(selectedPackage.id);
+      packageConversionHook.setBaseUnitKind('packaging');
+      formState.updateFormData({ base_inventory_unit_id: selectedPackage.id });
     }
   }, [
-    formState.isEditMode,
+    formState.formData.base_inventory_unit_id,
     formState.formData.package_id,
     formState.packages,
+    packageConversionHook,
+    formState,
+  ]);
+
+  useEffect(() => {
+    if (!packageConversionHook.baseInventoryUnitId) return;
+    if (packageConversionHook.baseUnit) return;
+
+    const selectedInventoryUnit = packageConversionHook.availableUnits.find(
+      unit => unit.id === packageConversionHook.baseInventoryUnitId
+    );
+
+    if (selectedInventoryUnit) {
+      packageConversionHook.setBaseUnit(selectedInventoryUnit.name);
+      packageConversionHook.setBaseUnitKind(selectedInventoryUnit.kind);
+    }
+  }, [
+    packageConversionHook.availableUnits,
+    packageConversionHook.baseInventoryUnitId,
+    packageConversionHook.baseUnit,
     packageConversionHook,
   ]);
 
@@ -255,49 +285,49 @@ export const useAddItemForm = ({
         let conversionsForSave = packageConversionHook.conversions;
         const pendingConversion =
           packageConversionHook.packageConversionFormData;
+        const dosageBackedUnit = createInventoryUnitFromDosage(
+          formState.dosages.find(
+            dosage => dosage.id === formState.formData.dosage_id
+          ) || null
+        );
+        const availableUnits = [
+          ...packageConversionHook.availableUnits,
+          ...(dosageBackedUnit ? [dosageBackedUnit] : []),
+        ];
 
         if (
-          pendingConversion.unit?.trim() &&
-          pendingConversion.conversion_rate > 0
+          pendingConversion.inventory_unit_id &&
+          pendingConversion.parent_inventory_unit_id &&
+          pendingConversion.contains_quantity > 0
         ) {
-          const selectedUnit = packageConversionHook.availableUnits.find(
-            unit => unit.name === pendingConversion.unit
+          const selectedUnit = availableUnits.find(
+            unit => unit.id === pendingConversion.inventory_unit_id
           );
 
           if (!selectedUnit) {
-            toast.error('Kemasan tidak valid!');
+            toast.error('Unit tidak valid!');
             return;
           }
 
           if (
-            packageConversionHook.baseUnit &&
-            selectedUnit.name === packageConversionHook.baseUnit
+            packageConversionHook.baseInventoryUnitId &&
+            selectedUnit.id === packageConversionHook.baseInventoryUnitId
           ) {
-            toast.error(
-              'Kemasan turunan tidak boleh sama dengan kemasan utama!'
-            );
+            toast.error('Unit tambahan tidak boleh sama dengan Unit Dasar!');
             return;
           }
 
           const existingUnit = packageConversionHook.conversions.find(
-            conversion => conversion.unit.name === selectedUnit.name
+            conversion =>
+              (conversion.inventory_unit_id ||
+                conversion.to_unit_id ||
+                conversion.unit.id) === selectedUnit.id
           );
 
           if (existingUnit) {
-            toast.error('Kemasan tersebut sudah ada dalam daftar!');
+            toast.error('Unit tersebut sudah ada dalam struktur!');
             return;
           }
-
-          const calculatedBasePrice =
-            packageConversionHook.basePrice > 0
-              ? packageConversionHook.basePrice /
-                pendingConversion.conversion_rate
-              : 0;
-          const calculatedSellPrice =
-            packageConversionHook.sellPrice > 0
-              ? packageConversionHook.sellPrice /
-                pendingConversion.conversion_rate
-              : 0;
 
           conversionsForSave = [
             ...packageConversionHook.conversions,
@@ -308,9 +338,52 @@ export const useAddItemForm = ({
               unit: selectedUnit,
               unit_name: selectedUnit.name,
               to_unit_id: selectedUnit.id,
-              conversion_rate: pendingConversion.conversion_rate,
-              base_price: calculatedBasePrice,
-              sell_price: calculatedSellPrice,
+              inventory_unit_id: selectedUnit.id,
+              parent_inventory_unit_id:
+                pendingConversion.parent_inventory_unit_id,
+              contains_quantity: pendingConversion.contains_quantity,
+              factor_to_base:
+                packageConversionHook.availableUnits.find(
+                  unit => unit.id === pendingConversion.parent_inventory_unit_id
+                ) &&
+                packageConversionHook.conversions.find(
+                  conversion =>
+                    (conversion.inventory_unit_id ||
+                      conversion.to_unit_id ||
+                      conversion.unit.id) ===
+                    pendingConversion.parent_inventory_unit_id
+                )
+                  ? (packageConversionHook.conversions.find(
+                      conversion =>
+                        (conversion.inventory_unit_id ||
+                          conversion.to_unit_id ||
+                          conversion.unit.id) ===
+                        pendingConversion.parent_inventory_unit_id
+                    )?.factor_to_base || 1) *
+                    pendingConversion.contains_quantity
+                  : pendingConversion.contains_quantity,
+              conversion_rate:
+                packageConversionHook.availableUnits.find(
+                  unit => unit.id === pendingConversion.parent_inventory_unit_id
+                ) &&
+                packageConversionHook.conversions.find(
+                  conversion =>
+                    (conversion.inventory_unit_id ||
+                      conversion.to_unit_id ||
+                      conversion.unit.id) ===
+                    pendingConversion.parent_inventory_unit_id
+                )
+                  ? (packageConversionHook.conversions.find(
+                      conversion =>
+                        (conversion.inventory_unit_id ||
+                          conversion.to_unit_id ||
+                          conversion.unit.id) ===
+                        pendingConversion.parent_inventory_unit_id
+                    )?.factor_to_base || 1) *
+                    pendingConversion.contains_quantity
+                  : pendingConversion.contains_quantity,
+              base_price: 0,
+              sell_price: 0,
             },
           ];
         }
@@ -327,6 +400,9 @@ export const useAddItemForm = ({
           formData: formState.formData,
           conversions: conversionsForSave,
           baseUnit: packageConversionHook.baseUnit,
+          baseInventoryUnitId:
+            formState.formData.base_inventory_unit_id ||
+            packageConversionHook.baseInventoryUnitId,
           isEditMode: formState.isEditMode,
           itemId,
         });
@@ -345,8 +421,7 @@ export const useAddItemForm = ({
       packageConversionHook.packageConversionFormData,
       packageConversionHook.availableUnits,
       packageConversionHook.baseUnit,
-      packageConversionHook.basePrice,
-      packageConversionHook.sellPrice,
+      packageConversionHook.baseInventoryUnitId,
       saveItemMutation,
       itemId,
       cache,
@@ -388,6 +463,8 @@ export const useAddItemForm = ({
     setIsAddDosageModalOpen: formState.setIsAddDosageModalOpen,
     isAddManufacturerModalOpen: formState.isAddManufacturerModalOpen,
     setIsAddManufacturerModalOpen: formState.setIsAddManufacturerModalOpen,
+    persistedDropdownName: formState.persistedDropdownName,
+    setPersistedDropdownName: formState.setPersistedDropdownName,
 
     // Editing states (from formState)
     editingMargin: formState.editingMargin,

@@ -106,6 +106,7 @@ export const useEntityQueries = {
   categories: createEntityQuery('categories'),
   types: createEntityQuery('types'),
   packages: createEntityQuery('packages'),
+  inventoryUnits: createEntityQuery('inventoryUnits'),
   units: createEntityQuery('units'),
   dosages: createEntityQuery('dosages'),
   manufacturers: createEntityQuery('manufacturers'),
@@ -285,6 +286,7 @@ export const useEntityMutations = {
   categories: createEntityMutations('categories'),
   types: createEntityMutations('types'),
   packages: createEntityMutations('packages'),
+  inventoryUnits: createEntityMutations('inventoryUnits'),
   units: createEntityMutations('units'),
   dosages: createEntityMutations('dosages'),
   manufacturers: createEntityMutations('manufacturers'),
@@ -307,10 +309,12 @@ import {
   useMedicineTypes,
   usePackages,
   useItemUnits,
+  useInventoryUnits,
   useCategoryMutations,
   useMedicineTypeMutations,
   usePackageMutations,
   useItemUnitMutations,
+  useInventoryUnitMutations,
 } from '@/hooks/queries/useMasterData';
 
 import { useDosages, useDosageMutations } from '@/hooks/queries/useDosages';
@@ -338,6 +342,10 @@ export const EXTERNAL_HOOK_REGISTRY = {
   packages: {
     useData: usePackages,
     useMutations: usePackageMutations,
+  },
+  inventoryUnits: {
+    useData: useInventoryUnits,
+    useMutations: useInventoryUnitMutations,
   },
   units: {
     useData: useItemUnits,

@@ -9,6 +9,7 @@ import type {
   Category,
   MedicineType,
   Unit,
+  ItemInventoryUnit,
   ItemPackage,
   ItemManufacturer,
   ItemDosage,
@@ -25,9 +26,11 @@ import type {
 export type ItemCategory = Category;
 export type ItemType = MedicineType;
 export type ItemUnit = Unit;
+export type ItemInventoryUnitEntity = ItemInventoryUnit;
 
 // These were already correct in database types, just alias them
 export type { ItemPackage };
+export type { ItemInventoryUnit };
 export type { ItemManufacturer };
 export type { ItemDosage };
 export type { Item };
@@ -70,6 +73,7 @@ type CreateInputWithOptionalId<T> = Omit<T, 'created_at' | 'updated_at'> & {
 export type ItemCategoryCreateInput = CreateInputFor<ItemCategory>;
 export type ItemTypeCreateInput = CreateInputFor<ItemType>;
 export type ItemPackageCreateInput = CreateInputFor<ItemPackage>;
+export type ItemInventoryUnitCreateInput = CreateInputFor<ItemInventoryUnit>;
 export type ItemUnitCreateInput = CreateInputWithOptionalId<ItemUnit>; // Special case
 export type ItemDosageCreateInput = CreateInputFor<ItemDosage>;
 export type ItemManufacturerCreateInput = CreateInputFor<ItemManufacturer>;
@@ -81,6 +85,7 @@ export type ItemManufacturerCreateInput = CreateInputFor<ItemManufacturer>;
 export type ItemCategoryUpdateInput = UpdateInputFor<ItemCategory>;
 export type ItemTypeUpdateInput = UpdateInputFor<ItemType>;
 export type ItemPackageUpdateInput = UpdateInputFor<ItemPackage>;
+export type ItemInventoryUnitUpdateInput = UpdateInputFor<ItemInventoryUnit>;
 export type ItemUnitUpdateInput = UpdateInputFor<ItemUnit>;
 export type ItemDosageUpdateInput = UpdateInputFor<ItemDosage>;
 export type ItemManufacturerUpdateInput = UpdateInputFor<ItemManufacturer>;
@@ -96,6 +101,7 @@ export type AnyEntity =
   | ItemCategory
   | ItemType
   | ItemPackage
+  | ItemInventoryUnit
   | ItemUnit
   | ItemDosage
   | ItemManufacturer;
@@ -107,6 +113,7 @@ export type AnyCreateInput =
   | ItemCategoryCreateInput
   | ItemTypeCreateInput
   | ItemPackageCreateInput
+  | ItemInventoryUnitCreateInput
   | ItemUnitCreateInput
   | ItemDosageCreateInput
   | ItemManufacturerCreateInput;
@@ -118,6 +125,7 @@ export type AnyUpdateInput =
   | ItemCategoryUpdateInput
   | ItemTypeUpdateInput
   | ItemPackageUpdateInput
+  | ItemInventoryUnitUpdateInput
   | ItemUnitUpdateInput
   | ItemDosageUpdateInput
   | ItemManufacturerUpdateInput;
@@ -133,6 +141,7 @@ export type EntityTypeKey =
   | 'categories'
   | 'types'
   | 'packages'
+  | 'inventoryUnits'
   | 'units'
   | 'dosages'
   | 'manufacturers';
@@ -144,6 +153,7 @@ export interface EntityTypeMap {
   categories: ItemCategory;
   types: ItemType;
   packages: ItemPackage;
+  inventoryUnits: ItemInventoryUnit;
   units: ItemUnit;
   dosages: ItemDosage;
   manufacturers: ItemManufacturer;
@@ -156,6 +166,7 @@ export interface CreateInputTypeMap {
   categories: ItemCategoryCreateInput;
   types: ItemTypeCreateInput;
   packages: ItemPackageCreateInput;
+  inventoryUnits: ItemInventoryUnitCreateInput;
   units: ItemUnitCreateInput;
   dosages: ItemDosageCreateInput;
   manufacturers: ItemManufacturerCreateInput;
@@ -168,6 +179,7 @@ export interface UpdateInputTypeMap {
   categories: ItemCategoryUpdateInput;
   types: ItemTypeUpdateInput;
   packages: ItemPackageUpdateInput;
+  inventoryUnits: ItemInventoryUnitUpdateInput;
   units: ItemUnitUpdateInput;
   dosages: ItemDosageUpdateInput;
   manufacturers: ItemManufacturerUpdateInput;

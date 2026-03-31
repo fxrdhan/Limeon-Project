@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import type { ItemFormData, PackageConversion } from '../../../shared/types';
-import type { ItemPackage } from '../../../shared/types';
+import type { ItemInventoryUnit } from '@/types/database';
 
 interface UseItemFormResetProps {
   formState: {
@@ -8,11 +8,13 @@ interface UseItemFormResetProps {
     isEditMode: boolean;
     initialFormData: ItemFormData | null;
     initialPackageConversions: PackageConversion[] | null;
-    units: ItemPackage[];
+    units: ItemInventoryUnit[];
   };
   packageConversionHook: {
     resetConversions: () => void;
     setBaseUnit: (unit: string) => void;
+    setBaseInventoryUnitId: (unitId: string) => void;
+    setBaseUnitKind: (kind: 'packaging' | 'retail_unit' | 'custom') => void;
     setBasePrice: (price: number) => void;
     setSellPrice: (price: number) => void;
     skipNextRecalculation: () => void;
@@ -47,10 +49,16 @@ export const useItemFormReset = ({
     ) {
       // Reset unit conversions for edit mode
       packageConversionHook.resetConversions();
-      const baseUnitName =
-        formState.units.find(u => u.id === formState.initialFormData!.unit_id)
-          ?.name || '';
+      const baseUnit =
+        formState.units.find(
+          u => u.id === formState.initialFormData!.base_inventory_unit_id
+        ) || null;
+      const baseUnitName = baseUnit?.name || '';
       packageConversionHook.setBaseUnit(baseUnitName);
+      packageConversionHook.setBaseInventoryUnitId(
+        formState.initialFormData.base_inventory_unit_id || ''
+      );
+      packageConversionHook.setBaseUnitKind(baseUnit?.kind || 'packaging');
       packageConversionHook.setBasePrice(
         formState.initialFormData.base_price || 0
       );
@@ -60,16 +68,24 @@ export const useItemFormReset = ({
       packageConversionHook.skipNextRecalculation();
 
       formState.initialPackageConversions.forEach(convDataFromDB => {
-        const unitDetails = formState.units.find(
-          u => u.name === convDataFromDB.unit_name
-        );
-        if (unitDetails && typeof convDataFromDB.conversion_rate === 'number') {
+        if (typeof convDataFromDB.conversion_rate === 'number') {
           packageConversionHook.addPackageConversion({
             id: convDataFromDB.id || `temp-${Date.now()}-${Math.random()}`,
-            to_unit_id: unitDetails.id,
-            unit_name: unitDetails.name,
-            unit: unitDetails,
+            inventory_unit_id:
+              convDataFromDB.inventory_unit_id || convDataFromDB.to_unit_id,
+            to_unit_id: convDataFromDB.to_unit_id,
+            unit_name: convDataFromDB.unit_name,
+            unit: convDataFromDB.unit,
+            parent_inventory_unit_id:
+              convDataFromDB.parent_inventory_unit_id || null,
+            contains_quantity:
+              convDataFromDB.contains_quantity ||
+              convDataFromDB.conversion_rate,
+            factor_to_base:
+              convDataFromDB.factor_to_base || convDataFromDB.conversion_rate,
             conversion_rate: convDataFromDB.conversion_rate,
+            base_price_override: convDataFromDB.base_price_override,
+            sell_price_override: convDataFromDB.sell_price_override,
             base_price: convDataFromDB.base_price || 0,
             sell_price: convDataFromDB.sell_price || 0,
           });
@@ -79,6 +95,8 @@ export const useItemFormReset = ({
       // Reset unit conversions for add mode
       packageConversionHook.resetConversions();
       packageConversionHook.setBaseUnit('');
+      packageConversionHook.setBaseInventoryUnitId('');
+      packageConversionHook.setBaseUnitKind('packaging');
       packageConversionHook.setBasePrice(0);
       packageConversionHook.setSellPrice(0);
       cache.clearCache();

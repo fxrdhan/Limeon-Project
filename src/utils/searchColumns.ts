@@ -418,7 +418,7 @@ export const itemManufacturersSearchColumns: SearchColumn[] = [
 ];
 
 /**
- * Item Units search columns configuration
+ * Measurement units search columns configuration
  */
 export const itemUnitsSearchColumns: SearchColumn[] = [
   {
@@ -426,21 +426,21 @@ export const itemUnitsSearchColumns: SearchColumn[] = [
     headerName: 'Kode',
     searchable: true,
     type: 'text',
-    description: 'Cari berdasarkan kode satuan',
+    description: 'Cari berdasarkan kode satuan ukur',
   },
   {
     field: 'units.name',
     headerName: 'Nama',
     searchable: true,
     type: 'text',
-    description: 'Cari berdasarkan nama satuan',
+    description: 'Cari berdasarkan nama satuan ukur',
   },
   {
     field: 'units.description',
     headerName: 'Deskripsi',
     searchable: true,
     type: 'text',
-    description: 'Cari berdasarkan deskripsi satuan',
+    description: 'Cari berdasarkan deskripsi satuan ukur',
   },
 ];
 

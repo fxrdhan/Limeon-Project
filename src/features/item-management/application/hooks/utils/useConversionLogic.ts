@@ -3,11 +3,12 @@ import type {
   PackageConversion,
   PackageConversionLogicFormData,
 } from '../../../shared/types';
-import type { ItemPackage } from '@/types/database';
+import type { ItemInventoryUnit } from '@/types/database';
+import { calculateFactorToBase } from '@/lib/item-units';
 
 interface ConversionLogicProps {
   conversions: PackageConversion[];
-  availableUnits: ItemPackage[];
+  availableUnits: ItemInventoryUnit[];
   formData: PackageConversionLogicFormData;
   addPackageConversion: (
     conversion: Omit<PackageConversion, 'id' | 'base_price' | 'sell_price'> & {
@@ -20,6 +21,7 @@ interface ConversionLogicProps {
 
 interface ConversionProps extends ConversionLogicProps {
   baseUnit?: string;
+  baseInventoryUnitId?: string;
 }
 
 export const useConversionLogic = ({
@@ -29,56 +31,86 @@ export const useConversionLogic = ({
   addPackageConversion,
   setFormData,
   baseUnit,
+  baseInventoryUnitId,
 }: ConversionProps) => {
   const validateAndAddConversion = useCallback(() => {
-    // Validate unit selection
-    if (!formData.unit) {
-      return { success: false, error: 'Silakan pilih kemasan!' };
+    if (!formData.inventory_unit_id) {
+      return { success: false, error: 'Silakan pilih unit!' };
     }
 
-    // Validate conversion value
-    if (formData.conversion_rate <= 0) {
-      return { success: false, error: 'Nilai konversi harus lebih dari 0!' };
+    if (!formData.parent_inventory_unit_id) {
+      return { success: false, error: 'Silakan pilih unit parent!' };
     }
 
-    // Check if selected unit is the same as base unit
-    if (baseUnit && formData.unit === baseUnit) {
+    if (formData.contains_quantity <= 0) {
+      return { success: false, error: 'Isi unit harus lebih dari 0!' };
+    }
+
+    const selectedUnit = availableUnits.find(
+      unit => unit.id === formData.inventory_unit_id
+    );
+
+    if (!selectedUnit) {
+      return { success: false, error: 'Unit tidak valid!' };
+    }
+
+    if (
+      formData.inventory_unit_id === formData.parent_inventory_unit_id &&
+      formData.parent_inventory_unit_id !== ''
+    ) {
       return {
         success: false,
-        error: 'Kemasan turunan tidak boleh sama dengan kemasan utama!',
+        error: 'Unit tidak boleh berisi dirinya sendiri!',
       };
     }
 
-    // Check for duplicate units
-    const existingUnit = conversions.find(uc => uc.unit.name === formData.unit);
+    if (baseUnit && selectedUnit.name === baseUnit) {
+      return {
+        success: false,
+        error: 'Unit baru tidak boleh sama dengan Unit Dasar!',
+      };
+    }
+
+    const existingUnit = conversions.find(
+      uc =>
+        (uc.inventory_unit_id || uc.to_unit_id || uc.unit.id) ===
+        formData.inventory_unit_id
+    );
     if (existingUnit) {
       return {
         success: false,
-        error: 'Kemasan tersebut sudah ada dalam daftar!',
+        error: 'Unit tersebut sudah ada dalam struktur!',
       };
     }
 
-    // Find selected unit details
-    const selectedUnit = availableUnits.find(u => u.name === formData.unit);
-    if (!selectedUnit) {
-      return { success: false, error: 'Kemasan tidak valid!' };
-    }
+    const factorToBase = calculateFactorToBase(
+      formData.inventory_unit_id,
+      formData.parent_inventory_unit_id,
+      formData.contains_quantity,
+      conversions.map(conversion => ({
+        inventory_unit_id:
+          conversion.inventory_unit_id || conversion.to_unit_id || '',
+        factor_to_base:
+          conversion.factor_to_base || conversion.conversion_rate || 1,
+      })),
+      baseInventoryUnitId || formData.parent_inventory_unit_id
+    );
 
-    // Add the conversion
     addPackageConversion({
-      unit: {
-        id: selectedUnit.id,
-        name: selectedUnit.name,
-      },
+      unit: selectedUnit,
       unit_name: selectedUnit.name,
       to_unit_id: selectedUnit.id,
-      conversion_rate: formData.conversion_rate,
+      inventory_unit_id: selectedUnit.id,
+      parent_inventory_unit_id: formData.parent_inventory_unit_id,
+      contains_quantity: formData.contains_quantity,
+      factor_to_base: factorToBase,
+      conversion_rate: factorToBase,
     });
 
-    // Reset form
     setFormData({
-      unit: '',
-      conversion_rate: 0,
+      inventory_unit_id: '',
+      parent_inventory_unit_id: '',
+      contains_quantity: 0,
     });
 
     return { success: true };
@@ -89,6 +121,7 @@ export const useConversionLogic = ({
     addPackageConversion,
     setFormData,
     baseUnit,
+    baseInventoryUnitId,
   ]);
 
   return {

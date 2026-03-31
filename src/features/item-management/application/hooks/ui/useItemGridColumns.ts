@@ -8,6 +8,7 @@ import {
   formatCurrency,
   formatBaseCurrency,
 } from '@/components/ag-grid';
+import { compareItemNameStrings } from '@/lib/item-sort';
 import type { PackageConversion } from '@/types';
 export const useItemGridColumns = () => {
   const columnDefs: ColDef[] = useMemo(() => {
@@ -33,6 +34,13 @@ export const useItemGridColumns = () => {
           suppressAndOrCondition: false,
           caseSensitive: false,
         },
+        valueGetter: params =>
+          params.data?.display_name || params.data?.name || '-',
+        comparator: (valueA, valueB) =>
+          compareItemNameStrings(
+            typeof valueA === 'string' ? valueA : '',
+            typeof valueB === 'string' ? valueB : ''
+          ),
         suppressHeaderFilterButton: true,
       },
       'manufacturer.name': {
@@ -160,7 +168,7 @@ export const useItemGridColumns = () => {
       package_conversions: {
         ...createTextColumn({
           field: 'package_conversions',
-          headerName: 'Kemasan Turunan',
+          headerName: 'Unit Jual',
 
           valueGetter: params => {
             const conversions = params.data?.package_conversions;

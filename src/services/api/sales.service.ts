@@ -35,6 +35,9 @@ interface DBSaleItem {
   price: number;
   subtotal: number;
   unit_name?: string | null;
+  inventory_unit_id?: string | null;
+  unit_id?: string | null;
+  unit_conversion_rate?: number | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -73,6 +76,10 @@ interface SaleItemWithDetails {
   quantity: number;
   price: number;
   subtotal: number;
+  unit_name?: string | null;
+  inventory_unit_id?: string | null;
+  unit_id?: string | null;
+  unit_conversion_rate?: number | null;
   created_at?: string;
   updated_at?: string;
   item: {
@@ -248,6 +255,9 @@ export class SalesService extends BaseService<DBSale> {
         price: item.price,
         subtotal: item.subtotal,
         unit_name: item.unit_name,
+        inventory_unit_id: item.inventory_unit_id ?? null,
+        unit_id: item.unit_id ?? null,
+        unit_conversion_rate: item.unit_conversion_rate ?? 1,
       }));
 
       const { data: saleId, error: saleError } = await supabase.rpc(
@@ -471,11 +481,11 @@ export class SalesService extends BaseService<DBSale> {
       newItems,
       getOldDelta: item => ({
         itemId: item.item_id,
-        delta: item.quantity,
+        delta: item.quantity * (item.unit_conversion_rate ?? 1),
       }),
       getNewDelta: item => ({
         itemId: item.item_id,
-        delta: -item.quantity,
+        delta: -item.quantity * (item.unit_conversion_rate ?? 1),
       }),
     });
 

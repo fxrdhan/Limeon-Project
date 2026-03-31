@@ -43,7 +43,7 @@ export const useEntity = (options: EntityOptions) => {
   const {
     entityType,
     search = '',
-    itemsPerPage = 20,
+    itemsPerPage = 25,
     enabled = true,
   } = options;
 

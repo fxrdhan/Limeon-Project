@@ -8,6 +8,7 @@ export interface ItemFormData {
   type_id: string;
   category_id: string;
   package_id: string;
+  base_inventory_unit_id: string;
   dosage_id: string;
   barcode: string;
   description: string;
@@ -18,6 +19,8 @@ export interface ItemFormData {
   min_stock: number;
   quantity: number;
   unit_id: string;
+  measurement_denominator_value?: number | null;
+  measurement_denominator_unit_id?: string;
   is_active: boolean;
   is_medicine: boolean;
   has_expiry_date: boolean;
@@ -35,6 +38,7 @@ export interface PackageConversionFormData {
 
 // Additional PackageConversionFormData variant for logic hook
 export interface PackageConversionLogicFormData {
-  unit: string;
-  conversion_rate: number;
+  inventory_unit_id: string;
+  parent_inventory_unit_id: string;
+  contains_quantity: number;
 }

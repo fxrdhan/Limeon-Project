@@ -244,6 +244,7 @@ export interface ChatDatabase {
           id: string;
           name: string;
           profilephoto: string | null;
+          profilephoto_thumb: string | null;
         }[];
       };
       list_undelivered_incoming_message_ids: {

@@ -6,6 +6,7 @@ export interface OnlineUser {
   name: string;
   email: string;
   profilephoto: string | null;
+  profilephoto_thumb?: string | null;
   online_at: string;
 }
 

@@ -4,6 +4,7 @@ import { fuzzyMatch, getScore } from '@/utils/search';
 import { useEffect } from 'react';
 import type { Item } from '@/types/database';
 import { filterAndRank } from './searchCore';
+import { compareItemsByDisplayName } from '@/lib/item-sort';
 import {
   preloadImages,
   removeCachedImageSet,
@@ -37,7 +38,7 @@ export const useItemsManagement = (options?: UseItemsManagementOptions) => {
   const [search, setSearch] = useState(initialSearch);
 
   // Pagination state for grid configuration
-  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
 
   // Fetch items data using existing useItems hook
   const {
@@ -47,6 +48,7 @@ export const useItemsManagement = (options?: UseItemsManagementOptions) => {
     error: queryError,
     isFetching,
     isPlaceholderData,
+    refetch,
   } = useItems({
     enabled,
     orderBy: { column: 'name', ascending: true },
@@ -69,7 +71,7 @@ export const useItemsManagement = (options?: UseItemsManagementOptions) => {
   // Filter items based on search query
   const filteredData = useMemo(() => {
     if (!search || search.trim() === '') {
-      return allData;
+      return [...(allData as Item[])].sort(compareItemsByDisplayName);
     }
 
     return filterAndRank<Item>({
@@ -77,7 +79,7 @@ export const useItemsManagement = (options?: UseItemsManagementOptions) => {
       searchTerm: search,
       matcher: (item, searchTermLower) => {
         return (
-          fuzzyMatch(item.name, searchTermLower) ||
+          fuzzyMatch(item.display_name || item.name, searchTermLower) ||
           (item.code && fuzzyMatch(item.code, searchTermLower)) ||
           (item.barcode && fuzzyMatch(item.barcode, searchTermLower)) ||
           (item.category?.name &&
@@ -96,7 +98,7 @@ export const useItemsManagement = (options?: UseItemsManagementOptions) => {
         );
       },
       scorer: (item, searchTermLower) => getScore(item, searchTermLower),
-      tieBreaker: (a, b) => a.name.localeCompare(b.name),
+      tieBreaker: compareItemsByDisplayName,
     });
   }, [allData, search]);
 
@@ -115,6 +117,7 @@ export const useItemsManagement = (options?: UseItemsManagementOptions) => {
     queryError,
     isFetching,
     isPlaceholderData,
+    refetchItems: refetch,
 
     // Search state
     search,

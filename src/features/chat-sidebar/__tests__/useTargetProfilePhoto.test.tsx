@@ -1,83 +1,33 @@
-import { act, renderHook } from '@testing-library/react';
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vite-plus/test';
+import { renderHook } from '@testing-library/react';
+import { describe, expect, it } from 'vite-plus/test';
 import { useTargetProfilePhoto } from '../hooks/useTargetProfilePhoto';
 
-const mockImageCache = vi.hoisted(() => ({
-  cacheImageBlob: vi.fn(),
-  getCachedImageBlobUrl: vi.fn(),
-  releaseCachedImageBlob: vi.fn(),
-  setCachedImage: vi.fn(),
-}));
-
-vi.mock('@/utils/imageCache', () => mockImageCache);
-
-const flushImageEffect = async () => {
-  await act(async () => {
-    await Promise.resolve();
-    await Promise.resolve();
-  });
-};
-
 describe('useTargetProfilePhoto', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockImageCache.getCachedImageBlobUrl.mockResolvedValue(null);
-    mockImageCache.cacheImageBlob.mockResolvedValue(
-      'blob:https://example.com/target'
-    );
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  it('releases cached blob references when the target image changes', async () => {
-    const { rerender } = renderHook(
-      ({ profilephoto }: { profilephoto: string | null }) =>
-        useTargetProfilePhoto({
-          id: 'user-b',
-          profilephoto,
-        }),
-      {
-        initialProps: {
-          profilephoto: 'https://example.com/target-a.png',
-        },
-      }
-    );
-
-    await flushImageEffect();
-
-    rerender({
-      profilephoto: 'https://example.com/target-b.png',
-    });
-
-    await flushImageEffect();
-
-    expect(mockImageCache.releaseCachedImageBlob).toHaveBeenCalledWith(
-      'https://example.com/target-a.png'
-    );
-  });
-
-  it('releases cached blob references on unmount', async () => {
-    const { unmount } = renderHook(() =>
+  it('prefers the thumbnail URL when available', () => {
+    const { result } = renderHook(() =>
       useTargetProfilePhoto({
         id: 'user-b',
-        profilephoto: 'https://example.com/target-a.png',
+        profilephoto: 'https://example.com/profile-full.png',
+        profilephoto_thumb: 'https://example.com/profile-thumb.webp',
       })
     );
 
-    await flushImageEffect();
-    unmount();
+    expect(result.current.displayTargetPhotoUrl).toBe(
+      'https://example.com/profile-thumb.webp'
+    );
+  });
 
-    expect(mockImageCache.releaseCachedImageBlob).toHaveBeenCalledWith(
-      'https://example.com/target-a.png'
+  it('falls back to the original profile photo when no thumbnail exists', () => {
+    const { result } = renderHook(() =>
+      useTargetProfilePhoto({
+        id: 'user-b',
+        profilephoto: 'https://example.com/profile-full.png',
+        profilephoto_thumb: null,
+      })
+    );
+
+    expect(result.current.displayTargetPhotoUrl).toBe(
+      'https://example.com/profile-full.png'
     );
   });
 });

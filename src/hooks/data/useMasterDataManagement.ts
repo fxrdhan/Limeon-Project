@@ -699,7 +699,7 @@ export const useMasterDataManagement = (
       description?: string;
       address?: string;
       data?: Record<string, unknown>;
-    }) => {
+    }): Promise<unknown> => {
       try {
         const defaultData: Record<string, unknown> = {};
         if (identityData.name !== undefined) {
@@ -717,6 +717,8 @@ export const useMasterDataManagement = (
 
         const payloadData = identityData.data ?? defaultData;
 
+        let mutationResult: unknown;
+
         if (identityData.id) {
           // Update existing identity
           const updateMutation = getUpdateMutation();
@@ -727,7 +729,7 @@ export const useMasterDataManagement = (
             'mutateAsync' in updateMutation
           ) {
             // For specific mutations (suppliers, patients, doctors), use nested data structure
-            await (
+            mutationResult = await (
               updateMutation as unknown as {
                 mutateAsync: (params: {
                   id: string;
@@ -753,7 +755,7 @@ export const useMasterDataManagement = (
             'mutateAsync' in createMutation
           ) {
             // Cast to unknown first to avoid type conflicts, then cast to mutation interface
-            await (
+            mutationResult = await (
               createMutation as unknown as {
                 mutateAsync: (
                   data: Record<string, unknown>
@@ -769,6 +771,7 @@ export const useMasterDataManagement = (
 
         // Manually refetch to ensure current tab updates immediately after mutation
         await refetch();
+        return mutationResult;
       } catch (error: unknown) {
         // Check for duplicate code constraint error (409 Conflict)
         // PostgrestError structure: {message: string, details: string, hint: string, code: string}
@@ -810,6 +813,7 @@ export const useMasterDataManagement = (
         } else {
           alert.error(`Gagal ${action} ${entityNameLabel}: ${errorMessage}`);
         }
+        throw error;
       }
     },
     [getUpdateMutation, mutations, entityNameLabel, alert, refetch]

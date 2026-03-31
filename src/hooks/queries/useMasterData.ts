@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import type {
   Category,
   MedicineType,
+  ItemInventoryUnit,
   ItemPackage,
   Supplier,
 } from '@/types/database';
@@ -331,7 +332,110 @@ export const usePackageMutations = () => {
   return { createPackage, updatePackage, deletePackage };
 };
 
-// Item Unit Hooks (for item_units table)
+// Inventory Unit Hooks
+export const useInventoryUnits = (options?: { enabled?: boolean }) => {
+  return useQuery({
+    queryKey: QueryKeys.masterData.inventoryUnits.list(),
+    queryFn: async () => {
+      const result =
+        await masterDataService.inventoryUnits.getActiveInventoryUnits();
+      if (result.error) throw result.error;
+      return result.data;
+    },
+    enabled: options?.enabled ?? true,
+  });
+};
+
+export const useInventoryUnit = (
+  id: string,
+  options?: { enabled?: boolean }
+) => {
+  return useQuery({
+    queryKey: QueryKeys.masterData.inventoryUnits.detail(id),
+    queryFn: async () => {
+      const result = await masterDataService.inventoryUnits.getById(id);
+      if (result.error) throw result.error;
+      return result.data;
+    },
+    enabled: options?.enabled ?? true,
+  });
+};
+
+export const useInventoryUnitMutations = () => {
+  const queryClient = useQueryClient();
+
+  const createInventoryUnit = useMutation({
+    mutationFn: async (
+      data: Omit<ItemInventoryUnit, 'id' | 'created_at' | 'updated_at'>
+    ) => {
+      const result = await masterDataService.inventoryUnits.create(data);
+      if (result.error) throw result.error;
+      return result.data;
+    },
+    onSuccess: () => {
+      toast.success('Unit stok/jual berhasil ditambahkan');
+      void queryClient.invalidateQueries({
+        queryKey: getInvalidationKeys.masterData.inventoryUnits(),
+      });
+    },
+    onError: error => {
+      console.error('Error creating inventory unit:', error);
+      toast.error('Gagal menambahkan unit stok/jual');
+    },
+  });
+
+  const updateInventoryUnit = useMutation({
+    mutationFn: async ({
+      id,
+      data,
+      options: _options,
+    }: {
+      id: string;
+      data: Partial<ItemInventoryUnit>;
+      options?: MutationOptions;
+    }) => {
+      const result = await masterDataService.inventoryUnits.update(id, data);
+      if (result.error) throw result.error;
+      return result.data;
+    },
+    onSuccess: (_data, variables) => {
+      if (!variables.options?.silent) {
+        toast.success('Unit stok/jual berhasil diperbarui');
+      }
+      void queryClient.invalidateQueries({
+        queryKey: getInvalidationKeys.masterData.inventoryUnits(),
+      });
+    },
+    onError: (error, variables) => {
+      console.error('Error updating inventory unit:', error);
+      if (!variables.options?.silent) {
+        toast.error('Gagal memperbarui unit stok/jual');
+      }
+    },
+  });
+
+  const deleteInventoryUnit = useMutation({
+    mutationFn: async (id: string) => {
+      const result = await masterDataService.inventoryUnits.delete(id);
+      if (result.error) throw result.error;
+      return result.data;
+    },
+    onSuccess: () => {
+      toast.success('Unit stok/jual berhasil dihapus');
+      void queryClient.invalidateQueries({
+        queryKey: getInvalidationKeys.masterData.inventoryUnits(),
+      });
+    },
+    onError: error => {
+      console.error('Error deleting inventory unit:', error);
+      toast.error('Gagal menghapus unit stok/jual');
+    },
+  });
+
+  return { createInventoryUnit, updateInventoryUnit, deleteInventoryUnit };
+};
+
+// Measurement Unit Hooks (for item_units table)
 export const useItemUnits = (options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: QueryKeys.masterData.itemUnits.list(),
@@ -366,7 +470,7 @@ export const useItemUnitMutations = () => {
       return result.data;
     },
     onSuccess: () => {
-      toast.success('Satuan berhasil ditambahkan');
+      toast.success('Satuan ukur berhasil ditambahkan');
       const keysToInvalidate = getInvalidationKeys.masterData.itemUnits();
       keysToInvalidate.forEach((keySet: readonly string[]) => {
         void queryClient.invalidateQueries({ queryKey: keySet });
@@ -374,7 +478,7 @@ export const useItemUnitMutations = () => {
     },
     onError: error => {
       console.error('Error creating item unit:', error);
-      toast.error('Gagal menambahkan satuan');
+      toast.error('Gagal menambahkan satuan ukur');
     },
   });
 
@@ -394,7 +498,7 @@ export const useItemUnitMutations = () => {
     },
     onSuccess: (_data, variables) => {
       if (!variables.options?.silent) {
-        toast.success('Satuan berhasil diperbarui');
+        toast.success('Satuan ukur berhasil diperbarui');
       }
       const keysToInvalidate = getInvalidationKeys.masterData.itemUnits();
       keysToInvalidate.forEach((keySet: readonly string[]) => {
@@ -404,7 +508,7 @@ export const useItemUnitMutations = () => {
     onError: (error, variables) => {
       console.error('Error updating item unit:', error);
       if (!variables.options?.silent) {
-        toast.error('Gagal memperbarui satuan');
+        toast.error('Gagal memperbarui satuan ukur');
       }
     },
   });
@@ -416,7 +520,7 @@ export const useItemUnitMutations = () => {
       return result.data;
     },
     onSuccess: () => {
-      toast.success('Satuan berhasil dihapus');
+      toast.success('Satuan ukur berhasil dihapus');
       const keysToInvalidate = getInvalidationKeys.masterData.itemUnits();
       keysToInvalidate.forEach((keySet: readonly string[]) => {
         void queryClient.invalidateQueries({ queryKey: keySet });
@@ -424,7 +528,7 @@ export const useItemUnitMutations = () => {
     },
     onError: error => {
       console.error('Error deleting item unit:', error);
-      toast.error('Gagal menghapus satuan');
+      toast.error('Gagal menghapus satuan ukur');
     },
   });
 

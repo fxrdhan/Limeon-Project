@@ -100,6 +100,7 @@ const createRuntime = (overrides: MessagesPaneRuntimeOverrides = {}) => {
       messagesContentRef: createRef<HTMLDivElement>(),
       messagesEndRef: createRef<HTMLDivElement>(),
       paddingBottom: 0,
+      isInitialOpenPinPending: false,
       closeMessageMenu: vi.fn(),
       hasNewMessages: false,
       isAtBottom: true,
@@ -223,6 +224,23 @@ describe('MessagesPane', () => {
     expect(messagesViewport).not.toBeNull();
     expect((messagesViewport as HTMLDivElement).style.paddingBottom).toBe(
       `${128 + 8 + MESSAGE_BOTTOM_GAP}px`
+    );
+  });
+
+  it('skips viewport padding transition while the initial open pin is still settling', () => {
+    const runtime = createRuntime({
+      viewport: {
+        isInitialOpenPinPending: true,
+      },
+    });
+
+    const { container } = render(<MessagesPane runtime={runtime} />);
+
+    const messagesViewport = container.querySelector('[role="presentation"]');
+
+    expect(messagesViewport).not.toBeNull();
+    expect((messagesViewport as HTMLDivElement).className).not.toContain(
+      'transition-[padding-bottom]'
     );
   });
 });

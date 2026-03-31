@@ -1,4 +1,4 @@
-import { forwardRef, useMemo, useEffect } from 'react';
+import { forwardRef, useMemo, useEffect, useRef, useState } from 'react';
 import Input from '@/components/input';
 import Dropdown from '@/components/dropdown';
 import FormField from '@/components/form-field';
@@ -22,6 +22,7 @@ interface ItemBasicInfoFormProps {
   isEditMode: boolean;
   formData: {
     code: string;
+    display_name: string;
     name: string;
     manufacturer_id: string;
     is_medicine: boolean;
@@ -37,11 +38,12 @@ interface ItemBasicInfoFormProps {
   manufacturers: DropdownOption[];
   loading: boolean;
   disabled?: boolean;
-  onChange: (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => void;
+  onDisplayNameChange: (value: string) => void;
   onFieldChange: (field: string, value: boolean | string) => void;
   onDropdownChange: (field: string, value: string) => void;
+  persistedDropdownName?: string | null;
+  onPersistedDropdownClear?: () => void;
+  freezePersistedDropdown?: boolean;
   onAddNewCategory: (searchTerm?: string) => void;
   onAddNewType: (searchTerm?: string) => void;
   onAddNewUnit: (searchTerm?: string) => void;
@@ -61,9 +63,12 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
       manufacturers,
       loading,
       disabled = false,
-      onChange,
+      onDisplayNameChange,
       onFieldChange,
       onDropdownChange,
+      persistedDropdownName,
+      onPersistedDropdownClear,
+      freezePersistedDropdown = false,
       onAddNewCategory,
       onAddNewType,
       onAddNewUnit,
@@ -74,17 +79,39 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
   ) => {
     const realtime = useItemRealtime();
     const nameFieldHandlers = realtime?.smartFormSync?.getFieldHandlers('name');
+    const [isNameFocused, setIsNameFocused] = useState(false);
+    const [localDisplayName, setLocalDisplayName] = useState(
+      formData.display_name
+    );
+    const previousDisplayNameRef = useRef(formData.display_name);
+
+    useEffect(() => {
+      const previousDisplayName = previousDisplayNameRef.current;
+      const shouldSyncWhileFocused =
+        isNameFocused &&
+        (localDisplayName.length === 0 ||
+          localDisplayName === previousDisplayName);
+
+      if (!isNameFocused || shouldSyncWhileFocused) {
+        setLocalDisplayName(formData.display_name);
+      }
+      previousDisplayNameRef.current = formData.display_name;
+    }, [formData.display_name, isNameFocused, localDisplayName]);
 
     const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      onChange(e);
+      setLocalDisplayName(e.target.value);
+      onDisplayNameChange(e.target.value);
       nameFieldHandlers?.onChange(e);
     };
 
     const handleNameFocus = () => {
+      setIsNameFocused(true);
       nameFieldHandlers?.onFocus();
     };
 
     const handleNameBlur = () => {
+      setIsNameFocused(false);
+      setLocalDisplayName(formData.display_name);
       nameFieldHandlers?.onBlur();
     };
 
@@ -167,7 +194,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
               <Input
                 name="name"
                 ref={ref}
-                value={formData.name}
+                value={isNameFocused ? localDisplayName : formData.display_name}
                 tabIndex={1}
                 onChange={handleNameChange}
                 onFocus={handleNameFocus}
@@ -218,6 +245,12 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                   options={manufacturers}
                   placeholder="Pilih Produsen"
                   onAddNew={disabled ? undefined : onAddNewManufacturer}
+                  persistOpen={persistedDropdownName === 'manufacturer_id'}
+                  freezePersistedMenu={
+                    freezePersistedDropdown &&
+                    persistedDropdownName === 'manufacturer_id'
+                  }
+                  onPersistOpenClear={onPersistedDropdownClear}
                   enableHoverDetail={true}
                   hoverDetailDelay={400}
                   onFetchHoverDetail={optimizedManufacturerDetailFetcher}
@@ -248,6 +281,12 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                   validationAutoHide={true}
                   validationAutoHideDelay={3000}
                   onAddNew={disabled ? undefined : onAddNewCategory}
+                  persistOpen={persistedDropdownName === 'category_id'}
+                  freezePersistedMenu={
+                    freezePersistedDropdown &&
+                    persistedDropdownName === 'category_id'
+                  }
+                  onPersistOpenClear={onPersistedDropdownClear}
                   enableHoverDetail={true}
                   hoverDetailDelay={400}
                   onFetchHoverDetail={optimizedCategoryDetailFetcher}
@@ -273,6 +312,12 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                   validationAutoHide={true}
                   validationAutoHideDelay={3000}
                   onAddNew={disabled ? undefined : onAddNewType}
+                  persistOpen={persistedDropdownName === 'type_id'}
+                  freezePersistedMenu={
+                    freezePersistedDropdown &&
+                    persistedDropdownName === 'type_id'
+                  }
+                  onPersistOpenClear={onPersistedDropdownClear}
                   enableHoverDetail={true}
                   hoverDetailDelay={400}
                   onFetchHoverDetail={optimizedTypeDetailFetcher}
@@ -298,6 +343,12 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                   validationAutoHide={true}
                   validationAutoHideDelay={3000}
                   onAddNew={disabled ? undefined : onAddNewUnit}
+                  persistOpen={persistedDropdownName === 'package_id'}
+                  freezePersistedMenu={
+                    freezePersistedDropdown &&
+                    persistedDropdownName === 'package_id'
+                  }
+                  onPersistOpenClear={onPersistedDropdownClear}
                   enableHoverDetail={true}
                   hoverDetailDelay={400}
                   onFetchHoverDetail={optimizedPackageDetailFetcher}
@@ -323,6 +374,12 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                   validationAutoHide={true}
                   validationAutoHideDelay={3000}
                   onAddNew={disabled ? undefined : onAddNewDosage}
+                  persistOpen={persistedDropdownName === 'dosage_id'}
+                  freezePersistedMenu={
+                    freezePersistedDropdown &&
+                    persistedDropdownName === 'dosage_id'
+                  }
+                  onPersistOpenClear={onPersistedDropdownClear}
                   enableHoverDetail={true}
                   hoverDetailDelay={400}
                   onFetchHoverDetail={optimizedDosageDetailFetcher}

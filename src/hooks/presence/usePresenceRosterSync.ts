@@ -10,6 +10,7 @@ interface PresenceRosterUser {
   name: string;
   email: string;
   profilephoto?: string | null;
+  profilephoto_thumb?: string | null;
 }
 
 interface BrowserActivePresencePayload {
@@ -17,6 +18,7 @@ interface BrowserActivePresencePayload {
   name: string;
   email: string;
   profilephoto: string | null;
+  profilephoto_thumb?: string | null;
   online_at: string;
 }
 
@@ -66,6 +68,7 @@ export const usePresenceRosterSync = ({
       name: user.name,
       email: user.email,
       profilephoto: user.profilephoto ?? null,
+      profilephoto_thumb: user.profilephoto_thumb ?? null,
       online_at: new Date().toISOString(),
     };
   }, [user]);
@@ -95,6 +98,7 @@ export const usePresenceRosterSync = ({
           name: presence.name,
           email: presence.email,
           profilephoto: presence.profilephoto ?? null,
+          profilephoto_thumb: presence.profilephoto_thumb ?? null,
           online_at: presence.online_at,
         }));
 
@@ -154,6 +158,7 @@ export const usePresenceRosterSync = ({
         name: currentUser.name,
         email: currentUser.email,
         profilephoto: currentUser.profilephoto ?? null,
+        profilephoto_thumb: currentUser.profilephoto_thumb ?? null,
         online_at: currentUser.online_at,
       });
 
@@ -275,5 +280,6 @@ export const usePresenceRosterSync = ({
     user?.id,
     user?.name,
     user?.profilephoto,
+    user?.profilephoto_thumb,
   ]);
 };

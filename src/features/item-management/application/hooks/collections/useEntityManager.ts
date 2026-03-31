@@ -104,14 +104,14 @@ export const entityConfigs: Record<EntityType, EntityConfig> = {
   },
   units: {
     key: 'units',
-    label: 'Satuan',
-    entityName: 'Satuan',
+    label: 'Satuan Ukur',
+    entityName: 'Satuan Ukur',
     tableName: 'item_units',
-    addButtonText: 'Tambah Satuan Baru',
-    searchPlaceholder: 'Cari code atau nama satuan',
-    nameColumnHeader: 'Nama Satuan',
-    noDataMessage: 'Tidak ada data satuan yang ditemukan',
-    searchNoDataMessage: 'Tidak ada satuan dengan kata kunci',
+    addButtonText: 'Tambah Satuan Ukur Baru',
+    searchPlaceholder: 'Cari kode atau nama satuan ukur',
+    nameColumnHeader: 'Nama Satuan Ukur',
+    noDataMessage: 'Tidak ada data satuan ukur yang ditemukan',
+    searchNoDataMessage: 'Tidak ada satuan ukur dengan kata kunci',
   },
   items: {
     key: 'items',
@@ -151,7 +151,7 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
     isAddOpen: false,
     isEditOpen: false,
     editing: null as EntityData | null,
-    itemsPerPage: 20,
+    itemsPerPage: 25,
   });
   if (activeEntityType !== entityState.activeType) {
     setEntityState({
@@ -287,13 +287,6 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
     [crudOperations]
   );
 
-  const handleFieldAutosave = useCallback(
-    async (entityId: string, updates: Record<string, unknown>) => {
-      await crudOperations.handleFieldAutosave(entityId, updates);
-    },
-    [crudOperations]
-  );
-
   // Delete handler
   const handleDelete = useCallback(
     async (entity: EntityData): Promise<void> => {
@@ -365,7 +358,6 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
     openEditModal,
     closeEditModal,
     handleSubmit,
-    handleFieldAutosave,
     handleDelete,
     handleSearch,
     handlePageChange,

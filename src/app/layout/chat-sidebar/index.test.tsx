@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vite-plus/test';
 import ChatSidebar from './index';
 
@@ -49,6 +49,17 @@ vi.mock('@/features/chat-sidebar', () => ({
 }));
 
 describe('ChatSidebar', () => {
+  it('preloads the chat shell even before any conversation is opened', () => {
+    render(
+      <ChatSidebar isOpen={false} onClose={vi.fn()} targetUser={undefined} />
+    );
+
+    expect(screen.getByTestId('chat-sidebar-aside')).not.toBeNull();
+    expect(screen.getByTestId('chat-sidebar-panel').textContent).toBe(
+      'closing:none'
+    );
+  });
+
   it('keeps the panel mounted with the persisted target user during close animation', () => {
     const { rerender } = render(
       <ChatSidebar
@@ -76,7 +87,7 @@ describe('ChatSidebar', () => {
     );
   });
 
-  it('clears the persisted target user after the close animation finishes', async () => {
+  it('clears the persisted target user after the close animation finishes', () => {
     const { rerender } = render(
       <ChatSidebar
         isOpen
@@ -100,8 +111,8 @@ describe('ChatSidebar', () => {
 
     fireEvent.click(screen.getByTestId('chat-sidebar-complete-animation'));
 
-    await waitFor(() => {
-      expect(screen.queryByTestId('chat-sidebar-panel')).toBeNull();
-    });
+    expect(screen.getByTestId('chat-sidebar-panel').textContent).toBe(
+      'closing:none'
+    );
   });
 });

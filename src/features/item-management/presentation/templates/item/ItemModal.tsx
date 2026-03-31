@@ -15,14 +15,13 @@ import {
   useItemActions,
   useItemForm,
   useItemPrice,
-  useItemRealtime,
   useItemUI,
 } from '../../../shared/contexts/useItemFormContext';
 import type {
   ItemManagementContextValue,
   ItemModalProps,
 } from '../../../shared/types';
-import type { DBPackageConversion, ItemPackage } from '@/types/database';
+import type { DBPackageConversion, ItemInventoryUnit } from '@/types/database';
 
 type AccordionSection = 'additional' | 'settings' | 'pricing' | 'conversion';
 
@@ -94,6 +93,8 @@ const ItemModal: React.FC<ItemModalProps> = ({
     setIsAddDosageModalOpen,
     isAddManufacturerModalOpen,
     setIsAddManufacturerModalOpen,
+    persistedDropdownName,
+    setPersistedDropdownName,
     currentSearchTermForModal,
     handleAddNewCategory,
     handleAddNewType,
@@ -182,14 +183,19 @@ const ItemModal: React.FC<ItemModalProps> = ({
 
         const mappedConversions = parsedConversions.map(conversion => {
           const unitDetail =
-            packages.find(pkg => pkg.id === conversion.to_unit_id) ||
-            packages.find(pkg => pkg.name === conversion.unit_name);
+            packageConversionHook.availableUnits.find(
+              unit => unit.id === conversion.to_unit_id
+            ) ||
+            packageConversionHook.availableUnits.find(
+              unit => unit.name === conversion.unit_name
+            );
 
-          const fallbackUnit: ItemPackage = unitDetail
+          const fallbackUnit: ItemInventoryUnit = unitDetail
             ? unitDetail
             : {
                 id: conversion.to_unit_id || '',
                 name: conversion.unit_name || 'Unknown Unit',
+                kind: 'custom',
               };
 
           const fallbackId =
@@ -200,11 +206,11 @@ const ItemModal: React.FC<ItemModalProps> = ({
 
           const computedBase =
             packageConversionHook.basePrice > 0 && rate > 0
-              ? packageConversionHook.basePrice / rate
+              ? packageConversionHook.basePrice * rate
               : baseFromDb;
           const computedSell =
             packageConversionHook.sellPrice > 0 && rate > 0
-              ? packageConversionHook.sellPrice / rate
+              ? packageConversionHook.sellPrice * rate
               : sellFromDb;
 
           return {
@@ -214,10 +220,16 @@ const ItemModal: React.FC<ItemModalProps> = ({
               `${Date.now().toString()}-${Math.random()
                 .toString(36)
                 .slice(2, 9)}`,
-            unit_name: conversion.unit_name,
+            unit_name: conversion.unit_name || fallbackUnit.name,
             to_unit_id: fallbackUnit.id,
-            unit: { id: fallbackUnit.id, name: fallbackUnit.name },
+            inventory_unit_id: fallbackUnit.id,
+            parent_inventory_unit_id: null,
+            contains_quantity: rate,
+            factor_to_base: rate,
+            unit: fallbackUnit,
             conversion_rate: rate,
+            base_price_override: null,
+            sell_price_override: null,
             base_price:
               baseFromDb === 0 && packageConversionHook.basePrice > 0
                 ? computedBase
@@ -245,7 +257,6 @@ const ItemModal: React.FC<ItemModalProps> = ({
     [
       itemId,
       packageConversionHook,
-      packages,
       setInitialFormData,
       setInitialPackageConversions,
       updateFormData,
@@ -414,6 +425,7 @@ const ItemModal: React.FC<ItemModalProps> = ({
       isAddDosageModalOpen,
       isAddManufacturerModalOpen,
       currentSearchTermForModal: currentSearchTermForModal || '',
+      persistedDropdownName,
     },
     price: {
       packageConversionHook,
@@ -459,6 +471,7 @@ const ItemModal: React.FC<ItemModalProps> = ({
       setIsAddUnitModalOpen,
       setIsAddDosageModalOpen,
       setIsAddManufacturerModalOpen,
+      setPersistedDropdownName,
       closeModalAndClearSearch: (
         setter:
           | ((open: boolean) => void)
@@ -507,12 +520,6 @@ const ItemManagementContent: React.FC<{
   const form = useItemForm();
   const price = useItemPrice();
   const actions = useItemActions();
-  const realtime = useItemRealtime();
-  const isRealtimeConnected = Boolean(realtime?.isConnected);
-  const useOfflineUpdate = ui.isEditMode && !isRealtimeConnected;
-  const submitDisabledOverride =
-    ui.isEditMode && isRealtimeConnected ? true : undefined;
-  const updateText = useOfflineUpdate ? 'Update' : 'Tersimpan';
   const isEditSession = Boolean(itemId);
   const hasFormData =
     Boolean(form.formData.code?.trim()) ||
@@ -591,14 +598,6 @@ const ItemManagementContent: React.FC<{
       dataSource && 'description' in dataSource
         ? ((dataSource.description as string) ?? '')
         : '';
-    const unitId =
-      dataSource && 'unit_id' in dataSource
-        ? ((dataSource.unit_id as string) ?? '')
-        : '';
-    const quantity =
-      dataSource && 'quantity' in dataSource
-        ? ((dataSource.quantity as number) ?? 0)
-        : 0;
     const basePrice = dataSource?.base_price ?? 0;
     const sellPrice = dataSource?.sell_price ?? 0;
     const fallbackConversions = Array.isArray(
@@ -612,10 +611,7 @@ const ItemManagementContent: React.FC<{
       price.packageConversionHook.conversions.length || fallbackConversions;
 
     const hasAdditionalInfo =
-      Boolean(barcode?.trim()) ||
-      Boolean(description?.trim()) ||
-      Boolean(unitId) ||
-      (quantity ?? 0) > 0;
+      Boolean(barcode?.trim()) || Boolean(description?.trim());
     const hasConversion = conversionCount > 0;
     const hasSettings =
       dataSource &&
@@ -1130,8 +1126,7 @@ const ItemManagementContent: React.FC<{
         isDeleting: actions.deleteItemMutation?.isPending || false,
         isEditMode: ui.isEditMode,
         isDisabled: actions.finalDisabledState,
-        isSubmitDisabled: submitDisabledOverride,
-        updateText,
+        updateText: 'Simpan',
       }}
     />
   );

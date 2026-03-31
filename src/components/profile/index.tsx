@@ -2,12 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import ImageUploader from '@/components/image-manager';
 import { useAuthStore } from '@/store/authStore';
-import {
-  cacheImageBlob,
-  getCachedImageBlobUrl,
-  releaseCachedImageBlob,
-  setCachedImage,
-} from '@/utils/imageCache';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   TbLogout,
@@ -24,11 +18,10 @@ const Profile = () => {
   const [animatingPortal, setAnimatingPortal] = useState(false);
 
   const portalRef = useRef<HTMLDivElement>(null);
-  const cacheKey = user?.id ? `profile:${user.id}` : null;
-  const profilePhotoUrl = user?.profilephoto ?? null;
-  const [displayProfileUrl, setDisplayProfileUrl] = useState<string | null>(
-    null
-  );
+  const smallProfilePhotoUrl =
+    user?.profilephoto_thumb ?? user?.profilephoto ?? null;
+  const largeProfilePhotoUrl =
+    user?.profilephoto ?? user?.profilephoto_thumb ?? null;
 
   const glowShadows = [
     '0 0 15px rgba(99, 102, 241, 0.7), 0 0 30px rgba(99, 102, 241, 0.5), 0 0 45px rgba(99, 102, 241, 0.3)',
@@ -60,49 +53,6 @@ const Profile = () => {
   const handleLogout = async () => {
     await logout();
   };
-
-  useEffect(() => {
-    if (!cacheKey || !profilePhotoUrl) return;
-    if (profilePhotoUrl.startsWith('http')) {
-      setCachedImage(cacheKey, profilePhotoUrl);
-    }
-  }, [cacheKey, profilePhotoUrl]);
-
-  useEffect(() => {
-    let isActive = true;
-
-    const resolveImage = async () => {
-      if (!profilePhotoUrl) {
-        if (isActive) setDisplayProfileUrl(null);
-        return;
-      }
-
-      if (!profilePhotoUrl.startsWith('http')) {
-        if (isActive) setDisplayProfileUrl(profilePhotoUrl);
-        return;
-      }
-
-      const cachedBlobUrl = await getCachedImageBlobUrl(profilePhotoUrl);
-      if (cachedBlobUrl) {
-        if (isActive) setDisplayProfileUrl(cachedBlobUrl);
-        return;
-      }
-
-      const blobUrl = await cacheImageBlob(profilePhotoUrl);
-      if (isActive) {
-        setDisplayProfileUrl(blobUrl || profilePhotoUrl);
-      }
-    };
-
-    void resolveImage();
-
-    return () => {
-      isActive = false;
-      if (profilePhotoUrl?.startsWith('http')) {
-        releaseCachedImageBlob(profilePhotoUrl);
-      }
-    };
-  }, [profilePhotoUrl]);
 
   useEffect(() => {
     if (animatingPortal) {
@@ -152,6 +102,8 @@ const Profile = () => {
           : 'w-24 h-24';
     const textSizeClass =
       size === 'small' ? 'text-sm' : size === 'large' ? 'text-3xl' : 'text-2xl';
+    const displayProfileUrl =
+      size === 'large' ? largeProfilePhotoUrl : smallProfilePhotoUrl;
 
     return displayProfileUrl ? (
       <img
@@ -362,7 +314,9 @@ const Profile = () => {
                               id="profile-upload"
                               className="w-32 h-32"
                               shape="full"
-                              hasImage={!!user?.profilephoto}
+                              hasImage={Boolean(
+                                user?.profilephoto || user?.profilephoto_thumb
+                              )}
                               onImageUpload={async (file: File) => {
                                 setIsUploading(true);
                                 try {

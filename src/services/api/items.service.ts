@@ -258,7 +258,7 @@ export class ItemsService extends BaseService<DBItem> {
       const item = result.data;
       return ItemTransformer.formatStockDisplay(
         item.stock || 0,
-        item.package_conversions || [],
+        item.inventory_units || [],
         item.base_unit || ''
       );
     } catch {

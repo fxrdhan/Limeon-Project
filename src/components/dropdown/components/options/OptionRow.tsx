@@ -130,7 +130,7 @@ const OptionRow: React.FC<OptionRowProps> = ({
       role="option"
       aria-selected={Boolean(isSelected)}
       type="button"
-      className={`flex ${shouldExpand ? 'items-start' : 'items-center'} w-full py-2 px-3 rounded-xl text-sm text-slate-800 cursor-pointer focus:outline-hidden ${backgroundClass} transition-colors duration-150`}
+      className={`flex ${shouldExpand ? 'items-start' : 'items-center'} w-full py-2 px-3 rounded-lg text-sm text-slate-800 cursor-pointer focus:outline-hidden ${backgroundClass} transition-colors duration-150`}
       onClick={() => onSelect(option.id)}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -143,11 +143,18 @@ const OptionRow: React.FC<OptionRowProps> = ({
       {withCheckbox && (
         <CheckboxIndicator isSelected={isSelected} isExpanded={shouldExpand} />
       )}
-      <span
-        className={`${baseTextClass} transition-all duration-200 text-left ${textStateClass}`}
-        title={willTruncate && !shouldExpand ? option.name : undefined}
-      >
-        {displayText}
+      <span className="flex min-w-0 flex-1 items-center gap-2">
+        <span
+          className={`${baseTextClass} transition-all duration-200 text-left ${textStateClass} min-w-0 flex-1`}
+          title={willTruncate && !shouldExpand ? option.name : undefined}
+        >
+          {displayText}
+        </span>
+        {option.metaLabel ? (
+          <span className="shrink-0 rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
+            {option.metaLabel}
+          </span>
+        ) : null}
       </span>
     </button>
   );

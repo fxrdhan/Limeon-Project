@@ -1,13 +1,104 @@
 import type {
   DBItem,
   Item,
+  ItemInventoryUnit,
+  ItemUnitHierarchyEntry,
   PackageConversion,
   DBPackageConversion,
   ItemManufacturer,
 } from '@/types/database';
 import type { DBItemWithRelations } from '../repositories/ItemRepository';
+import { formatItemDisplayName } from '@/lib/item-display';
 
 export class ItemTransformer {
+  private static resolveInventoryUnit(
+    unit?: {
+      id: string;
+      code?: string;
+      name: string;
+      kind: 'packaging' | 'retail_unit' | 'custom';
+      source_package_id?: string | null;
+      source_dosage_id?: string | null;
+      description?: string | null;
+    } | null
+  ): ItemInventoryUnit {
+    return {
+      id: unit?.id || '',
+      code: unit?.code,
+      name: unit?.name || '',
+      kind: unit?.kind || 'custom',
+      source_package_id: unit?.source_package_id ?? null,
+      source_dosage_id: unit?.source_dosage_id ?? null,
+      description: unit?.description ?? null,
+    };
+  }
+
+  private static mapHierarchyEntries(
+    dbItem: DBItemWithRelations
+  ): ItemUnitHierarchyEntry[] {
+    if (!Array.isArray(dbItem.item_unit_hierarchy)) {
+      return [];
+    }
+
+    const itemBasePrice = Number(dbItem.base_price) || 0;
+    const itemSellPrice = Number(dbItem.sell_price) || 0;
+
+    return dbItem.item_unit_hierarchy
+      .map(entry => {
+        const factorToBase = Number(entry.factor_to_base) || 1;
+        const baseOverride =
+          entry.base_price_override != null
+            ? Number(entry.base_price_override) || 0
+            : null;
+        const sellOverride =
+          entry.sell_price_override != null
+            ? Number(entry.sell_price_override) || 0
+            : null;
+
+        return {
+          id: entry.id,
+          item_id: entry.item_id,
+          inventory_unit_id: entry.inventory_unit_id,
+          parent_inventory_unit_id: entry.parent_inventory_unit_id ?? null,
+          contains_quantity: Number(entry.contains_quantity) || 1,
+          factor_to_base: factorToBase,
+          base_price_override: baseOverride,
+          sell_price_override: sellOverride,
+          unit: this.resolveInventoryUnit(entry.inventory_unit),
+          parent_unit: entry.parent_unit
+            ? this.resolveInventoryUnit(entry.parent_unit)
+            : null,
+          base_price:
+            baseOverride != null ? baseOverride : itemBasePrice * factorToBase,
+          sell_price:
+            sellOverride != null ? sellOverride : itemSellPrice * factorToBase,
+        };
+      })
+      .sort((a, b) => a.factor_to_base - b.factor_to_base);
+  }
+
+  private static toLegacyPackageConversions(
+    inventoryUnits: ItemUnitHierarchyEntry[]
+  ): PackageConversion[] {
+    return inventoryUnits
+      .filter(entry => entry.factor_to_base > 1)
+      .map(entry => ({
+        id: entry.id,
+        conversion_rate: entry.factor_to_base,
+        unit_name: entry.unit.name,
+        to_unit_id: entry.inventory_unit_id,
+        inventory_unit_id: entry.inventory_unit_id,
+        parent_inventory_unit_id: entry.parent_inventory_unit_id ?? null,
+        contains_quantity: entry.contains_quantity,
+        factor_to_base: entry.factor_to_base,
+        base_price_override: entry.base_price_override ?? null,
+        sell_price_override: entry.sell_price_override ?? null,
+        unit: entry.unit,
+        base_price: entry.base_price,
+        sell_price: entry.sell_price,
+      }));
+  }
+
   /**
    * Parse package conversions from string or array format
    */
@@ -65,9 +156,10 @@ export class ItemTransformer {
     const manufacturerInfo = this.getManufacturerInfo(
       dbItem.item_manufacturers
     );
-    const packageConversions = this.parsePackageConversions(
-      dbItem.package_conversions
-    );
+    const inventoryUnits = this.mapHierarchyEntries(dbItem);
+    const packageConversions = this.toLegacyPackageConversions(inventoryUnits);
+    const resolvedBaseUnit =
+      dbItem.base_inventory_unit?.name || dbItem.base_unit || '';
     const customerLevelDiscounts = Array.isArray(
       dbItem.customer_level_discounts
     )
@@ -79,14 +171,30 @@ export class ItemTransformer {
 
     return {
       ...dbItem,
+      display_name: formatItemDisplayName({
+        name: dbItem.name,
+        measurement_value: dbItem.measurement_value ?? null,
+        measurement_unit: dbItem.measurement_unit || null,
+        measurement_denominator_value:
+          dbItem.measurement_denominator_value ?? null,
+        measurement_denominator_unit:
+          dbItem.measurement_denominator_unit || null,
+      }),
       category: dbItem.item_categories || { name: '' },
       type: dbItem.item_types || { name: '' },
       package: dbItem.item_packages || { name: '' }, // Kemasan dari item_packages
-      unit: { name: dbItem.base_unit || '' }, // Satuan dari base_unit string
+      unit: { name: resolvedBaseUnit },
       dosage: dbItem.item_dosages || { name: '' },
+      measurement_value: dbItem.measurement_value ?? null,
+      measurement_unit: dbItem.measurement_unit || null,
+      measurement_denominator_value:
+        dbItem.measurement_denominator_value ?? null,
+      measurement_denominator_unit: dbItem.measurement_denominator_unit || null,
       manufacturer: manufacturerInfo,
       package_conversions: packageConversions,
-      base_unit: dbItem.base_unit || '', // base_unit tetap dari field base_unit
+      inventory_units: inventoryUnits,
+      base_inventory_unit_id: dbItem.base_inventory_unit_id ?? null,
+      base_unit: resolvedBaseUnit,
       image_urls: Array.isArray(dbItem.image_urls) ? dbItem.image_urls : [],
       is_level_pricing_active:
         dbItem.is_level_pricing_active !== undefined
@@ -167,6 +275,7 @@ export class ItemTransformer {
   static createEmptyItem(): Partial<Item> {
     return {
       name: '',
+      display_name: '',
       code: '',
       barcode: '',
       stock: 0,
@@ -179,7 +288,13 @@ export class ItemTransformer {
       dosage: { name: '' },
       manufacturer: { id: '', code: undefined, name: '' },
       package_conversions: [],
+      inventory_units: [],
+      base_inventory_unit_id: null,
       base_unit: '',
+      measurement_value: null,
+      measurement_unit: null,
+      measurement_denominator_value: null,
+      measurement_denominator_unit: null,
     };
   }
 
@@ -188,6 +303,7 @@ export class ItemTransformer {
    */
   static extractSearchableFields(item: Item): string[] {
     return [
+      item.display_name || '',
       item.name || '',
       item.code || '',
       item.barcode || '',
@@ -202,16 +318,15 @@ export class ItemTransformer {
    */
   static calculateTotalUnits(
     stock: number,
-    packageConversions: PackageConversion[]
+    inventoryUnits: ItemUnitHierarchyEntry[]
   ): number {
-    if (!packageConversions.length) {
+    const derivedUnits = inventoryUnits.filter(unit => unit.factor_to_base > 1);
+    if (!derivedUnits.length) {
       return stock;
     }
 
     // Find the largest package conversion rate
-    const maxRate = Math.max(
-      ...packageConversions.map(pc => pc.conversion_rate || 1)
-    );
+    const maxRate = Math.max(...derivedUnits.map(unit => unit.factor_to_base));
     return stock * maxRate;
   }
 
@@ -220,27 +335,28 @@ export class ItemTransformer {
    */
   static formatStockDisplay(
     stock: number,
-    packageConversions: PackageConversion[],
+    inventoryUnits: ItemUnitHierarchyEntry[],
     baseUnit: string
   ): string {
-    if (!packageConversions.length) {
+    const derivedUnits = inventoryUnits.filter(unit => unit.factor_to_base > 1);
+    if (!derivedUnits.length) {
       return `${stock} ${baseUnit}`;
     }
 
     // Display stock in largest unit first
-    const sorted = packageConversions.sort(
-      (a, b) => (b.conversion_rate || 1) - (a.conversion_rate || 1)
+    const sorted = [...derivedUnits].sort(
+      (a, b) => b.factor_to_base - a.factor_to_base
     );
 
     let remaining = stock;
     const parts: string[] = [];
 
-    for (const conversion of sorted) {
-      const rate = conversion.conversion_rate || 1;
+    for (const inventoryUnit of sorted) {
+      const rate = inventoryUnit.factor_to_base || 1;
       const units = Math.floor(remaining / rate);
 
       if (units > 0) {
-        parts.push(`${units} ${conversion.unit_name}`);
+        parts.push(`${units} ${inventoryUnit.unit.name}`);
         remaining = remaining % rate;
       }
     }

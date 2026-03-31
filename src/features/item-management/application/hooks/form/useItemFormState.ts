@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { formatRupiah, extractNumericValue } from '@/lib/formatters';
 import { formatMarginPercentage } from '../../../shared/utils/PriceCalculator';
 import type { ItemFormData, PackageConversion } from '../../../shared/types';
@@ -29,6 +29,7 @@ export const useAddItemFormState = ({
     type_id: '',
     category_id: '',
     package_id: '',
+    base_inventory_unit_id: '',
     dosage_id: '',
     barcode: '',
     description: '',
@@ -39,6 +40,8 @@ export const useAddItemFormState = ({
     min_stock: 10,
     quantity: 0,
     unit_id: '',
+    measurement_denominator_value: null,
+    measurement_denominator_unit_id: '',
     is_active: true,
     is_medicine: true,
     has_expiry_date: false,
@@ -71,6 +74,9 @@ export const useAddItemFormState = ({
   const [isAddDosageModalOpen, setIsAddDosageModalOpen] = useState(false);
   const [isAddManufacturerModalOpen, setIsAddManufacturerModalOpen] =
     useState(false);
+  const [persistedDropdownName, setPersistedDropdownName] = useState<
+    string | null
+  >(null);
   const [currentSearchTermForModal, setCurrentSearchTermForModal] = useState<
     string | undefined
   >();
@@ -98,7 +104,7 @@ export const useAddItemFormState = ({
   /**
    * Updates form data and synchronized display values
    */
-  const updateFormData = (newData: Partial<ItemFormData>) => {
+  const updateFormData = useCallback((newData: Partial<ItemFormData>) => {
     // Update display prices if price fields change
     if (newData.sell_price !== undefined) {
       setDisplaySellPrice(formatRupiah(newData.sell_price));
@@ -108,7 +114,7 @@ export const useAddItemFormState = ({
     }
 
     setFormData(prev => ({ ...prev, ...newData }));
-  };
+  }, []);
 
   /**
    * Handles form input changes with type-specific processing
@@ -210,6 +216,7 @@ export const useAddItemFormState = ({
       type_id: '',
       category_id: '',
       package_id: '',
+      base_inventory_unit_id: '',
       dosage_id: '',
       barcode: '',
       description: '',
@@ -219,6 +226,8 @@ export const useAddItemFormState = ({
       min_stock: 10,
       quantity: 0,
       unit_id: '',
+      measurement_denominator_value: null,
+      measurement_denominator_unit_id: '',
       is_active: true,
       is_medicine: true,
       has_expiry_date: false,
@@ -308,6 +317,8 @@ export const useAddItemFormState = ({
     setIsAddDosageModalOpen,
     isAddManufacturerModalOpen,
     setIsAddManufacturerModalOpen,
+    persistedDropdownName,
+    setPersistedDropdownName,
     currentSearchTermForModal,
     setCurrentSearchTermForModal,
 

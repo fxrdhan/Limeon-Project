@@ -184,7 +184,6 @@ export const useKeyboardNavigation = ({
           ) {
             onCloseValidation();
             onAddNew(searchTerm);
-            onCloseDropdown();
           }
           return;
         },

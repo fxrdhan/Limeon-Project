@@ -67,7 +67,10 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
             duration: 0.25,
             ease: [0.25, 0.46, 0.45, 0.94],
           }}
-          className="fixed top-1/2 left-1/2 transform -translate-y-1/2 translate-x-0 z-[51]"
+          className="fixed top-1/2 left-1/2 transform -translate-y-1/2 translate-x-0 z-[10053]"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Perbandingan ${entityName}`}
           onAnimationComplete={() => {
             // Prevent auto-focus on form elements
             if (document.activeElement) {

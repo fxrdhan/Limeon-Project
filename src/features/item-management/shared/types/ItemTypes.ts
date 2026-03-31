@@ -1,5 +1,5 @@
 // Business Entity Types
-import type { ItemPackage } from '@/types/database';
+import type { ItemInventoryUnit } from '@/types/database';
 export interface EntityData {
   id: string;
   code?: string;
@@ -25,7 +25,13 @@ export interface PackageConversion {
   id: string;
   unit_name: string;
   to_unit_id: string;
-  unit: ItemPackage;
+  inventory_unit_id?: string;
+  parent_inventory_unit_id?: string | null;
+  contains_quantity?: number;
+  factor_to_base?: number;
+  base_price_override?: number | null;
+  sell_price_override?: number | null;
+  unit: ItemInventoryUnit;
   conversion_rate: number;
   base_price: number;
   sell_price: number;

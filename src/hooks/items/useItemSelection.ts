@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useItems } from '@/hooks/queries';
 import { fuzzyMatch } from '@/utils/search';
 import type { Item, UseItemSelectionOptions } from '@/types';
+import { getItemUnitOptions } from '@/lib/item-units';
 
 export const useItemSelection = (options: UseItemSelectionOptions = {}) => {
   const { enabled = true } = options;
@@ -26,7 +27,10 @@ export const useItemSelection = (options: UseItemSelectionOptions = {}) => {
     const matches = allItems
       .filter((item: Item) => {
         // Check if item matches search term in any field
-        const nameMatch = fuzzyMatch(item.name || '', searchTerm);
+        const nameMatch = fuzzyMatch(
+          item.display_name || item.name || '',
+          searchTerm
+        );
         const codeMatch = item.code ? fuzzyMatch(item.code, searchTerm) : false;
         const manufacturerMatch = item.manufacturer?.name
           ? fuzzyMatch(item.manufacturer.name, searchTerm)
@@ -50,7 +54,7 @@ export const useItemSelection = (options: UseItemSelectionOptions = {}) => {
   const handleSelectItem = (item: Item | null) => {
     setSelectedItem(item);
     if (item) {
-      setSearchItem(item.name);
+      setSearchItem(item.display_name || item.name);
       setShowItemDropdown(false);
     }
   };
@@ -77,20 +81,10 @@ export const useItemSelection = (options: UseItemSelectionOptions = {}) => {
 
   // Get available units for an item
   const getItemUnits = (item: Item) => {
-    const units = [{ id: item.package_id, name: item.unit.name }];
-
-    if (item.package_conversions && item.package_conversions.length > 0) {
-      item.package_conversions.forEach(conversion => {
-        if (conversion.unit && !units.find(u => u.id === conversion.unit.id)) {
-          units.push({
-            id: conversion.unit.id,
-            name: conversion.unit.name,
-          });
-        }
-      });
-    }
-
-    return units;
+    return getItemUnitOptions(item).map(unit => ({
+      id: unit.id,
+      name: unit.name,
+    }));
   };
 
   return {

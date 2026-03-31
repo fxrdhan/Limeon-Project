@@ -7,6 +7,7 @@ interface MenuPortalProps {
   isOpen: boolean;
   isClosing: boolean;
   applyOpenStyles: boolean;
+  isFrozen?: boolean;
   dropDirection: DropDirection;
   portalStyle: CSSProperties;
   isPositionReady: boolean;
@@ -22,6 +23,7 @@ const MenuPortal = forwardRef<HTMLDivElement, MenuPortalProps>(
       isOpen,
       isClosing,
       applyOpenStyles,
+      isFrozen = false,
       dropDirection,
       portalStyle,
       isPositionReady,
@@ -52,9 +54,11 @@ const MenuPortal = forwardRef<HTMLDivElement, MenuPortalProps>(
               ${dropDirection === 'down' ? 'shadow-xl' : ''}
               transition-all duration-150 ease-out
               ${isClosing || !applyOpenStyles ? 'opacity-0 scale-95' : !isPositionReady ? 'opacity-0' : 'opacity-100 scale-100'}
+              ${isFrozen ? 'pointer-events-none select-none' : ''}
               ${isKeyboardNavigation ? 'cursor-none' : ''}
           `}
             role="menu"
+            aria-hidden={isFrozen}
             onClick={e => e.stopPropagation()}
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}

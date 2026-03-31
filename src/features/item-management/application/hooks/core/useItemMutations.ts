@@ -20,6 +20,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { logger } from '@/utils/logger';
 import { QueryKeys } from '@/constants/queryKeys';
+import type { Item } from '@/types/database';
 // ItemFormData and PackageConversion types are now used via SaveItemParams interface
 import { useEntityMutations } from './GenericHookFactories';
 import { itemsService } from '@/services/api/items.service';
@@ -31,6 +32,23 @@ import {
   checkExistingCodes,
   type SaveItemParams,
 } from './ItemMutationUtilities';
+
+const mergeItemInCollection = (
+  items: Item[] | undefined,
+  nextItem: Item,
+  action: 'create' | 'update'
+): Item[] | undefined => {
+  if (!Array.isArray(items)) return items;
+
+  const existingIndex = items.findIndex(item => item.id === nextItem.id);
+  if (existingIndex === -1) {
+    return action === 'create' ? [...items, nextItem] : items;
+  }
+
+  const updated = [...items];
+  updated[existingIndex] = nextItem;
+  return updated;
+};
 
 interface UseAddItemMutationsProps {
   onClose: () => void;
@@ -152,28 +170,31 @@ export const useAddItemMutations = ({
         toast.success(`Item berhasil ${actionText}`);
       }
 
-      // Invalidate and refetch items
-      void queryClient.invalidateQueries({
-        queryKey: QueryKeys.items.all,
-        refetchType: 'all',
-      });
-
-      // Force refetch items with delays to ensure data consistency
-      setTimeout(() => {
-        void queryClient.refetchQueries({
-          queryKey: QueryKeys.items.all,
-          type: 'all',
-        });
-      }, 100);
-
-      // Call refetchItems callback if provided
-      if (refetchItems) {
-        setTimeout(() => {
-          refetchItems();
-        }, 150);
-      }
+      queryClient.setQueryData(
+        QueryKeys.items.detail(result.itemId),
+        result.item
+      );
+      queryClient.setQueriesData<Item[] | undefined>(
+        { queryKey: QueryKeys.items.lists() },
+        currentItems =>
+          mergeItemInCollection(currentItems, result.item, result.action)
+      );
+      queryClient.setQueriesData<Item[] | undefined>(
+        { queryKey: [...QueryKeys.items.all, 'search'] },
+        currentItems =>
+          mergeItemInCollection(currentItems, result.item, result.action)
+      );
 
       onClose();
+
+      void queryClient.invalidateQueries({
+        queryKey: QueryKeys.items.all,
+        refetchType: 'active',
+      });
+
+      if (refetchItems) {
+        void Promise.resolve(refetchItems());
+      }
     },
     onError: error => {
       console.error('Error saving item:', error);

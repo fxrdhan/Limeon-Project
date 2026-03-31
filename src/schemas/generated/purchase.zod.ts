@@ -14,6 +14,7 @@ export const PurchaseItemSchema = z.object({
   discount: z.number(),
   subtotal: z.number(),
   unit: z.string(),
+  unit_id: z.string().nullable().optional(),
   vat_percentage: z.number(),
   batch_no: z.string().nullable(),
   expiry_date: z.string().nullable(),

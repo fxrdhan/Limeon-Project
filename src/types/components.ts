@@ -8,6 +8,8 @@ export interface DropdownOption {
   name: string;
   code?: string;
   description?: string;
+  metaLabel?: string;
+  metaTone?: 'default' | 'info' | 'success' | 'warning';
   updated_at?: string | null;
 }
 
@@ -37,6 +39,9 @@ export interface DropdownProps {
   required?: boolean;
   disabled?: boolean;
   onAddNew?: (searchTerm?: string) => void;
+  persistOpen?: boolean;
+  onPersistOpenClear?: () => void;
+  freezePersistedMenu?: boolean;
   withRadio?: boolean;
   searchList?: boolean;
   autoScrollOnOpen?: boolean;
@@ -273,10 +278,6 @@ export interface AddEditModalProps {
     description?: string;
     address?: string;
   }) => Promise<void>;
-  onFieldAutosave?: (
-    id: string,
-    updates: Record<string, unknown>
-  ) => Promise<void>;
   initialData?: Category | null;
   onDelete?: (categoryId: string) => void;
   isLoading?: boolean;
@@ -302,7 +303,7 @@ export interface GenericIdentityModalProps {
   onClose: () => void;
   onSave?: (
     data: Record<string, string | number | boolean | null>
-  ) => Promise<void>;
+  ) => Promise<unknown>;
   onFieldSave?: (key: string, value: unknown) => Promise<void>;
   onImageSave?: (data: {
     entityId?: string;
