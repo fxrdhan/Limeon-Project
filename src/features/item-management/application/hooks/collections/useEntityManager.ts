@@ -151,7 +151,7 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
     isAddOpen: false,
     isEditOpen: false,
     editing: null as EntityData | null,
-    itemsPerPage: 20,
+    itemsPerPage: 25,
   });
   if (activeEntityType !== entityState.activeType) {
     setEntityState({

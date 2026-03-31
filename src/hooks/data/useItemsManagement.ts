@@ -38,7 +38,7 @@ export const useItemsManagement = (options?: UseItemsManagementOptions) => {
   const [search, setSearch] = useState(initialSearch);
 
   // Pagination state for grid configuration
-  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
 
   // Fetch items data using existing useItems hook
   const {

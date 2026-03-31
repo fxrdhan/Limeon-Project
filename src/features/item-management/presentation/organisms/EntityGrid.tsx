@@ -159,7 +159,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
   doesExternalFilterPass,
   onGridApiReady,
   onFilterChanged,
-  itemsPerPage = 20,
+  itemsPerPage = 25,
 }) {
   // Single grid API for all tabs
   const [gridApi, setGridApi] = useState<GridApi | null>(null);
@@ -186,18 +186,58 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
         return undefined;
       }
 
+      const allowedPageSizes = new Set([25, 50, 100]);
       if (hasPersistedSearchPattern(tableType)) {
-        return state as GridState;
+        const gridState = state as GridState;
+        const savedPageSize = gridState.pagination?.pageSize;
+        if (
+          savedPageSize === undefined ||
+          allowedPageSizes.has(savedPageSize)
+        ) {
+          return gridState;
+        }
+
+        const normalizedState: GridState = {
+          ...gridState,
+          pagination: {
+            ...gridState.pagination,
+            pageSize: 25,
+          },
+        };
+
+        try {
+          sessionStorage.setItem(
+            `grid_state_${tableType}`,
+            JSON.stringify(normalizedState)
+          );
+        } catch {
+          // ignore
+        }
+
+        return normalizedState;
       }
 
       const gridState = state as GridState;
       const advancedFilterModel = gridState.filter?.advancedFilterModel;
-      if (advancedFilterModel == null) {
+      const savedPageSize = gridState.pagination?.pageSize;
+      const normalizedPageSize =
+        savedPageSize === undefined || allowedPageSizes.has(savedPageSize)
+          ? savedPageSize
+          : 25;
+
+      if (advancedFilterModel == null && normalizedPageSize === savedPageSize) {
         return gridState;
       }
 
       const sanitizedState: GridState = {
         ...gridState,
+        pagination:
+          normalizedPageSize === savedPageSize
+            ? gridState.pagination
+            : {
+                ...gridState.pagination,
+                pageSize: normalizedPageSize,
+              },
         filter: {
           ...gridState.filter,
           advancedFilterModel: undefined,
