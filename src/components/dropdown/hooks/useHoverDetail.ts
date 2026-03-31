@@ -36,6 +36,7 @@ export const useHoverDetail = ({
 
   const showTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const clearDataTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const currentOptionIdRef = useRef<string | null>(null);
   const isPortalShownRef = useRef(false); // Track if portal has been shown
 
@@ -48,6 +49,17 @@ export const useHoverDetail = ({
       clearTimeout(hideTimeoutRef.current);
       hideTimeoutRef.current = null;
     }
+    if (clearDataTimeoutRef.current) {
+      clearTimeout(clearDataTimeoutRef.current);
+      clearDataTimeoutRef.current = null;
+    }
+  }, []);
+
+  const scheduleDataClear = useCallback(() => {
+    clearDataTimeoutRef.current = setTimeout(() => {
+      setData(null);
+      clearDataTimeoutRef.current = null;
+    }, 200);
   }, []);
 
   const calculatePosition = useCallback(
@@ -188,22 +200,25 @@ export const useHoverDetail = ({
   );
 
   const handleOptionLeave = useCallback(() => {
-    if (!isEnabled || !isPortalShownRef.current) return;
+    if (!isEnabled) return;
 
     clearTimeouts();
     currentOptionIdRef.current = null;
+    setIsLoading(false);
+
+    if (!isPortalShownRef.current) {
+      setData(null);
+      return;
+    }
 
     // Hide portal after delay
     hideTimeoutRef.current = setTimeout(() => {
       isPortalShownRef.current = false;
       setIsVisible(false);
       setIsLoading(false);
-      // Clear data after animation completes
-      setTimeout(() => {
-        setData(null);
-      }, 200);
+      scheduleDataClear();
     }, hideDelay);
-  }, [isEnabled, hideDelay, clearTimeouts]);
+  }, [isEnabled, hideDelay, clearTimeouts, scheduleDataClear]);
 
   const handlePortalHover = useCallback(() => {
     // Keep portal visible when hovering over it
@@ -220,10 +235,8 @@ export const useHoverDetail = ({
     setIsVisible(false);
     setIsLoading(false);
     currentOptionIdRef.current = null;
-    setTimeout(() => {
-      setData(null);
-    }, 200);
-  }, [clearTimeouts]);
+    scheduleDataClear();
+  }, [clearTimeouts, scheduleDataClear]);
 
   // Hide portal when dropdown closes
   useEffect(() => {

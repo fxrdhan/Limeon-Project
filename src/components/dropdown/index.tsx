@@ -260,12 +260,23 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     data: hoverDetailData,
     handleOptionHover,
     handleOptionLeave,
+    hidePortal: hideHoverDetail,
   } = useHoverDetail({
     isEnabled: enableHoverDetail,
     hoverDelay: hoverDetailDelay,
     onFetchData: onFetchHoverDetail,
     isDropdownOpen: isOpen,
   });
+
+  const handleSearchChangeWithHoverReset = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (enableHoverDetail) {
+        hideHoverDetail();
+      }
+      handleSearchChange(e);
+    },
+    [enableHoverDetail, handleSearchChange, hideHoverDetail]
+  );
 
   const handleButtonBlur = useCallback(() => {
     // Always set touched to true
@@ -350,7 +361,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     // Handlers
     onSelect: handleSelect,
     onAddNew,
-    onSearchChange: handleSearchChange,
+    onSearchChange: handleSearchChangeWithHoverReset,
     onKeyDown: handleDropdownKeyDown,
     onSetHighlightedIndex: setHighlightedIndex,
     onSetIsKeyboardNavigation: setIsKeyboardNavigation,
