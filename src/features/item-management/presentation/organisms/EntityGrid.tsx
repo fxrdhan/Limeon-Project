@@ -348,6 +348,19 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
     [readSavedPaginationEnabledState]
   );
 
+  const syncPaginationUiState = useCallback((api: GridApi) => {
+    if (!api || api.isDestroyed()) {
+      return;
+    }
+
+    const isPaginationEnabled = api.getGridOption('pagination');
+    const nextPageSize = isPaginationEnabled ? api.paginationGetPageSize() : -1;
+
+    setCurrentPageSize(currentPageSize =>
+      currentPageSize === nextPageSize ? currentPageSize : nextPageSize
+    );
+  }, []);
+
   // 🎯 Load initial grid state for AG Grid's initialState prop
   // AG Grid Best Practice: Use initialState for initial restore
   const initialGridState = useMemo(() => {
@@ -356,8 +369,13 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
 
   // 💾 AG Grid Best Practice: Auto-save on state changes
   // Simple onStateUpdated handler - saves to sessionStorage automatically
+  const isApplyingTabStateRef = useRef(false);
   const handleStateUpdated = useCallback(() => {
     if (!gridApi || gridApi.isDestroyed()) {
+      return;
+    }
+
+    if (isApplyingTabStateRef.current) {
       return;
     }
 
@@ -389,6 +407,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
     // but pagination enabled/disabled still needs explicit sync.
     if (previousActiveTabRef.current === null) {
       previousActiveTabRef.current = tableType;
+      isApplyingTabStateRef.current = true;
       requestAnimationFrame(() => {
         if (gridApi && !gridApi.isDestroyed()) {
           applySavedPaginationState(
@@ -397,7 +416,9 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
             initialGridState,
             itemsPerPage
           );
+          syncPaginationUiState(gridApi);
         }
+        isApplyingTabStateRef.current = false;
       });
       return;
     }
@@ -405,6 +426,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
     // Only apply state when tab actually changes
     if (previousActiveTabRef.current !== tableType) {
       previousActiveTabRef.current = tableType;
+      isApplyingTabStateRef.current = true;
 
       gridApi.clearFocusedCell();
       gridApi.clearCellSelection();
@@ -422,9 +444,11 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
               savedState,
               itemsPerPage
             );
+            syncPaginationUiState(gridApi);
             gridApi.clearFocusedCell();
             gridApi.clearCellSelection();
           }
+          isApplyingTabStateRef.current = false;
         });
       } else {
         // No saved state, autosize columns for first-time users
@@ -436,10 +460,12 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
               undefined,
               itemsPerPage
             );
+            syncPaginationUiState(gridApi);
             gridApi.autoSizeAllColumns();
             gridApi.clearFocusedCell();
             gridApi.clearCellSelection();
           }
+          isApplyingTabStateRef.current = false;
         });
       }
     }
@@ -450,6 +476,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
     initialGridState,
     itemsPerPage,
     readSavedGridState,
+    syncPaginationUiState,
   ]);
 
   // Column display mode for items (reference columns)
@@ -580,13 +607,8 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
         savedState,
         itemsPerPage
       );
+      syncPaginationUiState(params.api);
       setGridApi(params.api);
-
-      // Sync current page size with grid
-      const isPaginationEnabled = params.api.getGridOption('pagination');
-      setCurrentPageSize(
-        isPaginationEnabled ? params.api.paginationGetPageSize() : -1
-      );
 
       // Notify parent about grid API
       if (onGridApiReady) {
@@ -602,6 +624,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
       onGridApiReady,
       onGridReady,
       readSavedGridState,
+      syncPaginationUiState,
     ]
   );
 
@@ -627,10 +650,28 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
   }, []);
 
   // Handle page size changes
-  const handlePageSizeChange = useCallback((newPageSize: number) => {
-    /* c8 ignore next */
-    setCurrentPageSize(newPageSize);
-  }, []);
+  const handlePageSizeChange = useCallback(
+    (newPageSize: number) => {
+      /* c8 ignore next */
+      setCurrentPageSize(newPageSize);
+
+      if (
+        gridApi &&
+        !gridApi.isDestroyed() &&
+        'savePaginationEnabledState' in gridStateManager
+      ) {
+        (
+          gridStateManager as {
+            savePaginationEnabledState: (
+              api: GridApi,
+              table: TableType
+            ) => boolean;
+          }
+        ).savePaginationEnabledState(gridApi, activeTab as TableType);
+      }
+    },
+    [activeTab, gridApi]
+  );
 
   useEffect(() => {
     if (!gridApi || gridApi.isDestroyed()) {
@@ -638,35 +679,18 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
     }
 
     const syncCurrentPageSize = () => {
-      if (gridApi.isDestroyed()) {
-        return;
-      }
-
-      const isPaginationEnabled = gridApi.getGridOption('pagination');
-      setCurrentPageSize(
-        isPaginationEnabled ? gridApi.paginationGetPageSize() : -1
-      );
+      syncPaginationUiState(gridApi);
     };
 
     syncCurrentPageSize();
     gridApi.addEventListener('paginationChanged', syncCurrentPageSize);
-    if ('savePaginationEnabledState' in gridStateManager) {
-      (
-        gridStateManager as {
-          savePaginationEnabledState: (
-            api: GridApi,
-            table: TableType
-          ) => boolean;
-        }
-      ).savePaginationEnabledState(gridApi, activeTab as TableType);
-    }
 
     return () => {
       if (!gridApi.isDestroyed()) {
         gridApi.removeEventListener('paginationChanged', syncCurrentPageSize);
       }
     };
-  }, [activeTab, gridApi]);
+  }, [gridApi, syncPaginationUiState]);
 
   // Handle filter changes - notify parent for SearchBar sync
   const handleFilterChanged = useCallback(() => {
