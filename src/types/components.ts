@@ -39,6 +39,9 @@ export interface DropdownProps {
   required?: boolean;
   disabled?: boolean;
   onAddNew?: (searchTerm?: string) => void;
+  persistOpen?: boolean;
+  onPersistOpenClear?: () => void;
+  freezePersistedMenu?: boolean;
   withRadio?: boolean;
   searchList?: boolean;
   autoScrollOnOpen?: boolean;

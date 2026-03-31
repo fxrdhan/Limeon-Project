@@ -463,6 +463,8 @@ export const useAddItemForm = ({
     setIsAddDosageModalOpen: formState.setIsAddDosageModalOpen,
     isAddManufacturerModalOpen: formState.isAddManufacturerModalOpen,
     setIsAddManufacturerModalOpen: formState.setIsAddManufacturerModalOpen,
+    persistedDropdownName: formState.persistedDropdownName,
+    setPersistedDropdownName: formState.setPersistedDropdownName,
 
     // Editing states (from formState)
     editingMargin: formState.editingMargin,

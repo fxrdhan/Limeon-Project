@@ -74,6 +74,9 @@ export const useAddItemFormState = ({
   const [isAddDosageModalOpen, setIsAddDosageModalOpen] = useState(false);
   const [isAddManufacturerModalOpen, setIsAddManufacturerModalOpen] =
     useState(false);
+  const [persistedDropdownName, setPersistedDropdownName] = useState<
+    string | null
+  >(null);
   const [currentSearchTermForModal, setCurrentSearchTermForModal] = useState<
     string | undefined
   >();
@@ -314,6 +317,8 @@ export const useAddItemFormState = ({
     setIsAddDosageModalOpen,
     isAddManufacturerModalOpen,
     setIsAddManufacturerModalOpen,
+    persistedDropdownName,
+    setPersistedDropdownName,
     currentSearchTermForModal,
     setCurrentSearchTermForModal,
 

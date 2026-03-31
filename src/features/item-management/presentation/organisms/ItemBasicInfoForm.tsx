@@ -41,6 +41,9 @@ interface ItemBasicInfoFormProps {
   onDisplayNameChange: (value: string) => void;
   onFieldChange: (field: string, value: boolean | string) => void;
   onDropdownChange: (field: string, value: string) => void;
+  persistedDropdownName?: string | null;
+  onPersistedDropdownClear?: () => void;
+  freezePersistedDropdown?: boolean;
   onAddNewCategory: (searchTerm?: string) => void;
   onAddNewType: (searchTerm?: string) => void;
   onAddNewUnit: (searchTerm?: string) => void;
@@ -63,6 +66,9 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
       onDisplayNameChange,
       onFieldChange,
       onDropdownChange,
+      persistedDropdownName,
+      onPersistedDropdownClear,
+      freezePersistedDropdown = false,
       onAddNewCategory,
       onAddNewType,
       onAddNewUnit,
@@ -239,6 +245,12 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                   options={manufacturers}
                   placeholder="Pilih Produsen"
                   onAddNew={disabled ? undefined : onAddNewManufacturer}
+                  persistOpen={persistedDropdownName === 'manufacturer_id'}
+                  freezePersistedMenu={
+                    freezePersistedDropdown &&
+                    persistedDropdownName === 'manufacturer_id'
+                  }
+                  onPersistOpenClear={onPersistedDropdownClear}
                   enableHoverDetail={true}
                   hoverDetailDelay={400}
                   onFetchHoverDetail={optimizedManufacturerDetailFetcher}
@@ -269,6 +281,12 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                   validationAutoHide={true}
                   validationAutoHideDelay={3000}
                   onAddNew={disabled ? undefined : onAddNewCategory}
+                  persistOpen={persistedDropdownName === 'category_id'}
+                  freezePersistedMenu={
+                    freezePersistedDropdown &&
+                    persistedDropdownName === 'category_id'
+                  }
+                  onPersistOpenClear={onPersistedDropdownClear}
                   enableHoverDetail={true}
                   hoverDetailDelay={400}
                   onFetchHoverDetail={optimizedCategoryDetailFetcher}
@@ -294,6 +312,12 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                   validationAutoHide={true}
                   validationAutoHideDelay={3000}
                   onAddNew={disabled ? undefined : onAddNewType}
+                  persistOpen={persistedDropdownName === 'type_id'}
+                  freezePersistedMenu={
+                    freezePersistedDropdown &&
+                    persistedDropdownName === 'type_id'
+                  }
+                  onPersistOpenClear={onPersistedDropdownClear}
                   enableHoverDetail={true}
                   hoverDetailDelay={400}
                   onFetchHoverDetail={optimizedTypeDetailFetcher}
@@ -319,6 +343,12 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                   validationAutoHide={true}
                   validationAutoHideDelay={3000}
                   onAddNew={disabled ? undefined : onAddNewUnit}
+                  persistOpen={persistedDropdownName === 'package_id'}
+                  freezePersistedMenu={
+                    freezePersistedDropdown &&
+                    persistedDropdownName === 'package_id'
+                  }
+                  onPersistOpenClear={onPersistedDropdownClear}
                   enableHoverDetail={true}
                   hoverDetailDelay={400}
                   onFetchHoverDetail={optimizedPackageDetailFetcher}
@@ -344,6 +374,12 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                   validationAutoHide={true}
                   validationAutoHideDelay={3000}
                   onAddNew={disabled ? undefined : onAddNewDosage}
+                  persistOpen={persistedDropdownName === 'dosage_id'}
+                  freezePersistedMenu={
+                    freezePersistedDropdown &&
+                    persistedDropdownName === 'dosage_id'
+                  }
+                  onPersistOpenClear={onPersistedDropdownClear}
                   enableHoverDetail={true}
                   hoverDetailDelay={400}
                   onFetchHoverDetail={optimizedDosageDetailFetcher}

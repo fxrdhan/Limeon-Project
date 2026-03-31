@@ -25,6 +25,9 @@ export const useDropdownEffects = ({
   const [isHovered, setIsHovered] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const leaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const openStyleTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const positionRafRef = useRef<number | null>(null);
+  const focusRafRef = useRef<number | null>(null);
 
   const clearTimeouts = useCallback(() => {
     if (hoverTimeoutRef.current) {
@@ -34,6 +37,21 @@ export const useDropdownEffects = ({
     if (leaveTimeoutRef.current) {
       clearTimeout(leaveTimeoutRef.current);
       leaveTimeoutRef.current = null;
+    }
+  }, []);
+
+  const clearOpenScheduling = useCallback(() => {
+    if (openStyleTimerRef.current) {
+      clearTimeout(openStyleTimerRef.current);
+      openStyleTimerRef.current = null;
+    }
+    if (positionRafRef.current !== null) {
+      cancelAnimationFrame(positionRafRef.current);
+      positionRafRef.current = null;
+    }
+    if (focusRafRef.current !== null) {
+      cancelAnimationFrame(focusRafRef.current);
+      focusRafRef.current = null;
     }
   }, []);
 
@@ -107,22 +125,24 @@ export const useDropdownEffects = ({
 
   // Manage open/close states and event listeners
   useEffect(() => {
-    let openStyleTimerId: NodeJS.Timeout | undefined;
-
     if (isOpen) {
       clearTimeouts();
+      clearOpenScheduling();
 
       document.body.style.overflow = 'hidden';
 
-      requestAnimationFrame(() => {
+      positionRafRef.current = requestAnimationFrame(() => {
+        positionRafRef.current = null;
         if (dropdownMenuRef.current) {
           calculateDropdownPosition();
-          requestAnimationFrame(() => {
+          focusRafRef.current = requestAnimationFrame(() => {
+            focusRafRef.current = null;
             setApplyOpenStyles(true);
             manageFocusOnOpen();
           });
         } else {
-          openStyleTimerId = setTimeout(() => {
+          openStyleTimerRef.current = setTimeout(() => {
+            openStyleTimerRef.current = null;
             if (dropdownMenuRef.current) {
               calculateDropdownPosition();
               setApplyOpenStyles(true);
@@ -144,13 +164,14 @@ export const useDropdownEffects = ({
 
       return () => {
         document.body.style.overflow = '';
-        if (openStyleTimerId) clearTimeout(openStyleTimerId);
+        clearOpenScheduling();
         events.forEach(([event, handler, capture]) =>
           window.removeEventListener(event, handler as EventListener, capture)
         );
       };
     } else {
       document.body.style.overflow = '';
+      clearOpenScheduling();
       setApplyOpenStyles(false);
       resetPosition();
       resetSearch();
@@ -162,11 +183,11 @@ export const useDropdownEffects = ({
     manageFocusOnOpen,
     handleFocusOut,
     clearTimeouts,
+    clearOpenScheduling,
     resetPosition,
     resetSearch,
     setApplyOpenStyles,
     dropdownMenuRef,
-    buttonRef,
   ]);
 
   // Position recalculation

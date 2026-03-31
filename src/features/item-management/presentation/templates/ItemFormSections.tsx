@@ -163,7 +163,20 @@ const BasicInfoRequiredSection: React.FC<BasicInfoRequiredProps> = () => {
     handleAddNewUnit,
     handleAddNewDosage,
     handleAddNewManufacturer,
+    isAddEditModalOpen,
+    isAddTypeModalOpen,
+    isAddUnitModalOpen,
+    isAddDosageModalOpen,
+    isAddManufacturerModalOpen,
+    persistedDropdownName,
+    setPersistedDropdownName,
   } = useItemModal();
+  const isAnyChildEntityModalOpen =
+    isAddEditModalOpen ||
+    isAddTypeModalOpen ||
+    isAddUnitModalOpen ||
+    isAddDosageModalOpen ||
+    isAddManufacturerModalOpen;
 
   // Transform database types to DropdownOption format
   const transformedCategories = categories.map(cat => ({
@@ -301,11 +314,29 @@ const BasicInfoRequiredSection: React.FC<BasicInfoRequiredProps> = () => {
       }}
       onFieldChange={handleFieldChange}
       onDropdownChange={handleDropdownChange}
-      onAddNewCategory={handleAddNewCategory}
-      onAddNewType={handleAddNewType}
-      onAddNewUnit={handleAddNewUnit}
-      onAddNewDosage={handleAddNewDosage}
-      onAddNewManufacturer={handleAddNewManufacturer}
+      persistedDropdownName={persistedDropdownName || null}
+      freezePersistedDropdown={isAnyChildEntityModalOpen}
+      onPersistedDropdownClear={() => setPersistedDropdownName?.(null)}
+      onAddNewCategory={searchTerm => {
+        setPersistedDropdownName?.('category_id');
+        handleAddNewCategory(searchTerm);
+      }}
+      onAddNewType={searchTerm => {
+        setPersistedDropdownName?.('type_id');
+        handleAddNewType(searchTerm);
+      }}
+      onAddNewUnit={searchTerm => {
+        setPersistedDropdownName?.('package_id');
+        handleAddNewUnit(searchTerm);
+      }}
+      onAddNewDosage={searchTerm => {
+        setPersistedDropdownName?.('dosage_id');
+        handleAddNewDosage(searchTerm);
+      }}
+      onAddNewManufacturer={searchTerm => {
+        setPersistedDropdownName?.('manufacturer_id');
+        handleAddNewManufacturer(searchTerm);
+      }}
     />
   );
 };

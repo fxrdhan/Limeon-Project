@@ -41,6 +41,7 @@ export interface ItemModalState {
   isAddDosageModalOpen: boolean;
   isAddManufacturerModalOpen: boolean;
   currentSearchTermForModal: string;
+  persistedDropdownName?: string | null;
 }
 
 export interface ItemPriceState {
@@ -108,16 +109,17 @@ export interface ItemModalActions {
   setIsAddUnitModalOpen: (open: boolean) => void;
   setIsAddDosageModalOpen: (open: boolean) => void;
   setIsAddManufacturerModalOpen: (open: boolean) => void;
+  setPersistedDropdownName?: (name: string | null) => void;
   closeModalAndClearSearch: (
     setter:
       | ((open: boolean) => void)
       | React.Dispatch<React.SetStateAction<boolean>>
   ) => void;
-  handleAddNewCategory: () => void;
-  handleAddNewType: () => void;
-  handleAddNewUnit: () => void;
-  handleAddNewDosage: () => void;
-  handleAddNewManufacturer: () => void;
+  handleAddNewCategory: (searchTerm?: string) => void;
+  handleAddNewType: (searchTerm?: string) => void;
+  handleAddNewUnit: (searchTerm?: string) => void;
+  handleAddNewDosage: (searchTerm?: string) => void;
+  handleAddNewManufacturer: (searchTerm?: string) => void;
 }
 
 export interface ItemBusinessActions {

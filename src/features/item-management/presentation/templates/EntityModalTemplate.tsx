@@ -12,7 +12,7 @@ const EntityModalTemplate: React.FC<EntityModalTemplateProps> = ({
   children,
 }) => {
   const { ui, uiActions, comparison } = useEntityModal();
-  const { isOpen, isClosing } = ui;
+  const { isOpen, isClosing, entityName } = ui;
   const { handleBackdropClick } = uiActions;
 
   const backdropVariants = {
@@ -41,7 +41,7 @@ const EntityModalTemplate: React.FC<EntityModalTemplateProps> = ({
           animate={isClosing ? 'exit' : 'visible'}
           exit="exit"
           transition={{ duration: 0.15 }}
-          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 backdrop-blur-xs"
+          className="fixed inset-0 z-[10050] flex items-center justify-center overflow-y-auto bg-black/50 backdrop-blur-xs"
           onClick={e => {
             if (e.target === e.currentTarget && !isClosing) {
               handleBackdropClick(e);
@@ -56,7 +56,10 @@ const EntityModalTemplate: React.FC<EntityModalTemplateProps> = ({
             exit="exit"
             transition={{ duration: 0.2, ease: 'easeOut' }}
             onClick={e => e.stopPropagation()}
-            className="relative z-[52]"
+            className="relative z-[10052]"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Modal ${entityName}`}
           >
             {children}
           </motion.div>

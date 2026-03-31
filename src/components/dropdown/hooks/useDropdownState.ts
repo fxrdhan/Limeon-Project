@@ -4,30 +4,42 @@ import { DROPDOWN_CONSTANTS } from '../constants';
 let activeDropdownCloseCallback: (() => void) | null = null;
 let activeDropdownId: string | null = null;
 
-export const useDropdownState = () => {
+interface UseDropdownStateOptions {
+  shouldKeepOpen?: () => boolean;
+}
+
+export const useDropdownState = (options: UseDropdownStateOptions = {}) => {
+  const { shouldKeepOpen } = options;
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [applyOpenStyles, setApplyOpenStyles] = useState(false);
   const instanceId = useId();
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const actualCloseDropdown = useCallback(() => {
-    if (closeTimeoutRef.current) {
-      clearTimeout(closeTimeoutRef.current);
-      closeTimeoutRef.current = null;
-    }
-
-    setIsClosing(true);
-    closeTimeoutRef.current = setTimeout(() => {
-      setIsOpen(false);
-      setIsClosing(false);
-      closeTimeoutRef.current = null;
-      if (activeDropdownId === instanceId) {
-        activeDropdownCloseCallback = null;
-        activeDropdownId = null;
+  const actualCloseDropdown = useCallback(
+    (force = false) => {
+      if (!force && shouldKeepOpen?.()) {
+        return;
       }
-    }, DROPDOWN_CONSTANTS.ANIMATION_DURATION);
-  }, [instanceId]);
+
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+        closeTimeoutRef.current = null;
+      }
+
+      setIsClosing(true);
+      closeTimeoutRef.current = setTimeout(() => {
+        setIsOpen(false);
+        setIsClosing(false);
+        closeTimeoutRef.current = null;
+        if (activeDropdownId === instanceId) {
+          activeDropdownCloseCallback = null;
+          activeDropdownId = null;
+        }
+      }, DROPDOWN_CONSTANTS.ANIMATION_DURATION);
+    },
+    [instanceId, shouldKeepOpen]
+  );
 
   const openThisDropdown = useCallback(() => {
     if (closeTimeoutRef.current) {
@@ -57,7 +69,7 @@ export const useDropdownState = () => {
         return;
       }
       if (isOpen) {
-        actualCloseDropdown();
+        actualCloseDropdown(true);
       } else {
         openThisDropdown();
       }

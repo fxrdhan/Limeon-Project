@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { DROPDOWN_CONSTANTS } from '../constants';
 import type { UseFocusManagementProps } from '../types';
 
@@ -8,25 +8,52 @@ export const useFocusManagement = ({
   touched,
   setTouched,
   actualCloseDropdown,
+  shouldKeepOpen,
+  shouldSkipOpenFocus,
   dropdownRef,
   dropdownMenuRef,
   searchInputRef,
   optionsContainerRef,
   mode,
 }: UseFocusManagementProps) => {
+  const focusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearPendingFocus = useCallback(() => {
+    if (focusTimeoutRef.current) {
+      clearTimeout(focusTimeoutRef.current);
+      focusTimeoutRef.current = null;
+    }
+  }, []);
+
   const manageFocusOnOpen = useCallback(() => {
     if (isOpen) {
-      setTimeout(
+      if (shouldSkipOpenFocus?.()) {
+        return;
+      }
+      clearPendingFocus();
+      focusTimeoutRef.current = setTimeout(
         () => {
+          focusTimeoutRef.current = null;
+
+          const activeElement = document.activeElement;
+          const dropdownOwnerDialog =
+            dropdownRef.current?.closest(
+              '[role="dialog"][aria-modal="true"]'
+            ) ?? null;
+          const activeDialog =
+            activeElement instanceof Element
+              ? activeElement.closest('[role="dialog"][aria-modal="true"]')
+              : null;
+
+          if (activeDialog && activeDialog !== dropdownOwnerDialog) {
+            return;
+          }
+
           if (searchList) {
             searchInputRef.current?.focus();
-          } else {
-            // For text mode without search, don't auto-focus to avoid scroll conflicts
-            // Let keyboard navigation be handled by button focus instead
-            if (mode === 'input') {
-              optionsContainerRef.current?.focus();
-            }
-            // For text mode, keep focus on button to avoid container focus conflicts
+          } else if (mode === 'input') {
+            // For text mode without search, don't auto-focus to avoid scroll conflicts.
+            optionsContainerRef.current?.focus();
           }
         },
         searchList
@@ -34,7 +61,16 @@ export const useFocusManagement = ({
           : DROPDOWN_CONSTANTS.FOCUS_DELAY
       );
     }
-  }, [isOpen, searchList, searchInputRef, optionsContainerRef, mode]);
+  }, [
+    clearPendingFocus,
+    dropdownRef,
+    isOpen,
+    mode,
+    optionsContainerRef,
+    searchInputRef,
+    searchList,
+    shouldSkipOpenFocus,
+  ]);
 
   const handleFocusOut = useCallback(() => {
     setTimeout(() => {
@@ -42,6 +78,13 @@ export const useFocusManagement = ({
       const isFocusInDropdown =
         dropdownRef.current?.contains(activeElement) ||
         dropdownMenuRef.current?.contains(activeElement);
+
+      if (shouldKeepOpen?.()) {
+        if (!touched) {
+          setTouched(true);
+        }
+        return;
+      }
 
       if (!isFocusInDropdown) {
         if (isOpen) {
@@ -55,13 +98,17 @@ export const useFocusManagement = ({
   }, [
     isOpen,
     actualCloseDropdown,
+    shouldKeepOpen,
     touched,
     setTouched,
     dropdownRef,
     dropdownMenuRef,
   ]);
 
+  useEffect(() => clearPendingFocus, [clearPendingFocus]);
+
   return {
+    clearPendingFocus,
     manageFocusOnOpen,
     handleFocusOut,
   };
