@@ -1,4 +1,4 @@
-import { useState, useCallback, useId, useRef } from 'react';
+import { useState, useCallback, useId, useRef, useEffect } from 'react';
 import { DROPDOWN_CONSTANTS } from '../constants';
 
 let activeDropdownCloseCallback: (() => void) | null = null;
@@ -76,6 +76,20 @@ export const useDropdownState = (options: UseDropdownStateOptions = {}) => {
     },
     [isOpen, isClosing, actualCloseDropdown, openThisDropdown]
   );
+
+  useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+        closeTimeoutRef.current = null;
+      }
+
+      if (activeDropdownId === instanceId) {
+        activeDropdownCloseCallback = null;
+        activeDropdownId = null;
+      }
+    };
+  }, [instanceId]);
 
   return {
     isOpen,

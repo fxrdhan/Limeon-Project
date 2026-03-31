@@ -234,6 +234,15 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
   }, [freezePersistedMenu, isLocallyFrozen]);
 
   useEffect(() => {
+    return () => {
+      pinnedOpenRef.current = false;
+      if (pinnedDropdownName === name) {
+        pinnedDropdownName = null;
+      }
+    };
+  }, [name]);
+
+  useEffect(() => {
     const wasFrozen = previousMenuFrozenRef.current;
     previousMenuFrozenRef.current = isMenuFrozen;
 
