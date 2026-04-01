@@ -411,12 +411,32 @@ export default function ItemPackageConversionManager({
                   baseUnit={baseUnit}
                   baseUnitId={baseUnitId}
                   availableUnits={filteredAvailableUnits}
+                  baseUnitOption={
+                    baseUnitId
+                      ? (() => {
+                          const baseUnitDetail = availableUnits.find(
+                            unit => unit.id === baseUnitId
+                          );
+                          return {
+                            id: baseUnitId,
+                            name: baseUnit,
+                            code: baseUnitDetail?.code,
+                            description:
+                              baseUnitDetail?.description ?? undefined,
+                            updated_at: baseUnitDetail?.updated_at,
+                          };
+                        })()
+                      : null
+                  }
                   existingUnits={filteredConversions.map(conversion => ({
                     id:
                       conversion.inventory_unit_id ||
                       conversion.to_unit_id ||
                       conversion.unit.id,
                     name: conversion.unit.name,
+                    code: conversion.unit.code,
+                    description: conversion.unit.description ?? undefined,
+                    updated_at: conversion.unit.updated_at,
                   }))}
                   formData={formData}
                   onFormDataChange={onFormDataChange}

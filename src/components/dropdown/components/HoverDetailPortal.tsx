@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import Badge from '@/components/badge';
@@ -14,6 +14,7 @@ interface HoverDetailPortalProps {
     top: number;
     left: number;
     direction: 'right' | 'left';
+    anchorCenterY: number;
   };
   data: HoverDetailData | null;
 }
@@ -25,6 +26,39 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
 }) => {
   // Derive state directly from props - no effect needed!
   const showContent = isVisible && !!data;
+  const popupRef = useRef<HTMLDivElement>(null);
+  const [resolvedTop, setResolvedTop] = useState(position.top);
+  const [arrowTop, setArrowTop] = useState(18);
+  const viewportPadding = 12;
+  const popupWidth = popupRef.current?.getBoundingClientRect().width ?? 320;
+  const clampedLeft =
+    typeof window === 'undefined'
+      ? position.left
+      : Math.min(
+          Math.max(position.left, viewportPadding),
+          window.innerWidth - popupWidth - viewportPadding
+        );
+
+  useLayoutEffect(() => {
+    if (!showContent || !popupRef.current) return;
+
+    const arrowSize = 12;
+    const popupRect = popupRef.current.getBoundingClientRect();
+    const maxTop = Math.max(
+      viewportPadding,
+      window.innerHeight - popupRect.height - viewportPadding
+    );
+    const nextTop = Math.min(Math.max(position.top, viewportPadding), maxTop);
+    const nextArrowTop = Math.min(
+      Math.max(position.anchorCenterY - nextTop - arrowSize / 2, 12),
+      Math.max(12, popupRect.height - arrowSize - 12)
+    );
+
+    setResolvedTop(prev => (Math.abs(prev - nextTop) < 1 ? prev : nextTop));
+    setArrowTop(prev =>
+      Math.abs(prev - nextArrowTop) < 1 ? prev : nextArrowTop
+    );
+  }, [position.anchorCenterY, position.top, showContent]);
 
   return createPortal(
     <AnimatePresence>
@@ -40,12 +74,13 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
           }}
           className="fixed z-[9999] pointer-events-none"
           style={{
-            top: position.top,
-            left: position.left,
+            top: resolvedTop,
+            left: clampedLeft,
           }}
         >
           {/* Container with layout animation - resizes first, NO text animation */}
           <motion.div
+            ref={popupRef}
             className={`group pointer-events-auto transition-colors duration-150 rounded-xl p-4 min-w-[250px] max-w-[500px] w-max relative shadow-xl ${POPUP_SURFACE_CLASS} ${POPUP_HOVER_BG_CLASS}`}
             layout
             layoutId={`hover-detail-${data.id}`}
@@ -64,7 +99,7 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
                 duration: 0.12,
                 ease: 'easeOut',
               }}
-              className="pointer-events-auto"
+              className="pointer-events-auto max-h-[calc(100vh-24px)] overflow-y-auto"
             >
               {/* Header with code and name - static, no animation */}
               <div className="flex items-center gap-2 mb-3">
@@ -113,12 +148,12 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
                 position.direction === 'right'
                   ? {
                       left: '-6px',
-                      top: '18px',
+                      top: `${arrowTop}px`,
                       transform: 'rotate(45deg)',
                     }
                   : {
                       right: '-6px',
-                      top: '18px',
+                      top: `${arrowTop}px`,
                       transform: 'rotate(45deg)',
                     }
               }

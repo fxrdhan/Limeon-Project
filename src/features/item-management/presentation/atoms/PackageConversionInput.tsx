@@ -3,6 +3,7 @@ import { TbArrowBack } from 'react-icons/tb';
 import Dropdown from '@/components/dropdown';
 import FormField from '@/components/form-field';
 import Input from '@/components/input';
+import type { DropdownOption } from '@/types/components';
 import type { PackageConversionLogicFormData } from '../../shared/types';
 import type { ItemInventoryUnit } from '@/types/database';
 import { getInventoryUnitMetaLabel } from '@/lib/item-units';
@@ -11,7 +12,8 @@ interface LocalPackageConversionInputProps {
   baseUnit: string;
   baseUnitId: string;
   availableUnits: ItemInventoryUnit[];
-  existingUnits: Array<{ id: string; name: string }>;
+  baseUnitOption?: DropdownOption | null;
+  existingUnits: DropdownOption[];
   formData: PackageConversionLogicFormData;
   onFormDataChange: (data: PackageConversionLogicFormData) => void;
   onAddConversion: () => void;
@@ -23,6 +25,7 @@ export default function PackageConversionInput({
   baseUnit,
   baseUnitId,
   availableUnits,
+  baseUnitOption = null,
   existingUnits,
   formData,
   onFormDataChange,
@@ -81,15 +84,17 @@ export default function PackageConversionInput({
           {
             id: baseUnitId,
             name: baseUnit,
+            code: baseUnitOption?.code,
+            description: baseUnitOption?.description,
+            updated_at: baseUnitOption?.updated_at,
             metaLabel: 'Unit Dasar',
-          },
+          } satisfies DropdownOption,
         ]
       : []),
     ...existingUnits
       .filter(unit => unit.id !== formData.inventory_unit_id)
       .map(unit => ({
-        id: unit.id,
-        name: unit.name,
+        ...unit,
         metaLabel: 'Struktur',
       })),
   ];
@@ -110,9 +115,14 @@ export default function PackageConversionInput({
             options={availableUnits.map(unit => ({
               id: unit.id,
               name: unit.name,
+              code: unit.code,
+              description: unit.description ?? undefined,
+              updated_at: unit.updated_at,
               metaLabel: getInventoryUnitMetaLabel(unit),
             }))}
             placeholder="-- Pilih Unit --"
+            enableHoverDetail={true}
+            hoverDetailDelay={400}
             required
             validate={true}
             showValidationOnBlur={true}
@@ -130,6 +140,8 @@ export default function PackageConversionInput({
             onChange={handleParentUnitChange}
             options={parentOptions}
             placeholder="-- Pilih Parent --"
+            enableHoverDetail={true}
+            hoverDetailDelay={400}
             required
             validate={true}
             showValidationOnBlur={true}

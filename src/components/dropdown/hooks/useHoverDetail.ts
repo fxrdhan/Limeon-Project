@@ -5,6 +5,7 @@ interface HoverDetailPosition {
   top: number;
   left: number;
   direction: 'right' | 'left';
+  anchorCenterY: number;
 }
 
 interface UseHoverDetailProps {
@@ -30,6 +31,7 @@ export const useHoverDetail = ({
     top: 0,
     left: 0,
     direction: 'right',
+    anchorCenterY: 0,
   });
   const [data, setData] = useState<HoverDetailData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -65,13 +67,10 @@ export const useHoverDetail = ({
   const calculatePosition = useCallback(
     (element: HTMLElement): HoverDetailPosition => {
       const rect = element.getBoundingClientRect();
-      const scrollTop =
-        window.pageYOffset || document.documentElement.scrollTop;
-      const scrollLeft =
-        window.pageXOffset || document.documentElement.scrollLeft;
       const viewportWidth = window.innerWidth;
 
-      const top = rect.top + scrollTop;
+      const top = rect.top;
+      const anchorCenterY = rect.top + rect.height / 2;
       const padding = 10;
       const minPortalWidth = 280;
       const maxPortalWidth = 580;
@@ -81,34 +80,35 @@ export const useHoverDetail = ({
 
       if (spaceOnRight >= minPortalWidth + padding) {
         return {
-          left: rect.right + scrollLeft + padding,
+          left: rect.right + padding,
           top,
           direction: 'right',
+          anchorCenterY,
         };
       }
 
       if (spaceOnLeft >= minPortalWidth + padding) {
         return {
-          left: rect.left + scrollLeft - minPortalWidth - padding,
+          left: rect.left - minPortalWidth - padding,
           top,
           direction: 'left',
+          anchorCenterY,
         };
       }
 
       if (spaceOnRight >= spaceOnLeft) {
         return {
-          left: Math.max(padding, rect.right + scrollLeft + padding),
+          left: Math.max(padding, rect.right + padding),
           top,
           direction: 'right',
+          anchorCenterY,
         };
       } else {
         return {
-          left: Math.max(
-            padding,
-            rect.left + scrollLeft - maxPortalWidth - padding
-          ),
+          left: Math.max(padding, rect.left - maxPortalWidth - padding),
           top,
           direction: 'left',
+          anchorCenterY,
         };
       }
     },

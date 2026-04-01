@@ -669,6 +669,8 @@ export default function ItemPricingForm({
                         onChange={onBaseUnitChange}
                         options={baseUnitOptions}
                         placeholder="Pilih Unit Dasar"
+                        enableHoverDetail={true}
+                        hoverDetailDelay={400}
                         required
                         validate={true}
                         showValidationOnBlur={true}

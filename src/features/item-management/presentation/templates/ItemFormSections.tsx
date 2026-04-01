@@ -518,7 +518,9 @@ const PricingSection: React.FC<PricingSectionProps> = ({
     const options = mergedUnits.map(unit => ({
       id: unit.id,
       name: unit.name,
+      code: unit.code,
       description: unit.description ?? undefined,
+      updated_at: unit.updated_at,
       metaLabel: getInventoryUnitMetaLabel(unit),
     }));
 
