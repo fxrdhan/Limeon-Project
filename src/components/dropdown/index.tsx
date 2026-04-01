@@ -4,6 +4,7 @@ import React, {
   RefObject,
   useEffect,
   useState,
+  useId,
 } from 'react';
 import type { DropdownProps, CheckboxDropdownProps } from '@/types';
 import ValidationOverlay from '@/components/validation-overlay';
@@ -25,6 +26,8 @@ import { useDropdownEffects } from './hooks/useDropdownEffects';
 import { useHoverDetail } from './hooks/useHoverDetail';
 
 let pinnedDropdownName: string | null = null;
+let activeManagedDropdownId: string | null = null;
+let activeManagedDropdownCloseCallback: (() => void) | null = null;
 
 // Function overloads for different modes
 function Dropdown(props: DropdownProps): React.JSX.Element;
@@ -64,6 +67,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
 
   const withCheckbox = 'withCheckbox' in allProps && allProps.withCheckbox;
   const withRadio = 'withRadio' in allProps ? allProps.withRadio : false;
+  const instanceId = useId();
 
   // Type guard for checkbox mode - memoized to prevent useCallback dependency changes
   const isCheckboxMode = useCallback(
@@ -137,15 +141,37 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     actualCloseDropdown(true);
   }, [actualCloseDropdown, onPersistOpenClear, releasePinnedOpen]);
 
+  const closeOtherActiveDropdown = useCallback(() => {
+    if (
+      activeManagedDropdownId !== null &&
+      activeManagedDropdownId !== instanceId
+    ) {
+      activeManagedDropdownCloseCallback?.();
+    }
+  }, [instanceId]);
+
+  const openDropdownExclusively = useCallback(() => {
+    closeOtherActiveDropdown();
+    openThisDropdown();
+  }, [closeOtherActiveDropdown, openThisDropdown]);
+
   const handleToggleDropdown = useCallback(
     (e: React.MouseEvent) => {
       if (effectiveIsOpen) {
         onPersistOpenClear?.();
         releasePinnedOpen();
+      } else {
+        closeOtherActiveDropdown();
       }
       toggleDropdown(e);
     },
-    [effectiveIsOpen, onPersistOpenClear, releasePinnedOpen, toggleDropdown]
+    [
+      closeOtherActiveDropdown,
+      effectiveIsOpen,
+      onPersistOpenClear,
+      releasePinnedOpen,
+      toggleDropdown,
+    ]
   );
 
   const {
@@ -328,16 +354,36 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
   });
 
   useEffect(() => {
+    if (!effectiveIsOpen) {
+      if (activeManagedDropdownId === instanceId) {
+        activeManagedDropdownId = null;
+        activeManagedDropdownCloseCallback = null;
+      }
+      return;
+    }
+
+    activeManagedDropdownId = instanceId;
+    activeManagedDropdownCloseCallback = closeDropdownAndReleasePin;
+
+    return () => {
+      if (activeManagedDropdownId === instanceId) {
+        activeManagedDropdownId = null;
+        activeManagedDropdownCloseCallback = null;
+      }
+    };
+  }, [closeDropdownAndReleasePin, effectiveIsOpen, instanceId]);
+
+  useEffect(() => {
     if (!shouldKeepDropdownOpen() || isOpen || isClosing) return;
     if (isMenuFrozen) return;
 
     suppressFocusOnNextOpenRef.current = true;
-    openThisDropdown();
+    openDropdownExclusively();
   }, [
     isMenuFrozen,
     isClosing,
     isOpen,
-    openThisDropdown,
+    openDropdownExclusively,
     shouldKeepDropdownOpen,
   ]);
 
@@ -441,7 +487,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     dropdownMenuRef,
     hoverToOpen,
     isClosing: effectiveIsClosing,
-    openThisDropdown,
+    openThisDropdown: openDropdownExclusively,
     actualCloseDropdown,
   });
 
