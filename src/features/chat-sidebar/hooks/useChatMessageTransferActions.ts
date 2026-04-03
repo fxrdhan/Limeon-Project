@@ -5,12 +5,32 @@ import type { ChatMessage } from '../data/chatSidebarGateway';
 import { getAttachmentFileName } from '../utils/attachment';
 import { getClipboardImagePayload } from '../utils/clipboard';
 import { fetchChatFileBlobWithFallback } from '../utils/message-file';
+import { buildZipBlob } from '../utils/zip';
 
 export const useChatMessageTransferActions = ({
   closeMessageMenu,
 }: {
   closeMessageMenu: () => void;
 }) => {
+  const triggerBlobDownload = useCallback(
+    (fileBlob: Blob, fileName: string) => {
+      const objectUrl = URL.createObjectURL(fileBlob);
+      const link = document.createElement('a');
+
+      link.href = objectUrl;
+      link.download = fileName;
+      link.rel = 'noreferrer';
+      document.body.append(link);
+      link.click();
+      link.remove();
+
+      window.setTimeout(() => {
+        URL.revokeObjectURL(objectUrl);
+      }, 1500);
+    },
+    []
+  );
+
   const buildCopyableMessageText = useCallback((targetMessage: ChatMessage) => {
     if (targetMessage.message_type === 'file') {
       return `[File: ${getAttachmentFileName(targetMessage)}]`;
@@ -125,19 +145,7 @@ export const useChatMessageTransferActions = ({
               throw new Error('Failed to fetch file for download');
             }
 
-            const objectUrl = URL.createObjectURL(fileBlob);
-            const link = document.createElement('a');
-
-            link.href = objectUrl;
-            link.download = fileName;
-            link.rel = 'noreferrer';
-            document.body.append(link);
-            link.click();
-            link.remove();
-
-            window.setTimeout(() => {
-              URL.revokeObjectURL(objectUrl);
-            }, 1500);
+            triggerBlobDownload(fileBlob, fileName);
           })(),
           {
             loading: 'Menyiapkan unduhan...',
@@ -154,11 +162,69 @@ export const useChatMessageTransferActions = ({
         closeMessageMenu();
       }
     },
-    [closeMessageMenu]
+    [closeMessageMenu, triggerBlobDownload]
+  );
+
+  const handleDownloadImageGroup = useCallback(
+    async (targetMessages: ChatMessage[]) => {
+      if (targetMessages.length === 0) {
+        closeMessageMenu();
+        return;
+      }
+
+      try {
+        await toast.promise(
+          (async () => {
+            const zipEntries = await Promise.all(
+              targetMessages.map(async (targetMessage, index) => {
+                const fileBlob = await fetchChatFileBlobWithFallback(
+                  targetMessage.message,
+                  targetMessage.file_storage_path,
+                  targetMessage.file_mime_type
+                );
+
+                if (!fileBlob) {
+                  throw new Error(
+                    `Failed to fetch image for group download: ${targetMessage.id}`
+                  );
+                }
+
+                return {
+                  blob: fileBlob,
+                  fileName:
+                    getAttachmentFileName(targetMessage) ||
+                    `gambar-${index + 1}`,
+                };
+              })
+            );
+            const zipBlob = await buildZipBlob(zipEntries);
+
+            triggerBlobDownload(
+              zipBlob,
+              `gambar-chat-${targetMessages.length}.zip`
+            );
+          })(),
+          {
+            loading: 'Menyiapkan arsip gambar...',
+            success: 'Unduhan ZIP dimulai',
+            error: 'Gagal mengunduh arsip gambar',
+          },
+          {
+            toasterId: CHAT_SIDEBAR_TOASTER_ID,
+          }
+        );
+      } catch (error) {
+        console.error('Error downloading image group:', error);
+      } finally {
+        closeMessageMenu();
+      }
+    },
+    [closeMessageMenu, triggerBlobDownload]
   );
 
   return {
     handleCopyMessage,
     handleDownloadMessage,
+    handleDownloadImageGroup,
   };
 };

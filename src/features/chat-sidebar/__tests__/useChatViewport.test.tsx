@@ -542,6 +542,100 @@ describe('useChatViewport', () => {
     messagesContainer.remove();
   });
 
+  it('keeps a bubble menu on the preferred side when the available side room matches the rendered popup width', () => {
+    const messagesContainer = document.createElement('div');
+    const messagesEnd = document.createElement('div');
+    const composerContainer = document.createElement('div');
+    const chatHeaderContainer = document.createElement('div');
+    const anchor = document.createElement('div');
+
+    document.body.append(messagesContainer);
+    messagesContainer.append(anchor);
+
+    Object.defineProperty(messagesContainer, 'clientHeight', {
+      configurable: true,
+      value: 400,
+    });
+    Object.defineProperty(messagesContainer, 'scrollHeight', {
+      configurable: true,
+      value: 800,
+    });
+    Object.defineProperty(messagesContainer, 'scrollTop', {
+      configurable: true,
+      value: 120,
+      writable: true,
+    });
+    Object.defineProperty(composerContainer, 'offsetHeight', {
+      configurable: true,
+      value: 80,
+    });
+
+    messagesContainer.getBoundingClientRect = () => createRect(0, 400);
+    composerContainer.getBoundingClientRect = () => createRect(320, 400);
+    messagesEnd.getBoundingClientRect = () => createRect(760, 760);
+    anchor.getBoundingClientRect = () =>
+      ({
+        top: 184,
+        bottom: 280,
+        left: 132,
+        right: 260,
+        width: 128,
+        height: 96,
+        x: 132,
+        y: 184,
+        toJSON: () => ({}),
+      }) as DOMRect;
+
+    const messagesContainerRef = createRef<HTMLDivElement>();
+    const messagesEndRef = createRef<HTMLDivElement>();
+    const composerContainerRef = createRef<HTMLDivElement>();
+    const chatHeaderContainerRef = createRef<HTMLDivElement>();
+    const messageBubbleRefs = {
+      current: new Map<string, HTMLDivElement>(),
+    };
+
+    messagesContainerRef.current = messagesContainer;
+    messagesEndRef.current = messagesEnd;
+    composerContainerRef.current = composerContainer;
+    chatHeaderContainerRef.current = chatHeaderContainer;
+
+    const { result } = renderHook(() =>
+      useChatViewport({
+        isOpen: true,
+        currentChannelId: 'channel-1',
+        messages: [],
+        userId: 'user-a',
+        targetUserId: 'user-b',
+        messagesCount: 0,
+        loading: false,
+        messageInputHeight: 22,
+        composerContextualOffset: 0,
+        isMessageInputMultiline: false,
+        pendingComposerAttachmentsCount: 0,
+        normalizedMessageSearchQuery: '',
+        isMessageSearchMode: false,
+        activeSearchMessageId: null,
+        searchNavigationTick: 0,
+        editingMessageId: null,
+        focusMessageComposer: vi.fn(),
+        markMessageIdsAsRead: vi.fn().mockResolvedValue(undefined),
+        messagesContainerRef,
+        messagesEndRef,
+        composerContainerRef,
+        chatHeaderContainerRef,
+        messageBubbleRefs,
+      })
+    );
+
+    act(() => {
+      result.current.toggleMessageMenu(anchor, 'message-1', 'left');
+    });
+
+    expect(result.current.menuPlacement).toBe('left');
+
+    messagesContainer.remove();
+  });
+
   it('auto-scrolls the messages viewport when opening a menu for a bubble near the composer', () => {
     const messagesContainer = document.createElement('div');
     const messagesEnd = document.createElement('div');

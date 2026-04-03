@@ -102,6 +102,7 @@ const createModel = (
       handleEditMessage: () => {},
       handleCopyMessage: async () => {},
       handleDownloadMessage: async () => {},
+      handleDownloadImageGroup: async () => {},
       handleOpenForwardMessagePicker: () => {},
       handleDeleteMessage: async () => true,
       ...actions,
@@ -264,6 +265,79 @@ describe('MessageItem', () => {
     expect(previewMessages).toHaveLength(4);
     expect(activeMessageId).toBe('image-1');
     expect(initialPreviewUrl).toBe('images/channel/chat-1.png');
+  });
+
+  it('anchors grouped image menus to the outer bubble instead of the inner grid button', () => {
+    const groupedMessages = Array.from({ length: 4 }, (_, index) => ({
+      ...baseMessage,
+      id: `image-${index + 1}`,
+      message: `images/channel/chat-${index + 1}.png`,
+      message_type: 'image' as const,
+      file_mime_type: 'image/png',
+      file_storage_path: `images/channel/chat-${index + 1}.png`,
+    }));
+    const toggle = vi.fn();
+
+    render(
+      <MessageItem
+        model={createModel({
+          message: groupedMessages[3],
+          menu: {
+            toggle,
+          },
+          content: {
+            groupedImageMessages: groupedMessages,
+            getImageMessageUrl: targetMessage => targetMessage.message,
+          },
+        })}
+      />
+    );
+
+    const button = screen.getByRole('button', { name: 'Aksi grup gambar' });
+    fireEvent.click(button);
+
+    expect(toggle).toHaveBeenCalledTimes(1);
+    const [anchorElement, messageId, preferredSide] = toggle.mock
+      .calls[0] as unknown as [HTMLElement, string, 'left' | 'right'];
+    expect(anchorElement).not.toBe(button);
+    expect(anchorElement.contains(button)).toBe(true);
+    expect(messageId).toBe('image-4');
+    expect(preferredSide).toBe('left');
+  });
+
+  it('downloads grouped image bubbles as a zip from the group popover', async () => {
+    const groupedMessages = Array.from({ length: 4 }, (_, index) => ({
+      ...baseMessage,
+      id: `image-${index + 1}`,
+      message: `https://example.com/chat-${index + 1}.png`,
+      message_type: 'image' as const,
+      file_mime_type: 'image/png',
+      file_storage_path: `images/channel/chat-${index + 1}.png`,
+      file_name: `chat-${index + 1}.png`,
+    }));
+    const handleDownloadImageGroup = vi.fn().mockResolvedValue(undefined);
+
+    render(
+      <MessageItem
+        model={createModel({
+          message: groupedMessages[3],
+          menu: {
+            openMessageId: 'image-4',
+          },
+          content: {
+            groupedImageMessages: groupedMessages,
+            getImageMessageUrl: targetMessage => targetMessage.message,
+          },
+          actions: {
+            handleDownloadImageGroup,
+          },
+        })}
+      />
+    );
+
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Unduh' }));
+
+    expect(handleDownloadImageGroup).toHaveBeenCalledWith(groupedMessages);
   });
 
   it('renders a PDF cover thumbnail inside a grouped document bubble when preview data exists', () => {

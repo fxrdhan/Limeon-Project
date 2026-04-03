@@ -99,6 +99,7 @@ export const buildMessageItemModel = ({
       handleEditMessage: runtime.actions.handleEditMessage,
       handleCopyMessage: runtime.actions.handleCopyMessage,
       handleDownloadMessage: runtime.actions.handleDownloadMessage,
+      handleDownloadImageGroup: runtime.actions.handleDownloadImageGroup,
       handleOpenForwardMessagePicker:
         runtime.actions.handleOpenForwardMessagePicker,
       handleDeleteMessage: runtime.actions.handleDeleteMessage,

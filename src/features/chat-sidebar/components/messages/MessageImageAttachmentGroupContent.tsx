@@ -1,6 +1,6 @@
 import { createPortal } from 'react-dom';
 import { motion } from 'motion/react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import type { ChatMessage } from '../../data/chatSidebarGateway';
 import type { MenuPlacement, MenuSideAnchor } from '../../types';
 import { getChatImagePreviewName } from '../../utils/message-preview-assets';
@@ -25,6 +25,7 @@ interface ImagePreviewIntrinsicDimensions {
 
 interface MessageImageAttachmentGroupContentProps {
   messages: ChatMessage[];
+  menuAnchorRef: RefObject<HTMLDivElement | null>;
   userId?: string;
   captionMessage?: ChatMessage;
   isSelectionMode: boolean;
@@ -70,6 +71,7 @@ interface MessageImageAttachmentGroupContentProps {
   ) => Promise<void>;
   handleCopyMessage: (targetMessage: ChatMessage) => Promise<void>;
   handleDownloadMessage: (targetMessage: ChatMessage) => Promise<void>;
+  handleDownloadImageGroup: (targetMessages: ChatMessage[]) => Promise<void>;
   handleOpenForwardMessagePicker: (targetMessage: ChatMessage) => void;
   handleDeleteMessage: (targetMessage: ChatMessage) => Promise<boolean>;
 }
@@ -78,6 +80,7 @@ const MAX_VISIBLE_IMAGE_GROUP_TILES = 4;
 
 export const MessageImageAttachmentGroupContent = ({
   messages,
+  menuAnchorRef,
   userId,
   captionMessage,
   isSelectionMode,
@@ -92,6 +95,7 @@ export const MessageImageAttachmentGroupContent = ({
   openImageGroupInPortal,
   handleCopyMessage,
   handleDownloadMessage,
+  handleDownloadImageGroup,
   handleOpenForwardMessagePicker,
   handleDeleteMessage,
 }: MessageImageAttachmentGroupContentProps) => {
@@ -111,7 +115,6 @@ export const MessageImageAttachmentGroupContent = ({
     menuPlacement,
     menuSideAnchor
   );
-  const openMenuTriggerRef = useRef<HTMLButtonElement | null>(null);
   const previewDimensionsByMessageIdRef = useRef<
     Map<string, ImagePreviewIntrinsicDimensions>
   >(new Map());
@@ -131,13 +134,13 @@ export const MessageImageAttachmentGroupContent = ({
     }
 
     const syncMenuAnchorPosition = () => {
-      const triggerElement = openMenuTriggerRef.current;
-      if (!triggerElement) {
+      const anchorElement = menuAnchorRef.current;
+      if (!anchorElement) {
         setMenuAnchorPosition(null);
         return;
       }
 
-      const rect = triggerElement.getBoundingClientRect();
+      const rect = anchorElement.getBoundingClientRect();
       setMenuAnchorPosition({
         top: rect.top,
         left: rect.left,
@@ -154,7 +157,7 @@ export const MessageImageAttachmentGroupContent = ({
       window.removeEventListener('resize', syncMenuAnchorPosition);
       window.removeEventListener('scroll', syncMenuAnchorPosition, true);
     };
-  }, [openGroupedMenuMessageId]);
+  }, [menuAnchorRef, openGroupedMenuMessageId]);
 
   const imageTiles = visibleMessages.map((message, index) => ({
     message,
@@ -195,7 +198,16 @@ export const MessageImageAttachmentGroupContent = ({
         handleDownloadMessage,
         handleOpenForwardMessagePicker,
         handleDeleteMessage,
-      })
+      }).map(action =>
+        action.label === 'Unduh'
+          ? {
+              ...action,
+              onClick: () => {
+                void handleDownloadImageGroup(messages);
+              },
+            }
+          : action
+      )
     : [];
 
   const captionText = captionMessage?.message?.trim() ?? '';
@@ -210,7 +222,6 @@ export const MessageImageAttachmentGroupContent = ({
         className="overflow-hidden rounded-xl bg-slate-200"
       >
         <button
-          ref={openMenuTriggerRef}
           type="button"
           aria-label="Aksi grup gambar"
           title="Aksi grup gambar"
@@ -228,7 +239,8 @@ export const MessageImageAttachmentGroupContent = ({
 
             event.stopPropagation();
 
-            const rect = event.currentTarget.getBoundingClientRect();
+            const anchorElement = menuAnchorRef.current ?? event.currentTarget;
+            const rect = anchorElement.getBoundingClientRect();
             setMenuAnchorPosition({
               top: rect.top,
               left: rect.left,
@@ -236,7 +248,7 @@ export const MessageImageAttachmentGroupContent = ({
               height: rect.height,
             });
             toggleMessageMenu(
-              event.currentTarget,
+              anchorElement,
               representativeMessage.id,
               isCurrentUserGroup ? 'left' : 'right'
             );

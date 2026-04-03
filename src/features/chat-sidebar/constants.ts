@@ -5,7 +5,7 @@ import {
 } from '../../../shared/chatAttachmentPaths';
 
 export const MENU_GAP = 8;
-export const MENU_WIDTH = 140;
+export const MENU_WIDTH = 120;
 export const MENU_HEIGHT = 128;
 export const CHAT_HEADER_OVERLAY_HEIGHT = 128;
 export const MAX_MESSAGE_CHARS = 220;

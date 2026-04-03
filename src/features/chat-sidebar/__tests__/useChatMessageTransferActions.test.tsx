@@ -66,6 +66,7 @@ describe('useChatMessageTransferActions', () => {
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
 
@@ -161,6 +162,113 @@ describe('useChatMessageTransferActions', () => {
     );
     expect(anchorClick).toHaveBeenCalledOnce();
     expect(closeMessageMenu).toHaveBeenCalledOnce();
+
+    createElementSpy.mockRestore();
+    appendSpy.mockRestore();
+  });
+
+  it('downloads grouped image bubbles as a zip archive', async () => {
+    const closeMessageMenu = vi.fn();
+    const imageBlobA = new Blob(['image-a'], { type: 'image/png' });
+    const imageBlobB = new Blob(['image-b'], { type: 'image/png' });
+    const anchorClick = vi.fn();
+    let createdDownloadLink: HTMLAnchorElement | null = null;
+    const originalCreateElement = document.createElement.bind(document);
+    const appendSpy = vi
+      .spyOn(document.body, 'append')
+      .mockImplementation(() => undefined);
+    const createElementSpy = vi
+      .spyOn(document, 'createElement')
+      .mockImplementation(tagName => {
+        if (tagName === 'a') {
+          createdDownloadLink = {
+            click: anchorClick,
+            remove: vi.fn(),
+            href: '',
+            download: '',
+            rel: '',
+          } as unknown as HTMLAnchorElement;
+
+          return createdDownloadLink;
+        }
+
+        return originalCreateElement(tagName);
+      });
+    const createObjectURL = vi.fn().mockReturnValue('blob:group-download');
+    const revokeObjectURL = vi.fn();
+    vi.stubGlobal(
+      'URL',
+      Object.assign(URL, {
+        createObjectURL,
+        revokeObjectURL,
+      })
+    );
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          blob: async () => imageBlobA,
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          blob: async () => imageBlobB,
+        })
+    );
+
+    const { result } = renderHook(() =>
+      useChatMessageTransferActions({
+        closeMessageMenu,
+      })
+    );
+
+    await act(async () => {
+      await result.current.handleDownloadImageGroup([
+        buildMessage({
+          id: 'image-1',
+          message_type: 'image',
+          message: 'https://example.com/image-a.png',
+          file_name: 'foto.png',
+          file_mime_type: 'image/png',
+          file_storage_path: 'images/channel/foto.png',
+        }),
+        buildMessage({
+          id: 'image-2',
+          message_type: 'image',
+          message: 'https://example.com/image-b.png',
+          file_name: 'foto.png',
+          file_mime_type: 'image/png',
+          file_storage_path: 'images/channel/foto-copy.png',
+        }),
+      ]);
+    });
+
+    expect(anchorClick).toHaveBeenCalledOnce();
+    expect(closeMessageMenu).toHaveBeenCalledOnce();
+    expect(mockToast.promise).toHaveBeenCalledWith(
+      expect.any(Promise),
+      expect.objectContaining({
+        loading: 'Menyiapkan arsip gambar...',
+        success: 'Unduhan ZIP dimulai',
+        error: 'Gagal mengunduh arsip gambar',
+      }),
+      expect.objectContaining({
+        toasterId: 'chat-sidebar-toaster',
+      })
+    );
+
+    const zipBlob = createObjectURL.mock.calls[0]?.[0] as Blob;
+    expect(zipBlob).toBeInstanceOf(Blob);
+    expect(zipBlob.type).toBe('application/zip');
+    expect(zipBlob.size).toBeGreaterThan(0);
+
+    const zipBytes = new Uint8Array(await zipBlob.arrayBuffer());
+    expect(zipBytes[0]).toBe(0x50);
+    expect(zipBytes[1]).toBe(0x4b);
+    expect((createdDownloadLink as HTMLAnchorElement | null)?.download).toBe(
+      'gambar-chat-2.zip'
+    );
 
     createElementSpy.mockRestore();
     appendSpy.mockRestore();

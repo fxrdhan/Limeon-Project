@@ -132,7 +132,7 @@ export const useChatConversationMutations = ({
       runInCurrentConversationScope,
     },
   });
-  const { handleCopyMessage, handleDownloadMessage } =
+  const { handleCopyMessage, handleDownloadMessage, handleDownloadImageGroup } =
     useChatMessageTransferActions({
       closeMessageMenu,
     });
@@ -265,6 +265,7 @@ export const useChatConversationMutations = ({
     handleCancelEditMessage,
     handleCopyMessage,
     handleDownloadMessage,
+    handleDownloadImageGroup,
     handleOpenForwardMessagePicker: forward.openForwardPicker,
     isForwardPickerOpen: forward.isForwardPickerOpen,
     forwardTargetMessage: forward.forwardTargetMessage,

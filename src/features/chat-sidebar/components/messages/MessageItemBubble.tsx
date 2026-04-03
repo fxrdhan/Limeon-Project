@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import { useRef, type CSSProperties } from 'react';
 import type { MessageItemDerivations } from './messageItemDerivations';
 import { MessageActionPopover } from './MessageActionPopover';
 import { MessageBubbleContent } from './MessageBubbleContent';
@@ -20,6 +20,7 @@ export const MessageItemBubble = ({
   bubbleShapeClass,
 }: MessageItemBubbleProps) => {
   const { message, interaction, menu, refs, content, actions } = model;
+  const groupedImageBubbleRef = useRef<HTMLDivElement | null>(null);
   const {
     isSelectionMode,
     userId,
@@ -51,6 +52,7 @@ export const MessageItemBubble = ({
     handleCopyMessage,
     handleDeleteMessage,
     handleDownloadMessage,
+    handleDownloadImageGroup,
     handleOpenForwardMessagePicker,
   } = actions;
   const {
@@ -114,6 +116,7 @@ export const MessageItemBubble = ({
       {isImageAttachmentGroup && groupedImageMessages ? (
         <MessageImageAttachmentGroupContent
           messages={groupedImageMessages}
+          menuAnchorRef={groupedImageBubbleRef}
           userId={userId}
           captionMessage={captionMessage}
           isSelectionMode={isSelectionMode}
@@ -128,6 +131,7 @@ export const MessageItemBubble = ({
           openImageGroupInPortal={openImageGroupInPortal}
           handleCopyMessage={handleCopyMessage}
           handleDownloadMessage={handleDownloadMessage}
+          handleDownloadImageGroup={handleDownloadImageGroup}
           handleOpenForwardMessagePicker={handleOpenForwardMessagePicker}
           handleDeleteMessage={handleDeleteMessage}
         />
@@ -217,6 +221,7 @@ export const MessageItemBubble = ({
                   messageBubbleRefs.current.delete(messageId);
                 }
               });
+              groupedImageBubbleRef.current = bubbleElement;
             }}
             className={bubbleClassName}
             style={bubbleStyle}
