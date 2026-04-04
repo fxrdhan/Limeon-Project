@@ -231,7 +231,6 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             className={classNames(
               'p-2.5 border rounded-xl',
               'px-3 text-sm font-medium text-slate-800',
-              'text-ellipsis overflow-hidden whitespace-nowrap',
               'h-[2.5rem]',
               'placeholder:text-slate-400',
               {

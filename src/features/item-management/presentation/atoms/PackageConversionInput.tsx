@@ -91,12 +91,7 @@ export default function PackageConversionInput({
           } satisfies DropdownOption,
         ]
       : []),
-    ...existingUnits
-      .filter(unit => unit.id !== formData.inventory_unit_id)
-      .map(unit => ({
-        ...unit,
-        metaLabel: 'Struktur',
-      })),
+    ...existingUnits.filter(unit => unit.id !== formData.inventory_unit_id),
   ];
 
   return (

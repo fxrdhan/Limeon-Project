@@ -14,6 +14,7 @@ import {
   createTextColumn,
   createCurrencyColumn,
 } from '@/components/ag-grid';
+import { getInventoryUnitMetaLabel } from '@/lib/item-units';
 import {
   COLLAPSIBLE_SECTION_HEADER_CLASS,
   SURFACE_CARD_CLASS,
@@ -437,6 +438,7 @@ export default function ItemPackageConversionManager({
                     code: conversion.unit.code,
                     description: conversion.unit.description ?? undefined,
                     updated_at: conversion.unit.updated_at,
+                    metaLabel: getInventoryUnitMetaLabel(conversion.unit),
                   }))}
                   formData={formData}
                   onFormDataChange={onFormDataChange}

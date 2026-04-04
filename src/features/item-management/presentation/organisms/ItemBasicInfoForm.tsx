@@ -115,6 +115,30 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
       nameFieldHandlers?.onBlur();
     };
 
+    const handleNameMouseDown = (e: React.MouseEvent<HTMLInputElement>) => {
+      if (
+        e.button !== 0 ||
+        e.detail !== 1 ||
+        e.altKey ||
+        e.ctrlKey ||
+        e.metaKey ||
+        e.shiftKey
+      ) {
+        return;
+      }
+
+      const input = e.currentTarget;
+
+      if (input.readOnly || input.disabled) return;
+      if (document.activeElement === input) return;
+
+      e.preventDefault();
+
+      const inputLength = input.value.length;
+      input.focus({ preventScroll: true });
+      input.setSelectionRange(inputLength, inputLength);
+    };
+
     // Generate item code based on selected values
     const codeGeneration = useItemCodeGenerator({
       categoryId: formData.category_id,
@@ -194,11 +218,12 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
               <Input
                 name="name"
                 ref={ref}
-                value={isNameFocused ? localDisplayName : formData.display_name}
+                value={localDisplayName}
                 tabIndex={1}
                 onChange={handleNameChange}
                 onFocus={handleNameFocus}
                 onBlur={handleNameBlur}
+                onMouseDown={handleNameMouseDown}
                 className="w-full"
                 validate={true}
                 validationSchema={itemNameSchema}
