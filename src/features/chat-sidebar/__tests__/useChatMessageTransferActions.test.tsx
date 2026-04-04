@@ -108,6 +108,7 @@ describe('useChatMessageTransferActions', () => {
     const closeMessageMenu = vi.fn();
     const downloadBlob = new Blob(['stok'], { type: 'application/pdf' });
     const anchorClick = vi.fn();
+    let createdDownloadLink: HTMLAnchorElement | null = null;
     const originalCreateElement = document.createElement.bind(document);
     const appendSpy = vi
       .spyOn(document.body, 'append')
@@ -116,13 +117,15 @@ describe('useChatMessageTransferActions', () => {
       .spyOn(document, 'createElement')
       .mockImplementation(tagName => {
         if (tagName === 'a') {
-          return {
+          createdDownloadLink = {
             click: anchorClick,
             remove: vi.fn(),
             href: '',
             download: '',
             rel: '',
           } as unknown as HTMLAnchorElement;
+
+          return createdDownloadLink;
         }
 
         return originalCreateElement(tagName);
@@ -159,6 +162,9 @@ describe('useChatMessageTransferActions', () => {
 
     expect(mockGateway.downloadFile).toHaveBeenCalledWith(
       'documents/channel/stok.pdf'
+    );
+    expect((createdDownloadLink as HTMLAnchorElement | null)?.download).toBe(
+      'stok.pdf'
     );
     expect(anchorClick).toHaveBeenCalledOnce();
     expect(closeMessageMenu).toHaveBeenCalledOnce();
@@ -267,7 +273,159 @@ describe('useChatMessageTransferActions', () => {
     expect(zipBytes[0]).toBe(0x50);
     expect(zipBytes[1]).toBe(0x4b);
     expect((createdDownloadLink as HTMLAnchorElement | null)?.download).toBe(
-      'gambar-chat-2.zip'
+      'ZIP_260306093000.zip'
+    );
+
+    createElementSpy.mockRestore();
+    appendSpy.mockRestore();
+  });
+
+  it('downloads grouped document bubbles as a zip archive', async () => {
+    const closeMessageMenu = vi.fn();
+    const fileBlobA = new Blob(['pdf-a'], { type: 'application/pdf' });
+    const fileBlobB = new Blob(['docx-b'], {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    });
+    let createdDownloadLink: HTMLAnchorElement | null = null;
+    const originalCreateElement = document.createElement.bind(document);
+    const appendSpy = vi
+      .spyOn(document.body, 'append')
+      .mockImplementation(() => undefined);
+    const createElementSpy = vi
+      .spyOn(document, 'createElement')
+      .mockImplementation(tagName => {
+        if (tagName === 'a') {
+          createdDownloadLink = {
+            click: vi.fn(),
+            remove: vi.fn(),
+            href: '',
+            download: '',
+            rel: '',
+          } as unknown as HTMLAnchorElement;
+
+          return createdDownloadLink;
+        }
+
+        return originalCreateElement(tagName);
+      });
+
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          blob: async () => fileBlobA,
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          blob: async () => fileBlobB,
+        })
+    );
+    vi.stubGlobal(
+      'URL',
+      Object.assign(URL, {
+        createObjectURL: vi.fn().mockReturnValue('blob:group-download'),
+        revokeObjectURL: vi.fn(),
+      })
+    );
+
+    const { result } = renderHook(() =>
+      useChatMessageTransferActions({
+        closeMessageMenu,
+      })
+    );
+
+    await act(async () => {
+      await result.current.handleDownloadDocumentGroup([
+        buildMessage({
+          id: 'file-1',
+          message_type: 'file',
+          message: 'https://example.com/report.pdf',
+          file_name: 'report.pdf',
+          file_mime_type: 'application/pdf',
+          file_storage_path: 'documents/channel/report.pdf',
+        }),
+        buildMessage({
+          id: 'file-2',
+          message_type: 'file',
+          message: 'https://example.com/notes.docx',
+          file_name: 'notes.docx',
+          file_mime_type:
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          file_storage_path: 'documents/channel/notes.docx',
+        }),
+      ]);
+    });
+
+    expect((createdDownloadLink as HTMLAnchorElement | null)?.download).toBe(
+      'ZIP_260306093000.zip'
+    );
+    expect(closeMessageMenu).toHaveBeenCalledOnce();
+
+    createElementSpy.mockRestore();
+    appendSpy.mockRestore();
+  });
+
+  it('uses IMG-prefixed names when downloading a single image message', async () => {
+    const closeMessageMenu = vi.fn();
+    const imageBlob = new Blob(['image'], { type: 'image/png' });
+    let createdDownloadLink: HTMLAnchorElement | null = null;
+    const originalCreateElement = document.createElement.bind(document);
+    const appendSpy = vi
+      .spyOn(document.body, 'append')
+      .mockImplementation(() => undefined);
+    const createElementSpy = vi
+      .spyOn(document, 'createElement')
+      .mockImplementation(tagName => {
+        if (tagName === 'a') {
+          createdDownloadLink = {
+            click: vi.fn(),
+            remove: vi.fn(),
+            href: '',
+            download: '',
+            rel: '',
+          } as unknown as HTMLAnchorElement;
+
+          return createdDownloadLink;
+        }
+
+        return originalCreateElement(tagName);
+      });
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        blob: async () => imageBlob,
+      })
+    );
+    vi.stubGlobal(
+      'URL',
+      Object.assign(URL, {
+        createObjectURL: vi.fn().mockReturnValue('blob:download'),
+        revokeObjectURL: vi.fn(),
+      })
+    );
+
+    const { result } = renderHook(() =>
+      useChatMessageTransferActions({
+        closeMessageMenu,
+      })
+    );
+
+    await act(async () => {
+      await result.current.handleDownloadMessage(
+        buildMessage({
+          message_type: 'image',
+          message: 'https://example.com/storage/image.png',
+          file_name: 'stok.png',
+        })
+      );
+    });
+
+    expect((createdDownloadLink as HTMLAnchorElement | null)?.download).toBe(
+      'IMG_260306093000.png'
     );
 
     createElementSpy.mockRestore();

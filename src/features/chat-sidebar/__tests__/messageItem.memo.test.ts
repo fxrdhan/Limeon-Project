@@ -99,6 +99,8 @@ const createModel = (
       handleEditMessage: () => {},
       handleCopyMessage: async () => {},
       handleDownloadMessage: async () => {},
+      handleDownloadImageGroup: async () => {},
+      handleDownloadDocumentGroup: async () => {},
       handleOpenForwardMessagePicker: () => {},
       handleDeleteMessage: async () => true,
       ...actions,

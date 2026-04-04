@@ -1,6 +1,6 @@
 import { createPortal } from 'react-dom';
 import { motion } from 'motion/react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import type { ChatMessage } from '../../data/chatSidebarGateway';
 import type { PdfMessagePreview } from '../../hooks/useMessagePdfPreviews';
 import type { MenuPlacement, MenuSideAnchor } from '../../types';
@@ -29,6 +29,7 @@ interface AttachmentMenuAnchorPosition {
 
 interface MessageDocumentAttachmentGroupContentProps {
   messages: ChatMessage[];
+  menuAnchorRef: RefObject<HTMLDivElement | null>;
   userId?: string;
   captionMessage?: ChatMessage;
   isHighlightedBubble: boolean;
@@ -66,12 +67,14 @@ interface MessageDocumentAttachmentGroupContentProps {
   ) => Promise<void>;
   handleCopyMessage: (targetMessage: ChatMessage) => Promise<void>;
   handleDownloadMessage: (targetMessage: ChatMessage) => Promise<void>;
+  handleDownloadDocumentGroup: (targetMessages: ChatMessage[]) => Promise<void>;
   handleOpenForwardMessagePicker: (targetMessage: ChatMessage) => void;
   handleDeleteMessage: (targetMessage: ChatMessage) => Promise<boolean>;
 }
 
 export const MessageDocumentAttachmentGroupContent = ({
   messages,
+  menuAnchorRef,
   userId,
   captionMessage,
   isHighlightedBubble,
@@ -87,31 +90,48 @@ export const MessageDocumentAttachmentGroupContent = ({
   openDocumentInPortal,
   handleCopyMessage,
   handleDownloadMessage,
+  handleDownloadDocumentGroup,
   handleOpenForwardMessagePicker,
   handleDeleteMessage,
 }: MessageDocumentAttachmentGroupContentProps) => {
+  const representativeMessage = messages[messages.length - 1] ?? null;
   const isCurrentUserGroup = messages[0]?.sender_id === userId;
   const { sidePlacementClass, sideArrowAnchorClass } = getMessageMenuClasses(
     menuPlacement,
     menuSideAnchor
   );
   const openMenuTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const [openMenuMode, setOpenMenuMode] = useState<'group' | 'item'>('item');
   const [menuAnchorPosition, setMenuAnchorPosition] =
     useState<AttachmentMenuAnchorPosition | null>(null);
-  const openGroupedMenuMessageId =
+  const isGroupMenuOpen =
+    openMenuMode === 'group' &&
+    representativeMessage !== null &&
+    openMenuMessageId === representativeMessage.id;
+  const openAttachmentMenuMessageId =
     openMenuMessageId &&
-    messages.some(message => message.id === openMenuMessageId)
+    messages.some(message => message.id === openMenuMessageId) &&
+    !isGroupMenuOpen
       ? openMenuMessageId
       : null;
 
   useEffect(() => {
-    if (!openGroupedMenuMessageId) {
+    if (!openMenuMessageId) {
+      setOpenMenuMode('item');
+    }
+  }, [openMenuMessageId]);
+
+  useEffect(() => {
+    if (!openAttachmentMenuMessageId && !isGroupMenuOpen) {
       setMenuAnchorPosition(null);
       return;
     }
 
     const syncMenuAnchorPosition = () => {
-      const triggerElement = openMenuTriggerRef.current;
+      const triggerElement =
+        openMenuMode === 'group'
+          ? menuAnchorRef.current
+          : openMenuTriggerRef.current;
       if (!triggerElement) {
         setMenuAnchorPosition(null);
         return;
@@ -134,7 +154,12 @@ export const MessageDocumentAttachmentGroupContent = ({
       window.removeEventListener('resize', syncMenuAnchorPosition);
       window.removeEventListener('scroll', syncMenuAnchorPosition, true);
     };
-  }, [openGroupedMenuMessageId]);
+  }, [
+    isGroupMenuOpen,
+    menuAnchorRef,
+    openAttachmentMenuMessageId,
+    openMenuMode,
+  ]);
 
   const attachmentRows = messages.map(message => {
     const fileName = getAttachmentFileName(message);
@@ -195,6 +220,34 @@ export const MessageDocumentAttachmentGroupContent = ({
       menuActions,
     };
   });
+  const groupMenuActions = representativeMessage
+    ? buildMessageMenuActions({
+        message: representativeMessage,
+        isCurrentUser: representativeMessage.sender_id === userId,
+        isImageMessage: false,
+        isFileMessage: true,
+        isImageFileMessage: false,
+        isPdfFileMessage: false,
+        fileKind: 'document',
+        fileName: null,
+        openImageInPortal,
+        openDocumentInPortal,
+        handleEditMessage: () => {},
+        handleCopyMessage,
+        handleDownloadMessage,
+        handleOpenForwardMessagePicker,
+        handleDeleteMessage,
+      }).map(action =>
+        action.label === 'Unduh'
+          ? {
+              ...action,
+              onClick: () => {
+                void handleDownloadDocumentGroup(messages);
+              },
+            }
+          : action
+      )
+    : [];
 
   const captionText = captionMessage?.message?.trim() ?? '';
   const highlightedCaption = renderHighlightedText(captionText, '', {
@@ -202,7 +255,34 @@ export const MessageDocumentAttachmentGroupContent = ({
   });
 
   return (
-    <div>
+    <div
+      data-chat-document-group-root
+      className="min-w-0"
+      onClick={event => {
+        if (
+          !representativeMessage ||
+          event.target !== event.currentTarget ||
+          !menuAnchorRef.current
+        ) {
+          return;
+        }
+
+        setOpenMenuMode('group');
+        const rect = menuAnchorRef.current.getBoundingClientRect();
+        setMenuAnchorPosition({
+          top: rect.top,
+          left: rect.left,
+          width: rect.width,
+          height: rect.height,
+        });
+        toggleMessageMenu(
+          menuAnchorRef.current,
+          representativeMessage.id,
+          isCurrentUserGroup ? 'left' : 'right'
+        );
+      }}
+      role="presentation"
+    >
       <div className="flex flex-col gap-2">
         {attachmentRows.map(
           ({
@@ -212,9 +292,10 @@ export const MessageDocumentAttachmentGroupContent = ({
             fileIcon,
             resolvedPdfPreviewUrl,
           }) => {
-            const isMenuOpen = openGroupedMenuMessageId === message.id;
+            const isMenuOpen = openAttachmentMenuMessageId === message.id;
             const isAnotherAttachmentFocused =
-              openGroupedMenuMessageId !== null && !isMenuOpen;
+              (openAttachmentMenuMessageId !== null || isGroupMenuOpen) &&
+              !isMenuOpen;
 
             return (
               <div
@@ -235,6 +316,7 @@ export const MessageDocumentAttachmentGroupContent = ({
                   aria-expanded={isMenuOpen}
                   onClick={event => {
                     event.stopPropagation();
+                    setOpenMenuMode('item');
                     const rect = event.currentTarget.getBoundingClientRect();
                     setMenuAnchorPosition({
                       top: rect.top,
@@ -282,8 +364,8 @@ export const MessageDocumentAttachmentGroupContent = ({
       </div>
 
       {typeof document !== 'undefined' &&
-      openGroupedMenuMessageId &&
-      menuAnchorPosition
+      menuAnchorPosition &&
+      (openAttachmentMenuMessageId || isGroupMenuOpen)
         ? createPortal(
             <motion.div
               initial={false}
@@ -307,17 +389,24 @@ export const MessageDocumentAttachmentGroupContent = ({
               >
                 <MessageActionPopover
                   isOpen
-                  menuId={openGroupedMenuMessageId}
+                  menuId={
+                    isGroupMenuOpen
+                      ? `document-group:${representativeMessage?.id ?? 'unknown'}`
+                      : (openAttachmentMenuMessageId ?? 'unknown')
+                  }
                   shouldAnimateMenuOpen={shouldAnimateMenuOpen}
                   menuPlacement={menuPlacement}
                   menuOffsetX={menuOffsetX}
                   sidePlacementClass={sidePlacementClass}
                   sideArrowAnchorClass={sideArrowAnchorClass}
                   actions={
-                    attachmentRows.find(
-                      attachmentRow =>
-                        attachmentRow.message.id === openGroupedMenuMessageId
-                    )?.menuActions ?? []
+                    isGroupMenuOpen
+                      ? groupMenuActions
+                      : (attachmentRows.find(
+                          attachmentRow =>
+                            attachmentRow.message.id ===
+                            openAttachmentMenuMessageId
+                        )?.menuActions ?? [])
                   }
                 />
               </div>
@@ -339,6 +428,8 @@ export const MessageDocumentAttachmentGroupContent = ({
           {highlightedCaption}
         </p>
       ) : null}
+
+      <div className="h-1" />
     </div>
   );
 };

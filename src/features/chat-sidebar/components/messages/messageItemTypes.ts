@@ -119,6 +119,7 @@ export interface MessageItemActionsModel {
   handleCopyMessage: (targetMessage: ChatMessage) => Promise<void>;
   handleDownloadMessage: (targetMessage: ChatMessage) => Promise<void>;
   handleDownloadImageGroup: (targetMessages: ChatMessage[]) => Promise<void>;
+  handleDownloadDocumentGroup: (targetMessages: ChatMessage[]) => Promise<void>;
   handleOpenForwardMessagePicker: (targetMessage: ChatMessage) => void;
   handleDeleteMessage: (targetMessage: ChatMessage) => Promise<boolean>;
 }

@@ -132,10 +132,14 @@ export const useChatConversationMutations = ({
       runInCurrentConversationScope,
     },
   });
-  const { handleCopyMessage, handleDownloadMessage, handleDownloadImageGroup } =
-    useChatMessageTransferActions({
-      closeMessageMenu,
-    });
+  const {
+    handleCopyMessage,
+    handleDownloadMessage,
+    handleDownloadImageGroup,
+    handleDownloadDocumentGroup,
+  } = useChatMessageTransferActions({
+    closeMessageMenu,
+  });
   const forward = useChatMessageForwardAction({
     user,
     targetUser,
@@ -266,6 +270,7 @@ export const useChatConversationMutations = ({
     handleCopyMessage,
     handleDownloadMessage,
     handleDownloadImageGroup,
+    handleDownloadDocumentGroup,
     handleOpenForwardMessagePicker: forward.openForwardPicker,
     isForwardPickerOpen: forward.isForwardPickerOpen,
     forwardTargetMessage: forward.forwardTargetMessage,

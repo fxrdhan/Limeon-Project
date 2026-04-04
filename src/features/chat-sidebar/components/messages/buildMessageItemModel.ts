@@ -100,6 +100,7 @@ export const buildMessageItemModel = ({
       handleCopyMessage: runtime.actions.handleCopyMessage,
       handleDownloadMessage: runtime.actions.handleDownloadMessage,
       handleDownloadImageGroup: runtime.actions.handleDownloadImageGroup,
+      handleDownloadDocumentGroup: runtime.actions.handleDownloadDocumentGroup,
       handleOpenForwardMessagePicker:
         runtime.actions.handleOpenForwardMessagePicker,
       handleDeleteMessage: runtime.actions.handleDeleteMessage,

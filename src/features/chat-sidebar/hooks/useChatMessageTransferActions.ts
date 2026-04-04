@@ -2,7 +2,11 @@ import { useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
 import type { ChatMessage } from '../data/chatSidebarGateway';
-import { getAttachmentFileName } from '../utils/attachment';
+import {
+  getAttachmentFileName,
+  getChatAttachmentGroupZipFileName,
+  getChatDownloadFileName,
+} from '../utils/attachment';
 import { getClipboardImagePayload } from '../utils/clipboard';
 import { fetchChatFileBlobWithFallback } from '../utils/message-file';
 import { buildZipBlob } from '../utils/zip';
@@ -124,7 +128,7 @@ export const useChatMessageTransferActions = ({
   const handleDownloadMessage = useCallback(
     async (targetMessage: ChatMessage) => {
       const fileUrl = targetMessage.message;
-      const fileName = getAttachmentFileName(targetMessage);
+      const fileName = getChatDownloadFileName(targetMessage);
 
       if (!fileUrl) {
         toast.error('File tidak tersedia untuk diunduh', {
@@ -176,7 +180,7 @@ export const useChatMessageTransferActions = ({
         await toast.promise(
           (async () => {
             const zipEntries = await Promise.all(
-              targetMessages.map(async (targetMessage, index) => {
+              targetMessages.map(async targetMessage => {
                 const fileBlob = await fetchChatFileBlobWithFallback(
                   targetMessage.message,
                   targetMessage.file_storage_path,
@@ -191,9 +195,7 @@ export const useChatMessageTransferActions = ({
 
                 return {
                   blob: fileBlob,
-                  fileName:
-                    getAttachmentFileName(targetMessage) ||
-                    `gambar-${index + 1}`,
+                  fileName: getChatDownloadFileName(targetMessage),
                 };
               })
             );
@@ -201,7 +203,7 @@ export const useChatMessageTransferActions = ({
 
             triggerBlobDownload(
               zipBlob,
-              `gambar-chat-${targetMessages.length}.zip`
+              getChatAttachmentGroupZipFileName(targetMessages)
             );
           })(),
           {
@@ -222,9 +224,68 @@ export const useChatMessageTransferActions = ({
     [closeMessageMenu, triggerBlobDownload]
   );
 
+  const handleDownloadDocumentGroup = useCallback(
+    async (targetMessages: ChatMessage[]) => {
+      if (targetMessages.length === 0) {
+        closeMessageMenu();
+        return;
+      }
+
+      try {
+        await toast.promise(
+          (async () => {
+            const zipEntries = await Promise.all(
+              targetMessages.map(async targetMessage => {
+                const fileBlob = await fetchChatFileBlobWithFallback(
+                  targetMessage.message,
+                  targetMessage.file_storage_path,
+                  targetMessage.file_mime_type
+                );
+
+                if (!fileBlob) {
+                  throw new Error(
+                    `Failed to fetch file for group download: ${targetMessage.id}`
+                  );
+                }
+
+                return {
+                  blob: fileBlob,
+                  fileName:
+                    targetMessage.file_name?.trim() ||
+                    getAttachmentFileName(targetMessage) ||
+                    getChatDownloadFileName(targetMessage),
+                };
+              })
+            );
+            const zipBlob = await buildZipBlob(zipEntries);
+
+            triggerBlobDownload(
+              zipBlob,
+              getChatAttachmentGroupZipFileName(targetMessages)
+            );
+          })(),
+          {
+            loading: 'Menyiapkan arsip lampiran...',
+            success: 'Unduhan ZIP dimulai',
+            error: 'Gagal mengunduh arsip lampiran',
+          },
+          {
+            toasterId: CHAT_SIDEBAR_TOASTER_ID,
+          }
+        );
+      } catch (error) {
+        console.error('Error downloading document group:', error);
+      } finally {
+        closeMessageMenu();
+      }
+    },
+    [closeMessageMenu, triggerBlobDownload]
+  );
+
   return {
     handleCopyMessage,
     handleDownloadMessage,
     handleDownloadImageGroup,
+    handleDownloadDocumentGroup,
   };
 };

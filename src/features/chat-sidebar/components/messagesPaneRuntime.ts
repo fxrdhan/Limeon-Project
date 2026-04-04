@@ -47,6 +47,7 @@ export interface MessageItemRuntime {
     handleCopyMessage: ChatSidebarRuntimeState['mutations']['handleCopyMessage'];
     handleDownloadMessage: ChatSidebarRuntimeState['mutations']['handleDownloadMessage'];
     handleDownloadImageGroup: ChatSidebarRuntimeState['mutations']['handleDownloadImageGroup'];
+    handleDownloadDocumentGroup: ChatSidebarRuntimeState['mutations']['handleDownloadDocumentGroup'];
     handleOpenForwardMessagePicker: ChatSidebarRuntimeState['mutations']['handleOpenForwardMessagePicker'];
     handleDeleteMessage: ChatSidebarRuntimeState['mutations']['handleDeleteMessage'];
   };
@@ -170,6 +171,7 @@ const buildMessageItemRuntime = (
     handleCopyMessage: runtime.mutations.handleCopyMessage,
     handleDownloadMessage: runtime.mutations.handleDownloadMessage,
     handleDownloadImageGroup: runtime.mutations.handleDownloadImageGroup,
+    handleDownloadDocumentGroup: runtime.mutations.handleDownloadDocumentGroup,
     handleOpenForwardMessagePicker:
       runtime.mutations.handleOpenForwardMessagePicker,
     handleDeleteMessage: runtime.mutations.handleDeleteMessage,

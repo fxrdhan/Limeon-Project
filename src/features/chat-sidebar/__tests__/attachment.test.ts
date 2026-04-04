@@ -1,5 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
-import { buildChatFilePath, buildChatImagePath } from '../utils/attachment';
+import {
+  buildChatFilePath,
+  buildChatImagePath,
+  formatChatDownloadTimestamp,
+  getChatAttachmentGroupZipFileName,
+  getChatDownloadFileName,
+} from '../utils/attachment';
+import type { ChatMessage } from '../data/chatSidebarGateway';
 
 describe('attachment utils', () => {
   beforeEach(() => {
@@ -52,5 +59,56 @@ describe('attachment utils', () => {
     expect(secondPath).toBe(
       'documents/dm_user-a_user-b/user-a_document_44444444-4444-4444-8444-444444444444.pdf'
     );
+  });
+
+  it('formats download timestamps from the server created_at in UTC', () => {
+    expect(formatChatDownloadTimestamp('2026-04-03T09:08:07.000Z')).toBe(
+      '260403090807'
+    );
+  });
+
+  it('uses IMG-prefixed names for image downloads', () => {
+    const message = {
+      created_at: '2026-04-03T09:08:07.000Z',
+      file_mime_type: 'image/png',
+      file_name: 'stok-lama.png',
+      message: 'https://example.com/storage/stok-lama.png',
+      message_type: 'image',
+    } as ChatMessage;
+
+    expect(getChatDownloadFileName(message)).toBe('IMG_260403090807.png');
+  });
+
+  it('preserves source names for file attachments when available', () => {
+    const message = {
+      created_at: '2026-04-03T09:08:07.000Z',
+      file_mime_type: 'application/pdf',
+      file_name: 'invoice.pdf',
+      message: 'https://example.com/storage/invoice.pdf',
+      message_type: 'file',
+    } as ChatMessage;
+
+    expect(getChatDownloadFileName(message)).toBe('invoice.pdf');
+  });
+
+  it('uses FILE-prefixed names for file attachments without a source name', () => {
+    const message = {
+      created_at: '2026-04-03T09:08:07.000Z',
+      file_mime_type: 'application/pdf',
+      file_name: null,
+      message: 'https://example.com/storage/view?id=123',
+      message_type: 'file',
+    } as ChatMessage;
+
+    expect(getChatDownloadFileName(message)).toBe('FILE_260403090807.pdf');
+  });
+
+  it('uses ZIP-prefixed names for grouped image downloads', () => {
+    expect(
+      getChatAttachmentGroupZipFileName([
+        { created_at: '2026-04-03T09:08:06.000Z' } as ChatMessage,
+        { created_at: '2026-04-03T09:08:07.000Z' } as ChatMessage,
+      ])
+    ).toBe('ZIP_260403090807.zip');
   });
 });

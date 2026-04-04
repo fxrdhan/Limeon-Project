@@ -151,6 +151,8 @@ const createRuntime = (overrides: MessagesPaneRuntimeOverrides = {}) => {
         handleEditMessage: vi.fn(),
         handleCopyMessage: vi.fn(async () => {}),
         handleDownloadMessage: vi.fn(async () => {}),
+        handleDownloadImageGroup: vi.fn(async () => {}),
+        handleDownloadDocumentGroup: vi.fn(async () => {}),
         handleOpenForwardMessagePicker: vi.fn(),
         handleDeleteMessage: vi.fn(async () => true),
         ...item?.actions,

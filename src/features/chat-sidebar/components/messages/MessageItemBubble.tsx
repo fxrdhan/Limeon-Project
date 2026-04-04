@@ -20,7 +20,7 @@ export const MessageItemBubble = ({
   bubbleShapeClass,
 }: MessageItemBubbleProps) => {
   const { message, interaction, menu, refs, content, actions } = model;
-  const groupedImageBubbleRef = useRef<HTMLDivElement | null>(null);
+  const groupedBubbleRef = useRef<HTMLDivElement | null>(null);
   const {
     isSelectionMode,
     userId,
@@ -53,6 +53,7 @@ export const MessageItemBubble = ({
     handleDeleteMessage,
     handleDownloadMessage,
     handleDownloadImageGroup,
+    handleDownloadDocumentGroup,
     handleOpenForwardMessagePicker,
   } = actions;
   const {
@@ -116,7 +117,7 @@ export const MessageItemBubble = ({
       {isImageAttachmentGroup && groupedImageMessages ? (
         <MessageImageAttachmentGroupContent
           messages={groupedImageMessages}
-          menuAnchorRef={groupedImageBubbleRef}
+          menuAnchorRef={groupedBubbleRef}
           userId={userId}
           captionMessage={captionMessage}
           isSelectionMode={isSelectionMode}
@@ -138,6 +139,7 @@ export const MessageItemBubble = ({
       ) : isDocumentAttachmentGroup && groupedDocumentMessages ? (
         <MessageDocumentAttachmentGroupContent
           messages={groupedDocumentMessages}
+          menuAnchorRef={groupedBubbleRef}
           userId={userId}
           captionMessage={captionMessage}
           isHighlightedBubble={isFlashingTarget}
@@ -153,6 +155,7 @@ export const MessageItemBubble = ({
           openDocumentInPortal={openDocumentInPortal}
           handleCopyMessage={handleCopyMessage}
           handleDownloadMessage={handleDownloadMessage}
+          handleDownloadDocumentGroup={handleDownloadDocumentGroup}
           handleOpenForwardMessagePicker={handleOpenForwardMessagePicker}
           handleDeleteMessage={handleDeleteMessage}
         />
@@ -221,7 +224,7 @@ export const MessageItemBubble = ({
                   messageBubbleRefs.current.delete(messageId);
                 }
               });
-              groupedImageBubbleRef.current = bubbleElement;
+              groupedBubbleRef.current = bubbleElement;
             }}
             className={bubbleClassName}
             style={bubbleStyle}

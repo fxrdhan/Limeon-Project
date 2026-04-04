@@ -103,6 +103,7 @@ const createModel = (
       handleCopyMessage: async () => {},
       handleDownloadMessage: async () => {},
       handleDownloadImageGroup: async () => {},
+      handleDownloadDocumentGroup: async () => {},
       handleOpenForwardMessagePicker: () => {},
       handleDeleteMessage: async () => true,
       ...actions,
@@ -386,5 +387,118 @@ describe('MessageItem', () => {
     );
 
     expect(screen.getByAltText('PDF cover preview')).toBeTruthy();
+  });
+
+  it('anchors grouped document menus to the outer bubble when clicking the bubble area', () => {
+    const groupedMessages = [
+      {
+        ...baseMessage,
+        id: 'file-1',
+        message: 'documents/channel/report.pdf',
+        message_type: 'file' as const,
+        file_name: 'Laporan.pdf',
+        file_mime_type: 'application/pdf',
+        file_storage_path: 'documents/channel/report.pdf',
+        file_kind: 'document' as const,
+      },
+      {
+        ...baseMessage,
+        id: 'file-2',
+        message: 'documents/channel/notes.docx',
+        message_type: 'file' as const,
+        file_name: 'Catatan.docx',
+        file_mime_type:
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        file_storage_path: 'documents/channel/notes.docx',
+        file_kind: 'document' as const,
+      },
+    ];
+    const toggle = vi.fn();
+
+    const { container } = render(
+      <MessageItem
+        model={createModel({
+          message: groupedMessages[1],
+          menu: {
+            toggle,
+          },
+          content: {
+            groupedDocumentMessages: groupedMessages,
+            getAttachmentFileName: targetMessage =>
+              targetMessage.file_name || '',
+          },
+        })}
+      />
+    );
+
+    const root = container.querySelector(
+      '[data-chat-document-group-root]'
+    ) as HTMLDivElement | null;
+    expect(root).toBeTruthy();
+
+    fireEvent.click(root as HTMLDivElement);
+
+    expect(toggle).toHaveBeenCalledTimes(1);
+    const [anchorElement, messageId, preferredSide] = toggle.mock
+      .calls[0] as unknown as [HTMLElement, string, 'left' | 'right'];
+    expect(anchorElement).not.toBe(root);
+    expect(anchorElement.contains(root as HTMLDivElement)).toBe(true);
+    expect(messageId).toBe('file-2');
+    expect(preferredSide).toBe('left');
+  });
+
+  it('downloads grouped document bubbles as a zip from the group popover', async () => {
+    const groupedMessages = [
+      {
+        ...baseMessage,
+        id: 'file-1',
+        message: 'https://example.com/report.pdf',
+        message_type: 'file' as const,
+        file_name: 'report.pdf',
+        file_mime_type: 'application/pdf',
+        file_storage_path: 'documents/channel/report.pdf',
+        file_kind: 'document' as const,
+      },
+      {
+        ...baseMessage,
+        id: 'file-2',
+        message: 'https://example.com/notes.docx',
+        message_type: 'file' as const,
+        file_name: 'notes.docx',
+        file_mime_type:
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        file_storage_path: 'documents/channel/notes.docx',
+        file_kind: 'document' as const,
+      },
+    ];
+    const handleDownloadDocumentGroup = vi.fn().mockResolvedValue(undefined);
+
+    const { container } = render(
+      <MessageItem
+        model={createModel({
+          message: groupedMessages[1],
+          menu: {
+            openMessageId: 'file-2',
+            toggle: () => {},
+          },
+          content: {
+            groupedDocumentMessages: groupedMessages,
+            getAttachmentFileName: targetMessage =>
+              targetMessage.file_name || '',
+          },
+          actions: {
+            handleDownloadDocumentGroup,
+          },
+        })}
+      />
+    );
+
+    const root = container.querySelector(
+      '[data-chat-document-group-root]'
+    ) as HTMLDivElement | null;
+    fireEvent.click(root as HTMLDivElement);
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Unduh' }));
+
+    expect(handleDownloadDocumentGroup).toHaveBeenCalledWith(groupedMessages);
   });
 });
