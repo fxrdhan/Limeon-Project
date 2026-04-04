@@ -34,6 +34,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       onBlur,
       onKeyDown,
       onChange,
+      onMouseDown,
       type = 'text',
       ...props
     },
@@ -132,6 +133,38 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       onKeyDown?.(e);
     };
 
+    const handleMouseDown = (e: React.MouseEvent<HTMLInputElement>) => {
+      onMouseDown?.(e);
+
+      if (
+        e.defaultPrevented ||
+        e.button !== 0 ||
+        e.detail !== 1 ||
+        e.altKey ||
+        e.ctrlKey ||
+        e.metaKey ||
+        e.shiftKey
+      ) {
+        return;
+      }
+
+      const input = e.currentTarget;
+
+      if (
+        input.readOnly ||
+        input.disabled ||
+        document.activeElement === input
+      ) {
+        return;
+      }
+
+      e.preventDefault();
+
+      const inputLength = input.value.length;
+      input.focus({ preventScroll: true });
+      input.setSelectionRange(inputLength, inputLength);
+    };
+
     // Use refs to avoid dependency issues
     const validationRef = useRef(validation);
 
@@ -227,6 +260,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             onFocus={handleFocus}
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
+            onMouseDown={handleMouseDown}
             onChange={handleChange}
             className={classNames(
               'p-2.5 border rounded-xl',
