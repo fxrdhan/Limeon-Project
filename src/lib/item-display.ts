@@ -15,6 +15,11 @@ const formatMeasurementNumber = (value: number) =>
 const resolveUnitLabel = (unit?: UnitData | null) =>
   unit?.code || unit?.name || '';
 
+const formatMeasurementPart = (value: number, unitLabel: string) =>
+  unitLabel === '%'
+    ? `${formatMeasurementNumber(value)}${unitLabel}`
+    : `${formatMeasurementNumber(value)} ${unitLabel}`;
+
 export const formatMeasurementSuffix = (item: MeasurementShape) => {
   if (item.measurement_value == null || !item.measurement_unit) {
     return '';
@@ -26,7 +31,10 @@ export const formatMeasurementSuffix = (item: MeasurementShape) => {
     return '';
   }
 
-  const numerator = `${formatMeasurementNumber(item.measurement_value)} ${numeratorUnit}`;
+  const numerator = formatMeasurementPart(
+    item.measurement_value,
+    numeratorUnit
+  );
 
   if (
     item.measurement_denominator_value == null ||
@@ -41,7 +49,7 @@ export const formatMeasurementSuffix = (item: MeasurementShape) => {
     return numerator;
   }
 
-  return `${numerator}/${formatMeasurementNumber(item.measurement_denominator_value)} ${denominatorUnit}`;
+  return `${numerator}/${formatMeasurementPart(item.measurement_denominator_value, denominatorUnit)}`;
 };
 
 export const formatItemDisplayName = (item: MeasurementShape) => {

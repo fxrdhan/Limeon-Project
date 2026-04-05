@@ -9,22 +9,39 @@ export type ParsedMeasurementInput = {
   name: string;
 };
 
-const MEASUREMENT_PATTERN =
-  /(?<!\d)(\d+(?:[.,]\d+)?)\s*(MG|MCG|G|GR|GRAM|KG|ML|L|IU|UCI|GA|GAUGE)(?:\s*\/\s*(\d+(?:[.,]\d+)?)\s*(MG|MCG|G|GR|GRAM|KG|ML|L|IU|UCI))?\b/i;
+const UNIT_TOKEN =
+  '(?:MG|MCG|UG|[\\u00B5\\u03BC]G|NG|G|GM|GR|GRAM|KG|ML|UL|[\\u00B5\\u03BC]L|L|IU|UCI|MEQ|MMOL|GA|GAUGE|%|PERCENT)';
+
+const MEASUREMENT_PATTERN = new RegExp(
+  `(?<!\\d)(\\d+(?:[.,]\\d+)?)\\s*(${UNIT_TOKEN})(?:\\s*\\/\\s*(\\d+(?:[.,]\\d+)?)\\s*(${UNIT_TOKEN}))?(?=$|\\s|[),.-])`,
+  'i'
+);
 
 const UNIT_ALIASES: Record<string, string> = {
+  '%': '%',
   g: 'g',
   ga: 'GA',
   gauge: 'GA',
+  gm: 'g',
   gr: 'g',
   gram: 'g',
   iu: 'IU',
   kg: 'kg',
   l: 'L',
   mcg: 'mcg',
+  meq: 'mEq',
   mg: 'mg',
   ml: 'mL',
+  mmol: 'mmol',
+  ng: 'ng',
+  percent: '%',
   uci: 'uCI',
+  ug: 'mcg',
+  ul: 'uL',
+  µg: 'mcg',
+  µl: 'uL',
+  μg: 'mcg',
+  μl: 'uL',
 };
 
 const normalizeUnitToken = (value: string) =>
