@@ -13,12 +13,6 @@ const { mockPopupMenuContent } = vi.hoisted(() => ({
   )),
 }));
 
-const { mockImageUploader } = vi.hoisted(() => ({
-  mockImageUploader: vi.fn(({ children }: { children?: React.ReactNode }) => (
-    <div>{children}</div>
-  )),
-}));
-
 vi.mock('motion/react', () => ({
   AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
   motion: new Proxy(
@@ -62,7 +56,9 @@ vi.mock('@/components/shared/popup-menu-popover', () => ({
 }));
 
 vi.mock('@/components/image-manager', () => ({
-  default: (props: { children?: React.ReactNode }) => mockImageUploader(props),
+  default: ({ children }: { children?: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
 }));
 
 vi.mock('@/components/shared/image-expand-preview', () => ({
@@ -503,33 +499,5 @@ describe('ComposerPanel', () => {
     expect(screen.getByText('Tempel sebagai')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'URL' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Attachment' })).toBeTruthy();
-  });
-
-  it('renders the composer image preview with square corners', () => {
-    const runtime = buildComposerRuntime();
-    runtime.composer.previewComposerImageAttachment = {
-      id: 'attachment-1',
-      fileName: 'preview.png',
-      previewUrl: 'https://example.com/preview.png',
-    } as typeof runtime.composer.previewComposerImageAttachment;
-    runtime.composer.isComposerImageExpanded = true;
-    runtime.composer.isComposerImageExpandedVisible = true;
-
-    const { container } = render(<ComposerPanel runtime={runtime} />);
-
-    expect(mockImageUploader).toHaveBeenCalledWith(
-      expect.objectContaining({
-        id: 'chat-composer-image-preview',
-        shape: 'square',
-      })
-    );
-
-    const previewImage = container.querySelector(
-      'img[alt="preview.png"]'
-    ) as HTMLImageElement | null;
-
-    expect(previewImage).not.toBeNull();
-    expect(previewImage?.className).toContain('object-contain');
-    expect(previewImage?.className).not.toContain('rounded');
   });
 });

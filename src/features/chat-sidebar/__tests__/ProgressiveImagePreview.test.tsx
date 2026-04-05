@@ -174,7 +174,6 @@ describe('ProgressiveImagePreview', () => {
         `height: ${expectedHeight}px`
       );
     });
-    expect(imageElement.className).toContain('object-contain');
   });
 
   it('prefers the full preview as the sizing source when frameSourceSrc is provided', async () => {

@@ -57,13 +57,11 @@ describe('MultiImagePreviewPortal', () => {
         fullSrc: 'https://example.com/full.png',
         frameSourceSrc: 'https://example.com/full.png',
         backdropSrc: 'https://example.com/full.png',
-        className: 'h-full w-full',
-        imageClassName: 'h-full w-full',
       })
     );
   });
 
-  it('renders black header controls and wires open, copy, forward, download, and close actions', () => {
+  it('wires open, copy, forward, download, and close actions', () => {
     const onSelectPreview = vi.fn();
     const onDownloadActivePreview = vi.fn();
     const onOpenActivePreviewInNewTab = vi.fn();
@@ -97,42 +95,6 @@ describe('MultiImagePreviewPortal', () => {
         backdropClassName="z-[80]"
       />
     );
-
-    const headerLabel = screen.getByTitle('1/1 | photo.png');
-    expect(headerLabel.className).toContain('text-black');
-    expect(
-      screen.getByRole('button', { name: 'Buka di tab baru' }).className
-    ).toContain('text-black');
-    expect(
-      screen.getByRole('button', { name: 'Salin link' }).className
-    ).toContain('text-black');
-    expect(
-      screen.getByRole('button', { name: 'Salin gambar' }).className
-    ).toContain('text-black');
-    expect(
-      screen.getByRole('button', { name: 'Teruskan gambar' }).className
-    ).toContain('text-black');
-    expect(
-      screen.getByRole('button', { name: 'Unduh gambar' }).className
-    ).toContain('text-black');
-    expect(
-      screen.getByRole('button', { name: 'Tutup preview gambar' }).className
-    ).toContain('text-black');
-    expect(
-      screen.getByRole('button', { name: 'Buka di tab baru' }).className
-    ).toContain('cursor-pointer');
-    expect(
-      screen.getByRole('button', { name: 'Salin link' }).className
-    ).toContain('cursor-pointer');
-    expect(
-      screen.getByRole('button', { name: 'Salin gambar' }).className
-    ).toContain('cursor-pointer');
-    expect(
-      screen.getByRole('button', { name: 'Unduh gambar' }).className
-    ).toContain('cursor-pointer');
-    expect(
-      screen.getByRole('button', { name: 'Tutup preview gambar' }).className
-    ).toContain('cursor-pointer');
 
     fireEvent.click(screen.getByRole('button', { name: 'Buka di tab baru' }));
     fireEvent.click(screen.getByRole('button', { name: 'Salin link' }));

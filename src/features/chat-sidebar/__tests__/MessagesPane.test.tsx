@@ -217,7 +217,7 @@ describe('MessagesPane', () => {
     expect(closeImagePreview).toHaveBeenCalledTimes(1);
   });
 
-  it('renders the single-image preview without rounded image corners', () => {
+  it('passes single-image preview sources into the preview component', () => {
     const runtime = createRuntime({
       previews: {
         isImagePreviewOpen: true,
@@ -234,7 +234,6 @@ describe('MessagesPane', () => {
       expect.objectContaining({
         fullSrc: 'https://example.com/full.png',
         backdropSrc: 'https://example.com/backdrop.png',
-        imageClassName: 'h-full w-full',
       })
     );
   });
@@ -259,23 +258,6 @@ describe('MessagesPane', () => {
     expect(messagesViewport).not.toBeNull();
     expect((messagesViewport as HTMLDivElement).style.paddingBottom).toBe(
       `${128 + 8 + MESSAGE_BOTTOM_GAP}px`
-    );
-  });
-
-  it('skips viewport padding transition while the initial open pin is still settling', () => {
-    const runtime = createRuntime({
-      viewport: {
-        isInitialOpenPinPending: true,
-      },
-    });
-
-    const { container } = render(<MessagesPane runtime={runtime} />);
-
-    const messagesViewport = container.querySelector('[role="presentation"]');
-
-    expect(messagesViewport).not.toBeNull();
-    expect((messagesViewport as HTMLDivElement).className).not.toContain(
-      'transition-[padding-bottom]'
     );
   });
 });

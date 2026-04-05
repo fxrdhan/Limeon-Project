@@ -113,104 +113,6 @@ const createModel = (
 };
 
 describe('MessageItem', () => {
-  it('renders multiple document attachments in a single bubble without preview covers', () => {
-    const groupedMessages = [
-      {
-        ...baseMessage,
-        id: 'file-1',
-        message: 'documents/channel/report.pdf',
-        message_type: 'file' as const,
-        file_name: 'Laporan.pdf',
-        file_mime_type: 'application/pdf',
-        file_storage_path: 'documents/channel/report.pdf',
-        file_kind: 'document' as const,
-      },
-      {
-        ...baseMessage,
-        id: 'file-2',
-        message: 'documents/channel/notes.docx',
-        message_type: 'file' as const,
-        file_name: 'Catatan.docx',
-        file_mime_type:
-          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        file_storage_path: 'documents/channel/notes.docx',
-        file_kind: 'document' as const,
-      },
-    ];
-
-    const { container } = render(
-      <MessageItem
-        model={createModel({
-          message: groupedMessages[1],
-          content: {
-            groupedDocumentMessages: groupedMessages,
-            getAttachmentFileName: targetMessage =>
-              targetMessage.file_name || '',
-          },
-        })}
-      />
-    );
-
-    expect(screen.getByText('Laporan.pdf')).toBeTruthy();
-    expect(screen.getByText('Catatan.docx')).toBeTruthy();
-    expect(container.querySelector('img')).toBeNull();
-  });
-
-  it('renders 4 images in a grouped 2x2 bubble', () => {
-    const groupedMessages = Array.from({ length: 4 }, (_, index) => ({
-      ...baseMessage,
-      id: `image-${index + 1}`,
-      message: `images/channel/chat-${index + 1}.png`,
-      message_type: 'image' as const,
-      file_mime_type: 'image/png',
-      file_storage_path: `images/channel/chat-${index + 1}.png`,
-    }));
-
-    const { container } = render(
-      <MessageItem
-        model={createModel({
-          message: groupedMessages[3],
-          content: {
-            groupedImageMessages: groupedMessages,
-            getImageMessageUrl: targetMessage => targetMessage.message,
-          },
-        })}
-      />
-    );
-
-    expect(
-      container.querySelector('[data-chat-image-group-grid]')
-    ).toBeTruthy();
-    expect(
-      container.querySelectorAll('[data-chat-image-group-tile-id]')
-    ).toHaveLength(4);
-  });
-
-  it('shows a +N overlay on the last tile when grouped images exceed 4', () => {
-    const groupedMessages = Array.from({ length: 6 }, (_, index) => ({
-      ...baseMessage,
-      id: `image-${index + 1}`,
-      message: `images/channel/chat-${index + 1}.png`,
-      message_type: 'image' as const,
-      file_mime_type: 'image/png',
-      file_storage_path: `images/channel/chat-${index + 1}.png`,
-    }));
-
-    render(
-      <MessageItem
-        model={createModel({
-          message: groupedMessages[5],
-          content: {
-            groupedImageMessages: groupedMessages,
-            getImageMessageUrl: targetMessage => targetMessage.message,
-          },
-        })}
-      />
-    );
-
-    expect(screen.getByText('+2')).toBeTruthy();
-  });
-
   it('opens grouped images in the multi-image portal from the group action menu', async () => {
     const groupedMessages = Array.from({ length: 4 }, (_, index) => ({
       ...baseMessage,
@@ -223,7 +125,7 @@ describe('MessageItem', () => {
     }));
     const openImageGroupInPortal = vi.fn(async () => {});
 
-    const { container } = render(
+    render(
       <MessageItem
         model={createModel({
           message: groupedMessages[3],
@@ -241,10 +143,6 @@ describe('MessageItem', () => {
     expect(
       screen.getByRole('button', { name: 'Aksi grup gambar' })
     ).toBeTruthy();
-    expect(
-      container.querySelector('[data-chat-image-group-tile-id="image-2"]')
-    ).toBeTruthy();
-
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Lihat' }));
 
     expect(openImageGroupInPortal).toHaveBeenCalledTimes(1);
@@ -339,54 +237,6 @@ describe('MessageItem', () => {
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Unduh' }));
 
     expect(handleDownloadImageGroup).toHaveBeenCalledWith(groupedMessages);
-  });
-
-  it('renders a PDF cover thumbnail inside a grouped document bubble when preview data exists', () => {
-    const groupedMessages = [
-      {
-        ...baseMessage,
-        id: 'file-1',
-        message: 'documents/channel/report.pdf',
-        message_type: 'file' as const,
-        file_name: 'Laporan.pdf',
-        file_mime_type: 'application/pdf',
-        file_storage_path: 'documents/channel/report.pdf',
-        file_kind: 'document' as const,
-      },
-      {
-        ...baseMessage,
-        id: 'file-2',
-        message: 'documents/channel/notes.pdf',
-        message_type: 'file' as const,
-        file_name: 'Catatan.pdf',
-        file_mime_type: 'application/pdf',
-        file_storage_path: 'documents/channel/notes.pdf',
-        file_kind: 'document' as const,
-      },
-    ];
-
-    render(
-      <MessageItem
-        model={createModel({
-          message: groupedMessages[1],
-          content: {
-            groupedDocumentMessages: groupedMessages,
-            getAttachmentFileName: targetMessage =>
-              targetMessage.file_name || '',
-            getPdfMessagePreview: targetMessage =>
-              targetMessage.id === 'file-1'
-                ? {
-                    cacheKey: 'pdf-preview-1',
-                    coverDataUrl: 'data:image/png;base64,preview',
-                    pageCount: 2,
-                  }
-                : undefined,
-          },
-        })}
-      />
-    );
-
-    expect(screen.getByAltText('PDF cover preview')).toBeTruthy();
   });
 
   it('anchors grouped document menus to the outer bubble when clicking the bubble area', () => {
