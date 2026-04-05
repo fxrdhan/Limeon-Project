@@ -1,11 +1,24 @@
 import { fuzzyMatch } from '@/utils/search';
 
+const tokenizeOptionName = (value: string) =>
+  value
+    .toLowerCase()
+    .split(/[^a-z0-9%]+/)
+    .filter(Boolean);
+
 export const getDropdownOptionScore = (
   option: { name: string; id: string },
   searchTermLower: string
 ): number => {
   const nameLower = option.name?.toLowerCase?.() ?? '';
-  if (nameLower.includes(searchTermLower)) return 3;
+  const nameTokens = tokenizeOptionName(option.name || '');
+
+  if (nameLower === searchTermLower) return 7;
+  if (nameLower.startsWith(searchTermLower)) return 6;
+  if (nameTokens.some(token => token === searchTermLower)) return 5;
+  if (nameTokens.some(token => token.startsWith(searchTermLower))) return 4;
+  if (nameTokens.some(token => token.includes(searchTermLower))) return 3;
+  if (nameLower.includes(searchTermLower)) return 2;
   if (fuzzyMatch(option.name, searchTermLower)) return 1;
   return 0;
 };
@@ -24,7 +37,9 @@ export const filterAndSortOptions = (
     .sort((a, b) => {
       const scoreA = getDropdownOptionScore(a, searchTermLower);
       const scoreB = getDropdownOptionScore(b, searchTermLower);
-      return scoreB !== scoreA ? scoreB - scoreA : a.name.localeCompare(b.name);
+      if (scoreB !== scoreA) return scoreB - scoreA;
+      if (a.name.length !== b.name.length) return a.name.length - b.name.length;
+      return a.name.localeCompare(b.name);
     });
 };
 

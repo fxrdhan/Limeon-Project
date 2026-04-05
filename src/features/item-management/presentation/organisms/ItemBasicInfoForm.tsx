@@ -17,6 +17,7 @@ import {
   createOptimizedDosageDetailFetcher,
   createOptimizedManufacturerDetailFetcher,
 } from '@/utils/optimizedCategoryDetailFetcher';
+import { extractDosageFromDisplayName } from '@/lib/item-dosage-inference';
 
 interface ItemBasicInfoFormProps {
   isEditMode: boolean;
@@ -109,10 +110,30 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
       nameFieldHandlers?.onFocus();
     };
 
-    const handleNameBlur = () => {
+    const applyInferredDosage = (rawDisplayName: string) => {
+      const { cleanedDisplayName, dosage } = extractDosageFromDisplayName(
+        rawDisplayName,
+        dosages
+      );
+
+      if (cleanedDisplayName !== rawDisplayName) {
+        setLocalDisplayName(cleanedDisplayName);
+        onDisplayNameChange(cleanedDisplayName);
+      }
+
+      if (dosage && dosage.id !== formData.dosage_id) {
+        onDropdownChange('dosage_id', dosage.id);
+      }
+    };
+
+    const handleNameBlur = (e: React.FocusEvent<HTMLInputElement>) => {
       setIsNameFocused(false);
-      setLocalDisplayName(formData.display_name);
+      applyInferredDosage(e.currentTarget.value);
       nameFieldHandlers?.onBlur();
+    };
+
+    const handleNameMouseLeave = (e: React.MouseEvent<HTMLInputElement>) => {
+      applyInferredDosage(e.currentTarget.value);
     };
 
     // Generate item code based on selected values
@@ -199,6 +220,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                 onChange={handleNameChange}
                 onFocus={handleNameFocus}
                 onBlur={handleNameBlur}
+                onMouseLeave={handleNameMouseLeave}
                 className="w-full"
                 validate={true}
                 validationSchema={itemNameSchema}
