@@ -1,4 +1,4 @@
-import { useDashboardRealtime } from '@/hooks/realtime';
+import { useDashboardRealtime } from '@/hooks/realtime/useDashboardRealtime';
 import {
   useDashboardStats,
   useLowStockItems,

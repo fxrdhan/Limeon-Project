@@ -1,8 +1,8 @@
 import IdentityDataModal from '@/components/IdentityDataModal';
 
-import { createTextColumn } from '@/components/ag-grid';
+import { createTextColumn } from '@/components/ag-grid/columns';
 import type { Doctor as DoctorType, FieldConfig } from '@/types';
-import { ColDef, RowClickedEvent } from 'ag-grid-community';
+import type { ColDef, RowClickedEvent } from 'ag-grid-community';
 import { useMemo, useRef } from 'react';
 
 // Use the new modular architecture

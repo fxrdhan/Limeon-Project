@@ -1,5 +1,5 @@
 import React from 'react';
-import { GridApi } from 'ag-grid-community';
+import type { GridApi } from 'ag-grid-community';
 import { TbPlus } from 'react-icons/tb';
 
 import Button from '@/components/button';
@@ -8,8 +8,7 @@ import PageTitle from '@/components/page-title';
 import { AGGridPagination } from '@/components/pagination';
 import EnhancedSearchBar from '@/components/search-bar/EnhancedSearchBar';
 import type { EnhancedSearchBarProps } from '@/components/search-bar/types';
-import { DataGrid } from '@/components/ag-grid';
-import type { DataGridProps } from '@/components/ag-grid';
+import DataGrid, { type DataGridProps } from '@/components/ag-grid/DataGrid';
 
 interface MasterDataListPaginationProps {
   gridApi: GridApi | null;

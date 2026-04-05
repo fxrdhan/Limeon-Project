@@ -1,4 +1,4 @@
-import {
+import type {
   RowClickedEvent,
   IRowNode,
   CellStyle,
@@ -22,8 +22,7 @@ import {
   GridPreDestroyedEvent,
   RowSelectionOptions,
 } from 'ag-grid-community';
-import type { CellSelectionOptions } from 'ag-grid-enterprise';
-import { SideBarDef } from 'ag-grid-enterprise';
+import type { CellSelectionOptions, SideBarDef } from 'ag-grid-enterprise';
 
 export interface ColumnConfig {
   field: string;

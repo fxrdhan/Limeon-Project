@@ -1,7 +1,7 @@
 import { ExportDropdown } from '@/components/export';
 import EnhancedSearchBar from '@/components/search-bar/EnhancedSearchBar';
 import type { FilterSearch, SearchColumn } from '@/types/search';
-import { GridApi } from 'ag-grid-community';
+import type { GridApi } from 'ag-grid-community';
 import { memo } from 'react';
 import { TbTablePlus } from 'react-icons/tb';
 

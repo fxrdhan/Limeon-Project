@@ -1,6 +1,7 @@
 import React, { forwardRef, useCallback, useMemo } from 'react';
-import { AgGridReact, AgGridReactProps } from 'ag-grid-react';
-import {
+import { AgGridReact } from 'ag-grid-react';
+import { type AgGridReactProps } from 'ag-grid-react';
+import type {
   ColDef,
   ColGroupDef,
   FirstDataRenderedEvent,

@@ -1,4 +1,8 @@
-import { ColDef, ColumnMenuTab, GetMainMenuItems } from 'ag-grid-community';
+import type {
+  ColDef,
+  ColumnMenuTab,
+  GetMainMenuItems,
+} from 'ag-grid-community';
 import { ColumnConfig } from '@/types';
 
 export type { ColumnConfig };

@@ -21,6 +21,10 @@ const reporters = isAIAgent
     : ['agent']
   : undefined;
 const isAnalyze = process.env.ANALYZE === 'true';
+const deferredInitialHtmlPreloadPatterns = [
+  /^assets\/ag-grid-.*\.js$/,
+  /^assets\/items-feature-.*\.(js|css)$/,
+];
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -128,9 +132,32 @@ export default defineConfig({
     ],
   },
   build: {
+    modulePreload: {
+      resolveDependencies: (_filename, deps, context) => {
+        if (context.hostType !== 'html') {
+          return deps;
+        }
+
+        return deps.filter(
+          dep =>
+            !deferredInitialHtmlPreloadPatterns.some(pattern =>
+              pattern.test(dep)
+            )
+        );
+      },
+    },
     rollupOptions: {
       output: {
         manualChunks: id => {
+          // React core - keep together to avoid circular dependencies
+          if (
+            id.includes('react/') ||
+            id.includes('react-dom/') ||
+            id.includes('scheduler/')
+          ) {
+            return 'react-vendor';
+          }
+
           // AG-Grid - split into community and enterprise
           if (id.includes('ag-grid-community')) {
             return 'ag-grid-community';
@@ -150,15 +177,6 @@ export default defineConfig({
           // Animation library - used across app
           if (id.includes('framer-motion')) {
             return 'animations';
-          }
-
-          // React core - keep together to avoid circular dependencies
-          if (
-            id.includes('react/') ||
-            id.includes('react-dom/') ||
-            id.includes('scheduler/')
-          ) {
-            return 'react-vendor';
           }
 
           // React Router - separate from React core
@@ -231,11 +249,6 @@ export default defineConfig({
           // Validation libraries
           if (id.includes('zod')) {
             return 'validation';
-          }
-
-          // Feature modules - keep together to avoid circular deps
-          if (id.includes('/features/item-management/')) {
-            return 'items-feature';
           }
 
           // API services and hooks - keep together with related components

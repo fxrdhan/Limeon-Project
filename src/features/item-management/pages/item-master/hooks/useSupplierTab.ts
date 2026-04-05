@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
-import { ColDef } from 'ag-grid-community';
+import type { ColDef } from 'ag-grid-community';
 
-import { createTextColumn } from '@/components/ag-grid';
+import { createTextColumn } from '@/components/ag-grid/columns';
 import type { FieldConfig, Supplier as SupplierType } from '@/types';
 import { useSuppliers, useSupplierMutations } from '@/hooks/queries';
 

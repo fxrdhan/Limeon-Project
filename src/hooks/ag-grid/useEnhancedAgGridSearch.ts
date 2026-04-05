@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { GridApi, GridReadyEvent } from 'ag-grid-community';
+import type { GridApi, GridReadyEvent } from 'ag-grid-community';
 import { SearchColumn, TargetedSearch } from '@/types/search';
 
 interface UseEnhancedAgGridSearchOptions {

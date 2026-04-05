@@ -1,19 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { TbChevronDown, TbTrash } from 'react-icons/tb';
 import { AnimatePresence, motion } from 'motion/react';
-import {
+import type {
   ColDef,
   ColGroupDef,
-  type ColumnState,
-  type FirstDataRenderedEvent,
+  ColumnState,
+  FirstDataRenderedEvent,
 } from 'ag-grid-community';
 import Button from '@/components/button';
 import { PackageConversionInput } from '../atoms';
 import {
-  DataGrid,
   createTextColumn,
   createCurrencyColumn,
-} from '@/components/ag-grid';
+} from '@/components/ag-grid/columns';
+import DataGrid from '@/components/ag-grid/DataGrid';
 import { getInventoryUnitMetaLabel } from '@/lib/item-units';
 import {
   COLLAPSIBLE_SECTION_HEADER_CLASS,

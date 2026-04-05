@@ -1,4 +1,4 @@
-import {
+import type {
   ColDef,
   ColGroupDef,
   FirstDataRenderedEvent,
@@ -13,7 +13,8 @@ import {
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 // Components
-import { DataGrid, getPinAndFilterMenuItems } from '@/components/ag-grid';
+import DataGrid from '@/components/ag-grid/DataGrid';
+import { getPinAndFilterMenuItems } from '@/components/ag-grid/columns';
 import type { AgGridReact } from 'ag-grid-react';
 import { StandardPagination } from '../atoms';
 

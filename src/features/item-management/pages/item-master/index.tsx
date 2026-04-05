@@ -1,5 +1,5 @@
-import { createTextColumn } from '@/components/ag-grid';
-import { ColDef, GridApi, GridReadyEvent } from 'ag-grid-community';
+import { createTextColumn } from '@/components/ag-grid/columns';
+import type { ColDef, GridApi, GridReadyEvent } from 'ag-grid-community';
 import {
   memo,
   useCallback,
@@ -71,7 +71,7 @@ import type {
   Patient as PatientType,
   Supplier as SupplierType,
 } from '@/types';
-import { FilterSearch } from '@/types/search';
+import type { FilterSearch } from '@/types/search';
 import { isPageFocusBlocked } from '@/store/pageFocusBlockStore';
 
 import { fuzzyMatch } from '@/utils/search';

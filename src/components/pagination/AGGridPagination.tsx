@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
 import classNames from 'classnames';
-import { GridApi } from 'ag-grid-community';
+import type { GridApi } from 'ag-grid-community';
 import { useFloatingPagination, useAnimationDirection } from './hooks';
 import { PaginationProvider } from './providers';
 import { PaginationContent, FloatingWrapper } from './components';

@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { AGGridPagination } from '@/components/pagination';
 import { PAGINATION_CONSTANTS } from '@/components/pagination/constants';
-import { GridApi } from 'ag-grid-community';
+import type { GridApi } from 'ag-grid-community';
 
 interface StandardPaginationProps {
   gridApi: GridApi | null;

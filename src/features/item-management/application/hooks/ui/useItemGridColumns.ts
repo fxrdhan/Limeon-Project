@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ColDef } from 'ag-grid-community';
+import type { ColDef } from 'ag-grid-community';
 import {
   createTextColumn,
   createWrapTextColumn,
@@ -7,7 +7,7 @@ import {
   createCenterAlignColumn,
   formatCurrency,
   formatBaseCurrency,
-} from '@/components/ag-grid';
+} from '@/components/ag-grid/columns';
 import { compareItemNameStrings } from '@/lib/item-sort';
 import type { PackageConversion } from '@/types';
 export const useItemGridColumns = () => {

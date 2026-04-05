@@ -1,8 +1,8 @@
 import IdentityDataModal from '@/components/IdentityDataModal';
 
-import { createTextColumn } from '@/components/ag-grid';
+import { createTextColumn } from '@/components/ag-grid/columns';
 import type { Customer as CustomerType, FieldConfig } from '@/types';
-import { ColDef, RowClickedEvent } from 'ag-grid-community';
+import type { ColDef, RowClickedEvent } from 'ag-grid-community';
 import { useMemo, useRef } from 'react';
 
 import { useMasterDataManagement } from '@/hooks/data/useMasterDataManagement';

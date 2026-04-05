@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { GridApi, GridReadyEvent } from 'ag-grid-community';
+import type { GridApi, GridReadyEvent } from 'ag-grid-community';
 import { useEnhancedAgGridSearch } from './useEnhancedAgGridSearch';
 import { fuzzySearchMatch } from '@/utils/search';
 

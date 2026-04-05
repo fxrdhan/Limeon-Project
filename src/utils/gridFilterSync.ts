@@ -1,4 +1,4 @@
-import { FilterModel } from 'ag-grid-community';
+import type { FilterModel } from 'ag-grid-community';
 
 /**
  * AG Grid filter model types

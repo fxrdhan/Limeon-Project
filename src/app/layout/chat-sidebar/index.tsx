@@ -1,7 +1,8 @@
 import type { ChatTargetUser } from '@/types';
 import { motion } from 'motion/react';
-import ChatSidebarPanel from '@/features/chat-sidebar';
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useState } from 'react';
+
+const ChatSidebarPanel = lazy(() => import('@/features/chat-sidebar'));
 
 interface ChatSidebarProps {
   isOpen: boolean;
@@ -44,6 +45,7 @@ const ChatSidebar = ({ isOpen, onClose, targetUser }: ChatSidebarProps) => {
   }, []);
 
   const activeTargetUser = targetUser ?? persistedTargetUser;
+  const shouldRenderPanel = isOpen || Boolean(activeTargetUser);
   const handleAnimationComplete = useCallback(() => {
     if (isOpen) return;
     setPersistedTargetUser(undefined);
@@ -67,11 +69,15 @@ const ChatSidebar = ({ isOpen, onClose, targetUser }: ChatSidebarProps) => {
           : 'border-l border-transparent bg-transparent pointer-events-none'
       }`}
     >
-      <ChatSidebarPanel
-        isOpen={isOpen}
-        onClose={onClose}
-        targetUser={activeTargetUser}
-      />
+      {shouldRenderPanel ? (
+        <Suspense fallback={null}>
+          <ChatSidebarPanel
+            isOpen={isOpen}
+            onClose={onClose}
+            targetUser={activeTargetUser}
+          />
+        </Suspense>
+      ) : null}
     </motion.aside>
   );
 };

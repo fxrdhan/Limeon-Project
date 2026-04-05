@@ -1,8 +1,7 @@
-import React, { useRef, useEffect } from 'react';
+import React, { Suspense, lazy, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import FormAction from '@/components/form-action';
-import ItemModal from '@/components/item-management/ItemModal';
 import { CardContent, CardFooter } from '@/components/card';
 import PurchaseModalHeader from '@/features/purchase-management/components/purchase-form/PurchaseModalHeader';
 import PurchaseInfoSection from '@/features/purchase-management/components/purchase-form/PurchaseInfoSection';
@@ -12,6 +11,8 @@ import { usePurchaseForm } from '@/features/purchase-management/hooks/purchaseFo
 import { useItemSelection } from '@/hooks/items/useItemSelection';
 import { useItemSelectionEffect } from '@/features/purchase-management/hooks/useItemSelectionEffect';
 import { usePurchaseModalAnimation } from '@/features/purchase-management/hooks/usePurchaseModalAnimation';
+
+const ItemModal = lazy(() => import('@/components/item-management/ItemModal'));
 
 const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
   isOpen,
@@ -207,15 +208,19 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
         </motion.div>
       )}
 
-      <ItemModal
-        key={`${searchItem ?? ''}-${portalRenderId}`}
-        isOpen={isAddItemPortalOpen}
-        onClose={handleCloseAddItemPortal}
-        initialSearchQuery={searchItem}
-        isClosing={isAddItemClosing}
-        setIsClosing={setIsAddItemClosing}
-        refetchItems={refetchItems}
-      />
+      {isAddItemPortalOpen ? (
+        <Suspense fallback={null}>
+          <ItemModal
+            key={`${searchItem ?? ''}-${portalRenderId}`}
+            isOpen={isAddItemPortalOpen}
+            onClose={handleCloseAddItemPortal}
+            initialSearchQuery={searchItem}
+            isClosing={isAddItemClosing}
+            setIsClosing={setIsAddItemClosing}
+            refetchItems={refetchItems}
+          />
+        </Suspense>
+      ) : null}
     </AnimatePresence>,
     document.body
   );

@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { GridApi, GridReadyEvent } from 'ag-grid-community';
+import type { GridApi, GridReadyEvent } from 'ag-grid-community';
 
 import { useUnifiedSearch } from '@/hooks/data/useUnifiedSearch';
 import { useDynamicGridHeight } from '@/hooks/ag-grid/useDynamicGridHeight';

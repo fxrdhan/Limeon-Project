@@ -1,7 +1,7 @@
 import IdentityDataModal from '@/components/IdentityDataModal';
 
-import { createTextColumn } from '@/components/ag-grid';
-import { ColDef, RowClickedEvent } from 'ag-grid-community';
+import { createTextColumn } from '@/components/ag-grid/columns';
+import type { ColDef, RowClickedEvent } from 'ag-grid-community';
 import { useMemo, useRef } from 'react';
 // import { useLocation } from "react-router-dom";
 import type { FieldConfig, Supplier as SupplierType } from '@/types';
