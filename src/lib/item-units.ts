@@ -124,7 +124,7 @@ export const getInventoryUnitMetaLabel = (
 ) => {
   if (unit.source_dosage_id) return 'Sediaan';
   if (unit.source_package_id || unit.kind === 'packaging') return 'Kemasan';
-  if (unit.kind === 'retail_unit') return 'Unit Ecer';
+  if (unit.kind === 'retail_unit') return 'Ecer';
   return 'Custom';
 };
 
@@ -160,6 +160,7 @@ export const mergeInventoryUnitsWithDosagePreference = (
           ...unit,
           kind: 'retail_unit' as const,
           source_dosage_id: dosageBackedUnit.source_dosage_id,
+          description: dosageBackedUnit.description ?? null,
         };
       }
 

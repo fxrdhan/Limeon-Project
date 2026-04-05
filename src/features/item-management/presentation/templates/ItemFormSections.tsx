@@ -99,6 +99,36 @@ export const updateItemFields = async (
 export const appendCacheBust = (url: string, token: string | number) =>
   url.includes('?') ? `${url}&t=${token}` : `${url}?t=${token}`;
 
+const enrichInventoryUnitsWithDosageDetails = <
+  T extends {
+    code?: string;
+    description?: string | null;
+    source_dosage_id?: string | null;
+    updated_at?: string | null;
+  },
+>(
+  inventoryUnits: T[],
+  dosages: Array<{
+    id: string;
+    code?: string;
+    description?: string;
+    updated_at?: string | null;
+  }>
+) =>
+  inventoryUnits.map(unit => {
+    if (!unit.source_dosage_id) return unit;
+
+    const dosage = dosages.find(item => item.id === unit.source_dosage_id);
+    if (!dosage) return unit;
+
+    return {
+      ...unit,
+      code: dosage.code || unit.code,
+      description: dosage.description ?? unit.description ?? null,
+      updated_at: dosage.updated_at ?? unit.updated_at ?? null,
+    };
+  });
+
 // Header Section
 
 const FormHeader: React.FC<{
@@ -493,26 +523,29 @@ const PricingSection: React.FC<PricingSectionProps> = ({
   ]);
 
   const baseUnitOptions = useMemo(() => {
-    const mergedUnits = mergeInventoryUnitsWithDosagePreference(
-      [
-        ...packageConversionHook.availableUnits,
-        ...packages
-          .filter(
-            pkg =>
-              !packageConversionHook.availableUnits.some(
-                unit => unit.id === pkg.id
-              )
-          )
-          .map(pkg => ({
-            id: pkg.id,
-            name: pkg.name,
-            code: pkg.code,
-            description: pkg.description ?? null,
-            kind: 'packaging' as const,
-            source_package_id: pkg.id,
-          })),
-      ],
-      dosageBackedUnit
+    const mergedUnits = enrichInventoryUnitsWithDosageDetails(
+      mergeInventoryUnitsWithDosagePreference(
+        [
+          ...packageConversionHook.availableUnits,
+          ...packages
+            .filter(
+              pkg =>
+                !packageConversionHook.availableUnits.some(
+                  unit => unit.id === pkg.id
+                )
+            )
+            .map(pkg => ({
+              id: pkg.id,
+              name: pkg.name,
+              code: pkg.code,
+              description: pkg.description ?? null,
+              kind: 'packaging' as const,
+              source_package_id: pkg.id,
+            })),
+        ],
+        dosageBackedUnit
+      ),
+      dosages
     );
 
     const options = mergedUnits.map(unit => ({
@@ -525,7 +558,12 @@ const PricingSection: React.FC<PricingSectionProps> = ({
     }));
 
     return options.sort((left, right) => left.name.localeCompare(right.name));
-  }, [dosageBackedUnit, packageConversionHook.availableUnits, packages]);
+  }, [
+    dosageBackedUnit,
+    dosages,
+    packageConversionHook.availableUnits,
+    packages,
+  ]);
 
   const { calculateProfitPercentage: calcMargin } = useItemPriceCalculations({
     basePrice: pricingFields.basePrice,
@@ -704,28 +742,36 @@ const PackageConversionSection: React.FC<CollapsibleSectionProps> = ({
     : null;
   const dosageBackedUnit = createInventoryUnitFromDosage(selectedDosage);
   const availableInventoryUnits = useMemo(() => {
-    return mergeInventoryUnitsWithDosagePreference(
-      [
-        ...packageConversionHook.availableUnits,
-        ...packages
-          .filter(
-            pkg =>
-              !packageConversionHook.availableUnits.some(
-                unit => unit.id === pkg.id
-              )
-          )
-          .map(pkg => ({
-            id: pkg.id,
-            name: pkg.name,
-            code: pkg.code,
-            description: pkg.description ?? null,
-            kind: 'packaging' as const,
-            source_package_id: pkg.id,
-          })),
-      ],
-      dosageBackedUnit
+    return enrichInventoryUnitsWithDosageDetails(
+      mergeInventoryUnitsWithDosagePreference(
+        [
+          ...packageConversionHook.availableUnits,
+          ...packages
+            .filter(
+              pkg =>
+                !packageConversionHook.availableUnits.some(
+                  unit => unit.id === pkg.id
+                )
+            )
+            .map(pkg => ({
+              id: pkg.id,
+              name: pkg.name,
+              code: pkg.code,
+              description: pkg.description ?? null,
+              kind: 'packaging' as const,
+              source_package_id: pkg.id,
+            })),
+        ],
+        dosageBackedUnit
+      ),
+      dosages
     );
-  }, [dosageBackedUnit, packageConversionHook.availableUnits, packages]);
+  }, [
+    dosageBackedUnit,
+    dosages,
+    packageConversionHook.availableUnits,
+    packages,
+  ]);
 
   const packageConversionLogic = useConversionLogic({
     conversions: packageConversionHook.conversions,
