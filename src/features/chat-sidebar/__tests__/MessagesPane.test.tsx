@@ -5,6 +5,10 @@ import type { ChatMessage } from '../data/chatSidebarGateway';
 import MessagesPane from '../components/MessagesPane';
 import { MESSAGE_BOTTOM_GAP } from '../constants';
 
+const { mockProgressiveImagePreview } = vi.hoisted(() => ({
+  mockProgressiveImagePreview: vi.fn(),
+}));
+
 vi.mock('@/components/shared/image-expand-preview', () => ({
   default: ({
     children,
@@ -37,6 +41,13 @@ vi.mock('../components/DocumentPreviewPortal', () => ({
 
 vi.mock('../components/MultiImagePreviewPortal', () => ({
   default: () => <div data-testid="multi-image-preview-portal" />,
+}));
+
+vi.mock('../components/ProgressiveImagePreview', () => ({
+  default: (props: Record<string, unknown>) => {
+    mockProgressiveImagePreview(props);
+    return <div data-testid="progressive-image-preview" />;
+  },
 }));
 
 vi.mock('../components/messages/MessageItem', () => ({
@@ -204,6 +215,28 @@ describe('MessagesPane', () => {
     fireEvent.click(previewContent);
 
     expect(closeImagePreview).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders the single-image preview without rounded image corners', () => {
+    const runtime = createRuntime({
+      previews: {
+        isImagePreviewOpen: true,
+        isImagePreviewVisible: true,
+        imagePreviewUrl: 'https://example.com/full.png',
+        imagePreviewBackdropUrl: 'https://example.com/backdrop.png',
+        imagePreviewName: 'Lampiran',
+      },
+    });
+
+    render(<MessagesPane runtime={runtime} />);
+
+    expect(mockProgressiveImagePreview).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fullSrc: 'https://example.com/full.png',
+        backdropSrc: 'https://example.com/backdrop.png',
+        imageClassName: 'h-full w-full',
+      })
+    );
   });
 
   it('reserves scroll space from the measured composer height so the last bubble keeps a gap above it', () => {

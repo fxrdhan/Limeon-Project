@@ -276,7 +276,7 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
         {composer.previewComposerImageAttachment ? (
           <ImageUploader
             id="chat-composer-image-preview"
-            shape="rounded"
+            shape="square"
             hasImage={true}
             onPopupClose={composer.closeComposerImagePreview}
             className="max-h-[92vh] max-w-[92vw]"
@@ -298,7 +298,7 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
             <img
               src={composer.previewComposerImageAttachment.previewUrl ?? ''}
               alt={composer.previewComposerImageAttachment.fileName}
-              className="max-h-[92vh] max-w-[92vw] rounded-xl object-contain shadow-xl"
+              className="max-h-[92vh] max-w-[92vw] object-contain shadow-xl"
               draggable={false}
             />
           </ImageUploader>

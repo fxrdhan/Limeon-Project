@@ -57,6 +57,8 @@ describe('MultiImagePreviewPortal', () => {
         fullSrc: 'https://example.com/full.png',
         frameSourceSrc: 'https://example.com/full.png',
         backdropSrc: 'https://example.com/full.png',
+        className: 'h-full w-full',
+        imageClassName: 'h-full w-full',
       })
     );
   });

@@ -491,8 +491,8 @@ const MultiImagePreviewPortal = ({
                 frameSourceSrc={activePreview.fullPreviewUrl}
                 backdropSrc={activeBackdropUrl}
                 alt={activePreview.previewName || 'Preview gambar'}
-                className="h-full w-full rounded-[28px]"
-                imageClassName="h-full w-full rounded-[28px]"
+                className="h-full w-full"
+                imageClassName="h-full w-full"
               />
             </div>
           </section>

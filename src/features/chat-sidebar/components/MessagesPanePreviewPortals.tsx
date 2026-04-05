@@ -48,7 +48,7 @@ export const MessagesPanePreviewPortals = ({
         allowPointerPassthrough={true}
         alt={runtime.imagePreviewName || 'Preview gambar'}
         className="h-[92vh] w-[92vw] box-border px-6 py-8"
-        imageClassName="h-full w-full rounded-xl"
+        imageClassName="h-full w-full"
       />
     </ImageExpandPreview>
 
