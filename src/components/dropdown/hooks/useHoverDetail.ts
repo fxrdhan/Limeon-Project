@@ -139,6 +139,8 @@ export const useHoverDetail = ({
             name: optionData.name || 'Unknown',
             code: optionData.code,
             description: optionData.description,
+            metaLabel: optionData.metaLabel,
+            metaTone: optionData.metaTone,
             created_at: optionData.created_at,
             updated_at: optionData.updated_at,
           });
@@ -150,7 +152,10 @@ export const useHoverDetail = ({
           try {
             const detailedData = await onFetchData(optionId);
             if (currentOptionIdRef.current === optionId && detailedData) {
-              setData(detailedData);
+              setData(previousData => ({
+                ...previousData,
+                ...detailedData,
+              }));
             }
           } catch (error) {
             console.error('Failed to fetch hover detail data:', error);
@@ -168,6 +173,8 @@ export const useHoverDetail = ({
           name: optionData.name || 'Unknown',
           code: optionData.code,
           description: optionData.description,
+          metaLabel: optionData.metaLabel,
+          metaTone: optionData.metaTone,
           created_at: optionData.created_at,
           updated_at: optionData.updated_at,
         });
@@ -186,7 +193,10 @@ export const useHoverDetail = ({
           try {
             const detailedData = await onFetchData(optionId);
             if (currentOptionIdRef.current === optionId && detailedData) {
-              setData(detailedData);
+              setData(previousData => ({
+                ...previousData,
+                ...detailedData,
+              }));
             }
           } catch (error) {
             console.error('Failed to fetch hover detail data:', error);

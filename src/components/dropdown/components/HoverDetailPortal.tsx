@@ -24,6 +24,15 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
   position,
   data,
 }) => {
+  const metaBadgeVariant =
+    data?.metaTone === 'success'
+      ? 'success'
+      : data?.metaTone === 'warning'
+        ? 'warning'
+        : data?.metaTone === 'info'
+          ? 'info'
+          : 'default';
+
   // Derive state directly from props - no effect needed!
   const showContent = isVisible && !!data;
   const popupRef = useRef<HTMLDivElement>(null);
@@ -102,15 +111,26 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
               className="pointer-events-auto max-h-[calc(100vh-24px)] overflow-y-auto"
             >
               {/* Header with code and name - static, no animation */}
-              <div className="flex items-center gap-2 mb-3">
-                {data.code && (
-                  <Badge variant="success" size="sm">
-                    {data.code}
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-2">
+                  {data.code && (
+                    <Badge variant="success" size="sm" className="rounded-md">
+                      {data.code}
+                    </Badge>
+                  )}
+                  <h3 className="font-semibold text-slate-900 break-words">
+                    {data.name}
+                  </h3>
+                </div>
+                {data.metaLabel ? (
+                  <Badge
+                    variant={metaBadgeVariant}
+                    size="sm"
+                    className="shrink-0 rounded-md uppercase tracking-wide"
+                  >
+                    {data.metaLabel}
                   </Badge>
-                )}
-                <h3 className="font-semibold text-slate-900 break-words">
-                  {data.name}
-                </h3>
+                ) : null}
               </div>
 
               {/* Description - static, no animation */}

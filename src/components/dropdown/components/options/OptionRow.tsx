@@ -86,6 +86,8 @@ const OptionRow: React.FC<OptionRowProps> = ({
         name: option.name,
         code: option.code,
         description: option.description,
+        metaLabel: option.metaLabel,
+        metaTone: option.metaTone,
         updated_at: option.updated_at,
       });
     }
@@ -150,11 +152,6 @@ const OptionRow: React.FC<OptionRowProps> = ({
         >
           {displayText}
         </span>
-        {option.metaLabel ? (
-          <span className="shrink-0 rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
-            {option.metaLabel}
-          </span>
-        ) : null}
       </span>
     </button>
   );

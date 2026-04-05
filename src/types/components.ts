@@ -18,6 +18,8 @@ export interface HoverDetailData {
   code?: string;
   name: string;
   description?: string;
+  metaLabel?: string;
+  metaTone?: 'default' | 'info' | 'success' | 'warning';
   created_at?: string;
   updated_at?: string | null;
 }
