@@ -184,7 +184,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
           <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
             Data Umum
           </h2>
-          <div className="text-xs text-slate-600 bg-white border border-slate-200 px-2.5 py-1 rounded-full">
+          <div className="text-xs text-slate-600 bg-white border border-slate-200 px-2.5 py-1 rounded-md">
             {displayCode}
           </div>
         </div>
