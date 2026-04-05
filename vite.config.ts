@@ -24,6 +24,11 @@ const isAnalyze = process.env.ANALYZE === 'true';
 const deferredInitialHtmlPreloadPatterns = [
   /^assets\/ag-grid-.*\.js$/,
   /^assets\/items-feature-.*\.(js|css)$/,
+  /^assets\/auth-api-.*\.js$/,
+  /^assets\/authService-.*\.js$/,
+  /^assets\/api-services-.*\.js$/,
+  /^assets\/supabase-core-.*\.js$/,
+  /^assets\/supabaseRealtimeAuth-.*\.js$/,
 ];
 
 // https://vite.dev/config/
@@ -152,6 +157,8 @@ export default defineConfig({
           // React core - keep together to avoid circular dependencies
           if (
             id.includes('react/') ||
+            id.includes('react/jsx-runtime') ||
+            id.includes('react/jsx-dev-runtime') ||
             id.includes('react-dom/') ||
             id.includes('scheduler/')
           ) {
@@ -174,11 +181,6 @@ export default defineConfig({
             return 'charts';
           }
 
-          // Animation library - used across app
-          if (id.includes('framer-motion')) {
-            return 'animations';
-          }
-
           // React Router - separate from React core
           if (id.includes('react-router')) {
             return 'router';
@@ -188,7 +190,10 @@ export default defineConfig({
           if (id.includes('@tanstack/react-query-devtools')) {
             return 'react-query-devtools'; // Only in dev
           }
-          if (id.includes('@tanstack/react-query')) {
+          if (
+            id.includes('@tanstack/react-query') ||
+            id.includes('@tanstack/query-core')
+          ) {
             return 'data-libs';
           }
           if (id.includes('zustand')) {
@@ -249,6 +254,23 @@ export default defineConfig({
           // Validation libraries
           if (id.includes('zod')) {
             return 'validation';
+          }
+
+          if (
+            id.includes('/lib/supabase.ts') ||
+            id.includes('/lib/supabaseRealtimeAuth.ts') ||
+            id.includes('/node_modules/@supabase/')
+          ) {
+            return 'supabase-core';
+          }
+
+          // Auth bootstrap needs a much smaller startup chunk than the full API layer
+          if (
+            id.includes('/lib/authSupabase.ts') ||
+            id.includes('/services/authService.ts') ||
+            id.includes('/services/api/auth.service.ts')
+          ) {
+            return 'auth-api';
           }
 
           // API services and hooks - keep together with related components

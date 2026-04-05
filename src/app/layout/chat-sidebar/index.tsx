@@ -1,5 +1,4 @@
 import type { ChatTargetUser } from '@/types';
-import { motion } from 'motion/react';
 import { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 
 const ChatSidebarPanel = lazy(() => import('@/features/chat-sidebar'));
@@ -46,27 +45,34 @@ const ChatSidebar = ({ isOpen, onClose, targetUser }: ChatSidebarProps) => {
 
   const activeTargetUser = targetUser ?? persistedTargetUser;
   const shouldRenderPanel = isOpen || Boolean(activeTargetUser);
-  const handleAnimationComplete = useCallback(() => {
-    if (isOpen) return;
-    setPersistedTargetUser(undefined);
-  }, [isOpen]);
+  const handleTransitionEnd = useCallback(
+    (event: React.TransitionEvent<HTMLElement>) => {
+      if (
+        event.target !== event.currentTarget ||
+        event.propertyName !== 'width' ||
+        isOpen
+      ) {
+        return;
+      }
+
+      setPersistedTargetUser(undefined);
+    },
+    [isOpen]
+  );
 
   return (
-    <motion.aside
-      key="chat-sidebar"
-      initial={false}
-      animate={{
+    <aside
+      aria-hidden={!isOpen}
+      style={{
         width: isOpen ? sidebarWidth : 0,
         opacity: isOpen ? 1 : 0,
+        maxWidth: '100vw',
       }}
-      transition={{ duration: 0.2, ease: 'easeOut' }}
-      onAnimationComplete={handleAnimationComplete}
-      aria-hidden={!isOpen}
-      style={{ maxWidth: '100vw' }}
-      className={`h-full overflow-hidden ${
+      onTransitionEnd={handleTransitionEnd}
+      className={`h-full overflow-hidden transition-[width,opacity] duration-200 ease-out ${
         isOpen
           ? 'border-l border-slate-200 bg-slate-100'
-          : 'border-l border-transparent bg-transparent pointer-events-none'
+          : 'pointer-events-none border-l border-transparent bg-transparent'
       }`}
     >
       {shouldRenderPanel ? (
@@ -78,7 +84,7 @@ const ChatSidebar = ({ isOpen, onClose, targetUser }: ChatSidebarProps) => {
           />
         </Suspense>
       ) : null}
-    </motion.aside>
+    </aside>
   );
 };
 

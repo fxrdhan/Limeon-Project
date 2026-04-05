@@ -1,10 +1,5 @@
 import { create } from 'zustand';
-import authService from '@/services/authService';
-import { chatPresenceService } from '@/services/api/chat.service';
-import { StorageService } from '@/services/api/storage.service';
-import { clearClientBrowserState } from '@/lib/browserLogoutCleanup';
 import { PROFILE_PHOTO_BUCKET } from '../../shared/profilePhotoPaths';
-import { buildProfilePhotoUploadPlan } from '@/utils/profilePhoto';
 import type { AuthState } from '@/types';
 import type { Session } from '@supabase/supabase-js';
 
@@ -19,6 +14,19 @@ type AuthStoreGet = () => AuthState;
 let authStateSubscription: {
   unsubscribe: () => void;
 } | null = null;
+let authServicePromise: Promise<
+  typeof import('@/services/authService').default
+> | null = null;
+
+const loadAuthService = async () => {
+  if (!authServicePromise) {
+    authServicePromise = import('@/services/authService').then(
+      module => module.default
+    );
+  }
+
+  return authServicePromise;
+};
 
 const syncStoreFromSession = async (
   session: Session | null,
@@ -42,6 +50,7 @@ const syncStoreFromSession = async (
   }
 
   try {
+    const authService = await loadAuthService();
     const user = await authService.fetchUserById(session.user.id);
     set({
       session,
@@ -61,11 +70,15 @@ const syncStoreFromSession = async (
   }
 };
 
-const ensureAuthStateSubscription = (set: AuthStoreSet, get: AuthStoreGet) => {
+const ensureAuthStateSubscription = async (
+  set: AuthStoreSet,
+  get: AuthStoreGet
+) => {
   if (authStateSubscription) {
     return;
   }
 
+  const authService = await loadAuthService();
   const {
     data: { subscription },
   } = authService.onAuthStateChange(
@@ -84,8 +97,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   error: null,
 
   initialize: async () => {
-    ensureAuthStateSubscription(set, get);
     try {
+      const authService = await loadAuthService();
+      await ensureAuthStateSubscription(set, get);
       const { session, user } = await authService.initializeAuth();
       set({ session, user, loading: false, error: null });
     } catch (error) {
@@ -97,6 +111,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   login: async (email, password) => {
     try {
       set({ loading: true, error: null });
+      const authService = await loadAuthService();
 
       const { session, user } = await authService.signInWithEmailPassword(
         email,
@@ -124,6 +139,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ loading: true, error: null });
       if (user?.id) {
         try {
+          const { chatPresenceService } =
+            await import('@/services/api/chat.service');
           await chatPresenceService.upsertUserPresence(user.id, {
             is_online: false,
           });
@@ -134,7 +151,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           );
         }
       }
+      const authService = await loadAuthService();
       await authService.signOut();
+      const { clearClientBrowserState } =
+        await import('@/lib/browserLogoutCleanup');
       await clearClientBrowserState();
       set({ session: null, user: null, loading: false });
 
@@ -159,6 +179,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
     set({ error: null });
     try {
+      const authService = await loadAuthService();
+      const [{ StorageService }, { buildProfilePhotoUploadPlan }] =
+        await Promise.all([
+          import('@/services/api/storage.service'),
+          import('@/utils/profilePhoto'),
+        ]);
+
       if (user.profilephoto) {
         const oldPath =
           user.profilephoto_path ||
@@ -238,6 +265,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
     set({ error: null });
     try {
+      const authService = await loadAuthService();
+      const { StorageService } = await import('@/services/api/storage.service');
+
       // Delete the current profile photo from storage if it exists
       if (user.profilephoto) {
         const oldPath =

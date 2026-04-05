@@ -2,9 +2,6 @@ import { AlertProvider } from '@/components/alert';
 import { ConfirmDialogProvider } from '@/components/dialog-box';
 import ErrorBoundary from '@/components/error-boundary';
 import { DashboardLoadingFallback } from '@/components/loading-fallback';
-import ToastTester from '@/components/ToastTester';
-import MainLayout from '@/app/layout/main';
-import Login from '@/features/auth/login';
 import { ClinicRoutes } from '@/app/routes/clinic';
 import { InventoryRoutes } from '@/app/routes/inventory';
 import { MasterDataRoutes } from '@/app/routes/master-data';
@@ -15,11 +12,23 @@ import { SettingsRoutes } from '@/app/routes/settings';
 import { useAuthStore } from '@/store/authStore';
 import { initConsoleAPI } from '@/utils/consoleCommands';
 import { Suspense, lazy, useEffect } from 'react';
-import { Toaster } from 'react-hot-toast';
 import { Navigate, Route, Routes } from 'react-router-dom';
 
+const AppToaster = lazy(() => import('@/app/toaster'));
 const Dashboard = lazy(() => import('@/features/dashboard'));
+const Login = lazy(() => import('@/features/auth/login'));
+const MainLayout = lazy(() => import('@/app/layout/main'));
 const PrintPurchase = lazy(() => import('@/features/purchases/print-purchase'));
+const ToastTester = lazy(() => import('@/components/ToastTester'));
+
+const MainLayoutFallback = () => (
+  <div className="flex min-h-screen items-center justify-center bg-white">
+    <div className="text-center">
+      <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
+      <p className="text-slate-600">Memuat aplikasi...</p>
+    </div>
+  </div>
+);
 
 function App() {
   const { session, loading, initialize } = useAuthStore();
@@ -31,6 +40,14 @@ function App() {
   // Initialize console API (development only)
   useEffect(() => {
     initConsoleAPI();
+  }, []);
+
+  useEffect(() => {
+    void import('@/lib/supabaseRealtimeAuth').then(
+      ({ initializeSupabaseRealtimeAuthSync }) => {
+        initializeSupabaseRealtimeAuthSync();
+      }
+    );
   }, []);
 
   // Show loading while auth is initializing
@@ -48,39 +65,27 @@ function App() {
   return (
     <AlertProvider>
       <ConfirmDialogProvider>
-        <Toaster
-          position="top-center"
-          toastOptions={{
-            style: {
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-              backgroundColor: 'rgba(255, 255, 255, 0.6)',
-              backdropFilter: 'blur(12px)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-            },
-            success: {
-              style: {
-                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-                backgroundColor: 'oklch(26.2% 0.051 172.552 / 0.7)',
-                backdropFilter: 'blur(8px)',
-                border: '1px solid oklch(26.2% 0.051 172.552 / 0.2)',
-                color: 'white',
-              },
-            },
-            error: {
-              style: {
-                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-                backgroundColor: 'oklch(27.1% 0.105 12.094 / 0.7)',
-                backdropFilter: 'blur(8px)',
-                border: '1px solid oklch(27.1% 0.105 12.094 / 0.2)',
-                color: 'white',
-              },
-            },
-          }}
-        />
+        <Suspense fallback={null}>
+          <AppToaster />
+        </Suspense>
         <Routes>
           <Route
             path="/login"
-            element={!session ? <Login /> : <Navigate to="/" />}
+            element={
+              !session ? (
+                <Suspense
+                  fallback={
+                    <div className="p-8 text-center">
+                      Memuat halaman login...
+                    </div>
+                  }
+                >
+                  <Login />
+                </Suspense>
+              ) : (
+                <Navigate to="/" />
+              )
+            }
           />
 
           <Route
@@ -98,7 +103,15 @@ function App() {
 
           <Route
             path="/"
-            element={session ? <MainLayout /> : <Navigate to="/login" />}
+            element={
+              session ? (
+                <Suspense fallback={<MainLayoutFallback />}>
+                  <MainLayout />
+                </Suspense>
+              ) : (
+                <Navigate to="/login" />
+              )
+            }
           >
             <Route
               index
@@ -122,7 +135,9 @@ function App() {
             {SettingsRoutes}
           </Route>
         </Routes>
-        <ToastTester />
+        <Suspense fallback={null}>
+          <ToastTester />
+        </Suspense>
       </ConfirmDialogProvider>
     </AlertProvider>
   );

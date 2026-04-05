@@ -1,19 +1,13 @@
-import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type JSX,
+  type ReactNode,
+} from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
-import {
-  TbBoxMultiple,
-  TbChartBar,
-  TbChevronDown,
-  TbDatabase,
-  TbHome,
-  TbHospital,
-  TbLock,
-  TbLockOpen,
-  TbSettings,
-  TbShoppingBag,
-  TbShoppingCart,
-} from 'react-icons/tb';
 
 const ITEM_MASTER_PATH = '/master-data/item-master';
 const SUBMENU_ITEM_HEIGHT = 48;
@@ -39,18 +33,119 @@ interface SidebarProps {
   collapseSidebar: () => void;
 }
 
+const IconBase = ({ children }: { children: ReactNode }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className="h-[18px] w-[18px]"
+    aria-hidden="true"
+  >
+    {children}
+  </svg>
+);
+
+const HomeIcon = () => (
+  <IconBase>
+    <path d="M4 10.5L12 4l8 6.5" />
+    <path d="M6.5 9.5V20h11V9.5" />
+    <path d="M10 20v-5h4v5" />
+  </IconBase>
+);
+
+const DatabaseIcon = () => (
+  <IconBase>
+    <ellipse cx="12" cy="6" rx="7" ry="3" />
+    <path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6" />
+    <path d="M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6" />
+  </IconBase>
+);
+
+const BoxIcon = () => (
+  <IconBase>
+    <path d="M12 3l8 4.5-8 4.5-8-4.5L12 3Z" />
+    <path d="M4 7.5V16.5L12 21" />
+    <path d="M20 7.5V16.5L12 21" />
+    <path d="M12 12v9" />
+  </IconBase>
+);
+
+const ShoppingCartIcon = () => (
+  <IconBase>
+    <circle cx="9" cy="19" r="1.5" />
+    <circle cx="17" cy="19" r="1.5" />
+    <path d="M3 4h2l2.2 10.5a1 1 0 0 0 1 .8h8.9a1 1 0 0 0 1-.7L21 7H7.2" />
+  </IconBase>
+);
+
+const ShoppingBagIcon = () => (
+  <IconBase>
+    <path d="M6 8h12l-1 11a2 2 0 0 1-2 1.8H9A2 2 0 0 1 7 19L6 8Z" />
+    <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+  </IconBase>
+);
+
+const HospitalIcon = () => (
+  <IconBase>
+    <path d="M5 20V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v14" />
+    <path d="M3 20h18" />
+    <path d="M12 8v6" />
+    <path d="M9 11h6" />
+    <path d="M9 20v-4h6v4" />
+  </IconBase>
+);
+
+const ChartBarIcon = () => (
+  <IconBase>
+    <path d="M4 20h16" />
+    <path d="M7 16v-5" />
+    <path d="M12 16V7" />
+    <path d="M17 16V10" />
+  </IconBase>
+);
+
+const SettingsIcon = () => (
+  <IconBase>
+    <circle cx="12" cy="12" r="3" />
+    <path d="M19.4 15a1 1 0 0 0 .2 1.1l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1 1 0 0 0-1.1-.2 1 1 0 0 0-.6.9V20a2 2 0 1 1-4 0v-.2a1 1 0 0 0-.6-.9 1 1 0 0 0-1.1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1 1 0 0 0 .2-1.1 1 1 0 0 0-.9-.6H4a2 2 0 1 1 0-4h.2a1 1 0 0 0 .9-.6 1 1 0 0 0-.2-1.1l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1 1 0 0 0 1.1.2 1 1 0 0 0 .6-.9V4a2 2 0 1 1 4 0v.2a1 1 0 0 0 .6.9 1 1 0 0 0 1.1-.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1 1 0 0 0-.2 1.1 1 1 0 0 0 .9.6h.2a2 2 0 1 1 0 4h-.2a1 1 0 0 0-.9.6Z" />
+  </IconBase>
+);
+
+const ChevronDownIcon = () => (
+  <IconBase>
+    <path d="m6 9 6 6 6-6" />
+  </IconBase>
+);
+
+const LockIcon = () => (
+  <IconBase>
+    <rect x="5.5" y="10" width="13" height="10" rx="2" />
+    <path d="M8.5 10V7a3.5 3.5 0 0 1 7 0v3" />
+  </IconBase>
+);
+
+const UnlockIcon = () => (
+  <IconBase>
+    <rect x="5.5" y="10" width="13" height="10" rx="2" />
+    <path d="M15.5 10V7a3.5 3.5 0 0 0-7 0" />
+  </IconBase>
+);
+
 const MENU_ITEMS: MenuItem[] = [
   {
     key: 'dashboard',
     name: 'Dashboard',
     path: '/',
-    icon: <TbHome className="text-lg" />,
+    icon: <HomeIcon />,
   },
   {
     key: 'masterData',
     name: 'Master Data',
     path: '/master-data',
-    icon: <TbDatabase className="text-lg" />,
+    icon: <DatabaseIcon />,
     children: [
       { name: 'Item Master', path: ITEM_MASTER_PATH },
       { name: 'Supplier', path: '/master-data/suppliers' },
@@ -63,7 +158,7 @@ const MENU_ITEMS: MenuItem[] = [
     key: 'inventory',
     name: 'Persediaan',
     path: '/inventory',
-    icon: <TbBoxMultiple className="text-lg" />,
+    icon: <BoxIcon />,
     children: [
       { name: 'Stok Obat', path: '/inventory/stock' },
       { name: 'Stok Opname', path: '/inventory/stock-opname' },
@@ -74,7 +169,7 @@ const MENU_ITEMS: MenuItem[] = [
     key: 'purchases',
     name: 'Pembelian',
     path: '/purchases',
-    icon: <TbShoppingCart className="text-lg" />,
+    icon: <ShoppingCartIcon />,
     children: [
       { name: 'Daftar Pesanan Beli', path: '/purchases/orders' },
       { name: 'Daftar Pembelian', path: '/purchases' },
@@ -85,7 +180,7 @@ const MENU_ITEMS: MenuItem[] = [
     key: 'sales',
     name: 'Penjualan',
     path: '/sales',
-    icon: <TbShoppingBag className="text-lg" />,
+    icon: <ShoppingBagIcon />,
     children: [
       { name: 'Daftar Penjualan', path: '/sales' },
       { name: 'Tambah Penjualan', path: '/sales/create' },
@@ -95,7 +190,7 @@ const MENU_ITEMS: MenuItem[] = [
     key: 'clinic',
     name: 'Klinik',
     path: '/clinic',
-    icon: <TbHospital className="text-lg" />,
+    icon: <HospitalIcon />,
     children: [
       { name: 'Daftar Pasien', path: '/clinic/patients' },
       { name: 'Antrian', path: '/clinic/queue' },
@@ -106,7 +201,7 @@ const MENU_ITEMS: MenuItem[] = [
     key: 'reports',
     name: 'Laporan',
     path: '/reports',
-    icon: <TbChartBar className="text-lg" />,
+    icon: <ChartBarIcon />,
     children: [
       { name: 'Penjualan', path: '/reports/sales' },
       { name: 'Pembelian', path: '/reports/purchases' },
@@ -117,7 +212,7 @@ const MENU_ITEMS: MenuItem[] = [
     key: 'settings',
     name: 'Pengaturan',
     path: '/settings',
-    icon: <TbSettings className="text-lg" />,
+    icon: <SettingsIcon />,
     children: [
       { name: 'Profil', path: '/settings/profile' },
       { name: 'Pengguna', path: '/settings/users' },
@@ -171,15 +266,14 @@ const getMenuButtonClassName = ({
 }: {
   collapsed: boolean;
   isActive: boolean;
-}) => {
-  return `w-full text-left flex items-center pl-2 pr-4 py-6 h-10 justify-between focus-visible:outline-hidden outline-hidden border-0 cursor-pointer focus:outline-hidden active:outline-hidden rounded-xl ${
+}) =>
+  `relative flex h-10 w-full cursor-pointer items-center justify-between rounded-xl py-6 pl-2 pr-4 text-left transition-all duration-150 group focus-visible:outline-hidden outline-hidden border-0 focus:outline-hidden active:outline-hidden ${
     isActive
       ? collapsed
-        ? 'text-primary font-medium'
-        : 'bg-primary text-white font-medium'
+        ? 'font-medium text-primary'
+        : 'bg-primary font-medium text-white'
       : 'text-slate-600 hover:bg-slate-100'
-  } transition-all duration-150 group relative`;
-};
+  }`;
 
 const isRouteActive = (pathname: string, path: string) => {
   if (path === '/') return pathname === '/';
@@ -196,6 +290,7 @@ const hasActiveChildRoute = (pathname: string, children?: SubmenuItem[]) => {
     if (child.path === ITEM_MASTER_PATH) {
       return pathname.startsWith(ITEM_MASTER_PATH);
     }
+
     return pathname.startsWith(child.path + '/');
   });
 };
@@ -214,6 +309,7 @@ const buildOpenMenusState = ({
       const isMenuActive =
         isRouteActive(pathname, item.path) ||
         hasActiveChildRoute(pathname, item.children);
+
       return [
         item.key,
         item.key === forceOpenMenuKey ||
@@ -227,6 +323,7 @@ const isSubmenuItemActive = (pathname: string, childPath: string) => {
   if (childPath === ITEM_MASTER_PATH) {
     return pathname.startsWith(ITEM_MASTER_PATH);
   }
+
   return pathname === childPath;
 };
 
@@ -246,7 +343,7 @@ const SidebarMenuLabel = ({
 }) => (
   <div className="flex items-center overflow-hidden">
     <div
-      className={`shrink-0 flex items-center justify-center transition-colors duration-200 ${
+      className={`flex shrink-0 items-center justify-center transition-colors duration-200 ${
         isActive && !collapsed ? 'text-white' : ''
       }`}
     >
@@ -254,7 +351,7 @@ const SidebarMenuLabel = ({
     </div>
     <span
       className={`ml-3 truncate transition-all duration-300 ease-in-out ${
-        collapsed ? 'opacity-0 max-w-0' : 'opacity-100 max-w-full'
+        collapsed ? 'max-w-0 opacity-0' : 'max-w-full opacity-100'
       } ${isActive && !collapsed ? 'text-white' : ''}`}
     >
       {name}
@@ -264,7 +361,7 @@ const SidebarMenuLabel = ({
 
 const LockToggleIcon = ({ isLocked }: { isLocked: boolean }) => (
   <div className="transition-all duration-200">
-    {isLocked ? <TbLock /> : <TbLockOpen />}
+    {isLocked ? <LockIcon /> : <UnlockIcon />}
   </div>
 );
 
@@ -283,7 +380,6 @@ const Sidebar = ({
         MENU_GROUPS.map(item => [item.key, false] as const)
       ) as Record<string, boolean>
   );
-
   const [manuallyClosedMenus, setManuallyClosedMenus] = useState<Set<string>>(
     () => new Set()
   );
@@ -297,43 +393,47 @@ const Sidebar = ({
 
   const toggleMenu = useCallback(
     (menuKey: string) => {
-      if (!collapsed) {
-        const isCurrentlyOpen = Boolean(openMenus[menuKey]);
-        setOpenMenus(prev => ({ ...prev, [menuKey]: !isCurrentlyOpen }));
-        setManuallyClosedMenus(prevSet => {
-          const newSet = new Set(prevSet);
-          if (isCurrentlyOpen) {
-            newSet.add(menuKey);
-          } else {
-            newSet.delete(menuKey);
-          }
-          return newSet;
-        });
+      if (collapsed) {
+        return;
       }
+
+      const isCurrentlyOpen = Boolean(openMenus[menuKey]);
+      setOpenMenus(prev => ({ ...prev, [menuKey]: !isCurrentlyOpen }));
+      setManuallyClosedMenus(prevSet => {
+        const next = new Set(prevSet);
+        if (isCurrentlyOpen) {
+          next.add(menuKey);
+        } else {
+          next.delete(menuKey);
+        }
+        return next;
+      });
     },
     [collapsed, openMenus]
   );
 
   const handleMenuMouseEnter = useCallback(
     (menuKey: string) => {
-      if (!collapsed) {
-        if (menuHoverTimeoutRef.current) {
-          clearTimeout(menuHoverTimeoutRef.current);
-          menuHoverTimeoutRef.current = null;
-        }
-
-        const newManuallyClosed = new Set(manuallyClosedMenus);
-        newManuallyClosed.delete(menuKey);
-        setManuallyClosedMenus(newManuallyClosed);
-
-        setOpenMenus(() =>
-          buildOpenMenusState({
-            forceOpenMenuKey: menuKey,
-            manuallyClosedMenus: newManuallyClosed,
-            pathname,
-          })
-        );
+      if (collapsed) {
+        return;
       }
+
+      if (menuHoverTimeoutRef.current) {
+        clearTimeout(menuHoverTimeoutRef.current);
+        menuHoverTimeoutRef.current = null;
+      }
+
+      const nextManuallyClosed = new Set(manuallyClosedMenus);
+      nextManuallyClosed.delete(menuKey);
+      setManuallyClosedMenus(nextManuallyClosed);
+
+      setOpenMenus(
+        buildOpenMenusState({
+          forceOpenMenuKey: menuKey,
+          manuallyClosedMenus: nextManuallyClosed,
+          pathname,
+        })
+      );
     },
     [collapsed, manuallyClosedMenus, pathname]
   );
@@ -343,28 +443,32 @@ const Sidebar = ({
       clearTimeout(hoverTimeoutRef.current);
       hoverTimeoutRef.current = null;
     }
+
     if (menuHoverTimeoutRef.current) {
       clearTimeout(menuHoverTimeoutRef.current);
       menuHoverTimeoutRef.current = null;
     }
+
     if (!isLocked && collapsed) {
       hoverTimeoutRef.current = setTimeout(() => {
         expandSidebar();
       }, 100);
     }
-  }, [collapsed, isLocked, expandSidebar]);
+  }, [collapsed, expandSidebar, isLocked]);
 
   const handleMouseLeaveSidebar = useCallback(() => {
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
       hoverTimeoutRef.current = null;
     }
+
     if (!isLocked && !collapsed) {
       collapseSidebar();
     }
+
     if (!collapsed) {
       menuHoverTimeoutRef.current = setTimeout(() => {
-        setOpenMenus(() =>
+        setOpenMenus(
           buildOpenMenusState({
             manuallyClosedMenus,
             pathname,
@@ -372,13 +476,14 @@ const Sidebar = ({
         );
       }, 200);
     }
-  }, [collapsed, isLocked, collapseSidebar, pathname, manuallyClosedMenus]);
+  }, [collapseSidebar, collapsed, isLocked, manuallyClosedMenus, pathname]);
 
   useEffect(() => {
     if (collapsed) {
       const timeoutId = setTimeout(() => {
         setIsExpandedContentReady(false);
       }, 0);
+
       return () => {
         clearTimeout(timeoutId);
       };
@@ -393,16 +498,17 @@ const Sidebar = ({
     };
   }, [collapsed]);
 
-  useEffect(() => {
-    return () => {
+  useEffect(
+    () => () => {
       if (hoverTimeoutRef.current) {
         clearTimeout(hoverTimeoutRef.current);
       }
       if (menuHoverTimeoutRef.current) {
         clearTimeout(menuHoverTimeoutRef.current);
       }
-    };
-  }, []);
+    },
+    []
+  );
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -417,6 +523,7 @@ const Sidebar = ({
             const shouldBeOpen =
               isRouteActive(pathname, item.path) ||
               hasActiveChildRoute(pathname, item.children);
+
             if (next[item.key] !== shouldBeOpen) {
               next[item.key] = shouldBeOpen;
               hasChanges = true;
@@ -437,35 +544,41 @@ const Sidebar = ({
     <aside
       onMouseEnter={handleMouseEnterSidebar}
       onMouseLeave={handleMouseLeaveSidebar}
-      className={`sidebar bg-white text-slate-800 border-r border-slate-200
-                        transition-all duration-500 ease-in-out h-screen
-                        ${collapsed ? 'w-20' : 'w-64'} relative group z-10 overflow-x-hidden`}
+      className={`sidebar relative z-10 h-screen overflow-x-hidden border-r border-slate-200 bg-white text-slate-800 transition-all duration-500 ease-in-out ${
+        collapsed ? 'w-20' : 'w-64'
+      }`}
     >
-      <div className="flex flex-col h-full">
-        <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+      <div className="flex h-full flex-col">
+        <div className="flex items-center justify-between border-b border-slate-200 p-4">
           <div className="flex items-center">
-            <div className="h-10 w-10 min-w-8 bg-primary rounded-xl flex items-center justify-center shrink-0">
-              <span className="text-white text-xl font-bold">P</span>
+            <div className="flex h-10 w-10 min-w-8 shrink-0 items-center justify-center rounded-xl bg-primary">
+              <span className="text-xl font-bold text-white">P</span>
             </div>
             <h2
-              className={`ml-2 text-lg font-bold transition-opacity duration-200 ${isVisuallyCollapsed ? 'opacity-0 scale-0 w-0' : 'opacity-100 scale-100 w-auto'} text-slate-800`}
+              className={`ml-2 text-lg font-bold text-slate-800 transition-all duration-200 ${
+                isVisuallyCollapsed
+                  ? 'w-0 scale-0 opacity-0'
+                  : 'w-auto scale-100 opacity-100'
+              }`}
             >
               PharmaSys
             </h2>
           </div>
-          {showExpandedContent && (
-            <motion.button
+
+          {showExpandedContent ? (
+            <button
+              type="button"
               onClick={toggleLock}
-              className="text-slate-400 hover:text-slate-600 focus:outline-hidden transition-colors duration-150 relative cursor-pointer"
+              className="relative cursor-pointer text-slate-400 transition-colors duration-150 hover:text-slate-600 focus:outline-hidden"
               title={isLocked ? 'Buka Kunci Sidebar' : 'Kunci Sidebar'}
               aria-label={isLocked ? 'Buka Kunci Sidebar' : 'Kunci Sidebar'}
             >
               <LockToggleIcon isLocked={isLocked} />
-            </motion.button>
-          )}
+            </button>
+          ) : null}
         </div>
 
-        <nav className="grow overflow-y-auto py-4 px-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <nav className="grow overflow-y-auto px-4 py-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {MENU_ITEMS.map(item => {
             const menuKey = item.key;
             const isMenuActive =
@@ -486,8 +599,10 @@ const Sidebar = ({
               return (
                 <div key={item.key}>
                   <button
+                    type="button"
                     onClick={() => toggleMenu(menuKey)}
                     onMouseEnter={() => handleMenuMouseEnter(menuKey)}
+                    aria-expanded={showExpandedContent && openMenus[menuKey]}
                     className={menuButtonClassName}
                     style={menuButtonStyle}
                   >
@@ -497,24 +612,22 @@ const Sidebar = ({
                       isActive={isMenuActive}
                       name={item.name}
                     />
-                    {showExpandedContent && (
+
+                    {showExpandedContent ? (
                       <motion.div
                         animate={{
                           rotate: openMenus[menuKey] ? 180 : 0,
                         }}
                         transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        className={isMenuActive ? 'text-white' : ''}
                       >
-                        <TbChevronDown
-                          className={`text-sm ${
-                            isMenuActive ? 'text-white' : ''
-                          }`}
-                        />
+                        <ChevronDownIcon />
                       </motion.div>
-                    )}
+                    ) : null}
                   </button>
 
                   <AnimatePresence initial={false}>
-                    {showExpandedContent && openMenus[menuKey] && (
+                    {showExpandedContent && openMenus[menuKey] ? (
                       <motion.div
                         key="submenu-content"
                         initial="collapsed"
@@ -533,17 +646,15 @@ const Sidebar = ({
                       >
                         <motion.div
                           variants={submenuContainerVariants}
-                          className="pl-5 pr-4 py-2 relative"
+                          className="relative py-2 pl-5 pr-4"
                         >
-                          {/* Static background line */}
-                          <div className="absolute left-5 top-4 bottom-4 w-0.5 bg-slate-300"></div>
+                          <div className="absolute bottom-4 left-5 top-4 w-0.5 bg-slate-300" />
 
-                          {/* Animated active indicator */}
                           <AnimatePresence>
-                            {activeChildIndex !== -1 && (
+                            {activeChildIndex !== -1 ? (
                               <motion.div
                                 layoutId={`active-submenu-indicator-${item.key}`}
-                                className="absolute w-0.5 bg-primary z-20"
+                                className="absolute z-20 w-0.5 bg-primary"
                                 initial={{
                                   y: activeChildIndex * SUBMENU_ITEM_HEIGHT,
                                   height: SUBMENU_ITEM_HEIGHT,
@@ -568,7 +679,7 @@ const Sidebar = ({
                                   mass: 0.8,
                                 }}
                               />
-                            )}
+                            ) : null}
                           </AnimatePresence>
 
                           {children.map(child => {
@@ -583,11 +694,10 @@ const Sidebar = ({
                                 className="relative"
                                 style={{ height: SUBMENU_ITEM_HEIGHT }}
                               >
-                                {/* Active dot indicator */}
                                 <AnimatePresence>
-                                  {isActiveChild && (
+                                  {isActiveChild ? (
                                     <motion.div
-                                      className="absolute left-[-3px] top-5 h-2 w-2 -translate-y-0.5 rounded-full bg-primary z-30"
+                                      className="absolute left-[-3px] top-5 z-30 h-2 w-2 -translate-y-0.5 rounded-full bg-primary"
                                       initial={{
                                         scale: 0,
                                         opacity: 0,
@@ -607,32 +717,26 @@ const Sidebar = ({
                                         delay: 0.1,
                                       }}
                                     />
-                                  )}
+                                  ) : null}
                                 </AnimatePresence>
 
                                 <motion.div variants={submenuItemVariants}>
                                   <Link
                                     to={child.path}
-                                    onClick={e => {
+                                    onClick={event => {
                                       if (
                                         child.path === ITEM_MASTER_PATH &&
                                         pathname.startsWith(
                                           ITEM_MASTER_PATH + '/'
                                         )
                                       ) {
-                                        e.preventDefault();
+                                        event.preventDefault();
                                       }
                                     }}
-                                    className={`block px-6 py-3 text-sm rounded-xl transition-all duration-300 ease-in-out
-                                                                focus-visible:outline-hidden outline-hidden
-                                                                focus:outline-hidden active:outline-hidden
-                                                                ${
-                                                                  isActiveChild
-                                                                    ? 'font-medium'
-                                                                    : ''
-                                                                } whitespace-nowrap overflow-hidden text-ellipsis`}
+                                    className={`block overflow-hidden text-ellipsis whitespace-nowrap rounded-xl px-6 py-3 text-sm transition-all duration-200 focus-visible:outline-hidden outline-hidden focus:outline-hidden active:outline-hidden ${
+                                      isActiveChild ? 'font-medium' : ''
+                                    }`}
                                     style={{
-                                      outline: 'none',
                                       color: isActiveChild
                                         ? submenuLinkColors.active
                                         : submenuLinkColors.inactive,
@@ -646,7 +750,7 @@ const Sidebar = ({
                           })}
                         </motion.div>
                       </motion.div>
-                    )}
+                    ) : null}
                   </AnimatePresence>
                 </div>
               );
@@ -655,6 +759,7 @@ const Sidebar = ({
             return (
               <div key={item.key}>
                 <button
+                  type="button"
                   onClick={() => {
                     if (pathname !== item.path) {
                       void navigate(item.path);
@@ -675,9 +780,7 @@ const Sidebar = ({
           })}
         </nav>
 
-        <div
-          className={`p-4 text-xs text-slate-500 border-t border-slate-200 mt-auto`}
-        >
+        <div className="mt-auto border-t border-slate-200 p-4 text-xs text-slate-500">
           <div className="h-4">
             <div
               style={{
@@ -687,7 +790,7 @@ const Sidebar = ({
               }}
             >
               <AnimatePresence initial={false}>
-                {showExpandedContent && (
+                {showExpandedContent ? (
                   <motion.div
                     key="pharmasys-text"
                     initial={{ opacity: 0, width: 0, marginRight: 0 }}
@@ -702,7 +805,7 @@ const Sidebar = ({
                   >
                     PharmaSys
                   </motion.div>
-                )}
+                ) : null}
               </AnimatePresence>
               <span>v2.3.0</span>
             </div>

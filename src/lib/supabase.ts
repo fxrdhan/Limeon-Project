@@ -10,29 +10,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
-const syncRealtimeAuthToken = (accessToken?: string | null) => {
-  try {
-    void supabase.realtime.setAuth(accessToken ?? null);
-  } catch (error) {
-    console.warn('Failed to sync Supabase Realtime auth token:', error);
-  }
-};
-
-if (typeof window !== 'undefined') {
-  void supabase.auth
-    .getSession()
-    .then(({ data }) => {
-      syncRealtimeAuthToken(data.session?.access_token ?? null);
-    })
-    .catch(error => {
-      console.warn('Failed to hydrate Supabase Realtime auth token:', error);
-    });
-
-  supabase.auth.onAuthStateChange((_event, session) => {
-    syncRealtimeAuthToken(session?.access_token ?? null);
-  });
-}
-
 // Global cleanup function for development / HMR
 const hmrOverride = (
   globalThis as {

@@ -1,6 +1,4 @@
-import { supabase } from '@/lib/supabase';
-import { StorageService } from '@/services/api/storage.service';
-import { buildProfilePhotoUploadPlan } from '@/utils/profilePhoto';
+import { authSupabase } from '@/lib/authSupabase';
 import type { Session, User, AuthError } from '@supabase/supabase-js';
 import type { UserDetails } from '@/types/database';
 import type { PostgrestError } from '@supabase/supabase-js';
@@ -17,7 +15,7 @@ export class AuthService {
   // Get current session
   async getSession(): Promise<AuthServiceResponse<Session>> {
     try {
-      const { data, error } = await supabase.auth.getSession();
+      const { data, error } = await authSupabase.auth.getSession();
       return { data: data.session, error };
     } catch (error) {
       return { data: null, error: error as Error };
@@ -27,7 +25,7 @@ export class AuthService {
   // Get current user
   async getCurrentUser(): Promise<AuthServiceResponse<User>> {
     try {
-      const { data, error } = await supabase.auth.getUser();
+      const { data, error } = await authSupabase.auth.getUser();
       return { data: data.user, error };
     } catch (error) {
       return { data: null, error: error as Error };
@@ -39,7 +37,7 @@ export class AuthService {
     userId: string
   ): Promise<AuthServiceResponse<UserDetails>> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await authSupabase
         .from('users')
         .select(USER_PROFILE_SELECT_COLUMNS)
         .eq('id', userId)
@@ -63,7 +61,7 @@ export class AuthService {
   > {
     try {
       const { data: authData, error: authError } =
-        await supabase.auth.signInWithPassword({
+        await authSupabase.auth.signInWithPassword({
           email,
           password,
         });
@@ -96,7 +94,7 @@ export class AuthService {
   // Sign out
   async signOut(): Promise<AuthServiceResponse<null>> {
     try {
-      const { error } = await supabase.auth.signOut();
+      const { error } = await authSupabase.auth.signOut();
       return { data: null, error };
     } catch (error) {
       return { data: null, error: error as Error };
@@ -118,7 +116,7 @@ export class AuthService {
     }>
   > {
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const { data, error } = await authSupabase.auth.signUp({
         email,
         password,
         options: {
@@ -151,7 +149,7 @@ export class AuthService {
     updates: Partial<UserDetails>
   ): Promise<AuthServiceResponse<UserDetails>> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await authSupabase
         .from('users')
         .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', userId)
@@ -179,6 +177,12 @@ export class AuthService {
     }>
   > {
     try {
+      const [{ StorageService }, { buildProfilePhotoUploadPlan }] =
+        await Promise.all([
+          import('@/services/api/storage.service'),
+          import('@/utils/profilePhoto'),
+        ]);
+
       // Delete old photo if exists
       if (currentPhotoUrl) {
         const oldPath =
@@ -245,7 +249,7 @@ export class AuthService {
   // Reset password
   async resetPassword(email: string): Promise<AuthServiceResponse<null>> {
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      const { error } = await authSupabase.auth.resetPasswordForEmail(email);
       return { data: null, error };
     } catch (error) {
       return { data: null, error: error as Error };
@@ -257,7 +261,7 @@ export class AuthService {
     newPassword: string
   ): Promise<AuthServiceResponse<User>> {
     try {
-      const { data, error } = await supabase.auth.updateUser({
+      const { data, error } = await authSupabase.auth.updateUser({
         password: newPassword,
       });
 
@@ -271,13 +275,13 @@ export class AuthService {
   onAuthStateChange(
     callback: (event: string, session: Session | null) => void
   ) {
-    return supabase.auth.onAuthStateChange(callback);
+    return authSupabase.auth.onAuthStateChange(callback);
   }
 
   // Refresh session
   async refreshSession(): Promise<AuthServiceResponse<Session>> {
     try {
-      const { data, error } = await supabase.auth.refreshSession();
+      const { data, error } = await authSupabase.auth.refreshSession();
       return { data: data.session, error };
     } catch (error) {
       return { data: null, error: error as Error };

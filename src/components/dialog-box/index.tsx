@@ -1,13 +1,10 @@
-import Button from '@/components/button';
 import { createPortal } from 'react-dom';
-import { Transition, TransitionChild } from '@headlessui/react';
 import type { ConfirmDialogContextType, ConfirmDialogOptions } from '@/types';
 import React, {
   createContext,
   useState,
   useContext,
   useCallback,
-  Fragment,
   useRef,
   useEffect,
 } from 'react';
@@ -29,6 +26,15 @@ const initialState: Omit<
 const ConfirmDialogContext = createContext<
   ConfirmDialogContextType | undefined
 >(undefined);
+
+const actionButtonStyles = {
+  cancel:
+    'inline-flex items-center rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 focus:outline-hidden focus:ring-2 focus:ring-slate-300',
+  danger:
+    'inline-flex items-center rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 focus:outline-hidden focus:ring-2 focus:ring-red-300',
+  primary:
+    'inline-flex items-center rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:brightness-95 focus:outline-hidden focus:ring-2 focus:ring-primary/30',
+} as const;
 
 export const ConfirmDialogProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -90,12 +96,22 @@ export const ConfirmDialogComponent: React.FC = () => {
   const isOpen = context?.isOpen ?? false;
 
   useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => cancelButtonRef.current?.focus(), 50);
+    if (!isOpen) {
+      return;
     }
+
+    const timeoutId = window.setTimeout(() => {
+      cancelButtonRef.current?.focus();
+    }, 50);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, [isOpen]);
 
-  if (!context) return null;
+  if (!context || !isOpen) {
+    return null;
+  }
 
   const {
     title,
@@ -118,103 +134,89 @@ export const ConfirmDialogComponent: React.FC = () => {
     closeConfirmDialog();
   };
 
-  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
+  const handleBackdropClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (event.target === event.currentTarget) {
       handleCancel();
     }
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Tab') {
-      if (!dialogRef.current) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      handleCancel();
+      return;
+    }
 
-      const focusableElements = Array.from(
-        dialogRef.current.querySelectorAll<HTMLElement>(
-          'button, [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-        )
-      ).filter(el => el.offsetParent !== null);
+    if (event.key !== 'Tab' || !dialogRef.current) {
+      return;
+    }
 
-      if (focusableElements.length === 0) return;
+    const focusableElements = Array.from(
+      dialogRef.current.querySelectorAll<HTMLElement>(
+        'button, [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )
+    ).filter(element => element.offsetParent !== null);
 
-      const firstElement = focusableElements[0];
-      const lastElement = focusableElements[focusableElements.length - 1];
+    if (focusableElements.length === 0) {
+      return;
+    }
 
-      if (event.shiftKey) {
-        if (document.activeElement === firstElement) {
-          lastElement.focus();
-          event.preventDefault();
-        }
-      } else {
-        if (document.activeElement === lastElement) {
-          firstElement.focus();
-          event.preventDefault();
-        }
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+
+    if (event.shiftKey) {
+      if (document.activeElement === firstElement) {
+        lastElement.focus();
+        event.preventDefault();
       }
+      return;
+    }
+
+    if (document.activeElement === lastElement) {
+      firstElement.focus();
+      event.preventDefault();
     }
   };
 
   return createPortal(
-    <Transition show={isOpen} as={Fragment}>
-      <div
-        ref={dialogRef}
-        onKeyDown={handleKeyDown}
-        className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto"
-        onClick={handleBackdropClick}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="dialog-title"
-      >
-        <TransitionChild
-          as={Fragment}
-          enter="transition-opacity duration-300"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="transition-opacity duration-200"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-xs"
-            aria-hidden="true"
-          />
-        </TransitionChild>
+    <div
+      ref={dialogRef}
+      onKeyDown={handleKeyDown}
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-xs"
+      onClick={handleBackdropClick}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="dialog-title"
+    >
+      <div className="relative w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+        <div id="dialog-title" className="mb-2 text-lg font-semibold">
+          {title}
+        </div>
+        <div className="mb-6 text-slate-600">{message}</div>
 
-        <TransitionChild
-          as={Fragment}
-          enter="transition-all duration-300 ease-out"
-          enterFrom="opacity-0 scale-95"
-          enterTo="opacity-100 scale-100"
-          leave="transition-all duration-200 ease-in"
-          leaveFrom="opacity-100 scale-100"
-          leaveTo="opacity-0 scale-95"
-        >
-          <div className="relative bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6">
-            <div id="dialog-title" className="text-lg font-semibold mb-2">
-              {title}
-            </div>
-            <div className="text-slate-600 mb-6">{message}</div>
-
-            <div className="flex justify-between">
-              <div>
-                <Button
-                  type="button"
-                  variant="text"
-                  onClick={handleCancel}
-                  ref={cancelButtonRef}
-                >
-                  {cancelText}
-                </Button>
-              </div>
-              <div>
-                <Button type="button" variant={variant} onClick={handleConfirm}>
-                  {confirmText}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </TransitionChild>
+        <div className="flex justify-between gap-3">
+          <button
+            ref={cancelButtonRef}
+            type="button"
+            onClick={handleCancel}
+            className={actionButtonStyles.cancel}
+          >
+            {cancelText}
+          </button>
+          <button
+            type="button"
+            onClick={handleConfirm}
+            className={
+              variant === 'danger'
+                ? actionButtonStyles.danger
+                : actionButtonStyles.primary
+            }
+          >
+            {confirmText}
+          </button>
+        </div>
       </div>
-    </Transition>,
+    </div>,
     document.body
   );
 };

@@ -1,7 +1,4 @@
 import React, { Component, ReactNode } from 'react';
-import { Card } from '@/components/card';
-import Button from '@/components/button';
-import { TbAlertTriangle, TbRefresh } from 'react-icons/tb';
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -15,6 +12,59 @@ interface ErrorBoundaryProps {
   onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
   showDetails?: boolean;
 }
+
+const RetryAction = ({
+  children,
+  className,
+  onClick,
+}: {
+  children: ReactNode;
+  className?: string;
+  onClick: () => void;
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 ${className ?? ''}`}
+  >
+    {children}
+  </button>
+);
+
+const WarningIcon = ({ size }: { size: 'sm' | 'lg' }) => (
+  <svg
+    aria-hidden="true"
+    viewBox="0 0 24 24"
+    className={
+      size === 'lg' ? 'mx-auto mb-4 h-16 w-16' : 'mx-auto mb-3 h-8 w-8'
+    }
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M12 4 20 19H4Z" />
+    <path d="M12 9v4" />
+    <path d="M12 16h.01" />
+  </svg>
+);
+
+const RefreshIcon = () => (
+  <svg
+    aria-hidden="true"
+    viewBox="0 0 24 24"
+    className="h-4 w-4"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M20 11a8 8 0 1 0 2 5.5" />
+    <path d="M20 4v7h-7" />
+  </svg>
+);
 
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
@@ -56,9 +106,11 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
       // Default error UI
       return (
-        <Card className="p-8 text-center max-w-2xl mx-auto mt-8">
+        <div className="mx-auto mt-8 max-w-2xl rounded-xl border border-slate-200 bg-white p-8 text-center shadow-xs">
           <div className="mb-6">
-            <TbAlertTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+            <div className="text-red-500">
+              <WarningIcon size="lg" />
+            </div>
             <h2 className="text-2xl font-bold text-slate-900 mb-2">
               Oops! Terjadi Kesalahan
             </h2>
@@ -69,21 +121,20 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
           </div>
 
           <div className="flex gap-4 justify-center mb-6">
-            <Button
+            <RetryAction
               onClick={this.handleRetry}
-              variant="primary"
-              className="flex items-center gap-2"
+              className="bg-primary text-white hover:brightness-95 focus:ring-primary/30"
             >
-              <TbRefresh className="h-4 w-4" />
+              <RefreshIcon />
               Coba Lagi
-            </Button>
+            </RetryAction>
 
-            <Button
+            <RetryAction
               onClick={() => window.location.reload()}
-              variant="secondary"
+              className="border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 focus:ring-slate-300"
             >
               Muat Ulang Halaman
-            </Button>
+            </RetryAction>
           </div>
 
           {this.props.showDetails && this.state.error && (
@@ -112,7 +163,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
               </div>
             </details>
           )}
-        </Card>
+        </div>
       );
     }
 
@@ -148,19 +199,19 @@ export const QueryErrorBoundary: React.FC<QueryErrorBoundaryProps> = ({
   ...props
 }) => {
   const queryFallback = (
-    <Card className="p-6 text-center">
-      <TbAlertTriangle className="h-8 w-8 text-red-500 mx-auto mb-3" />
+    <div className="rounded-xl border border-slate-200 bg-white p-6 text-center shadow-xs">
+      <div className="text-red-500">
+        <WarningIcon size="sm" />
+      </div>
       <p className="text-slate-600 mb-4">{fallbackMessage}</p>
-      <Button
+      <RetryAction
         onClick={() => window.location.reload()}
-        variant="primary"
-        size="sm"
-        className="flex items-center gap-2 mx-auto"
+        className="mx-auto bg-primary text-white hover:brightness-95 focus:ring-primary/30"
       >
-        <TbRefresh className="h-4 w-4" />
+        <RefreshIcon />
         Coba Lagi
-      </Button>
-    </Card>
+      </RetryAction>
+    </div>
   );
 
   return (

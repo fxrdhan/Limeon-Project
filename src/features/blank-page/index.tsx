@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom';
-import { TbArrowLeft, TbClock, TbTools } from 'react-icons/tb';
 import Badge from '@/components/badge';
 
 interface ComingSoonProps {
@@ -28,30 +27,50 @@ const ComingSoon = ({
   return (
     <div className="min-h-[70vh] flex items-center justify-center p-6">
       <div className="max-w-md w-full text-center space-y-8">
-        {/* Icon */}
         <div className="flex justify-center">
           <div className="relative">
             <div className="w-24 h-24 bg-gradient-to-br from-blue-50 to-blue-100 rounded-full flex items-center justify-center">
-              <TbTools className="w-10 h-10 text-blue-500" />
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                className="h-10 w-10 text-blue-500"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M14.5 5.5a4 4 0 0 0 4.7 4.7l-8.6 8.6a2 2 0 0 1-2.8-2.8l8.6-8.6a4 4 0 0 0-1.9-1.9Z" />
+                <path d="m12 8 4 4" />
+              </svg>
             </div>
             <div className="absolute -top-1 -right-1 w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-              <TbClock className="w-4 h-4 text-orange-500" />
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                className="h-4 w-4 text-orange-500"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="8" />
+                <path d="M12 8v5l3 2" />
+              </svg>
             </div>
           </div>
         </div>
 
-        {/* Title */}
         <div className="space-y-3">
           <h1 className="text-2xl font-semibold text-slate-800">{title}</h1>
           <p className="text-slate-500 text-lg">Sedang dalam pengembangan</p>
         </div>
 
-        {/* Description */}
         {description && (
           <p className="text-slate-600 leading-relaxed">{description}</p>
         )}
 
-        {/* Status Badge */}
         <div className="flex justify-center">
           <Badge
             variant="info"
@@ -64,16 +83,16 @@ const ComingSoon = ({
           </Badge>
         </div>
 
-        {/* Status Description */}
         <p className="text-slate-600 text-sm">{statusDescription}</p>
 
-        {/* Back Button */}
         {showBackButton && (
           <button
             onClick={handleGoBack}
             className="inline-flex items-center space-x-2 px-6 py-3 bg-white border border-slate-200 rounded-xl text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors duration-200 shadow-sm"
           >
-            <TbArrowLeft className="w-4 h-4" />
+            <span aria-hidden="true" className="text-base leading-none">
+              &lt;
+            </span>
             <span>{backButtonText}</span>
           </button>
         )}

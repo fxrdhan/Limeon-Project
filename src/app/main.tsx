@@ -3,9 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
-import { configurePersistence } from '@/lib/queryPersistence';
 import { queryClient } from '@/lib/queryClient';
-import { preloadCachedImages } from '@/utils/imageCache';
 import '@/fonts.css'; // AG Grid font weight customization
 import '@/App.css';
 
@@ -25,19 +23,50 @@ if (import.meta.env.DEV) {
   };
 }
 
-// Configure custom IndexedDB persistence (works in both dev and production)
-const initializeApp = async () => {
-  try {
-    await configurePersistence(queryClient);
-  } catch (error) {
-    console.warn(
-      'Failed to configure persistence, continuing with in-memory cache:',
-      error
-    );
+const warmClientCaches = () => {
+  void import('@/lib/queryPersistence')
+    .then(({ configurePersistence }) => configurePersistence(queryClient))
+    .catch(error => {
+      console.warn(
+        'Failed to configure persistence, continuing with in-memory cache:',
+        error
+      );
+    });
+
+  void import('@/utils/imageCache')
+    .then(({ preloadCachedImages }) => {
+      preloadCachedImages();
+    })
+    .catch(error => {
+      console.warn('Failed to warm image cache:', error);
+    });
+};
+
+const scheduleClientCacheWarmup = () => {
+  if (typeof window === 'undefined') {
+    return;
   }
 
-  preloadCachedImages();
+  if ('requestIdleCallback' in window) {
+    const idleCallbackId = window.requestIdleCallback(() => {
+      warmClientCaches();
+    });
 
+    return () => {
+      window.cancelIdleCallback(idleCallbackId);
+    };
+  }
+
+  const timeoutId = globalThis.setTimeout(() => {
+    warmClientCaches();
+  }, 0);
+
+  return () => {
+    globalThis.clearTimeout(timeoutId);
+  };
+};
+
+const initializeApp = () => {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <QueryClientProvider client={queryClient}>
@@ -47,6 +76,8 @@ const initializeApp = async () => {
       </QueryClientProvider>
     </StrictMode>
   );
+
+  scheduleClientCacheWarmup();
 };
 
-void initializeApp();
+initializeApp();

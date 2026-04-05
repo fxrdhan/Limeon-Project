@@ -1,4 +1,3 @@
-import { Card } from '@/components/card';
 import PageTitle from '@/components/page-title';
 import { Skeleton } from '@/components/skeleton';
 
@@ -20,7 +19,7 @@ export const TableLoadingFallback = ({
   showPagination = true,
 }: LoadingFallbackProps) => {
   return (
-    <Card className="flex-1 flex flex-col animate-pulse">
+    <div className="flex flex-1 flex-col rounded-xl border border-slate-200 bg-white p-6 shadow-xs animate-pulse">
       <div className="mb-6">
         <PageTitle title={title} />
       </div>
@@ -92,7 +91,7 @@ export const TableLoadingFallback = ({
           </div>
         </div>
       )}
-    </Card>
+    </div>
   );
 };
 
@@ -218,7 +217,7 @@ export const DashboardLoadingFallback = () => {
 
 export const FormLoadingFallback = () => {
   return (
-    <Card className="p-6 animate-pulse">
+    <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs animate-pulse">
       <div className="mb-6">
         <Skeleton className="h-8 w-48" />
       </div>
@@ -236,7 +235,7 @@ export const FormLoadingFallback = () => {
           <Skeleton className="h-10 w-24" />
         </div>
       </div>
-    </Card>
+    </div>
   );
 };
 
