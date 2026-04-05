@@ -132,13 +132,22 @@ export const mergeInventoryUnitsWithDosagePreference = (
   units: ItemInventoryUnit[],
   dosageBackedUnit?: ItemInventoryUnit | null
 ) => {
-  if (!dosageBackedUnit) return units;
+  const visibleUnits = units.filter(
+    unit =>
+      !(
+        unit.kind === 'retail_unit' &&
+        !unit.source_package_id &&
+        !unit.source_dosage_id
+      )
+  );
+
+  if (!dosageBackedUnit) return visibleUnits;
 
   const normalizedName = dosageBackedUnit.name.toLowerCase();
-  const hasLinkedDosageUnit = units.some(
+  const hasLinkedDosageUnit = visibleUnits.some(
     unit => unit.source_dosage_id === dosageBackedUnit.source_dosage_id
   );
-  const promotedUnits = units
+  const promotedUnits = visibleUnits
     .filter(unit => {
       const isSameName = unit.name.toLowerCase() === normalizedName;
       const isPlainCustom =
