@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { fileURLToPath } from 'url';
-import { defineConfig } from 'vite-plus';
+import { defineConfig, loadEnv } from 'vite-plus';
 import { configDefaults } from 'vite-plus/test/config';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -13,15 +13,11 @@ const nonRuntimeCoverageFiles = JSON.parse(
     'utf8'
   )
 ) as string[];
-const isAIAgent = Boolean(process.env.AI_AGENT);
-const isGitHubActions = process.env.GITHUB_ACTIONS === 'true';
-const reporters = isAIAgent
-  ? isGitHubActions
-    ? ['agent', 'github-actions']
-    : ['agent']
-  : undefined;
-const isAnalyze = process.env.ANALYZE === 'true';
-const tailscaleAllowedHosts = ['huawei-mtd16.tail5fa5ba.ts.net'];
+const parseEnvList = (value?: string) =>
+  (value ?? '')
+    .split(',')
+    .map(item => item.trim())
+    .filter(Boolean);
 const deferredInitialHtmlPreloadPatterns = [
   /^assets\/ag-grid-.*\.js$/,
   /^assets\/items-feature-.*\.(js|css)$/,
@@ -33,6 +29,22 @@ const deferredInitialHtmlPreloadPatterns = [
 ];
 
 // https://vite.dev/config/
+const env = {
+  ...process.env,
+  ...loadEnv(process.env.NODE_ENV ?? 'development', __dirname, ''),
+};
+const isAIAgent = Boolean(env.AI_AGENT);
+const isGitHubActions = env.GITHUB_ACTIONS === 'true';
+const reporters = isAIAgent
+  ? isGitHubActions
+    ? ['agent', 'github-actions']
+    : ['agent']
+  : undefined;
+const isAnalyze = env.ANALYZE === 'true';
+const networkAllowedHosts = parseEnvList(env.PHARMASYS_ALLOWED_HOSTS);
+const shouldExposeNetwork =
+  env.PHARMASYS_EXPOSE_NETWORK === 'true' || networkAllowedHosts.length > 0;
+
 export default defineConfig({
   plugins: [
     react(),
@@ -61,12 +73,16 @@ export default defineConfig({
     },
   },
   server: {
-    host: true, // Expose to network
-    allowedHosts: tailscaleAllowedHosts,
+    host: shouldExposeNetwork ? true : '127.0.0.1',
+    ...(networkAllowedHosts.length > 0
+      ? { allowedHosts: networkAllowedHosts }
+      : {}),
   },
   preview: {
-    host: true,
-    allowedHosts: tailscaleAllowedHosts,
+    host: shouldExposeNetwork ? true : '127.0.0.1',
+    ...(networkAllowedHosts.length > 0
+      ? { allowedHosts: networkAllowedHosts }
+      : {}),
   },
   test: {
     ...(reporters ? { reporters } : {}),

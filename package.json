@@ -20,6 +20,7 @@
     "check:chat-schema": "bun scripts/check-chat-schema-types.ts",
     "check:chat-schema:live": "bun scripts/check-chat-schema-types.ts --require-live",
     "preview": "bunx vp preview",
+    "preview:remote": "bun scripts/preview-remote.ts",
     "test": "bunx vp test watch",
     "test:ui": "bunx vp test --ui",
     "test:coverage": "bunx vp test run --coverage",
