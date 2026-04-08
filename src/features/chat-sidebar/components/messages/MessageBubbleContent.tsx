@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import { TbArrowUpRight, TbCopy, TbFileTypePdf } from 'react-icons/tb';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../../constants';
 import type { ChatMessage } from '../../data/chatSidebarGateway';
+import { copyTextToClipboard } from '../../utils/clipboard';
 
 interface MessageBubbleContentProps {
   message: ChatMessage;
@@ -116,8 +117,7 @@ export const MessageBubbleContent = ({
           label: 'Salin',
           icon: <TbCopy className="h-4 w-4" />,
           onClick: () => {
-            void navigator.clipboard
-              .writeText(linkContextMenu.text)
+            void copyTextToClipboard(linkContextMenu.text)
               .then(() => {
                 toast.success('Link berhasil disalin', {
                   toasterId: CHAT_SIDEBAR_TOASTER_ID,

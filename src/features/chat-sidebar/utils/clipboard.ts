@@ -1,3 +1,60 @@
+const fallbackCopyTextToClipboard = (text: string) => {
+  if (typeof document === 'undefined' || !document.body) {
+    throw new Error('Clipboard text write is not supported');
+  }
+
+  const activeElement =
+    document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+  const textArea = document.createElement('textarea');
+
+  textArea.value = text;
+  textArea.setAttribute('readonly', '');
+  textArea.setAttribute('aria-hidden', 'true');
+  textArea.style.position = 'fixed';
+  textArea.style.top = '0';
+  textArea.style.left = '0';
+  textArea.style.opacity = '0';
+  textArea.style.pointerEvents = 'none';
+
+  document.body.append(textArea);
+
+  try {
+    textArea.focus();
+    textArea.select();
+    textArea.setSelectionRange(0, text.length);
+
+    if (
+      typeof document.execCommand !== 'function' ||
+      !document.execCommand('copy')
+    ) {
+      throw new Error('Clipboard text write is not supported');
+    }
+  } finally {
+    textArea.remove();
+    activeElement?.focus();
+  }
+};
+
+export const copyTextToClipboard = async (text: string) => {
+  const canUseAsyncClipboard =
+    typeof window !== 'undefined' &&
+    window.isSecureContext &&
+    typeof navigator.clipboard?.writeText === 'function';
+
+  if (canUseAsyncClipboard) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return;
+    } catch (error) {
+      console.warn('Async clipboard write failed, falling back', error);
+    }
+  }
+
+  fallbackCopyTextToClipboard(text);
+};
+
 export const convertImageBlobToPng = async (imageBlob: Blob) => {
   const objectUrl = URL.createObjectURL(imageBlob);
 

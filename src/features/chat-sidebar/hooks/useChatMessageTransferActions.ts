@@ -7,7 +7,10 @@ import {
   getChatAttachmentGroupZipFileName,
   getChatDownloadFileName,
 } from '../utils/attachment';
-import { getClipboardImagePayload } from '../utils/clipboard';
+import {
+  copyTextToClipboard,
+  getClipboardImagePayload,
+} from '../utils/clipboard';
 import { fetchChatFileBlobWithFallback } from '../utils/message-file';
 import { buildZipBlob } from '../utils/zip';
 
@@ -99,9 +102,7 @@ export const useChatMessageTransferActions = ({
       }
 
       try {
-        await navigator.clipboard.writeText(
-          buildCopyableMessageText(targetMessage)
-        );
+        await copyTextToClipboard(buildCopyableMessageText(targetMessage));
         toast.success(
           targetMessage.message_type === 'file'
             ? 'Lampiran berhasil disalin'

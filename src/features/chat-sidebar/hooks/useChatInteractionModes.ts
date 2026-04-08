@@ -18,6 +18,7 @@ import {
   serializeSelectedMessages,
   type AttachmentCaptionData,
 } from '../utils/message-derivations';
+import { copyTextToClipboard } from '../utils/clipboard';
 import { useChatMessageSearchMode } from './useChatMessageSearchMode';
 
 class EmptySelectedMessagesCopyError extends Error {
@@ -237,7 +238,7 @@ export const useChatInteractionModes = ({
           throw new EmptySelectedMessagesCopyError();
         }
 
-        await navigator.clipboard.writeText(serializedMessages);
+        await copyTextToClipboard(serializedMessages);
 
         window.clearTimeout(loadingToastTimeout);
         toast.success(

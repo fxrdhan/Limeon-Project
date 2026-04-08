@@ -83,6 +83,10 @@ describe('useChatInteractionModes', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    Object.defineProperty(window, 'isSecureContext', {
+      configurable: true,
+      value: true,
+    });
     vi.stubGlobal('requestAnimationFrame', ((
       callback: FrameRequestCallback
     ) => {

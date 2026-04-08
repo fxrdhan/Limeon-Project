@@ -10,6 +10,7 @@ import {
   openChatFileInNewTab,
   resolveCopyableChatAssetUrl,
 } from '../utils/message-file';
+import { copyTextToClipboard } from '../utils/clipboard';
 import DocumentPreviewPortal from './DocumentPreviewPortal';
 import MultiImagePreviewPortal from './MultiImagePreviewPortal';
 import ProgressiveImagePreview from './ProgressiveImagePreview';
@@ -111,7 +112,7 @@ export const MessagesPanePreviewPortals = ({
               throw new Error('Link gambar tidak tersedia');
             }
 
-            await navigator.clipboard.writeText(copyableUrl);
+            await copyTextToClipboard(copyableUrl);
             window.clearTimeout(loadingToastTimeout);
             toast.success('Link gambar berhasil disalin', {
               id: didShowLoadingToast ? loadingToastId : undefined,

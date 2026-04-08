@@ -106,6 +106,10 @@ describe('useChatComposerAttachments', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    Object.defineProperty(window, 'isSecureContext', {
+      configurable: true,
+      value: true,
+    });
     vi.stubGlobal('open', vi.fn());
     vi.stubGlobal('requestAnimationFrame', ((
       callback: FrameRequestCallback

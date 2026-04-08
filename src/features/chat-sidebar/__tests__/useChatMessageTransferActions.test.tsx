@@ -62,6 +62,10 @@ const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
 describe('useChatMessageTransferActions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    Object.defineProperty(window, 'isSecureContext', {
+      configurable: true,
+      value: true,
+    });
     mockToast.promise.mockImplementation(async promise => await promise);
   });
 

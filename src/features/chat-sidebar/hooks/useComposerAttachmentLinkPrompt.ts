@@ -16,6 +16,7 @@ import toast from 'react-hot-toast';
 import { extractChatStoragePath } from '../../../../shared/chatStoragePaths';
 import { chatSidebarShareGateway } from '../data/chatSidebarGateway';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
+import { copyTextToClipboard } from '../utils/clipboard';
 import { openInNewTab } from '../utils/message-file';
 import type {
   ComposerHoverableAttachmentCandidate,
@@ -314,7 +315,7 @@ export const useComposerAttachmentLinkPrompt = ({
     }
 
     try {
-      await navigator.clipboard.writeText(attachmentPastePrompt.url);
+      await copyTextToClipboard(attachmentPastePrompt.url);
       toast.success('Link berhasil disalin', {
         toasterId: CHAT_SIDEBAR_TOASTER_ID,
       });

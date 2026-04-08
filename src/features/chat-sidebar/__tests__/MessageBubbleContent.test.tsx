@@ -39,6 +39,10 @@ const buildMessage = (overrides: Partial<ChatMessage> = {}): ChatMessage => ({
 describe('MessageBubbleContent', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    Object.defineProperty(window, 'isSecureContext', {
+      configurable: true,
+      value: true,
+    });
   });
 
   it('renders text message urls as hyperlinks that stop bubble clicks', () => {
