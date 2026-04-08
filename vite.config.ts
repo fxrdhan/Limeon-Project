@@ -21,6 +21,7 @@ const reporters = isAIAgent
     : ['agent']
   : undefined;
 const isAnalyze = process.env.ANALYZE === 'true';
+const tailscaleAllowedHosts = ['huawei-mtd16.tail5fa5ba.ts.net'];
 const deferredInitialHtmlPreloadPatterns = [
   /^assets\/ag-grid-.*\.js$/,
   /^assets\/items-feature-.*\.(js|css)$/,
@@ -61,6 +62,11 @@ export default defineConfig({
   },
   server: {
     host: true, // Expose to network
+    allowedHosts: tailscaleAllowedHosts,
+  },
+  preview: {
+    host: true,
+    allowedHosts: tailscaleAllowedHosts,
   },
   test: {
     ...(reporters ? { reporters } : {}),
