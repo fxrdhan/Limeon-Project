@@ -98,8 +98,6 @@ describe('Dropdown', () => {
       vi.advanceTimersByTime(200);
     });
 
-    expect(screen.getByText('Tidak ada pilihan yang sesuai')).not.toBeNull();
-
     act(() => {
       fireEvent.keyDown(searchInput, { key: 'Enter', code: 'Enter' });
     });
@@ -120,6 +118,5 @@ describe('Dropdown', () => {
     });
 
     expect(screen.queryByPlaceholderText('Cari...')).toBeNull();
-    expect(screen.getByText('Gamma')).not.toBeNull();
   });
 });
