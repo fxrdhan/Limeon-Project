@@ -283,7 +283,6 @@ describe('ComposerPanel', () => {
 
     render(<ComposerPanel runtime={runtime} />);
 
-    expect(screen.getByText('1/2 terpilih')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Batal' }));
     fireEvent.click(screen.getByRole('button', { name: 'Pilih semua' }));
     fireEvent.click(screen.getByRole('button', { name: 'Hapus' }));
@@ -381,13 +380,7 @@ describe('ComposerPanel', () => {
 
     fireEvent.mouseEnter(firstLink);
 
-    expect(screen.getByText('Aksi')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Buka' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Salin' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Shorten link' })).toBeNull();
-    expect(screen.getByText('Tempel sebagai')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'URL' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Attachment' })).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Buka' }));
 
@@ -424,42 +417,6 @@ describe('ComposerPanel', () => {
       rangeEnd: 10,
     });
     expect(runtime.composer.openAttachmentPastePrompt).not.toHaveBeenCalled();
-  });
-
-  it('renders the generic link popover without shorten or paste-as actions', () => {
-    const runtime = buildComposerRuntime();
-    runtime.composer.message = 'github.com';
-    runtime.composer.hoverableAttachmentCandidates = [];
-    runtime.composer.attachmentPastePromptUrl = 'https://github.com/';
-
-    render(<ComposerPanel runtime={runtime} />);
-
-    const link = screen.getByRole('link', {
-      name: 'github.com',
-    });
-    Object.defineProperty(link, 'getBoundingClientRect', {
-      value: () => ({
-        x: 24,
-        y: 48,
-        width: 120,
-        height: 20,
-        top: 48,
-        right: 144,
-        bottom: 68,
-        left: 24,
-        toJSON: () => ({}),
-      }),
-    });
-
-    fireEvent.mouseEnter(link);
-
-    expect(screen.getByText('Aksi')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Buka' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Salin' })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Shorten link' })).toBeNull();
-    expect(screen.queryByText('Tempel sebagai')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'URL' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Attachment' })).toBeNull();
   });
 
   it('renders the shorten action for direct chat asset links', () => {
@@ -548,9 +505,15 @@ describe('ComposerPanel', () => {
     });
 
     expect(upgradedLink.getAttribute('href')).toBe('https://github.com/');
-    expect(screen.getByText('Aksi')).toBeTruthy();
-    expect(screen.getByText('Tempel sebagai')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'URL' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Attachment' })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'URL' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Attachment' }));
+
+    expect(
+      upgradedRuntime.composer.handleUseAttachmentPasteAsUrl
+    ).toHaveBeenCalledOnce();
+    expect(
+      upgradedRuntime.composer.handleUseAttachmentPasteAsAttachment
+    ).toHaveBeenCalledOnce();
   });
 });

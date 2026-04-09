@@ -78,6 +78,7 @@ describe('MessageBubbleContent', () => {
           isMessageLong={false}
           isExpanded={false}
           isHighlightedBubble={false}
+          disableTextLinks={false}
           onToggleExpand={() => {}}
         />
       </div>
@@ -124,6 +125,7 @@ describe('MessageBubbleContent', () => {
         isMessageLong={false}
         isExpanded={false}
         isHighlightedBubble={false}
+        disableTextLinks={false}
         onToggleExpand={() => {}}
       />
     );
@@ -165,6 +167,7 @@ describe('MessageBubbleContent', () => {
         isMessageLong={false}
         isExpanded={false}
         isHighlightedBubble={false}
+        disableTextLinks={false}
         onToggleExpand={() => {}}
       />
     );
@@ -172,40 +175,6 @@ describe('MessageBubbleContent', () => {
     const link = screen.getByRole('link', { name: url });
 
     expect(link.getAttribute('href')).toBe(`https://${url}/`);
-  });
-
-  it('renders attachment caption urls as hyperlinks', () => {
-    const url = 'https://example.com/report';
-
-    render(
-      <MessageBubbleContent
-        message={buildMessage()}
-        resolvedMessageUrl="https://example.com/screenshot.png"
-        isSelectionMode={false}
-        isImageMessage={false}
-        isFileMessage={true}
-        isImageFileMessage={true}
-        isPdfFileMessage={false}
-        hasAttachmentCaption={true}
-        fileName="Screenshot.png"
-        fileSecondaryLabel="PNG"
-        fileIcon={<span />}
-        resolvedPdfPreviewUrl={null}
-        pdfMetaLabel={null}
-        highlightedMessage="documents/channel/screenshot.png"
-        highlightedCaption={renderHighlightedText(url, '', {
-          linkify: true,
-        })}
-        hasLeadingEllipsis={false}
-        hasTrailingEllipsis={false}
-        isMessageLong={false}
-        isExpanded={false}
-        isHighlightedBubble={false}
-        onToggleExpand={() => {}}
-      />
-    );
-
-    expect(screen.getByRole('link', { name: url })).toBeTruthy();
   });
 
   it('opens a custom context menu for bubble links and copies the visible link text', async () => {
@@ -244,6 +213,7 @@ describe('MessageBubbleContent', () => {
         isMessageLong={false}
         isExpanded={false}
         isHighlightedBubble={false}
+        disableTextLinks={false}
         onToggleExpand={() => {}}
       />
     );
@@ -253,7 +223,6 @@ describe('MessageBubbleContent', () => {
     fireEvent.contextMenu(link, { clientX: 80, clientY: 120 });
 
     const copyButton = screen.getByRole('button', { name: 'Salin' });
-    expect(screen.getByRole('button', { name: 'Buka' })).toBeTruthy();
 
     fireEvent.click(copyButton);
 

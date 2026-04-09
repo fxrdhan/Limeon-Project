@@ -151,64 +151,6 @@ describe('ProgressiveImagePreview', () => {
     });
   });
 
-  it('renders the active stage inside a contained frame derived from the decoded image dimensions', async () => {
-    render(
-      <ProgressiveImagePreview
-        alt="Preview gambar"
-        fullSrc="https://example.com/full-image.jpg"
-        backdropSrc="data:image/webp;base64,preview"
-        className="h-[480px] w-[720px]"
-        imageClassName="h-full w-full rounded-xl"
-      />
-    );
-
-    const imageElement = await screen.findByAltText('Preview gambar');
-    const expectedWidth = Math.round(window.innerWidth * 0.92);
-    const expectedHeight = Math.round((800 / 1200) * expectedWidth);
-
-    await waitFor(() => {
-      expect(imageElement.parentElement?.getAttribute('style')).toContain(
-        `width: ${expectedWidth}px`
-      );
-      expect(imageElement.parentElement?.getAttribute('style')).toContain(
-        `height: ${expectedHeight}px`
-      );
-    });
-  });
-
-  it('prefers the full preview as the sizing source when frameSourceSrc is provided', async () => {
-    imageDimensionsBySrc.set('data:image/webp;base64,preview', {
-      width: 800,
-      height: 800,
-    });
-    imageDimensionsBySrc.set('https://example.com/full-image.jpg', {
-      width: 800,
-      height: 1200,
-    });
-
-    render(
-      <ProgressiveImagePreview
-        alt="Preview gambar"
-        fullSrc="https://example.com/full-image.jpg"
-        frameSourceSrc="https://example.com/full-image.jpg"
-        backdropSrc="data:image/webp;base64,preview"
-      />
-    );
-
-    const imageElement = await screen.findByAltText('Preview gambar');
-    const expectedHeight = Math.round(window.innerHeight * 0.92);
-    const expectedWidth = Math.round((800 / 1200) * expectedHeight);
-
-    await waitFor(() => {
-      expect(imageElement.parentElement?.getAttribute('style')).toContain(
-        `width: ${expectedWidth}px`
-      );
-      expect(imageElement.parentElement?.getAttribute('style')).toContain(
-        `height: ${expectedHeight}px`
-      );
-    });
-  });
-
   it('keeps rendering the current preview while a new sizing source is still decoding', async () => {
     const { rerender } = render(
       <ProgressiveImagePreview

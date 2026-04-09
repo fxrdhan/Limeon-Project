@@ -6,13 +6,7 @@ import {
   type MouseEvent,
   type RefObject,
 } from 'react';
-import {
-  TbCheck,
-  TbFileTypeJpg,
-  TbFileTypePng,
-  TbMusic,
-  TbX,
-} from 'react-icons/tb';
+import { TbFileTypeJpg, TbFileTypePng, TbMusic, TbX } from 'react-icons/tb';
 import type {
   ComposerAttachmentPreviewItem,
   PendingComposerAttachment,
@@ -126,7 +120,7 @@ const ComposerAttachmentPreviewList = forwardRef<
                   className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1"
                 >
                   <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl">
-                    <div className="h-11 w-11 shrink-0 animate-pulse rounded-xl bg-slate-200" />
+                    <div className="h-11 w-11 shrink-0 animate-pulse rounded-lg bg-slate-200" />
                     <div className="min-w-0 flex-1">
                       {isPdfCompressionLoading ? (
                         <>
@@ -185,7 +179,11 @@ const ComposerAttachmentPreviewList = forwardRef<
             return (
               <div
                 key={attachment.id}
-                className="flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1"
+                className={`flex w-full items-center gap-2 rounded-xl border bg-slate-50 p-1 ${
+                  isSelectionMode && isSelectedAttachment
+                    ? 'border-emerald-400'
+                    : 'border-slate-200'
+                }`}
               >
                 {isImageAttachment ? (
                   <button
@@ -210,11 +208,7 @@ const ComposerAttachmentPreviewList = forwardRef<
                     aria-pressed={
                       isSelectionMode ? isSelectedAttachment : undefined
                     }
-                    className={`relative flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-xl text-left transition-colors hover:bg-slate-100/90 ${
-                      isSelectionMode && isSelectedAttachment
-                        ? 'ring-2 ring-emerald-400/70'
-                        : ''
-                    }`}
+                    className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-xl text-left transition-colors hover:bg-slate-100/90"
                     onClick={event => {
                       event.stopPropagation();
                       if (isSelectionMode) {
@@ -224,16 +218,14 @@ const ComposerAttachmentPreviewList = forwardRef<
                       onToggleImageActionsMenu(event, attachment.id);
                     }}
                   >
-                    <img
-                      src={resolvedAttachment.previewUrl ?? ''}
-                      alt={resolvedAttachment.fileName}
-                      className={`h-11 w-11 rounded-xl object-cover ${
-                        isSelectionMode && isSelectedAttachment
-                          ? 'opacity-55'
-                          : ''
-                      }`}
-                      draggable={false}
-                    />
+                    <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg">
+                      <img
+                        src={resolvedAttachment.previewUrl ?? ''}
+                        alt={resolvedAttachment.fileName}
+                        className="h-full w-full object-cover"
+                        draggable={false}
+                      />
+                    </div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-slate-800">
                         {attachment.fileName}
@@ -242,13 +234,6 @@ const ComposerAttachmentPreviewList = forwardRef<
                         {fileSecondaryLabel}
                       </p>
                     </div>
-                    {isSelectionMode && isSelectedAttachment ? (
-                      <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-emerald-100/70 backdrop-blur-[1px]">
-                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-white shadow-sm">
-                          <TbCheck className="h-4.5 w-4.5" />
-                        </span>
-                      </div>
-                    ) : null}
                   </button>
                 ) : isDocumentAttachment ? (
                   <button
@@ -273,11 +258,7 @@ const ComposerAttachmentPreviewList = forwardRef<
                     aria-pressed={
                       isSelectionMode ? isSelectedAttachment : undefined
                     }
-                    className={`relative flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-xl text-left transition-colors hover:bg-slate-100/90 ${
-                      isSelectionMode && isSelectedAttachment
-                        ? 'ring-2 ring-emerald-400/70'
-                        : ''
-                    }`}
+                    className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-xl text-left transition-colors hover:bg-slate-100/90"
                     onClick={event => {
                       event.stopPropagation();
                       if (isSelectionMode) {
@@ -288,13 +269,7 @@ const ComposerAttachmentPreviewList = forwardRef<
                     }}
                   >
                     {resolvedAttachment.pdfCoverUrl ? (
-                      <div
-                        className={`h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-slate-300 bg-white ${
-                          isSelectionMode && isSelectedAttachment
-                            ? 'opacity-55'
-                            : ''
-                        }`}
-                      >
+                      <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-slate-300 bg-white">
                         <img
                           src={resolvedAttachment.pdfCoverUrl}
                           alt="PDF cover preview"
@@ -303,33 +278,15 @@ const ComposerAttachmentPreviewList = forwardRef<
                         />
                       </div>
                     ) : isJpgDocumentAttachment ? (
-                      <div
-                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white ${
-                          isSelectionMode && isSelectedAttachment
-                            ? 'opacity-55'
-                            : ''
-                        }`}
-                      >
+                      <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white">
                         <TbFileTypeJpg className="h-5 w-5 text-slate-600" />
                       </div>
                     ) : isPngDocumentAttachment ? (
-                      <div
-                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white ${
-                          isSelectionMode && isSelectedAttachment
-                            ? 'opacity-55'
-                            : ''
-                        }`}
-                      >
+                      <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white">
                         <TbFileTypePng className="h-5 w-5 text-slate-600" />
                       </div>
                     ) : (
-                      <div
-                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white text-[11px] font-semibold tracking-wide text-slate-700 ${
-                          isSelectionMode && isSelectedAttachment
-                            ? 'opacity-55'
-                            : ''
-                        }`}
-                      >
+                      <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-[11px] font-semibold tracking-wide text-slate-700">
                         {(
                           resolvedAttachment.fileName
                             .split('.')
@@ -346,13 +303,6 @@ const ComposerAttachmentPreviewList = forwardRef<
                         {fileSecondaryLabel}
                       </p>
                     </div>
-                    {isSelectionMode && isSelectedAttachment ? (
-                      <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-emerald-100/70 backdrop-blur-[1px]">
-                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-white shadow-sm">
-                          <TbCheck className="h-4.5 w-4.5" />
-                        </span>
-                      </div>
-                    ) : null}
                   </button>
                 ) : (
                   <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl">

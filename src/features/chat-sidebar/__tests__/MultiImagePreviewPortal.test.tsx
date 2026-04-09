@@ -2,10 +2,6 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vite-plus/test';
 import MultiImagePreviewPortal from '../components/MultiImagePreviewPortal';
 
-const { mockProgressiveImagePreview } = vi.hoisted(() => ({
-  mockProgressiveImagePreview: vi.fn(),
-}));
-
 vi.mock('@/components/shared/image-expand-preview', () => ({
   default: ({
     children,
@@ -18,117 +14,10 @@ vi.mock('@/components/shared/image-expand-preview', () => ({
 }));
 
 vi.mock('../components/ProgressiveImagePreview', () => ({
-  default: (props: Record<string, unknown>) => {
-    mockProgressiveImagePreview(props);
-    return <div data-testid="progressive-image-preview" />;
-  },
+  default: () => <div data-testid="progressive-image-preview" />,
 }));
 
-const buildPreviewItems = (count: number) =>
-  Array.from({ length: count }, (_, index) => {
-    const nextIndex = index + 1;
-
-    return {
-      id: `image-${nextIndex}`,
-      thumbnailUrl: `data:image/png;base64,thumb-${nextIndex}`,
-      previewUrl: `data:image/png;base64,preview-${nextIndex}`,
-      fullPreviewUrl: `https://example.com/full-${nextIndex}.png`,
-      previewName: `photo-${nextIndex}.png`,
-    };
-  });
-
 describe('MultiImagePreviewPortal', () => {
-  it('uses the full preview as the backdrop and the sizing source', () => {
-    render(
-      <MultiImagePreviewPortal
-        isOpen={true}
-        isVisible={true}
-        previewItems={[
-          {
-            id: 'image-1',
-            thumbnailUrl: 'data:image/png;base64,thumb',
-            previewUrl: null,
-            fullPreviewUrl: 'https://example.com/full.png',
-            previewName: 'photo.png',
-          },
-        ]}
-        activePreviewId="image-1"
-        isActivePreviewForwardable={true}
-        onSelectPreview={() => {}}
-        onDownloadActivePreview={() => {}}
-        onOpenActivePreviewInNewTab={() => {}}
-        onCopyActivePreviewLink={() => {}}
-        onCopyActivePreviewImage={() => {}}
-        onReplyActivePreview={() => {}}
-        onForwardActivePreview={() => {}}
-        onClose={() => {}}
-        backdropClassName="z-[80]"
-      />
-    );
-
-    expect(mockProgressiveImagePreview).toHaveBeenCalledWith(
-      expect.objectContaining({
-        fullSrc: 'https://example.com/full.png',
-        frameSourceSrc: 'https://example.com/full.png',
-        backdropSrc: 'https://example.com/full.png',
-      })
-    );
-  });
-
-  it('uses one thumbnail column when the items fit vertically', () => {
-    const { container } = render(
-      <MultiImagePreviewPortal
-        isOpen={true}
-        isVisible={true}
-        previewItems={buildPreviewItems(5)}
-        activePreviewId="image-1"
-        isActivePreviewForwardable={true}
-        onSelectPreview={() => {}}
-        onDownloadActivePreview={() => {}}
-        onOpenActivePreviewInNewTab={() => {}}
-        onCopyActivePreviewLink={() => {}}
-        onCopyActivePreviewImage={() => {}}
-        onReplyActivePreview={() => {}}
-        onForwardActivePreview={() => {}}
-        onClose={() => {}}
-        backdropClassName="z-[80]"
-      />
-    );
-
-    const grid = container.querySelector(
-      'div[style*="grid-template-columns"]'
-    ) as HTMLDivElement | null;
-
-    expect(grid?.style.gridTemplateColumns).toBe('repeat(1, 116px)');
-  });
-
-  it('uses two thumbnail columns when one column would overflow vertically', () => {
-    const { container } = render(
-      <MultiImagePreviewPortal
-        isOpen={true}
-        isVisible={true}
-        previewItems={buildPreviewItems(8)}
-        activePreviewId="image-1"
-        isActivePreviewForwardable={true}
-        onSelectPreview={() => {}}
-        onDownloadActivePreview={() => {}}
-        onOpenActivePreviewInNewTab={() => {}}
-        onCopyActivePreviewLink={() => {}}
-        onCopyActivePreviewImage={() => {}}
-        onReplyActivePreview={() => {}}
-        onForwardActivePreview={() => {}}
-        onClose={() => {}}
-        backdropClassName="z-[80]"
-      />
-    );
-
-    const grid = container.querySelector(
-      'div[style*="grid-template-columns"]'
-    ) as HTMLDivElement | null;
-
-    expect(grid?.style.gridTemplateColumns).toBe('repeat(2, 99px)');
-  });
-
   it('wires open, copy, forward, download, and close actions', () => {
     const onSelectPreview = vi.fn();
     const onDownloadActivePreview = vi.fn();

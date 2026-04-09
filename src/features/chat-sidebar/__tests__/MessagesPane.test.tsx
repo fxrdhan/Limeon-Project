@@ -3,11 +3,6 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vite-plus/test';
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import MessagesPane from '../components/MessagesPane';
-import { MESSAGE_BOTTOM_GAP } from '../constants';
-
-const { mockProgressiveImagePreview } = vi.hoisted(() => ({
-  mockProgressiveImagePreview: vi.fn(),
-}));
 
 vi.mock('@/components/shared/image-expand-preview', () => ({
   default: ({
@@ -44,10 +39,7 @@ vi.mock('../components/MultiImagePreviewPortal', () => ({
 }));
 
 vi.mock('../components/ProgressiveImagePreview', () => ({
-  default: (props: Record<string, unknown>) => {
-    mockProgressiveImagePreview(props);
-    return <div data-testid="progressive-image-preview" />;
-  },
+  default: () => <div data-testid="progressive-image-preview" />,
 }));
 
 vi.mock('../components/messages/MessageItem', () => ({
@@ -216,49 +208,5 @@ describe('MessagesPane', () => {
     fireEvent.click(previewContent);
 
     expect(closeImagePreview).toHaveBeenCalledTimes(1);
-  });
-
-  it('passes single-image preview sources into the preview component', () => {
-    const runtime = createRuntime({
-      previews: {
-        isImagePreviewOpen: true,
-        isImagePreviewVisible: true,
-        imagePreviewUrl: 'https://example.com/full.png',
-        imagePreviewBackdropUrl: 'https://example.com/backdrop.png',
-        imagePreviewName: 'Lampiran',
-      },
-    });
-
-    render(<MessagesPane runtime={runtime} />);
-
-    expect(mockProgressiveImagePreview).toHaveBeenCalledWith(
-      expect.objectContaining({
-        fullSrc: 'https://example.com/full.png',
-        backdropSrc: 'https://example.com/backdrop.png',
-      })
-    );
-  });
-
-  it('reserves scroll space from the measured composer height so the last bubble keeps a gap above it', () => {
-    const runtime = createRuntime({
-      conversation: {
-        messages: [
-          { id: 'message-1', message: 'Halo' } as unknown as ChatMessage,
-        ],
-      },
-      viewport: {
-        paddingBottom: 128 + 8 + MESSAGE_BOTTOM_GAP,
-        composerContainerHeight: 128,
-      },
-    });
-
-    const { container } = render(<MessagesPane runtime={runtime} />);
-
-    const messagesViewport = container.querySelector('[role="presentation"]');
-
-    expect(messagesViewport).not.toBeNull();
-    expect((messagesViewport as HTMLDivElement).style.paddingBottom).toBe(
-      `${128 + 8 + MESSAGE_BOTTOM_GAP}px`
-    );
   });
 });

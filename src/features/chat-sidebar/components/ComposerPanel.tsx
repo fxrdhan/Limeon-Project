@@ -150,10 +150,10 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                 >
                   <button
                     type="button"
-                    onClick={previews.handleClearComposerAttachmentSelection}
+                    onClick={previews.handleSelectAllComposerAttachments}
                     className="cursor-pointer bg-transparent p-0 text-sm font-medium text-slate-500 transition-colors hover:text-slate-700 hover:underline hover:underline-offset-2"
                   >
-                    Batal
+                    Pilih semua
                   </button>
                   <p className="text-sm font-medium text-slate-500">
                     {previews.selectedComposerAttachmentIds.length}/
@@ -196,10 +196,10 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
               >
                 <button
                   type="button"
-                  onClick={previews.handleSelectAllComposerAttachments}
+                  onClick={previews.handleClearComposerAttachmentSelection}
                   className="cursor-pointer bg-transparent p-0 text-sm font-medium text-slate-500 transition-colors hover:text-slate-700 hover:underline hover:underline-offset-2"
                 >
-                  Pilih semua
+                  Batal
                 </button>
                 <button
                   type="button"

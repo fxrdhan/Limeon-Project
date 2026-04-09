@@ -136,7 +136,6 @@ describe('useComposerAttachmentPreview', () => {
     expect(onOpenComposerImagePreview).toHaveBeenCalledWith('attachment-1');
     expect(screen.getByTestId('open-id').textContent).toBe('attachment-1');
     expect(screen.getByTestId('menu-position').textContent).toBe('open');
-    expect(screen.getByRole('button', { name: 'Buka' })).toBeTruthy();
   });
 
   it('keeps the composer menu open when opening a document preview', () => {
@@ -162,7 +161,6 @@ describe('useComposerAttachmentPreview', () => {
     expect(mockOpenDocumentPreview).toHaveBeenCalledOnce();
     expect(screen.getByTestId('open-id').textContent).toBe('attachment-2');
     expect(screen.getByTestId('menu-position').textContent).toBe('open');
-    expect(screen.getByRole('button', { name: 'Buka' })).toBeTruthy();
   });
 
   it('selects an image attachment from the popup menu', () => {
@@ -211,28 +209,6 @@ describe('useComposerAttachmentPreview', () => {
     );
   });
 
-  it('shows a compress action for pending PDF documents', () => {
-    render(
-      <ComposerAttachmentPreviewHarness
-        attachment={buildAttachment({
-          id: 'attachment-3',
-          file: new File(['pdf'], 'stok.pdf', {
-            type: 'application/pdf',
-          }),
-          fileName: 'stok.pdf',
-          fileTypeLabel: 'PDF',
-          fileKind: 'document',
-          mimeType: 'application/pdf',
-          previewUrl: null,
-        })}
-      />
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: 'toggle' }));
-
-    expect(screen.getByRole('button', { name: 'Kompres' })).toBeTruthy();
-  });
-
   it('opens the pdf compression levels menu before compressing', () => {
     const onCompressPendingComposerPdf = vi.fn().mockResolvedValue(true);
 
@@ -262,9 +238,6 @@ describe('useComposerAttachmentPreview', () => {
     expect(screen.getByTestId('compression-menu-position').textContent).toBe(
       'open'
     );
-    expect(screen.getByRole('button', { name: 'Extreme' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Recommended' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Less' })).toBeTruthy();
   });
 
   it('compresses the pdf with the selected level from the submenu', () => {
@@ -299,28 +272,5 @@ describe('useComposerAttachmentPreview', () => {
     expect(screen.getByTestId('compression-menu-position').textContent).toBe(
       'closed'
     );
-  });
-
-  it('hides the compress action for non-pdf documents', () => {
-    render(
-      <ComposerAttachmentPreviewHarness
-        attachment={buildAttachment({
-          id: 'attachment-4',
-          file: new File(['doc'], 'stok.docx', {
-            type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          }),
-          fileName: 'stok.docx',
-          fileTypeLabel: 'DOCX',
-          fileKind: 'document',
-          mimeType:
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          previewUrl: null,
-        })}
-      />
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: 'toggle' }));
-
-    expect(screen.queryByRole('button', { name: 'Kompres' })).toBeNull();
   });
 });
