@@ -35,6 +35,18 @@ export interface ResolvedPreviewResource {
   revokeOnClose: boolean;
 }
 
+export const shouldPreferExternalPdfPreview = () => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  if (typeof window.matchMedia !== 'function') {
+    return false;
+  }
+
+  return window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+};
+
 export const getChatImagePreviewName = (
   message: Pick<PreviewableImageGroupMessage, 'file_name' | 'message'>,
   fallbackIndex: number

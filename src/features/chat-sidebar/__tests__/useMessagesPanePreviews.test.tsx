@@ -1,5 +1,12 @@
 import { act, renderHook } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vite-plus/test';
 import { useMessagesPanePreviews } from '../hooks/useMessagesPanePreviews';
 
 const { mockEnsureChannelImageAssetUrl, mockGetRuntimeChannelImageAssetUrl } =
@@ -57,6 +64,7 @@ describe('useMessagesPanePreviews', () => {
       await Promise.resolve();
     }
   };
+  const originalMatchMedia = window.matchMedia;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -78,6 +86,20 @@ describe('useMessagesPanePreviews', () => {
     mockFetchChatFileBlobWithFallback.mockResolvedValue(null);
     mockFetchPdfBlobWithFallback.mockResolvedValue(null);
     mockOpenDocumentPreview.mockResolvedValue(true);
+    window.matchMedia = vi.fn().mockImplementation(() => ({
+      matches: false,
+      media: '',
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
+  });
+
+  afterEach(() => {
+    window.matchMedia = originalMatchMedia;
   });
 
   it('opens single-image previews from the active channel cache first', async () => {
@@ -226,5 +248,84 @@ describe('useMessagesPanePreviews', () => {
       fullPreviewUrl: 'blob:full-image-b',
       previewName: 'B.png',
     });
+  });
+
+  it('opens pdf previews in a new tab on coarse-pointer devices', async () => {
+    window.matchMedia = vi.fn().mockImplementation(query => ({
+      matches: query === '(hover: none) and (pointer: coarse)',
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
+    mockResolveChatAssetUrl.mockResolvedValue(
+      'https://example.com/invoice.pdf'
+    );
+    const replace = vi.fn();
+    const close = vi.fn();
+    vi.spyOn(window, 'open').mockReturnValue({
+      close,
+      location: { replace },
+    } as unknown as Window);
+
+    const { result } = renderHook(() =>
+      useMessagesPanePreviews({
+        currentChannelId: 'dm_user-a_user-b',
+      })
+    );
+
+    await act(async () => {
+      await result.current.openDocumentInPortal(
+        {
+          message: 'documents/channel/invoice.pdf',
+          file_storage_path: 'documents/channel/invoice.pdf',
+        },
+        'invoice.pdf',
+        true
+      );
+      await flushMicrotasks();
+    });
+
+    expect(window.open).toHaveBeenCalledWith('', '_blank');
+    expect(replace).toHaveBeenCalledWith('https://example.com/invoice.pdf');
+    expect(mockOpenDocumentPreview).not.toHaveBeenCalled();
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the in-app portal when coarse-pointer tab opening is blocked', async () => {
+    window.matchMedia = vi.fn().mockImplementation(query => ({
+      matches: query === '(hover: none) and (pointer: coarse)',
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
+    vi.spyOn(window, 'open').mockReturnValue(null);
+
+    const { result } = renderHook(() =>
+      useMessagesPanePreviews({
+        currentChannelId: 'dm_user-a_user-b',
+      })
+    );
+
+    await act(async () => {
+      await result.current.openDocumentInPortal(
+        {
+          message: 'documents/channel/invoice.pdf',
+          file_storage_path: 'documents/channel/invoice.pdf',
+        },
+        'invoice.pdf',
+        true
+      );
+      await flushMicrotasks();
+    });
+
+    expect(mockOpenDocumentPreview).toHaveBeenCalledTimes(1);
   });
 });
