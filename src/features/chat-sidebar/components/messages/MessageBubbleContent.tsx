@@ -14,6 +14,7 @@ interface MessageBubbleContentProps {
   message: ChatMessage;
   resolvedMessageUrl: string | null;
   isSelectionMode: boolean;
+  disableTextLinks: boolean;
   isImageMessage: boolean;
   isFileMessage: boolean;
   isImageFileMessage: boolean;
@@ -47,6 +48,7 @@ type LinkContextMenuState = {
 export const MessageBubbleContent = ({
   resolvedMessageUrl,
   isSelectionMode,
+  disableTextLinks,
   isImageMessage,
   isFileMessage,
   isImageFileMessage,
@@ -246,7 +248,13 @@ export const MessageBubbleContent = ({
 
   return (
     <div
-      className={isSelectionMode ? 'pointer-events-none' : undefined}
+      className={
+        isSelectionMode
+          ? 'pointer-events-none'
+          : disableTextLinks
+            ? '[&_a]:pointer-events-none [&_a]:cursor-default'
+            : undefined
+      }
       onContextMenuCapture={event => {
         const anchorElement =
           event.target instanceof HTMLAnchorElement

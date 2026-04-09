@@ -113,6 +113,28 @@ const createModel = (
 };
 
 describe('MessageItem', () => {
+  it('keeps blurred bubbles clickable while disabling link interaction styling', () => {
+    const { container } = render(
+      <MessageItem
+        model={createModel({
+          menu: {
+            openMessageId: 'message-2',
+          },
+        })}
+      />
+    );
+
+    expect(container.firstElementChild?.className).not.toContain(
+      'pointer-events-none'
+    );
+    expect(container.firstElementChild?.className).toContain('blur-[2px]');
+    expect(
+      Array.from(container.querySelectorAll('div')).some(element =>
+        element.className.includes('[&_a]:pointer-events-none')
+      )
+    ).toBe(true);
+  });
+
   it('opens grouped images in the multi-image portal from the group action menu', async () => {
     const groupedMessages = Array.from({ length: 4 }, (_, index) => ({
       ...baseMessage,

@@ -135,6 +135,10 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
           messageItem => messageItem.id
         )
       : [message.id];
+  const isAnotherMessageMenuOpen =
+    !isSelectionMode &&
+    openMessageId !== null &&
+    !bubbleMessageIds.includes(openMessageId);
 
   return (
     <motion.div
@@ -164,11 +168,7 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
       } ${rowSpacingClass} ${
         isMenuOpen ? 'z-10' : isMenuTransitionSource ? 'z-[9]' : 'z-0'
       } ${
-        !isSelectionMode &&
-        openMessageId &&
-        !bubbleMessageIds.includes(openMessageId)
-          ? 'blur-[2px] brightness-95'
-          : ''
+        isAnotherMessageMenuOpen ? 'blur-[2px] brightness-95' : ''
       } ${isSelectionMode ? 'group cursor-pointer' : ''}`}
       onClick={() => {
         if (!isSelectionMode) return;

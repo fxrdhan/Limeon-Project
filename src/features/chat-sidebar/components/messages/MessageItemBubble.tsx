@@ -99,6 +99,10 @@ export const MessageItemBubble = ({
     : groupedImageMessages?.length
       ? groupedImageMessages.map(messageItem => messageItem.id)
       : [message.id];
+  const disableTextLinks =
+    !isSelectionMode &&
+    openMessageId !== null &&
+    !bubbleMessageIds.includes(openMessageId);
   const bubbleStyle: CSSProperties = {
     overflowWrap:
       !isImageMessage && !isFileMessage ? ('anywhere' as const) : undefined,
@@ -164,6 +168,7 @@ export const MessageItemBubble = ({
           message={message}
           resolvedMessageUrl={resolvedMessageUrl}
           isSelectionMode={isSelectionMode}
+          disableTextLinks={disableTextLinks}
           isImageMessage={isImageMessage}
           isFileMessage={isFileMessage}
           isImageFileMessage={isImageFileMessage}
