@@ -211,6 +211,7 @@ export const useChatViewport = ({
     toggleMessageMenu: menu.toggleMessageMenu,
     scheduleScrollMessagesToBottom: scroll.scheduleScrollMessagesToBottom,
     focusEditingTargetMessage,
+    focusReplyTargetMessage: focus.focusReplyTargetMessage,
     handleChatPortalBackgroundClick,
     scrollToBottom: scroll.scrollToBottom,
   };

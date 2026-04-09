@@ -18,11 +18,13 @@ interface CreateOptimisticAttachmentThreadParams {
   timestamp: string;
   user: AttachmentParticipant;
   targetUser: ChatSidebarPanelTargetUser;
+  replyToId?: string | null;
   buildOptimisticMessage: (context: {
     tempId: string;
     stableKey: string;
     localPreviewUrl: string;
     timestamp: string;
+    replyToId: string | null;
   }) => ChatMessage;
 }
 
@@ -46,6 +48,7 @@ export const createOptimisticAttachmentThread = ({
   timestamp,
   user,
   targetUser,
+  replyToId,
   buildOptimisticMessage,
 }: CreateOptimisticAttachmentThreadParams): OptimisticAttachmentThread => {
   const tempId = createRuntimeId(tempIdPrefix);
@@ -61,6 +64,7 @@ export const createOptimisticAttachmentThread = ({
     stableKey,
     localPreviewUrl,
     timestamp,
+    replyToId: replyToId ?? null,
   });
   const optimisticCaptionMessage = hasAttachmentCaption
     ? markMessageAsAttachmentCaption(

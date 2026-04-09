@@ -41,6 +41,7 @@ interface UseChatComposerSendProps {
   message: string;
   setMessage: Dispatch<SetStateAction<string>>;
   editingMessageId: string | null;
+  replyingMessageId?: string | null;
   rawAttachmentUrl: string | null;
   pendingComposerAttachments: PendingComposerAttachment[];
   clearPendingComposerAttachments: () => void;
@@ -105,6 +106,7 @@ export const useChatComposerSend = ({
   message,
   setMessage,
   editingMessageId,
+  replyingMessageId = null,
   rawAttachmentUrl,
   pendingComposerAttachments,
   clearPendingComposerAttachments,
@@ -127,6 +129,7 @@ export const useChatComposerSend = ({
     targetUser,
     currentChannelId,
     editingMessageId,
+    replyingMessageId,
     setMessages,
     scheduleScrollMessagesToBottom,
     triggerSendSuccessGlow,
@@ -173,7 +176,11 @@ export const useChatComposerSend = ({
   );
 
   const sendAttachmentMessage = useCallback(
-    async (attachmentLink: string, originalMessageText: string) => {
+    async (
+      attachmentLink: string,
+      originalMessageText: string,
+      replyToId?: string | null
+    ) => {
       setMessage('');
 
       try {
@@ -192,7 +199,9 @@ export const useChatComposerSend = ({
         }
 
         const didSend = await sendComposerAttachment(
-          buildRemoteComposerAttachment(attachmentRemoteFile)
+          buildRemoteComposerAttachment(attachmentRemoteFile),
+          undefined,
+          replyToId
         );
 
         if (!didSend && isCurrentConversationScopeActive()) {
@@ -221,7 +230,8 @@ export const useChatComposerSend = ({
   const sendPendingComposerAttachments = useCallback(
     async (
       attachmentsToSend: PendingComposerAttachment[],
-      messageText: string
+      messageText: string,
+      replyToId?: string | null
     ) => {
       const sendPlan = buildPendingAttachmentSendPlan(
         attachmentsToSend,
@@ -244,7 +254,8 @@ export const useChatComposerSend = ({
           pendingAttachment: attachment,
           sentAttachmentMessageId: await sendComposerAttachment(
             attachment,
-            captionText
+            captionText,
+            replyToId
           ),
         });
       }
@@ -291,10 +302,10 @@ export const useChatComposerSend = ({
 
   const handleSendMessage = useCallback(async () => {
     if (editingMessageId || isSendingRef.current) {
-      return;
+      return false;
     }
     if (!user || !targetUser || !currentChannelId) {
-      return;
+      return false;
     }
 
     const hasPendingAttachments = pendingComposerAttachments.length > 0;
@@ -308,35 +319,43 @@ export const useChatComposerSend = ({
         : extractAttachmentComposerLinkFromMessageText(messageText);
 
     if (!hasPendingAttachments && !messageText) {
-      return;
+      return false;
     }
 
     isSendingRef.current = true;
 
     try {
       if (attachmentLink) {
-        await sendAttachmentMessage(attachmentLink.url, messageText);
-        return;
+        return (
+          (await sendAttachmentMessage(
+            attachmentLink.url,
+            messageText,
+            replyingMessageId
+          )) !== false
+        );
       }
 
       if (hasPendingAttachments) {
         const attachmentSendResult = await sendPendingComposerAttachments(
           attachmentsToSend,
-          messageText
+          messageText,
+          replyingMessageId
         );
 
         if (!attachmentSendResult.didSendAllAttachments) {
-          return;
+          return false;
         }
 
         if (attachmentSendResult.shouldAttachCaption) {
-          return;
+          return true;
         }
       }
 
       if (messageText) {
-        await sendTextMessage(messageText);
+        return await sendTextMessage(messageText, replyingMessageId);
       }
+
+      return true;
     } finally {
       isSendingRef.current = false;
     }
@@ -345,6 +364,7 @@ export const useChatComposerSend = ({
     editingMessageId,
     message,
     pendingComposerAttachments,
+    replyingMessageId,
     rawAttachmentUrl,
     sendAttachmentMessage,
     sendPendingComposerAttachments,

@@ -45,6 +45,7 @@ describe('messageItemUtils', () => {
       openImageInPortal: vi.fn(),
       openDocumentInPortal: vi.fn().mockResolvedValue(undefined),
       handleEditMessage: vi.fn(),
+      handleReplyMessage: vi.fn(),
       handleCopyMessage: vi.fn().mockResolvedValue(undefined),
       handleDownloadMessage: vi.fn().mockResolvedValue(undefined),
       handleOpenForwardMessagePicker: vi.fn(),
@@ -74,6 +75,7 @@ describe('messageItemUtils', () => {
       openImageInPortal: vi.fn(),
       openDocumentInPortal: vi.fn().mockResolvedValue(undefined),
       handleEditMessage: vi.fn(),
+      handleReplyMessage: vi.fn(),
       handleCopyMessage,
       handleDownloadMessage: vi.fn().mockResolvedValue(undefined),
       handleOpenForwardMessagePicker: vi.fn(),
@@ -106,6 +108,7 @@ describe('messageItemUtils', () => {
       openImageInPortal,
       openDocumentInPortal: vi.fn().mockResolvedValue(undefined),
       handleEditMessage: vi.fn(),
+      handleReplyMessage: vi.fn(),
       handleCopyMessage: vi.fn().mockResolvedValue(undefined),
       handleDownloadMessage: vi.fn().mockResolvedValue(undefined),
       handleOpenForwardMessagePicker: vi.fn(),
@@ -141,6 +144,7 @@ describe('messageItemUtils', () => {
       openImageInPortal: vi.fn(),
       openDocumentInPortal: vi.fn().mockResolvedValue(undefined),
       handleEditMessage: vi.fn(),
+      handleReplyMessage: vi.fn(),
       handleCopyMessage: vi.fn().mockResolvedValue(undefined),
       handleDownloadMessage,
       handleOpenForwardMessagePicker: vi.fn(),
@@ -149,8 +153,9 @@ describe('messageItemUtils', () => {
 
     expect(actions.map(action => action.label)).toEqual([
       'Lihat',
-      'Unduh',
       'Salin',
+      'Unduh',
+      'Balas',
       'Teruskan',
       'Hapus',
     ]);
@@ -160,8 +165,45 @@ describe('messageItemUtils', () => {
     expect(handleDownloadMessage).toHaveBeenCalledWith(imageMessage);
   });
 
+  it('can omit reply for image bubble group menus', () => {
+    const imageMessage = buildMessage({
+      message_type: 'image',
+      message: 'images/channel/image.png',
+      file_storage_path: 'images/channel/image.png',
+      file_mime_type: 'image/png',
+    });
+    const actions = buildMessageMenuActions({
+      message: imageMessage,
+      isCurrentUser: true,
+      isImageMessage: true,
+      isFileMessage: false,
+      isImageFileMessage: false,
+      isPdfFileMessage: false,
+      fileKind: 'document',
+      fileName: null,
+      includeReplyAction: false,
+      openImageInPortal: vi.fn(),
+      openDocumentInPortal: vi.fn().mockResolvedValue(undefined),
+      handleEditMessage: vi.fn(),
+      handleReplyMessage: vi.fn(),
+      handleCopyMessage: vi.fn().mockResolvedValue(undefined),
+      handleDownloadMessage: vi.fn().mockResolvedValue(undefined),
+      handleOpenForwardMessagePicker: vi.fn(),
+      handleDeleteMessage: vi.fn().mockResolvedValue(true),
+    });
+
+    expect(actions.map(action => action.label)).toEqual([
+      'Lihat',
+      'Salin',
+      'Unduh',
+      'Teruskan',
+      'Hapus',
+    ]);
+  });
+
   it('adds a forward action for persisted text messages', async () => {
     const handleOpenForwardMessagePicker = vi.fn();
+    const handleReplyMessage = vi.fn();
     const textMessage = buildMessage({
       id: 'message-99',
       message: 'teruskan ini',
@@ -179,16 +221,59 @@ describe('messageItemUtils', () => {
       openImageInPortal: vi.fn(),
       openDocumentInPortal: vi.fn().mockResolvedValue(undefined),
       handleEditMessage: vi.fn(),
+      handleReplyMessage,
       handleCopyMessage: vi.fn().mockResolvedValue(undefined),
       handleDownloadMessage: vi.fn().mockResolvedValue(undefined),
       handleOpenForwardMessagePicker,
       handleDeleteMessage: vi.fn().mockResolvedValue(true),
     });
 
-    expect(actions.map(action => action.label)).toEqual(['Salin', 'Teruskan']);
+    expect(actions.map(action => action.label)).toEqual([
+      'Salin',
+      'Balas',
+      'Teruskan',
+    ]);
 
+    await actions.find(action => action.label === 'Balas')?.onClick();
     await actions.find(action => action.label === 'Teruskan')?.onClick();
 
+    expect(handleReplyMessage).toHaveBeenCalledWith(textMessage);
     expect(handleOpenForwardMessagePicker).toHaveBeenCalledWith(textMessage);
+  });
+
+  it('orders edit after copy for persisted current-user text messages', () => {
+    const handleEditMessage = vi.fn();
+    const textMessage = buildMessage({
+      id: 'message-100',
+      message: 'edit ini',
+      message_type: 'text',
+      sender_id: 'user-a',
+    });
+    const actions = buildMessageMenuActions({
+      message: textMessage,
+      isCurrentUser: true,
+      isImageMessage: false,
+      isFileMessage: false,
+      isImageFileMessage: false,
+      isPdfFileMessage: false,
+      fileKind: 'document',
+      fileName: null,
+      openImageInPortal: vi.fn(),
+      openDocumentInPortal: vi.fn().mockResolvedValue(undefined),
+      handleEditMessage,
+      handleReplyMessage: vi.fn(),
+      handleCopyMessage: vi.fn().mockResolvedValue(undefined),
+      handleDownloadMessage: vi.fn().mockResolvedValue(undefined),
+      handleOpenForwardMessagePicker: vi.fn(),
+      handleDeleteMessage: vi.fn().mockResolvedValue(true),
+    });
+
+    expect(actions.map(action => action.label)).toEqual([
+      'Salin',
+      'Edit',
+      'Balas',
+      'Teruskan',
+      'Hapus',
+    ]);
   });
 });

@@ -14,8 +14,9 @@ import {
   TbFileTypeZip,
   TbFileUnknown,
   TbMusic,
+  TbCornerUpLeft,
+  TbCornerUpRightDouble,
   TbPencil,
-  TbShare3,
   TbTrash,
 } from 'react-icons/tb';
 import type { PopupMenuAction } from '@/components/image-manager/PopupMenuContent';
@@ -82,6 +83,7 @@ interface BuildMessageMenuActionsProps {
   fileKind: ComposerPendingFileKind;
   fileName: string | null;
   previewUrl?: string | null;
+  includeReplyAction?: boolean;
   openImageInPortal: (
     message: Pick<
       ChatMessage,
@@ -100,6 +102,7 @@ interface BuildMessageMenuActionsProps {
     forcePdfMime?: boolean
   ) => Promise<void>;
   handleEditMessage: (targetMessage: ChatMessage) => void;
+  handleReplyMessage: (targetMessage: ChatMessage) => void;
   handleCopyMessage: (targetMessage: ChatMessage) => Promise<void>;
   handleDownloadMessage: (targetMessage: ChatMessage) => Promise<void>;
   handleOpenForwardMessagePicker: (targetMessage: ChatMessage) => void;
@@ -116,34 +119,21 @@ export const buildMessageMenuActions = ({
   fileKind,
   fileName,
   previewUrl,
+  includeReplyAction = true,
   openImageInPortal,
   openDocumentInPortal,
   handleEditMessage,
+  handleReplyMessage,
   handleCopyMessage,
   handleDownloadMessage,
   handleOpenForwardMessagePicker,
   handleDeleteMessage,
 }: BuildMessageMenuActionsProps): PopupMenuAction[] => {
-  const menuActions: PopupMenuAction[] = [
-    {
-      label: 'Salin',
-      icon: <TbCopy className="h-4 w-4" />,
-      onClick: () => {
-        void handleCopyMessage(message);
-      },
-    },
-  ];
-
-  if (!message.id.startsWith('temp_')) {
-    menuActions.push({
-      label: 'Teruskan',
-      icon: <TbShare3 className="h-4 w-4" />,
-      onClick: () => handleOpenForwardMessagePicker(message),
-    });
-  }
+  const menuActions: PopupMenuAction[] = [];
+  const isPersistedMessage = !message.id.startsWith('temp_');
 
   if (isImageMessage || isFileMessage) {
-    menuActions.unshift({
+    menuActions.push({
       label: 'Lihat',
       icon: <TbEye className="h-4 w-4" />,
       onClick: () => {
@@ -168,8 +158,16 @@ export const buildMessageMenuActions = ({
     });
   }
 
+  menuActions.push({
+    label: 'Salin',
+    icon: <TbCopy className="h-4 w-4" />,
+    onClick: () => {
+      void handleCopyMessage(message);
+    },
+  });
+
   if (isImageMessage || isFileMessage) {
-    menuActions.splice(1, 0, {
+    menuActions.push({
       label: 'Unduh',
       icon: <TbDownload className="h-4 w-4" />,
       onClick: () => {
@@ -178,27 +176,36 @@ export const buildMessageMenuActions = ({
     });
   }
 
-  if (isCurrentUser && (isImageMessage || isFileMessage)) {
+  if (
+    isCurrentUser &&
+    !isImageMessage &&
+    !isFileMessage &&
+    isPersistedMessage
+  ) {
     menuActions.push({
-      label: 'Hapus',
-      icon: <TbTrash className="h-4 w-4" />,
-      onClick: () => {
-        void handleDeleteMessage(message);
-      },
-      tone: 'danger',
+      label: 'Edit',
+      icon: <TbPencil className="h-4 w-4" />,
+      onClick: () => handleEditMessage(message),
     });
-    return menuActions;
+  }
+
+  if (includeReplyAction && isPersistedMessage) {
+    menuActions.push({
+      label: 'Balas',
+      icon: <TbCornerUpLeft className="h-4 w-4" />,
+      onClick: () => handleReplyMessage(message),
+    });
+  }
+
+  if (isPersistedMessage) {
+    menuActions.push({
+      label: 'Teruskan',
+      icon: <TbCornerUpRightDouble className="h-4 w-4" />,
+      onClick: () => handleOpenForwardMessagePicker(message),
+    });
   }
 
   if (isCurrentUser) {
-    if (!message.id.startsWith('temp_')) {
-      menuActions.push({
-        label: 'Edit',
-        icon: <TbPencil className="h-4 w-4" />,
-        onClick: () => handleEditMessage(message),
-      });
-    }
-
     menuActions.push({
       label: 'Hapus',
       icon: <TbTrash className="h-4 w-4" />,

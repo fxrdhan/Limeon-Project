@@ -57,6 +57,7 @@ interface UseChatAttachmentSendProps {
   targetUser?: ChatSidebarPanelTargetUser;
   currentChannelId: string | null;
   editingMessageId: string | null;
+  replyingMessageId?: string | null;
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
   scheduleScrollMessagesToBottom: () => void;
   triggerSendSuccessGlow: () => void;
@@ -95,6 +96,7 @@ interface SendAttachmentMessageOptions {
     stableKey: string;
     localPreviewUrl: string;
     timestamp: string;
+    replyToId: string | null;
   }) => ChatMessage;
   uploadAsset: () => Promise<{
     path: string;
@@ -222,6 +224,7 @@ export const useChatAttachmentSend = ({
   targetUser,
   currentChannelId,
   editingMessageId,
+  replyingMessageId = null,
   setMessages,
   scheduleScrollMessagesToBottom,
   triggerSendSuccessGlow,
@@ -326,6 +329,7 @@ export const useChatAttachmentSend = ({
         timestamp,
         user,
         targetUser,
+        replyToId: replyingMessageId,
         buildOptimisticMessage,
       });
       const {
@@ -568,6 +572,7 @@ export const useChatAttachmentSend = ({
       conversationScopeKey,
       currentChannelId,
       editingMessageId,
+      replyingMessageId,
       isCurrentConversationScopeActive,
       pendingImagePreviewUrlsRef,
       reconcileCurrentConversationMessages,
@@ -610,7 +615,11 @@ export const useChatAttachmentSend = ({
   );
 
   const sendImageMessage = useCallback(
-    async (file: File, captionText?: string): Promise<string | null> => {
+    async (
+      file: File,
+      captionText?: string,
+      replyToId?: string | null
+    ): Promise<string | null> => {
       if (!file.type.startsWith('image/')) {
         toast.error('File harus berupa gambar', {
           toasterId: CHAT_SIDEBAR_TOASTER_ID,
@@ -646,6 +655,7 @@ export const useChatAttachmentSend = ({
           stableKey,
           localPreviewUrl,
           timestamp,
+          replyToId: optimisticReplyToId,
         }) => ({
           id: tempId,
           sender_id: user.id,
@@ -656,7 +666,7 @@ export const useChatAttachmentSend = ({
           created_at: timestamp,
           updated_at: timestamp,
           is_read: false,
-          reply_to_id: null,
+          reply_to_id: optimisticReplyToId ?? null,
           sender_name: user.name || 'You',
           receiver_name: targetUser.name || 'Unknown',
           stableKey,
@@ -695,6 +705,7 @@ export const useChatAttachmentSend = ({
             receiver_id: targetUser.id,
             message: imagePath,
             message_type: 'image',
+            reply_to_id: replyToId ?? undefined,
             file_storage_path: imagePath,
             ...imagePreviewFields,
           }),
@@ -740,7 +751,8 @@ export const useChatAttachmentSend = ({
   const sendFileMessage = useCallback(
     async (
       pendingFile: PendingComposerFile,
-      captionText?: string
+      captionText?: string,
+      replyToId?: string | null
     ): Promise<string | null> => {
       if (!user || !targetUser || !currentChannelId) {
         return null;
@@ -810,6 +822,7 @@ export const useChatAttachmentSend = ({
           stableKey,
           localPreviewUrl,
           timestamp,
+          replyToId: optimisticReplyToId,
         }) => ({
           id: tempId,
           sender_id: user.id,
@@ -825,7 +838,7 @@ export const useChatAttachmentSend = ({
           created_at: timestamp,
           updated_at: timestamp,
           is_read: false,
-          reply_to_id: null,
+          reply_to_id: optimisticReplyToId ?? null,
           sender_name: user.name || 'You',
           receiver_name: targetUser.name || 'Unknown',
           stableKey,
@@ -888,6 +901,7 @@ export const useChatAttachmentSend = ({
             receiver_id: targetUser.id,
             message: filePath,
             message_type: 'file',
+            reply_to_id: replyToId ?? undefined,
             file_name: pendingFile.fileName,
             file_kind: pendingFile.fileKind,
             file_mime_type: pendingFile.mimeType,
@@ -965,13 +979,18 @@ export const useChatAttachmentSend = ({
   const sendComposerAttachment = useCallback(
     async (
       attachment: SendableComposerAttachment,
-      captionText?: string
+      captionText?: string,
+      replyToId?: string | null
     ): Promise<string | null> => {
       if (attachment.fileKind === 'image') {
-        return sendImageMessage(attachment.file, captionText);
+        return sendImageMessage(attachment.file, captionText, replyToId);
       }
 
-      return sendFileMessage(attachment as PendingComposerFile, captionText);
+      return sendFileMessage(
+        attachment as PendingComposerFile,
+        captionText,
+        replyToId
+      );
     },
     [sendFileMessage, sendImageMessage]
   );

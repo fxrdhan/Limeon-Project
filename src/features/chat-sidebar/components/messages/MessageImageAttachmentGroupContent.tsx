@@ -74,6 +74,7 @@ interface MessageImageAttachmentGroupContentProps {
   handleDownloadImageGroup: (targetMessages: ChatMessage[]) => Promise<void>;
   handleOpenForwardMessagePicker: (targetMessage: ChatMessage) => void;
   handleDeleteMessage: (targetMessage: ChatMessage) => Promise<boolean>;
+  handleReplyMessage: (targetMessage: ChatMessage) => void;
 }
 
 const MAX_VISIBLE_IMAGE_GROUP_TILES = 4;
@@ -98,6 +99,7 @@ export const MessageImageAttachmentGroupContent = ({
   handleDownloadImageGroup,
   handleOpenForwardMessagePicker,
   handleDeleteMessage,
+  handleReplyMessage,
 }: MessageImageAttachmentGroupContentProps) => {
   const groupPreviewMessages = messages.map(message => ({
     id: message.id,
@@ -180,6 +182,7 @@ export const MessageImageAttachmentGroupContent = ({
             representativeMessage,
             messages.length > 0 ? messages.length - 1 : 0
           ) || 'Gambar',
+        includeReplyAction: false,
         openImageInPortal: async () => {
           await openImageGroupInPortal(
             groupPreviewMessages,
@@ -194,6 +197,7 @@ export const MessageImageAttachmentGroupContent = ({
         },
         openDocumentInPortal: async () => {},
         handleEditMessage: () => {},
+        handleReplyMessage,
         handleCopyMessage,
         handleDownloadMessage,
         handleOpenForwardMessagePicker,
@@ -219,7 +223,7 @@ export const MessageImageAttachmentGroupContent = ({
     <div>
       <div
         data-chat-image-group-grid
-        className="overflow-hidden rounded-xl bg-slate-200"
+        className="overflow-hidden rounded-lg bg-slate-200"
       >
         <button
           type="button"

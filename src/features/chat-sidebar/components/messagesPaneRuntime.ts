@@ -44,6 +44,7 @@ export interface MessageItemRuntime {
   };
   actions: {
     handleEditMessage: ChatSidebarRuntimeState['mutations']['handleEditMessage'];
+    handleReplyMessage: ChatSidebarRuntimeState['mutations']['handleReplyMessage'];
     handleCopyMessage: ChatSidebarRuntimeState['mutations']['handleCopyMessage'];
     handleDownloadMessage: ChatSidebarRuntimeState['mutations']['handleDownloadMessage'];
     handleDownloadImageGroup: ChatSidebarRuntimeState['mutations']['handleDownloadImageGroup'];
@@ -66,6 +67,7 @@ export interface MessagesPanePreviewRuntime {
   selectImageGroupPreviewItem: ChatSidebarRuntimeState['previews']['selectImageGroupPreviewItem'];
   handleDownloadMessage: ChatSidebarRuntimeState['mutations']['handleDownloadMessage'];
   handleCopyMessage: ChatSidebarRuntimeState['mutations']['handleCopyMessage'];
+  handleReplyMessage: ChatSidebarRuntimeState['mutations']['handleReplyMessage'];
   handleOpenForwardMessagePicker: ChatSidebarRuntimeState['mutations']['handleOpenForwardMessagePicker'];
   closeImageGroupPreview: ChatSidebarRuntimeState['previews']['closeImageGroupPreview'];
   documentPreviewUrl: ChatSidebarRuntimeState['previews']['documentPreviewUrl'];
@@ -168,6 +170,7 @@ const buildMessageItemRuntime = (
   },
   actions: {
     handleEditMessage: runtime.mutations.handleEditMessage,
+    handleReplyMessage: runtime.mutations.handleReplyMessage,
     handleCopyMessage: runtime.mutations.handleCopyMessage,
     handleDownloadMessage: runtime.mutations.handleDownloadMessage,
     handleDownloadImageGroup: runtime.mutations.handleDownloadImageGroup,
@@ -194,6 +197,7 @@ const buildMessagesPanePreviewRuntime = (
   selectImageGroupPreviewItem: runtime.previews.selectImageGroupPreviewItem,
   handleDownloadMessage: runtime.mutations.handleDownloadMessage,
   handleCopyMessage: runtime.mutations.handleCopyMessage,
+  handleReplyMessage: runtime.mutations.handleReplyMessage,
   handleOpenForwardMessagePicker:
     runtime.mutations.handleOpenForwardMessagePicker,
   closeImageGroupPreview: runtime.previews.closeImageGroupPreview,

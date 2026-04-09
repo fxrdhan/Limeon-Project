@@ -70,6 +70,7 @@ interface MessageDocumentAttachmentGroupContentProps {
   handleDownloadDocumentGroup: (targetMessages: ChatMessage[]) => Promise<void>;
   handleOpenForwardMessagePicker: (targetMessage: ChatMessage) => void;
   handleDeleteMessage: (targetMessage: ChatMessage) => Promise<boolean>;
+  handleReplyMessage: (targetMessage: ChatMessage) => void;
 }
 
 export const MessageDocumentAttachmentGroupContent = ({
@@ -93,6 +94,7 @@ export const MessageDocumentAttachmentGroupContent = ({
   handleDownloadDocumentGroup,
   handleOpenForwardMessagePicker,
   handleDeleteMessage,
+  handleReplyMessage,
 }: MessageDocumentAttachmentGroupContentProps) => {
   const representativeMessage = messages[messages.length - 1] ?? null;
   const isCurrentUserGroup = messages[0]?.sender_id === userId;
@@ -205,6 +207,7 @@ export const MessageDocumentAttachmentGroupContent = ({
       openImageInPortal,
       openDocumentInPortal,
       handleEditMessage: () => {},
+      handleReplyMessage,
       handleCopyMessage,
       handleDownloadMessage,
       handleOpenForwardMessagePicker,
@@ -233,6 +236,7 @@ export const MessageDocumentAttachmentGroupContent = ({
         openImageInPortal,
         openDocumentInPortal,
         handleEditMessage: () => {},
+        handleReplyMessage,
         handleCopyMessage,
         handleDownloadMessage,
         handleOpenForwardMessagePicker,

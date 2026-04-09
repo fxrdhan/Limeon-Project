@@ -97,6 +97,7 @@ export const buildMessageItemModel = ({
     },
     actions: {
       handleEditMessage: runtime.actions.handleEditMessage,
+      handleReplyMessage: runtime.actions.handleReplyMessage,
       handleCopyMessage: runtime.actions.handleCopyMessage,
       handleDownloadMessage: runtime.actions.handleDownloadMessage,
       handleDownloadImageGroup: runtime.actions.handleDownloadImageGroup,

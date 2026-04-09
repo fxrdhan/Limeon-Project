@@ -182,6 +182,7 @@ const createRuntime = (overrides: MessagesPaneRuntimeOverrides = {}) => {
       selectImageGroupPreviewItem: vi.fn(),
       handleDownloadMessage: vi.fn(async () => {}),
       handleCopyMessage: vi.fn(async () => {}),
+      handleReplyMessage: vi.fn(),
       handleOpenForwardMessagePicker: vi.fn(),
       closeImageGroupPreview: vi.fn(),
       documentPreviewUrl: null,

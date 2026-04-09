@@ -18,6 +18,7 @@ import {
   readPersistedComposerDraftMessage,
   writePersistedComposerDraftMessage,
 } from '../utils/composer-draft-persistence';
+import { getAttachmentFileName } from '../utils/attachment';
 import { useChatComposerAttachments } from './useChatComposerAttachments';
 import type { ChatMessage } from '../data/chatSidebarGateway';
 
@@ -40,6 +41,9 @@ export const useChatComposer = ({
     readPersistedComposerDraftMessage(currentChannelId)
   );
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [replyingMessageId, setReplyingMessageId] = useState<string | null>(
+    null
+  );
   const [messageInputHeight, setMessageInputHeight] = useState(
     MESSAGE_INPUT_MIN_HEIGHT
   );
@@ -160,8 +164,28 @@ export const useChatComposer = ({
       ? null
       : (messages.find(candidate => candidate.id === editingMessageId)
           ?.message ?? null);
+  const replyingMessagePreview =
+    replyingMessageId === null
+      ? null
+      : (() => {
+          const replyingMessage = messages.find(
+            candidate => candidate.id === replyingMessageId
+          );
+          if (!replyingMessage) {
+            return null;
+          }
+
+          if (replyingMessage.message_type === 'text') {
+            const replyText = replyingMessage.message.trim();
+            return replyText.length > 0 ? replyText : null;
+          }
+
+          return getAttachmentFileName(replyingMessage);
+        })();
+  const hasComposerContextBanner =
+    editingMessagePreview !== null || replyingMessagePreview !== null;
   const composerContextualOffset =
-    (editingMessagePreview ? EDITING_COMPOSER_OFFSET : 0) +
+    (hasComposerContextBanner ? EDITING_COMPOSER_OFFSET : 0) +
     (pendingComposerAttachments.length + loadingComposerAttachments.length > 0
       ? COMPOSER_IMAGE_PREVIEW_OFFSET
       : 0);
@@ -170,6 +194,7 @@ export const useChatComposer = ({
     closeAttachModal();
     setMessageState(readPersistedComposerDraftMessage(currentChannelId));
     setEditingMessageId(null);
+    setReplyingMessageId(null);
     inlineOverflowThresholdRef.current = null;
     setIsSendSuccessGlowVisible(false);
   }, [closeAttachModal, currentChannelId]);
@@ -300,6 +325,8 @@ export const useChatComposer = ({
     setMessage,
     editingMessageId,
     setEditingMessageId,
+    replyingMessageId,
+    setReplyingMessageId,
     messageInputHeight,
     isMessageInputMultiline,
     isSendSuccessGlowVisible,
@@ -318,6 +345,7 @@ export const useChatComposer = ({
     isComposerImageExpanded,
     isComposerImageExpandedVisible,
     editingMessagePreview,
+    replyingMessagePreview,
     composerContextualOffset,
     attachButtonRef,
     attachModalRef,

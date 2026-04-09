@@ -282,6 +282,60 @@ describe('useChatComposerSend', () => {
     mockClearPersistedComposerDraftAttachments.mockResolvedValue(undefined);
   });
 
+  it('includes reply_to_id when sending a text reply', async () => {
+    mockGateway.createMessage.mockResolvedValue({
+      data: buildMessage({
+        id: 'server-text-reply',
+        message: 'balasan',
+        message_type: 'text',
+      }),
+      error: null,
+    });
+
+    const { registerPendingSend } = createPendingSendRegistry();
+
+    const { result } = renderHook(() => {
+      const [, setMessages] = useState<ChatMessage[]>([]);
+      const [draftMessage, setDraftMessage] = useState('balas ini');
+      const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
+
+      return useComposerSendWithMutationScope({
+        user: { id: 'user-a', name: 'Admin' },
+        targetUser: {
+          id: 'user-b',
+          name: 'Gudang',
+          email: 'gudang@example.com',
+          profilephoto: null,
+        },
+        currentChannelId: 'channel-1',
+        message: draftMessage,
+        setMessage: setDraftMessage,
+        editingMessageId: null,
+        replyingMessageId: 'message-1',
+        pendingComposerAttachments: [],
+        clearPendingComposerAttachments: vi.fn(),
+        restorePendingComposerAttachments: vi.fn(),
+        setMessages,
+        scheduleScrollMessagesToBottom: vi.fn(),
+        triggerSendSuccessGlow: vi.fn(),
+        pendingImagePreviewUrlsRef,
+        registerPendingSend,
+      });
+    });
+
+    await act(async () => {
+      await result.current.handleSendMessage();
+    });
+
+    expect(mockGateway.createMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: 'balas ini',
+        message_type: 'text',
+        reply_to_id: 'message-1',
+      })
+    );
+  });
+
   it('rolls back the persisted attachment thread when caption insert fails', async () => {
     mockGateway.uploadAttachment.mockResolvedValue({
       path: 'documents/channel/stok.pdf',
@@ -462,6 +516,7 @@ describe('useChatComposerSend', () => {
         message: draftMessage,
         setMessage: setDraftMessage,
         editingMessageId: null,
+        replyingMessageId: 'message-1',
         pendingComposerAttachments: [buildPendingAttachment()],
         clearPendingComposerAttachments: vi.fn(),
         restorePendingComposerAttachments: vi.fn(),
@@ -479,6 +534,11 @@ describe('useChatComposerSend', () => {
 
     expect(mockClearPersistedComposerDraftAttachments).toHaveBeenCalledWith(
       'channel-1'
+    );
+    expect(mockGateway.createMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reply_to_id: 'message-1',
+      })
     );
   });
 
@@ -592,7 +652,7 @@ describe('useChatComposerSend', () => {
       };
     });
 
-    let sendPromise: Promise<void> | undefined;
+    let sendPromise: Promise<boolean> | undefined;
     await act(async () => {
       sendPromise = result.current.handleSendMessage();
       await Promise.resolve();
@@ -1345,7 +1405,7 @@ describe('useChatComposerSend', () => {
       { initialProps }
     );
 
-    let sendPromise: Promise<void> | undefined;
+    let sendPromise: Promise<boolean> | undefined;
     await act(async () => {
       sendPromise = result.current.handleSendMessage();
       await Promise.resolve();
@@ -1476,7 +1536,7 @@ describe('useChatComposerSend', () => {
       };
     });
 
-    let sendPromise: Promise<void> | undefined;
+    let sendPromise: Promise<boolean> | undefined;
     await act(async () => {
       sendPromise = result.current.handleSendMessage();
       await Promise.resolve();

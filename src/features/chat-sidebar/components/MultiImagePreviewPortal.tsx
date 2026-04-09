@@ -10,11 +10,12 @@ import {
 import { LayoutGroup, motion } from 'motion/react';
 import ImageExpandPreview from '@/components/shared/image-expand-preview';
 import {
+  TbCornerUpLeft,
+  TbCornerUpRightDouble,
   TbArrowUpRight,
   TbCopy,
   TbDownload,
   TbLink,
-  TbShare3,
   TbX,
 } from 'react-icons/tb';
 import ProgressiveImagePreview from './ProgressiveImagePreview';
@@ -38,6 +39,7 @@ interface MultiImagePreviewPortalProps {
   onOpenActivePreviewInNewTab: () => void;
   onCopyActivePreviewLink: () => void;
   onCopyActivePreviewImage: () => void;
+  onReplyActivePreview: () => void;
   onForwardActivePreview: () => void;
   onClose: () => void;
   backdropClassName: string;
@@ -90,6 +92,7 @@ const MultiImagePreviewPortal = ({
   onOpenActivePreviewInNewTab,
   onCopyActivePreviewLink,
   onCopyActivePreviewImage,
+  onReplyActivePreview,
   onForwardActivePreview,
   onClose,
   backdropClassName,
@@ -331,7 +334,7 @@ const MultiImagePreviewPortal = ({
         <div
           ref={containerRef}
           style={containerStyle}
-          className="flex h-full w-full flex-col overflow-hidden rounded-[32px] border border-slate-300 bg-white md:flex-row"
+          className="flex h-full w-full flex-col overflow-hidden rounded-3xl border border-slate-300 bg-white md:flex-row"
         >
           <aside className="flex w-full shrink-0 border-b border-slate-300 bg-white md:w-[var(--multi-image-preview-sidebar-width)] md:border-b-0">
             <LayoutGroup id="multi-image-preview-thumbnails">
@@ -452,6 +455,23 @@ const MultiImagePreviewPortal = ({
                 </button>
                 <button
                   type="button"
+                  onClick={() => {
+                    onReplyActivePreview();
+                    onClose();
+                  }}
+                  aria-label="Balas gambar"
+                  title="Balas gambar"
+                  disabled={!isActivePreviewForwardable}
+                  className={`inline-flex h-8 w-8 items-center justify-center rounded-xl text-black transition-colors ${
+                    isActivePreviewForwardable
+                      ? 'cursor-pointer hover:bg-slate-100'
+                      : 'cursor-default opacity-40'
+                  }`}
+                >
+                  <TbCornerUpLeft className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
                   onClick={onForwardActivePreview}
                   aria-label="Teruskan gambar"
                   title="Teruskan gambar"
@@ -462,7 +482,7 @@ const MultiImagePreviewPortal = ({
                       : 'cursor-default opacity-40'
                   }`}
                 >
-                  <TbShare3 className="h-5 w-5" />
+                  <TbCornerUpRightDouble className="h-5 w-5" />
                 </button>
                 <button
                   type="button"

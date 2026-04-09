@@ -51,6 +51,7 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
   } = content;
   const {
     handleEditMessage,
+    handleReplyMessage,
     handleCopyMessage,
     handleDownloadMessage,
     handleOpenForwardMessagePicker,
@@ -76,6 +77,7 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
     openImageInPortal,
     openDocumentInPortal,
     handleEditMessage,
+    handleReplyMessage,
     handleCopyMessage,
     handleDownloadMessage,
     handleOpenForwardMessagePicker,

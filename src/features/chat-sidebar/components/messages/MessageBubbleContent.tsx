@@ -140,7 +140,7 @@ export const MessageBubbleContent = ({
     : [];
 
   const mainContent = isSquareImageAttachment ? (
-    <div className="w-full overflow-hidden rounded-xl bg-slate-100">
+    <div className="w-full overflow-hidden rounded-lg bg-slate-100">
       <div className="aspect-square w-full overflow-hidden">
         {resolvedMessageUrl ? (
           <img

@@ -55,6 +55,7 @@ export const MessageItemBubble = ({
     handleDownloadImageGroup,
     handleDownloadDocumentGroup,
     handleOpenForwardMessagePicker,
+    handleReplyMessage,
   } = actions;
   const {
     displayTime,
@@ -139,6 +140,7 @@ export const MessageItemBubble = ({
           handleDownloadImageGroup={handleDownloadImageGroup}
           handleOpenForwardMessagePicker={handleOpenForwardMessagePicker}
           handleDeleteMessage={handleDeleteMessage}
+          handleReplyMessage={handleReplyMessage}
         />
       ) : isDocumentAttachmentGroup && groupedDocumentMessages ? (
         <MessageDocumentAttachmentGroupContent
@@ -162,6 +164,7 @@ export const MessageItemBubble = ({
           handleDownloadDocumentGroup={handleDownloadDocumentGroup}
           handleOpenForwardMessagePicker={handleOpenForwardMessagePicker}
           handleDeleteMessage={handleDeleteMessage}
+          handleReplyMessage={handleReplyMessage}
         />
       ) : (
         <MessageBubbleContent

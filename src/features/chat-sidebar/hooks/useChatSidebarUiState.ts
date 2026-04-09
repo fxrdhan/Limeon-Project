@@ -1,6 +1,11 @@
 import { useCallback } from 'react';
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import type { AttachmentCaptionData } from '../utils/message-derivations';
+import { buildMessageRenderItems } from '../utils/message-render-items';
+import {
+  isImageFileExtensionOrMime,
+  resolveFileExtension,
+} from '../utils/message-file';
 import { useChatComposer } from './useChatComposer';
 import { useChatSidebarPreviewState } from './useChatSidebarPreviewState';
 import { useChatSidebarRefs } from './useChatSidebarRefs';
@@ -112,6 +117,71 @@ export const useChatSidebarUiState = ({
     captionData,
   });
 
+  const focusReplyTargetMessage = useCallback(
+    (messageId: string) => {
+      const { openImageGroupInPortal, openImageInPortal } = previews;
+      const replyingMessage = messages.find(
+        candidate => candidate.id === messageId
+      );
+      if (!replyingMessage) {
+        return;
+      }
+
+      const attachmentFileName = getAttachmentFileName(replyingMessage);
+      const fileExtension = resolveFileExtension(
+        attachmentFileName,
+        replyingMessage.message,
+        replyingMessage.file_mime_type
+      );
+      const imageGroupRenderItem = buildMessageRenderItems({
+        messages,
+        captionMessagesByAttachmentId:
+          captionData.captionMessagesByAttachmentId,
+        getAttachmentFileKind,
+        enableDocumentBubbleGrouping: true,
+      }).find(
+        renderItem =>
+          renderItem.kind === 'image-group' &&
+          renderItem.messages.some(message => message.id === messageId)
+      );
+
+      if (imageGroupRenderItem?.kind === 'image-group') {
+        void openImageGroupInPortal(
+          imageGroupRenderItem.messages,
+          messageId,
+          replyingMessage.file_preview_url || null
+        );
+        return;
+      }
+
+      const isImageReply =
+        replyingMessage.message_type === 'image' ||
+        isImageFileExtensionOrMime(
+          fileExtension,
+          replyingMessage.file_mime_type
+        );
+
+      if (isImageReply) {
+        void openImageInPortal(
+          replyingMessage,
+          attachmentFileName || 'Gambar',
+          replyingMessage.file_preview_url || null
+        );
+        return;
+      }
+
+      viewport.focusReplyTargetMessage(messageId);
+    },
+    [
+      captionData.captionMessagesByAttachmentId,
+      getAttachmentFileKind,
+      getAttachmentFileName,
+      messages,
+      previews,
+      viewport,
+    ]
+  );
+
   const toggleMessageMenu = useCallback(
     (
       anchor: HTMLElement,
@@ -127,7 +197,10 @@ export const useChatSidebarUiState = ({
 
   return {
     composer,
-    viewport,
+    viewport: {
+      ...viewport,
+      focusReplyTargetMessage,
+    },
     previews,
     focusMessageComposer,
     toggleMessageMenu,

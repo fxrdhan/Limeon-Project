@@ -53,6 +53,7 @@ interface BuildMessageItemDerivationsParams {
     forcePdfMime?: boolean
   ) => Promise<void>;
   handleEditMessage: (targetMessage: ChatMessage) => void;
+  handleReplyMessage: (targetMessage: ChatMessage) => void;
   handleCopyMessage: (targetMessage: ChatMessage) => Promise<void>;
   handleDownloadMessage: (targetMessage: ChatMessage) => Promise<void>;
   handleOpenForwardMessagePicker: (targetMessage: ChatMessage) => void;
@@ -116,6 +117,7 @@ export const buildMessageItemDerivations = ({
   openImageInPortal,
   openDocumentInPortal,
   handleEditMessage,
+  handleReplyMessage,
   handleCopyMessage,
   handleDownloadMessage,
   handleOpenForwardMessagePicker,
@@ -268,6 +270,7 @@ export const buildMessageItemDerivations = ({
     previewUrl: resolvedMessageUrl,
     openDocumentInPortal,
     handleEditMessage,
+    handleReplyMessage,
     handleCopyMessage,
     handleDownloadMessage,
     handleOpenForwardMessagePicker,

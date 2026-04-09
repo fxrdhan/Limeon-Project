@@ -116,6 +116,7 @@ export interface MessageItemContentModel {
 
 export interface MessageItemActionsModel {
   handleEditMessage: (targetMessage: ChatMessage) => void;
+  handleReplyMessage: (targetMessage: ChatMessage) => void;
   handleCopyMessage: (targetMessage: ChatMessage) => Promise<void>;
   handleDownloadMessage: (targetMessage: ChatMessage) => Promise<void>;
   handleDownloadImageGroup: (targetMessages: ChatMessage[]) => Promise<void>;

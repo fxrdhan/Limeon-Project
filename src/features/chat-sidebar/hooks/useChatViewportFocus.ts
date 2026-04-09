@@ -206,6 +206,13 @@ export const useChatViewportFocus = ({
     focusMessage(editingMessageId, 'smooth');
   }, [editingMessageId, focusMessage]);
 
+  const focusReplyTargetMessage = useCallback(
+    (messageId: string) => {
+      focusMessage(messageId, 'smooth');
+    },
+    [focusMessage]
+  );
+
   useEffect(() => {
     return () => {
       if (flashMessageTimeoutRef.current) {
@@ -225,5 +232,6 @@ export const useChatViewportFocus = ({
     isFlashHighlightVisible,
     focusSearchTargetMessage,
     focusEditingTargetMessage,
+    focusReplyTargetMessage,
   };
 };

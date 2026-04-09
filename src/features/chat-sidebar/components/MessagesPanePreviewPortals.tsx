@@ -140,6 +140,13 @@ export const MessagesPanePreviewPortals = ({
 
         void runtime.handleCopyMessage(activeImageGroupPreviewMessage);
       }}
+      onReplyActivePreview={() => {
+        if (!activeImageGroupPreviewMessage) {
+          return;
+        }
+
+        runtime.handleReplyMessage(activeImageGroupPreviewMessage);
+      }}
       onForwardActivePreview={() => {
         if (
           !activeImageGroupPreviewMessage ||

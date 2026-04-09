@@ -24,6 +24,19 @@ vi.mock('../components/ProgressiveImagePreview', () => ({
   },
 }));
 
+const buildPreviewItems = (count: number) =>
+  Array.from({ length: count }, (_, index) => {
+    const nextIndex = index + 1;
+
+    return {
+      id: `image-${nextIndex}`,
+      thumbnailUrl: `data:image/png;base64,thumb-${nextIndex}`,
+      previewUrl: `data:image/png;base64,preview-${nextIndex}`,
+      fullPreviewUrl: `https://example.com/full-${nextIndex}.png`,
+      previewName: `photo-${nextIndex}.png`,
+    };
+  });
+
 describe('MultiImagePreviewPortal', () => {
   it('uses the full preview as the backdrop and the sizing source', () => {
     render(
@@ -46,6 +59,7 @@ describe('MultiImagePreviewPortal', () => {
         onOpenActivePreviewInNewTab={() => {}}
         onCopyActivePreviewLink={() => {}}
         onCopyActivePreviewImage={() => {}}
+        onReplyActivePreview={() => {}}
         onForwardActivePreview={() => {}}
         onClose={() => {}}
         backdropClassName="z-[80]"
@@ -61,12 +75,98 @@ describe('MultiImagePreviewPortal', () => {
     );
   });
 
+  it('keeps thumbnail columns tied to the sidebar width rather than item count', () => {
+    const { container: singleContainer } = render(
+      <MultiImagePreviewPortal
+        isOpen={true}
+        isVisible={true}
+        previewItems={buildPreviewItems(5)}
+        activePreviewId="image-1"
+        isActivePreviewForwardable={true}
+        onSelectPreview={() => {}}
+        onDownloadActivePreview={() => {}}
+        onOpenActivePreviewInNewTab={() => {}}
+        onCopyActivePreviewLink={() => {}}
+        onCopyActivePreviewImage={() => {}}
+        onReplyActivePreview={() => {}}
+        onForwardActivePreview={() => {}}
+        onClose={() => {}}
+        backdropClassName="z-[80]"
+      />
+    );
+    const { container: manyContainer } = render(
+      <MultiImagePreviewPortal
+        isOpen={true}
+        isVisible={true}
+        previewItems={buildPreviewItems(8)}
+        activePreviewId="image-1"
+        isActivePreviewForwardable={true}
+        onSelectPreview={() => {}}
+        onDownloadActivePreview={() => {}}
+        onOpenActivePreviewInNewTab={() => {}}
+        onCopyActivePreviewLink={() => {}}
+        onCopyActivePreviewImage={() => {}}
+        onReplyActivePreview={() => {}}
+        onForwardActivePreview={() => {}}
+        onClose={() => {}}
+        backdropClassName="z-[80]"
+      />
+    );
+
+    const singleGrid = singleContainer.querySelector(
+      'div[style*="grid-template-columns"]'
+    ) as HTMLDivElement | null;
+    const manyGrid = manyContainer.querySelector(
+      'div[style*="grid-template-columns"]'
+    ) as HTMLDivElement | null;
+
+    expect(singleGrid?.style.gridTemplateColumns).toBe(
+      manyGrid?.style.gridTemplateColumns
+    );
+    expect(singleGrid?.style.gridTemplateColumns).toBe('repeat(2, 99px)');
+  });
+
+  it('updates the thumbnail columns when the sidebar width changes', () => {
+    const { container } = render(
+      <MultiImagePreviewPortal
+        isOpen={true}
+        isVisible={true}
+        previewItems={buildPreviewItems(5)}
+        activePreviewId="image-1"
+        isActivePreviewForwardable={true}
+        onSelectPreview={() => {}}
+        onDownloadActivePreview={() => {}}
+        onOpenActivePreviewInNewTab={() => {}}
+        onCopyActivePreviewLink={() => {}}
+        onCopyActivePreviewImage={() => {}}
+        onReplyActivePreview={() => {}}
+        onForwardActivePreview={() => {}}
+        onClose={() => {}}
+        backdropClassName="z-[80]"
+      />
+    );
+
+    const grid = container.querySelector(
+      'div[style*="grid-template-columns"]'
+    ) as HTMLDivElement | null;
+    const resizeHandle = screen.getByRole('separator', {
+      name: 'Ubah lebar daftar gambar',
+    });
+
+    expect(grid?.style.gridTemplateColumns).toBe('repeat(2, 99px)');
+
+    fireEvent.keyDown(resizeHandle, { key: 'ArrowRight' });
+
+    expect(grid?.style.gridTemplateColumns).toBe('repeat(3, 84px)');
+  });
+
   it('wires open, copy, forward, download, and close actions', () => {
     const onSelectPreview = vi.fn();
     const onDownloadActivePreview = vi.fn();
     const onOpenActivePreviewInNewTab = vi.fn();
     const onCopyActivePreviewLink = vi.fn();
     const onCopyActivePreviewImage = vi.fn();
+    const onReplyActivePreview = vi.fn();
     const onForwardActivePreview = vi.fn();
     const onClose = vi.fn();
 
@@ -90,6 +190,7 @@ describe('MultiImagePreviewPortal', () => {
         onOpenActivePreviewInNewTab={onOpenActivePreviewInNewTab}
         onCopyActivePreviewLink={onCopyActivePreviewLink}
         onCopyActivePreviewImage={onCopyActivePreviewImage}
+        onReplyActivePreview={onReplyActivePreview}
         onForwardActivePreview={onForwardActivePreview}
         onClose={onClose}
         backdropClassName="z-[80]"
@@ -99,6 +200,7 @@ describe('MultiImagePreviewPortal', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Buka di tab baru' }));
     fireEvent.click(screen.getByRole('button', { name: 'Salin link' }));
     fireEvent.click(screen.getByRole('button', { name: 'Salin gambar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Balas gambar' }));
     fireEvent.click(screen.getByRole('button', { name: 'Teruskan gambar' }));
     fireEvent.click(screen.getByRole('button', { name: 'Unduh gambar' }));
     fireEvent.click(
@@ -108,9 +210,10 @@ describe('MultiImagePreviewPortal', () => {
     expect(onOpenActivePreviewInNewTab).toHaveBeenCalledTimes(1);
     expect(onCopyActivePreviewLink).toHaveBeenCalledTimes(1);
     expect(onCopyActivePreviewImage).toHaveBeenCalledTimes(1);
+    expect(onReplyActivePreview).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledTimes(2);
     expect(onForwardActivePreview).toHaveBeenCalledTimes(1);
     expect(onDownloadActivePreview).toHaveBeenCalledTimes(1);
-    expect(onClose).toHaveBeenCalledTimes(1);
     expect(onSelectPreview).not.toHaveBeenCalled();
   });
 
@@ -135,6 +238,7 @@ describe('MultiImagePreviewPortal', () => {
         onOpenActivePreviewInNewTab={() => {}}
         onCopyActivePreviewLink={() => {}}
         onCopyActivePreviewImage={() => {}}
+        onReplyActivePreview={() => {}}
         onForwardActivePreview={() => {}}
         onClose={() => {}}
         backdropClassName="z-[80]"

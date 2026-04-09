@@ -100,6 +100,7 @@ const createModel = (
     },
     actions: {
       handleEditMessage: () => {},
+      handleReplyMessage: () => {},
       handleCopyMessage: async () => {},
       handleDownloadMessage: async () => {},
       handleDownloadImageGroup: async () => {},

@@ -35,8 +35,10 @@ interface UseChatConversationMutationsProps {
   message: string;
   setMessage: Dispatch<SetStateAction<string>>;
   editingMessageId: string | null;
+  replyingMessageId: string | null;
   rawAttachmentUrl?: string | null;
   setEditingMessageId: Dispatch<SetStateAction<string | null>>;
+  setReplyingMessageId: Dispatch<SetStateAction<string | null>>;
   pendingComposerAttachments: PendingComposerAttachment[];
   clearPendingComposerAttachments: () => void;
   restorePendingComposerAttachments: (
@@ -77,8 +79,10 @@ export const useChatConversationMutations = ({
   message,
   setMessage,
   editingMessageId,
+  replyingMessageId,
   rawAttachmentUrl = null,
   setEditingMessageId,
+  setReplyingMessageId,
   pendingComposerAttachments,
   clearPendingComposerAttachments,
   restorePendingComposerAttachments,
@@ -114,6 +118,7 @@ export const useChatConversationMutations = ({
     message,
     setMessage,
     editingMessageId,
+    replyingMessageId,
     rawAttachmentUrl,
     pendingComposerAttachments,
     clearPendingComposerAttachments,
@@ -205,6 +210,7 @@ export const useChatConversationMutations = ({
       }
 
       setEditingMessageId(targetMessage.id);
+      setReplyingMessageId(null);
       setMessage(targetMessage.message);
       closeMessageMenu();
       requestAnimationFrame(focusMessageComposer);
@@ -216,7 +222,31 @@ export const useChatConversationMutations = ({
       isComposerAttachmentLoading,
       pendingComposerAttachments.length,
       setEditingMessageId,
+      setReplyingMessageId,
       setMessage,
+    ]
+  );
+
+  const handleReplyMessage = useCallback(
+    (targetMessage: ChatMessage) => {
+      setReplyingMessageId(targetMessage.id);
+
+      if (editingMessageId) {
+        setEditingMessageId(null);
+        setMessage('');
+      }
+
+      closeMessageMenu();
+      requestAnimationFrame(focusMessageComposer);
+      setTimeout(focusMessageComposer, 60);
+    },
+    [
+      closeMessageMenu,
+      editingMessageId,
+      focusMessageComposer,
+      setEditingMessageId,
+      setMessage,
+      setReplyingMessageId,
     ]
   );
 
@@ -226,6 +256,12 @@ export const useChatConversationMutations = ({
     closeMessageMenu();
     requestAnimationFrame(focusMessageComposer);
   }, [closeMessageMenu, focusMessageComposer, setEditingMessageId, setMessage]);
+
+  const handleCancelReplyMessage = useCallback(() => {
+    setReplyingMessageId(null);
+    closeMessageMenu();
+    requestAnimationFrame(focusMessageComposer);
+  }, [closeMessageMenu, focusMessageComposer, setReplyingMessageId]);
 
   const handleSendMessage = useCallback(async () => {
     if (isComposerAttachmentLoading) {
@@ -237,8 +273,12 @@ export const useChatConversationMutations = ({
       return;
     }
 
-    await send.handleSendMessage();
+    const didSend = await send.handleSendMessage();
+    if (didSend) {
+      setReplyingMessageId(null);
+    }
   }, [
+    setReplyingMessageId,
     editingMessageId,
     handleUpdateMessage,
     isComposerAttachmentLoading,
@@ -264,9 +304,11 @@ export const useChatConversationMutations = ({
 
   return {
     handleEditMessage,
+    handleReplyMessage,
     handleDeleteMessage,
     handleDeleteMessages,
     handleCancelEditMessage,
+    handleCancelReplyMessage,
     handleCopyMessage,
     handleDownloadMessage,
     handleDownloadImageGroup,

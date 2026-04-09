@@ -112,11 +112,24 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
             <AnimatePresence initial={false} mode="popLayout">
               {composer.editingMessagePreview ? (
                 <ComposerEditBanner
-                  editingMessagePreview={composer.editingMessagePreview}
-                  onCancelEditMessage={mutations.handleCancelEditMessage}
-                  onFocusEditingTargetMessage={
-                    viewport.focusEditingTargetMessage
-                  }
+                  messagePreview={composer.editingMessagePreview}
+                  mode="edit"
+                  onCancelContext={mutations.handleCancelEditMessage}
+                  onFocusTargetMessage={viewport.focusEditingTargetMessage}
+                  transition={contextualPanelTransition}
+                />
+              ) : composer.replyingMessagePreview ? (
+                <ComposerEditBanner
+                  messagePreview={composer.replyingMessagePreview}
+                  mode="reply"
+                  onCancelContext={mutations.handleCancelReplyMessage}
+                  onFocusTargetMessage={() => {
+                    if (composer.replyingMessageId) {
+                      viewport.focusReplyTargetMessage(
+                        composer.replyingMessageId
+                      );
+                    }
+                  }}
                   transition={contextualPanelTransition}
                 />
               ) : null}
