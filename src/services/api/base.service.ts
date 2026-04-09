@@ -101,9 +101,11 @@ export class BaseService<T extends BaseEntity> {
     data: Omit<T, 'id' | 'created_at' | 'updated_at'>
   ): Promise<ServiceResponse<T>> {
     try {
+      // BaseService only models the entity shape, so inserts need a narrow cast
+      // when database-generated fields are intentionally omitted.
       const result = await supabase
         .from(this.tableName)
-        .insert(data)
+        .insert(data as T)
         .select()
         .single();
 

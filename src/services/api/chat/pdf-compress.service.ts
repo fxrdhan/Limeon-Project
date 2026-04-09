@@ -1,6 +1,7 @@
 import { supabase, supabaseUrl } from '@/lib/supabase';
 import type { PostgrestError } from '@supabase/supabase-js';
 import type { ServiceResponse } from '../base.service';
+import { createPostgrestError } from './contractErrors';
 import {
   CHAT_PDF_COMPRESS_DEFAULT_LEVEL,
   type ChatPdfCompressionLevel,
@@ -20,13 +21,7 @@ const normalizeHeaderValue = (value?: string | null) => value?.trim() || '';
 const buildChatPdfCompressError = (
   message: string,
   code = 'CHAT_PDF_COMPRESS_REQUEST_FAILED'
-): PostgrestError => ({
-  code,
-  details: '',
-  hint: '',
-  message,
-  name: 'PostgrestError',
-});
+): PostgrestError => createPostgrestError(message, code);
 
 const parseNumericHeader = (
   value: string | null,
