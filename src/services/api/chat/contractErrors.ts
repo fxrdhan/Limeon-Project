@@ -12,6 +12,41 @@ export class ChatContractError extends Error {
   }
 }
 
+export const createPostgrestError = (
+  message: string,
+  code: string,
+  details = '',
+  hint = ''
+): PostgrestError => {
+  const error = {
+    name: 'PostgrestError',
+    message,
+    details,
+    hint,
+    code,
+  } as PostgrestError & {
+    toJSON: () => {
+      name: string;
+      message: string;
+      details: string;
+      hint: string;
+      code: string;
+    };
+  };
+
+  Object.defineProperty(error, 'toJSON', {
+    value: () => ({
+      name: error.name,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code,
+    }),
+  });
+
+  return error;
+};
+
 const isPostgrestError = (error: unknown): error is PostgrestError =>
   typeof error === 'object' &&
   error !== null &&
@@ -28,13 +63,8 @@ export const createChatContractError = (
   message: string,
   details = CHAT_CONTRACT_ERROR_DETAILS,
   hint = CHAT_CONTRACT_ERROR_HINT
-): PostgrestError => ({
-  name: 'PostgrestError',
-  message,
-  details,
-  hint,
-  code: CHAT_CONTRACT_ERROR_CODE,
-});
+): PostgrestError =>
+  createPostgrestError(message, CHAT_CONTRACT_ERROR_CODE, details, hint);
 
 export const toChatServiceError = (error: unknown): PostgrestError => {
   if (error instanceof ChatContractError) {

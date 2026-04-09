@@ -1,6 +1,7 @@
 import { supabase, supabaseUrl } from '@/lib/supabase';
 import type { PostgrestError } from '@supabase/supabase-js';
 import type { ServiceResponse } from '../base.service';
+import { createPostgrestError } from './contractErrors';
 import type {
   ChatSharedLinkCreateRequest,
   ChatSharedLinkResponse,
@@ -22,13 +23,7 @@ export const buildChatSharedLinkShortUrl = (slug: string) =>
 const buildChatLinkError = (
   message: string,
   code = 'CHAT_LINK_REQUEST_FAILED'
-): PostgrestError => ({
-  code,
-  details: '',
-  hint: '',
-  message,
-  name: 'PostgrestError',
-});
+): PostgrestError => createPostgrestError(message, code);
 
 export const chatLinkService = {
   async createSharedLink(
