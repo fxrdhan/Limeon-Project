@@ -12,6 +12,9 @@
 - When creating Git commits, use git-commit skills.
 - Development, build, lint, format, check, and test flows are routed through `vp`/VitePlus. Legacy script names such as `dev:vite` are wrappers around `vp`, not plain Vite CLI usage.
 - Testing in this project runs through VitePlus test tooling with Vitest-compatible APIs. Prefer `bun run test:agent` or `bun run test:agent:watch` when running tests. Use `bun run test:run` for regular local terminal output.
+- Do not add low-value tests. Never write tests that only verify static UI text, markup, styling classes, layout values, prop wiring to mocks, or other implementation details without protecting a meaningful regression.
+- Only add tests for critical actions and behaviors: important user flows, state transitions, data transformations, side effects, permissions, failure handling, and bugs that are likely to regress.
+- When a change is simple and low risk, prefer no new test over a noisy or brittle test with little regression value.
 - Do not make remote-only Supabase changes first. Update the relevant files under `supabase/functions` or `supabase/migrations`, confirm the intended changes are tracked by Git, then use Supabase MCP to deploy Edge Functions or apply migrations only when those local changes are ready.
 - If you need to inspect live database state such as tables, columns, schema definitions, RLS policies, or other metadata not represented in `supabase/`, use Supabase MCP.
 
