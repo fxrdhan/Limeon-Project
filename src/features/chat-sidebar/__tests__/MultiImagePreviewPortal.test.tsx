@@ -75,58 +75,7 @@ describe('MultiImagePreviewPortal', () => {
     );
   });
 
-  it('keeps thumbnail columns tied to the sidebar width rather than item count', () => {
-    const { container: singleContainer } = render(
-      <MultiImagePreviewPortal
-        isOpen={true}
-        isVisible={true}
-        previewItems={buildPreviewItems(5)}
-        activePreviewId="image-1"
-        isActivePreviewForwardable={true}
-        onSelectPreview={() => {}}
-        onDownloadActivePreview={() => {}}
-        onOpenActivePreviewInNewTab={() => {}}
-        onCopyActivePreviewLink={() => {}}
-        onCopyActivePreviewImage={() => {}}
-        onReplyActivePreview={() => {}}
-        onForwardActivePreview={() => {}}
-        onClose={() => {}}
-        backdropClassName="z-[80]"
-      />
-    );
-    const { container: manyContainer } = render(
-      <MultiImagePreviewPortal
-        isOpen={true}
-        isVisible={true}
-        previewItems={buildPreviewItems(8)}
-        activePreviewId="image-1"
-        isActivePreviewForwardable={true}
-        onSelectPreview={() => {}}
-        onDownloadActivePreview={() => {}}
-        onOpenActivePreviewInNewTab={() => {}}
-        onCopyActivePreviewLink={() => {}}
-        onCopyActivePreviewImage={() => {}}
-        onReplyActivePreview={() => {}}
-        onForwardActivePreview={() => {}}
-        onClose={() => {}}
-        backdropClassName="z-[80]"
-      />
-    );
-
-    const singleGrid = singleContainer.querySelector(
-      'div[style*="grid-template-columns"]'
-    ) as HTMLDivElement | null;
-    const manyGrid = manyContainer.querySelector(
-      'div[style*="grid-template-columns"]'
-    ) as HTMLDivElement | null;
-
-    expect(singleGrid?.style.gridTemplateColumns).toBe(
-      manyGrid?.style.gridTemplateColumns
-    );
-    expect(singleGrid?.style.gridTemplateColumns).toBe('repeat(2, 99px)');
-  });
-
-  it('updates the thumbnail columns when the sidebar width changes', () => {
+  it('uses one thumbnail column when the items fit vertically', () => {
     const { container } = render(
       <MultiImagePreviewPortal
         isOpen={true}
@@ -149,15 +98,35 @@ describe('MultiImagePreviewPortal', () => {
     const grid = container.querySelector(
       'div[style*="grid-template-columns"]'
     ) as HTMLDivElement | null;
-    const resizeHandle = screen.getByRole('separator', {
-      name: 'Ubah lebar daftar gambar',
-    });
+
+    expect(grid?.style.gridTemplateColumns).toBe('repeat(1, 116px)');
+  });
+
+  it('uses two thumbnail columns when one column would overflow vertically', () => {
+    const { container } = render(
+      <MultiImagePreviewPortal
+        isOpen={true}
+        isVisible={true}
+        previewItems={buildPreviewItems(8)}
+        activePreviewId="image-1"
+        isActivePreviewForwardable={true}
+        onSelectPreview={() => {}}
+        onDownloadActivePreview={() => {}}
+        onOpenActivePreviewInNewTab={() => {}}
+        onCopyActivePreviewLink={() => {}}
+        onCopyActivePreviewImage={() => {}}
+        onReplyActivePreview={() => {}}
+        onForwardActivePreview={() => {}}
+        onClose={() => {}}
+        backdropClassName="z-[80]"
+      />
+    );
+
+    const grid = container.querySelector(
+      'div[style*="grid-template-columns"]'
+    ) as HTMLDivElement | null;
 
     expect(grid?.style.gridTemplateColumns).toBe('repeat(2, 99px)');
-
-    fireEvent.keyDown(resizeHandle, { key: 'ArrowRight' });
-
-    expect(grid?.style.gridTemplateColumns).toBe('repeat(3, 84px)');
   });
 
   it('wires open, copy, forward, download, and close actions', () => {

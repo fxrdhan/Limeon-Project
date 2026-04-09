@@ -102,9 +102,6 @@ const ComposerAttachmentPreviewList = forwardRef<
         transition={transition}
         className="mb-2"
       >
-        <div className="mb-1 px-0.5 text-[11px] text-slate-500">
-          Lampiran {attachments.length}/5
-        </div>
         <div className="flex flex-col gap-2 pr-1">
           {attachments.map(attachment => {
             if ('status' in attachment && attachment.status === 'loading') {

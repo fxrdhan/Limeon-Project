@@ -1,4 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
+import type { ChangeEvent } from 'react';
 import { useRef } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import type { ChatMessage } from '../../../services/api/chat.service';
@@ -221,6 +222,135 @@ describe('useChatComposer', () => {
       expect(result.current.message).toBe('');
       expect(result.current.editingMessageId).toBeNull();
       expect(result.current.pendingComposerAttachments).toHaveLength(0);
+    });
+  });
+
+  it('membatasi total lampiran campuran hingga 30 item per kirim', async () => {
+    const closeMessageMenu = vi.fn();
+
+    const { result } = renderHook(() => {
+      const messageInputRef = useRef<HTMLTextAreaElement | null>(null);
+
+      return useChatComposer({
+        isOpen: true,
+        currentChannelId: 'channel-1',
+        messages: [],
+        closeMessageMenu,
+        messageInputRef,
+      });
+    });
+
+    await act(async () => {
+      result.current.handleImageFileChange({
+        target: {
+          files: Array.from({ length: 15 }, (_, index) => {
+            const nextIndex = index + 1;
+
+            return new File(['image'], `foto-${nextIndex}.png`, {
+              type: 'image/png',
+            });
+          }),
+          value: '',
+        },
+      } as unknown as ChangeEvent<HTMLInputElement>);
+    });
+
+    await waitFor(() => {
+      expect(result.current.pendingComposerAttachments).toHaveLength(15);
+    });
+
+    await act(async () => {
+      result.current.handleDocumentFileChange({
+        target: {
+          files: Array.from({ length: 15 }, (_, index) => {
+            const nextIndex = index + 1;
+
+            return new File(['pdf'], `dokumen-${nextIndex}.pdf`, {
+              type: 'application/pdf',
+            });
+          }),
+          value: '',
+        },
+      } as unknown as ChangeEvent<HTMLInputElement>);
+    });
+
+    await waitFor(() => {
+      expect(result.current.pendingComposerAttachments).toHaveLength(30);
+    });
+
+    await act(async () => {
+      result.current.handleDocumentFileChange({
+        target: {
+          files: [
+            new File(['pdf'], 'dokumen-16.pdf', {
+              type: 'application/pdf',
+            }),
+          ],
+          value: '',
+        },
+      } as unknown as ChangeEvent<HTMLInputElement>);
+    });
+
+    await waitFor(() => {
+      expect(result.current.pendingComposerAttachments).toHaveLength(30);
+    });
+  });
+
+  it('membatasi total ukuran lampiran hingga 2 gb per kirim', async () => {
+    const closeMessageMenu = vi.fn();
+
+    const { result } = renderHook(() => {
+      const messageInputRef = useRef<HTMLTextAreaElement | null>(null);
+
+      return useChatComposer({
+        isOpen: true,
+        currentChannelId: 'channel-1',
+        messages: [],
+        closeMessageMenu,
+        messageInputRef,
+      });
+    });
+
+    const firstFile = new File(['image'], 'foto-1.png', {
+      type: 'image/png',
+    });
+    const secondFile = new File(['pdf'], 'dokumen-2.pdf', {
+      type: 'application/pdf',
+    });
+
+    Object.defineProperty(firstFile, 'size', {
+      configurable: true,
+      value: 1.5 * 1024 * 1024 * 1024,
+    });
+    Object.defineProperty(secondFile, 'size', {
+      configurable: true,
+      value: 0.75 * 1024 * 1024 * 1024,
+    });
+
+    await act(async () => {
+      result.current.handleImageFileChange({
+        target: {
+          files: [firstFile],
+          value: '',
+        },
+      } as unknown as ChangeEvent<HTMLInputElement>);
+    });
+
+    await waitFor(() => {
+      expect(result.current.pendingComposerAttachments).toHaveLength(1);
+    });
+
+    await act(async () => {
+      result.current.handleDocumentFileChange({
+        target: {
+          files: [secondFile],
+          value: '',
+        },
+      } as unknown as ChangeEvent<HTMLInputElement>);
+    });
+
+    await waitFor(() => {
+      expect(result.current.pendingComposerAttachments).toHaveLength(1);
     });
   });
 

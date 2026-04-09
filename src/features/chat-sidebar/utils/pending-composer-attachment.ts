@@ -7,6 +7,7 @@ import { resolveFileExtension } from '../../../../shared/chatStoragePaths';
 
 interface UpsertPendingComposerAttachmentOptions {
   maxAttachments: number;
+  maxTotalBytes: number;
   replaceAttachmentId?: string;
   replaceableKinds: PendingComposerAttachmentKind[];
 }
@@ -14,7 +15,9 @@ interface UpsertPendingComposerAttachmentOptions {
 interface UpsertPendingComposerAttachmentResult {
   attachments: PendingComposerAttachment[];
   exceededLimit: boolean;
+  exceededSizeLimit: boolean;
   replacedPreviewUrl: string | null;
+  rejectedPreviewUrl: string | null;
 }
 
 const buildPendingAttachmentId = (prefix: 'pending_image' | 'pending_file') =>
@@ -29,6 +32,17 @@ const getFileTypeLabel = (file: File, fallbackLabel: string) => {
 
   return (resolvedExtension || fallbackLabel).toUpperCase();
 };
+
+const getPendingComposerAttachmentTotalBytes = (
+  attachments: PendingComposerAttachment[]
+) =>
+  attachments.reduce((totalSize, attachment) => {
+    if (!(attachment.file instanceof Blob)) {
+      return totalSize;
+    }
+
+    return totalSize + attachment.file.size;
+  }, 0);
 
 export const isPdfComposerAttachment = (
   attachment: Pick<
@@ -77,6 +91,7 @@ export const upsertPendingComposerAttachment = (
   nextAttachment: PendingComposerAttachment,
   {
     maxAttachments,
+    maxTotalBytes,
     replaceAttachmentId,
     replaceableKinds,
   }: UpsertPendingComposerAttachmentOptions
@@ -92,11 +107,25 @@ export const upsertPendingComposerAttachment = (
       const replacedAttachment = previousAttachments[replaceIndex];
       const nextAttachments = [...previousAttachments];
       nextAttachments[replaceIndex] = nextAttachment;
+      const nextTotalBytes =
+        getPendingComposerAttachmentTotalBytes(nextAttachments);
+
+      if (nextTotalBytes > maxTotalBytes) {
+        return {
+          attachments: previousAttachments,
+          exceededLimit: false,
+          exceededSizeLimit: true,
+          replacedPreviewUrl: null,
+          rejectedPreviewUrl: nextAttachment.previewUrl,
+        };
+      }
 
       return {
         attachments: nextAttachments,
         exceededLimit: false,
+        exceededSizeLimit: false,
         replacedPreviewUrl: replacedAttachment.previewUrl,
+        rejectedPreviewUrl: null,
       };
     }
   }
@@ -105,13 +134,31 @@ export const upsertPendingComposerAttachment = (
     return {
       attachments: previousAttachments,
       exceededLimit: true,
+      exceededSizeLimit: false,
       replacedPreviewUrl: null,
+      rejectedPreviewUrl: nextAttachment.previewUrl,
+    };
+  }
+
+  const nextAttachments = [...previousAttachments, nextAttachment];
+  const nextTotalBytes =
+    getPendingComposerAttachmentTotalBytes(nextAttachments);
+
+  if (nextTotalBytes > maxTotalBytes) {
+    return {
+      attachments: previousAttachments,
+      exceededLimit: false,
+      exceededSizeLimit: true,
+      replacedPreviewUrl: null,
+      rejectedPreviewUrl: nextAttachment.previewUrl,
     };
   }
 
   return {
-    attachments: [...previousAttachments, nextAttachment],
+    attachments: nextAttachments,
     exceededLimit: false,
+    exceededSizeLimit: false,
     replacedPreviewUrl: null,
+    rejectedPreviewUrl: null,
   };
 };

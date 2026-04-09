@@ -10,6 +10,7 @@ import toast from 'react-hot-toast';
 import {
   CHAT_SIDEBAR_TOASTER_ID,
   MAX_PENDING_COMPOSER_ATTACHMENTS,
+  MAX_PENDING_COMPOSER_TOTAL_BYTES,
 } from '../constants';
 import { compressImageIfNeeded } from '@/utils/image';
 import { renderPdfPreviewDataUrl } from '../utils/pdf-preview';
@@ -271,8 +272,10 @@ export const useComposerPendingAttachments = ({
       }
 
       const nextAttachment = buildPendingImageComposerAttachment(file);
-      let exceededAttachmentLimit = false;
+      let exceededCountLimit = false;
+      let exceededSizeLimit = false;
       let replacedPreviewUrl: string | null = null;
+      let rejectedPreviewUrl: string | null = null;
 
       markPendingComposerAttachmentsDirty();
       setPendingComposerAttachments(previousAttachments => {
@@ -281,13 +284,16 @@ export const useComposerPendingAttachments = ({
           nextAttachment,
           {
             maxAttachments: MAX_PENDING_COMPOSER_ATTACHMENTS,
+            maxTotalBytes: MAX_PENDING_COMPOSER_TOTAL_BYTES,
             replaceAttachmentId,
             replaceableKinds: ['image'],
           }
         );
 
-        exceededAttachmentLimit = upsertResult.exceededLimit;
+        exceededCountLimit = upsertResult.exceededLimit;
+        exceededSizeLimit = upsertResult.exceededSizeLimit;
         replacedPreviewUrl = upsertResult.replacedPreviewUrl;
+        rejectedPreviewUrl = upsertResult.rejectedPreviewUrl;
         return upsertResult.attachments;
       });
 
@@ -295,16 +301,24 @@ export const useComposerPendingAttachments = ({
         URL.revokeObjectURL(replacedPreviewUrl);
       }
 
-      if (exceededAttachmentLimit) {
-        if (nextAttachment.previewUrl) {
-          URL.revokeObjectURL(nextAttachment.previewUrl);
-        }
+      if (rejectedPreviewUrl) {
+        URL.revokeObjectURL(rejectedPreviewUrl);
+      }
+
+      if (exceededCountLimit) {
         toast.error(
           `Maksimal ${MAX_PENDING_COMPOSER_ATTACHMENTS} lampiran dalam satu kirim`,
           {
             toasterId: CHAT_SIDEBAR_TOASTER_ID,
           }
         );
+        return false;
+      }
+
+      if (exceededSizeLimit) {
+        toast.error('Maksimal total 2 GB lampiran dalam satu kirim', {
+          toasterId: CHAT_SIDEBAR_TOASTER_ID,
+        });
         return false;
       }
 
@@ -336,8 +350,10 @@ export const useComposerPendingAttachments = ({
       }
 
       const nextAttachment = buildPendingFileComposerAttachment(file, fileKind);
-      let exceededAttachmentLimit = false;
+      let exceededCountLimit = false;
+      let exceededSizeLimit = false;
       let replacedPreviewUrl: string | null = null;
+      let rejectedPreviewUrl: string | null = null;
 
       markPendingComposerAttachmentsDirty();
       setPendingComposerAttachments(previousAttachments => {
@@ -346,13 +362,16 @@ export const useComposerPendingAttachments = ({
           nextAttachment,
           {
             maxAttachments: MAX_PENDING_COMPOSER_ATTACHMENTS,
+            maxTotalBytes: MAX_PENDING_COMPOSER_TOTAL_BYTES,
             replaceAttachmentId,
             replaceableKinds: [fileKind],
           }
         );
 
-        exceededAttachmentLimit = upsertResult.exceededLimit;
+        exceededCountLimit = upsertResult.exceededLimit;
+        exceededSizeLimit = upsertResult.exceededSizeLimit;
         replacedPreviewUrl = upsertResult.replacedPreviewUrl;
+        rejectedPreviewUrl = upsertResult.rejectedPreviewUrl;
         return upsertResult.attachments;
       });
 
@@ -360,13 +379,24 @@ export const useComposerPendingAttachments = ({
         URL.revokeObjectURL(replacedPreviewUrl);
       }
 
-      if (exceededAttachmentLimit) {
+      if (rejectedPreviewUrl) {
+        URL.revokeObjectURL(rejectedPreviewUrl);
+      }
+
+      if (exceededCountLimit) {
         toast.error(
           `Maksimal ${MAX_PENDING_COMPOSER_ATTACHMENTS} lampiran dalam satu kirim`,
           {
             toasterId: CHAT_SIDEBAR_TOASTER_ID,
           }
         );
+        return false;
+      }
+
+      if (exceededSizeLimit) {
+        toast.error('Maksimal total 2 GB lampiran dalam satu kirim', {
+          toasterId: CHAT_SIDEBAR_TOASTER_ID,
+        });
         return false;
       }
 

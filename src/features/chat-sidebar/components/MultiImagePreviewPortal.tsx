@@ -74,6 +74,30 @@ const FOUR_COLUMN_SIDEBAR_WIDTH =
 const MIN_SIDEBAR_WIDTH = ONE_COLUMN_SIDEBAR_WIDTH;
 const MAX_SIDEBAR_WIDTH = FOUR_COLUMN_SIDEBAR_WIDTH;
 const MIN_PREVIEW_PANE_WIDTH = 360;
+const INITIAL_CONTAINER_HEIGHT =
+  typeof window !== 'undefined' ? Math.round(window.innerHeight * 0.92) : 0;
+const buildThumbnailGridHeight = (columnCount: number, itemCount: number) => {
+  const tileSize = buildThumbnailTileSize(columnCount);
+  const rowCount = Math.ceil(itemCount / columnCount);
+
+  return (
+    THUMBNAIL_GRID_HORIZONTAL_PADDING +
+    tileSize * rowCount +
+    THUMBNAIL_GRID_GAP * Math.max(0, rowCount - 1)
+  );
+};
+const getDefaultSidebarWidth = (itemCount: number, availableHeight: number) => {
+  if (availableHeight <= 0) {
+    return DEFAULT_SIDEBAR_WIDTH;
+  }
+
+  const fittedLevel = SIDEBAR_LAYOUT_LEVELS.find(
+    level =>
+      buildThumbnailGridHeight(level.columnCount, itemCount) <= availableHeight
+  );
+
+  return fittedLevel?.width ?? DEFAULT_SIDEBAR_WIDTH;
+};
 const THUMBNAIL_LAYOUT_TRANSITION = {
   type: 'spring' as const,
   stiffness: 380,
@@ -114,7 +138,13 @@ const MultiImagePreviewPortal = ({
     startX: number;
   } | null>(null);
   const [containerWidth, setContainerWidth] = useState(1180);
-  const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
+  const [containerHeight, setContainerHeight] = useState(
+    INITIAL_CONTAINER_HEIGHT
+  );
+  const didUserAdjustSidebarRef = useRef(false);
+  const [sidebarWidth, setSidebarWidth] = useState(() =>
+    getDefaultSidebarWidth(previewItems.length, INITIAL_CONTAINER_HEIGHT)
+  );
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
 
   const getMaxSidebarWidth = useCallback((availableWidth: number) => {
@@ -161,15 +191,19 @@ const MultiImagePreviewPortal = ({
     }
 
     const resizeObserver = new ResizeObserver(entries => {
-      const nextWidth = entries[0]?.contentRect.width;
+      const nextEntry = entries[0];
+      const nextWidth = nextEntry?.contentRect.width;
       if (!nextWidth) {
         return;
       }
 
       setContainerWidth(nextWidth);
+      setContainerHeight(nextEntry.contentRect.height);
     });
 
-    setContainerWidth(containerElement.getBoundingClientRect().width);
+    const containerRect = containerElement.getBoundingClientRect();
+    setContainerWidth(containerRect.width);
+    setContainerHeight(containerRect.height);
     resizeObserver.observe(containerElement);
 
     return () => {
@@ -207,8 +241,19 @@ const MultiImagePreviewPortal = ({
       return;
     }
 
+    didUserAdjustSidebarRef.current = false;
     stopSidebarResize(resizeHandleRef.current);
   }, [isOpen, stopSidebarResize]);
+
+  useEffect(() => {
+    if (didUserAdjustSidebarRef.current) {
+      return;
+    }
+
+    setSidebarWidth(
+      getDefaultSidebarWidth(previewItems.length, containerHeight)
+    );
+  }, [containerHeight, previewItems.length]);
 
   useEffect(() => {
     const resizeHandleElement = resizeHandleRef.current;
@@ -232,6 +277,7 @@ const MultiImagePreviewPortal = ({
         startWidth: boundedWidth,
         startX: event.clientX,
       };
+      didUserAdjustSidebarRef.current = true;
       event.currentTarget.setPointerCapture(event.pointerId);
       setSidebarWidth(boundedWidth);
       setIsResizingSidebar(true);
@@ -277,6 +323,7 @@ const MultiImagePreviewPortal = ({
       }
 
       event.preventDefault();
+      didUserAdjustSidebarRef.current = true;
       setSidebarWidth(currentWidth => {
         const maxSidebarWidth = getMaxSidebarWidth(containerWidth);
         const snapCandidates = SIDEBAR_LAYOUT_LEVELS.map(
