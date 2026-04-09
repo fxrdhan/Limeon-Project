@@ -1,7 +1,6 @@
 import { AnimatePresence, motion } from 'motion/react';
 import ImageUploader from '@/components/image-manager';
 import ImageExpandPreview from '@/components/shared/image-expand-preview';
-import Button from '@/components/button';
 import { TbArrowUp } from 'react-icons/tb';
 import {
   COMPOSER_BASE_BORDER_COLOR,
@@ -34,6 +33,12 @@ interface ComposerPanelProps {
 
 const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
   const { composer, previews, mutations, refs, viewport } = runtime;
+  const totalSelectableComposerAttachments =
+    composer.composerAttachmentPreviewItems.filter(
+      attachment =>
+        !('status' in attachment) &&
+        (attachment.fileKind === 'image' || attachment.fileKind === 'document')
+    ).length;
   const linkPromptPopover = useComposerLinkPromptPopover({
     linkPromptUrl: composer.attachmentPastePromptUrl,
     onDismissAttachmentPastePrompt: composer.dismissAttachmentPastePrompt,
@@ -137,6 +142,26 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
             </AnimatePresence>
 
             <AnimatePresence initial={false} mode="popLayout">
+              {previews.isComposerAttachmentSelectionMode ? (
+                <motion.div
+                  layout
+                  transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
+                  className="mb-2 flex items-center justify-between px-1 text-sm"
+                >
+                  <button
+                    type="button"
+                    onClick={previews.handleClearComposerAttachmentSelection}
+                    className="cursor-pointer bg-transparent p-0 text-sm font-medium text-slate-500 transition-colors hover:text-slate-700 hover:underline hover:underline-offset-2"
+                  >
+                    Batal
+                  </button>
+                  <p className="text-sm font-medium text-slate-500">
+                    {previews.selectedComposerAttachmentIds.length}/
+                    {totalSelectableComposerAttachments} terpilih
+                  </p>
+                </motion.div>
+              ) : null}
+
               {composer.composerAttachmentPreviewItems.length > 0 ? (
                 <ComposerAttachmentPreviewList
                   attachments={composer.composerAttachmentPreviewItems}
@@ -169,27 +194,21 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                 transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
                 className="mb-2 flex items-center justify-between px-1 text-sm"
               >
-                <Button
+                <button
                   type="button"
-                  variant="text"
-                  size="sm"
-                  withUnderline={false}
                   onClick={previews.handleSelectAllComposerAttachments}
-                  className="!h-auto !min-h-0 !px-0 !py-0 !bg-transparent !shadow-none !ring-0 !text-slate-500 !underline !underline-offset-2 hover:!text-slate-700"
+                  className="cursor-pointer bg-transparent p-0 text-sm font-medium text-slate-500 transition-colors hover:text-slate-700 hover:underline hover:underline-offset-2"
                 >
                   Pilih semua
-                </Button>
-                <Button
+                </button>
+                <button
                   type="button"
-                  variant="text"
-                  size="sm"
-                  withUnderline={false}
                   onClick={previews.handleDeleteSelectedComposerAttachments}
                   disabled={previews.selectedComposerAttachmentIds.length === 0}
-                  className="!h-auto !min-h-0 !px-0 !py-0 !bg-transparent !shadow-none !ring-0 !text-rose-500 !underline !underline-offset-2 hover:!text-rose-600 disabled:!text-rose-300"
+                  className="cursor-pointer bg-transparent p-0 text-sm font-medium text-rose-500 transition-colors hover:text-rose-600 hover:underline hover:underline-offset-2 disabled:cursor-default disabled:text-rose-300 disabled:hover:no-underline"
                 >
                   Hapus
-                </Button>
+                </button>
               </motion.div>
             ) : null}
 

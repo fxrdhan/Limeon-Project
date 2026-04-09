@@ -158,6 +158,7 @@ const buildComposerRuntime = () =>
       selectedComposerAttachmentIds: [],
       handleToggleImageActionsMenu: vi.fn(),
       handleSelectAllComposerAttachments: vi.fn(),
+      handleClearComposerAttachmentSelection: vi.fn(),
       handleDeleteSelectedComposerAttachments: vi.fn(),
       handleToggleComposerAttachmentSelection: vi.fn(),
       composerDocumentPreviewUrl: null,
@@ -255,12 +256,41 @@ describe('ComposerPanel', () => {
     const runtime = buildComposerRuntime();
     runtime.previews.isComposerAttachmentSelectionMode = true;
     runtime.previews.selectedComposerAttachmentIds = ['pending-image-1'];
+    runtime.composer.composerAttachmentPreviewItems = [
+      {
+        id: 'pending-image-1',
+        file: new File(['image'], 'foto.png', { type: 'image/png' }),
+        fileName: 'foto.png',
+        fileTypeLabel: 'PNG',
+        fileKind: 'image',
+        mimeType: 'image/png',
+        previewUrl: 'blob:preview-1',
+        pdfCoverUrl: null,
+        pdfPageCount: null,
+      },
+      {
+        id: 'pending-doc-1',
+        file: new File(['pdf'], 'dokumen.pdf', { type: 'application/pdf' }),
+        fileName: 'dokumen.pdf',
+        fileTypeLabel: 'PDF',
+        fileKind: 'document',
+        mimeType: 'application/pdf',
+        previewUrl: null,
+        pdfCoverUrl: null,
+        pdfPageCount: null,
+      },
+    ];
 
     render(<ComposerPanel runtime={runtime} />);
 
+    expect(screen.getByText('1/2 terpilih')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Batal' }));
     fireEvent.click(screen.getByRole('button', { name: 'Pilih semua' }));
     fireEvent.click(screen.getByRole('button', { name: 'Hapus' }));
 
+    expect(
+      runtime.previews.handleClearComposerAttachmentSelection
+    ).toHaveBeenCalledOnce();
     expect(
       runtime.previews.handleSelectAllComposerAttachments
     ).toHaveBeenCalledOnce();

@@ -207,6 +207,10 @@ export const useComposerAttachmentPreview = ({
     setSelectedComposerAttachmentIds(selectableComposerAttachmentIds);
   }, [selectableComposerAttachmentIds]);
 
+  const handleClearComposerAttachmentSelection = useCallback(() => {
+    setSelectedComposerAttachmentIds([]);
+  }, []);
+
   const handleDeleteSelectedComposerAttachments = useCallback(() => {
     if (selectedComposerAttachmentIds.length === 0) {
       return;
@@ -596,6 +600,7 @@ export const useComposerAttachmentPreview = ({
     closeImageActionsMenu,
     closePdfCompressionMenu,
     closeComposerDocumentPreview,
+    handleClearComposerAttachmentSelection,
     handleSelectAllComposerAttachments,
     handleDeleteSelectedComposerAttachments,
     handleToggleComposerAttachmentSelection,
