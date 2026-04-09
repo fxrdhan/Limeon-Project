@@ -1,8 +1,6 @@
-import { resolveRemoteNetworkEnv } from './network-exposure';
+import { localNetworkEnv } from './network-exposure';
 
 declare const Bun: any;
-
-const remoteNetworkEnv = await resolveRemoteNetworkEnv('development');
 
 const devProcess = Bun.spawn(['bunx', 'vp', 'dev'], {
   stdin: 'inherit',
@@ -10,7 +8,7 @@ const devProcess = Bun.spawn(['bunx', 'vp', 'dev'], {
   stderr: 'inherit',
   env: {
     ...process.env,
-    ...remoteNetworkEnv,
+    ...localNetworkEnv,
   },
 });
 

@@ -41,9 +41,12 @@ const reporters = isAIAgent
     : ['agent']
   : undefined;
 const isAnalyze = env.ANALYZE === 'true';
-const networkAllowedHosts = parseEnvList(env.PHARMASYS_ALLOWED_HOSTS);
+// Network exposure is opt-in via wrapper scripts or explicit shell env.
+// Do not read these flags from `.env.local`, otherwise normal `dev` becomes remote.
+const networkAllowedHosts = parseEnvList(process.env.PHARMASYS_ALLOWED_HOSTS);
 const shouldExposeNetwork =
-  env.PHARMASYS_EXPOSE_NETWORK === 'true' || networkAllowedHosts.length > 0;
+  process.env.PHARMASYS_EXPOSE_NETWORK === 'true' ||
+  networkAllowedHosts.length > 0;
 
 export default defineConfig({
   plugins: [

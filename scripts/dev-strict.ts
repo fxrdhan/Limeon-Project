@@ -3,11 +3,22 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { localNetworkEnv, resolveRemoteNetworkEnv } from './network-exposure';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const bunExecutable = process.execPath;
 const shutdownSignals = ['SIGINT', 'SIGTERM'] as const;
 const forceKillDelayMs = 5_000;
+const shouldExposeRemote = process.argv.includes('--remote');
+const devServerEnv = shouldExposeRemote
+  ? {
+      ...process.env,
+      ...(await resolveRemoteNetworkEnv('development')),
+    }
+  : {
+      ...process.env,
+      ...localNetworkEnv,
+    };
 
 type ShutdownSignal = (typeof shutdownSignals)[number];
 
@@ -18,18 +29,19 @@ interface ManagedProcess {
 
 const spawnManagedProcess = (
   label: string,
-  args: string[]
+  args: string[],
+  env: NodeJS.ProcessEnv = process.env
 ): ManagedProcess => ({
   label,
   child: spawn(bunExecutable, args, {
     cwd: repoRoot,
-    env: process.env,
+    env,
     stdio: 'inherit',
   }),
 });
 
 const managedProcesses = [
-  spawnManagedProcess('dev server', ['x', 'vp', 'dev']),
+  spawnManagedProcess('dev server', ['x', 'vp', 'dev'], devServerEnv),
   spawnManagedProcess('typecheck watch', [
     'x',
     '--bun',

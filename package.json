@@ -6,10 +6,11 @@
   "type": "module",
   "license": "AGPL-3.0",
   "scripts": {
-    "dev": "bunx vp dev",
+    "dev": "bun scripts/dev-local.ts",
     "dev:remote": "bun scripts/dev-remote.ts",
     "dev:strict": "bun scripts/dev-strict.ts",
-    "dev:vite": "bunx vp dev",
+    "dev:strict:remote": "bun scripts/dev-strict.ts --remote",
+    "dev:vite": "bun scripts/dev-local.ts",
     "build": "bunx vp build",
     "lint": "bunx vp lint . --deny-warnings",
     "lint:fix": "bunx vp lint . --fix --deny-warnings",
