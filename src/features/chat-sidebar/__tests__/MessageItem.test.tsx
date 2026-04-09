@@ -105,6 +105,11 @@ const createModel = (
       handleDownloadMessage: async () => {},
       handleDownloadImageGroup: async () => {},
       handleDownloadDocumentGroup: async () => {},
+      handleDeleteMessages: async () => ({
+        deletedTargetMessageIds: [],
+        failedTargetMessageIds: [],
+        cleanupWarningTargetMessageIds: [],
+      }),
       handleOpenForwardMessagePicker: () => {},
       handleDeleteMessage: async () => true,
       ...actions,
@@ -240,6 +245,48 @@ describe('MessageItem', () => {
     expect(handleDownloadImageGroup).toHaveBeenCalledWith(groupedMessages);
   });
 
+  it('deletes all grouped images from the group popover', async () => {
+    const groupedMessages = Array.from({ length: 4 }, (_, index) => ({
+      ...baseMessage,
+      id: `image-${index + 1}`,
+      message: `https://example.com/chat-${index + 1}.png`,
+      message_type: 'image' as const,
+      file_mime_type: 'image/png',
+      file_storage_path: `images/channel/chat-${index + 1}.png`,
+      file_name: `chat-${index + 1}.png`,
+    }));
+    const handleDeleteMessages = vi.fn().mockResolvedValue({
+      deletedTargetMessageIds: groupedMessages.map(message => message.id),
+      failedTargetMessageIds: [],
+      cleanupWarningTargetMessageIds: [],
+    });
+    const handleDeleteMessage = vi.fn().mockResolvedValue(true);
+
+    render(
+      <MessageItem
+        model={createModel({
+          message: groupedMessages[3],
+          menu: {
+            openMessageId: 'image-4',
+          },
+          content: {
+            groupedImageMessages: groupedMessages,
+            getImageMessageUrl: targetMessage => targetMessage.message,
+          },
+          actions: {
+            handleDeleteMessages,
+            handleDeleteMessage,
+          },
+        })}
+      />
+    );
+
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Hapus' }));
+
+    expect(handleDeleteMessages).toHaveBeenCalledWith(groupedMessages);
+    expect(handleDeleteMessage).not.toHaveBeenCalled();
+  });
+
   it('anchors grouped document menus to the outer bubble when clicking the bubble area', () => {
     const groupedMessages = [
       {
@@ -351,5 +398,67 @@ describe('MessageItem', () => {
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Unduh' }));
 
     expect(handleDownloadDocumentGroup).toHaveBeenCalledWith(groupedMessages);
+  });
+
+  it('deletes all grouped documents from the group popover', async () => {
+    const groupedMessages = [
+      {
+        ...baseMessage,
+        id: 'file-1',
+        message: 'https://example.com/report.pdf',
+        message_type: 'file' as const,
+        file_name: 'report.pdf',
+        file_mime_type: 'application/pdf',
+        file_storage_path: 'documents/channel/report.pdf',
+        file_kind: 'document' as const,
+      },
+      {
+        ...baseMessage,
+        id: 'file-2',
+        message: 'https://example.com/notes.docx',
+        message_type: 'file' as const,
+        file_name: 'notes.docx',
+        file_mime_type:
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        file_storage_path: 'documents/channel/notes.docx',
+        file_kind: 'document' as const,
+      },
+    ];
+    const handleDeleteMessages = vi.fn().mockResolvedValue({
+      deletedTargetMessageIds: groupedMessages.map(message => message.id),
+      failedTargetMessageIds: [],
+      cleanupWarningTargetMessageIds: [],
+    });
+    const handleDeleteMessage = vi.fn().mockResolvedValue(true);
+
+    const { container } = render(
+      <MessageItem
+        model={createModel({
+          message: groupedMessages[1],
+          menu: {
+            openMessageId: 'file-2',
+            toggle: () => {},
+          },
+          content: {
+            groupedDocumentMessages: groupedMessages,
+            getAttachmentFileName: targetMessage =>
+              targetMessage.file_name || '',
+          },
+          actions: {
+            handleDeleteMessages,
+            handleDeleteMessage,
+          },
+        })}
+      />
+    );
+
+    const root = container.querySelector(
+      '[data-chat-document-group-root]'
+    ) as HTMLDivElement | null;
+    fireEvent.click(root as HTMLDivElement);
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Hapus' }));
+
+    expect(handleDeleteMessages).toHaveBeenCalledWith(groupedMessages);
+    expect(handleDeleteMessage).not.toHaveBeenCalled();
   });
 });

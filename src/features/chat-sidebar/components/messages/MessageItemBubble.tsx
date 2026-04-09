@@ -51,6 +51,7 @@ export const MessageItemBubble = ({
   const {
     handleCopyMessage,
     handleDeleteMessage,
+    handleDeleteMessages,
     handleDownloadMessage,
     handleDownloadImageGroup,
     handleDownloadDocumentGroup,
@@ -138,6 +139,7 @@ export const MessageItemBubble = ({
           handleCopyMessage={handleCopyMessage}
           handleDownloadMessage={handleDownloadMessage}
           handleDownloadImageGroup={handleDownloadImageGroup}
+          handleDeleteMessages={handleDeleteMessages}
           handleOpenForwardMessagePicker={handleOpenForwardMessagePicker}
           handleDeleteMessage={handleDeleteMessage}
           handleReplyMessage={handleReplyMessage}
@@ -162,6 +164,7 @@ export const MessageItemBubble = ({
           handleCopyMessage={handleCopyMessage}
           handleDownloadMessage={handleDownloadMessage}
           handleDownloadDocumentGroup={handleDownloadDocumentGroup}
+          handleDeleteMessages={handleDeleteMessages}
           handleOpenForwardMessagePicker={handleOpenForwardMessagePicker}
           handleDeleteMessage={handleDeleteMessage}
           handleReplyMessage={handleReplyMessage}

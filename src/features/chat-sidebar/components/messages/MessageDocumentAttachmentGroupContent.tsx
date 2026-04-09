@@ -68,6 +68,7 @@ interface MessageDocumentAttachmentGroupContentProps {
   handleCopyMessage: (targetMessage: ChatMessage) => Promise<void>;
   handleDownloadMessage: (targetMessage: ChatMessage) => Promise<void>;
   handleDownloadDocumentGroup: (targetMessages: ChatMessage[]) => Promise<void>;
+  handleDeleteMessages: (targetMessages: ChatMessage[]) => Promise<unknown>;
   handleOpenForwardMessagePicker: (targetMessage: ChatMessage) => void;
   handleDeleteMessage: (targetMessage: ChatMessage) => Promise<boolean>;
   handleReplyMessage: (targetMessage: ChatMessage) => void;
@@ -92,6 +93,7 @@ export const MessageDocumentAttachmentGroupContent = ({
   handleCopyMessage,
   handleDownloadMessage,
   handleDownloadDocumentGroup,
+  handleDeleteMessages,
   handleOpenForwardMessagePicker,
   handleDeleteMessage,
   handleReplyMessage,
@@ -249,7 +251,14 @@ export const MessageDocumentAttachmentGroupContent = ({
                 void handleDownloadDocumentGroup(messages);
               },
             }
-          : action
+          : action.label === 'Hapus'
+            ? {
+                ...action,
+                onClick: () => {
+                  void handleDeleteMessages(messages);
+                },
+              }
+            : action
       )
     : [];
 
