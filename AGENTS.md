@@ -10,6 +10,9 @@
 
 - Run `bun run check --fix [filenames path]` after editing or adding complex lines in code files. This repo's canonical validation entrypoint is `vp check` via the `check` script, so do not call raw `tsc`, `vite`, or `vitest` unless the task explicitly requires it.
 - When creating Git commits, use git-commit skills.
+- If the user asks to `commit`, immediately spawn exactly 1 subagent to handle the commit workflow instead of doing the commit in the main agent.
+- That subagent must use the `git-commit` skill and follow its workflow exactly: inspect repo state and diffs, choose the staging strategy, run required validation from this repo's instructions, create the commit(s) without pushing, and report the commit hash(es) plus any remaining uncommitted changes.
+- The main agent should only coordinate and report results for `commit` requests unless the subagent is unavailable or fails.
 - Development, build, lint, format, check, and test flows are routed through `vp`/VitePlus. Legacy script names such as `dev:vite` are wrappers around `vp`, not plain Vite CLI usage.
 - Testing in this project runs through VitePlus test tooling with Vitest-compatible APIs. Prefer `bun run test:agent` or `bun run test:agent:watch` when running tests. Use `bun run test:run` for regular local terminal output.
 - Do not make remote-only Supabase changes first. Update the relevant files under `supabase/functions` or `supabase/migrations`, confirm the intended changes are tracked by Git, then use Supabase MCP to deploy Edge Functions or apply migrations only when those local changes are ready.
