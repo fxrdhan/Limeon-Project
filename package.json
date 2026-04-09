@@ -7,6 +7,7 @@
   "license": "AGPL-3.0",
   "scripts": {
     "dev": "bunx vp dev",
+    "dev:remote": "bun scripts/dev-remote.ts",
     "dev:strict": "bun scripts/dev-strict.ts",
     "dev:vite": "bunx vp dev",
     "build": "bunx vp build",
