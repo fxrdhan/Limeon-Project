@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'motion/react';
 import ImageUploader from '@/components/image-manager';
 import ImageExpandPreview from '@/components/shared/image-expand-preview';
+import Button from '@/components/button';
 import { TbArrowUp } from 'react-icons/tb';
 import {
   COMPOSER_BASE_BORDER_COLOR,
@@ -142,10 +143,15 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                   openImageActionsAttachmentId={
                     previews.openImageActionsAttachmentId
                   }
+                  isSelectionMode={previews.isComposerAttachmentSelectionMode}
+                  selectedAttachmentIds={previews.selectedComposerAttachmentIds}
                   imageActionsButtonRef={previews.imageActionsButtonRef}
                   transition={contextualPanelTransition}
                   onToggleImageActionsMenu={
                     previews.handleToggleImageActionsMenu
+                  }
+                  onToggleAttachmentSelection={
+                    previews.handleToggleComposerAttachmentSelection
                   }
                   onCancelLoadingComposerAttachment={
                     composer.cancelLoadingComposerAttachment
@@ -156,6 +162,36 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                 />
               ) : null}
             </AnimatePresence>
+
+            {previews.isComposerAttachmentSelectionMode ? (
+              <motion.div
+                layout
+                transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
+                className="mb-2 flex items-center justify-between px-1 text-sm"
+              >
+                <Button
+                  type="button"
+                  variant="text"
+                  size="sm"
+                  withUnderline={false}
+                  onClick={previews.handleSelectAllComposerAttachments}
+                  className="!h-auto !min-h-0 !px-0 !py-0 !bg-transparent !shadow-none !ring-0 !text-slate-500 !underline !underline-offset-2 hover:!text-slate-700"
+                >
+                  Pilih semua
+                </Button>
+                <Button
+                  type="button"
+                  variant="text"
+                  size="sm"
+                  withUnderline={false}
+                  onClick={previews.handleDeleteSelectedComposerAttachments}
+                  disabled={previews.selectedComposerAttachmentIds.length === 0}
+                  className="!h-auto !min-h-0 !px-0 !py-0 !bg-transparent !shadow-none !ring-0 !text-rose-500 !underline !underline-offset-2 hover:!text-rose-600 disabled:!text-rose-300"
+                >
+                  Hapus
+                </Button>
+              </motion.div>
+            ) : null}
 
             <ComposerAttachmentActionMenus
               openImageActionsAttachmentId={

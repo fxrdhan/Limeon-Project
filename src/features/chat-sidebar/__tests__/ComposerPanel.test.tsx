@@ -154,7 +154,12 @@ const buildComposerRuntime = () =>
       imageActionsButtonRef: { current: null },
       imageActionsMenuRef: { current: null },
       pdfCompressionMenuRef: { current: null },
+      isComposerAttachmentSelectionMode: false,
+      selectedComposerAttachmentIds: [],
       handleToggleImageActionsMenu: vi.fn(),
+      handleSelectAllComposerAttachments: vi.fn(),
+      handleDeleteSelectedComposerAttachments: vi.fn(),
+      handleToggleComposerAttachmentSelection: vi.fn(),
       composerDocumentPreviewUrl: null,
       composerDocumentPreviewName: '',
       isComposerDocumentPreviewVisible: false,
@@ -244,6 +249,24 @@ describe('ComposerPanel', () => {
         initialPreselectedIndex: 1,
       })
     );
+  });
+
+  it('renders the composer attachment selection bar when selection mode is active', () => {
+    const runtime = buildComposerRuntime();
+    runtime.previews.isComposerAttachmentSelectionMode = true;
+    runtime.previews.selectedComposerAttachmentIds = ['pending-image-1'];
+
+    render(<ComposerPanel runtime={runtime} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Pilih semua' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Hapus' }));
+
+    expect(
+      runtime.previews.handleSelectAllComposerAttachments
+    ).toHaveBeenCalledOnce();
+    expect(
+      runtime.previews.handleDeleteSelectedComposerAttachments
+    ).toHaveBeenCalledOnce();
   });
 
   it('renders each hoverable attachment link as a separate inline anchor', () => {

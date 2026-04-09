@@ -88,6 +88,12 @@ const ComposerAttachmentPreviewHarness = ({
       <span data-testid="compression-menu-position">
         {preview.pdfCompressionMenuPosition ? 'open' : 'closed'}
       </span>
+      <span data-testid="selection-mode">
+        {preview.isComposerAttachmentSelectionMode ? 'open' : 'closed'}
+      </span>
+      <span data-testid="selected-ids">
+        {preview.selectedComposerAttachmentIds.join(',')}
+      </span>
       {preview.imageActions.map(action => (
         <button key={action.label} type="button" onClick={action.onClick}>
           {action.label}
@@ -157,6 +163,52 @@ describe('useComposerAttachmentPreview', () => {
     expect(screen.getByTestId('open-id').textContent).toBe('attachment-2');
     expect(screen.getByTestId('menu-position').textContent).toBe('open');
     expect(screen.getByRole('button', { name: 'Buka' })).toBeTruthy();
+  });
+
+  it('selects an image attachment from the popup menu', () => {
+    render(
+      <ComposerAttachmentPreviewHarness
+        attachment={buildAttachment({
+          id: 'attachment-select-image',
+        })}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'toggle' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Pilih' }));
+
+    expect(screen.getByTestId('open-id').textContent).toBe('');
+    expect(screen.getByTestId('selection-mode').textContent).toBe('open');
+    expect(screen.getByTestId('selected-ids').textContent).toBe(
+      'attachment-select-image'
+    );
+  });
+
+  it('selects a document attachment from the popup menu', () => {
+    render(
+      <ComposerAttachmentPreviewHarness
+        attachment={buildAttachment({
+          id: 'attachment-select-doc',
+          file: new File(['pdf'], 'stok.pdf', {
+            type: 'application/pdf',
+          }),
+          fileName: 'stok.pdf',
+          fileTypeLabel: 'PDF',
+          fileKind: 'document',
+          mimeType: 'application/pdf',
+          previewUrl: null,
+        })}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'toggle' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Pilih' }));
+
+    expect(screen.getByTestId('open-id').textContent).toBe('');
+    expect(screen.getByTestId('selection-mode').textContent).toBe('open');
+    expect(screen.getByTestId('selected-ids').textContent).toBe(
+      'attachment-select-doc'
+    );
   });
 
   it('shows a compress action for pending PDF documents', () => {

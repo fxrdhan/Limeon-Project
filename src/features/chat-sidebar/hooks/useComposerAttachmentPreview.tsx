@@ -6,6 +6,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   TbEye,
+  TbCheckbox,
   TbFileIsr,
   TbFileMinus,
   TbPhotoEdit,
@@ -63,6 +64,8 @@ export const useComposerAttachmentPreview = ({
   const imageActionsMenuRef = useRef<HTMLDivElement | null>(null);
   const pdfCompressionMenuRef = useRef<HTMLDivElement | null>(null);
   const pdfCompressionMenuAnchorRef = useRef<HTMLButtonElement | null>(null);
+  const [selectedComposerAttachmentIds, setSelectedComposerAttachmentIds] =
+    useState<string[]>([]);
   const {
     previewUrl: composerDocumentPreviewUrl,
     previewName: composerDocumentPreviewName,
@@ -156,6 +159,69 @@ export const useComposerAttachmentPreview = ({
     setPdfCompressionMenuPosition(null);
     pdfCompressionMenuAnchorRef.current = null;
   }, []);
+
+  const selectableComposerAttachmentIds = useMemo(
+    () =>
+      pendingComposerAttachments
+        .filter(
+          attachment =>
+            attachment.fileKind === 'image' ||
+            attachment.fileKind === 'document'
+        )
+        .map(attachment => attachment.id),
+    [pendingComposerAttachments]
+  );
+
+  useEffect(() => {
+    setSelectedComposerAttachmentIds(previousIds => {
+      const nextIds = previousIds.filter(id =>
+        selectableComposerAttachmentIds.includes(id)
+      );
+      const hasChanged =
+        nextIds.length !== previousIds.length ||
+        nextIds.some((id, index) => id !== previousIds[index]);
+
+      return hasChanged ? nextIds : previousIds;
+    });
+  }, [selectableComposerAttachmentIds]);
+
+  const isComposerAttachmentSelectionMode =
+    selectedComposerAttachmentIds.length > 0;
+
+  const handleToggleComposerAttachmentSelection = useCallback(
+    (attachmentId: string) => {
+      if (!selectableComposerAttachmentIds.includes(attachmentId)) {
+        return;
+      }
+
+      setSelectedComposerAttachmentIds(previousIds =>
+        previousIds.includes(attachmentId)
+          ? previousIds.filter(id => id !== attachmentId)
+          : [...previousIds, attachmentId]
+      );
+    },
+    [selectableComposerAttachmentIds]
+  );
+
+  const handleSelectAllComposerAttachments = useCallback(() => {
+    setSelectedComposerAttachmentIds(selectableComposerAttachmentIds);
+  }, [selectableComposerAttachmentIds]);
+
+  const handleDeleteSelectedComposerAttachments = useCallback(() => {
+    if (selectedComposerAttachmentIds.length === 0) {
+      return;
+    }
+
+    selectedComposerAttachmentIds.forEach(attachmentId => {
+      onRemovePendingComposerAttachment(attachmentId);
+    });
+    closeImageActionsMenu();
+    setSelectedComposerAttachmentIds([]);
+  }, [
+    closeImageActionsMenu,
+    onRemovePendingComposerAttachment,
+    selectedComposerAttachmentIds,
+  ]);
 
   const openPdfCompressionMenu = useCallback(
     (targetButton: HTMLButtonElement) => {
@@ -297,6 +363,17 @@ export const useComposerAttachmentPreview = ({
           },
         },
         {
+          label: 'Pilih',
+          icon: <TbCheckbox className="h-4.5 w-4.5" />,
+          onClick: () => {
+            closePdfCompressionMenu();
+            closeImageActionsMenu();
+            handleToggleComposerAttachmentSelection(
+              openImageActionsAttachment.id
+            );
+          },
+        },
+        {
           label: 'Kompres',
           icon: <TbPhotoMinus className="h-4 w-4" />,
           onClick: () => {
@@ -340,6 +417,17 @@ export const useComposerAttachmentPreview = ({
           onAttachDocumentClick(openImageActionsAttachment.id);
         },
       },
+      {
+        label: 'Pilih',
+        icon: <TbCheckbox className="h-4.5 w-4.5" />,
+        onClick: () => {
+          closePdfCompressionMenu();
+          closeImageActionsMenu();
+          handleToggleComposerAttachmentSelection(
+            openImageActionsAttachment.id
+          );
+        },
+      },
       ...(isPdfAttachment
         ? [
             {
@@ -373,6 +461,7 @@ export const useComposerAttachmentPreview = ({
     onCompressPendingComposerImage,
     onAttachDocumentClick,
     onAttachImageClick,
+    handleToggleComposerAttachmentSelection,
     onOpenComposerImagePreview,
     onRemovePendingComposerAttachment,
     openDocumentAttachmentInPortal,
@@ -494,6 +583,8 @@ export const useComposerAttachmentPreview = ({
     openImageActionsAttachmentId,
     imageActionsMenuPosition,
     pdfCompressionMenuPosition,
+    isComposerAttachmentSelectionMode,
+    selectedComposerAttachmentIds,
     composerDocumentPreviewUrl,
     composerDocumentPreviewName,
     isComposerDocumentPreviewVisible,
@@ -505,6 +596,9 @@ export const useComposerAttachmentPreview = ({
     closeImageActionsMenu,
     closePdfCompressionMenu,
     closeComposerDocumentPreview,
+    handleSelectAllComposerAttachments,
+    handleDeleteSelectedComposerAttachments,
+    handleToggleComposerAttachmentSelection,
     openDocumentAttachmentInPortal,
     handleToggleImageActionsMenu,
   };

@@ -6,7 +6,13 @@ import {
   type MouseEvent,
   type RefObject,
 } from 'react';
-import { TbFileTypeJpg, TbFileTypePng, TbMusic, TbX } from 'react-icons/tb';
+import {
+  TbCheck,
+  TbFileTypeJpg,
+  TbFileTypePng,
+  TbMusic,
+  TbX,
+} from 'react-icons/tb';
 import type {
   ComposerAttachmentPreviewItem,
   PendingComposerAttachment,
@@ -17,6 +23,8 @@ import { formatFileSize } from '../../utils/message-file';
 interface ComposerAttachmentPreviewListProps {
   attachments: ComposerAttachmentPreviewItem[];
   openImageActionsAttachmentId: string | null;
+  isSelectionMode: boolean;
+  selectedAttachmentIds: string[];
   imageActionsButtonRef: RefObject<HTMLButtonElement | null>;
   transition: {
     duration: number;
@@ -35,6 +43,7 @@ interface ComposerAttachmentPreviewListProps {
     event: MouseEvent<HTMLButtonElement>,
     attachmentId: string
   ) => void;
+  onToggleAttachmentSelection: (attachmentId: string) => void;
   onCancelLoadingComposerAttachment: (attachmentId: string) => void;
   onRemovePendingComposerAttachment: (attachmentId: string) => void;
 }
@@ -47,9 +56,12 @@ const ComposerAttachmentPreviewList = forwardRef<
     {
       attachments,
       openImageActionsAttachmentId,
+      isSelectionMode,
+      selectedAttachmentIds = [],
       imageActionsButtonRef,
       transition,
       onToggleImageActionsMenu,
+      onToggleAttachmentSelection,
       onCancelLoadingComposerAttachment,
       onRemovePendingComposerAttachment,
     },
@@ -161,6 +173,9 @@ const ComposerAttachmentPreviewList = forwardRef<
               attachmentExtension === 'jpg' || attachmentExtension === 'jpeg';
             const isPngDocumentAttachment = attachmentExtension === 'png';
             const isMenuOpen = openImageActionsAttachmentId === attachment.id;
+            const isSelectedAttachment = selectedAttachmentIds.includes(
+              attachment.id
+            );
             const fileSizeLabel = formatFileSize(resolvedAttachment.file.size);
             const fileSecondaryLabel =
               [resolvedAttachment.fileTypeLabel, fileSizeLabel]
@@ -176,20 +191,47 @@ const ComposerAttachmentPreviewList = forwardRef<
                   <button
                     ref={isMenuOpen ? imageActionsButtonRef : undefined}
                     type="button"
-                    aria-label="Aksi gambar"
-                    title="Aksi gambar"
-                    aria-haspopup="menu"
-                    aria-expanded={isMenuOpen}
-                    className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-xl text-left transition-colors hover:bg-slate-100/90"
+                    aria-label={
+                      isSelectionMode
+                        ? isSelectedAttachment
+                          ? 'Batal pilih gambar'
+                          : 'Pilih gambar'
+                        : 'Aksi gambar'
+                    }
+                    title={
+                      isSelectionMode
+                        ? isSelectedAttachment
+                          ? 'Batal pilih gambar'
+                          : 'Pilih gambar'
+                        : 'Aksi gambar'
+                    }
+                    aria-haspopup={isSelectionMode ? undefined : 'menu'}
+                    aria-expanded={isSelectionMode ? undefined : isMenuOpen}
+                    aria-pressed={
+                      isSelectionMode ? isSelectedAttachment : undefined
+                    }
+                    className={`relative flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-xl text-left transition-colors hover:bg-slate-100/90 ${
+                      isSelectionMode && isSelectedAttachment
+                        ? 'ring-2 ring-emerald-400/70'
+                        : ''
+                    }`}
                     onClick={event => {
                       event.stopPropagation();
+                      if (isSelectionMode) {
+                        onToggleAttachmentSelection(attachment.id);
+                        return;
+                      }
                       onToggleImageActionsMenu(event, attachment.id);
                     }}
                   >
                     <img
                       src={resolvedAttachment.previewUrl ?? ''}
                       alt={resolvedAttachment.fileName}
-                      className="h-11 w-11 rounded-xl object-cover"
+                      className={`h-11 w-11 rounded-xl object-cover ${
+                        isSelectionMode && isSelectedAttachment
+                          ? 'opacity-55'
+                          : ''
+                      }`}
                       draggable={false}
                     />
                     <div className="min-w-0 flex-1">
@@ -200,23 +242,59 @@ const ComposerAttachmentPreviewList = forwardRef<
                         {fileSecondaryLabel}
                       </p>
                     </div>
+                    {isSelectionMode && isSelectedAttachment ? (
+                      <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-emerald-100/70 backdrop-blur-[1px]">
+                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-white shadow-sm">
+                          <TbCheck className="h-4.5 w-4.5" />
+                        </span>
+                      </div>
+                    ) : null}
                   </button>
                 ) : isDocumentAttachment ? (
                   <button
                     ref={isMenuOpen ? imageActionsButtonRef : undefined}
                     type="button"
-                    aria-label="Aksi dokumen"
-                    title="Aksi dokumen"
-                    aria-haspopup="menu"
-                    aria-expanded={isMenuOpen}
-                    className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-xl text-left transition-colors hover:bg-slate-100/90"
+                    aria-label={
+                      isSelectionMode
+                        ? isSelectedAttachment
+                          ? 'Batal pilih dokumen'
+                          : 'Pilih dokumen'
+                        : 'Aksi dokumen'
+                    }
+                    title={
+                      isSelectionMode
+                        ? isSelectedAttachment
+                          ? 'Batal pilih dokumen'
+                          : 'Pilih dokumen'
+                        : 'Aksi dokumen'
+                    }
+                    aria-haspopup={isSelectionMode ? undefined : 'menu'}
+                    aria-expanded={isSelectionMode ? undefined : isMenuOpen}
+                    aria-pressed={
+                      isSelectionMode ? isSelectedAttachment : undefined
+                    }
+                    className={`relative flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-xl text-left transition-colors hover:bg-slate-100/90 ${
+                      isSelectionMode && isSelectedAttachment
+                        ? 'ring-2 ring-emerald-400/70'
+                        : ''
+                    }`}
                     onClick={event => {
                       event.stopPropagation();
+                      if (isSelectionMode) {
+                        onToggleAttachmentSelection(attachment.id);
+                        return;
+                      }
                       onToggleImageActionsMenu(event, attachment.id);
                     }}
                   >
                     {resolvedAttachment.pdfCoverUrl ? (
-                      <div className="h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-slate-300 bg-white">
+                      <div
+                        className={`h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-slate-300 bg-white ${
+                          isSelectionMode && isSelectedAttachment
+                            ? 'opacity-55'
+                            : ''
+                        }`}
+                      >
                         <img
                           src={resolvedAttachment.pdfCoverUrl}
                           alt="PDF cover preview"
@@ -225,15 +303,33 @@ const ComposerAttachmentPreviewList = forwardRef<
                         />
                       </div>
                     ) : isJpgDocumentAttachment ? (
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white">
+                      <div
+                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white ${
+                          isSelectionMode && isSelectedAttachment
+                            ? 'opacity-55'
+                            : ''
+                        }`}
+                      >
                         <TbFileTypeJpg className="h-5 w-5 text-slate-600" />
                       </div>
                     ) : isPngDocumentAttachment ? (
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white">
+                      <div
+                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white ${
+                          isSelectionMode && isSelectedAttachment
+                            ? 'opacity-55'
+                            : ''
+                        }`}
+                      >
                         <TbFileTypePng className="h-5 w-5 text-slate-600" />
                       </div>
                     ) : (
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white text-[11px] font-semibold tracking-wide text-slate-700">
+                      <div
+                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white text-[11px] font-semibold tracking-wide text-slate-700 ${
+                          isSelectionMode && isSelectedAttachment
+                            ? 'opacity-55'
+                            : ''
+                        }`}
+                      >
                         {(
                           resolvedAttachment.fileName
                             .split('.')
@@ -250,6 +346,13 @@ const ComposerAttachmentPreviewList = forwardRef<
                         {fileSecondaryLabel}
                       </p>
                     </div>
+                    {isSelectionMode && isSelectedAttachment ? (
+                      <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-emerald-100/70 backdrop-blur-[1px]">
+                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-white shadow-sm">
+                          <TbCheck className="h-4.5 w-4.5" />
+                        </span>
+                      </div>
+                    ) : null}
                   </button>
                 ) : (
                   <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl">
