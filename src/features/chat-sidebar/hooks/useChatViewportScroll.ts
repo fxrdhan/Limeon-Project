@@ -59,6 +59,22 @@ export const useChatViewportScroll = ({
   const previousLatestMessageIdRef = useRef<string | null>(null);
   const previousComposerContainerHeightRef = useRef<number | null>(null);
 
+  const cancelAnimationFrameSafely = useCallback((frameId: number | null) => {
+    if (frameId === null) {
+      return;
+    }
+
+    const cancelAnimationFrameFn =
+      typeof window !== 'undefined' &&
+      typeof window.cancelAnimationFrame === 'function'
+        ? window.cancelAnimationFrame.bind(window)
+        : typeof cancelAnimationFrame === 'function'
+          ? cancelAnimationFrame
+          : null;
+
+    cancelAnimationFrameFn?.(frameId);
+  }, []);
+
   const getBottomScrollMetrics = useCallback(() => {
     const container = messagesContainerRef.current;
     const endMarker = messagesEndRef.current;
@@ -124,15 +140,15 @@ export const useChatViewportScroll = ({
 
   const cancelScrollToBottomAnimation = useCallback(() => {
     if (scrollToBottomAnimationFrameRef.current === null) return;
-    cancelAnimationFrame(scrollToBottomAnimationFrameRef.current);
+    cancelAnimationFrameSafely(scrollToBottomAnimationFrameRef.current);
     scrollToBottomAnimationFrameRef.current = null;
-  }, []);
+  }, [cancelAnimationFrameSafely]);
 
   const cancelInitialOpenPinSettleAnimation = useCallback(() => {
     if (initialOpenPinSettleAnimationFrameRef.current === null) return;
-    cancelAnimationFrame(initialOpenPinSettleAnimationFrameRef.current);
+    cancelAnimationFrameSafely(initialOpenPinSettleAnimationFrameRef.current);
     initialOpenPinSettleAnimationFrameRef.current = null;
-  }, []);
+  }, [cancelAnimationFrameSafely]);
 
   const cancelComposerResizeBottomSync = useCallback(() => {
     if (composerResizeBottomSyncTimeoutRef.current !== null) {
@@ -258,17 +274,10 @@ export const useChatViewportScroll = ({
     });
 
     return () => {
-      const cancelAnimationFrameFn =
-        typeof window !== 'undefined' &&
-        typeof window.cancelAnimationFrame === 'function'
-          ? window.cancelAnimationFrame.bind(window)
-          : typeof cancelAnimationFrame === 'function'
-            ? cancelAnimationFrame
-            : null;
-
-      cancelAnimationFrameFn?.(rafId);
+      cancelAnimationFrameSafely(rafId);
     };
   }, [
+    cancelAnimationFrameSafely,
     composerContainerHeight,
     composerContextualOffset,
     handleScroll,
@@ -346,6 +355,49 @@ export const useChatViewportScroll = ({
   }, [
     isOpen,
     messagesContentRef,
+    pinViewportToBottom,
+    scheduleVisibleUnreadReadReceipts,
+  ]);
+
+  useEffect(() => {
+    const containerElement = messagesContainerRef.current;
+    if (!isOpen || !containerElement || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+
+    let previousContainerHeight = containerElement.clientHeight;
+
+    const syncPinnedViewport = () => {
+      const nextContainerHeight = containerElement.clientHeight;
+      if (Math.abs(nextContainerHeight - previousContainerHeight) < 0.5) {
+        return;
+      }
+
+      previousContainerHeight = nextContainerHeight;
+
+      if (
+        !shouldPinToBottomOnOpenRef.current &&
+        !shouldMaintainBottomDuringComposerResizeRef.current &&
+        !isAtBottomRef.current
+      ) {
+        return;
+      }
+
+      pinViewportToBottom();
+      scheduleVisibleUnreadReadReceipts();
+    };
+
+    const resizeObserver = new ResizeObserver(() => {
+      requestAnimationFrame(syncPinnedViewport);
+    });
+    resizeObserver.observe(containerElement);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [
+    isOpen,
+    messagesContainerRef,
     pinViewportToBottom,
     scheduleVisibleUnreadReadReceipts,
   ]);
