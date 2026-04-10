@@ -133,6 +133,8 @@ export const MessageImageAttachmentGroupContent = ({
   const isGroupedMenuTransitionSource =
     representativeMessage !== null &&
     menuTransitionSourceId === representativeMessage.id;
+  const isGroupMenuVisible =
+    Boolean(openGroupedMenuMessageId) || isGroupedMenuTransitionSource;
 
   const imageTiles = visibleMessages.map((message, index) => ({
     message,
@@ -236,80 +238,68 @@ export const MessageImageAttachmentGroupContent = ({
           style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}
         >
           {imageTiles.map(
-            ({ message, resolvedMessageUrl, previewName, isOverflowTile }) => {
-              const isMenuOpen =
-                openGroupedMenuMessageId === representativeMessage?.id ||
-                isGroupedMenuTransitionSource;
-              const isAnotherAttachmentFocused =
-                openGroupedMenuMessageId !== null && !isMenuOpen;
+            ({ message, resolvedMessageUrl, previewName, isOverflowTile }) => (
+              <div
+                key={message.id}
+                data-chat-image-group-tile-id={message.id}
+                className="relative"
+              >
+                <div className="relative block aspect-square w-full overflow-hidden bg-slate-100 text-left">
+                  {resolvedMessageUrl ? (
+                    <img
+                      src={resolvedMessageUrl}
+                      alt={`Preview ${previewName}`}
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                      draggable={false}
+                      ref={imageElement => {
+                        if (
+                          !imageElement?.naturalWidth ||
+                          !imageElement.naturalHeight
+                        ) {
+                          return;
+                        }
 
-              return (
-                <div
-                  key={message.id}
-                  data-chat-image-group-tile-id={message.id}
-                  className={`relative overflow-visible transition-[filter,opacity,transform] duration-150 ${
-                    isMenuOpen ? 'z-[80]' : 'z-0'
-                  } ${
-                    isAnotherAttachmentFocused ? 'blur-[2px] brightness-95' : ''
-                  }`}
-                >
-                  <div className="relative block aspect-square w-full overflow-hidden bg-slate-100 text-left">
-                    {resolvedMessageUrl ? (
-                      <img
-                        src={resolvedMessageUrl}
-                        alt={`Preview ${previewName}`}
-                        className="h-full w-full object-cover"
-                        loading="lazy"
-                        draggable={false}
-                        ref={imageElement => {
-                          if (
-                            !imageElement?.naturalWidth ||
-                            !imageElement.naturalHeight
-                          ) {
-                            return;
+                        previewDimensionsByMessageIdRef.current.set(
+                          message.id,
+                          {
+                            width: imageElement.naturalWidth,
+                            height: imageElement.naturalHeight,
                           }
+                        );
+                      }}
+                      onLoad={event => {
+                        const imageElement = event.currentTarget;
+                        if (
+                          !imageElement.naturalWidth ||
+                          !imageElement.naturalHeight
+                        ) {
+                          return;
+                        }
 
-                          previewDimensionsByMessageIdRef.current.set(
-                            message.id,
-                            {
-                              width: imageElement.naturalWidth,
-                              height: imageElement.naturalHeight,
-                            }
-                          );
-                        }}
-                        onLoad={event => {
-                          const imageElement = event.currentTarget;
-                          if (
-                            !imageElement.naturalWidth ||
-                            !imageElement.naturalHeight
-                          ) {
-                            return;
+                        previewDimensionsByMessageIdRef.current.set(
+                          message.id,
+                          {
+                            width: imageElement.naturalWidth,
+                            height: imageElement.naturalHeight,
                           }
-
-                          previewDimensionsByMessageIdRef.current.set(
-                            message.id,
-                            {
-                              width: imageElement.naturalWidth,
-                              height: imageElement.naturalHeight,
-                            }
-                          );
-                        }}
-                      />
-                    ) : (
-                      <div
-                        className="h-full w-full bg-slate-100"
-                        aria-hidden="true"
-                      />
-                    )}
-                    {isOverflowTile ? (
-                      <div className="absolute inset-0 flex items-center justify-center bg-slate-950/52 text-[1.75rem] font-semibold text-white">
-                        +{hiddenImageCount}
-                      </div>
-                    ) : null}
-                  </div>
+                        );
+                      }}
+                    />
+                  ) : (
+                    <div
+                      className="h-full w-full bg-slate-100"
+                      aria-hidden="true"
+                    />
+                  )}
+                  {isOverflowTile ? (
+                    <div className="absolute inset-0 flex items-center justify-center bg-slate-950/52 text-[1.75rem] font-semibold text-white">
+                      +{hiddenImageCount}
+                    </div>
+                  ) : null}
                 </div>
-              );
-            }
+              </div>
+            )
           )}
         </button>
       </div>
@@ -317,10 +307,7 @@ export const MessageImageAttachmentGroupContent = ({
       {menuPortalContainer
         ? createPortal(
             <MessageActionPopover
-              isOpen={
-                Boolean(openGroupedMenuMessageId) ||
-                isGroupedMenuTransitionSource
-              }
+              isOpen={isGroupMenuVisible}
               menuId={openGroupedMenuMessageId ?? 'grouped-image-menu'}
               shouldAnimateMenuOpen={shouldAnimateMenuOpen}
               menuPlacement={menuPlacement}

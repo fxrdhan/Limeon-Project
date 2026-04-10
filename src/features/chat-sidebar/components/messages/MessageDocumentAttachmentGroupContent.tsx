@@ -138,6 +138,9 @@ export const MessageDocumentAttachmentGroupContent = ({
       : null;
   const activeAttachmentMenuMessageId =
     openAttachmentMenuMessageId ?? transitionSourceAttachmentMenuMessageId;
+  const isGroupMenuVisible = isGroupMenuOpen || isGroupMenuTransitionSource;
+  const isAnyAttachmentMenuVisible =
+    Boolean(activeAttachmentMenuMessageId) || isGroupMenuVisible;
 
   useLayoutEffect(() => {
     if (!openMenuMessageId) {
@@ -146,11 +149,7 @@ export const MessageDocumentAttachmentGroupContent = ({
   }, [openMenuMessageId]);
 
   useLayoutEffect(() => {
-    if (
-      !activeAttachmentMenuMessageId &&
-      !isGroupMenuOpen &&
-      !isGroupMenuTransitionSource
-    ) {
+    if (!isAnyAttachmentMenuVisible) {
       setMenuAnchorPosition(null);
       return;
     }
@@ -197,6 +196,7 @@ export const MessageDocumentAttachmentGroupContent = ({
     };
   }, [
     activeAttachmentMenuMessageId,
+    isAnyAttachmentMenuVisible,
     isGroupMenuOpen,
     isGroupMenuTransitionSource,
     menuAnchorRef,
@@ -299,6 +299,12 @@ export const MessageDocumentAttachmentGroupContent = ({
             : action
       )
     : [];
+  const activeAttachmentMenuActions = activeAttachmentMenuMessageId
+    ? (attachmentRows.find(
+        attachmentRow =>
+          attachmentRow.message.id === activeAttachmentMenuMessageId
+      )?.menuActions ?? [])
+    : [];
 
   const captionText = captionMessage?.message?.trim() ?? '';
   const highlightedCaption = renderHighlightedText(captionText, '', {
@@ -345,10 +351,7 @@ export const MessageDocumentAttachmentGroupContent = ({
           }) => {
             const isMenuOpen = activeAttachmentMenuMessageId === message.id;
             const isAnotherAttachmentFocused =
-              (activeAttachmentMenuMessageId !== null ||
-                isGroupMenuOpen ||
-                isGroupMenuTransitionSource) &&
-              !isMenuOpen;
+              isAnyAttachmentMenuVisible && !isMenuOpen;
 
             return (
               <div
@@ -418,9 +421,7 @@ export const MessageDocumentAttachmentGroupContent = ({
 
       {typeof document !== 'undefined' &&
       menuAnchorPosition &&
-      (activeAttachmentMenuMessageId ||
-        isGroupMenuOpen ||
-        isGroupMenuTransitionSource)
+      isAnyAttachmentMenuVisible
         ? createPortal(
             <div
               style={{
@@ -439,7 +440,7 @@ export const MessageDocumentAttachmentGroupContent = ({
                 <MessageActionPopover
                   isOpen
                   menuId={
-                    isGroupMenuOpen || isGroupMenuTransitionSource
+                    isGroupMenuVisible
                       ? `document-group:${representativeMessage?.id ?? 'unknown'}`
                       : (activeAttachmentMenuMessageId ?? 'unknown')
                   }
@@ -450,13 +451,9 @@ export const MessageDocumentAttachmentGroupContent = ({
                   sideArrowAnchorClass={sideArrowAnchorClass}
                   menuVerticalAnchor={menuVerticalAnchor}
                   actions={
-                    isGroupMenuOpen || isGroupMenuTransitionSource
+                    isGroupMenuVisible
                       ? groupMenuActions
-                      : (attachmentRows.find(
-                          attachmentRow =>
-                            attachmentRow.message.id ===
-                            activeAttachmentMenuMessageId
-                        )?.menuActions ?? [])
+                      : activeAttachmentMenuActions
                   }
                 />
               </div>
