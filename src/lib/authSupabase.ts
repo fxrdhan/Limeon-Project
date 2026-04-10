@@ -1,11 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
-
-export const authSupabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-  },
-});
+// Auth flows should share the app-wide Supabase singleton. Creating a second
+// browser client produces duplicate GoTrueClient instances and session storage
+// contention under the same auth storage key.
+export const authSupabase = supabase;
