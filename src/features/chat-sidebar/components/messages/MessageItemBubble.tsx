@@ -12,12 +12,14 @@ interface MessageItemBubbleProps {
   model: MessageItemModel;
   derivations: MessageItemDerivations;
   bubbleShapeClass: string;
+  shouldDimBubble: boolean;
 }
 
 export const MessageItemBubble = ({
   model,
   derivations,
   bubbleShapeClass,
+  shouldDimBubble,
 }: MessageItemBubbleProps) => {
   const { message, interaction, menu, refs, content, actions } = model;
   const groupedBubbleRef = useRef<HTMLDivElement | null>(null);
@@ -217,7 +219,9 @@ export const MessageItemBubble = ({
         : ''
   } ${
     isAttachmentGroup ? 'cursor-pointer overflow-visible' : 'cursor-pointer'
-  } select-none transition-[background-color,color,opacity,box-shadow] duration-300 ease-in-out`;
+  } ${
+    shouldDimBubble ? 'blur-[2px] brightness-95' : ''
+  } select-none transition-[background-color,color,opacity,box-shadow,filter] duration-300 ease-in-out`;
 
   return (
     <div

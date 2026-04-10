@@ -129,16 +129,6 @@ export const useChatViewportMenu = ({
     return animationFrameController.request(callback);
   }, []);
 
-  const getMenuLayout = useCallback(
-    (anchorRect: DOMRect, preferredSide: 'left' | 'right') =>
-      getViewportMenuLayout({
-        anchorRect,
-        bounds: getVisibleMessagesBounds(),
-        preferredSide,
-      }),
-    [getVisibleMessagesBounds]
-  );
-
   const cancelMenuOpenScrollAnimation = useCallback(() => {
     if (menuOpenScrollAnimationFrameRef.current === null) {
       return;
@@ -308,10 +298,11 @@ export const useChatViewportMenu = ({
       preferredSide: 'left' | 'right',
       shouldAnimateOpen: boolean
     ) => {
-      const nextMenuLayout = getMenuLayout(
-        anchor.getBoundingClientRect(),
-        preferredSide
-      );
+      const nextMenuLayout = getViewportMenuLayout({
+        anchorRect: anchor.getBoundingClientRect(),
+        bounds: getVisibleMessagesBounds(),
+        preferredSide,
+      });
 
       setMenuOffsetX(0);
       setMenuVerticalAnchor('left');
@@ -320,7 +311,7 @@ export const useChatViewportMenu = ({
       setShouldAnimateMenuOpen(shouldAnimateOpen);
       setOpenMenuMessageId(messageId);
     },
-    [getMenuLayout]
+    [getVisibleMessagesBounds]
   );
 
   const toggleMessageMenu = useCallback(

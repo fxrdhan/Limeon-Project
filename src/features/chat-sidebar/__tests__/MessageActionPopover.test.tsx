@@ -37,6 +37,7 @@ describe('MessageActionPopover', () => {
     );
 
     expect(menuElement?.className).toContain('right-0');
+    expect(menuElement?.className).toContain('z-[200]');
     expect(menuElement?.className).toContain('origin-top-right');
     expect(arrowElement?.className).toContain('right-3');
   });

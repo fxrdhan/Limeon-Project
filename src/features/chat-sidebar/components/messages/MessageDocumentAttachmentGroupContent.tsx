@@ -429,7 +429,7 @@ export const MessageDocumentAttachmentGroupContent = ({
                 width: menuAnchorPosition.width,
                 height: menuAnchorPosition.height,
               }}
-              className="pointer-events-none fixed z-[70]"
+              className="pointer-events-none fixed z-[200]"
             >
               <div
                 className="relative h-full w-full pointer-events-auto"

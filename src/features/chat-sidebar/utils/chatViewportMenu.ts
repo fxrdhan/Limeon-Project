@@ -11,11 +11,6 @@ export type VisibleBounds = {
   visibleBottom: number;
 };
 
-export type MenuOpenScrollPlan = {
-  projectedAnchorRect: DOMRect;
-  targetScrollTop: number;
-};
-
 export const createAnimationFrameController = () => ({
   cancel(frameId: number) {
     const cancelAnimationFrameFn =
@@ -135,7 +130,7 @@ export const getMenuOpenScrollPlan = ({
   anchorRect: DOMRect;
   bounds: VisibleBounds | null;
   container: HTMLDivElement | null;
-}): MenuOpenScrollPlan | null => {
+}): { targetScrollTop: number } | null => {
   if (!container || !bounds) {
     return null;
   }
@@ -167,11 +162,5 @@ export const getMenuOpenScrollPlan = ({
 
   return {
     targetScrollTop,
-    projectedAnchorRect: new DOMRect(
-      anchorRect.x,
-      anchorRect.y - appliedScrollDelta,
-      anchorRect.width,
-      anchorRect.height
-    ),
   };
 };

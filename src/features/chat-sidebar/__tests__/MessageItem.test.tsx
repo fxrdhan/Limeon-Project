@@ -70,6 +70,7 @@ const createModel = (
       openMessageId: null,
       placement: 'up',
       sideAnchor: 'middle',
+      verticalAnchor: 'left',
       shouldAnimateOpen: false,
       transitionSourceId: null,
       offsetX: 0,
@@ -210,6 +211,33 @@ describe('MessageItem', () => {
     expect(preferredSide).toBe('left');
   });
 
+  it('keeps menu rows above other bubbles during open and transition states', () => {
+    const { container, rerender } = render(
+      <MessageItem
+        model={createModel({
+          menu: {
+            openMessageId: 'message-1',
+          },
+        })}
+      />
+    );
+
+    expect(container.firstElementChild?.className).toContain('z-[181]');
+
+    rerender(
+      <MessageItem
+        model={createModel({
+          menu: {
+            openMessageId: 'message-2',
+            transitionSourceId: 'message-1',
+          },
+        })}
+      />
+    );
+
+    expect(container.firstElementChild?.className).toContain('z-[180]');
+  });
+
   it('downloads grouped image bubbles as a zip from the group popover', async () => {
     const groupedMessages = Array.from({ length: 4 }, (_, index) => ({
       ...baseMessage,
@@ -319,7 +347,7 @@ describe('MessageItem', () => {
     ).toBeTruthy();
   });
 
-  it('keeps a single bubble popover rendered while it is the transition source', () => {
+  it('keeps a single bubble dimmed while its popover is the transition source', () => {
     const { container } = render(
       <MessageItem
         model={createModel({
@@ -334,6 +362,10 @@ describe('MessageItem', () => {
     expect(
       container.querySelector('[data-chat-menu-id="message-1"]')
     ).toBeTruthy();
+    expect(container.firstElementChild?.className).not.toContain('blur-[2px]');
+    expect(
+      container.querySelector('[role="button"][tabindex="0"]')?.className
+    ).toContain('blur-[2px]');
   });
 
   it('anchors grouped document menus to the outer bubble when clicking the bubble area', () => {

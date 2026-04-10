@@ -168,9 +168,7 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
       className={`relative flex w-full ${
         isCurrentUser ? 'justify-end' : 'justify-start'
       } ${rowSpacingClass} ${
-        isMenuOpen ? 'z-10' : isMenuTransitionSource ? 'z-[9]' : 'z-0'
-      } ${
-        isAnotherMessageMenuOpen ? 'blur-[2px] brightness-95' : ''
+        isMenuOpen ? 'z-[181]' : isMenuTransitionSource ? 'z-[180]' : 'z-0'
       } ${isSelectionMode ? 'group cursor-pointer' : ''}`}
       onClick={() => {
         if (!isSelectionMode) return;
@@ -191,6 +189,7 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
         model={model}
         derivations={derivations}
         bubbleShapeClass={bubbleShapeClass}
+        shouldDimBubble={isAnotherMessageMenuOpen}
       />
     </motion.div>
   );
