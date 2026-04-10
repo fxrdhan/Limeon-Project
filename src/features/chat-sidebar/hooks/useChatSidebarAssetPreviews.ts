@@ -11,6 +11,7 @@ interface UseChatSidebarAssetPreviewsProps {
   chatHeaderContainerRef: RefObject<HTMLDivElement | null>;
   messageBubbleRefs: MutableRefObject<Map<string, HTMLDivElement>>;
   getVisibleMessagesBounds: () => VisibleBounds | null;
+  viewportPrefetchableImageMessageIds?: ReadonlySet<string>;
   getAttachmentFileName: (targetMessage: ChatMessage) => string;
   getAttachmentFileKind: (targetMessage: ChatMessage) => 'audio' | 'document';
 }
@@ -22,6 +23,7 @@ export const useChatSidebarAssetPreviews = ({
   chatHeaderContainerRef,
   messageBubbleRefs,
   getVisibleMessagesBounds,
+  viewportPrefetchableImageMessageIds,
   getAttachmentFileName,
   getAttachmentFileKind,
 }: UseChatSidebarAssetPreviewsProps) => {
@@ -32,6 +34,7 @@ export const useChatSidebarAssetPreviews = ({
     chatHeaderContainerRef,
     messageBubbleRefs,
     getVisibleMessagesBounds,
+    viewportPrefetchableImageMessageIds,
   });
   const pdfPreviews = useMessagePdfPreviews({
     messages,

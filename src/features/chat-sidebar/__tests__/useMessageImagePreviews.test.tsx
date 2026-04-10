@@ -51,6 +51,10 @@ vi.mock('../utils/message-file', async () => {
 });
 
 describe('useMessageImagePreviews', () => {
+  type HookProps = Parameters<typeof useMessageImagePreviews>[0] & {
+    viewportPrefetchableImageMessageIds?: ReadonlySet<string>;
+  };
+
   const createMessage = (
     overrides: Partial<ChatMessage> = {}
   ): ChatMessage => ({
@@ -83,7 +87,7 @@ describe('useMessageImagePreviews', () => {
     return element;
   };
 
-  const createHookProps = (messages: ChatMessage[]) => {
+  const createHookProps = (messages: ChatMessage[]): HookProps => {
     const messagesContainerRef = {
       current: document.createElement('div'),
     };
@@ -120,6 +124,7 @@ describe('useMessageImagePreviews', () => {
       chatHeaderContainerRef,
       messageBubbleRefs,
       getVisibleMessagesBounds,
+      viewportPrefetchableImageMessageIds: undefined,
     };
   };
 
@@ -328,6 +333,60 @@ describe('useMessageImagePreviews', () => {
     expect(mockResolveChatAssetUrlWithExpiry).toHaveBeenCalledTimes(2);
     expect(result.current.getImageMessageUrl(message)).toBe(
       'https://signed.example/previews/channel/expiring-preview-2.webp'
+    );
+  });
+
+  it('skips viewport prefetch for visible images outside the rendered group tiles', async () => {
+    const firstVisibleMessage = createMessage({
+      id: 'image-1',
+      message: 'images/channel/image-1.png',
+      file_storage_path: 'images/channel/image-1.png',
+    });
+    const hiddenGroupMessage = createMessage({
+      id: 'image-5',
+      message: 'images/channel/image-5.png',
+      file_storage_path: 'images/channel/image-5.png',
+    });
+    const props = createHookProps([firstVisibleMessage, hiddenGroupMessage]);
+
+    props.messageBubbleRefs.current.set(
+      'image-1',
+      createBubbleElement(40, 240)
+    );
+    props.messageBubbleRefs.current.set(
+      'image-5',
+      createBubbleElement(40, 240)
+    );
+    props.viewportPrefetchableImageMessageIds = new Set(['image-1']);
+
+    renderHook(() => useMessageImagePreviews(props));
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(mockEnsureChannelImageAssetUrl).toHaveBeenCalledWith(
+      'dm_user-a_user-b',
+      expect.objectContaining({
+        id: 'image-1',
+      }),
+      'thumbnail'
+    );
+    expect(mockEnsureChannelImageAssetUrl).toHaveBeenCalledWith(
+      'dm_user-a_user-b',
+      expect.objectContaining({
+        id: 'image-1',
+      }),
+      'full'
+    );
+    expect(mockEnsureChannelImageAssetUrl).not.toHaveBeenCalledWith(
+      'dm_user-a_user-b',
+      expect.objectContaining({
+        id: 'image-5',
+      }),
+      expect.anything()
     );
   });
 

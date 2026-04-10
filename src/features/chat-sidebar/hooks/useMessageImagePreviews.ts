@@ -55,6 +55,7 @@ export const useMessageImagePreviews = ({
   chatHeaderContainerRef,
   messageBubbleRefs,
   getVisibleMessagesBounds,
+  viewportPrefetchableImageMessageIds,
 }: {
   messages: ChatMessage[];
   currentChannelId: string | null;
@@ -62,6 +63,7 @@ export const useMessageImagePreviews = ({
   chatHeaderContainerRef: RefObject<HTMLDivElement | null>;
   messageBubbleRefs: MutableRefObject<Map<string, HTMLDivElement>>;
   getVisibleMessagesBounds: () => VisibleBounds | null;
+  viewportPrefetchableImageMessageIds?: ReadonlySet<string>;
 }) => {
   const [
     resolvedPreviewAssetEntriesByMessageId,
@@ -140,7 +142,9 @@ export const useMessageImagePreviews = ({
       if (
         messageItem.channel_id !== normalizedChannelId ||
         messageItem.id.startsWith('temp_') ||
-        !chatRuntime.imageAssets.isPreviewableMessage(messageItem)
+        !chatRuntime.imageAssets.isPreviewableMessage(messageItem) ||
+        (viewportPrefetchableImageMessageIds &&
+          !viewportPrefetchableImageMessageIds.has(messageItem.id))
       ) {
         return false;
       }
@@ -178,6 +182,7 @@ export const useMessageImagePreviews = ({
     getVisibleMessagesBounds,
     messageBubbleRefs,
     messages,
+    viewportPrefetchableImageMessageIds,
   ]);
 
   const prefetchVisibleImageAssets = useCallback(

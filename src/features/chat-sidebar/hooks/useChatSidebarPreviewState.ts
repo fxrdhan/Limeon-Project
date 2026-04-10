@@ -3,8 +3,10 @@ import type { RefObject } from 'react';
 import type { MutableRefObject } from 'react';
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import type { PendingComposerAttachment } from '../types';
+import { buildMessageRenderItems } from '../utils/message-render-items';
 import type { AttachmentCaptionData } from '../utils/message-derivations';
 import type { VisibleBounds } from '../utils/viewport-visibility';
+import { isCacheableChannelImageMessage } from '../utils/channel-image-asset-cache';
 import { useChatSidebarAssetPreviews } from './useChatSidebarAssetPreviews';
 import { useComposerAttachmentPreview } from './useComposerAttachmentPreview';
 import { useMessagesPanePreviews } from './useMessagesPanePreviews';
@@ -51,6 +53,27 @@ export const useChatSidebarPreviewState = ({
   getAttachmentFileKind,
   captionData,
 }: UseChatSidebarPreviewStateProps) => {
+  const viewportPrefetchableImageMessageIds = new Set<string>();
+  buildMessageRenderItems({
+    messages: messages.filter(
+      messageItem => !captionData.captionMessageIds.has(messageItem.id)
+    ),
+    captionMessagesByAttachmentId: captionData.captionMessagesByAttachmentId,
+    getAttachmentFileKind,
+    enableDocumentBubbleGrouping: true,
+  }).forEach(renderItem => {
+    if (renderItem.kind === 'image-group') {
+      renderItem.messages.slice(0, 4).forEach(messageItem => {
+        viewportPrefetchableImageMessageIds.add(messageItem.id);
+      });
+      return;
+    }
+
+    if (isCacheableChannelImageMessage(renderItem.anchorMessage)) {
+      viewportPrefetchableImageMessageIds.add(renderItem.anchorMessage.id);
+    }
+  });
+
   const panePreviews = useMessagesPanePreviews({
     currentChannelId,
     closeMessageMenu,
@@ -62,6 +85,7 @@ export const useChatSidebarPreviewState = ({
     chatHeaderContainerRef,
     messageBubbleRefs,
     getVisibleMessagesBounds,
+    viewportPrefetchableImageMessageIds,
     getAttachmentFileName,
     getAttachmentFileKind,
   });
