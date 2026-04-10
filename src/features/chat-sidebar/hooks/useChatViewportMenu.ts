@@ -5,7 +5,7 @@ import {
   useState,
   type RefObject,
 } from 'react';
-import { MENU_GAP } from '../constants';
+import { CHAT_HEADER_OVERLAY_HEIGHT, MENU_GAP } from '../constants';
 import type { MenuPlacement, MenuSideAnchor } from '../types';
 import {
   createAnimationFrameController,
@@ -355,9 +355,10 @@ export const useChatViewportMenu = ({
       const bounds = getVisibleMessagesBounds();
       if (!bounds) return;
 
+      let anchorRect: DOMRect | null = null;
       const anchor = openMenuAnchorRef.current;
       if (anchor) {
-        const anchorRect = anchor.getBoundingClientRect();
+        anchorRect = anchor.getBoundingClientRect();
         if (!isAnchorVisibleWithinViewport(bounds, anchorRect)) {
           closeMessageMenu();
           return;
@@ -366,6 +367,29 @@ export const useChatViewportMenu = ({
 
       const { containerRect } = bounds;
       const menuRect = menuElement.getBoundingClientRect();
+      const minVisibleTop =
+        containerRect.top + CHAT_HEADER_OVERLAY_HEIGHT + MENU_GAP;
+      const maxVisibleBottom = bounds.visibleBottom - MENU_GAP;
+      const isClippedByHeader = menuRect.top < minVisibleTop;
+      const isClippedByComposer = menuRect.bottom > maxVisibleBottom;
+
+      if ((isClippedByHeader || isClippedByComposer) && anchorRect) {
+        const nextPlacement: MenuPlacement =
+          isClippedByHeader && isClippedByComposer
+            ? anchorRect.top - minVisibleTop >=
+              maxVisibleBottom - anchorRect.bottom
+              ? 'down'
+              : 'up'
+            : isClippedByComposer
+              ? 'down'
+              : 'up';
+
+        if (menuPlacement !== nextPlacement) {
+          setMenuPlacement(nextPlacement);
+          setMenuOffsetX(0);
+          return;
+        }
+      }
 
       const minMenuLeft = containerRect.left + MENU_GAP;
       const maxMenuRight = containerRect.right - MENU_GAP;
@@ -382,7 +406,12 @@ export const useChatViewportMenu = ({
           : nextOffsetX
       );
     },
-    [closeMessageMenu, getVisibleMessagesBounds, messagesContainerRef]
+    [
+      closeMessageMenu,
+      getVisibleMessagesBounds,
+      menuPlacement,
+      messagesContainerRef,
+    ]
   );
 
   useLayoutEffect(() => {

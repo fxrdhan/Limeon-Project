@@ -307,6 +307,7 @@ export const MessageItemBubble = ({
             menuOffsetX={offsetX}
             sidePlacementClass={sidePlacementClass}
             sideArrowAnchorClass={sideArrowAnchorClass}
+            verticalMenuAnchor={isCurrentUser ? 'right' : 'left'}
             actions={menuActions}
           />
         )}

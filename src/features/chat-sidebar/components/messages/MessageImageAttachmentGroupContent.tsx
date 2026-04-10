@@ -321,6 +321,7 @@ export const MessageImageAttachmentGroupContent = ({
               menuOffsetX={menuOffsetX}
               sidePlacementClass={sidePlacementClass}
               sideArrowAnchorClass={sideArrowAnchorClass}
+              verticalMenuAnchor={isCurrentUserGroup ? 'right' : 'left'}
               actions={groupMenuActions}
             />,
             menuPortalContainer
