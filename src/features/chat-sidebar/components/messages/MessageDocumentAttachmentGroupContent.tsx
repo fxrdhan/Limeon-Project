@@ -2,7 +2,11 @@ import { createPortal } from 'react-dom';
 import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import type { ChatMessage } from '../../data/chatSidebarGateway';
 import type { PdfMessagePreview } from '../../hooks/useMessagePdfPreviews';
-import type { MenuPlacement, MenuSideAnchor } from '../../types';
+import type {
+  MenuPlacement,
+  MenuSideAnchor,
+  MenuVerticalAnchor,
+} from '../../types';
 import {
   formatFileFallbackLabel,
   formatFileSize,
@@ -36,6 +40,7 @@ interface MessageDocumentAttachmentGroupContentProps {
   menuTransitionSourceId: string | null;
   menuPlacement: MenuPlacement;
   menuSideAnchor: MenuSideAnchor;
+  menuVerticalAnchor: MenuVerticalAnchor;
   menuOffsetX: number;
   shouldAnimateMenuOpen: boolean;
   toggleMessageMenu: (
@@ -84,6 +89,7 @@ export const MessageDocumentAttachmentGroupContent = ({
   menuTransitionSourceId,
   menuPlacement,
   menuSideAnchor,
+  menuVerticalAnchor,
   menuOffsetX,
   shouldAnimateMenuOpen,
   toggleMessageMenu,
@@ -442,7 +448,7 @@ export const MessageDocumentAttachmentGroupContent = ({
                   menuOffsetX={menuOffsetX}
                   sidePlacementClass={sidePlacementClass}
                   sideArrowAnchorClass={sideArrowAnchorClass}
-                  verticalMenuAnchor={isCurrentUserGroup ? 'right' : 'left'}
+                  menuVerticalAnchor={menuVerticalAnchor}
                   actions={
                     isGroupMenuOpen || isGroupMenuTransitionSource
                       ? groupMenuActions

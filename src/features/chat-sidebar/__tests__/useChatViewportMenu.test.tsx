@@ -92,6 +92,7 @@ describe('useChatViewportMenu', () => {
     });
 
     expect(result.current.menuPlacement).toBe('left');
+    expect(result.current.menuVerticalAnchor).toBe('left');
 
     menuElement.dataset.chatMenuId = 'message-1';
     menuElement.getBoundingClientRect = () =>
@@ -108,6 +109,7 @@ describe('useChatViewportMenu', () => {
     });
 
     expect(result.current.menuPlacement).toBe('down');
+    expect(result.current.menuVerticalAnchor).toBe('left');
   });
 
   it('repositions a rendered menu below the bubble when the header clips a side menu', () => {
@@ -150,6 +152,7 @@ describe('useChatViewportMenu', () => {
     });
 
     expect(result.current.menuPlacement).toBe('right');
+    expect(result.current.menuVerticalAnchor).toBe('left');
 
     menuElement.dataset.chatMenuId = 'message-2';
     menuElement.getBoundingClientRect = () =>
@@ -166,5 +169,65 @@ describe('useChatViewportMenu', () => {
     });
 
     expect(result.current.menuPlacement).toBe('up');
+    expect(result.current.menuVerticalAnchor).toBe('left');
+  });
+
+  it('uses the right-side tail only when the left-side vertical anchor would overflow the viewport more', () => {
+    const messagesContainer = document.createElement('div');
+    const anchor = document.createElement('div');
+    const menuElement = document.createElement('div');
+    const messagesContainerRef = createRef<HTMLDivElement>();
+    const visibleBounds: VisibleBounds = {
+      containerRect: createRect({ top: 0, bottom: 400 }),
+      visibleBottom: 320,
+    };
+
+    document.body.append(messagesContainer);
+    messagesContainer.append(anchor);
+    messagesContainerRef.current = messagesContainer;
+    messagesContainer.getBoundingClientRect = () => visibleBounds.containerRect;
+    Object.defineProperty(messagesContainer, 'scrollTop', {
+      configurable: true,
+      value: 0,
+      writable: true,
+    });
+
+    anchor.getBoundingClientRect = () =>
+      createRect({
+        top: 80,
+        bottom: 140,
+        left: 220,
+        right: 304,
+      });
+
+    const { result } = renderHook(() =>
+      useChatViewportMenu({
+        getVisibleMessagesBounds: () => visibleBounds,
+        messagesContainerRef,
+      })
+    );
+
+    act(() => {
+      result.current.toggleMessageMenu(anchor, 'message-3', 'right');
+    });
+
+    expect(result.current.menuPlacement).toBe('up');
+    expect(result.current.menuVerticalAnchor).toBe('left');
+
+    menuElement.dataset.chatMenuId = 'message-3';
+    menuElement.getBoundingClientRect = () =>
+      createRect({
+        top: 148,
+        bottom: 268,
+        left: 220,
+        right: 340,
+      });
+    messagesContainer.append(menuElement);
+
+    act(() => {
+      messagesContainer.dispatchEvent(new Event('scroll'));
+    });
+
+    expect(result.current.menuVerticalAnchor).toBe('right');
   });
 });

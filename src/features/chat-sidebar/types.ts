@@ -30,6 +30,7 @@ export interface ComposerPromptableLink {
 
 export type MenuPlacement = 'left' | 'right' | 'up' | 'down';
 export type MenuSideAnchor = 'top' | 'middle' | 'bottom';
+export type MenuVerticalAnchor = 'left' | 'right';
 export type ComposerPendingFileKind = 'audio' | 'document';
 
 export type PendingComposerFile = {

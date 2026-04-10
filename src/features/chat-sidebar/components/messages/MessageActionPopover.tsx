@@ -2,7 +2,7 @@ import PopupMenuContent, {
   type PopupMenuAction,
 } from '@/components/image-manager/PopupMenuContent';
 import PopupMenuPopover from '@/components/shared/popup-menu-popover';
-import type { MenuPlacement } from '../../types';
+import type { MenuPlacement, MenuVerticalAnchor } from '../../types';
 
 const CHAT_POPOVER_ICON_CLASS_NAME =
   '[&>svg]:!text-black hover:[&>svg]:!text-black data-[preselected=true]:[&>svg]:!text-black';
@@ -15,7 +15,7 @@ interface MessageActionPopoverProps {
   menuOffsetX: number;
   sidePlacementClass: string;
   sideArrowAnchorClass: string;
-  verticalMenuAnchor: 'left' | 'right';
+  menuVerticalAnchor: MenuVerticalAnchor;
   actions: PopupMenuAction[];
 }
 
@@ -27,17 +27,17 @@ export const MessageActionPopover = ({
   menuOffsetX,
   sidePlacementClass,
   sideArrowAnchorClass,
-  verticalMenuAnchor,
+  menuVerticalAnchor,
   actions,
 }: MessageActionPopoverProps) => {
   const resolvedPlacementClass =
     menuPlacement === 'left' || menuPlacement === 'right'
       ? sidePlacementClass
       : menuPlacement === 'down'
-        ? verticalMenuAnchor === 'right'
+        ? menuVerticalAnchor === 'right'
           ? 'bottom-full mb-2 right-0 origin-bottom-right'
           : 'bottom-full mb-2 left-0 origin-bottom-left'
-        : verticalMenuAnchor === 'right'
+        : menuVerticalAnchor === 'right'
           ? 'top-full mt-2 right-0 origin-top-right'
           : 'top-full mt-2 left-0 origin-top-left';
 
@@ -97,9 +97,9 @@ export const MessageActionPopover = ({
         </div>
       ) : menuPlacement === 'down' ? (
         <div
-          data-chat-menu-arrow-position={verticalMenuAnchor}
+          data-chat-menu-arrow-position={menuVerticalAnchor}
           className={`absolute bottom-0 translate-y-full ${
-            verticalMenuAnchor === 'right' ? 'right-3' : 'left-3'
+            menuVerticalAnchor === 'right' ? 'right-3' : 'left-3'
           }`}
         >
           <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-slate-200" />
@@ -107,9 +107,9 @@ export const MessageActionPopover = ({
         </div>
       ) : (
         <div
-          data-chat-menu-arrow-position={verticalMenuAnchor}
+          data-chat-menu-arrow-position={menuVerticalAnchor}
           className={`absolute top-0 -translate-y-full ${
-            verticalMenuAnchor === 'right' ? 'right-3' : 'left-3'
+            menuVerticalAnchor === 'right' ? 'right-3' : 'left-3'
           }`}
         >
           <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-b-[6px] border-l-transparent border-r-transparent border-b-slate-200" />

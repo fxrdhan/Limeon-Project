@@ -33,6 +33,7 @@ export const MessageItemBubble = ({
     openMessageId,
     placement,
     sideAnchor,
+    verticalAnchor,
     shouldAnimateOpen,
     offsetX,
     toggle,
@@ -136,6 +137,7 @@ export const MessageItemBubble = ({
           menuTransitionSourceId={menu.transitionSourceId}
           menuPlacement={placement}
           menuSideAnchor={sideAnchor}
+          menuVerticalAnchor={verticalAnchor}
           menuOffsetX={offsetX}
           shouldAnimateMenuOpen={shouldAnimateOpen}
           toggleMessageMenu={toggle}
@@ -160,6 +162,7 @@ export const MessageItemBubble = ({
           menuTransitionSourceId={menu.transitionSourceId}
           menuPlacement={placement}
           menuSideAnchor={sideAnchor}
+          menuVerticalAnchor={verticalAnchor}
           menuOffsetX={offsetX}
           shouldAnimateMenuOpen={shouldAnimateOpen}
           toggleMessageMenu={toggle}
@@ -307,7 +310,7 @@ export const MessageItemBubble = ({
             menuOffsetX={offsetX}
             sidePlacementClass={sidePlacementClass}
             sideArrowAnchorClass={sideArrowAnchorClass}
-            verticalMenuAnchor={isCurrentUser ? 'right' : 'left'}
+            menuVerticalAnchor={verticalAnchor}
             actions={menuActions}
           />
         )}

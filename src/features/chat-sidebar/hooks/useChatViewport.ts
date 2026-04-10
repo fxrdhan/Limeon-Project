@@ -201,6 +201,7 @@ export const useChatViewport = ({
     openMenuMessageId: menu.openMenuMessageId,
     menuPlacement: menu.menuPlacement,
     menuSideAnchor: menu.menuSideAnchor,
+    menuVerticalAnchor: menu.menuVerticalAnchor,
     shouldAnimateMenuOpen: menu.shouldAnimateMenuOpen,
     menuTransitionSourceId: menu.menuTransitionSourceId,
     menuOffsetX: menu.menuOffsetX,

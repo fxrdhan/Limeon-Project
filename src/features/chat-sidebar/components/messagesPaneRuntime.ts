@@ -23,6 +23,7 @@ export interface MessageItemRuntime {
     openMessageId: ChatSidebarRuntimeState['viewport']['openMenuMessageId'];
     placement: ChatSidebarRuntimeState['viewport']['menuPlacement'];
     sideAnchor: ChatSidebarRuntimeState['viewport']['menuSideAnchor'];
+    verticalAnchor: ChatSidebarRuntimeState['viewport']['menuVerticalAnchor'];
     shouldAnimateOpen: ChatSidebarRuntimeState['viewport']['shouldAnimateMenuOpen'];
     transitionSourceId: ChatSidebarRuntimeState['viewport']['menuTransitionSourceId'];
     offsetX: ChatSidebarRuntimeState['viewport']['menuOffsetX'];
@@ -149,6 +150,7 @@ const buildMessageItemRuntime = (
     openMessageId: runtime.viewport.openMenuMessageId,
     placement: runtime.viewport.menuPlacement,
     sideAnchor: runtime.viewport.menuSideAnchor,
+    verticalAnchor: runtime.viewport.menuVerticalAnchor,
     shouldAnimateOpen: runtime.viewport.shouldAnimateMenuOpen,
     transitionSourceId: runtime.viewport.menuTransitionSourceId,
     offsetX: runtime.viewport.menuOffsetX,

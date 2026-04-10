@@ -6,7 +6,11 @@ import {
   type RefObject,
 } from 'react';
 import { CHAT_HEADER_OVERLAY_HEIGHT, MENU_GAP } from '../constants';
-import type { MenuPlacement, MenuSideAnchor } from '../types';
+import type {
+  MenuPlacement,
+  MenuSideAnchor,
+  MenuVerticalAnchor,
+} from '../types';
 import {
   createAnimationFrameController,
   getMenuOpenScrollPlan,
@@ -32,6 +36,8 @@ export const useChatViewportMenu = ({
   const [menuPlacement, setMenuPlacement] = useState<MenuPlacement>('up');
   const [menuSideAnchor, setMenuSideAnchor] =
     useState<MenuSideAnchor>('middle');
+  const [menuVerticalAnchor, setMenuVerticalAnchor] =
+    useState<MenuVerticalAnchor>('left');
   const [shouldAnimateMenuOpen, setShouldAnimateMenuOpen] = useState(true);
   const [menuTransitionSourceId, setMenuTransitionSourceId] = useState<
     string | null
@@ -147,6 +153,7 @@ export const useChatViewportMenu = ({
     setOpenMenuMessageId(null);
     setMenuTransitionSourceId(null);
     setMenuOffsetX(0);
+    setMenuVerticalAnchor('left');
     setShouldAnimateMenuOpen(true);
   }, [cancelMenuOpenScrollAnimation, cancelNextFrame]);
 
@@ -241,6 +248,7 @@ export const useChatViewportMenu = ({
       );
 
       setMenuOffsetX(0);
+      setMenuVerticalAnchor('left');
       setMenuPlacement(nextMenuLayout.placement);
       setMenuSideAnchor(nextMenuLayout.sideAnchor);
       setShouldAnimateMenuOpen(shouldAnimateOpen);
@@ -393,6 +401,28 @@ export const useChatViewportMenu = ({
 
       const minMenuLeft = containerRect.left + MENU_GAP;
       const maxMenuRight = containerRect.right - MENU_GAP;
+
+      if (
+        (menuPlacement === 'up' || menuPlacement === 'down') &&
+        anchorRect !== null
+      ) {
+        const leftAnchoredOverflow =
+          Math.max(minMenuLeft - anchorRect.left, 0) +
+          Math.max(anchorRect.left + menuRect.width - maxMenuRight, 0);
+        const rightAnchoredLeft = anchorRect.right - menuRect.width;
+        const rightAnchoredOverflow =
+          Math.max(minMenuLeft - rightAnchoredLeft, 0) +
+          Math.max(anchorRect.right - maxMenuRight, 0);
+        const nextVerticalAnchor: MenuVerticalAnchor =
+          leftAnchoredOverflow <= rightAnchoredOverflow ? 'left' : 'right';
+
+        if (menuVerticalAnchor !== nextVerticalAnchor) {
+          setMenuVerticalAnchor(nextVerticalAnchor);
+          setMenuOffsetX(0);
+          return;
+        }
+      }
+
       const shiftMin = minMenuLeft - menuRect.left;
       const shiftMax = maxMenuRight - menuRect.right;
       const nextOffsetX =
@@ -410,6 +440,7 @@ export const useChatViewportMenu = ({
       closeMessageMenu,
       getVisibleMessagesBounds,
       menuPlacement,
+      menuVerticalAnchor,
       messagesContainerRef,
     ]
   );
@@ -472,6 +503,7 @@ export const useChatViewportMenu = ({
     openMenuMessageId,
     menuPlacement,
     menuSideAnchor,
+    menuVerticalAnchor,
     shouldAnimateMenuOpen,
     menuTransitionSourceId,
     menuOffsetX,

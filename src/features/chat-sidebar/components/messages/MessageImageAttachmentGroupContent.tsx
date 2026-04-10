@@ -1,7 +1,11 @@
 import { createPortal } from 'react-dom';
 import { useRef, type RefObject } from 'react';
 import type { ChatMessage } from '../../data/chatSidebarGateway';
-import type { MenuPlacement, MenuSideAnchor } from '../../types';
+import type {
+  MenuPlacement,
+  MenuSideAnchor,
+  MenuVerticalAnchor,
+} from '../../types';
 import { getChatImagePreviewName } from '../../utils/message-preview-assets';
 import { renderHighlightedText } from '../../utils/message-search';
 import { MessageActionPopover } from './MessageActionPopover';
@@ -27,6 +31,7 @@ interface MessageImageAttachmentGroupContentProps {
   menuTransitionSourceId: string | null;
   menuPlacement: MenuPlacement;
   menuSideAnchor: MenuSideAnchor;
+  menuVerticalAnchor: MenuVerticalAnchor;
   menuOffsetX: number;
   shouldAnimateMenuOpen: boolean;
   toggleMessageMenu: (
@@ -86,6 +91,7 @@ export const MessageImageAttachmentGroupContent = ({
   menuTransitionSourceId,
   menuPlacement,
   menuSideAnchor,
+  menuVerticalAnchor,
   menuOffsetX,
   shouldAnimateMenuOpen,
   toggleMessageMenu,
@@ -321,7 +327,7 @@ export const MessageImageAttachmentGroupContent = ({
               menuOffsetX={menuOffsetX}
               sidePlacementClass={sidePlacementClass}
               sideArrowAnchorClass={sideArrowAnchorClass}
-              verticalMenuAnchor={isCurrentUserGroup ? 'right' : 'left'}
+              menuVerticalAnchor={menuVerticalAnchor}
               actions={groupMenuActions}
             />,
             menuPortalContainer

@@ -53,6 +53,7 @@ export const areMessageItemPropsEqual = (
     previousMenuTransitionSource === nextMenuTransitionSource &&
     previousModel.menu.placement === nextModel.menu.placement &&
     previousModel.menu.sideAnchor === nextModel.menu.sideAnchor &&
+    previousModel.menu.verticalAnchor === nextModel.menu.verticalAnchor &&
     previousModel.menu.shouldAnimateOpen === nextModel.menu.shouldAnimateOpen &&
     previousModel.menu.offsetX === nextModel.menu.offsetX &&
     previousModel.interaction.expandedMessageIds.has(messageId) ===

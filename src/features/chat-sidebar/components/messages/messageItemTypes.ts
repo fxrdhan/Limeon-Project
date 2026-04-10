@@ -5,6 +5,7 @@ import type {
   ComposerPendingFileKind,
   MenuPlacement,
   MenuSideAnchor,
+  MenuVerticalAnchor,
 } from '../../types';
 
 export interface MessageItemLayoutModel {
@@ -32,6 +33,7 @@ export interface MessageItemMenuModel {
   openMessageId: string | null;
   placement: MenuPlacement;
   sideAnchor: MenuSideAnchor;
+  verticalAnchor: MenuVerticalAnchor;
   shouldAnimateOpen: boolean;
   transitionSourceId: string | null;
   offsetX: number;

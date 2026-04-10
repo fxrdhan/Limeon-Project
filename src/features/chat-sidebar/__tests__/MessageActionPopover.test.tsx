@@ -23,7 +23,7 @@ describe('MessageActionPopover', () => {
           menuOffsetX={0}
           sidePlacementClass="top-full mt-2 left-0 origin-top-left"
           sideArrowAnchorClass="top-1/2 -translate-y-1/2"
-          verticalMenuAnchor="right"
+          menuVerticalAnchor="right"
           actions={actions}
         />
       </div>
@@ -52,7 +52,7 @@ describe('MessageActionPopover', () => {
           menuOffsetX={0}
           sidePlacementClass="bottom-full mb-2 left-0 origin-bottom-left"
           sideArrowAnchorClass="top-1/2 -translate-y-1/2"
-          verticalMenuAnchor="left"
+          menuVerticalAnchor="left"
           actions={actions}
         />
       </div>

@@ -63,6 +63,7 @@ export const buildMessageItemModel = ({
       openMessageId: runtime.menu.openMessageId,
       placement: runtime.menu.placement,
       sideAnchor: runtime.menu.sideAnchor,
+      verticalAnchor: runtime.menu.verticalAnchor,
       shouldAnimateOpen: runtime.menu.shouldAnimateOpen,
       transitionSourceId: runtime.menu.transitionSourceId,
       offsetX: runtime.menu.offsetX,
