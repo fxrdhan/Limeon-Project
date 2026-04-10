@@ -66,6 +66,7 @@ export const useChatSidebarRuntimeState = ({
     activeSearchMessageId: interaction.activeSearchMessageId,
     searchNavigationTick: interaction.searchNavigationTick,
     markMessageIdsAsRead: session.markMessageIdsAsRead,
+    mergeSearchContextMessages: session.mergeSearchContextMessages,
     refs,
     closeMessageMenu: refs.closeMessageMenu,
     getAttachmentFileName,

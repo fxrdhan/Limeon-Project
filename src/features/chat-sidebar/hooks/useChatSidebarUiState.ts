@@ -1,5 +1,8 @@
-import { useCallback } from 'react';
-import type { ChatMessage } from '../data/chatSidebarGateway';
+import { useCallback, useRef } from 'react';
+import {
+  chatSidebarMessagesGateway,
+  type ChatMessage,
+} from '../data/chatSidebarGateway';
 import type { AttachmentCaptionData } from '../utils/message-derivations';
 import { buildMessageRenderItems } from '../utils/message-render-items';
 import {
@@ -23,6 +26,7 @@ interface UseChatSidebarUiStateProps {
   activeSearchMessageId: string | null;
   searchNavigationTick: number;
   markMessageIdsAsRead: (messageIds: string[]) => Promise<void>;
+  mergeSearchContextMessages: (searchContextMessages: ChatMessage[]) => void;
   refs: ReturnType<typeof useChatSidebarRefs>;
   closeMessageMenu: () => void;
   getAttachmentFileName: (targetMessage: ChatMessage) => string;
@@ -42,12 +46,14 @@ export const useChatSidebarUiState = ({
   activeSearchMessageId,
   searchNavigationTick,
   markMessageIdsAsRead,
+  mergeSearchContextMessages,
   refs,
   closeMessageMenu,
   getAttachmentFileName,
   getAttachmentFileKind,
   captionData,
 }: UseChatSidebarUiStateProps) => {
+  const loadingReplyContextMessageIdRef = useRef<string | null>(null);
   const focusMessageComposer = useCallback(() => {
     const textarea = refs.messageInputRef.current;
     if (!textarea) return;
@@ -117,14 +123,13 @@ export const useChatSidebarUiState = ({
     captionData,
   });
 
-  const focusReplyTargetMessage = useCallback(
-    (messageId: string) => {
+  const focusReplyTargetFromMessages = useCallback(
+    (messageId: string, availableMessages: ChatMessage[]) => {
       const { openImageGroupInPortal, openImageInPortal } = previews;
-      const replyingMessage = messages.find(
-        candidate => candidate.id === messageId
-      );
+      const replyingMessage =
+        availableMessages.find(candidate => candidate.id === messageId) || null;
       if (!replyingMessage) {
-        return;
+        return false;
       }
 
       const attachmentFileName = getAttachmentFileName(replyingMessage);
@@ -134,7 +139,7 @@ export const useChatSidebarUiState = ({
         replyingMessage.file_mime_type
       );
       const imageGroupRenderItem = buildMessageRenderItems({
-        messages,
+        messages: availableMessages,
         captionMessagesByAttachmentId:
           captionData.captionMessagesByAttachmentId,
         getAttachmentFileKind,
@@ -151,7 +156,7 @@ export const useChatSidebarUiState = ({
           messageId,
           replyingMessage.file_preview_url || null
         );
-        return;
+        return true;
       }
 
       const isImageReply =
@@ -167,18 +172,91 @@ export const useChatSidebarUiState = ({
           attachmentFileName || 'Gambar',
           replyingMessage.file_preview_url || null
         );
-        return;
+        return true;
       }
 
       viewport.focusReplyTargetMessage(messageId);
+      return true;
     },
     [
       captionData.captionMessagesByAttachmentId,
       getAttachmentFileKind,
       getAttachmentFileName,
-      messages,
       previews,
       viewport,
+    ]
+  );
+
+  const focusReplyTargetMessage = useCallback(
+    (messageId: string) => {
+      if (focusReplyTargetFromMessages(messageId, messages)) {
+        return;
+      }
+
+      if (
+        !isOpen ||
+        !targetUserId ||
+        !currentChannelId ||
+        loadingReplyContextMessageIdRef.current === messageId
+      ) {
+        return;
+      }
+
+      loadingReplyContextMessageIdRef.current = messageId;
+      void (async () => {
+        try {
+          const { data: searchContextMessages, error } =
+            await chatSidebarMessagesGateway.fetchConversationMessageContext(
+              targetUserId,
+              messageId
+            );
+          if (
+            error ||
+            !searchContextMessages ||
+            searchContextMessages.length === 0
+          ) {
+            if (error) {
+              console.error('Error loading reply target context:', error);
+            }
+            return;
+          }
+
+          mergeSearchContextMessages(searchContextMessages);
+
+          const mergedMessages = [...messages, ...searchContextMessages].reduce<
+            Map<string, ChatMessage>
+          >((messagesById, messageItem) => {
+            messagesById.set(messageItem.id, messageItem);
+            return messagesById;
+          }, new Map());
+          const orderedMergedMessages = [...mergedMessages.values()].sort(
+            (leftMessage, rightMessage) => {
+              const createdAtOrder = leftMessage.created_at.localeCompare(
+                rightMessage.created_at
+              );
+              if (createdAtOrder !== 0) {
+                return createdAtOrder;
+              }
+
+              return leftMessage.id.localeCompare(rightMessage.id);
+            }
+          );
+
+          focusReplyTargetFromMessages(messageId, orderedMergedMessages);
+        } finally {
+          if (loadingReplyContextMessageIdRef.current === messageId) {
+            loadingReplyContextMessageIdRef.current = null;
+          }
+        }
+      })();
+    },
+    [
+      currentChannelId,
+      focusReplyTargetFromMessages,
+      isOpen,
+      mergeSearchContextMessages,
+      messages,
+      targetUserId,
     ]
   );
 

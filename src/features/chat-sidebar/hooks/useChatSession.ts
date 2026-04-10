@@ -1,6 +1,15 @@
 import type { UserDetails } from '@/types/database';
-import { useCallback, useState, type MutableRefObject } from 'react';
-import { type ChatMessage } from '../data/chatSidebarGateway';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type MutableRefObject,
+} from 'react';
+import {
+  chatSidebarMessagesGateway,
+  type ChatMessage,
+} from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
 import {
   mapConversationMessageForDisplay,
@@ -44,6 +53,9 @@ export const useChatSession = ({
   initialOpenJumpAnimationKeysRef,
 }: UseChatSessionProps) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [replyTargetMessagesById, setReplyTargetMessagesById] = useState<
+    Record<string, ChatMessage>
+  >({});
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [hasOlderMessages, setHasOlderMessages] = useState(false);
@@ -52,6 +64,7 @@ export const useChatSession = ({
     null
   );
   const [retryInitialLoadTick, setRetryInitialLoadTick] = useState(0);
+  const requestedReplyTargetIdsRef = useRef<Set<string>>(new Set());
 
   const applyMessageUpdate = useCallback(
     (updatedMessage: Partial<ChatMessage> & { id: string }) => {
@@ -91,6 +104,142 @@ export const useChatSession = ({
           )
         : messageItem,
     [targetUser, user]
+  );
+
+  const primeReplyTargetMessages = useCallback(
+    async (candidateMessages: ChatMessage[]) => {
+      if (!isOpen || !user || !targetUser || !currentChannelId) {
+        return;
+      }
+
+      const loadedMessageIds = new Set(
+        candidateMessages.map(messageItem => messageItem.id)
+      );
+      const missingReplyTargetIds = [
+        ...new Set(
+          candidateMessages
+            .map(messageItem => messageItem.reply_to_id?.trim() || null)
+            .filter((replyToId): replyToId is string => Boolean(replyToId))
+        ),
+      ].filter(
+        replyToId =>
+          !loadedMessageIds.has(replyToId) &&
+          !replyTargetMessagesById[replyToId] &&
+          !requestedReplyTargetIdsRef.current.has(replyToId)
+      );
+
+      if (missingReplyTargetIds.length === 0) {
+        return;
+      }
+
+      missingReplyTargetIds.forEach(replyToId => {
+        requestedReplyTargetIdsRef.current.add(replyToId);
+      });
+
+      const replyTargetEntries = await Promise.all(
+        missingReplyTargetIds.map(async replyToId => {
+          const { data: replyTargetMessage, error } =
+            await chatSidebarMessagesGateway.getMessageById(replyToId);
+
+          if (error || !replyTargetMessage) {
+            return null;
+          }
+
+          if (
+            replyTargetMessage.channel_id &&
+            replyTargetMessage.channel_id !== currentChannelId
+          ) {
+            return null;
+          }
+
+          return {
+            replyToId,
+            replyTargetMessage:
+              mapMessageForActiveConversation(replyTargetMessage),
+          };
+        })
+      );
+
+      const resolvedReplyTargetEntries = replyTargetEntries.filter(
+        (
+          replyTargetEntry
+        ): replyTargetEntry is {
+          replyToId: string;
+          replyTargetMessage: ChatMessage;
+        } => Boolean(replyTargetEntry)
+      );
+
+      if (resolvedReplyTargetEntries.length === 0) {
+        return;
+      }
+
+      setReplyTargetMessagesById(previousReplyTargetMessagesById => {
+        const nextReplyTargetMessagesById = {
+          ...previousReplyTargetMessagesById,
+        };
+
+        resolvedReplyTargetEntries.forEach(
+          ({ replyToId, replyTargetMessage }) => {
+            nextReplyTargetMessagesById[replyToId] = replyTargetMessage;
+          }
+        );
+
+        return nextReplyTargetMessagesById;
+      });
+    },
+    [
+      currentChannelId,
+      isOpen,
+      mapMessageForActiveConversation,
+      replyTargetMessagesById,
+      targetUser,
+      user,
+    ]
+  );
+
+  useEffect(() => {
+    setReplyTargetMessagesById({});
+    requestedReplyTargetIdsRef.current.clear();
+  }, [currentChannelId, isOpen, targetUser?.id, user?.id]);
+
+  useEffect(() => {
+    if (!isOpen || !user || !targetUser || !currentChannelId) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    void primeReplyTargetMessages(messages).then(() => {
+      if (isCancelled) {
+        return;
+      }
+    });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [
+    currentChannelId,
+    isOpen,
+    messages,
+    primeReplyTargetMessages,
+    targetUser,
+    user,
+  ]);
+
+  const getReplyTargetMessage = useCallback(
+    (replyToId: string | null) => {
+      const normalizedReplyToId = replyToId?.trim() || null;
+      if (!normalizedReplyToId) {
+        return undefined;
+      }
+
+      return (
+        messages.find(messageItem => messageItem.id === normalizedReplyToId) ||
+        replyTargetMessagesById[normalizedReplyToId]
+      );
+    },
+    [messages, replyTargetMessagesById]
   );
 
   const mergeSearchContextMessages = useCallback(
@@ -208,6 +357,7 @@ export const useChatSession = ({
     markConversationRecoverySuccess:
       sessionEngine.markConversationRecoverySuccess,
     markMessageIdsAsDelivered: sessionEngine.markMessageIdsAsDelivered,
+    primeReplyTargetMessages,
   });
 
   useChatConversationCacheSync({
@@ -227,6 +377,7 @@ export const useChatSession = ({
 
   return {
     messages,
+    getReplyTargetMessage,
     setMessages,
     loading,
     loadError,
@@ -240,5 +391,6 @@ export const useChatSession = ({
     targetUserPresenceError: sessionEngine.targetUserPresenceError,
     markMessageIdsAsRead: sessionEngine.markMessageIdsAsRead,
     mergeSearchContextMessages,
+    primeReplyTargetMessages,
   };
 };

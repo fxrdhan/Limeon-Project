@@ -16,6 +16,7 @@ const { createdChannels, mockChatService, mockRealtimeService } = vi.hoisted(
     }>,
     mockChatService: {
       fetchMessagesBetweenUsers: vi.fn(),
+      getMessageById: vi.fn(),
       updateUserPresence: vi.fn(),
       insertUserPresence: vi.fn(),
       getUserPresence: vi.fn(),
@@ -157,6 +158,10 @@ describe('useChatSession', () => {
 
     mockChatService.fetchMessagesBetweenUsers.mockResolvedValue({
       data: [],
+      error: null,
+    });
+    mockChatService.getMessageById.mockResolvedValue({
+      data: null,
       error: null,
     });
     mockResolveChatAssetUrl.mockResolvedValue(null);
@@ -305,6 +310,61 @@ describe('useChatSession', () => {
         'channel-1',
         'image-cached',
         'full'
+      );
+    });
+  });
+
+  it('hydrates missing reply target messages for loaded replies without inserting them into the active list', async () => {
+    const initialMessageAnimationKeysRef = { current: new Set<string>() };
+    const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
+    const replyMessage = buildMessage({
+      id: 'reply-1',
+      sender_id: currentUser.id,
+      receiver_id: targetUser.id,
+      message: 'Balasan baru',
+      reply_to_id: 'older-parent',
+    });
+    const olderParentMessage = buildMessage({
+      id: 'older-parent',
+      sender_id: targetUser.id,
+      receiver_id: currentUser.id,
+      message: 'Pesan lama yang belum termuat',
+    });
+
+    mockChatService.fetchMessagesBetweenUsers.mockResolvedValue({
+      data: [replyMessage],
+      error: null,
+    });
+    mockChatService.getMessageById.mockResolvedValue({
+      data: olderParentMessage,
+      error: null,
+    });
+
+    const { result } = renderHook(() =>
+      useChatSession({
+        isOpen: true,
+        user: currentUser,
+        targetUser,
+        currentChannelId: 'channel-1',
+        initialMessageAnimationKeysRef,
+        initialOpenJumpAnimationKeysRef,
+      })
+    );
+
+    await waitFor(() => {
+      expect(mockChatService.getMessageById).toHaveBeenCalledWith(
+        'older-parent'
+      );
+    });
+    await waitFor(() => {
+      expect(
+        result.current.messages.map(messageItem => messageItem.id)
+      ).toEqual(['reply-1']);
+      expect(result.current.getReplyTargetMessage('older-parent')).toEqual(
+        expect.objectContaining({
+          id: 'older-parent',
+          message: 'Pesan lama yang belum termuat',
+        })
       );
     });
   });

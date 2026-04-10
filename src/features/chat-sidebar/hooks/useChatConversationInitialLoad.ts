@@ -49,6 +49,7 @@ interface UseChatConversationInitialLoadProps {
     messageIds: string[],
     sessionToken?: number
   ) => Promise<void>;
+  primeReplyTargetMessages: (messages: ChatMessage[]) => Promise<void>;
 }
 
 export const useChatConversationInitialLoad = ({
@@ -69,6 +70,7 @@ export const useChatConversationInitialLoad = ({
   initialOpenJumpAnimationKeysRef,
   markConversationRecoverySuccess,
   markMessageIdsAsDelivered,
+  primeReplyTargetMessages,
 }: UseChatConversationInitialLoadProps) => {
   const {
     hasCompletedInitialOpenLoadRef,
@@ -246,6 +248,7 @@ export const useChatConversationInitialLoad = ({
           await primeRecentCachedImageAssets(existingMessagesPage.messages);
           void primeRecentImagePreviewUrls(existingMessagesPage.messages);
         }
+        await primeReplyTargetMessages(existingMessagesPage.messages);
 
         const transformedMessages = hasCachedConversation
           ? mapConversationMessagesForDisplay(existingMessagesPage.messages, {
@@ -377,6 +380,7 @@ export const useChatConversationInitialLoad = ({
     searchContextMessageIdsRef,
     realtimeRecoveryTick,
     retryInitialLoadTick,
+    primeReplyTargetMessages,
     setHasOlderMessages,
     setIsLoadingOlderMessages,
     setLoadError,
