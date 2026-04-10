@@ -2,7 +2,7 @@ import { supabase } from '@/lib/supabase';
 
 let isRealtimeAuthSyncInitialized = false;
 
-const syncRealtimeAuthToken = (accessToken?: string | null) => {
+export const syncSupabaseRealtimeAuthToken = (accessToken?: string | null) => {
   try {
     void supabase.realtime.setAuth(accessToken ?? null);
   } catch (error) {
@@ -20,13 +20,13 @@ export const initializeSupabaseRealtimeAuthSync = () => {
   void supabase.auth
     .getSession()
     .then(({ data }) => {
-      syncRealtimeAuthToken(data.session?.access_token ?? null);
+      syncSupabaseRealtimeAuthToken(data.session?.access_token ?? null);
     })
     .catch(error => {
       console.warn('Failed to hydrate Supabase Realtime auth token:', error);
     });
 
   supabase.auth.onAuthStateChange((_event, session) => {
-    syncRealtimeAuthToken(session?.access_token ?? null);
+    syncSupabaseRealtimeAuthToken(session?.access_token ?? null);
   });
 };

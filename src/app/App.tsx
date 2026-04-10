@@ -42,14 +42,6 @@ function App() {
     initConsoleAPI();
   }, []);
 
-  useEffect(() => {
-    void import('@/lib/supabaseRealtimeAuth').then(
-      ({ initializeSupabaseRealtimeAuthSync }) => {
-        initializeSupabaseRealtimeAuthSync();
-      }
-    );
-  }, []);
-
   // Show loading while auth is initializing
   if (loading) {
     return (

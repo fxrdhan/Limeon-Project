@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { PROFILE_PHOTO_BUCKET } from '../../shared/profilePhotoPaths';
 import type { AuthState } from '@/types';
+import { syncSupabaseRealtimeAuthToken } from '@/lib/supabaseRealtimeAuth';
 import type { Session } from '@supabase/supabase-js';
 
 type AuthStoreSet = (
@@ -33,6 +34,8 @@ const syncStoreFromSession = async (
   set: AuthStoreSet,
   get: AuthStoreGet
 ) => {
+  syncSupabaseRealtimeAuthToken(session?.access_token ?? null);
+
   if (!session?.user?.id) {
     set({ session: null, user: null, loading: false, error: null });
     return;
@@ -101,6 +104,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const authService = await loadAuthService();
       await ensureAuthStateSubscription(set, get);
       const { session, user } = await authService.initializeAuth();
+      syncSupabaseRealtimeAuthToken(session?.access_token ?? null);
       set({ session, user, loading: false, error: null });
     } catch (error) {
       console.error('Error initializing auth:', error);
@@ -117,6 +121,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         email,
         password
       );
+      syncSupabaseRealtimeAuthToken(session.access_token);
 
       set({
         session,
@@ -153,6 +158,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       const authService = await loadAuthService();
       await authService.signOut();
+      syncSupabaseRealtimeAuthToken(null);
       const { clearClientBrowserState } =
         await import('@/lib/browserLogoutCleanup');
       await clearClientBrowserState();
