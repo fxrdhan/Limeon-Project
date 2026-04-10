@@ -5,10 +5,6 @@ import {
 } from '../data/chatSidebarGateway';
 import type { AttachmentCaptionData } from '../utils/message-derivations';
 import { buildMessageRenderItems } from '../utils/message-render-items';
-import {
-  isImageFileExtensionOrMime,
-  resolveFileExtension,
-} from '../utils/message-file';
 import { useChatComposer } from './useChatComposer';
 import { useChatSidebarPreviewState } from './useChatSidebarPreviewState';
 import { useChatSidebarRefs } from './useChatSidebarRefs';
@@ -125,19 +121,13 @@ export const useChatSidebarUiState = ({
 
   const focusReplyTargetFromMessages = useCallback(
     (messageId: string, availableMessages: ChatMessage[]) => {
-      const { openImageGroupInPortal, openImageInPortal } = previews;
+      const { openImageGroupInPortal } = previews;
       const replyingMessage =
         availableMessages.find(candidate => candidate.id === messageId) || null;
       if (!replyingMessage) {
         return false;
       }
 
-      const attachmentFileName = getAttachmentFileName(replyingMessage);
-      const fileExtension = resolveFileExtension(
-        attachmentFileName,
-        replyingMessage.message,
-        replyingMessage.file_mime_type
-      );
       const imageGroupRenderItem = buildMessageRenderItems({
         messages: availableMessages,
         captionMessagesByAttachmentId:
@@ -159,29 +149,12 @@ export const useChatSidebarUiState = ({
         return true;
       }
 
-      const isImageReply =
-        replyingMessage.message_type === 'image' ||
-        isImageFileExtensionOrMime(
-          fileExtension,
-          replyingMessage.file_mime_type
-        );
-
-      if (isImageReply) {
-        void openImageInPortal(
-          replyingMessage,
-          attachmentFileName || 'Gambar',
-          replyingMessage.file_preview_url || null
-        );
-        return true;
-      }
-
       viewport.focusReplyTargetMessage(messageId);
       return true;
     },
     [
       captionData.captionMessagesByAttachmentId,
       getAttachmentFileKind,
-      getAttachmentFileName,
       previews,
       viewport,
     ]

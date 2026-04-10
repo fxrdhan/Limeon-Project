@@ -432,7 +432,7 @@ describe('useChatSidebarUiState', () => {
     expect(focusReplyTargetMessage).toHaveBeenCalledWith('text-1');
   });
 
-  it('opens the single image viewer for non-group image replies', () => {
+  it('keeps single image reply targets focused in the message list', () => {
     const replyingMessage = buildMessage({
       id: 'image-1',
       message: 'images/channel/image-1.png',
@@ -443,6 +443,7 @@ describe('useChatSidebarUiState', () => {
       file_preview_url: 'https://example.com/image-1.png',
     });
     const openImageInPortal = vi.fn(async () => {});
+    const focusReplyTargetMessage = vi.fn();
 
     mockUseChatComposer.mockReturnValue({
       messageInputHeight: 40,
@@ -507,7 +508,7 @@ describe('useChatSidebarUiState', () => {
       toggleMessageMenu: vi.fn(),
       getVisibleMessagesBounds: vi.fn(),
       focusEditingTargetMessage: vi.fn(),
-      focusReplyTargetMessage: vi.fn(),
+      focusReplyTargetMessage,
       focusSearchTargetMessage: vi.fn(),
       isAtBottom: true,
       isAtTop: true,
@@ -599,11 +600,8 @@ describe('useChatSidebarUiState', () => {
       result.current.viewport.focusReplyTargetMessage('image-1');
     });
 
-    expect(openImageInPortal).toHaveBeenCalledWith(
-      replyingMessage,
-      'image-1.png',
-      'https://example.com/image-1.png'
-    );
+    expect(openImageInPortal).not.toHaveBeenCalled();
+    expect(focusReplyTargetMessage).toHaveBeenCalledWith('image-1');
   });
 
   it('loads missing reply target context before focusing a text source message', async () => {
@@ -976,5 +974,192 @@ describe('useChatSidebarUiState', () => {
       'older-image-5',
       'https://example.com/older-image-5.png'
     );
+  });
+
+  it('loads missing reply target context before focusing a single image source message', async () => {
+    const mergeSearchContextMessages = vi.fn();
+    const openImageInPortal = vi.fn(async () => {});
+    const focusReplyTargetMessage = vi.fn();
+    const sourceMessage = buildMessage({
+      id: 'older-image-1',
+      sender_id: 'user-b',
+      receiver_id: 'user-a',
+      message: 'images/channel/older-image-1.png',
+      message_type: 'image',
+      file_name: 'older-image-1.png',
+      file_mime_type: 'image/png',
+      file_storage_path: 'images/channel/older-image-1.png',
+      file_preview_url: 'https://example.com/older-image-1.png',
+      created_at: '2026-03-05T09:30:00.000Z',
+      updated_at: '2026-03-05T09:30:00.000Z',
+    });
+
+    mockUseChatComposer.mockReturnValue({
+      messageInputHeight: 40,
+      isMessageInputMultiline: false,
+      composerAttachmentPreviewItems: [],
+      pendingComposerAttachments: [],
+      loadingComposerAttachments: [],
+      editingMessageId: null,
+      replyingMessageId: null,
+      replyingMessagePreview: null,
+      message: '',
+      setMessage: vi.fn(),
+      closeAttachModal: vi.fn(),
+      handleAttachImageClick: vi.fn(),
+      handleAttachDocumentClick: vi.fn(),
+      compressPendingComposerImage: vi.fn(),
+      compressPendingComposerPdf: vi.fn(),
+      removePendingComposerAttachment: vi.fn(),
+      openComposerImagePreview: vi.fn(),
+      pendingImagePreviewUrlsRef: { current: [] },
+      isSendSuccessGlowVisible: false,
+      isAttachModalOpen: false,
+      attachmentPastePromptUrl: null,
+      isAttachmentPastePromptAttachmentCandidate: false,
+      isAttachmentPastePromptShortenable: false,
+      hoverableAttachmentCandidates: [],
+      hoverableAttachmentUrl: null,
+      rawAttachmentUrl: null,
+      previewComposerImageAttachment: undefined,
+      isComposerImageExpanded: false,
+      isComposerImageExpandedVisible: false,
+      attachButtonRef: { current: null },
+      attachModalRef: { current: null },
+      attachmentPastePromptRef: { current: null },
+      imageInputRef: { current: null },
+      documentInputRef: { current: null },
+      audioInputRef: { current: null },
+      clearAttachmentPasteState: vi.fn(),
+      dismissAttachmentPastePrompt: vi.fn(),
+      openAttachmentPastePrompt: vi.fn(),
+      openComposerLinkPrompt: vi.fn(),
+      handleEditAttachmentLink: vi.fn(),
+      handleOpenAttachmentPastePromptLink: vi.fn(),
+      handleCopyAttachmentPastePromptLink: vi.fn(),
+      handleShortenAttachmentPastePromptLink: vi.fn(),
+      handleComposerPaste: vi.fn(),
+      handleUseAttachmentPasteAsUrl: vi.fn(),
+      handleUseAttachmentPasteAsAttachment: vi.fn(),
+      cancelLoadingComposerAttachment: vi.fn(),
+      clearPendingComposerAttachments: vi.fn(),
+      restorePendingComposerAttachments: vi.fn(),
+      queueComposerImage: vi.fn(),
+      triggerSendSuccessGlow: vi.fn(),
+      isLoadingAttachmentComposerAttachments: false,
+      linkPrompt: {},
+      composerContextualOffset: 0,
+    });
+
+    mockUseChatViewport.mockReturnValue({
+      closeMessageMenu: vi.fn(),
+      scheduleScrollMessagesToBottom: vi.fn(),
+      toggleMessageMenu: vi.fn(),
+      getVisibleMessagesBounds: vi.fn(),
+      focusEditingTargetMessage: vi.fn(),
+      focusReplyTargetMessage,
+      focusSearchTargetMessage: vi.fn(),
+      isAtBottom: true,
+      isAtTop: true,
+      hasNewMessages: false,
+      isInitialOpenPinPending: false,
+      composerContainerHeight: 0,
+      openMenuMessageId: null,
+      menuPlacement: 'up',
+      menuSideAnchor: 'middle',
+      shouldAnimateMenuOpen: false,
+      menuTransitionSourceId: null,
+      menuOffsetX: 0,
+      flashingMessageId: null,
+      isFlashHighlightVisible: false,
+      handleChatPortalBackgroundClick: vi.fn(),
+      scrollToBottom: vi.fn(),
+    });
+
+    mockUseChatSidebarPreviewState.mockReturnValue({
+      openImageInPortal,
+      openImageGroupInPortal: vi.fn(async () => {}),
+      closeImageActionsMenu: vi.fn(),
+      openDocumentInPortal: vi.fn(),
+      closeImageGroupPreview: vi.fn(),
+      closeImagePreview: vi.fn(),
+      openDocumentPreview: vi.fn(),
+      closeDocumentPreview: vi.fn(),
+      imageGroupPreviewItems: [],
+      activeImageGroupPreviewId: null,
+      isImageGroupPreviewVisible: false,
+      isImagePreviewOpen: false,
+      isImagePreviewVisible: false,
+      imagePreviewUrl: null,
+      imagePreviewBackdropUrl: null,
+      imagePreviewName: '',
+      documentPreviewUrl: null,
+      documentPreviewName: '',
+      isDocumentPreviewVisible: false,
+      selectImageGroupPreviewItem: vi.fn(),
+      handleDownloadMessage: vi.fn(),
+      handleCopyMessage: vi.fn(),
+      handleReplyMessage: vi.fn(),
+      handleOpenForwardMessagePicker: vi.fn(),
+      activeImageGroupPreviewMessage: null,
+      openImageActionsAttachmentId: null,
+      imageActionsMenuPosition: null,
+      pdfCompressionMenuPosition: null,
+      imageActions: [],
+      pdfCompressionLevelActions: [],
+      imageActionsButtonRef: { current: null },
+      imageActionsMenuRef: { current: null },
+      pdfCompressionMenuRef: { current: null },
+      handleToggleImageActionsMenu: vi.fn(),
+      composerDocumentPreviewUrl: null,
+      composerDocumentPreviewName: '',
+      isComposerDocumentPreviewVisible: false,
+      closeComposerDocumentPreview: vi.fn(),
+      closeImageGroupPreviewVisible: vi.fn(),
+      captionMessagesByAttachmentId: new Map(),
+      captionMessageIds: new Set(),
+    });
+    mockFetchConversationMessageContext.mockResolvedValue({
+      data: [sourceMessage],
+      error: null,
+    });
+
+    const { result } = renderHook(() =>
+      useChatSidebarUiState({
+        isOpen: true,
+        currentChannelId: 'channel-1',
+        messages: [],
+        loading: false,
+        userId: 'user-a',
+        targetUserId: 'user-b',
+        normalizedMessageSearchQuery: '',
+        isMessageSearchMode: false,
+        activeSearchMessageId: null,
+        searchNavigationTick: 0,
+        markMessageIdsAsRead: vi.fn(async () => {}),
+        mergeSearchContextMessages,
+        refs: buildRefs(),
+        closeMessageMenu: vi.fn(),
+        getAttachmentFileName: message => message.file_name || 'Lampiran',
+        getAttachmentFileKind: (_message: ChatMessage) => 'document',
+        captionData: {
+          captionMessagesByAttachmentId: new Map(),
+          captionMessageIds: new Set(),
+        },
+      })
+    );
+
+    await act(async () => {
+      result.current.viewport.focusReplyTargetMessage('older-image-1');
+      await Promise.resolve();
+    });
+
+    expect(mockFetchConversationMessageContext).toHaveBeenCalledWith(
+      'user-b',
+      'older-image-1'
+    );
+    expect(mergeSearchContextMessages).toHaveBeenCalledWith([sourceMessage]);
+    expect(openImageInPortal).not.toHaveBeenCalled();
+    expect(focusReplyTargetMessage).toHaveBeenCalledWith('older-image-1');
   });
 });
