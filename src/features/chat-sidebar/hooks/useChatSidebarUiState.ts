@@ -137,13 +137,26 @@ export const useChatSidebarUiState = ({
 
   const scheduleReplyTargetViewportFocus = useCallback(
     (messageId: string) => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
+      let remainingFrames = 12;
+
+      const focusWhenBubbleReady = () => {
+        if (refs.messageBubbleRefs.current.has(messageId)) {
           viewport.focusReplyTargetMessage(messageId);
-        });
-      });
+          return;
+        }
+
+        if (remainingFrames <= 0) {
+          viewport.focusReplyTargetMessage(messageId);
+          return;
+        }
+
+        remainingFrames -= 1;
+        requestAnimationFrame(focusWhenBubbleReady);
+      };
+
+      requestAnimationFrame(focusWhenBubbleReady);
     },
-    [viewport]
+    [refs.messageBubbleRefs, viewport]
   );
 
   const focusReplyTargetFromMessages = useCallback(
