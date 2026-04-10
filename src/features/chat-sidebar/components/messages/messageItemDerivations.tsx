@@ -254,7 +254,7 @@ export const buildMessageItemDerivations = ({
   const bubbleToneClass = isFlashingTarget
     ? 'bg-primary text-white'
     : isCurrentUser
-      ? 'bg-emerald-200 text-slate-900'
+      ? 'bg-emerald-100 text-slate-900'
       : 'bg-white text-slate-800';
   const bubbleOpacityClass = isFlashSequenceTarget
     ? isFlashHighlightVisible

@@ -9,8 +9,29 @@ import { useChatRuntimeReadReceipts } from './useChatRuntimeReadReceipts';
 const CHAT_CLEANUP_RUNTIME_TOAST_ID = 'chat-cleanup-runtime-warning';
 const CHAT_CLEANUP_RETRY_DELAY_MS = 60_000;
 
+const isChatCleanupAuthError = (error: unknown) => {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const code = 'code' in error ? error.code : undefined;
+  const message =
+    'message' in error && typeof error.message === 'string'
+      ? error.message.toLowerCase()
+      : '';
+
+  return (
+    code === '401' ||
+    code === 401 ||
+    code === '403' ||
+    code === 403 ||
+    message.includes('unauthorized') ||
+    message.includes('missing auth')
+  );
+};
+
 export const useChatRuntime = () => {
-  const { user } = useAuthStore();
+  const { user, session } = useAuthStore();
   const retryCleanupTimeoutRef = useRef<number | null>(null);
   const hadPendingCleanupFailuresRef = useRef(false);
 
@@ -49,7 +70,7 @@ export const useChatRuntime = () => {
       retryCleanupTimeoutRef.current = null;
     };
 
-    if (!user?.id) {
+    if (!user?.id || !session?.access_token) {
       clearScheduledRetry();
       hadPendingCleanupFailuresRef.current = false;
       toast.dismiss(CHAT_CLEANUP_RUNTIME_TOAST_ID);
@@ -77,6 +98,16 @@ export const useChatRuntime = () => {
       }
 
       if (error || !data) {
+        if (isChatCleanupAuthError(error)) {
+          console.warn(
+            'Skipping chat cleanup retry until auth session is ready again:',
+            error
+          );
+          toast.dismiss(CHAT_CLEANUP_RUNTIME_TOAST_ID);
+          scheduleRetry();
+          return;
+        }
+
         console.error('Failed to retry chat cleanup failures:', error);
         hadPendingCleanupFailuresRef.current = true;
         toast.error(
@@ -126,5 +157,5 @@ export const useChatRuntime = () => {
       isCancelled = true;
       clearScheduledRetry();
     };
-  }, [user?.id]);
+  }, [session?.access_token, user?.id]);
 };

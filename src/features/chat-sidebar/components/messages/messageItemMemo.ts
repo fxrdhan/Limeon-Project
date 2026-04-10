@@ -68,6 +68,8 @@ export const areMessageItemPropsEqual = (
     previousModel.interaction.maxMessageChars ===
       nextModel.interaction.maxMessageChars &&
     previousModel.content.captionMessage === nextModel.content.captionMessage &&
+    previousModel.content.replyTargetMessage ===
+      nextModel.content.replyTargetMessage &&
     previousModel.content.groupedDocumentMessages ===
       nextModel.content.groupedDocumentMessages &&
     previousModel.content.groupedImageMessages ===

@@ -67,6 +67,7 @@ const createModel = (
       openMessageId: null,
       placement: 'up',
       sideAnchor: 'middle',
+      verticalAnchor: 'left',
       shouldAnimateOpen: true,
       transitionSourceId: null,
       offsetX: 0,
@@ -82,6 +83,7 @@ const createModel = (
     content: {
       resolvedMessageUrl: null,
       captionMessage: undefined,
+      replyTargetMessage: undefined,
       groupedDocumentMessages: undefined,
       groupedImageMessages: undefined,
       pdfMessagePreview: undefined,
@@ -93,14 +95,21 @@ const createModel = (
       openImageInPortal: async () => {},
       openImageGroupInPortal: async () => {},
       openDocumentInPortal: async () => {},
+      focusReplyTargetMessage: () => {},
       ...content,
     },
     actions: {
       handleEditMessage: () => {},
+      handleReplyMessage: () => {},
       handleCopyMessage: async () => {},
       handleDownloadMessage: async () => {},
       handleDownloadImageGroup: async () => {},
       handleDownloadDocumentGroup: async () => {},
+      handleDeleteMessages: async () => ({
+        deletedTargetMessageIds: [],
+        failedTargetMessageIds: [],
+        cleanupWarningTargetMessageIds: [],
+      }),
       handleOpenForwardMessagePicker: () => {},
       handleDeleteMessage: async () => true,
       ...actions,
@@ -168,6 +177,25 @@ describe('areMessageItemPropsEqual', () => {
     const previousModel = createModel();
     const nextModel = createModel({
       content: { groupedDocumentMessages },
+    });
+
+    expect(
+      areMessageItemPropsEqual({ model: previousModel }, { model: nextModel })
+    ).toBe(false);
+  });
+
+  it('detects when the reply target changes for the current item', () => {
+    const previousModel = createModel();
+    const nextModel = createModel({
+      content: {
+        replyTargetMessage: {
+          ...baseMessage,
+          id: 'message-2',
+          sender_id: 'user-b',
+          receiver_id: 'user-a',
+          message: 'pesan sumber',
+        },
+      },
     });
 
     expect(

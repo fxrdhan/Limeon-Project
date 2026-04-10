@@ -20,6 +20,7 @@ const {
   mockLoadPersistedPdfPreviewEntries: vi.fn(),
   authState: {
     user: null as { id: string } | null,
+    session: null as { access_token: string } | null,
   },
   mockToast: {
     dismiss: vi.fn(),
@@ -57,6 +58,7 @@ describe('useChatRuntime', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     authState.user = null;
+    authState.session = null;
     mockLoadPersistedPdfPreviewEntries.mockResolvedValue([]);
     mockRetryChatCleanupFailures.mockResolvedValue({
       data: {
@@ -82,6 +84,9 @@ describe('useChatRuntime', () => {
 
     authState.user = {
       id: 'user-a',
+    };
+    authState.session = {
+      access_token: 'access-token',
     };
     rerender();
 
@@ -115,6 +120,9 @@ describe('useChatRuntime', () => {
 
     authState.user = {
       id: 'user-a',
+    };
+    authState.session = {
+      access_token: 'access-token',
     };
 
     const { useChatRuntime } = await import('../hooks/useChatRuntime');
@@ -160,6 +168,9 @@ describe('useChatRuntime', () => {
     authState.user = {
       id: 'user-a',
     };
+    authState.session = {
+      access_token: 'access-token',
+    };
 
     const { useChatRuntime } = await import('../hooks/useChatRuntime');
     renderHook(() => useChatRuntime());
@@ -181,5 +192,75 @@ describe('useChatRuntime', () => {
     });
 
     expect(mockRetryChatCleanupFailures).toHaveBeenCalledTimes(1);
+  });
+
+  it('waits for an access token before retrying cleanup failures', async () => {
+    authState.user = {
+      id: 'user-a',
+    };
+
+    const { useChatRuntime } = await import('../hooks/useChatRuntime');
+    const { rerender } = renderHook(() => useChatRuntime());
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(mockRetryChatCleanupFailures).not.toHaveBeenCalled();
+    expect(mockToast.error).not.toHaveBeenCalled();
+
+    authState.session = {
+      access_token: 'access-token',
+    };
+    rerender();
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(mockRetryChatCleanupFailures).toHaveBeenCalledTimes(1);
+  });
+
+  it('suppresses cleanup warning toasts for auth errors and retries silently', async () => {
+    mockRetryChatCleanupFailures.mockResolvedValueOnce({
+      data: null,
+      error: {
+        code: '401',
+        details: '',
+        hint: '',
+        message: 'Unauthorized',
+        name: 'FunctionsHttpError',
+      },
+    });
+
+    authState.user = {
+      id: 'user-a',
+    };
+    authState.session = {
+      access_token: 'access-token',
+    };
+
+    const { useChatRuntime } = await import('../hooks/useChatRuntime');
+    renderHook(() => useChatRuntime());
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(mockRetryChatCleanupFailures).toHaveBeenCalledTimes(1);
+    expect(mockToast.error).not.toHaveBeenCalled();
+    expect(mockToast.dismiss).toHaveBeenCalledWith(
+      'chat-cleanup-runtime-warning'
+    );
+
+    await act(async () => {
+      vi.advanceTimersByTime(60_000);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(mockRetryChatCleanupFailures).toHaveBeenCalledTimes(2);
   });
 });

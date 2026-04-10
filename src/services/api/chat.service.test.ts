@@ -5,6 +5,7 @@ const {
   mockSelect,
   mockInsert,
   mockFrom,
+  mockGetSession,
   mockRpc,
   mockInvoke,
   mockUpdate,
@@ -15,6 +16,7 @@ const {
   mockSelect: vi.fn(),
   mockInsert: vi.fn(),
   mockFrom: vi.fn(),
+  mockGetSession: vi.fn(),
   mockRpc: vi.fn(),
   mockInvoke: vi.fn(),
   mockUpdate: vi.fn(),
@@ -26,6 +28,9 @@ vi.mock('@/lib/supabase', () => ({
   supabase: {
     from: mockFrom,
     rpc: mockRpc,
+    auth: {
+      getSession: mockGetSession,
+    },
     functions: {
       invoke: mockInvoke,
     },
@@ -107,6 +112,14 @@ describe('chatService', () => {
     });
     mockUpdateSelect.mockResolvedValue({
       data: [],
+      error: null,
+    });
+    mockGetSession.mockResolvedValue({
+      data: {
+        session: {
+          access_token: 'access-token-123',
+        },
+      },
       error: null,
     });
   });
@@ -365,6 +378,9 @@ describe('chatService', () => {
         action: 'delete_thread',
         messageId: 'message-1',
       },
+      headers: {
+        Authorization: 'Bearer access-token-123',
+      },
     });
     expect(result).toEqual({
       data: {
@@ -465,6 +481,9 @@ describe('chatService', () => {
       body: {
         action: 'delete_threads',
         messageIds: ['message-1', 'message-2'],
+      },
+      headers: {
+        Authorization: 'Bearer access-token-123',
       },
     });
     expect(result).toEqual({
@@ -662,6 +681,9 @@ describe('chatService', () => {
       body: {
         action: 'retry_failures',
       },
+      headers: {
+        Authorization: 'Bearer access-token-123',
+      },
     });
     expect(result).toEqual({
       data: {
@@ -695,6 +717,28 @@ describe('chatService', () => {
           'Chat contract violation: cleanup.resolvedCount must be a non-negative number.',
       })
     );
+  });
+
+  it('returns an auth error before invoking chat cleanup when the session is missing', async () => {
+    mockGetSession.mockResolvedValueOnce({
+      data: {
+        session: null,
+      },
+      error: null,
+    });
+
+    const { chatService } = await import('./chat.service');
+
+    const result = await chatService.retryChatCleanupFailures();
+
+    expect(mockInvoke).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      data: null,
+      error: expect.objectContaining({
+        code: '401',
+        message: 'Missing auth session',
+      }),
+    });
   });
 
   it('starts keepalive and fallback update through the page-exit helper', async () => {

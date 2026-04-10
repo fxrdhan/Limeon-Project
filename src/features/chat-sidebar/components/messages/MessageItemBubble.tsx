@@ -129,6 +129,7 @@ export const MessageItemBubble = ({
   };
   const isReplyPanelInteractive =
     !isSelectionMode && Boolean(replyTargetMessage?.id) && hasReplyPreview;
+  const isReplyTargetCurrentUser = replyTargetMessage?.sender_id === userId;
 
   const activateReplyPanel = (event: ReactMouseEvent<HTMLButtonElement>) => {
     if (!replyTargetMessage?.id) {
@@ -140,10 +141,15 @@ export const MessageItemBubble = ({
   };
 
   const replyPanelClassName = isFlashingTarget
-    ? 'border-white/20 bg-white/10'
-    : isCurrentUser
-      ? 'border-emerald-400/70 bg-emerald-300/55'
-      : 'border-slate-300 bg-slate-100';
+    ? 'bg-white/10'
+    : isReplyTargetCurrentUser
+      ? 'bg-olive-300/50'
+      : 'bg-olive-300/50';
+  const replyPanelStripeClassName = isFlashingTarget
+    ? 'bg-white/20'
+    : isReplyTargetCurrentUser
+      ? 'bg-olive-500'
+      : 'bg-emerald-500';
   const replyLabelClassName = isFlashingTarget
     ? 'text-white/80'
     : isCurrentUser
@@ -165,35 +171,47 @@ export const MessageItemBubble = ({
         isReplyPanelInteractive ? (
           <button
             type="button"
-            className={`mb-2 block w-full min-w-0 rounded-xl border-l-[3px] px-3 py-2 text-left transition-colors ${replyPanelClassName} cursor-pointer`}
+            className={`relative mb-2 block w-full min-w-0 overflow-hidden rounded-lg text-left transition-colors ${replyPanelClassName} cursor-pointer`}
             onClick={activateReplyPanel}
             aria-label={`Buka pesan yang dibalas dari ${replyAuthorLabel}`}
           >
-            <p
-              className={`truncate text-[11px] font-semibold ${replyLabelClassName}`}
-            >
-              {replyAuthorLabel}
-            </p>
-            <p
-              className={`truncate text-sm leading-relaxed ${replyPreviewClassName}`}
-            >
-              {replyPreviewText}
-            </p>
+            <span
+              aria-hidden="true"
+              className={`absolute inset-y-0 left-0 w-1 rounded-l-lg ${replyPanelStripeClassName}`}
+            />
+            <div className="min-w-0 px-2 py-1 pl-4">
+              <p
+                className={`truncate text-[11px] font-semibold ${replyLabelClassName}`}
+              >
+                {replyAuthorLabel}
+              </p>
+              <p
+                className={`truncate text-sm leading-relaxed ${replyPreviewClassName}`}
+              >
+                {replyPreviewText}
+              </p>
+            </div>
           </button>
         ) : (
           <div
-            className={`mb-2 min-w-0 rounded-xl border-l-[3px] px-3 py-2 text-left transition-colors ${replyPanelClassName}`}
+            className={`relative mb-2 min-w-0 overflow-hidden rounded-lg text-left transition-colors ${replyPanelClassName}`}
           >
-            <p
-              className={`truncate text-[11px] font-semibold ${replyLabelClassName}`}
-            >
-              {replyAuthorLabel}
-            </p>
-            <p
-              className={`truncate text-sm leading-relaxed ${replyPreviewClassName}`}
-            >
-              {replyPreviewText}
-            </p>
+            <span
+              aria-hidden="true"
+              className={`absolute inset-y-0 left-0 w-1 rounded-l-lg ${replyPanelStripeClassName}`}
+            />
+            <div className="min-w-0 px-2 py-1 pl-4">
+              <p
+                className={`truncate text-[11px] font-semibold ${replyLabelClassName}`}
+              >
+                {replyAuthorLabel}
+              </p>
+              <p
+                className={`truncate text-sm leading-relaxed ${replyPreviewClassName}`}
+              >
+                {replyPreviewText}
+              </p>
+            </div>
           </div>
         )
       ) : null}

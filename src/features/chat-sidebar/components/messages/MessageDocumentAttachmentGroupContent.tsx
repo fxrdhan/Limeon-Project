@@ -388,7 +388,7 @@ export const MessageDocumentAttachmentGroupContent = ({
                   }}
                   className={`flex w-full cursor-pointer items-center gap-2 rounded-xl border p-1 text-left transition-colors ${
                     isCurrentUserGroup
-                      ? 'border-emerald-100 bg-emerald-50/85 hover:bg-emerald-100/90'
+                      ? 'border-emerald-50 bg-emerald-50/85 hover:bg-emerald-50/90'
                       : 'border-slate-200 bg-slate-50 hover:bg-slate-100/90'
                   }`}
                 >

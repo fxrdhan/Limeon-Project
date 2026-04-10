@@ -6,7 +6,7 @@ import type {
   DeleteMessageThreadsAndCleanupResult,
   RetryChatCleanupFailuresResult,
 } from './types';
-import { toChatServiceError } from './contractErrors';
+import { createPostgrestError, toChatServiceError } from './contractErrors';
 import {
   normalizeCleanupStoragePathsResult,
   normalizeDeleteMessageThreadAndCleanupResult,
@@ -25,11 +25,42 @@ const normalizeRequestStringList = (values: Array<string | null | undefined>) =>
     .map(value => value?.trim() || null)
     .filter((value): value is string => Boolean(value));
 
+const getChatCleanupFunctionAuthHeaders = async () => {
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+  const accessToken = session?.access_token?.trim();
+
+  if (sessionError || !accessToken) {
+    return {
+      headers: null,
+      error: createPostgrestError(
+        sessionError?.message || 'Missing auth session',
+        '401'
+      ),
+    };
+  }
+
+  return {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    error: null,
+  };
+};
+
 export const chatCleanupService = {
   async deleteMessageThreadAndCleanup(
     id: string
   ): Promise<ServiceResponse<DeleteMessageThreadAndCleanupResult>> {
     try {
+      const { headers, error: authError } =
+        await getChatCleanupFunctionAuthHeaders();
+      if (authError || !headers) {
+        return { data: null, error: authError };
+      }
+
       const request: DeleteMessageThreadAndCleanupRequest = {
         action: 'delete_thread',
         messageId: id,
@@ -39,6 +70,7 @@ export const chatCleanupService = {
           'chat-cleanup',
           {
             body: request,
+            headers,
           }
         );
 
@@ -74,6 +106,12 @@ export const chatCleanupService = {
     }
 
     try {
+      const { headers, error: authError } =
+        await getChatCleanupFunctionAuthHeaders();
+      if (authError || !headers) {
+        return { data: null, error: authError };
+      }
+
       const request: DeleteMessageThreadsAndCleanupRequest = {
         action: 'delete_threads',
         messageIds: normalizedMessageIds,
@@ -83,6 +121,7 @@ export const chatCleanupService = {
           'chat-cleanup',
           {
             body: request,
+            headers,
           }
         );
 
@@ -114,6 +153,12 @@ export const chatCleanupService = {
     }
 
     try {
+      const { headers, error: authError } =
+        await getChatCleanupFunctionAuthHeaders();
+      if (authError || !headers) {
+        return { data: null, error: authError };
+      }
+
       const request: CleanupStoragePathsRequest = {
         action: 'cleanup_storage',
         storagePaths: normalizedStoragePaths,
@@ -123,6 +168,7 @@ export const chatCleanupService = {
           'chat-cleanup',
           {
             body: request,
+            headers,
           }
         );
 
@@ -143,6 +189,12 @@ export const chatCleanupService = {
     ServiceResponse<RetryChatCleanupFailuresResult>
   > {
     try {
+      const { headers, error: authError } =
+        await getChatCleanupFunctionAuthHeaders();
+      if (authError || !headers) {
+        return { data: null, error: authError };
+      }
+
       const request: RetryChatCleanupFailuresRequest = {
         action: 'retry_failures',
       };
@@ -151,6 +203,7 @@ export const chatCleanupService = {
           'chat-cleanup',
           {
             body: request,
+            headers,
           }
         );
 
