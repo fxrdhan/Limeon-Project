@@ -202,6 +202,7 @@ export const useChatSidebarUiState = ({
       );
 
       if (imageGroupRenderItem?.kind === 'image-group') {
+        scheduleReplyTargetViewportFocus(messageId);
         void openImageGroupInPortal(
           imageGroupRenderItem.messages,
           messageId,
@@ -213,7 +214,12 @@ export const useChatSidebarUiState = ({
       viewport.focusReplyTargetMessage(messageId);
       return true;
     },
-    [getReplyTargetImageGroup, previews, viewport]
+    [
+      getReplyTargetImageGroup,
+      previews,
+      scheduleReplyTargetViewportFocus,
+      viewport,
+    ]
   );
 
   const focusReplyTargetMessage = useCallback(
@@ -284,6 +290,7 @@ export const useChatSidebarUiState = ({
             orderedMergedMessages
           );
           if (imageGroupRenderItem?.kind === 'image-group') {
+            scheduleReplyTargetViewportFocus(messageId);
             void previews.openImageGroupInPortal(
               imageGroupRenderItem.messages,
               messageId,

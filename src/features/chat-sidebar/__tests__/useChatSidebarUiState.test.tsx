@@ -282,7 +282,7 @@ describe('useChatSidebarUiState', () => {
       'image-5',
       'https://example.com/image-5.png'
     );
-    expect(focusReplyTargetMessage).not.toHaveBeenCalled();
+    expect(focusReplyTargetMessage).toHaveBeenCalledWith('image-5');
   });
 
   it('keeps text reply targets focused in the message list', () => {
@@ -1215,6 +1215,7 @@ describe('useChatSidebarUiState', () => {
   it('loads missing reply target context before opening an image group source message', async () => {
     const mergeSearchContextMessages = vi.fn();
     const openImageGroupInPortal = vi.fn(async () => {});
+    const focusReplyTargetMessage = vi.fn();
     const sourceMessages = Array.from({ length: 5 }, (_, index) =>
       buildMessage({
         id: `older-image-${index + 1}`,
@@ -1294,7 +1295,7 @@ describe('useChatSidebarUiState', () => {
       toggleMessageMenu: vi.fn(),
       getVisibleMessagesBounds: vi.fn(),
       focusEditingTargetMessage: vi.fn(),
-      focusReplyTargetMessage: vi.fn(),
+      focusReplyTargetMessage,
       focusSearchTargetMessage: vi.fn(),
       isAtBottom: true,
       isAtTop: true,
@@ -1401,6 +1402,7 @@ describe('useChatSidebarUiState', () => {
       'older-image-5',
       'https://example.com/older-image-5.png'
     );
+    expect(focusReplyTargetMessage).toHaveBeenCalledWith('older-image-5');
   });
 
   it('loads missing reply target context before focusing a single image source message', async () => {
