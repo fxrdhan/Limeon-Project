@@ -287,6 +287,55 @@ describe('MessageItem', () => {
     expect(handleDeleteMessage).not.toHaveBeenCalled();
   });
 
+  it('keeps the grouped image popover rendered while it is the transition source', () => {
+    const groupedMessages = Array.from({ length: 4 }, (_, index) => ({
+      ...baseMessage,
+      id: `image-${index + 1}`,
+      message: `images/channel/chat-${index + 1}.png`,
+      message_type: 'image' as const,
+      file_mime_type: 'image/png',
+      file_storage_path: `images/channel/chat-${index + 1}.png`,
+      file_name: `Chat-${index + 1}.png`,
+    }));
+
+    const { container } = render(
+      <MessageItem
+        model={createModel({
+          message: groupedMessages[3],
+          menu: {
+            openMessageId: 'message-other',
+            transitionSourceId: 'image-4',
+          },
+          content: {
+            groupedImageMessages: groupedMessages,
+            getImageMessageUrl: targetMessage => targetMessage.message,
+          },
+        })}
+      />
+    );
+
+    expect(
+      container.querySelector('[data-chat-menu-id="grouped-image-menu"]')
+    ).toBeTruthy();
+  });
+
+  it('keeps a single bubble popover rendered while it is the transition source', () => {
+    const { container } = render(
+      <MessageItem
+        model={createModel({
+          menu: {
+            openMessageId: 'message-other',
+            transitionSourceId: 'message-1',
+          },
+        })}
+      />
+    );
+
+    expect(
+      container.querySelector('[data-chat-menu-id="message-1"]')
+    ).toBeTruthy();
+  });
+
   it('anchors grouped document menus to the outer bubble when clicking the bubble area', () => {
     const groupedMessages = [
       {

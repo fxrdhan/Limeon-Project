@@ -64,7 +64,7 @@ export const MessageActionPopover = ({
         damping: 34,
       },
     }}
-    className={`absolute z-[70] touch-pan-y text-slate-900 ${sidePlacementClass}`}
+    className={`pointer-events-auto absolute z-[70] touch-pan-y text-slate-900 ${sidePlacementClass}`}
     onClick={event => event.stopPropagation()}
   >
     {menuPlacement === 'left' ? (

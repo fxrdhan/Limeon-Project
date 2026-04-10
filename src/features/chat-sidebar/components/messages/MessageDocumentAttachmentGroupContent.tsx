@@ -33,6 +33,7 @@ interface MessageDocumentAttachmentGroupContentProps {
   captionMessage?: ChatMessage;
   isHighlightedBubble: boolean;
   openMenuMessageId: string | null;
+  menuTransitionSourceId: string | null;
   menuPlacement: MenuPlacement;
   menuSideAnchor: MenuSideAnchor;
   menuOffsetX: number;
@@ -80,6 +81,7 @@ export const MessageDocumentAttachmentGroupContent = ({
   captionMessage,
   isHighlightedBubble,
   openMenuMessageId,
+  menuTransitionSourceId,
   menuPlacement,
   menuSideAnchor,
   menuOffsetX,
@@ -112,12 +114,24 @@ export const MessageDocumentAttachmentGroupContent = ({
     openMenuMode === 'group' &&
     representativeMessage !== null &&
     openMenuMessageId === representativeMessage.id;
+  const isGroupMenuTransitionSource =
+    openMenuMode === 'group' &&
+    representativeMessage !== null &&
+    menuTransitionSourceId === representativeMessage.id;
   const openAttachmentMenuMessageId =
     openMenuMessageId &&
     messages.some(message => message.id === openMenuMessageId) &&
     !isGroupMenuOpen
       ? openMenuMessageId
       : null;
+  const transitionSourceAttachmentMenuMessageId =
+    menuTransitionSourceId &&
+    messages.some(message => message.id === menuTransitionSourceId) &&
+    !isGroupMenuTransitionSource
+      ? menuTransitionSourceId
+      : null;
+  const activeAttachmentMenuMessageId =
+    openAttachmentMenuMessageId ?? transitionSourceAttachmentMenuMessageId;
 
   useLayoutEffect(() => {
     if (!openMenuMessageId) {
@@ -126,7 +140,11 @@ export const MessageDocumentAttachmentGroupContent = ({
   }, [openMenuMessageId]);
 
   useLayoutEffect(() => {
-    if (!openAttachmentMenuMessageId && !isGroupMenuOpen) {
+    if (
+      !activeAttachmentMenuMessageId &&
+      !isGroupMenuOpen &&
+      !isGroupMenuTransitionSource
+    ) {
       setMenuAnchorPosition(null);
       return;
     }
@@ -172,9 +190,10 @@ export const MessageDocumentAttachmentGroupContent = ({
       window.removeEventListener('scroll', syncMenuAnchorPosition, true);
     };
   }, [
+    activeAttachmentMenuMessageId,
     isGroupMenuOpen,
+    isGroupMenuTransitionSource,
     menuAnchorRef,
-    openAttachmentMenuMessageId,
     openMenuMode,
   ]);
 
@@ -318,9 +337,11 @@ export const MessageDocumentAttachmentGroupContent = ({
             fileIcon,
             resolvedPdfPreviewUrl,
           }) => {
-            const isMenuOpen = openAttachmentMenuMessageId === message.id;
+            const isMenuOpen = activeAttachmentMenuMessageId === message.id;
             const isAnotherAttachmentFocused =
-              (openAttachmentMenuMessageId !== null || isGroupMenuOpen) &&
+              (activeAttachmentMenuMessageId !== null ||
+                isGroupMenuOpen ||
+                isGroupMenuTransitionSource) &&
               !isMenuOpen;
 
             return (
@@ -391,7 +412,9 @@ export const MessageDocumentAttachmentGroupContent = ({
 
       {typeof document !== 'undefined' &&
       menuAnchorPosition &&
-      (openAttachmentMenuMessageId || isGroupMenuOpen)
+      (activeAttachmentMenuMessageId ||
+        isGroupMenuOpen ||
+        isGroupMenuTransitionSource)
         ? createPortal(
             <div
               style={{
@@ -410,9 +433,9 @@ export const MessageDocumentAttachmentGroupContent = ({
                 <MessageActionPopover
                   isOpen
                   menuId={
-                    isGroupMenuOpen
+                    isGroupMenuOpen || isGroupMenuTransitionSource
                       ? `document-group:${representativeMessage?.id ?? 'unknown'}`
-                      : (openAttachmentMenuMessageId ?? 'unknown')
+                      : (activeAttachmentMenuMessageId ?? 'unknown')
                   }
                   shouldAnimateMenuOpen={shouldAnimateMenuOpen}
                   menuPlacement={menuPlacement}
@@ -420,12 +443,12 @@ export const MessageDocumentAttachmentGroupContent = ({
                   sidePlacementClass={sidePlacementClass}
                   sideArrowAnchorClass={sideArrowAnchorClass}
                   actions={
-                    isGroupMenuOpen
+                    isGroupMenuOpen || isGroupMenuTransitionSource
                       ? groupMenuActions
                       : (attachmentRows.find(
                           attachmentRow =>
                             attachmentRow.message.id ===
-                            openAttachmentMenuMessageId
+                            activeAttachmentMenuMessageId
                         )?.menuActions ?? [])
                   }
                 />

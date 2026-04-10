@@ -1,4 +1,4 @@
-import { useRef, type CSSProperties } from 'react';
+import { useRef, useState, type CSSProperties } from 'react';
 import type { MessageItemDerivations } from './messageItemDerivations';
 import { MessageActionPopover } from './MessageActionPopover';
 import { MessageBubbleContent } from './MessageBubbleContent';
@@ -21,6 +21,8 @@ export const MessageItemBubble = ({
 }: MessageItemBubbleProps) => {
   const { message, interaction, menu, refs, content, actions } = model;
   const groupedBubbleRef = useRef<HTMLDivElement | null>(null);
+  const [groupedMenuPortalElement, setGroupedMenuPortalElement] =
+    useState<HTMLDivElement | null>(null);
   const {
     isSelectionMode,
     userId,
@@ -64,6 +66,7 @@ export const MessageItemBubble = ({
     messageDeliveryStatus,
     isCurrentUser,
     isMenuOpen,
+    isMenuTransitionSource,
     hasAttachmentCaption,
     isFlashingTarget,
     isSearchMatch,
@@ -124,11 +127,13 @@ export const MessageItemBubble = ({
         <MessageImageAttachmentGroupContent
           messages={groupedImageMessages}
           menuAnchorRef={groupedBubbleRef}
+          menuPortalContainer={groupedMenuPortalElement}
           userId={userId}
           captionMessage={captionMessage}
           isSelectionMode={isSelectionMode}
           isHighlightedBubble={isFlashingTarget}
           openMenuMessageId={openMessageId}
+          menuTransitionSourceId={menu.transitionSourceId}
           menuPlacement={placement}
           menuSideAnchor={sideAnchor}
           menuOffsetX={offsetX}
@@ -152,6 +157,7 @@ export const MessageItemBubble = ({
           captionMessage={captionMessage}
           isHighlightedBubble={isFlashingTarget}
           openMenuMessageId={openMessageId}
+          menuTransitionSourceId={menu.transitionSourceId}
           menuPlacement={placement}
           menuSideAnchor={sideAnchor}
           menuOffsetX={offsetX}
@@ -285,9 +291,16 @@ export const MessageItemBubble = ({
           </div>
         )}
 
+        {isImageAttachmentGroup ? (
+          <div
+            ref={setGroupedMenuPortalElement}
+            className="pointer-events-none absolute inset-0"
+          />
+        ) : null}
+
         {isAttachmentGroup ? null : (
           <MessageActionPopover
-            isOpen={!isSelectionMode && isMenuOpen}
+            isOpen={!isSelectionMode && (isMenuOpen || isMenuTransitionSource)}
             menuId={message.id}
             shouldAnimateMenuOpen={shouldAnimateOpen}
             menuPlacement={placement}

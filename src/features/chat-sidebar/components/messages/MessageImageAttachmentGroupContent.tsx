@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useRef, type RefObject } from 'react';
 import type { ChatMessage } from '../../data/chatSidebarGateway';
 import type { MenuPlacement, MenuSideAnchor } from '../../types';
@@ -17,11 +18,13 @@ interface ImagePreviewIntrinsicDimensions {
 interface MessageImageAttachmentGroupContentProps {
   messages: ChatMessage[];
   menuAnchorRef: RefObject<HTMLDivElement | null>;
+  menuPortalContainer: HTMLDivElement | null;
   userId?: string;
   captionMessage?: ChatMessage;
   isSelectionMode: boolean;
   isHighlightedBubble: boolean;
   openMenuMessageId: string | null;
+  menuTransitionSourceId: string | null;
   menuPlacement: MenuPlacement;
   menuSideAnchor: MenuSideAnchor;
   menuOffsetX: number;
@@ -74,11 +77,13 @@ const MAX_VISIBLE_IMAGE_GROUP_TILES = 4;
 export const MessageImageAttachmentGroupContent = ({
   messages,
   menuAnchorRef,
+  menuPortalContainer,
   userId,
   captionMessage,
   isSelectionMode,
   isHighlightedBubble,
   openMenuMessageId,
+  menuTransitionSourceId,
   menuPlacement,
   menuSideAnchor,
   menuOffsetX,
@@ -119,6 +124,9 @@ export const MessageImageAttachmentGroupContent = ({
     representativeMessage && openMenuMessageId === representativeMessage.id
       ? representativeMessage.id
       : null;
+  const isGroupedMenuTransitionSource =
+    representativeMessage !== null &&
+    menuTransitionSourceId === representativeMessage.id;
 
   const imageTiles = visibleMessages.map((message, index) => ({
     message,
@@ -224,7 +232,8 @@ export const MessageImageAttachmentGroupContent = ({
           {imageTiles.map(
             ({ message, resolvedMessageUrl, previewName, isOverflowTile }) => {
               const isMenuOpen =
-                openGroupedMenuMessageId === representativeMessage?.id;
+                openGroupedMenuMessageId === representativeMessage?.id ||
+                isGroupedMenuTransitionSource;
               const isAnotherAttachmentFocused =
                 openGroupedMenuMessageId !== null && !isMenuOpen;
 
@@ -299,16 +308,24 @@ export const MessageImageAttachmentGroupContent = ({
         </button>
       </div>
 
-      <MessageActionPopover
-        isOpen={Boolean(openGroupedMenuMessageId)}
-        menuId={openGroupedMenuMessageId ?? 'grouped-image-menu'}
-        shouldAnimateMenuOpen={shouldAnimateMenuOpen}
-        menuPlacement={menuPlacement}
-        menuOffsetX={menuOffsetX}
-        sidePlacementClass={sidePlacementClass}
-        sideArrowAnchorClass={sideArrowAnchorClass}
-        actions={groupMenuActions}
-      />
+      {menuPortalContainer
+        ? createPortal(
+            <MessageActionPopover
+              isOpen={
+                Boolean(openGroupedMenuMessageId) ||
+                isGroupedMenuTransitionSource
+              }
+              menuId={openGroupedMenuMessageId ?? 'grouped-image-menu'}
+              shouldAnimateMenuOpen={shouldAnimateMenuOpen}
+              menuPlacement={menuPlacement}
+              menuOffsetX={menuOffsetX}
+              sidePlacementClass={sidePlacementClass}
+              sideArrowAnchorClass={sideArrowAnchorClass}
+              actions={groupMenuActions}
+            />,
+            menuPortalContainer
+          )
+        : null}
 
       {captionText ? (
         <p

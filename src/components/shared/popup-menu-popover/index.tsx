@@ -45,20 +45,27 @@ const PopupMenuPopover = ({
   layout,
   layoutId,
 }: PopupMenuPopoverProps) => {
+  const resolvedInitial = disableEnterAnimation ? animate : initial;
+  const resolvedExit: MotionProps['exit'] | undefined = disableExitAnimation
+    ? typeof animate === 'object' && animate !== null
+      ? (animate as MotionProps['exit'])
+      : undefined
+    : exit;
+
   return (
     <AnimatePresence initial={presenceInitial}>
       {isOpen ? (
         <motion.div
           data-chat-menu-id={menuId}
-          initial={disableEnterAnimation ? false : initial}
+          initial={resolvedInitial}
           animate={animate}
+          exit={resolvedExit}
           transition={transition}
           layout={layout}
           layoutId={layoutId}
           className={className}
           style={style}
           onClick={onClick}
-          {...(disableExitAnimation ? {} : { exit })}
         >
           {children}
         </motion.div>
