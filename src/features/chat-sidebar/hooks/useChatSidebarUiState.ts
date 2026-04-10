@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useLayoutEffect, useRef } from 'react';
 import {
   chatSidebarMessagesGateway,
   type ChatMessage,
@@ -50,6 +50,10 @@ export const useChatSidebarUiState = ({
   captionData,
 }: UseChatSidebarUiStateProps) => {
   const loadingReplyContextMessageIdRef = useRef<string | null>(null);
+  const pendingReplyTargetViewportSnapshotRef = useRef<{
+    scrollHeight: number;
+    scrollTop: number;
+  } | null>(null);
   const focusMessageComposer = useCallback(() => {
     const textarea = refs.messageInputRef.current;
     if (!textarea) return;
@@ -159,6 +163,30 @@ export const useChatSidebarUiState = ({
     [refs.messageBubbleRefs, viewport]
   );
 
+  useLayoutEffect(() => {
+    const pendingViewportSnapshot =
+      pendingReplyTargetViewportSnapshotRef.current;
+    if (!pendingViewportSnapshot) {
+      return;
+    }
+
+    pendingReplyTargetViewportSnapshotRef.current = null;
+
+    const messagesContainer = refs.messagesContainerRef.current;
+    if (!messagesContainer) {
+      return;
+    }
+
+    const scrollHeightDelta =
+      messagesContainer.scrollHeight - pendingViewportSnapshot.scrollHeight;
+    if (scrollHeightDelta <= 0) {
+      return;
+    }
+
+    messagesContainer.scrollTop =
+      pendingViewportSnapshot.scrollTop + scrollHeightDelta;
+  }, [messages, refs.messagesContainerRef]);
+
   const focusReplyTargetFromMessages = useCallback(
     (messageId: string, availableMessages: ChatMessage[]) => {
       const { openImageGroupInPortal } = previews;
@@ -222,6 +250,14 @@ export const useChatSidebarUiState = ({
             return;
           }
 
+          const messagesContainer = refs.messagesContainerRef.current;
+          pendingReplyTargetViewportSnapshotRef.current = messagesContainer
+            ? {
+                scrollTop: messagesContainer.scrollTop,
+                scrollHeight: messagesContainer.scrollHeight,
+              }
+            : null;
+
           mergeSearchContextMessages(searchContextMessages);
 
           const mergedMessages = [...messages, ...searchContextMessages].reduce<
@@ -274,6 +310,7 @@ export const useChatSidebarUiState = ({
       messages,
       previews,
       scheduleReplyTargetViewportFocus,
+      refs.messagesContainerRef,
       targetUserId,
     ]
   );
