@@ -100,6 +100,9 @@ const PopupMenuContent = ({
     },
     [onPreselectedIndexChange]
   );
+  const focusActionButton = useCallback((actionIndex: number) => {
+    actionButtonRefs.current[actionIndex]?.focus({ preventScroll: true });
+  }, []);
 
   const focusNextEnabledAction = (currentIndex: number, direction: 1 | -1) => {
     if (actions.length === 0) return;
@@ -109,7 +112,7 @@ const PopupMenuContent = ({
         (currentIndex + direction * step + actions.length) % actions.length;
       if (!actions[nextIndex]?.disabled) {
         setFocusedActionIndexWithSync(nextIndex);
-        actionButtonRefs.current[nextIndex]?.focus();
+        focusActionButton(nextIndex);
         return;
       }
     }
@@ -147,7 +150,7 @@ const PopupMenuContent = ({
 
     const rafId = window.requestAnimationFrame(() => {
       setFocusedActionIndexWithSync(nextFocusedIndex);
-      actionButtonRefs.current[nextFocusedIndex]?.focus();
+      focusActionButton(nextFocusedIndex);
     });
 
     return () => {
@@ -158,6 +161,7 @@ const PopupMenuContent = ({
     autoFocusFirstItem,
     enableArrowNavigation,
     initialPreselectedIndex,
+    focusActionButton,
     setFocusedActionIndexWithSync,
   ]);
 

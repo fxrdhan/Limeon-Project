@@ -636,7 +636,7 @@ describe('useChatViewport', () => {
     messagesContainer.remove();
   });
 
-  it('auto-scrolls the messages viewport when opening a menu for a bubble near the composer', () => {
+  it('keeps the bubble position when opening a menu for a bubble clipped by the composer', () => {
     const messagesContainer = document.createElement('div');
     const messagesEnd = document.createElement('div');
     const composerContainer = document.createElement('div');
@@ -731,12 +731,12 @@ describe('useChatViewport', () => {
     });
 
     expect(result.current.openMenuMessageId).toBe('message-1');
-    expect(messagesContainer.scrollTop).toBe(152);
+    expect(messagesContainer.scrollTop).toBe(120);
 
     messagesContainer.remove();
   });
 
-  it('waits for the menu auto-scroll to finish before opening the popup', () => {
+  it('opens the popup immediately when the bubble is clipped only by the composer', () => {
     const frameQueue: FrameRequestCallback[] = [];
     const requestAnimationFrameMock = vi.fn(
       (callback: FrameRequestCallback) => {
@@ -845,17 +845,8 @@ describe('useChatViewport', () => {
       result.current.toggleMessageMenu(anchor, 'message-1', 'left');
     });
 
-    expect(result.current.openMenuMessageId).toBeNull();
-
-    act(() => {
-      while (frameQueue.length > 0) {
-        const nextFrame = frameQueue.shift();
-        nextFrame?.(0);
-      }
-    });
-
     expect(result.current.openMenuMessageId).toBe('message-1');
-    expect(messagesContainer.scrollTop).toBe(152);
+    expect(messagesContainer.scrollTop).toBe(120);
 
     messagesContainer.remove();
   });

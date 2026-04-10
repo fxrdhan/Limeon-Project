@@ -137,13 +137,10 @@ export const getMenuOpenScrollPlan = ({
 
   const minVisibleTop =
     bounds.containerRect.top + CHAT_HEADER_OVERLAY_HEIGHT + MENU_GAP;
-  const maxVisibleBottom = bounds.visibleBottom - MENU_GAP;
 
   let scrollOffset = 0;
   if (anchorRect.top < minVisibleTop) {
     scrollOffset = anchorRect.top - minVisibleTop;
-  } else if (anchorRect.bottom > maxVisibleBottom) {
-    scrollOffset = anchorRect.bottom - maxVisibleBottom;
   }
 
   if (Math.abs(scrollOffset) < 0.5) {

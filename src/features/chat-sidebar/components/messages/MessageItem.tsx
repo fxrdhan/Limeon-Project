@@ -83,7 +83,7 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
     handleOpenForwardMessagePicker,
     handleDeleteMessage,
   });
-  const { isCurrentUser, isMenuOpen, isMenuTransitionSource } = derivations;
+  const { isCurrentUser } = derivations;
   const animationKey = message.stableKey || message.id;
   const shouldAnimateEnter =
     !initialMessageAnimationKeysRef.current.has(animationKey);
@@ -167,9 +167,7 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
       }}
       className={`relative flex w-full ${
         isCurrentUser ? 'justify-end' : 'justify-start'
-      } ${rowSpacingClass} ${
-        isMenuOpen ? 'z-[181]' : isMenuTransitionSource ? 'z-[180]' : 'z-0'
-      } ${isSelectionMode ? 'group cursor-pointer' : ''}`}
+      } ${rowSpacingClass} ${isSelectionMode ? 'group cursor-pointer' : ''}`}
       onClick={() => {
         if (!isSelectionMode) return;
         onToggleMessageSelection(message.id);

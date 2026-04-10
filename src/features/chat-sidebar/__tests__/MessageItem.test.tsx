@@ -211,7 +211,7 @@ describe('MessageItem', () => {
     expect(preferredSide).toBe('left');
   });
 
-  it('keeps menu rows above other bubbles during open and transition states', () => {
+  it('does not elevate the message row itself when the menu is open or transitioning', () => {
     const { container, rerender } = render(
       <MessageItem
         model={createModel({
@@ -222,7 +222,8 @@ describe('MessageItem', () => {
       />
     );
 
-    expect(container.firstElementChild?.className).toContain('z-[181]');
+    expect(container.firstElementChild?.className).not.toContain('z-[181]');
+    expect(container.firstElementChild?.className).not.toContain('z-[180]');
 
     rerender(
       <MessageItem
@@ -235,7 +236,8 @@ describe('MessageItem', () => {
       />
     );
 
-    expect(container.firstElementChild?.className).toContain('z-[180]');
+    expect(container.firstElementChild?.className).not.toContain('z-[181]');
+    expect(container.firstElementChild?.className).not.toContain('z-[180]');
   });
 
   it('downloads grouped image bubbles as a zip from the group popover', async () => {

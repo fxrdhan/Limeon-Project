@@ -227,8 +227,8 @@ export const MessageItemBubble = ({
     <div
       className={
         isCurrentUser
-          ? 'relative z-[1] flex min-w-0 max-w-xs flex-col items-end'
-          : 'relative z-[1] flex min-w-0 max-w-xs flex-col items-start'
+          ? 'relative flex min-w-0 max-w-xs flex-col items-end'
+          : 'relative flex min-w-0 max-w-xs flex-col items-start'
       }
     >
       <div
