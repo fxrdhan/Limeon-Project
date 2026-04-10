@@ -2,6 +2,18 @@ import { useQuery } from '@tanstack/react-query';
 import { QueryKeys } from '@/constants/queryKeys';
 import { dashboardService } from '@/services/api/dashboard.service';
 
+export const useDashboardSummary = (options?: { enabled?: boolean }) => {
+  return useQuery({
+    queryKey: QueryKeys.dashboard.summary,
+    queryFn: async () => {
+      const result = await dashboardService.getDashboardSummary();
+      if (result.error) throw result.error;
+      return result.data;
+    },
+    enabled: options?.enabled ?? true,
+  });
+};
+
 // Dashboard Stats Hook
 export const useDashboardStats = (options?: { enabled?: boolean }) => {
   return useQuery({
@@ -96,50 +108,46 @@ export const useMonthlyRevenueComparison = (options?: {
 
 // Combined dashboard data hook for when you need everything
 export const useDashboardData = (options?: { enabled?: boolean }) => {
-  const statsQuery = useDashboardStats(options);
+  const summaryQuery = useDashboardSummary(options);
   const salesQuery = useSalesAnalytics(7, options);
   const topMedicinesQuery = useTopSellingMedicines(5, options);
   const lowStockQuery = useLowStockItems(10, options);
   const recentTransactionsQuery = useRecentTransactions(10, options);
-  const monthlyRevenueQuery = useMonthlyRevenueComparison(options);
 
   return {
-    stats: statsQuery.data,
+    stats: summaryQuery.data?.stats,
     salesAnalytics: salesQuery.data,
     topMedicines: topMedicinesQuery.data,
     lowStockItems: lowStockQuery.data,
     recentTransactions: recentTransactionsQuery.data,
-    monthlyRevenue: monthlyRevenueQuery.data,
+    monthlyRevenue: summaryQuery.data?.monthlyRevenue,
     isLoading:
-      statsQuery.isLoading ||
+      summaryQuery.isLoading ||
       salesQuery.isLoading ||
       topMedicinesQuery.isLoading ||
       lowStockQuery.isLoading ||
-      recentTransactionsQuery.isLoading ||
-      monthlyRevenueQuery.isLoading,
+      recentTransactionsQuery.isLoading,
     isError:
-      statsQuery.isError ||
+      summaryQuery.isError ||
       salesQuery.isError ||
       topMedicinesQuery.isError ||
       lowStockQuery.isError ||
-      recentTransactionsQuery.isError ||
-      monthlyRevenueQuery.isError,
+      recentTransactionsQuery.isError,
     errors: {
-      stats: statsQuery.error,
+      stats: summaryQuery.error,
       salesAnalytics: salesQuery.error,
       topMedicines: topMedicinesQuery.error,
       lowStock: lowStockQuery.error,
       recentTransactions: recentTransactionsQuery.error,
-      monthlyRevenue: monthlyRevenueQuery.error,
+      monthlyRevenue: summaryQuery.error,
     },
     refetch: async () => {
       await Promise.all([
-        statsQuery.refetch(),
+        summaryQuery.refetch(),
         salesQuery.refetch(),
         topMedicinesQuery.refetch(),
         lowStockQuery.refetch(),
         recentTransactionsQuery.refetch(),
-        monthlyRevenueQuery.refetch(),
       ]);
     },
   };

@@ -48,23 +48,29 @@ const scheduleClientCacheWarmup = () => {
     return;
   }
 
-  if ('requestIdleCallback' in window) {
-    const idleCallbackId = window.requestIdleCallback(() => {
+  const queueWarmup = () => {
+    const runWarmup = () => {
       warmClientCaches();
-    });
-
-    return () => {
-      window.cancelIdleCallback(idleCallbackId);
     };
+
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(runWarmup);
+      return;
+    }
+
+    globalThis.setTimeout(runWarmup, 0);
+  };
+
+  const startWarmupAfterLoad = () => {
+    globalThis.setTimeout(queueWarmup, 2_000);
+  };
+
+  if (document.readyState === 'complete') {
+    startWarmupAfterLoad();
+    return;
   }
 
-  const timeoutId = globalThis.setTimeout(() => {
-    warmClientCaches();
-  }, 0);
-
-  return () => {
-    globalThis.clearTimeout(timeoutId);
-  };
+  window.addEventListener('load', startWarmupAfterLoad, { once: true });
 };
 
 const initializeApp = () => {

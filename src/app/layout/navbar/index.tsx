@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useEffect, useState } from 'react';
+import { Suspense, lazy, useCallback, useState } from 'react';
 import type { NavbarProps } from '@/types';
 import { useAuthStore } from '@/store/authStore';
 import DateTimeDisplay from './live-datetime';
@@ -30,7 +30,7 @@ const OnlineUsersFallback = ({
   </button>
 );
 
-const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
+const Navbar = ({ sidebarCollapsed, onOnlineUsersIntent }: NavbarProps) => {
   const { user } = useAuthStore();
   const [shouldLoadOnlineUsers, setShouldLoadOnlineUsers] = useState(false);
   const fallbackOnlineCount = user ? 1 : 0;
@@ -50,31 +50,8 @@ const Navbar = ({ sidebarCollapsed }: NavbarProps) => {
 
   const loadOnlineUsers = useCallback(() => {
     setShouldLoadOnlineUsers(true);
-  }, []);
-
-  useEffect(() => {
-    if (shouldLoadOnlineUsers || typeof window === 'undefined') {
-      return;
-    }
-
-    if ('requestIdleCallback' in window) {
-      const idleCallbackId = window.requestIdleCallback(() => {
-        setShouldLoadOnlineUsers(true);
-      });
-
-      return () => {
-        window.cancelIdleCallback(idleCallbackId);
-      };
-    }
-
-    const timeoutId = globalThis.setTimeout(() => {
-      setShouldLoadOnlineUsers(true);
-    }, 2000);
-
-    return () => {
-      globalThis.clearTimeout(timeoutId);
-    };
-  }, [shouldLoadOnlineUsers]);
+    onOnlineUsersIntent?.();
+  }, [onOnlineUsersIntent]);
 
   return (
     <nav className="sticky top-0 z-40 box-border h-[73px] select-none border-b border-slate-200 bg-white px-4">

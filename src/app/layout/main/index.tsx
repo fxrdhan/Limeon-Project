@@ -6,6 +6,9 @@ import ChatSidebar from '@/app/layout/chat-sidebar';
 import { usePageFocusBlockStore } from '@/store/pageFocusBlockStore';
 import { useChatSidebarStore } from '@/store/chatSidebarStore';
 
+const PresenceRuntimeHost = lazy(
+  () => import('@/features/chat-sidebar/presence-host')
+);
 const ChatRuntimeHost = lazy(
   () => import('@/features/chat-sidebar/runtime-host')
 );
@@ -13,6 +16,8 @@ const ChatRuntimeHost = lazy(
 const MainLayout = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [isLocked, setLockState] = useState(false);
+  const [shouldLoadPresenceRuntime, setShouldLoadPresenceRuntime] =
+    useState(false);
   const [shouldLoadChatRuntime, setShouldLoadChatRuntime] = useState(false);
   const setIsLocked = useCallback(
     (updater: boolean | ((prev: boolean) => boolean)) => {
@@ -66,36 +71,22 @@ const MainLayout = () => {
     [setPageFocusBlocked]
   );
 
+  const loadPresenceRuntime = useCallback(() => {
+    setShouldLoadPresenceRuntime(true);
+  }, []);
+
+  const loadChatRuntime = useCallback(() => {
+    setShouldLoadPresenceRuntime(true);
+    setShouldLoadChatRuntime(true);
+  }, []);
+
   useEffect(() => {
-    if (
-      shouldLoadChatRuntime ||
-      isChatSidebarOpen ||
-      typeof window === 'undefined'
-    ) {
-      if (isChatSidebarOpen) {
-        setShouldLoadChatRuntime(true);
-      }
+    if (!isChatSidebarOpen) {
       return;
     }
 
-    if ('requestIdleCallback' in window) {
-      const idleCallbackId = window.requestIdleCallback(() => {
-        setShouldLoadChatRuntime(true);
-      });
-
-      return () => {
-        window.cancelIdleCallback(idleCallbackId);
-      };
-    }
-
-    const timeoutId = globalThis.setTimeout(() => {
-      setShouldLoadChatRuntime(true);
-    }, 2000);
-
-    return () => {
-      globalThis.clearTimeout(timeoutId);
-    };
-  }, [isChatSidebarOpen, shouldLoadChatRuntime]);
+    loadChatRuntime();
+  }, [isChatSidebarOpen, loadChatRuntime]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -125,9 +116,13 @@ const MainLayout = () => {
 
       <div className="flex flex-col flex-1 overflow-hidden">
         <Suspense fallback={null}>
+          {shouldLoadPresenceRuntime ? <PresenceRuntimeHost /> : null}
           {shouldLoadChatRuntime ? <ChatRuntimeHost /> : null}
         </Suspense>
-        <Navbar sidebarCollapsed={sidebarCollapsed} />
+        <Navbar
+          sidebarCollapsed={sidebarCollapsed}
+          onOnlineUsersIntent={loadPresenceRuntime}
+        />
 
         <div className="flex flex-1 overflow-hidden">
           <main className="flex-1 overflow-y-auto bg-white p-4 text-slate-800">

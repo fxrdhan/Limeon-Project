@@ -59,7 +59,7 @@ const OnlineUsersControl = () => {
     loadMoreDirectoryUsers,
     openChatForUser,
     prefetchConversationForUser,
-  } = useChatSidebarLauncher(Boolean(user));
+  } = useChatSidebarLauncher(showPortal);
   const [hoveredUser, setHoveredUser] = useState<string | null>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const portalTriggerRef = useRef<HTMLButtonElement | null>(null);

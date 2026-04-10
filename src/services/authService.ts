@@ -50,7 +50,7 @@ export async function signInWithEmailPassword(
     throw error ?? new Error('Authentication succeeded but session is missing');
   }
 
-  return { session: data.session, user: data.user ?? null };
+  return { session: data.session, user: null };
 }
 
 /**

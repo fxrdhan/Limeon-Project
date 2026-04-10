@@ -9,6 +9,7 @@ import { PurchasesRoutes } from '@/app/routes/purchases';
 import { ReportsRoutes } from '@/app/routes/reports';
 import { SalesRoutes } from '@/app/routes/sales';
 import { SettingsRoutes } from '@/app/routes/settings';
+import { config } from '@/config';
 import { useAuthStore } from '@/store/authStore';
 import { initConsoleAPI } from '@/utils/consoleCommands';
 import { Suspense, lazy, useEffect } from 'react';
@@ -127,9 +128,11 @@ function App() {
             {SettingsRoutes}
           </Route>
         </Routes>
-        <Suspense fallback={null}>
-          <ToastTester />
-        </Suspense>
+        {config.toast_tester_enabled ? (
+          <Suspense fallback={null}>
+            <ToastTester />
+          </Suspense>
+        ) : null}
       </ConfirmDialogProvider>
     </AlertProvider>
   );

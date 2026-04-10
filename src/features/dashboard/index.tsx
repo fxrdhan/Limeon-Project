@@ -1,8 +1,7 @@
 import { useDashboardRealtime } from '@/hooks/realtime/useDashboardRealtime';
 import {
-  useDashboardStats,
+  useDashboardSummary,
   useLowStockItems,
-  useMonthlyRevenueComparison,
   useRecentTransactions,
   useSalesAnalytics,
   useTopSellingMedicines,
@@ -15,22 +14,19 @@ import type { LowStockItem, RecentTransaction } from './types';
 const DashboardNew = () => {
   useDashboardRealtime();
 
-  const statsQuery = useDashboardStats();
+  const summaryQuery = useDashboardSummary();
   const salesQuery = useSalesAnalytics(7);
   const topMedicinesQuery = useTopSellingMedicines(5);
   const lowStockQuery = useLowStockItems(10);
   const recentTransactionsQuery = useRecentTransactions(10);
-  const monthlyRevenueQuery = useMonthlyRevenueComparison();
 
-  const isStatsLoading = statsQuery.isLoading && !statsQuery.data;
+  const isSummaryLoading = summaryQuery.isLoading && !summaryQuery.data;
   const isSalesLoading = salesQuery.isLoading && !salesQuery.data;
   const isTopMedicinesLoading =
     topMedicinesQuery.isLoading && !topMedicinesQuery.data;
   const isLowStockLoading = lowStockQuery.isLoading && !lowStockQuery.data;
   const isRecentTransactionsLoading =
     recentTransactionsQuery.isLoading && !recentTransactionsQuery.data;
-  const isMonthlyRevenueLoading =
-    monthlyRevenueQuery.isLoading && !monthlyRevenueQuery.data;
 
   const lowStockItems = (lowStockQuery.data || []) as LowStockItem[];
   const recentTransactions = (recentTransactionsQuery.data ||
@@ -39,15 +35,15 @@ const DashboardNew = () => {
   return (
     <div className="w-full px-1 pb-6 pt-2 sm:px-2 lg:px-4">
       <HeroSection
-        stats={statsQuery.data}
-        monthlyRevenue={monthlyRevenueQuery.data}
+        stats={summaryQuery.data?.stats}
+        monthlyRevenue={summaryQuery.data?.monthlyRevenue}
         recentTransactionsCount={recentTransactions.length}
         salesTotalRevenue={salesQuery.data?.totalRevenue || 0}
         salesAverageDaily={salesQuery.data?.averageDaily || 0}
-        isStatsLoading={isStatsLoading}
+        isStatsLoading={isSummaryLoading}
         isSalesLoading={isSalesLoading}
         isRecentTransactionsLoading={isRecentTransactionsLoading}
-        isMonthlyRevenueLoading={isMonthlyRevenueLoading}
+        isMonthlyRevenueLoading={isSummaryLoading}
       />
 
       <PerformanceSection

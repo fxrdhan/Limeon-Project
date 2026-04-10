@@ -8,6 +8,13 @@ export interface DashboardStats {
   lowStockCount: number;
 }
 
+export interface MonthlyRevenueComparison {
+  currentMonth: number;
+  previousMonth: number;
+  percentageChange: number;
+  isIncrease: boolean;
+}
+
 export interface SalesAnalyticsData {
   labels: string[];
   values: number[];
@@ -25,51 +32,89 @@ export interface ServiceResponse<T> {
   error: PostgrestError | Error | null;
 }
 
+interface DashboardSummaryRow {
+  total_sales: number | string | null;
+  total_purchases: number | string | null;
+  total_medicines: number | string | null;
+  low_stock_count: number | string | null;
+  current_month_sales: number | string | null;
+  previous_month_sales: number | string | null;
+}
+
+export interface DashboardSummaryResponse {
+  stats: DashboardStats;
+  monthlyRevenue: MonthlyRevenueComparison;
+}
+
+const toNumericValue = (value: number | string | null | undefined) =>
+  Number(value ?? 0);
+
+const buildMonthlyRevenueComparison = (
+  currentMonthTotal: number,
+  previousMonthTotal: number
+): MonthlyRevenueComparison => {
+  const percentageChange =
+    previousMonthTotal > 0
+      ? ((currentMonthTotal - previousMonthTotal) / previousMonthTotal) * 100
+      : 0;
+
+  return {
+    currentMonth: currentMonthTotal,
+    previousMonth: previousMonthTotal,
+    percentageChange,
+    isIncrease: percentageChange > 0,
+  };
+};
+
 export class DashboardService {
-  // Get overall dashboard statistics
-  async getDashboardStats(): Promise<ServiceResponse<DashboardStats>> {
+  async getDashboardSummary(): Promise<
+    ServiceResponse<DashboardSummaryResponse>
+  > {
     try {
-      // Fetch all data in parallel for better performance
-      const [salesResult, purchasesResult, medicinesResult, lowStockResult] =
-        await Promise.all([
-          supabase.from('sales').select('total'),
-          supabase.from('purchases').select('total'),
-          supabase.from('items').select('*', { count: 'exact' }),
-          supabase
-            .from('items')
-            .select('*', { count: 'exact' })
-            .lt('stock', 10),
-        ]);
+      const { data, error } = await supabase
+        .rpc('get_dashboard_summary')
+        .single();
 
-      // Check for errors
-      if (salesResult.error) throw salesResult.error;
-      if (purchasesResult.error) throw purchasesResult.error;
-      if (medicinesResult.error) throw medicinesResult.error;
-      if (lowStockResult.error) throw lowStockResult.error;
+      if (error) throw error;
 
-      // Calculate totals
-      const totalSales = salesResult.data
-        ? salesResult.data.reduce((sum, sale) => sum + Number(sale.total), 0)
-        : 0;
-
-      const totalPurchases = purchasesResult.data
-        ? purchasesResult.data.reduce(
-            (sum, purchase) => sum + Number(purchase.total),
-            0
-          )
-        : 0;
+      const summary = (data || null) as DashboardSummaryRow | null;
+      if (!summary) {
+        throw new Error('Missing dashboard summary data');
+      }
 
       const stats: DashboardStats = {
-        totalSales,
-        totalPurchases,
-        totalMedicines: medicinesResult.count || 0,
-        lowStockCount: lowStockResult.count || 0,
+        totalSales: toNumericValue(summary.total_sales),
+        totalPurchases: toNumericValue(summary.total_purchases),
+        totalMedicines: toNumericValue(summary.total_medicines),
+        lowStockCount: toNumericValue(summary.low_stock_count),
       };
 
-      return { data: stats, error: null };
+      return {
+        data: {
+          stats,
+          monthlyRevenue: buildMonthlyRevenueComparison(
+            toNumericValue(summary.current_month_sales),
+            toNumericValue(summary.previous_month_sales)
+          ),
+        },
+        error: null,
+      };
     } catch (error) {
       return { data: null, error: error as PostgrestError };
     }
+  }
+
+  // Get overall dashboard statistics
+  async getDashboardStats(): Promise<ServiceResponse<DashboardStats>> {
+    const result = await this.getDashboardSummary();
+    if (result.error || !result.data) {
+      return { data: null, error: result.error };
+    }
+
+    return {
+      data: result.data.stats,
+      error: null,
+    };
   }
 
   // Get sales analytics for a date range
@@ -240,61 +285,15 @@ export class DashboardService {
 
   // Get monthly revenue comparison
   async getMonthlyRevenueComparison() {
-    try {
-      const currentDate = new Date();
-      const currentMonth = currentDate.getMonth();
-      const currentYear = currentDate.getFullYear();
-
-      // Get current month sales
-      const currentMonthStart = new Date(currentYear, currentMonth, 1);
-      const currentMonthEnd = new Date(currentYear, currentMonth + 1, 0);
-
-      // Get previous month sales
-      const prevMonthStart = new Date(currentYear, currentMonth - 1, 1);
-      const prevMonthEnd = new Date(currentYear, currentMonth, 0);
-
-      const [currentMonthResult, prevMonthResult] = await Promise.all([
-        supabase
-          .from('sales')
-          .select('total')
-          .gte('date', currentMonthStart.toISOString())
-          .lte('date', currentMonthEnd.toISOString()),
-        supabase
-          .from('sales')
-          .select('total')
-          .gte('date', prevMonthStart.toISOString())
-          .lte('date', prevMonthEnd.toISOString()),
-      ]);
-
-      if (currentMonthResult.error) throw currentMonthResult.error;
-      if (prevMonthResult.error) throw prevMonthResult.error;
-
-      const currentMonthTotal = (currentMonthResult.data || []).reduce(
-        (sum, sale) => sum + Number(sale.total),
-        0
-      );
-      const prevMonthTotal = (prevMonthResult.data || []).reduce(
-        (sum, sale) => sum + Number(sale.total),
-        0
-      );
-
-      const percentageChange =
-        prevMonthTotal > 0
-          ? ((currentMonthTotal - prevMonthTotal) / prevMonthTotal) * 100
-          : 0;
-
-      return {
-        data: {
-          currentMonth: currentMonthTotal,
-          previousMonth: prevMonthTotal,
-          percentageChange,
-          isIncrease: percentageChange > 0,
-        },
-        error: null,
-      };
-    } catch (error) {
-      return { data: null, error: error as PostgrestError };
+    const result = await this.getDashboardSummary();
+    if (result.error || !result.data) {
+      return { data: null, error: result.error };
     }
+
+    return {
+      data: result.data.monthlyRevenue,
+      error: null,
+    };
   }
 }
 

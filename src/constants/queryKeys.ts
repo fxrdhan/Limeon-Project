@@ -226,6 +226,7 @@ export const QueryKeys = {
   // Dashboard
   dashboard: {
     all: ['dashboard'] as const,
+    summary: ['dashboard', 'summary'] as const,
     stats: ['dashboard', 'stats'] as const,
     topSellingMedicines: ['dashboard', 'topSellingMedicines'] as const,
     salesAnalytics: (period?: string) =>

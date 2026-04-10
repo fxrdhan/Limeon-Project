@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { PROFILE_PHOTO_BUCKET } from '../../shared/profilePhotoPaths';
+import type { UserPublicFields } from '@/services/authService';
 import type { AuthState } from '@/types';
 import { syncSupabaseRealtimeAuthToken } from '@/lib/supabaseRealtimeAuth';
 import type { Session } from '@supabase/supabase-js';
@@ -18,6 +19,7 @@ let authStateSubscription: {
 let authServicePromise: Promise<
   typeof import('@/services/authService').default
 > | null = null;
+const pendingUserProfiles = new Map<string, Promise<UserPublicFields | null>>();
 
 const loadAuthService = async () => {
   if (!authServicePromise) {
@@ -27,6 +29,33 @@ const loadAuthService = async () => {
   }
 
   return authServicePromise;
+};
+
+const loadUserProfileById = async (userId: string) => {
+  const normalizedUserId = userId.trim();
+  if (!normalizedUserId) {
+    return null;
+  }
+
+  const pendingUserProfile = pendingUserProfiles.get(normalizedUserId);
+  if (pendingUserProfile) {
+    return pendingUserProfile;
+  }
+
+  const nextUserProfilePromise = (async () => {
+    const authService = await loadAuthService();
+    return authService.fetchUserById(normalizedUserId);
+  })();
+
+  pendingUserProfiles.set(normalizedUserId, nextUserProfilePromise);
+
+  try {
+    return await nextUserProfilePromise;
+  } finally {
+    if (pendingUserProfiles.get(normalizedUserId) === nextUserProfilePromise) {
+      pendingUserProfiles.delete(normalizedUserId);
+    }
+  }
 };
 
 const syncStoreFromSession = async (
@@ -53,8 +82,7 @@ const syncStoreFromSession = async (
   }
 
   try {
-    const authService = await loadAuthService();
-    const user = await authService.fetchUserById(session.user.id);
+    const user = await loadUserProfileById(session.user.id);
     set({
       session,
       user,
@@ -103,7 +131,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const authService = await loadAuthService();
       await ensureAuthStateSubscription(set, get);
-      const { session, user } = await authService.initializeAuth();
+      const session = await authService.getCurrentSession();
+      const user = session?.user?.id
+        ? await loadUserProfileById(session.user.id)
+        : null;
       syncSupabaseRealtimeAuthToken(session?.access_token ?? null);
       set({ session, user, loading: false, error: null });
     } catch (error) {
@@ -117,10 +148,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ loading: true, error: null });
       const authService = await loadAuthService();
 
-      const { session, user } = await authService.signInWithEmailPassword(
+      const { session } = await authService.signInWithEmailPassword(
         email,
         password
       );
+      const user = session.user.id
+        ? await loadUserProfileById(session.user.id)
+        : null;
       syncSupabaseRealtimeAuthToken(session.access_token);
 
       set({

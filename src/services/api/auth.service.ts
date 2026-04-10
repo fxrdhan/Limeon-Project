@@ -56,7 +56,7 @@ export class AuthService {
   ): Promise<
     AuthServiceResponse<{
       session: Session;
-      user: UserDetails;
+      user: User;
     }>
   > {
     try {
@@ -70,19 +70,10 @@ export class AuthService {
         return { data: null, error: authError };
       }
 
-      // Get user profile
-      const { data: userData, error: userError } = await this.getUserProfile(
-        authData.user.id
-      );
-
-      if (userError || !userData) {
-        return { data: null, error: userError };
-      }
-
       return {
         data: {
           session: authData.session,
-          user: userData,
+          user: authData.user,
         },
         error: null,
       };

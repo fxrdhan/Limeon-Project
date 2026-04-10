@@ -3,6 +3,7 @@ import { JSX } from 'react';
 // Navigation and layout types
 export interface NavbarProps {
   sidebarCollapsed: boolean;
+  onOnlineUsersIntent?: () => void;
 }
 
 export interface ChatTargetUser {
