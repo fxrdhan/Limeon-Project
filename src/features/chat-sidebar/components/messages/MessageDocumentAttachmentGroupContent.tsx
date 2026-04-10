@@ -1,6 +1,5 @@
 import { createPortal } from 'react-dom';
-import { motion } from 'motion/react';
-import { useEffect, useRef, useState, type RefObject } from 'react';
+import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import type { ChatMessage } from '../../data/chatSidebarGateway';
 import type { PdfMessagePreview } from '../../hooks/useMessagePdfPreviews';
 import type { MenuPlacement, MenuSideAnchor } from '../../types';
@@ -105,6 +104,7 @@ export const MessageDocumentAttachmentGroupContent = ({
     menuSideAnchor
   );
   const openMenuTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const menuAnchorSyncFrameRef = useRef<number | null>(null);
   const [openMenuMode, setOpenMenuMode] = useState<'group' | 'item'>('item');
   const [menuAnchorPosition, setMenuAnchorPosition] =
     useState<AttachmentMenuAnchorPosition | null>(null);
@@ -119,13 +119,13 @@ export const MessageDocumentAttachmentGroupContent = ({
       ? openMenuMessageId
       : null;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!openMenuMessageId) {
       setOpenMenuMode('item');
     }
   }, [openMenuMessageId]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!openAttachmentMenuMessageId && !isGroupMenuOpen) {
       setMenuAnchorPosition(null);
       return;
@@ -137,6 +137,15 @@ export const MessageDocumentAttachmentGroupContent = ({
           ? menuAnchorRef.current
           : openMenuTriggerRef.current;
       if (!triggerElement) {
+        if (
+          menuAnchorSyncFrameRef.current === null &&
+          typeof window !== 'undefined'
+        ) {
+          menuAnchorSyncFrameRef.current = window.requestAnimationFrame(() => {
+            menuAnchorSyncFrameRef.current = null;
+            syncMenuAnchorPosition();
+          });
+        }
         setMenuAnchorPosition(null);
         return;
       }
@@ -155,6 +164,10 @@ export const MessageDocumentAttachmentGroupContent = ({
     window.addEventListener('scroll', syncMenuAnchorPosition, true);
 
     return () => {
+      if (menuAnchorSyncFrameRef.current !== null) {
+        window.cancelAnimationFrame(menuAnchorSyncFrameRef.current);
+        menuAnchorSyncFrameRef.current = null;
+      }
       window.removeEventListener('resize', syncMenuAnchorPosition);
       window.removeEventListener('scroll', syncMenuAnchorPosition, true);
     };
@@ -380,18 +393,12 @@ export const MessageDocumentAttachmentGroupContent = ({
       menuAnchorPosition &&
       (openAttachmentMenuMessageId || isGroupMenuOpen)
         ? createPortal(
-            <motion.div
-              initial={false}
-              animate={{
+            <div
+              style={{
                 top: menuAnchorPosition.top,
                 left: menuAnchorPosition.left,
                 width: menuAnchorPosition.width,
                 height: menuAnchorPosition.height,
-              }}
-              transition={{
-                type: 'spring',
-                stiffness: 420,
-                damping: 34,
               }}
               className="pointer-events-none fixed z-[70]"
             >
@@ -423,7 +430,7 @@ export const MessageDocumentAttachmentGroupContent = ({
                   }
                 />
               </div>
-            </motion.div>,
+            </div>,
             document.body
           )
         : null}

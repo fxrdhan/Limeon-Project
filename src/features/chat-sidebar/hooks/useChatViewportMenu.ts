@@ -209,25 +209,64 @@ export const useChatViewportMenu = ({
     });
   }, [closeMessageMenu, requestNextFrame, syncOpenMenuLayout]);
 
+  const applyMenuTransitionSource = useCallback(
+    (previousMessageId: string | null) => {
+      if (
+        previousMessageId === null ||
+        previousMessageId === openMenuMessageIdRef.current
+      ) {
+        setMenuTransitionSourceId(null);
+        return;
+      }
+
+      setMenuTransitionSourceId(previousMessageId);
+      menuTransitionSourceTimeoutRef.current = setTimeout(() => {
+        setMenuTransitionSourceId(null);
+        menuTransitionSourceTimeoutRef.current = null;
+      }, 220);
+    },
+    []
+  );
+
+  const openMenuAtAnchor = useCallback(
+    (
+      anchor: HTMLElement,
+      messageId: string,
+      preferredSide: 'left' | 'right',
+      shouldAnimateOpen: boolean
+    ) => {
+      const nextMenuLayout = getMenuLayout(
+        anchor.getBoundingClientRect(),
+        preferredSide
+      );
+
+      setMenuOffsetX(0);
+      setMenuPlacement(nextMenuLayout.placement);
+      setMenuSideAnchor(nextMenuLayout.sideAnchor);
+      setShouldAnimateMenuOpen(shouldAnimateOpen);
+      setOpenMenuMessageId(messageId);
+    },
+    [getMenuLayout]
+  );
+
   const toggleMessageMenu = useCallback(
     (
       anchor: HTMLElement,
       messageId: string,
       preferredSide: 'left' | 'right'
     ) => {
-      if (openMenuMessageId === messageId) {
+      const currentOpenMenuMessageId = openMenuMessageIdRef.current;
+
+      if (currentOpenMenuMessageId === messageId) {
         closeMessageMenu();
         return;
       }
 
       const anchorRect = anchor.getBoundingClientRect();
       const menuOpenScrollPlan = getMenuOpenScrollPlanForAnchor(anchorRect);
-      const nextMenuLayout = getMenuLayout(
-        menuOpenScrollPlan?.projectedAnchorRect ?? anchorRect,
-        preferredSide
-      );
       const isSwitchingMenuMessage =
-        openMenuMessageId !== null && openMenuMessageId !== messageId;
+        currentOpenMenuMessageId !== null &&
+        currentOpenMenuMessageId !== messageId;
 
       if (menuTransitionSourceTimeoutRef.current) {
         clearTimeout(menuTransitionSourceTimeoutRef.current);
@@ -241,22 +280,7 @@ export const useChatViewportMenu = ({
       openMenuMessageIdRef.current = messageId;
       openMenuAnchorRef.current = anchor;
       openMenuPreferredSideRef.current = preferredSide;
-      setMenuOffsetX(0);
-      setMenuPlacement(nextMenuLayout.placement);
-      setMenuSideAnchor(nextMenuLayout.sideAnchor);
-
-      if (isSwitchingMenuMessage) {
-        setMenuTransitionSourceId(openMenuMessageId);
-        menuTransitionSourceTimeoutRef.current = setTimeout(() => {
-          setMenuTransitionSourceId(null);
-          menuTransitionSourceTimeoutRef.current = null;
-        }, 220);
-      } else {
-        setMenuTransitionSourceId(null);
-      }
-
-      setShouldAnimateMenuOpen(!isSwitchingMenuMessage);
-      setOpenMenuMessageId(messageId);
+      applyMenuTransitionSource(currentOpenMenuMessageId);
 
       if (menuOpenScrollPlan) {
         const container = messagesContainerRef.current;
@@ -264,6 +288,8 @@ export const useChatViewportMenu = ({
           lockedMenuLayoutRef.current = {
             messageId,
           };
+          setOpenMenuMessageId(null);
+          setMenuOffsetX(0);
           animateMenuOpenScroll(
             container,
             menuOpenScrollPlan.targetScrollTop,
@@ -284,21 +310,33 @@ export const useChatViewportMenu = ({
                 currentAnchor,
                 openMenuPreferredSideRef.current
               );
+              openMenuAtAnchor(
+                currentAnchor,
+                messageId,
+                openMenuPreferredSideRef.current,
+                !isSwitchingMenuMessage
+              );
             }
           );
         }
       } else {
         lockedMenuLayoutRef.current = null;
+        openMenuAtAnchor(
+          anchor,
+          messageId,
+          preferredSide,
+          !isSwitchingMenuMessage
+        );
       }
     },
     [
+      applyMenuTransitionSource,
       animateMenuOpenScroll,
       cancelNextFrame,
       closeMessageMenu,
-      getMenuLayout,
       getMenuOpenScrollPlanForAnchor,
       messagesContainerRef,
-      openMenuMessageId,
+      openMenuAtAnchor,
       syncOpenMenuLayout,
     ]
   );
