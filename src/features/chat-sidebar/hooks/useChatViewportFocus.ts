@@ -40,6 +40,7 @@ export const useChatViewportFocus = ({
 
   const flashMessageTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pendingSearchFlashRafRef = useRef<number | null>(null);
+  const pendingFocusRafRef = useRef<number | null>(null);
 
   const triggerMessageFlash = useCallback((messageId: string) => {
     if (flashMessageTimeoutRef.current) {
@@ -63,6 +64,12 @@ export const useChatViewportFocus = ({
     if (pendingSearchFlashRafRef.current === null) return;
     cancelAnimationFrame(pendingSearchFlashRafRef.current);
     pendingSearchFlashRafRef.current = null;
+  }, []);
+
+  const clearPendingFocus = useCallback(() => {
+    if (pendingFocusRafRef.current === null) return;
+    cancelAnimationFrame(pendingFocusRafRef.current);
+    pendingFocusRafRef.current = null;
   }, []);
 
   const getCurrentVerticalVisibilityBounds = useCallback(() => {
@@ -161,16 +168,16 @@ export const useChatViewportFocus = ({
     ]
   );
 
-  const focusMessage = useCallback(
-    (messageId: string, behavior: ScrollBehavior) => {
-      const bubble = messageBubbleRefs.current.get(messageId);
-      const container = messagesContainerRef.current;
-      const visibilityBounds = getCurrentVerticalVisibilityBounds();
-      if (!bubble || !container || !visibilityBounds) {
-        triggerMessageFlashWhenScrollSettled(messageId);
-        return;
-      }
-
+  const focusMessageNow = useCallback(
+    (
+      messageId: string,
+      behavior: ScrollBehavior,
+      bubble: HTMLDivElement,
+      container: HTMLDivElement,
+      visibilityBounds: NonNullable<
+        ReturnType<typeof getCurrentVerticalVisibilityBounds>
+      >
+    ) => {
       closeMessageMenu();
       const { minVisibleTop, maxVisibleBottom } = visibilityBounds;
       const bubbleRect = bubble.getBoundingClientRect();
@@ -196,8 +203,56 @@ export const useChatViewportFocus = ({
 
       triggerMessageFlashWhenScrollSettled(messageId);
     },
+    [closeMessageMenu, triggerMessageFlashWhenScrollSettled]
+  );
+
+  const focusMessage = useCallback(
+    (messageId: string, behavior: ScrollBehavior) => {
+      const bubble = messageBubbleRefs.current.get(messageId);
+      const container = messagesContainerRef.current;
+      const visibilityBounds = getCurrentVerticalVisibilityBounds();
+      if (!bubble || !container || !visibilityBounds) {
+        clearPendingFocus();
+        const waitStart = Date.now();
+        const maxWaitMs = 900;
+
+        const retryFocusWhenReady = () => {
+          const nextBubble = messageBubbleRefs.current.get(messageId);
+          const nextContainer = messagesContainerRef.current;
+          const nextVisibilityBounds = getCurrentVerticalVisibilityBounds();
+
+          if (nextBubble && nextContainer && nextVisibilityBounds) {
+            pendingFocusRafRef.current = null;
+            focusMessageNow(
+              messageId,
+              behavior,
+              nextBubble,
+              nextContainer,
+              nextVisibilityBounds
+            );
+            return;
+          }
+
+          if (Date.now() - waitStart >= maxWaitMs) {
+            pendingFocusRafRef.current = null;
+            triggerMessageFlashWhenScrollSettled(messageId);
+            return;
+          }
+
+          pendingFocusRafRef.current =
+            requestAnimationFrame(retryFocusWhenReady);
+        };
+
+        pendingFocusRafRef.current = requestAnimationFrame(retryFocusWhenReady);
+        return;
+      }
+
+      clearPendingFocus();
+      focusMessageNow(messageId, behavior, bubble, container, visibilityBounds);
+    },
     [
-      closeMessageMenu,
+      clearPendingFocus,
+      focusMessageNow,
       getCurrentVerticalVisibilityBounds,
       messageBubbleRefs,
       messagesContainerRef,
@@ -234,6 +289,11 @@ export const useChatViewportFocus = ({
       if (pendingSearchFlashRafRef.current !== null) {
         cancelAnimationFrame(pendingSearchFlashRafRef.current);
         pendingSearchFlashRafRef.current = null;
+      }
+
+      if (pendingFocusRafRef.current !== null) {
+        cancelAnimationFrame(pendingFocusRafRef.current);
+        pendingFocusRafRef.current = null;
       }
     };
   }, []);

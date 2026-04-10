@@ -110,4 +110,96 @@ describe('useChatViewportFocus', () => {
       behavior: 'smooth',
     });
   });
+
+  it('waits for a late-mounted reply target bubble and still scrolls on the first focus attempt', () => {
+    const frameQueue: FrameRequestCallback[] = [];
+    const requestAnimationFrameMock = vi.fn(
+      (callback: FrameRequestCallback) => {
+        frameQueue.push(callback);
+        return frameQueue.length;
+      }
+    ) as typeof requestAnimationFrame;
+    const cancelAnimationFrameMock = vi.fn((frameId: number) => {
+      frameQueue[frameId - 1] = () => 0;
+    }) as typeof cancelAnimationFrame;
+    vi.stubGlobal('requestAnimationFrame', requestAnimationFrameMock);
+    vi.stubGlobal('cancelAnimationFrame', cancelAnimationFrameMock);
+
+    const messagesContainer = document.createElement('div');
+    const chatHeaderContainer = document.createElement('div');
+    const messageBubble = document.createElement('div');
+
+    const bounds: VisibleBounds = {
+      containerRect: createRect(0, 400),
+      visibleBottom: 320,
+    };
+    const bubbleDocumentTop = 310;
+    const bubbleHeight = 64;
+    let scrollTop = 200;
+
+    Object.defineProperty(messagesContainer, 'scrollTop', {
+      configurable: true,
+      get: () => scrollTop,
+      set: value => {
+        scrollTop = value;
+      },
+    });
+
+    const scrollTo = vi.fn(({ top }: ScrollToOptions) => {
+      scrollTop = top ?? scrollTop;
+    });
+    messagesContainer.scrollTo =
+      scrollTo as unknown as typeof messagesContainer.scrollTo;
+    chatHeaderContainer.getBoundingClientRect = () => createRect(0, 100);
+    messageBubble.getBoundingClientRect = () =>
+      createRect(
+        bubbleDocumentTop - scrollTop,
+        bubbleDocumentTop - scrollTop + bubbleHeight
+      );
+
+    const messagesContainerRef = createRef<HTMLDivElement>();
+    const chatHeaderContainerRef = createRef<HTMLDivElement>();
+    const messageBubbleRefs = {
+      current: new Map<string, HTMLDivElement>(),
+    };
+
+    messagesContainerRef.current = messagesContainer;
+    chatHeaderContainerRef.current = chatHeaderContainer;
+
+    const closeMessageMenu = vi.fn();
+
+    const { result } = renderHook(() =>
+      useChatViewportFocus({
+        getVisibleMessagesBounds: () => bounds,
+        closeMessageMenu,
+        chatHeaderContainerRef,
+        messageBubbleRefs,
+        messagesContainerRef,
+        editingMessageId: null,
+      })
+    );
+
+    act(() => {
+      result.current.focusReplyTargetMessage('message-late');
+    });
+
+    expect(scrollTo).not.toHaveBeenCalled();
+
+    messageBubbleRefs.current.set('message-late', messageBubble);
+
+    act(() => {
+      const nextFrame = frameQueue.shift();
+      nextFrame?.(0);
+    });
+
+    expect(closeMessageMenu).toHaveBeenCalledTimes(1);
+    expect(scrollTo).toHaveBeenCalledWith({
+      top:
+        200 -
+        (CHAT_HEADER_OVERLAY_HEIGHT +
+          EDIT_TARGET_FOCUS_PADDING -
+          (bubbleDocumentTop - 200)),
+      behavior: 'smooth',
+    });
+  });
 });
