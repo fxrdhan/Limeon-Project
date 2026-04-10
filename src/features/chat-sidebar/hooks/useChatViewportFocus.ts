@@ -7,6 +7,7 @@ import {
   type RefObject,
 } from 'react';
 import {
+  CHAT_HEADER_OVERLAY_HEIGHT,
   EDIT_TARGET_FLASH_PHASE_DURATION,
   EDIT_TARGET_FOCUS_PADDING,
 } from '../constants';
@@ -68,12 +69,22 @@ export const useChatViewportFocus = ({
     const bounds = getVisibleMessagesBounds();
     if (!bounds) return null;
 
+    const overlayMinVisibleTop =
+      bounds.containerRect.top +
+      CHAT_HEADER_OVERLAY_HEIGHT +
+      EDIT_TARGET_FOCUS_PADDING;
+    const verticalVisibilityBounds = buildVerticalVisibilityBounds(
+      bounds,
+      chatHeaderContainerRef.current?.getBoundingClientRect(),
+      EDIT_TARGET_FOCUS_PADDING
+    );
+
     return {
       bounds,
-      ...buildVerticalVisibilityBounds(
-        bounds,
-        chatHeaderContainerRef.current?.getBoundingClientRect(),
-        EDIT_TARGET_FOCUS_PADDING
+      ...verticalVisibilityBounds,
+      minVisibleTop: Math.max(
+        verticalVisibilityBounds.minVisibleTop,
+        overlayMinVisibleTop
       ),
     };
   }, [chatHeaderContainerRef, getVisibleMessagesBounds]);

@@ -1,5 +1,12 @@
 import { renderHook, act } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vite-plus/test';
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import { useChatSidebarUiState } from '../hooks/useChatSidebarUiState';
 
@@ -79,10 +86,18 @@ const buildRefs = () =>
 describe('useChatSidebarUiState', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => {
+      callback(0);
+      return 1;
+    });
     mockFetchConversationMessageContext.mockResolvedValue({
       data: [],
       error: null,
     });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('opens the image group viewer when focusing a replied image group target', () => {

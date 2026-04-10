@@ -119,16 +119,9 @@ export const useChatSidebarUiState = ({
     captionData,
   });
 
-  const focusReplyTargetFromMessages = useCallback(
-    (messageId: string, availableMessages: ChatMessage[]) => {
-      const { openImageGroupInPortal } = previews;
-      const replyingMessage =
-        availableMessages.find(candidate => candidate.id === messageId) || null;
-      if (!replyingMessage) {
-        return false;
-      }
-
-      const imageGroupRenderItem = buildMessageRenderItems({
+  const getReplyTargetImageGroup = useCallback(
+    (messageId: string, availableMessages: ChatMessage[]) =>
+      buildMessageRenderItems({
         messages: availableMessages,
         captionMessagesByAttachmentId:
           captionData.captionMessagesByAttachmentId,
@@ -138,6 +131,33 @@ export const useChatSidebarUiState = ({
         renderItem =>
           renderItem.kind === 'image-group' &&
           renderItem.messages.some(message => message.id === messageId)
+      ),
+    [captionData.captionMessagesByAttachmentId, getAttachmentFileKind]
+  );
+
+  const scheduleReplyTargetViewportFocus = useCallback(
+    (messageId: string) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          viewport.focusReplyTargetMessage(messageId);
+        });
+      });
+    },
+    [viewport]
+  );
+
+  const focusReplyTargetFromMessages = useCallback(
+    (messageId: string, availableMessages: ChatMessage[]) => {
+      const { openImageGroupInPortal } = previews;
+      const replyingMessage =
+        availableMessages.find(candidate => candidate.id === messageId) || null;
+      if (!replyingMessage) {
+        return false;
+      }
+
+      const imageGroupRenderItem = getReplyTargetImageGroup(
+        messageId,
+        availableMessages
       );
 
       if (imageGroupRenderItem?.kind === 'image-group') {
@@ -152,12 +172,7 @@ export const useChatSidebarUiState = ({
       viewport.focusReplyTargetMessage(messageId);
       return true;
     },
-    [
-      captionData.captionMessagesByAttachmentId,
-      getAttachmentFileKind,
-      previews,
-      viewport,
-    ]
+    [getReplyTargetImageGroup, previews, viewport]
   );
 
   const focusReplyTargetMessage = useCallback(
@@ -215,7 +230,21 @@ export const useChatSidebarUiState = ({
             }
           );
 
-          focusReplyTargetFromMessages(messageId, orderedMergedMessages);
+          const imageGroupRenderItem = getReplyTargetImageGroup(
+            messageId,
+            orderedMergedMessages
+          );
+          if (imageGroupRenderItem?.kind === 'image-group') {
+            void previews.openImageGroupInPortal(
+              imageGroupRenderItem.messages,
+              messageId,
+              searchContextMessages.find(message => message.id === messageId)
+                ?.file_preview_url || null
+            );
+            return;
+          }
+
+          scheduleReplyTargetViewportFocus(messageId);
         } finally {
           if (loadingReplyContextMessageIdRef.current === messageId) {
             loadingReplyContextMessageIdRef.current = null;
@@ -225,10 +254,13 @@ export const useChatSidebarUiState = ({
     },
     [
       currentChannelId,
+      getReplyTargetImageGroup,
       focusReplyTargetFromMessages,
       isOpen,
       mergeSearchContextMessages,
       messages,
+      previews,
+      scheduleReplyTargetViewportFocus,
       targetUserId,
     ]
   );
