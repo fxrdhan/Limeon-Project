@@ -79,6 +79,9 @@ export const buildMessageItemModel = ({
     content: {
       resolvedMessageUrl: runtime.content.getImageMessageUrl(messageItem),
       captionMessage: renderItem.captionMessage,
+      replyTargetMessage: runtime.content.getReplyTargetMessage(
+        messageItem.reply_to_id
+      ),
       groupedDocumentMessages:
         renderItem.kind === 'document-group' ? renderItem.messages : undefined,
       groupedImageMessages:
@@ -95,6 +98,7 @@ export const buildMessageItemModel = ({
       openImageInPortal: runtime.content.openImageInPortal,
       openImageGroupInPortal: runtime.content.openImageGroupInPortal,
       openDocumentInPortal: runtime.content.openDocumentInPortal,
+      focusReplyTargetMessage: runtime.content.focusReplyTargetMessage,
     },
     actions: {
       handleEditMessage: runtime.actions.handleEditMessage,

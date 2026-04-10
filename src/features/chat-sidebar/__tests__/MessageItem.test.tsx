@@ -86,6 +86,7 @@ const createModel = (
     content: {
       resolvedMessageUrl: null,
       captionMessage: undefined,
+      replyTargetMessage: undefined,
       groupedDocumentMessages: undefined,
       groupedImageMessages: undefined,
       pdfMessagePreview: undefined,
@@ -97,6 +98,7 @@ const createModel = (
       openImageInPortal: async () => {},
       openImageGroupInPortal: async () => {},
       openDocumentInPortal: async () => {},
+      focusReplyTargetMessage: () => {},
       ...content,
     },
     actions: {
@@ -120,6 +122,46 @@ const createModel = (
 };
 
 describe('MessageItem', () => {
+  it('renders an inline reply panel and focuses the target message when clicked', () => {
+    const toggle = vi.fn();
+    const focusReplyTargetMessage = vi.fn();
+
+    render(
+      <MessageItem
+        model={createModel({
+          message: {
+            ...baseMessage,
+            id: 'message-3',
+            message: 'balasan baru',
+            reply_to_id: 'message-2',
+          },
+          menu: {
+            toggle,
+          },
+          content: {
+            replyTargetMessage: {
+              ...baseMessage,
+              id: 'message-2',
+              sender_id: 'user-b',
+              receiver_id: 'user-a',
+              message: 'pesan asal',
+              sender_name: 'Tester',
+            },
+            focusReplyTargetMessage,
+          },
+        })}
+      />
+    );
+
+    const replyPanel = screen.getByRole('button', {
+      name: /Buka pesan yang dibalas dari Tester/i,
+    });
+    fireEvent.click(replyPanel);
+
+    expect(focusReplyTargetMessage).toHaveBeenCalledWith('message-2');
+    expect(toggle).not.toHaveBeenCalled();
+  });
+
   it('opens grouped images in the multi-image portal from the group action menu', async () => {
     const groupedMessages = Array.from({ length: 4 }, (_, index) => ({
       ...baseMessage,

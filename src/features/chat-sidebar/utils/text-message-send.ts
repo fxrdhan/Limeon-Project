@@ -91,6 +91,9 @@ export const sendTextChatMessage = async ({
       });
 
     if (error || !newMessage) {
+      if (error) {
+        console.error('Error sending message:', error);
+      }
       if (!pendingSend.isCancelled() && isCurrentConversationScopeActive()) {
         setMessages(previousMessages =>
           previousMessages.filter(messageItem => messageItem.id !== tempId)

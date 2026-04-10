@@ -39,9 +39,13 @@ export interface MessageItemRuntime {
     getPdfMessagePreview: ChatSidebarRuntimeState['previews']['getPdfMessagePreview'];
     getAttachmentFileName: ChatSidebarRuntimeState['actions']['getAttachmentFileName'];
     getAttachmentFileKind: ChatSidebarRuntimeState['actions']['getAttachmentFileKind'];
+    getReplyTargetMessage: (
+      replyToId: string | null
+    ) => ChatMessage | undefined;
     openImageInPortal: ChatSidebarRuntimeState['previews']['openImageInPortal'];
     openImageGroupInPortal: ChatSidebarRuntimeState['previews']['openImageGroupInPortal'];
     openDocumentInPortal: ChatSidebarRuntimeState['previews']['openDocumentInPortal'];
+    focusReplyTargetMessage: ChatSidebarRuntimeState['viewport']['focusReplyTargetMessage'];
   };
   actions: {
     handleEditMessage: ChatSidebarRuntimeState['mutations']['handleEditMessage'];
@@ -131,7 +135,8 @@ type MessagesPaneRuntimeSource = Pick<
 >;
 
 const buildMessageItemRuntime = (
-  runtime: MessagesPaneRuntimeSource
+  runtime: MessagesPaneRuntimeSource,
+  messagesById: Map<string, ChatMessage>
 ): MessageItemRuntime => ({
   interaction: {
     userId: runtime.user?.id,
@@ -167,9 +172,12 @@ const buildMessageItemRuntime = (
     getPdfMessagePreview: runtime.previews.getPdfMessagePreview,
     getAttachmentFileName: runtime.actions.getAttachmentFileName,
     getAttachmentFileKind: runtime.actions.getAttachmentFileKind,
+    getReplyTargetMessage: replyToId =>
+      replyToId ? messagesById.get(replyToId) : undefined,
     openImageInPortal: runtime.previews.openImageInPortal,
     openImageGroupInPortal: runtime.previews.openImageGroupInPortal,
     openDocumentInPortal: runtime.previews.openDocumentInPortal,
+    focusReplyTargetMessage: runtime.viewport.focusReplyTargetMessage,
   },
   actions: {
     handleEditMessage: runtime.mutations.handleEditMessage,
@@ -216,6 +224,7 @@ export const buildMessagesPaneRuntime = (
   runtime: MessagesPaneRuntimeSource
 ): MessagesPaneRuntime => {
   const messages = runtime.session.messages;
+  const messagesById = new Map(messages.map(message => [message.id, message]));
   const renderItems = buildMessageRenderItems({
     messages: messages.filter(
       messageItem => !runtime.previews.captionMessageIds.has(messageItem.id)
@@ -276,7 +285,7 @@ export const buildMessagesPaneRuntime = (
       scrollToBottom: runtime.viewport.scrollToBottom,
       composerContainerHeight: runtime.viewport.composerContainerHeight,
     },
-    item: buildMessageItemRuntime(runtime),
+    item: buildMessageItemRuntime(runtime, messagesById),
     previews: buildMessagesPanePreviewRuntime(
       runtime,
       activeImageGroupPreviewMessage

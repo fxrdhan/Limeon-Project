@@ -40,6 +40,7 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
   const {
     resolvedMessageUrl,
     captionMessage,
+    replyTargetMessage,
     groupedDocumentMessages,
     groupedImageMessages,
     pdfMessagePreview,
@@ -61,6 +62,7 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
     message,
     resolvedMessageUrl,
     userId,
+    replyTargetMessage,
     openMenuMessageId: openMessageId,
     menuTransitionSourceId: transitionSourceId,
     flashingMessageId,

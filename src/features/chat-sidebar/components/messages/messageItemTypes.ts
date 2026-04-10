@@ -53,6 +53,7 @@ export interface MessageItemRefsModel {
 export interface MessageItemContentModel {
   resolvedMessageUrl: string | null;
   captionMessage?: ChatMessage;
+  replyTargetMessage?: ChatMessage;
   groupedDocumentMessages?: ChatMessage[];
   groupedImageMessages?: ChatMessage[];
   pdfMessagePreview?: PdfMessagePreview;
@@ -114,6 +115,7 @@ export interface MessageItemContentModel {
     previewName: string,
     forcePdfMime?: boolean
   ) => Promise<void>;
+  focusReplyTargetMessage: (messageId: string) => void;
 }
 
 export interface MessageItemActionsModel {

@@ -20,6 +20,7 @@ interface BuildMessageItemDerivationsParams {
   message: ChatMessage;
   resolvedMessageUrl: string | null;
   userId?: string;
+  replyTargetMessage?: ChatMessage;
   openMenuMessageId: string | null;
   menuTransitionSourceId: string | null;
   flashingMessageId: string | null;
@@ -63,6 +64,9 @@ interface BuildMessageItemDerivationsParams {
 export interface MessageItemDerivations {
   isCurrentUser: boolean;
   hasAttachmentCaption: boolean;
+  hasReplyPreview: boolean;
+  replyAuthorLabel: string | null;
+  replyPreviewText: string | null;
   displayTime: string;
   isEdited: boolean;
   messageDeliveryStatus: 'sending' | 'sent' | 'delivered' | 'read' | null;
@@ -97,10 +101,37 @@ export interface MessageItemDerivations {
   menuActions: ReturnType<typeof buildMessageMenuActions>;
 }
 
+const collapseReplyPreviewText = (value: string) =>
+  value.replace(/\s+/g, ' ').trim();
+
+const getReplyPreviewText = (
+  replyTargetMessage: ChatMessage | undefined,
+  getAttachmentFileName: (targetMessage: ChatMessage) => string
+) => {
+  if (!replyTargetMessage) {
+    return null;
+  }
+
+  if (replyTargetMessage.message_type === 'text') {
+    const normalizedMessage = collapseReplyPreviewText(
+      replyTargetMessage.message
+    );
+
+    return normalizedMessage || 'Pesan';
+  }
+
+  if (replyTargetMessage.message_type === 'image') {
+    return 'Gambar';
+  }
+
+  return getAttachmentFileName(replyTargetMessage) || 'Dokumen';
+};
+
 export const buildMessageItemDerivations = ({
   message,
   resolvedMessageUrl,
   userId,
+  replyTargetMessage,
   openMenuMessageId,
   menuTransitionSourceId,
   flashingMessageId,
@@ -124,6 +155,19 @@ export const buildMessageItemDerivations = ({
   handleDeleteMessage,
 }: BuildMessageItemDerivationsParams): MessageItemDerivations => {
   const isCurrentUser = message.sender_id === userId;
+  const replyAuthorLabel = replyTargetMessage
+    ? replyTargetMessage.sender_id === userId
+      ? 'Anda'
+      : replyTargetMessage.sender_name?.trim() || 'Pengguna'
+    : null;
+  const replyPreviewText = getReplyPreviewText(
+    replyTargetMessage,
+    getAttachmentFileName
+  );
+  const hasReplyPreview =
+    replyTargetMessage !== undefined &&
+    replyAuthorLabel !== null &&
+    replyPreviewText !== null;
   const attachmentCaptionText = captionMessage?.message?.trim() ?? '';
   const hasAttachmentCaption =
     (message.message_type === 'image' || message.message_type === 'file') &&
@@ -280,6 +324,9 @@ export const buildMessageItemDerivations = ({
   return {
     isCurrentUser,
     hasAttachmentCaption,
+    hasReplyPreview,
+    replyAuthorLabel,
+    replyPreviewText,
     displayTime,
     isEdited,
     messageDeliveryStatus,

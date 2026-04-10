@@ -1,4 +1,9 @@
-import { useRef, useState, type CSSProperties } from 'react';
+import {
+  useRef,
+  useState,
+  type CSSProperties,
+  type MouseEvent as ReactMouseEvent,
+} from 'react';
 import type { MessageItemDerivations } from './messageItemDerivations';
 import { MessageActionPopover } from './MessageActionPopover';
 import { MessageBubbleContent } from './MessageBubbleContent';
@@ -44,6 +49,7 @@ export const MessageItemBubble = ({
   const {
     resolvedMessageUrl,
     captionMessage,
+    replyTargetMessage,
     groupedDocumentMessages,
     groupedImageMessages,
     getAttachmentFileName,
@@ -52,6 +58,7 @@ export const MessageItemBubble = ({
     openImageInPortal,
     openImageGroupInPortal,
     openDocumentInPortal,
+    focusReplyTargetMessage,
   } = content;
   const {
     handleCopyMessage,
@@ -68,6 +75,9 @@ export const MessageItemBubble = ({
     isEdited,
     messageDeliveryStatus,
     isCurrentUser,
+    hasReplyPreview,
+    replyAuthorLabel,
+    replyPreviewText,
     isMenuOpen,
     isMenuTransitionSource,
     hasAttachmentCaption,
@@ -117,6 +127,31 @@ export const MessageItemBubble = ({
     wordBreak:
       !isImageMessage && !isFileMessage ? ('break-word' as const) : undefined,
   };
+  const isReplyPanelInteractive =
+    !isSelectionMode && Boolean(replyTargetMessage?.id) && hasReplyPreview;
+
+  const activateReplyPanel = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    if (!replyTargetMessage?.id) {
+      return;
+    }
+
+    event.stopPropagation();
+    focusReplyTargetMessage(replyTargetMessage.id);
+  };
+
+  const replyPanelClassName = isFlashingTarget
+    ? 'border-white/20 bg-white/10'
+    : isCurrentUser
+      ? 'border-emerald-400/70 bg-emerald-300/55'
+      : 'border-slate-300 bg-slate-100';
+  const replyLabelClassName = isFlashingTarget
+    ? 'text-white/80'
+    : isCurrentUser
+      ? 'text-emerald-950'
+      : 'text-slate-600';
+  const replyPreviewClassName = isFlashingTarget
+    ? 'text-white'
+    : 'text-slate-800';
 
   const bubbleInnerContent = (
     <>
@@ -126,6 +161,42 @@ export const MessageItemBubble = ({
         isEdited={isEdited}
         messageDeliveryStatus={messageDeliveryStatus}
       />
+      {hasReplyPreview ? (
+        isReplyPanelInteractive ? (
+          <button
+            type="button"
+            className={`mb-2 block w-full min-w-0 rounded-xl border-l-[3px] px-3 py-2 text-left transition-colors ${replyPanelClassName} cursor-pointer`}
+            onClick={activateReplyPanel}
+            aria-label={`Buka pesan yang dibalas dari ${replyAuthorLabel}`}
+          >
+            <p
+              className={`truncate text-[11px] font-semibold ${replyLabelClassName}`}
+            >
+              {replyAuthorLabel}
+            </p>
+            <p
+              className={`truncate text-sm leading-relaxed ${replyPreviewClassName}`}
+            >
+              {replyPreviewText}
+            </p>
+          </button>
+        ) : (
+          <div
+            className={`mb-2 min-w-0 rounded-xl border-l-[3px] px-3 py-2 text-left transition-colors ${replyPanelClassName}`}
+          >
+            <p
+              className={`truncate text-[11px] font-semibold ${replyLabelClassName}`}
+            >
+              {replyAuthorLabel}
+            </p>
+            <p
+              className={`truncate text-sm leading-relaxed ${replyPreviewClassName}`}
+            >
+              {replyPreviewText}
+            </p>
+          </div>
+        )
+      ) : null}
       {isImageAttachmentGroup && groupedImageMessages ? (
         <MessageImageAttachmentGroupContent
           messages={groupedImageMessages}
