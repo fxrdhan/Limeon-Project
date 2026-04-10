@@ -24,6 +24,72 @@ interface UseChatViewportMenuProps {
   messagesContainerRef: RefObject<HTMLDivElement | null>;
 }
 
+const getProjectedMenuRect = ({
+  anchorRect,
+  menuPlacement,
+  menuSideAnchor,
+  menuVerticalAnchor,
+  menuOffsetX,
+  menuWidth,
+  menuHeight,
+}: {
+  anchorRect: DOMRect;
+  menuPlacement: MenuPlacement;
+  menuSideAnchor: MenuSideAnchor;
+  menuVerticalAnchor: MenuVerticalAnchor;
+  menuOffsetX: number;
+  menuWidth: number;
+  menuHeight: number;
+}) => {
+  let top = anchorRect.top;
+  let left = anchorRect.left;
+
+  if (menuPlacement === 'left' || menuPlacement === 'right') {
+    top =
+      menuSideAnchor === 'bottom'
+        ? anchorRect.bottom - menuHeight
+        : menuSideAnchor === 'top'
+          ? anchorRect.top
+          : anchorRect.top + (anchorRect.height - menuHeight) / 2;
+    left =
+      menuPlacement === 'left'
+        ? anchorRect.left - MENU_GAP - menuWidth
+        : anchorRect.right + MENU_GAP;
+  } else {
+    left =
+      menuVerticalAnchor === 'right'
+        ? anchorRect.right - menuWidth
+        : anchorRect.left;
+    top =
+      menuPlacement === 'down'
+        ? anchorRect.top - MENU_GAP - menuHeight
+        : anchorRect.bottom + MENU_GAP;
+  }
+
+  left += menuOffsetX;
+
+  return {
+    top,
+    bottom: top + menuHeight,
+    left,
+    right: left + menuWidth,
+    width: menuWidth,
+    height: menuHeight,
+  };
+};
+
+const getVerticalMenuOverflow = ({
+  rect,
+  minVisibleTop,
+  maxVisibleBottom,
+}: {
+  rect: Pick<DOMRect, 'top' | 'bottom'>;
+  minVisibleTop: number;
+  maxVisibleBottom: number;
+}) =>
+  Math.max(minVisibleTop - rect.top, 0) +
+  Math.max(rect.bottom - maxVisibleBottom, 0);
+
 const animationFrameController = createAnimationFrameController();
 
 export const useChatViewportMenu = ({
@@ -351,10 +417,13 @@ export const useChatViewportMenu = ({
 
   const ensureMenuFullyVisible = useCallback(
     (messageId: string) => {
-      const container = messagesContainerRef.current;
-      if (!container) return;
+      const menuRoot =
+        typeof document !== 'undefined'
+          ? document
+          : messagesContainerRef.current;
+      if (!menuRoot) return;
 
-      const menuElement = container.querySelector<HTMLElement>(
+      const menuElement = menuRoot.querySelector<HTMLElement>(
         `[data-chat-menu-id="${messageId}"]`
       );
 
@@ -374,25 +443,73 @@ export const useChatViewportMenu = ({
       }
 
       const { containerRect } = bounds;
-      const menuRect = menuElement.getBoundingClientRect();
+      const measuredMenuRect = menuElement.getBoundingClientRect();
+      const menuWidth = menuElement.offsetWidth || measuredMenuRect.width;
+      const menuHeight = menuElement.offsetHeight || measuredMenuRect.height;
+      const menuRect =
+        anchorRect !== null
+          ? getProjectedMenuRect({
+              anchorRect,
+              menuPlacement,
+              menuSideAnchor,
+              menuVerticalAnchor,
+              menuOffsetX,
+              menuWidth,
+              menuHeight,
+            })
+          : {
+              top: measuredMenuRect.top,
+              bottom: measuredMenuRect.bottom,
+              left: measuredMenuRect.left,
+              right: measuredMenuRect.right,
+              width: measuredMenuRect.width,
+              height: measuredMenuRect.height,
+            };
       const minVisibleTop =
         containerRect.top + CHAT_HEADER_OVERLAY_HEIGHT + MENU_GAP;
       const maxVisibleBottom = bounds.visibleBottom - MENU_GAP;
-      const isClippedByHeader = menuRect.top < minVisibleTop;
-      const isClippedByComposer = menuRect.bottom > maxVisibleBottom;
+      const currentVerticalOverflow = getVerticalMenuOverflow({
+        rect: menuRect,
+        minVisibleTop,
+        maxVisibleBottom,
+      });
 
-      if ((isClippedByHeader || isClippedByComposer) && anchorRect) {
+      if (currentVerticalOverflow > 0 && anchorRect) {
+        const upMenuRect = getProjectedMenuRect({
+          anchorRect,
+          menuPlacement: 'up',
+          menuSideAnchor,
+          menuVerticalAnchor,
+          menuOffsetX,
+          menuWidth,
+          menuHeight,
+        });
+        const downMenuRect = getProjectedMenuRect({
+          anchorRect,
+          menuPlacement: 'down',
+          menuSideAnchor,
+          menuVerticalAnchor,
+          menuOffsetX,
+          menuWidth,
+          menuHeight,
+        });
+        const upOverflow = getVerticalMenuOverflow({
+          rect: upMenuRect,
+          minVisibleTop,
+          maxVisibleBottom,
+        });
+        const downOverflow = getVerticalMenuOverflow({
+          rect: downMenuRect,
+          minVisibleTop,
+          maxVisibleBottom,
+        });
         const nextPlacement: MenuPlacement =
-          isClippedByHeader && isClippedByComposer
-            ? anchorRect.top - minVisibleTop >=
-              maxVisibleBottom - anchorRect.bottom
-              ? 'down'
-              : 'up'
-            : isClippedByComposer
-              ? 'down'
-              : 'up';
+          upOverflow <= downOverflow ? 'up' : 'down';
 
-        if (menuPlacement !== nextPlacement) {
+        if (
+          menuPlacement !== nextPlacement &&
+          Math.min(upOverflow, downOverflow) < currentVerticalOverflow
+        ) {
           setMenuPlacement(nextPlacement);
           setMenuOffsetX(0);
           return;
@@ -438,8 +555,10 @@ export const useChatViewportMenu = ({
     },
     [
       closeMessageMenu,
+      menuOffsetX,
       getVisibleMessagesBounds,
       menuPlacement,
+      menuSideAnchor,
       menuVerticalAnchor,
       messagesContainerRef,
     ]

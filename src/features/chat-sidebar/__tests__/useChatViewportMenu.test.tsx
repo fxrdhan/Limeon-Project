@@ -52,7 +52,7 @@ describe('useChatViewportMenu', () => {
     document.body.innerHTML = '';
   });
 
-  it('repositions a rendered menu above the bubble when the composer clips a side menu', () => {
+  it('switches to the below-bubble placement when it has less vertical overflow than the above-bubble placement', () => {
     const messagesContainer = document.createElement('div');
     const anchor = document.createElement('div');
     const menuElement = document.createElement('div');
@@ -74,11 +74,19 @@ describe('useChatViewportMenu', () => {
 
     anchor.getBoundingClientRect = () =>
       createRect({
-        top: 100,
-        bottom: 280,
-        left: 160,
-        right: 288,
+        top: 150,
+        bottom: 210,
+        left: 120,
+        right: 200,
       });
+    Object.defineProperty(menuElement, 'offsetWidth', {
+      configurable: true,
+      value: 120,
+    });
+    Object.defineProperty(menuElement, 'offsetHeight', {
+      configurable: true,
+      value: 220,
+    });
 
     const { result } = renderHook(() =>
       useChatViewportMenu({
@@ -91,16 +99,16 @@ describe('useChatViewportMenu', () => {
       result.current.toggleMessageMenu(anchor, 'message-1', 'left');
     });
 
-    expect(result.current.menuPlacement).toBe('left');
+    expect(result.current.menuPlacement).toBe('down');
     expect(result.current.menuVerticalAnchor).toBe('left');
 
     menuElement.dataset.chatMenuId = 'message-1';
     menuElement.getBoundingClientRect = () =>
       createRect({
-        top: 140,
-        bottom: 360,
-        left: 32,
-        right: 152,
+        top: -78,
+        bottom: 142,
+        left: 120,
+        right: 240,
       });
     messagesContainer.append(menuElement);
 
@@ -108,11 +116,11 @@ describe('useChatViewportMenu', () => {
       messagesContainer.dispatchEvent(new Event('scroll'));
     });
 
-    expect(result.current.menuPlacement).toBe('down');
+    expect(result.current.menuPlacement).toBe('up');
     expect(result.current.menuVerticalAnchor).toBe('left');
   });
 
-  it('repositions a rendered menu below the bubble when the header clips a side menu', () => {
+  it('keeps the below-bubble placement when it already has less vertical overflow, while still allowing a right-tail fallback for horizontal clipping', () => {
     const messagesContainer = document.createElement('div');
     const anchor = document.createElement('div');
     const menuElement = document.createElement('div');
@@ -135,10 +143,18 @@ describe('useChatViewportMenu', () => {
     anchor.getBoundingClientRect = () =>
       createRect({
         top: 80,
-        bottom: 260,
-        left: 32,
-        right: 160,
+        bottom: 140,
+        left: 220,
+        right: 304,
       });
+    Object.defineProperty(menuElement, 'offsetWidth', {
+      configurable: true,
+      value: 120,
+    });
+    Object.defineProperty(menuElement, 'offsetHeight', {
+      configurable: true,
+      value: 220,
+    });
 
     const { result } = renderHook(() =>
       useChatViewportMenu({
@@ -151,16 +167,16 @@ describe('useChatViewportMenu', () => {
       result.current.toggleMessageMenu(anchor, 'message-2', 'right');
     });
 
-    expect(result.current.menuPlacement).toBe('right');
+    expect(result.current.menuPlacement).toBe('up');
     expect(result.current.menuVerticalAnchor).toBe('left');
 
     menuElement.dataset.chatMenuId = 'message-2';
     menuElement.getBoundingClientRect = () =>
       createRect({
-        top: 60,
-        bottom: 280,
-        left: 168,
-        right: 288,
+        top: 148,
+        bottom: 368,
+        left: 220,
+        right: 340,
       });
     messagesContainer.append(menuElement);
 
@@ -169,7 +185,7 @@ describe('useChatViewportMenu', () => {
     });
 
     expect(result.current.menuPlacement).toBe('up');
-    expect(result.current.menuVerticalAnchor).toBe('left');
+    expect(result.current.menuVerticalAnchor).toBe('right');
   });
 
   it('uses the right-side tail only when the left-side vertical anchor would overflow the viewport more', () => {
@@ -228,6 +244,79 @@ describe('useChatViewportMenu', () => {
       messagesContainer.dispatchEvent(new Event('scroll'));
     });
 
+    expect(result.current.menuVerticalAnchor).toBe('right');
+  });
+
+  it('uses the target bubble geometry instead of a stale animated popup rect when switching menus quickly', () => {
+    const messagesContainer = document.createElement('div');
+    const firstAnchor = document.createElement('div');
+    const secondAnchor = document.createElement('div');
+    const secondMenuElement = document.createElement('div');
+    const messagesContainerRef = createRef<HTMLDivElement>();
+    const visibleBounds: VisibleBounds = {
+      containerRect: createRect({ top: 0, bottom: 400 }),
+      visibleBottom: 320,
+    };
+
+    document.body.append(messagesContainer);
+    messagesContainer.append(firstAnchor, secondAnchor);
+    messagesContainerRef.current = messagesContainer;
+    messagesContainer.getBoundingClientRect = () => visibleBounds.containerRect;
+    Object.defineProperty(messagesContainer, 'scrollTop', {
+      configurable: true,
+      value: 0,
+      writable: true,
+    });
+
+    firstAnchor.getBoundingClientRect = () =>
+      createRect({
+        top: 80,
+        bottom: 140,
+        left: 40,
+        right: 124,
+      });
+    secondAnchor.getBoundingClientRect = () =>
+      createRect({
+        top: 80,
+        bottom: 140,
+        left: 220,
+        right: 304,
+      });
+
+    Object.defineProperty(secondMenuElement, 'offsetWidth', {
+      configurable: true,
+      value: 120,
+    });
+    Object.defineProperty(secondMenuElement, 'offsetHeight', {
+      configurable: true,
+      value: 120,
+    });
+    secondMenuElement.dataset.chatMenuId = 'message-2';
+    secondMenuElement.getBoundingClientRect = () =>
+      createRect({
+        top: 148,
+        bottom: 268,
+        left: 40,
+        right: 160,
+      });
+    document.body.append(secondMenuElement);
+
+    const { result } = renderHook(() =>
+      useChatViewportMenu({
+        getVisibleMessagesBounds: () => visibleBounds,
+        messagesContainerRef,
+      })
+    );
+
+    act(() => {
+      result.current.toggleMessageMenu(firstAnchor, 'message-1', 'right');
+    });
+
+    act(() => {
+      result.current.toggleMessageMenu(secondAnchor, 'message-2', 'right');
+    });
+
+    expect(result.current.menuPlacement).toBe('up');
     expect(result.current.menuVerticalAnchor).toBe('right');
   });
 });
