@@ -162,6 +162,49 @@ describe('MessageItem', () => {
     expect(toggle).not.toHaveBeenCalled();
   });
 
+  it('lets the bubble capture reply-panel clicks when another message menu is active', () => {
+    const toggle = vi.fn();
+    const focusReplyTargetMessage = vi.fn();
+
+    render(
+      <MessageItem
+        model={createModel({
+          message: {
+            ...baseMessage,
+            id: 'message-3',
+            message: 'balasan baru',
+            reply_to_id: 'message-2',
+          },
+          menu: {
+            openMessageId: 'message-other',
+            toggle,
+          },
+          content: {
+            replyTargetMessage: {
+              ...baseMessage,
+              id: 'message-2',
+              sender_id: 'user-b',
+              receiver_id: 'user-a',
+              message: 'pesan asal',
+              sender_name: 'Tester',
+            },
+            focusReplyTargetMessage,
+          },
+        })}
+      />
+    );
+
+    fireEvent.click(screen.getByText('pesan asal'));
+
+    expect(focusReplyTargetMessage).not.toHaveBeenCalled();
+    expect(toggle).toHaveBeenCalledTimes(1);
+    const [anchorElement, messageId, preferredSide] = toggle.mock
+      .calls[0] as unknown as [HTMLElement, string, 'left' | 'right'];
+    expect(anchorElement.getAttribute('role')).toBe('button');
+    expect(messageId).toBe('message-3');
+    expect(preferredSide).toBe('left');
+  });
+
   it('opens grouped images in the multi-image portal from the group action menu', async () => {
     const groupedMessages = Array.from({ length: 4 }, (_, index) => ({
       ...baseMessage,

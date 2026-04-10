@@ -121,6 +121,9 @@ export const MessageItemBubble = ({
     !isSelectionMode &&
     openMessageId !== null &&
     !bubbleMessageIds.includes(openMessageId);
+  const disableReplyPanelInteraction =
+    isSelectionMode ||
+    (openMessageId !== null && !bubbleMessageIds.includes(openMessageId));
   const bubbleStyle: CSSProperties = {
     overflowWrap:
       !isImageMessage && !isFileMessage ? ('anywhere' as const) : undefined,
@@ -128,7 +131,9 @@ export const MessageItemBubble = ({
       !isImageMessage && !isFileMessage ? ('break-word' as const) : undefined,
   };
   const isReplyPanelInteractive =
-    !isSelectionMode && Boolean(replyTargetMessage?.id) && hasReplyPreview;
+    !disableReplyPanelInteraction &&
+    Boolean(replyTargetMessage?.id) &&
+    hasReplyPreview;
   const isReplyTargetCurrentUser = replyTargetMessage?.sender_id === userId;
   const shouldUseIndependentReplyPanelPadding =
     hasReplyPreview && !isImageMessage && !isFileMessage && !isAttachmentGroup;
