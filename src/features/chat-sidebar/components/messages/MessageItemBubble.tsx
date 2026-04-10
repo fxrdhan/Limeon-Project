@@ -130,6 +130,8 @@ export const MessageItemBubble = ({
   const isReplyPanelInteractive =
     !isSelectionMode && Boolean(replyTargetMessage?.id) && hasReplyPreview;
   const isReplyTargetCurrentUser = replyTargetMessage?.sender_id === userId;
+  const shouldUseIndependentReplyPanelPadding =
+    hasReplyPreview && !isImageMessage && !isFileMessage && !isAttachmentGroup;
 
   const activateReplyPanel = (event: ReactMouseEvent<HTMLButtonElement>) => {
     if (!replyTargetMessage?.id) {
@@ -142,9 +144,9 @@ export const MessageItemBubble = ({
 
   const replyPanelClassName = isFlashingTarget
     ? 'bg-white/10'
-    : isReplyTargetCurrentUser
-      ? 'bg-olive-300/50'
-      : 'bg-olive-300/50';
+    : isCurrentUser
+      ? 'bg-emerald-50'
+      : 'bg-slate-50';
   const replyPanelStripeClassName = isFlashingTarget
     ? 'bg-white/20'
     : isReplyTargetCurrentUser
@@ -152,12 +154,15 @@ export const MessageItemBubble = ({
       : 'bg-emerald-500';
   const replyLabelClassName = isFlashingTarget
     ? 'text-white/80'
-    : isCurrentUser
-      ? 'text-emerald-950'
-      : 'text-slate-600';
+    : isReplyTargetCurrentUser
+      ? 'text-olive-700'
+      : 'text-emerald-600';
   const replyPreviewClassName = isFlashingTarget
     ? 'text-white'
-    : 'text-slate-800';
+    : 'text-slate-600';
+  const replyPanelContainerClassName = shouldUseIndependentReplyPanelPadding
+    ? 'px-1 pt-1 pb-1'
+    : 'mb-2';
 
   const bubbleInnerContent = (
     <>
@@ -168,52 +173,54 @@ export const MessageItemBubble = ({
         messageDeliveryStatus={messageDeliveryStatus}
       />
       {hasReplyPreview ? (
-        isReplyPanelInteractive ? (
-          <button
-            type="button"
-            className={`relative mb-2 block w-full min-w-0 overflow-hidden rounded-lg text-left transition-colors ${replyPanelClassName} cursor-pointer`}
-            onClick={activateReplyPanel}
-            aria-label={`Buka pesan yang dibalas dari ${replyAuthorLabel}`}
-          >
-            <span
-              aria-hidden="true"
-              className={`absolute inset-y-0 left-0 w-1 rounded-l-lg ${replyPanelStripeClassName}`}
-            />
-            <div className="min-w-0 px-2 py-1 pl-4">
-              <p
-                className={`truncate text-[11px] font-semibold ${replyLabelClassName}`}
-              >
-                {replyAuthorLabel}
-              </p>
-              <p
-                className={`truncate text-sm leading-relaxed ${replyPreviewClassName}`}
-              >
-                {replyPreviewText}
-              </p>
+        <div className={replyPanelContainerClassName}>
+          {isReplyPanelInteractive ? (
+            <button
+              type="button"
+              className={`relative block w-full min-w-0 overflow-hidden rounded-lg text-left transition-colors ${replyPanelClassName} cursor-pointer`}
+              onClick={activateReplyPanel}
+              aria-label={`Buka pesan yang dibalas dari ${replyAuthorLabel}`}
+            >
+              <span
+                aria-hidden="true"
+                className={`absolute inset-y-0 left-0 w-1 rounded-l-lg ${replyPanelStripeClassName}`}
+              />
+              <div className="min-w-0 pt-0.5 pr-1.5 pb-0.5 pl-2.5">
+                <p
+                  className={`truncate text-[11px] font-semibold ${replyLabelClassName}`}
+                >
+                  {replyAuthorLabel}
+                </p>
+                <p
+                  className={`truncate text-xs leading-relaxed ${replyPreviewClassName}`}
+                >
+                  {replyPreviewText}
+                </p>
+              </div>
+            </button>
+          ) : (
+            <div
+              className={`relative min-w-0 overflow-hidden rounded-lg text-left transition-colors ${replyPanelClassName}`}
+            >
+              <span
+                aria-hidden="true"
+                className={`absolute inset-y-0 left-0 w-1 rounded-l-lg ${replyPanelStripeClassName}`}
+              />
+              <div className="min-w-0 pt-0.5 pr-1.5 pb-0.5 pl-2.5">
+                <p
+                  className={`truncate text-[11px] font-semibold ${replyLabelClassName}`}
+                >
+                  {replyAuthorLabel}
+                </p>
+                <p
+                  className={`truncate text-xs leading-relaxed ${replyPreviewClassName}`}
+                >
+                  {replyPreviewText}
+                </p>
+              </div>
             </div>
-          </button>
-        ) : (
-          <div
-            className={`relative mb-2 min-w-0 overflow-hidden rounded-lg text-left transition-colors ${replyPanelClassName}`}
-          >
-            <span
-              aria-hidden="true"
-              className={`absolute inset-y-0 left-0 w-1 rounded-l-lg ${replyPanelStripeClassName}`}
-            />
-            <div className="min-w-0 px-2 py-1 pl-4">
-              <p
-                className={`truncate text-[11px] font-semibold ${replyLabelClassName}`}
-              >
-                {replyAuthorLabel}
-              </p>
-              <p
-                className={`truncate text-sm leading-relaxed ${replyPreviewClassName}`}
-              >
-                {replyPreviewText}
-              </p>
-            </div>
-          </div>
-        )
+          )}
+        </div>
       ) : null}
       {isImageAttachmentGroup && groupedImageMessages ? (
         <MessageImageAttachmentGroupContent
@@ -270,35 +277,44 @@ export const MessageItemBubble = ({
           handleReplyMessage={handleReplyMessage}
         />
       ) : (
-        <MessageBubbleContent
-          message={message}
-          resolvedMessageUrl={resolvedMessageUrl}
-          isSelectionMode={isSelectionMode}
-          disableTextLinks={disableTextLinks}
-          isImageMessage={isImageMessage}
-          isFileMessage={isFileMessage}
-          isImageFileMessage={isImageFileMessage}
-          isPdfFileMessage={isPdfFileMessage}
-          hasAttachmentCaption={hasAttachmentCaption}
-          fileName={fileName}
-          fileSecondaryLabel={fileSecondaryLabel}
-          fileIcon={fileIcon}
-          resolvedPdfPreviewUrl={resolvedPdfPreviewUrl}
-          pdfMetaLabel={pdfMetaLabel}
-          highlightedMessage={highlightedMessage}
-          highlightedCaption={highlightedCaption}
-          hasLeadingEllipsis={collapsedSearchSnippet.hasLeadingEllipsis}
-          hasTrailingEllipsis={collapsedSearchSnippet.hasTrailingEllipsis}
-          isMessageLong={isMessageLong}
-          isExpanded={isExpanded}
-          isHighlightedBubble={isFlashingTarget}
-          onToggleExpand={() => handleToggleExpand(message.id)}
-        />
+        <div
+          className={
+            shouldUseIndependentReplyPanelPadding ? 'px-3 pt-0 pb-2' : ''
+          }
+        >
+          <MessageBubbleContent
+            message={message}
+            isCurrentUser={isCurrentUser}
+            resolvedMessageUrl={resolvedMessageUrl}
+            isSelectionMode={isSelectionMode}
+            disableTextLinks={disableTextLinks}
+            isImageMessage={isImageMessage}
+            isFileMessage={isFileMessage}
+            isImageFileMessage={isImageFileMessage}
+            isPdfFileMessage={isPdfFileMessage}
+            hasAttachmentCaption={hasAttachmentCaption}
+            fileName={fileName}
+            fileSecondaryLabel={fileSecondaryLabel}
+            fileIcon={fileIcon}
+            resolvedPdfPreviewUrl={resolvedPdfPreviewUrl}
+            pdfMetaLabel={pdfMetaLabel}
+            highlightedMessage={highlightedMessage}
+            highlightedCaption={highlightedCaption}
+            hasLeadingEllipsis={collapsedSearchSnippet.hasLeadingEllipsis}
+            hasTrailingEllipsis={collapsedSearchSnippet.hasTrailingEllipsis}
+            isMessageLong={isMessageLong}
+            isExpanded={isExpanded}
+            isHighlightedBubble={isFlashingTarget}
+            onToggleExpand={() => handleToggleExpand(message.id)}
+          />
+        </div>
       )}
     </>
   );
 
-  const bubbleClassName = `${bubbleWrapperClass} max-w-full ${bubbleSpacingClass} ${bubbleTypographyClass} ${bubbleToneClass} ${bubbleOpacityClass} ${
+  const bubbleClassName = `${bubbleWrapperClass} max-w-full ${
+    shouldUseIndependentReplyPanelPadding ? 'p-0' : bubbleSpacingClass
+  } ${bubbleTypographyClass} ${bubbleToneClass} ${bubbleOpacityClass} ${
     bubbleShapeClass
   } ${
     isActiveSearchMatch

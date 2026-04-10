@@ -59,6 +59,7 @@ vi.mock('../hooks/useDocumentPreviewPortal', () => ({
 }));
 
 describe('useMessagesPanePreviews', () => {
+  const closeMessageMenu = vi.fn();
   const flushMicrotasks = async (count = 4) => {
     for (let index = 0; index < count; index += 1) {
       await Promise.resolve();
@@ -86,6 +87,7 @@ describe('useMessagesPanePreviews', () => {
     mockFetchChatFileBlobWithFallback.mockResolvedValue(null);
     mockFetchPdfBlobWithFallback.mockResolvedValue(null);
     mockOpenDocumentPreview.mockResolvedValue(true);
+    closeMessageMenu.mockReset();
     window.matchMedia = vi.fn().mockImplementation(() => ({
       matches: false,
       media: '',
@@ -115,6 +117,7 @@ describe('useMessagesPanePreviews', () => {
     const { result } = renderHook(() =>
       useMessagesPanePreviews({
         currentChannelId: 'dm_user-a_user-b',
+        closeMessageMenu,
       })
     );
 
@@ -137,6 +140,7 @@ describe('useMessagesPanePreviews', () => {
     );
     expect(result.current.imagePreviewUrl).toBe('blob:full-image-single-1');
     expect(mockEnsureChannelImageAssetUrl).not.toHaveBeenCalled();
+    expect(closeMessageMenu).toHaveBeenCalledTimes(1);
   });
 
   it('opens grouped image previews with cached full assets for the active item', async () => {
@@ -152,6 +156,7 @@ describe('useMessagesPanePreviews', () => {
     const { result } = renderHook(() =>
       useMessagesPanePreviews({
         currentChannelId: 'dm_user-a_user-b',
+        closeMessageMenu,
       })
     );
 
@@ -181,6 +186,7 @@ describe('useMessagesPanePreviews', () => {
     });
 
     expect(result.current.activeImageGroupPreviewId).toBe('image-b');
+    expect(closeMessageMenu).toHaveBeenCalledTimes(1);
     expect(result.current.imageGroupPreviewItems).toEqual([
       {
         id: 'image-a',
@@ -212,6 +218,7 @@ describe('useMessagesPanePreviews', () => {
     const { result } = renderHook(() =>
       useMessagesPanePreviews({
         currentChannelId: 'dm_user-a_user-b',
+        closeMessageMenu,
       })
     );
 
@@ -274,6 +281,7 @@ describe('useMessagesPanePreviews', () => {
     const { result } = renderHook(() =>
       useMessagesPanePreviews({
         currentChannelId: 'dm_user-a_user-b',
+        closeMessageMenu,
       })
     );
 
@@ -293,6 +301,7 @@ describe('useMessagesPanePreviews', () => {
     expect(replace).toHaveBeenCalledWith('https://example.com/invoice.pdf');
     expect(mockOpenDocumentPreview).not.toHaveBeenCalled();
     expect(close).not.toHaveBeenCalled();
+    expect(closeMessageMenu).toHaveBeenCalledTimes(1);
   });
 
   it('falls back to the in-app portal when coarse-pointer tab opening is blocked', async () => {
@@ -311,6 +320,7 @@ describe('useMessagesPanePreviews', () => {
     const { result } = renderHook(() =>
       useMessagesPanePreviews({
         currentChannelId: 'dm_user-a_user-b',
+        closeMessageMenu,
       })
     );
 
@@ -327,5 +337,6 @@ describe('useMessagesPanePreviews', () => {
     });
 
     expect(mockOpenDocumentPreview).toHaveBeenCalledTimes(1);
+    expect(closeMessageMenu).toHaveBeenCalledTimes(1);
   });
 });

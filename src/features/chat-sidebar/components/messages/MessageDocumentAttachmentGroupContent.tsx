@@ -386,14 +386,14 @@ export const MessageDocumentAttachmentGroupContent = ({
                       isCurrentUserGroup ? 'left' : 'right'
                     );
                   }}
-                  className={`flex w-full cursor-pointer items-center gap-2 rounded-xl border p-1 text-left transition-colors ${
+                  className={`flex w-full cursor-pointer items-center gap-2 rounded-lg p-1 text-left transition-colors ${
                     isCurrentUserGroup
                       ? 'border-emerald-50 bg-emerald-50/85 hover:bg-emerald-50/90'
-                      : 'border-slate-200 bg-slate-50 hover:bg-slate-100/90'
+                      : 'bg-slate-50 hover:bg-slate-100/90'
                   }`}
                 >
                   {resolvedPdfPreviewUrl ? (
-                    <div className="h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-slate-300 bg-white">
+                    <div className="h-11 w-11 shrink-0 overflow-hidden rounded-md bg-white">
                       <img
                         src={resolvedPdfPreviewUrl}
                         alt="PDF cover preview"

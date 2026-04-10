@@ -12,6 +12,7 @@ import { copyTextToClipboard } from '../../utils/clipboard';
 
 interface MessageBubbleContentProps {
   message: ChatMessage;
+  isCurrentUser: boolean;
   resolvedMessageUrl: string | null;
   isSelectionMode: boolean;
   disableTextLinks: boolean;
@@ -46,6 +47,7 @@ type LinkContextMenuState = {
 };
 
 export const MessageBubbleContent = ({
+  isCurrentUser,
   resolvedMessageUrl,
   isSelectionMode,
   disableTextLinks,
@@ -158,7 +160,7 @@ export const MessageBubbleContent = ({
       </div>
     </div>
   ) : isPdfFileMessage ? (
-    <div className="w-full overflow-hidden rounded-xl bg-white/65 text-slate-800">
+    <div className="w-full overflow-hidden rounded-lg bg-white/65 text-slate-800">
       <div className="h-32 w-full overflow-hidden border-b border-slate-200 bg-white">
         {resolvedPdfPreviewUrl ? (
           <img
@@ -173,7 +175,11 @@ export const MessageBubbleContent = ({
           </div>
         )}
       </div>
-      <div className="flex items-center gap-2 px-2 py-2">
+      <div
+        className={`flex items-center gap-2 px-2 py-2 ${
+          isCurrentUser ? 'bg-emerald-50' : 'bg-slate-50'
+        }`}
+      >
         <TbFileTypePdf className="h-8 w-8 shrink-0 text-slate-600" />
         <div className="min-w-0 flex-1 overflow-hidden">
           <p className="block w-full truncate text-sm font-medium text-slate-800">
@@ -184,7 +190,7 @@ export const MessageBubbleContent = ({
       </div>
     </div>
   ) : isFileMessage ? (
-    <div className="flex w-full min-w-0 max-w-full items-center gap-2 rounded-xl bg-white/65 px-2 py-2 text-slate-800">
+    <div className="flex w-full min-w-0 max-w-full items-center gap-2 rounded-lg bg-white/65 px-2 py-2 text-slate-800">
       {fileIcon}
       <div className="min-w-0 flex-1 overflow-hidden">
         <p className="block w-full truncate text-sm font-medium text-slate-800">

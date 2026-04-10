@@ -11,8 +11,10 @@ import {
 
 export const useMessagesPanePreviews = ({
   currentChannelId,
+  closeMessageMenu,
 }: {
   currentChannelId: string | null;
+  closeMessageMenu: () => void;
 }) => {
   const {
     previewUrl: documentPreviewUrl,
@@ -24,10 +26,32 @@ export const useMessagesPanePreviews = ({
   const {
     clearImagePreviewStateImmediately,
     clearImageGroupPreviewStateImmediately,
+    openImageInPortal: openImageInPortalBase,
+    openImageGroupInPortal: openImageGroupInPortalBase,
     ...imagePreviews
   } = useMessagesPaneImagePreviews({
     currentChannelId,
   });
+
+  const openImageInPortal = useCallback(
+    async (
+      ...args: Parameters<typeof openImageInPortalBase>
+    ): Promise<void> => {
+      closeMessageMenu();
+      await openImageInPortalBase(...args);
+    },
+    [closeMessageMenu, openImageInPortalBase]
+  );
+
+  const openImageGroupInPortal = useCallback(
+    async (
+      ...args: Parameters<typeof openImageGroupInPortalBase>
+    ): Promise<void> => {
+      closeMessageMenu();
+      await openImageGroupInPortalBase(...args);
+    },
+    [closeMessageMenu, openImageGroupInPortalBase]
+  );
 
   const openDocumentInPortal = useCallback(
     async (
@@ -35,6 +59,7 @@ export const useMessagesPanePreviews = ({
       previewName: string,
       forcePdfMime = false
     ) => {
+      closeMessageMenu();
       clearImagePreviewStateImmediately();
       clearImageGroupPreviewStateImmediately();
 
@@ -96,6 +121,7 @@ export const useMessagesPanePreviews = ({
       }
     },
     [
+      closeMessageMenu,
       clearImageGroupPreviewStateImmediately,
       clearImagePreviewStateImmediately,
       openDocumentPreview,
@@ -108,6 +134,8 @@ export const useMessagesPanePreviews = ({
     isDocumentPreviewVisible,
     closeDocumentPreview,
     ...imagePreviews,
+    openImageInPortal,
+    openImageGroupInPortal,
     openDocumentInPortal,
   };
 };

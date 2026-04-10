@@ -51,7 +51,10 @@ export const useChatSidebarPreviewState = ({
   getAttachmentFileKind,
   captionData,
 }: UseChatSidebarPreviewStateProps) => {
-  const panePreviews = useMessagesPanePreviews({ currentChannelId });
+  const panePreviews = useMessagesPanePreviews({
+    currentChannelId,
+    closeMessageMenu,
+  });
   const assetPreviews = useChatSidebarAssetPreviews({
     currentChannelId,
     messages,
