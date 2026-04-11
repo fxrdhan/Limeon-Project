@@ -192,6 +192,45 @@ export const useChatViewportScroll = ({
     composerResizeBottomSyncTimeoutRef.current = window.setTimeout(step, 16);
   }, [pinViewportToBottom, scheduleVisibleUnreadReadReceipts]);
 
+  const preserveViewportDuringComposerResize = useCallback(
+    (
+      previousComposerContainerHeight: number,
+      nextComposerContainerHeight: number
+    ) => {
+      const container = messagesContainerRef.current;
+      if (!container) {
+        return;
+      }
+
+      const composerHeightDelta =
+        nextComposerContainerHeight - previousComposerContainerHeight;
+      if (Math.abs(composerHeightDelta) < 0.5) {
+        return;
+      }
+
+      const nextScrollTop = Math.min(
+        Math.max(container.scrollTop + composerHeightDelta, 0),
+        Math.max(0, container.scrollHeight - container.clientHeight)
+      );
+
+      if (Math.abs(nextScrollTop - container.scrollTop) < 0.5) {
+        return;
+      }
+
+      if (typeof container.scrollTo === 'function') {
+        container.scrollTo({
+          top: nextScrollTop,
+          behavior: 'auto',
+        });
+      } else {
+        container.scrollTop = nextScrollTop;
+      }
+
+      scheduleVisibleUnreadReadReceipts();
+    },
+    [messagesContainerRef, scheduleVisibleUnreadReadReceipts]
+  );
+
   const animateScrollToBottom = useCallback(() => {
     const metrics = getBottomScrollMetrics();
     if (!metrics) return;
@@ -301,19 +340,27 @@ export const useChatViewportScroll = ({
       !currentChannelId ||
       shouldPinToBottomOnOpenRef.current ||
       previousComposerContainerHeight === null ||
-      previousComposerContainerHeight === composerContainerHeight ||
-      !shouldMaintainBottom
+      previousComposerContainerHeight === composerContainerHeight
     ) {
       return;
     }
 
-    shouldMaintainBottomDuringComposerResizeRef.current = true;
-    maintainBottomDuringComposerResize();
+    if (shouldMaintainBottom) {
+      shouldMaintainBottomDuringComposerResizeRef.current = true;
+      maintainBottomDuringComposerResize();
+      return;
+    }
+
+    preserveViewportDuringComposerResize(
+      previousComposerContainerHeight,
+      composerContainerHeight
+    );
   }, [
     composerContainerHeight,
     currentChannelId,
     isOpen,
     maintainBottomDuringComposerResize,
+    preserveViewportDuringComposerResize,
   ]);
 
   useEffect(() => {
