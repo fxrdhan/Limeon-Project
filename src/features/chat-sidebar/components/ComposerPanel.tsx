@@ -73,7 +73,10 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
               layout
               initial={false}
               transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
-              className="mb-2 flex h-0 min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border bg-white"
+              className="mb-[-1px] flex h-0 min-h-0 flex-1 flex-col overflow-hidden rounded-t-3xl rounded-b-none border border-b-0 bg-white"
+              style={{
+                borderColor: COMPOSER_BASE_BORDER_COLOR,
+              }}
             >
               <div className="grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)_auto] px-2.5 py-2.5">
                 <AnimatePresence initial={false} mode="popLayout">
@@ -187,19 +190,23 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                       'oklch(50.8% 0.118 165.612 / 0.22)',
                       COMPOSER_BASE_BORDER_COLOR,
                     ],
-                    boxShadow: [
-                      COMPOSER_BASE_SHADOW,
-                      COMPOSER_GLOW_SHADOW_PEAK,
-                      COMPOSER_GLOW_SHADOW_HIGH,
-                      COMPOSER_GLOW_SHADOW_MID,
-                      COMPOSER_GLOW_SHADOW_FADE,
-                      COMPOSER_GLOW_SHADOW_LOW,
-                      COMPOSER_BASE_SHADOW,
-                    ],
+                    boxShadow: hasComposerAttachmentTray
+                      ? 'none'
+                      : [
+                          COMPOSER_BASE_SHADOW,
+                          COMPOSER_GLOW_SHADOW_PEAK,
+                          COMPOSER_GLOW_SHADOW_HIGH,
+                          COMPOSER_GLOW_SHADOW_MID,
+                          COMPOSER_GLOW_SHADOW_FADE,
+                          COMPOSER_GLOW_SHADOW_LOW,
+                          COMPOSER_BASE_SHADOW,
+                        ],
                   }
                 : {
                     borderColor: COMPOSER_BASE_BORDER_COLOR,
-                    boxShadow: COMPOSER_BASE_SHADOW,
+                    boxShadow: hasComposerAttachmentTray
+                      ? 'none'
+                      : COMPOSER_BASE_SHADOW,
                   }
             }
             transition={
@@ -216,12 +223,20 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                     ease: 'easeOut',
                   }
             }
-            className="relative z-10 shrink-0 rounded-2xl border bg-white"
+            className={`relative z-10 shrink-0 border bg-white ${
+              hasComposerAttachmentTray
+                ? 'rounded-t-none rounded-b-3xl border-t-0'
+                : 'rounded-3xl'
+            }`}
           >
             <motion.div
               layout
               transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
-              className="relative z-10 rounded-[15px] bg-white px-2.5 py-2.5 transition-[height,padding] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
+              className={`relative z-10 bg-white px-2.5 py-2.5 transition-[height,padding] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                hasComposerAttachmentTray
+                  ? 'rounded-t-none rounded-b-[18px]'
+                  : 'rounded-[18px]'
+              }`}
             >
               <AnimatePresence initial={false} mode="popLayout">
                 {composer.editingMessagePreview ? (
