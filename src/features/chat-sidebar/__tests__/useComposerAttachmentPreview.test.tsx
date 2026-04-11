@@ -116,6 +116,52 @@ const ComposerAttachmentPreviewHarness = ({
   );
 };
 
+const ComposerAttachmentPreviewMultiHarness = ({
+  attachments,
+}: {
+  attachments: PendingComposerAttachment[];
+}) => {
+  const preview = useComposerAttachmentPreview({
+    pendingComposerAttachments: attachments,
+    onOpenImageActionsMenu: vi.fn(),
+    onAttachImageClick: vi.fn(),
+    onAttachDocumentClick: vi.fn(),
+    onCompressPendingComposerImage: vi.fn().mockResolvedValue(true),
+    onCompressPendingComposerPdf: vi.fn().mockResolvedValue(true),
+    onRemovePendingComposerAttachment: vi.fn(),
+    onOpenComposerImagePreview: vi.fn(),
+  });
+
+  return (
+    <div>
+      {attachments.map(attachment => {
+        const isMenuOpen =
+          preview.openImageActionsAttachmentId === attachment.id;
+
+        return (
+          <button
+            key={attachment.id}
+            type="button"
+            ref={isMenuOpen ? preview.imageActionsButtonRef : undefined}
+            data-chat-composer-attachment-action-trigger="true"
+            onClick={event =>
+              preview.handleToggleImageActionsMenu(event, attachment.id)
+            }
+          >
+            {attachment.id}
+          </button>
+        );
+      })}
+      <span data-testid="multi-open-id">
+        {preview.openImageActionsAttachmentId ?? ''}
+      </span>
+      <span data-testid="multi-menu-position">
+        {preview.imageActionsMenuPosition ? 'open' : 'closed'}
+      </span>
+    </div>
+  );
+};
+
 describe('useComposerAttachmentPreview', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -303,5 +349,44 @@ describe('useComposerAttachmentPreview', () => {
     expect(screen.getByTestId('compression-menu-position').textContent).toBe(
       'closed'
     );
+  });
+
+  it('keeps the composer menu mounted when switching between attachment triggers', () => {
+    render(
+      <ComposerAttachmentPreviewMultiHarness
+        attachments={[
+          buildAttachment({ id: 'attachment-a' }),
+          buildAttachment({
+            id: 'attachment-b',
+            fileName: 'foto-b.png',
+            previewUrl: 'blob:preview-b',
+          }),
+        ]}
+      />
+    );
+
+    const firstTrigger = screen.getByRole('button', { name: 'attachment-a' });
+    const secondTrigger = screen.getByRole('button', { name: 'attachment-b' });
+
+    fireEvent.click(firstTrigger);
+
+    expect(screen.getByTestId('multi-open-id').textContent).toBe(
+      'attachment-a'
+    );
+    expect(screen.getByTestId('multi-menu-position').textContent).toBe('open');
+
+    fireEvent.mouseDown(secondTrigger);
+
+    expect(screen.getByTestId('multi-open-id').textContent).toBe(
+      'attachment-a'
+    );
+    expect(screen.getByTestId('multi-menu-position').textContent).toBe('open');
+
+    fireEvent.click(secondTrigger);
+
+    expect(screen.getByTestId('multi-open-id').textContent).toBe(
+      'attachment-b'
+    );
+    expect(screen.getByTestId('multi-menu-position').textContent).toBe('open');
   });
 });

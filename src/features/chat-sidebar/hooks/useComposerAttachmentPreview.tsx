@@ -25,6 +25,8 @@ const IMAGE_ACTIONS_MENU_FALLBACK_HEIGHT = 128;
 const PDF_COMPRESSION_LEVELS_MENU_SIDE_GAP = 6;
 const PDF_COMPRESSION_LEVELS_MENU_FALLBACK_WIDTH = 168;
 const PDF_COMPRESSION_LEVELS_MENU_FALLBACK_HEIGHT = 180;
+const COMPOSER_ATTACHMENT_ACTION_TRIGGER_SELECTOR =
+  '[data-chat-composer-attachment-action-trigger="true"]';
 
 interface UseComposerAttachmentPreviewProps {
   pendingComposerAttachments: PendingComposerAttachment[];
@@ -532,6 +534,12 @@ export const useComposerAttachmentPreview = ({
       if (imageActionsMenuRef.current?.contains(target)) return;
       if (pdfCompressionMenuRef.current?.contains(target)) return;
       if (imageActionsButtonRef.current?.contains(target)) return;
+      if (
+        target instanceof Element &&
+        target.closest(COMPOSER_ATTACHMENT_ACTION_TRIGGER_SELECTOR)
+      ) {
+        return;
+      }
       closeImageActionsMenu();
     };
 

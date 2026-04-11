@@ -42,7 +42,7 @@ export const ComposerAttachmentActionMenus = ({
         ? createPortal(
             <PopupMenuPopover
               isOpen
-              className="fixed z-[120] origin-top-right"
+              className="fixed z-[120] origin-top-right transition-[top,left] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)]"
               style={{
                 top: imageActionsMenuPosition.top,
                 left: imageActionsMenuPosition.left,
@@ -70,7 +70,7 @@ export const ComposerAttachmentActionMenus = ({
         ? createPortal(
             <PopupMenuPopover
               isOpen
-              className="fixed z-[121] origin-top-right"
+              className="fixed z-[121] origin-top-right transition-[top,left] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)]"
               style={{
                 top: pdfCompressionMenuPosition.top,
                 left: pdfCompressionMenuPosition.left,

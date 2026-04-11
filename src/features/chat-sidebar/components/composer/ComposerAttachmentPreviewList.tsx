@@ -293,6 +293,7 @@ const ComposerAttachmentPreviewList = forwardRef<
                       aria-pressed={
                         isSelectionMode ? isSelectedAttachment : undefined
                       }
+                      data-chat-composer-attachment-action-trigger="true"
                       className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-xl text-left transition-colors hover:bg-slate-100/90"
                       onClick={event => {
                         event.stopPropagation();
@@ -345,6 +346,7 @@ const ComposerAttachmentPreviewList = forwardRef<
                       aria-pressed={
                         isSelectionMode ? isSelectedAttachment : undefined
                       }
+                      data-chat-composer-attachment-action-trigger="true"
                       className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-xl text-left transition-colors hover:bg-slate-100/90"
                       onClick={event => {
                         event.stopPropagation();
