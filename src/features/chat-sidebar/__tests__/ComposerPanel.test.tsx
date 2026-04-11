@@ -585,9 +585,8 @@ describe('ComposerPanel', () => {
     const composerContainer = runtime.refs.composerContainerRef.current;
 
     expect(composerContainer).toBeTruthy();
-    expect(composerContainer?.className).toContain('shrink-0');
+    expect(composerContainer?.className).toContain('flex-1');
     expect(composerContainer?.className).toContain('pointer-events-auto');
-    expect(composerContainer?.className).not.toContain('flex-1');
     expect(composerContainer).toContain(
       screen.getByTestId('composer-attachment-preview-list')
     );

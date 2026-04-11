@@ -8,6 +8,7 @@ import {
   it,
   vi,
 } from 'vite-plus/test';
+import { MESSAGE_BOTTOM_GAP } from '../constants';
 import { useChatViewport } from '../hooks/useChatViewport';
 
 const createRect = (top: number, bottom: number): DOMRect =>
@@ -1518,11 +1519,13 @@ describe('useChatViewport', () => {
       vi.runAllTimers();
     });
 
+    const expectedScrollTop = endMarkerContentTop - (280 - MESSAGE_BOTTOM_GAP);
+
     expect(scrollTo).toHaveBeenCalledWith({
       behavior: 'auto',
-      top: 492,
+      top: expectedScrollTop,
     });
-    expect(scrollTop).toBe(492);
+    expect(scrollTop).toBe(expectedScrollTop);
 
     unmount();
   });

@@ -4,6 +4,7 @@ import {
   type MutableRefObject,
   type RefObject,
 } from 'react';
+import { getComposerVisibleStackMetrics } from '../utils/composer-stack-metrics';
 import type { VisibleBounds } from '../utils/viewport-visibility';
 import { useComposerContainerHeight } from './useComposerContainerHeight';
 import { useChatViewportFocus } from './useChatViewportFocus';
@@ -74,8 +75,9 @@ export const useChatViewport = ({
       messagesContainerRef.current?.getBoundingClientRect() ?? null;
     if (!containerRect) return null;
 
-    const composerTop =
-      composerContainerRef.current?.getBoundingClientRect().top;
+    const composerTop = getComposerVisibleStackMetrics(
+      composerContainerRef.current
+    )?.top;
     const hasValidComposerTop =
       typeof composerTop === 'number' &&
       Number.isFinite(composerTop) &&

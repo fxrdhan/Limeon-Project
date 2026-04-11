@@ -1,4 +1,5 @@
 import { useLayoutEffect, useState, type RefObject } from 'react';
+import { getComposerVisibleStackMetrics } from '../utils/composer-stack-metrics';
 
 interface UseComposerContainerHeightProps {
   composerContainerRef: RefObject<HTMLDivElement | null>;
@@ -22,7 +23,11 @@ export const useComposerContainerHeight = ({
     if (!composerContainer) return;
 
     const updateComposerContainerHeight = () => {
-      setComposerContainerHeight(composerContainer.offsetHeight);
+      const visibleStackMetrics =
+        getComposerVisibleStackMetrics(composerContainer);
+      setComposerContainerHeight(
+        visibleStackMetrics ? Math.round(visibleStackMetrics.height) : 0
+      );
     };
 
     updateComposerContainerHeight();
@@ -31,6 +36,11 @@ export const useComposerContainerHeight = ({
       updateComposerContainerHeight();
     });
     resizeObserver.observe(composerContainer);
+    Array.from(composerContainer.children).forEach(child => {
+      if (child instanceof HTMLElement) {
+        resizeObserver.observe(child);
+      }
+    });
 
     return () => {
       resizeObserver.disconnect();
