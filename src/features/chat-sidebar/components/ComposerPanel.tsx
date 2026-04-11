@@ -211,7 +211,7 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                         className="pointer-events-none absolute inset-x-0 -top-2.5 h-[calc(100%+0.625rem)]"
                         style={{
                           background:
-                            'linear-gradient(to top, rgba(255,255,255,0) 0%, rgba(255,255,255,0.22) 20%, rgba(255,255,255,0.58) 46%, rgba(255,255,255,0.9) 72%, rgba(255,255,255,1) 100%)',
+                            'linear-gradient(to top, rgba(255,255,255,0) 0%, rgba(255,255,255,0.34) 18%, rgba(255,255,255,0.72) 42%, rgba(255,255,255,0.96) 68%, rgba(255,255,255,1) 84%, rgba(255,255,255,1) 100%)',
                         }}
                       />
                       <div className="absolute inset-x-0 top-0 flex items-start justify-between px-1 pt-0.5">
@@ -240,7 +240,7 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                         className="pointer-events-none absolute inset-x-0 -top-2.5 h-[calc(100%+0.625rem)]"
                         style={{
                           background:
-                            'linear-gradient(to top, rgba(255,255,255,0) 0%, rgba(255,255,255,0.22) 20%, rgba(255,255,255,0.58) 46%, rgba(255,255,255,0.9) 72%, rgba(255,255,255,1) 100%)',
+                            'linear-gradient(to top, rgba(255,255,255,0) 0%, rgba(255,255,255,0.34) 18%, rgba(255,255,255,0.72) 42%, rgba(255,255,255,0.96) 68%, rgba(255,255,255,1) 84%, rgba(255,255,255,1) 100%)',
                         }}
                       />
                     </motion.div>
@@ -264,7 +264,7 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                       style={{
                         background: isComposerAttachmentTrayScrolledToBottom
                           ? 'rgb(255,255,255)'
-                          : 'linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.22) 20%, rgba(255,255,255,0.58) 46%, rgba(255,255,255,0.9) 72%, rgba(255,255,255,1) 100%)',
+                          : 'linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.34) 18%, rgba(255,255,255,0.72) 42%, rgba(255,255,255,0.96) 68%, rgba(255,255,255,1) 84%, rgba(255,255,255,1) 100%)',
                       }}
                     />
                     {previews.isComposerAttachmentSelectionMode ? (
