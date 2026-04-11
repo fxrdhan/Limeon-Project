@@ -290,6 +290,7 @@ export const MessageItemBubble = ({
           <MessageBubbleContent
             message={message}
             isCurrentUser={isCurrentUser}
+            messageDeliveryStatus={messageDeliveryStatus}
             resolvedMessageUrl={resolvedMessageUrl}
             isSelectionMode={isSelectionMode}
             disableTextLinks={disableTextLinks}

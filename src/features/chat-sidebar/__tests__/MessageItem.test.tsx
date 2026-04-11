@@ -258,6 +258,32 @@ describe('MessageItem', () => {
     expect(initialPreviewUrl).toBe('images/channel/chat-1.png');
   });
 
+  it('shows an upload overlay while a grouped image bubble still has temp messages', () => {
+    const groupedMessages = Array.from({ length: 4 }, (_, index) => ({
+      ...baseMessage,
+      id: `temp_image_${index + 1}`,
+      message: `blob:image-${index + 1}`,
+      message_type: 'image' as const,
+      file_mime_type: 'image/png',
+      file_storage_path: `images/channel/chat-${index + 1}.png`,
+      file_name: `Chat-${index + 1}.png`,
+    }));
+
+    render(
+      <MessageItem
+        model={createModel({
+          message: groupedMessages[3],
+          content: {
+            groupedImageMessages: groupedMessages,
+            getImageMessageUrl: targetMessage => targetMessage.message,
+          },
+        })}
+      />
+    );
+
+    expect(screen.getByText('Mengunggah 4 gambar')).toBeTruthy();
+  });
+
   it('anchors grouped image menus to the outer bubble instead of the inner grid button', () => {
     const groupedMessages = Array.from({ length: 4 }, (_, index) => ({
       ...baseMessage,

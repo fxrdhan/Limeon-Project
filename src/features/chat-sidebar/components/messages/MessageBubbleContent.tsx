@@ -9,10 +9,12 @@ import { TbArrowUpRight, TbCopy, TbFileTypePdf } from 'react-icons/tb';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../../constants';
 import type { ChatMessage } from '../../data/chatSidebarGateway';
 import { copyTextToClipboard } from '../../utils/clipboard';
+import type { MessageDeliveryStatus } from './MessageBubbleMeta';
 
 interface MessageBubbleContentProps {
   message: ChatMessage;
   isCurrentUser: boolean;
+  messageDeliveryStatus: MessageDeliveryStatus | null;
   resolvedMessageUrl: string | null;
   isSelectionMode: boolean;
   disableTextLinks: boolean;
@@ -48,6 +50,7 @@ type LinkContextMenuState = {
 
 export const MessageBubbleContent = ({
   isCurrentUser,
+  messageDeliveryStatus,
   resolvedMessageUrl,
   isSelectionMode,
   disableTextLinks,
@@ -143,7 +146,7 @@ export const MessageBubbleContent = ({
 
   const mainContent = isSquareImageAttachment ? (
     <div className="w-full overflow-hidden rounded-lg bg-slate-100">
-      <div className="aspect-square w-full overflow-hidden">
+      <div className="relative aspect-square w-full overflow-hidden">
         {resolvedMessageUrl ? (
           <img
             src={resolvedMessageUrl}
@@ -157,6 +160,17 @@ export const MessageBubbleContent = ({
             Memuat gambar...
           </div>
         )}
+        {messageDeliveryStatus === 'sending' ? (
+          <div className="pointer-events-none absolute inset-0 flex items-end justify-start bg-slate-950/24 p-2">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/92 px-2.5 py-1 text-[11px] font-medium text-slate-700 shadow-sm">
+              <span
+                aria-hidden="true"
+                className="h-2 w-2 animate-pulse rounded-full bg-emerald-500"
+              />
+              <span>Mengunggah gambar</span>
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   ) : isPdfFileMessage ? (

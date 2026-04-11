@@ -11,7 +11,12 @@ import {
 import { buildPendingFileComposerAttachment } from '../utils/pending-composer-attachment';
 import { clearPersistedComposerDraftAttachments } from '../utils/composer-draft-persistence';
 import {
+  appendOptimisticAttachmentThread,
+  createOptimisticAttachmentThread,
+} from '../utils/attachment-send';
+import {
   useChatAttachmentSend,
+  type PreparedComposerAttachmentOptimisticState,
   type SendableComposerAttachment,
 } from './useChatAttachmentSend';
 import { sendTextChatMessage } from '../utils/text-message-send';
@@ -98,6 +103,12 @@ const buildPendingAttachmentSendPlan = (
     })),
   };
 };
+
+const shouldPreappendBulkImageOptimisticBatch = (
+  attachments: PendingComposerAttachment[]
+) =>
+  attachments.length > 1 &&
+  attachments.every(attachment => attachment.fileKind === 'image');
 
 export const useChatComposerSend = ({
   user,
@@ -244,6 +255,84 @@ export const useChatComposerSend = ({
 
       clearPendingComposerAttachments();
 
+      const optimisticAttachmentStateById = new Map<
+        string,
+        PreparedComposerAttachmentOptimisticState
+      >();
+
+      if (
+        user &&
+        targetUser &&
+        currentChannelId &&
+        shouldPreappendBulkImageOptimisticBatch(attachmentsToSend)
+      ) {
+        const baseTimestamp = Date.now();
+        let optimisticMessagesBatch: ChatMessage[] | null = null;
+
+        sendPlan.jobs.forEach(
+          ({ attachment, captionText }, attachmentIndex) => {
+            const localPreviewUrl = URL.createObjectURL(attachment.file);
+            const timestamp = new Date(
+              baseTimestamp + attachmentIndex
+            ).toISOString();
+            const optimisticThread = createOptimisticAttachmentThread({
+              tempIdPrefix: 'temp_image',
+              stableKeySuffix: 'image',
+              captionText,
+              currentChannelId,
+              localPreviewUrl,
+              timestamp,
+              user,
+              targetUser,
+              replyToId,
+              buildOptimisticMessage: ({
+                tempId,
+                stableKey,
+                localPreviewUrl: optimisticPreviewUrl,
+                timestamp: optimisticTimestamp,
+                replyToId: optimisticReplyToId,
+              }) => ({
+                id: tempId,
+                sender_id: user.id,
+                receiver_id: targetUser.id,
+                channel_id: currentChannelId,
+                message: optimisticPreviewUrl,
+                message_type: 'image',
+                created_at: optimisticTimestamp,
+                updated_at: optimisticTimestamp,
+                is_read: false,
+                reply_to_id: optimisticReplyToId ?? null,
+                sender_name: user.name || 'You',
+                receiver_name: targetUser.name || 'Unknown',
+                stableKey,
+              }),
+            });
+
+            optimisticAttachmentStateById.set(attachment.id, {
+              appendBeforeSend: false,
+              localPreviewUrl,
+              thread: optimisticThread,
+            });
+
+            optimisticMessagesBatch = appendOptimisticAttachmentThread(
+              optimisticMessagesBatch ?? [],
+              optimisticThread
+            );
+          }
+        );
+
+        if (optimisticMessagesBatch) {
+          const nextOptimisticMessagesBatch = optimisticMessagesBatch;
+
+          setMessages(previousMessages => [
+            ...previousMessages,
+            ...nextOptimisticMessagesBatch,
+          ]);
+          triggerSendSuccessGlow();
+          scheduleScrollMessagesToBottom();
+        }
+      }
+
       const attachmentResults: Array<{
         pendingAttachment: PendingComposerAttachment;
         sentAttachmentMessageId: string | null;
@@ -255,7 +344,10 @@ export const useChatComposerSend = ({
           sentAttachmentMessageId: await sendComposerAttachment(
             attachment,
             captionText,
-            replyToId
+            replyToId,
+            {
+              optimistic: optimisticAttachmentStateById.get(attachment.id),
+            }
           ),
         });
       }
@@ -296,7 +388,12 @@ export const useChatComposerSend = ({
       isCurrentConversationScopeActive,
       restorePendingComposerAttachments,
       sendComposerAttachment,
+      scheduleScrollMessagesToBottom,
+      setMessages,
       setMessage,
+      targetUser,
+      triggerSendSuccessGlow,
+      user,
     ]
   );
 

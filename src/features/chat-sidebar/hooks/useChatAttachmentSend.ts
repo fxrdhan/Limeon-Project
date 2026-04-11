@@ -13,6 +13,7 @@ import {
   commitOptimisticAttachmentThread,
   createOptimisticAttachmentThread,
   removeOptimisticAttachmentThread,
+  type OptimisticAttachmentThread,
 } from '../utils/attachment-send';
 import { buildChatFilePath, buildChatImagePath } from '../utils/attachment';
 import {
@@ -118,6 +119,13 @@ interface SendAttachmentMessageOptions {
     conversationScopeKey: string | null,
     tempId: string
   ) => void | Promise<void>;
+  optimistic?: PreparedComposerAttachmentOptimisticState;
+}
+
+export interface PreparedComposerAttachmentOptimisticState {
+  appendBeforeSend?: boolean;
+  localPreviewUrl: string;
+  thread: OptimisticAttachmentThread;
 }
 
 const persistAttachmentMessage = async ({
@@ -306,6 +314,7 @@ export const useChatAttachmentSend = ({
       mapPersistedMessage,
       onBeforeAppendOptimistic,
       onAfterCommit,
+      optimistic,
     }: SendAttachmentMessageOptions) => {
       if (!user || !targetUser || !currentChannelId) {
         return null;
@@ -318,20 +327,21 @@ export const useChatAttachmentSend = ({
         return null;
       }
 
-      const timestamp = new Date().toISOString();
-      const localPreviewUrl = URL.createObjectURL(file);
-      const optimisticThread = createOptimisticAttachmentThread({
-        tempIdPrefix,
-        stableKeySuffix,
-        captionText,
-        currentChannelId,
-        localPreviewUrl,
-        timestamp,
-        user,
-        targetUser,
-        replyToId: replyingMessageId,
-        buildOptimisticMessage,
-      });
+      const optimisticThread =
+        optimistic?.thread ??
+        createOptimisticAttachmentThread({
+          tempIdPrefix,
+          stableKeySuffix,
+          captionText,
+          currentChannelId,
+          localPreviewUrl:
+            optimistic?.localPreviewUrl ?? URL.createObjectURL(file),
+          timestamp: new Date().toISOString(),
+          user,
+          targetUser,
+          replyToId: replyingMessageId,
+          buildOptimisticMessage,
+        });
       const {
         tempId,
         stableKey,
@@ -340,15 +350,21 @@ export const useChatAttachmentSend = ({
         captionTempId,
         captionStableKey,
       } = optimisticThread;
+      const localPreviewUrl =
+        optimistic?.localPreviewUrl ??
+        optimisticThread.optimisticMessage.message;
+      const shouldAppendOptimistic = optimistic?.appendBeforeSend !== false;
       const pendingSend = registerPendingSend(tempId);
       pendingImagePreviewUrlsRef.current.set(tempId, localPreviewUrl);
       onBeforeAppendOptimistic?.(optimisticThread.optimisticMessage);
 
-      setMessages(previousMessages =>
-        appendOptimisticAttachmentThread(previousMessages, optimisticThread)
-      );
-      triggerSendSuccessGlow();
-      scheduleScrollMessagesToBottom();
+      if (shouldAppendOptimistic) {
+        setMessages(previousMessages =>
+          appendOptimisticAttachmentThread(previousMessages, optimisticThread)
+        );
+        triggerSendSuccessGlow();
+        scheduleScrollMessagesToBottom();
+      }
 
       let uploadedStoragePath: string | null = null;
       let uploadedStoragePaths: string[] = [];
@@ -618,7 +634,10 @@ export const useChatAttachmentSend = ({
     async (
       file: File,
       captionText?: string,
-      replyToId?: string | null
+      replyToId?: string | null,
+      options?: {
+        optimistic?: PreparedComposerAttachmentOptimisticState;
+      }
     ): Promise<string | null> => {
       if (!file.type.startsWith('image/')) {
         toast.error('File harus berupa gambar', {
@@ -736,6 +755,7 @@ export const useChatAttachmentSend = ({
             file,
           });
         },
+        optimistic: options?.optimistic,
       });
     },
     [
@@ -752,7 +772,10 @@ export const useChatAttachmentSend = ({
     async (
       pendingFile: PendingComposerFile,
       captionText?: string,
-      replyToId?: string | null
+      replyToId?: string | null,
+      options?: {
+        optimistic?: PreparedComposerAttachmentOptimisticState;
+      }
     ): Promise<string | null> => {
       if (!user || !targetUser || !currentChannelId) {
         return null;
@@ -960,6 +983,7 @@ export const useChatAttachmentSend = ({
             pendingFile: resolvedPdfPendingFile,
           });
         },
+        optimistic: options?.optimistic,
       });
     },
     [
@@ -980,16 +1004,25 @@ export const useChatAttachmentSend = ({
     async (
       attachment: SendableComposerAttachment,
       captionText?: string,
-      replyToId?: string | null
+      replyToId?: string | null,
+      options?: {
+        optimistic?: PreparedComposerAttachmentOptimisticState;
+      }
     ): Promise<string | null> => {
       if (attachment.fileKind === 'image') {
-        return sendImageMessage(attachment.file, captionText, replyToId);
+        return sendImageMessage(
+          attachment.file,
+          captionText,
+          replyToId,
+          options
+        );
       }
 
       return sendFileMessage(
         attachment as PendingComposerFile,
         captionText,
-        replyToId
+        replyToId,
+        options
       );
     },
     [sendFileMessage, sendImageMessage]

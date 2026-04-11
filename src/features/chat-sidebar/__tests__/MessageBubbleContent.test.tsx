@@ -57,6 +57,8 @@ describe('MessageBubbleContent', () => {
             message: url,
             message_type: 'text',
           })}
+          isCurrentUser={false}
+          messageDeliveryStatus={null}
           resolvedMessageUrl={null}
           isSelectionMode={false}
           isImageMessage={false}
@@ -104,6 +106,8 @@ describe('MessageBubbleContent', () => {
           message: url,
           message_type: 'text',
         })}
+        isCurrentUser={false}
+        messageDeliveryStatus={null}
         resolvedMessageUrl={null}
         isSelectionMode={false}
         isImageMessage={false}
@@ -146,6 +150,8 @@ describe('MessageBubbleContent', () => {
           message: url,
           message_type: 'text',
         })}
+        isCurrentUser={false}
+        messageDeliveryStatus={null}
         resolvedMessageUrl={null}
         isSelectionMode={false}
         isImageMessage={false}
@@ -192,6 +198,8 @@ describe('MessageBubbleContent', () => {
           message: url,
           message_type: 'text',
         })}
+        isCurrentUser={false}
+        messageDeliveryStatus={null}
         resolvedMessageUrl={null}
         isSelectionMode={false}
         isImageMessage={false}

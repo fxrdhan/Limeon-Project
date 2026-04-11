@@ -705,6 +705,163 @@ describe('useChatComposerSend', () => {
     );
   });
 
+  it('appends bulk image optimistic messages in one pass before uploads settle', async () => {
+    mockCreateImagePreviewUploadArtifact.mockResolvedValue(null);
+
+    vi.stubGlobal(
+      'URL',
+      Object.assign(URL, {
+        createObjectURL: vi
+          .fn()
+          .mockReturnValueOnce('blob:image-batch-1')
+          .mockReturnValueOnce('blob:image-batch-2')
+          .mockReturnValueOnce('blob:image-batch-3')
+          .mockReturnValueOnce('blob:image-batch-4'),
+        revokeObjectURL: vi.fn(),
+      })
+    );
+
+    const uploadResolvers: Array<(value: { path: string }) => void> = [];
+    const startedUploads: string[] = [];
+    mockGateway.uploadAttachment.mockImplementation(
+      (file: File) =>
+        new Promise(resolve => {
+          startedUploads.push(file.name);
+          uploadResolvers.push(resolve);
+        })
+    );
+
+    let persistedMessageCount = 0;
+    mockGateway.createMessage.mockImplementation(async payload => {
+      persistedMessageCount += 1;
+
+      return {
+        data: buildMessage({
+          id: `server-image-${persistedMessageCount}`,
+          message: String(payload.message),
+          message_type: 'image',
+          file_name: undefined,
+          file_kind: undefined,
+          file_mime_type: 'image/png',
+          file_size: 1024,
+          file_storage_path: String(payload.file_storage_path),
+        }),
+        error: null,
+      };
+    });
+
+    const { registerPendingSend } = createPendingSendRegistry();
+
+    const { result } = renderHook(() => {
+      const [messages, setMessages] = useState<ChatMessage[]>([]);
+      const [draftMessage, setDraftMessage] = useState('');
+      const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
+
+      const send = useComposerSendWithMutationScope({
+        user: { id: 'user-a', name: 'Admin' },
+        targetUser: {
+          id: 'user-b',
+          name: 'Gudang',
+          email: 'gudang@example.com',
+          profilephoto: null,
+        },
+        currentChannelId: 'channel-1',
+        message: draftMessage,
+        setMessage: setDraftMessage,
+        editingMessageId: null,
+        pendingComposerAttachments: Array.from({ length: 4 }, (_, index) =>
+          buildPendingAttachment({
+            id: `pending-image-${index + 1}`,
+            file: new File([`image-${index + 1}`], `chat-${index + 1}.png`, {
+              type: 'image/png',
+            }),
+            fileName: `chat-${index + 1}.png`,
+            fileTypeLabel: 'PNG',
+            fileKind: 'image',
+            mimeType: 'image/png',
+            previewUrl: `blob:composer-preview-${index + 1}`,
+          })
+        ),
+        clearPendingComposerAttachments: vi.fn(),
+        restorePendingComposerAttachments: vi.fn(),
+        setMessages,
+        scheduleScrollMessagesToBottom: vi.fn(),
+        triggerSendSuccessGlow: vi.fn(),
+        pendingImagePreviewUrlsRef,
+        registerPendingSend,
+      });
+
+      return {
+        ...send,
+        messages,
+      };
+    });
+
+    let sendPromise: Promise<boolean> | undefined;
+    await act(async () => {
+      sendPromise = result.current.handleSendMessage();
+      await Promise.resolve();
+    });
+
+    expect(startedUploads).toEqual(['chat-1.png']);
+    expect(result.current.messages).toHaveLength(4);
+    expect(result.current.messages.map(message => message.message)).toEqual([
+      'blob:image-batch-1',
+      'blob:image-batch-2',
+      'blob:image-batch-3',
+      'blob:image-batch-4',
+    ]);
+    expect(
+      result.current.messages.every(message => message.id.startsWith('temp_'))
+    ).toBe(true);
+
+    await act(async () => {
+      uploadResolvers[0]?.({
+        path: 'images/channel-1/user-a_image_chat-1.png',
+      });
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(
+        startedUploads.filter(fileName => fileName.startsWith('chat-'))
+      ).toEqual(['chat-1.png', 'chat-2.png']);
+    });
+
+    await act(async () => {
+      uploadResolvers[1]?.({
+        path: 'images/channel-1/user-a_image_chat-2.png',
+      });
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(
+        startedUploads.filter(fileName => fileName.startsWith('chat-'))
+      ).toEqual(['chat-1.png', 'chat-2.png', 'chat-3.png']);
+    });
+
+    await act(async () => {
+      uploadResolvers[2]?.({
+        path: 'images/channel-1/user-a_image_chat-3.png',
+      });
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(
+        startedUploads.filter(fileName => fileName.startsWith('chat-'))
+      ).toEqual(['chat-1.png', 'chat-2.png', 'chat-3.png', 'chat-4.png']);
+    });
+
+    await act(async () => {
+      uploadResolvers[3]?.({
+        path: 'images/channel-1/user-a_image_chat-4.png',
+      });
+      await sendPromise;
+    });
+  });
+
   it('surfaces a cleanup warning when an uncommitted uploaded file cannot be deleted', async () => {
     mockGateway.uploadAttachment.mockResolvedValue({
       path: 'documents/channel/stok.pdf',

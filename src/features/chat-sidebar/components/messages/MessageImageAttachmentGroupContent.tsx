@@ -143,6 +143,15 @@ export const MessageImageAttachmentGroupContent = ({
     isOverflowTile:
       hiddenImageCount > 0 && index === visibleMessages.length - 1,
   }));
+  const pendingUploadCount = messages.filter(message =>
+    message.id.startsWith('temp_')
+  ).length;
+  const uploadOverlayLabel =
+    pendingUploadCount <= 0
+      ? null
+      : pendingUploadCount === messages.length
+        ? `Mengunggah ${messages.length} gambar`
+        : `Mengunggah ${pendingUploadCount} dari ${messages.length} gambar`;
   const groupMenuActions = representativeMessage
     ? buildMessageMenuActions({
         message: representativeMessage,
@@ -205,7 +214,7 @@ export const MessageImageAttachmentGroupContent = ({
     <div className="relative">
       <div
         data-chat-image-group-grid
-        className="overflow-hidden rounded-lg bg-slate-200"
+        className="relative overflow-hidden rounded-lg bg-slate-200"
       >
         <button
           type="button"
@@ -302,6 +311,17 @@ export const MessageImageAttachmentGroupContent = ({
             )
           )}
         </button>
+        {uploadOverlayLabel ? (
+          <div className="pointer-events-none absolute inset-0 flex items-end justify-start bg-slate-950/24 p-2">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/92 px-2.5 py-1 text-[11px] font-medium text-slate-700 shadow-sm">
+              <span
+                aria-hidden="true"
+                className="h-2 w-2 animate-pulse rounded-full bg-emerald-500"
+              />
+              <span>{uploadOverlayLabel}</span>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {menuPortalContainer
