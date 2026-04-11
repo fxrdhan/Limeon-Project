@@ -114,293 +114,299 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
       <div className="pointer-events-none absolute inset-x-0 bottom-2 top-1/2 flex min-h-0 flex-col justify-end px-3 pb-4">
         <div
           ref={refs.composerContainerRef}
-          className="pointer-events-auto flex min-h-0 max-h-full flex-1 flex-col justify-end"
+          className="pointer-events-none flex min-h-0 max-h-full flex-1 flex-col justify-end"
         >
-          {hasComposerAttachmentTray ? (
-            <motion.div
-              layout
-              initial={false}
-              transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
-              className="mb-[-1px] grid min-h-0 shrink-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-t-3xl rounded-b-none border border-b-0 bg-white px-2.5 py-2.5"
-              style={{
-                borderColor: COMPOSER_BASE_BORDER_COLOR,
-                maxHeight:
-                  composerTrayMaxHeight && composerTrayMaxHeight > 0
-                    ? composerTrayMaxHeight
-                    : undefined,
-              }}
-            >
-              <AnimatePresence initial={false} mode="popLayout">
+          <div className="pointer-events-auto shrink-0">
+            {hasComposerAttachmentTray ? (
+              <motion.div
+                layout
+                initial={false}
+                transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
+                className="mb-[-1px] grid min-h-0 shrink-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-t-3xl rounded-b-none border border-b-0 bg-white px-2.5 py-2.5"
+                style={{
+                  borderColor: COMPOSER_BASE_BORDER_COLOR,
+                  maxHeight:
+                    composerTrayMaxHeight && composerTrayMaxHeight > 0
+                      ? composerTrayMaxHeight
+                      : undefined,
+                }}
+              >
+                <AnimatePresence initial={false} mode="popLayout">
+                  {previews.isComposerAttachmentSelectionMode ? (
+                    <motion.div
+                      layout
+                      transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
+                      className="mb-2 flex items-center justify-between px-1 text-sm"
+                    >
+                      <button
+                        type="button"
+                        onClick={previews.handleSelectAllComposerAttachments}
+                        className="cursor-pointer bg-transparent p-0 text-sm font-medium text-slate-500 transition-colors hover:text-slate-700 hover:underline hover:underline-offset-2"
+                      >
+                        Pilih semua
+                      </button>
+                      <p className="text-sm font-medium text-slate-500">
+                        {previews.selectedComposerAttachmentIds.length}/
+                        {totalSelectableComposerAttachments} terpilih
+                      </p>
+                    </motion.div>
+                  ) : (
+                    <div />
+                  )}
+                </AnimatePresence>
+
+                <div className="min-h-0 overflow-hidden">
+                  {composer.composerAttachmentPreviewItems.length > 0 ? (
+                    <ComposerAttachmentPreviewList
+                      attachments={composer.composerAttachmentPreviewItems}
+                      openImageActionsAttachmentId={
+                        previews.openImageActionsAttachmentId
+                      }
+                      isSelectionMode={
+                        previews.isComposerAttachmentSelectionMode
+                      }
+                      selectedAttachmentIds={
+                        previews.selectedComposerAttachmentIds
+                      }
+                      imageActionsButtonRef={previews.imageActionsButtonRef}
+                      transition={contextualPanelTransition}
+                      onToggleImageActionsMenu={
+                        previews.handleToggleImageActionsMenu
+                      }
+                      onToggleAttachmentSelection={
+                        previews.handleToggleComposerAttachmentSelection
+                      }
+                      onCancelLoadingComposerAttachment={
+                        composer.cancelLoadingComposerAttachment
+                      }
+                      onRemovePendingComposerAttachment={
+                        composer.removePendingComposerAttachment
+                      }
+                    />
+                  ) : null}
+                </div>
+
                 {previews.isComposerAttachmentSelectionMode ? (
                   <motion.div
                     layout
                     transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
-                    className="mb-2 flex items-center justify-between px-1 text-sm"
+                    className="mt-2 flex items-center justify-between px-1 text-sm"
                   >
                     <button
                       type="button"
-                      onClick={previews.handleSelectAllComposerAttachments}
+                      onClick={previews.handleClearComposerAttachmentSelection}
                       className="cursor-pointer bg-transparent p-0 text-sm font-medium text-slate-500 transition-colors hover:text-slate-700 hover:underline hover:underline-offset-2"
                     >
-                      Pilih semua
+                      Batal
                     </button>
-                    <p className="text-sm font-medium text-slate-500">
-                      {previews.selectedComposerAttachmentIds.length}/
-                      {totalSelectableComposerAttachments} terpilih
-                    </p>
+                    <button
+                      type="button"
+                      onClick={previews.handleDeleteSelectedComposerAttachments}
+                      disabled={
+                        previews.selectedComposerAttachmentIds.length === 0
+                      }
+                      className="cursor-pointer bg-transparent p-0 text-sm font-medium text-rose-500 transition-colors hover:text-rose-600 hover:underline hover:underline-offset-2 disabled:cursor-default disabled:text-rose-300 disabled:hover:no-underline"
+                    >
+                      Hapus
+                    </button>
                   </motion.div>
                 ) : (
                   <div />
                 )}
-              </AnimatePresence>
+              </motion.div>
+            ) : null}
 
-              <div className="min-h-0 overflow-hidden">
-                {composer.composerAttachmentPreviewItems.length > 0 ? (
-                  <ComposerAttachmentPreviewList
-                    attachments={composer.composerAttachmentPreviewItems}
-                    openImageActionsAttachmentId={
-                      previews.openImageActionsAttachmentId
-                    }
-                    isSelectionMode={previews.isComposerAttachmentSelectionMode}
-                    selectedAttachmentIds={
-                      previews.selectedComposerAttachmentIds
-                    }
-                    imageActionsButtonRef={previews.imageActionsButtonRef}
-                    transition={contextualPanelTransition}
-                    onToggleImageActionsMenu={
-                      previews.handleToggleImageActionsMenu
-                    }
-                    onToggleAttachmentSelection={
-                      previews.handleToggleComposerAttachmentSelection
-                    }
-                    onCancelLoadingComposerAttachment={
-                      composer.cancelLoadingComposerAttachment
-                    }
-                    onRemovePendingComposerAttachment={
-                      composer.removePendingComposerAttachment
-                    }
-                  />
-                ) : null}
-              </div>
-
-              {previews.isComposerAttachmentSelectionMode ? (
-                <motion.div
-                  layout
-                  transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
-                  className="mt-2 flex items-center justify-between px-1 text-sm"
-                >
-                  <button
-                    type="button"
-                    onClick={previews.handleClearComposerAttachmentSelection}
-                    className="cursor-pointer bg-transparent p-0 text-sm font-medium text-slate-500 transition-colors hover:text-slate-700 hover:underline hover:underline-offset-2"
-                  >
-                    Batal
-                  </button>
-                  <button
-                    type="button"
-                    onClick={previews.handleDeleteSelectedComposerAttachments}
-                    disabled={
-                      previews.selectedComposerAttachmentIds.length === 0
-                    }
-                    className="cursor-pointer bg-transparent p-0 text-sm font-medium text-rose-500 transition-colors hover:text-rose-600 hover:underline hover:underline-offset-2 disabled:cursor-default disabled:text-rose-300 disabled:hover:no-underline"
-                  >
-                    Hapus
-                  </button>
-                </motion.div>
-              ) : (
-                <div />
-              )}
-            </motion.div>
-          ) : null}
-
-          <motion.div
-            ref={composerBarRef}
-            layout
-            initial={false}
-            animate={
-              composer.isSendSuccessGlowVisible
-                ? {
-                    borderColor: [
-                      COMPOSER_BASE_BORDER_COLOR,
-                      'oklch(50.8% 0.118 165.612 / 0.55)',
-                      'oklch(50.8% 0.118 165.612 / 0.48)',
-                      'oklch(50.8% 0.118 165.612 / 0.42)',
-                      'oklch(50.8% 0.118 165.612 / 0.32)',
-                      'oklch(50.8% 0.118 165.612 / 0.22)',
-                      COMPOSER_BASE_BORDER_COLOR,
-                    ],
-                    boxShadow: hasComposerAttachmentTray
-                      ? 'none'
-                      : [
-                          COMPOSER_BASE_SHADOW,
-                          COMPOSER_GLOW_SHADOW_PEAK,
-                          COMPOSER_GLOW_SHADOW_HIGH,
-                          COMPOSER_GLOW_SHADOW_MID,
-                          COMPOSER_GLOW_SHADOW_FADE,
-                          COMPOSER_GLOW_SHADOW_LOW,
-                          COMPOSER_BASE_SHADOW,
-                        ],
-                  }
-                : {
-                    borderColor: COMPOSER_BASE_BORDER_COLOR,
-                    boxShadow: hasComposerAttachmentTray
-                      ? 'none'
-                      : COMPOSER_BASE_SHADOW,
-                  }
-            }
-            transition={
-              composer.isSendSuccessGlowVisible
-                ? {
-                    layout: COMPOSER_SYNC_LAYOUT_TRANSITION,
-                    duration: SEND_SUCCESS_GLOW_DURATION / 1000,
-                    times: [0, 0.12, 0.3, 0.48, 0.66, 0.82, 1],
-                    ease: 'easeOut',
-                  }
-                : {
-                    layout: COMPOSER_SYNC_LAYOUT_TRANSITION,
-                    duration: 0.12,
-                    ease: 'easeOut',
-                  }
-            }
-            className={`relative z-10 shrink-0 border bg-white ${
-              hasComposerAttachmentTray
-                ? 'rounded-t-none rounded-b-3xl border-t-0'
-                : 'rounded-3xl'
-            }`}
-          >
             <motion.div
+              ref={composerBarRef}
               layout
-              transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
-              className={`relative z-10 bg-white px-2.5 py-2.5 transition-[height,padding] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+              initial={false}
+              animate={
+                composer.isSendSuccessGlowVisible
+                  ? {
+                      borderColor: [
+                        COMPOSER_BASE_BORDER_COLOR,
+                        'oklch(50.8% 0.118 165.612 / 0.55)',
+                        'oklch(50.8% 0.118 165.612 / 0.48)',
+                        'oklch(50.8% 0.118 165.612 / 0.42)',
+                        'oklch(50.8% 0.118 165.612 / 0.32)',
+                        'oklch(50.8% 0.118 165.612 / 0.22)',
+                        COMPOSER_BASE_BORDER_COLOR,
+                      ],
+                      boxShadow: hasComposerAttachmentTray
+                        ? 'none'
+                        : [
+                            COMPOSER_BASE_SHADOW,
+                            COMPOSER_GLOW_SHADOW_PEAK,
+                            COMPOSER_GLOW_SHADOW_HIGH,
+                            COMPOSER_GLOW_SHADOW_MID,
+                            COMPOSER_GLOW_SHADOW_FADE,
+                            COMPOSER_GLOW_SHADOW_LOW,
+                            COMPOSER_BASE_SHADOW,
+                          ],
+                    }
+                  : {
+                      borderColor: COMPOSER_BASE_BORDER_COLOR,
+                      boxShadow: hasComposerAttachmentTray
+                        ? 'none'
+                        : COMPOSER_BASE_SHADOW,
+                    }
+              }
+              transition={
+                composer.isSendSuccessGlowVisible
+                  ? {
+                      layout: COMPOSER_SYNC_LAYOUT_TRANSITION,
+                      duration: SEND_SUCCESS_GLOW_DURATION / 1000,
+                      times: [0, 0.12, 0.3, 0.48, 0.66, 0.82, 1],
+                      ease: 'easeOut',
+                    }
+                  : {
+                      layout: COMPOSER_SYNC_LAYOUT_TRANSITION,
+                      duration: 0.12,
+                      ease: 'easeOut',
+                    }
+              }
+              className={`relative z-10 shrink-0 border bg-white ${
                 hasComposerAttachmentTray
-                  ? 'rounded-t-none rounded-b-[18px]'
-                  : 'rounded-[18px]'
+                  ? 'rounded-t-none rounded-b-3xl border-t-0'
+                  : 'rounded-3xl'
               }`}
             >
-              <AnimatePresence initial={false} mode="popLayout">
-                {composer.editingMessagePreview ? (
-                  <ComposerEditBanner
-                    messagePreview={composer.editingMessagePreview}
-                    mode="edit"
-                    onCancelContext={mutations.handleCancelEditMessage}
-                    onFocusTargetMessage={viewport.focusEditingTargetMessage}
-                    transition={contextualPanelTransition}
-                  />
-                ) : composer.replyingMessagePreview ? (
-                  <ComposerEditBanner
-                    messagePreview={composer.replyingMessagePreview}
-                    mode="reply"
-                    onCancelContext={mutations.handleCancelReplyMessage}
-                    onFocusTargetMessage={() => {
-                      if (composer.replyingMessageId) {
-                        viewport.focusReplyTargetMessage(
-                          composer.replyingMessageId
-                        );
-                      }
-                    }}
-                    transition={contextualPanelTransition}
-                  />
-                ) : null}
-              </AnimatePresence>
-
               <motion.div
                 layout
                 transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
-                className={`grid grid-cols-[auto_1fr_auto] gap-x-1 ${
-                  composer.isMessageInputMultiline
-                    ? 'grid-rows-[auto_auto] items-end gap-y-1'
-                    : 'grid-rows-[auto] items-center gap-y-0'
+                className={`relative z-10 bg-white px-2.5 py-2.5 transition-[height,padding] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                  hasComposerAttachmentTray
+                    ? 'rounded-t-none rounded-b-[18px]'
+                    : 'rounded-[18px]'
                 }`}
               >
-                <ComposerMessageField
-                  message={composer.message}
-                  messageInputHeight={composer.messageInputHeight}
-                  isMessageInputMultiline={composer.isMessageInputMultiline}
-                  messageInputRef={refs.messageInputRef}
-                  attachmentPastePromptRef={composer.attachmentPastePromptRef}
-                  linkPrompt={{
-                    url: composer.attachmentPastePromptUrl,
-                    isAttachmentCandidate:
-                      composer.isAttachmentPastePromptAttachmentCandidate,
-                    isShortenable: composer.isAttachmentPastePromptShortenable,
-                    hoverableCandidates: composer.hoverableAttachmentCandidates,
-                  }}
-                  attachmentPromptPosition={
-                    linkPromptPopover.attachmentPromptPosition
-                  }
-                  onClearAttachmentPromptCloseTimer={
-                    linkPromptPopover.clearAttachmentPromptCloseTimer
-                  }
-                  onScheduleAttachmentPromptClose={
-                    linkPromptPopover.scheduleAttachmentPromptClose
-                  }
-                  onUpdateAttachmentPromptPosition={
-                    linkPromptPopover.updateAttachmentPromptPosition
-                  }
-                  onMessageChange={composer.handleMessageChange}
-                  onKeyDown={mutations.handleKeyPress}
-                  onPaste={composer.handleComposerPaste}
-                  onOpenAttachmentPastePrompt={
-                    composer.openAttachmentPastePrompt
-                  }
-                  onOpenComposerLinkPrompt={composer.openComposerLinkPrompt}
-                  onEditAttachmentLink={composer.handleEditAttachmentLink}
-                  onOpenAttachmentPastePromptLink={
-                    composer.handleOpenAttachmentPastePromptLink
-                  }
-                  onCopyAttachmentPastePromptLink={
-                    composer.handleCopyAttachmentPastePromptLink
-                  }
-                  onShortenAttachmentPastePromptLink={
-                    composer.handleShortenAttachmentPastePromptLink
-                  }
-                  onUseAttachmentPasteAsUrl={
-                    composer.handleUseAttachmentPasteAsUrl
-                  }
-                  onUseAttachmentPasteAsAttachment={
-                    composer.handleUseAttachmentPasteAsAttachment
-                  }
-                />
+                <AnimatePresence initial={false} mode="popLayout">
+                  {composer.editingMessagePreview ? (
+                    <ComposerEditBanner
+                      messagePreview={composer.editingMessagePreview}
+                      mode="edit"
+                      onCancelContext={mutations.handleCancelEditMessage}
+                      onFocusTargetMessage={viewport.focusEditingTargetMessage}
+                      transition={contextualPanelTransition}
+                    />
+                  ) : composer.replyingMessagePreview ? (
+                    <ComposerEditBanner
+                      messagePreview={composer.replyingMessagePreview}
+                      mode="reply"
+                      onCancelContext={mutations.handleCancelReplyMessage}
+                      onFocusTargetMessage={() => {
+                        if (composer.replyingMessageId) {
+                          viewport.focusReplyTargetMessage(
+                            composer.replyingMessageId
+                          );
+                        }
+                      }}
+                      transition={contextualPanelTransition}
+                    />
+                  ) : null}
+                </AnimatePresence>
 
-                <ComposerAttachmentMenu
-                  isAttachModalOpen={composer.isAttachModalOpen}
-                  isMessageInputMultiline={composer.isMessageInputMultiline}
-                  attachButtonRef={composer.attachButtonRef}
-                  attachModalRef={composer.attachModalRef}
-                  imageInputRef={composer.imageInputRef}
-                  documentInputRef={composer.documentInputRef}
-                  audioInputRef={composer.audioInputRef}
-                  onAttachButtonClick={composer.handleAttachButtonClick}
-                  onAttachImageClick={composer.handleAttachImageClick}
-                  onAttachDocumentClick={composer.handleAttachDocumentClick}
-                  onAttachAudioClick={composer.handleAttachAudioClick}
-                  onImageFileChange={composer.handleImageFileChange}
-                  onDocumentFileChange={composer.handleDocumentFileChange}
-                  onAudioFileChange={composer.handleAudioFileChange}
-                />
-
-                <motion.button
-                  layout="position"
+                <motion.div
+                  layout
                   transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
-                  type="button"
-                  onClick={mutations.handleSendMessage}
-                  aria-label="Kirim pesan"
-                  disabled={composer.isLoadingAttachmentComposerAttachments}
-                  className={`flex h-8 w-8 shrink-0 items-center justify-center justify-self-end rounded-xl bg-primary text-white whitespace-nowrap transition-opacity ${
-                    composer.isLoadingAttachmentComposerAttachments
-                      ? 'cursor-not-allowed opacity-55'
-                      : 'cursor-pointer'
-                  } ${
+                  className={`grid grid-cols-[auto_1fr_auto] gap-x-1 ${
                     composer.isMessageInputMultiline
-                      ? 'col-start-3 row-start-2'
-                      : 'col-start-3 row-start-1'
+                      ? 'grid-rows-[auto_auto] items-end gap-y-1'
+                      : 'grid-rows-[auto] items-center gap-y-0'
                   }`}
                 >
-                  <TbArrowUp size={20} className="text-white" />
-                </motion.button>
+                  <ComposerMessageField
+                    message={composer.message}
+                    messageInputHeight={composer.messageInputHeight}
+                    isMessageInputMultiline={composer.isMessageInputMultiline}
+                    messageInputRef={refs.messageInputRef}
+                    attachmentPastePromptRef={composer.attachmentPastePromptRef}
+                    linkPrompt={{
+                      url: composer.attachmentPastePromptUrl,
+                      isAttachmentCandidate:
+                        composer.isAttachmentPastePromptAttachmentCandidate,
+                      isShortenable:
+                        composer.isAttachmentPastePromptShortenable,
+                      hoverableCandidates:
+                        composer.hoverableAttachmentCandidates,
+                    }}
+                    attachmentPromptPosition={
+                      linkPromptPopover.attachmentPromptPosition
+                    }
+                    onClearAttachmentPromptCloseTimer={
+                      linkPromptPopover.clearAttachmentPromptCloseTimer
+                    }
+                    onScheduleAttachmentPromptClose={
+                      linkPromptPopover.scheduleAttachmentPromptClose
+                    }
+                    onUpdateAttachmentPromptPosition={
+                      linkPromptPopover.updateAttachmentPromptPosition
+                    }
+                    onMessageChange={composer.handleMessageChange}
+                    onKeyDown={mutations.handleKeyPress}
+                    onPaste={composer.handleComposerPaste}
+                    onOpenAttachmentPastePrompt={
+                      composer.openAttachmentPastePrompt
+                    }
+                    onOpenComposerLinkPrompt={composer.openComposerLinkPrompt}
+                    onEditAttachmentLink={composer.handleEditAttachmentLink}
+                    onOpenAttachmentPastePromptLink={
+                      composer.handleOpenAttachmentPastePromptLink
+                    }
+                    onCopyAttachmentPastePromptLink={
+                      composer.handleCopyAttachmentPastePromptLink
+                    }
+                    onShortenAttachmentPastePromptLink={
+                      composer.handleShortenAttachmentPastePromptLink
+                    }
+                    onUseAttachmentPasteAsUrl={
+                      composer.handleUseAttachmentPasteAsUrl
+                    }
+                    onUseAttachmentPasteAsAttachment={
+                      composer.handleUseAttachmentPasteAsAttachment
+                    }
+                  />
+
+                  <ComposerAttachmentMenu
+                    isAttachModalOpen={composer.isAttachModalOpen}
+                    isMessageInputMultiline={composer.isMessageInputMultiline}
+                    attachButtonRef={composer.attachButtonRef}
+                    attachModalRef={composer.attachModalRef}
+                    imageInputRef={composer.imageInputRef}
+                    documentInputRef={composer.documentInputRef}
+                    audioInputRef={composer.audioInputRef}
+                    onAttachButtonClick={composer.handleAttachButtonClick}
+                    onAttachImageClick={composer.handleAttachImageClick}
+                    onAttachDocumentClick={composer.handleAttachDocumentClick}
+                    onAttachAudioClick={composer.handleAttachAudioClick}
+                    onImageFileChange={composer.handleImageFileChange}
+                    onDocumentFileChange={composer.handleDocumentFileChange}
+                    onAudioFileChange={composer.handleAudioFileChange}
+                  />
+
+                  <motion.button
+                    layout="position"
+                    transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
+                    type="button"
+                    onClick={mutations.handleSendMessage}
+                    aria-label="Kirim pesan"
+                    disabled={composer.isLoadingAttachmentComposerAttachments}
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center justify-self-end rounded-xl bg-primary text-white whitespace-nowrap transition-opacity ${
+                      composer.isLoadingAttachmentComposerAttachments
+                        ? 'cursor-not-allowed opacity-55'
+                        : 'cursor-pointer'
+                    } ${
+                      composer.isMessageInputMultiline
+                        ? 'col-start-3 row-start-2'
+                        : 'col-start-3 row-start-1'
+                    }`}
+                  >
+                    <TbArrowUp size={20} className="text-white" />
+                  </motion.button>
+                </motion.div>
               </motion.div>
             </motion.div>
-          </motion.div>
+          </div>
 
           <ComposerAttachmentActionMenus
             openImageActionsAttachmentId={previews.openImageActionsAttachmentId}

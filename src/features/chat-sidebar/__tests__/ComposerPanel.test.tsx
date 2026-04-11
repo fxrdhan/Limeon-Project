@@ -590,13 +590,16 @@ describe('ComposerPanel', () => {
 
     expect(composerContainer).toBeTruthy();
     expect(composerContainer?.className).toContain('flex-1');
-    expect(composerContainer?.className).toContain('pointer-events-auto');
+    expect(composerContainer?.className).toContain('pointer-events-none');
     expect(composerContainer).toContain(
       screen.getByTestId('composer-attachment-preview-list')
     );
     expect(composerContainer).toContain(
       screen.getByRole('button', { name: 'Kirim pesan' })
     );
+    expect(
+      composerContainer?.querySelector('div.pointer-events-auto.shrink-0')
+    ).toBeTruthy();
   });
 
   it('keeps the empty composer overlay transparent to pointer events', () => {
