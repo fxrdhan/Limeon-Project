@@ -72,7 +72,7 @@ vi.mock('../components/DocumentPreviewPortal', () => ({
 }));
 
 vi.mock('../components/composer/ComposerAttachmentPreviewList', () => ({
-  default: () => null,
+  default: () => <div data-testid="composer-attachment-preview-list" />,
 }));
 
 vi.mock('../components/composer/ComposerEditBanner', () => ({
@@ -250,6 +250,18 @@ describe('ComposerPanel', () => {
         initialPreselectedIndex: 1,
       })
     );
+  });
+
+  it('renders the attach popup menu when the composer attach menu is open', () => {
+    const runtime = buildComposerRuntime();
+    runtime.composer.isAttachModalOpen = true;
+
+    render(<ComposerPanel runtime={runtime} />);
+
+    expect(screen.getByRole('dialog', { name: 'Lampirkan file' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Gambar' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Dokumen' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Audio' })).toBeTruthy();
   });
 
   it('renders the composer attachment selection bar when selection mode is active', () => {
@@ -515,5 +527,40 @@ describe('ComposerPanel', () => {
     expect(
       upgradedRuntime.composer.handleUseAttachmentPasteAsAttachment
     ).toHaveBeenCalledOnce();
+  });
+
+  it('caps the composer panel height to half of the viewport', () => {
+    const runtime = buildComposerRuntime();
+    const { container } = render(<ComposerPanel runtime={runtime} />);
+
+    const composerRoot = container.querySelector('div[class*="top-1/2"]');
+
+    expect(composerRoot).toBeTruthy();
+  });
+
+  it('caps the attachment tray height and keeps it separate from the composer bar', () => {
+    const runtime = buildComposerRuntime();
+    runtime.composer.composerAttachmentPreviewItems = [
+      {
+        id: 'pending-image-1',
+        file: new File(['image'], 'foto.png', { type: 'image/png' }),
+        fileName: 'foto.png',
+        fileTypeLabel: 'PNG',
+        fileKind: 'image',
+        mimeType: 'image/png',
+        previewUrl: 'blob:preview-1',
+        pdfCoverUrl: null,
+        pdfPageCount: null,
+      },
+    ];
+
+    const { container } = render(<ComposerPanel runtime={runtime} />);
+
+    const tray = container.querySelector(
+      'div[class*="h-0"][class*="flex-1"][class*="overflow-hidden"]'
+    );
+
+    expect(tray).toBeTruthy();
+    expect(screen.getByTestId('composer-attachment-preview-list')).toBeTruthy();
   });
 });

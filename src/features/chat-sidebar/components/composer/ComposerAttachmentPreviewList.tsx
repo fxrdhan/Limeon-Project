@@ -106,9 +106,9 @@ const ComposerAttachmentPreviewList = forwardRef<
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 2 }}
         transition={transition}
-        className="mb-2"
+        className="h-full min-h-0 overflow-hidden"
       >
-        <div className="flex flex-col gap-2 pr-1">
+        <div className="h-full min-h-0 overflow-y-auto pr-1 overscroll-contain">
           {attachments.map(attachment => {
             if ('status' in attachment && attachment.status === 'loading') {
               const isPdfCompressionLoading =
