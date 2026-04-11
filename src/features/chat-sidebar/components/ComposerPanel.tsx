@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react';
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import ImageUploader from '@/components/image-manager';
 import ImageExpandPreview from '@/components/shared/image-expand-preview';
 import { TbArrowUp } from 'react-icons/tb';
@@ -38,6 +38,10 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
   const [composerTrayMaxHeight, setComposerTrayMaxHeight] = useState<
     number | null
   >(null);
+  const [
+    isComposerAttachmentTrayScrolledToBottom,
+    setIsComposerAttachmentTrayScrolledToBottom,
+  ] = useState(false);
   const totalSelectableComposerAttachments =
     composer.composerAttachmentPreviewItems.filter(
       attachment =>
@@ -99,6 +103,12 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
       resizeObserver.disconnect();
     };
   }, [hasComposerAttachmentTray, refs.composerContainerRef]);
+
+  useEffect(() => {
+    if (!previews.isComposerAttachmentSelectionMode) {
+      setIsComposerAttachmentTrayScrolledToBottom(false);
+    }
+  }, [previews.isComposerAttachmentSelectionMode]);
 
   return (
     <>
@@ -184,6 +194,9 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                       onRemovePendingComposerAttachment={
                         composer.removePendingComposerAttachment
                       }
+                      onBottomStateChange={
+                        setIsComposerAttachmentTrayScrolledToBottom
+                      }
                     />
                   ) : null}
                 </div>
@@ -196,10 +209,15 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                   >
                     <div
                       aria-hidden="true"
-                      className="pointer-events-none absolute inset-x-0 bottom-0 h-full"
+                      className={`pointer-events-none absolute inset-x-0 bottom-0 ${
+                        isComposerAttachmentTrayScrolledToBottom
+                          ? 'h-7'
+                          : 'h-full'
+                      }`}
                       style={{
-                        background:
-                          'linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.22) 20%, rgba(255,255,255,0.58) 46%, rgba(255,255,255,0.9) 72%, rgba(255,255,255,1) 100%)',
+                        background: isComposerAttachmentTrayScrolledToBottom
+                          ? 'rgb(255,255,255)'
+                          : 'linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.22) 20%, rgba(255,255,255,0.58) 46%, rgba(255,255,255,0.9) 72%, rgba(255,255,255,1) 100%)',
                       }}
                     />
                     <div className="absolute inset-x-0 bottom-px flex items-end justify-between px-3">

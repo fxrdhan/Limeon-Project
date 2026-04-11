@@ -1,5 +1,5 @@
 import { createRef } from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vite-plus/test';
 import ComposerAttachmentPreviewList from '../components/composer/ComposerAttachmentPreviewList';
 import type { PendingComposerAttachment } from '../types';
@@ -57,5 +57,66 @@ describe('ComposerAttachmentPreviewList', () => {
 
     expect(scrollContainer).toBeTruthy();
     expect(scrollContainer?.className).toContain('h-full');
+  });
+
+  it('reports when the attachment preview list reaches the bottom', () => {
+    const onBottomStateChange = vi.fn();
+    const { container } = render(
+      <ComposerAttachmentPreviewList
+        attachments={Array.from({ length: 3 }, (_, index) =>
+          buildAttachment({
+            id: `pending-image-${index + 1}`,
+            fileName: `bulk-image-${index + 1}.png`,
+            previewUrl: `blob:bulk-image-${index + 1}`,
+          })
+        )}
+        openImageActionsAttachmentId={null}
+        isSelectionMode={true}
+        selectedAttachmentIds={[]}
+        imageActionsButtonRef={createRef<HTMLButtonElement>()}
+        transition={{
+          duration: 0.2,
+          ease: 'easeOut',
+          layout: {
+            type: 'tween',
+            ease: [0.22, 1, 0.36, 1],
+            duration: 0.2,
+          },
+        }}
+        onToggleImageActionsMenu={vi.fn()}
+        onToggleAttachmentSelection={vi.fn()}
+        onCancelLoadingComposerAttachment={vi.fn()}
+        onRemovePendingComposerAttachment={vi.fn()}
+        onBottomStateChange={onBottomStateChange}
+      />
+    );
+
+    const scrollContainer = container.querySelector(
+      'div.overflow-y-auto'
+    ) as HTMLDivElement | null;
+
+    expect(scrollContainer).toBeTruthy();
+
+    Object.defineProperties(scrollContainer!, {
+      clientHeight: {
+        configurable: true,
+        value: 120,
+      },
+      scrollHeight: {
+        configurable: true,
+        value: 240,
+      },
+      scrollTop: {
+        configurable: true,
+        writable: true,
+        value: 0,
+      },
+    });
+
+    fireEvent.scroll(scrollContainer!);
+    scrollContainer!.scrollTop = 120;
+    fireEvent.scroll(scrollContainer!);
+
+    expect(onBottomStateChange).toHaveBeenLastCalledWith(true);
   });
 });
