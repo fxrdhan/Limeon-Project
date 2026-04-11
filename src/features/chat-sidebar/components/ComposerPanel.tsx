@@ -73,95 +73,91 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
               layout
               initial={false}
               transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
-              className="mb-[-1px] flex h-0 min-h-0 flex-1 flex-col overflow-hidden rounded-t-3xl rounded-b-none border border-b-0 bg-white"
+              className="mb-[-1px] grid min-h-0 shrink-0 max-h-[min(38vh,19rem)] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-t-3xl rounded-b-none border border-b-0 bg-white px-2.5 py-2.5"
               style={{
                 borderColor: COMPOSER_BASE_BORDER_COLOR,
               }}
             >
-              <div className="grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)_auto] px-2.5 py-2.5">
-                <AnimatePresence initial={false} mode="popLayout">
-                  {previews.isComposerAttachmentSelectionMode ? (
-                    <motion.div
-                      layout
-                      transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
-                      className="mb-2 flex items-center justify-between px-1 text-sm"
-                    >
-                      <button
-                        type="button"
-                        onClick={previews.handleSelectAllComposerAttachments}
-                        className="cursor-pointer bg-transparent p-0 text-sm font-medium text-slate-500 transition-colors hover:text-slate-700 hover:underline hover:underline-offset-2"
-                      >
-                        Pilih semua
-                      </button>
-                      <p className="text-sm font-medium text-slate-500">
-                        {previews.selectedComposerAttachmentIds.length}/
-                        {totalSelectableComposerAttachments} terpilih
-                      </p>
-                    </motion.div>
-                  ) : (
-                    <div />
-                  )}
-                </AnimatePresence>
-
-                <div className="min-h-0 overflow-hidden">
-                  {composer.composerAttachmentPreviewItems.length > 0 ? (
-                    <ComposerAttachmentPreviewList
-                      attachments={composer.composerAttachmentPreviewItems}
-                      openImageActionsAttachmentId={
-                        previews.openImageActionsAttachmentId
-                      }
-                      isSelectionMode={
-                        previews.isComposerAttachmentSelectionMode
-                      }
-                      selectedAttachmentIds={
-                        previews.selectedComposerAttachmentIds
-                      }
-                      imageActionsButtonRef={previews.imageActionsButtonRef}
-                      transition={contextualPanelTransition}
-                      onToggleImageActionsMenu={
-                        previews.handleToggleImageActionsMenu
-                      }
-                      onToggleAttachmentSelection={
-                        previews.handleToggleComposerAttachmentSelection
-                      }
-                      onCancelLoadingComposerAttachment={
-                        composer.cancelLoadingComposerAttachment
-                      }
-                      onRemovePendingComposerAttachment={
-                        composer.removePendingComposerAttachment
-                      }
-                    />
-                  ) : null}
-                </div>
-
+              <AnimatePresence initial={false} mode="popLayout">
                 {previews.isComposerAttachmentSelectionMode ? (
                   <motion.div
                     layout
                     transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
-                    className="mt-2 flex items-center justify-between px-1 text-sm"
+                    className="mb-2 flex items-center justify-between px-1 text-sm"
                   >
                     <button
                       type="button"
-                      onClick={previews.handleClearComposerAttachmentSelection}
+                      onClick={previews.handleSelectAllComposerAttachments}
                       className="cursor-pointer bg-transparent p-0 text-sm font-medium text-slate-500 transition-colors hover:text-slate-700 hover:underline hover:underline-offset-2"
                     >
-                      Batal
+                      Pilih semua
                     </button>
-                    <button
-                      type="button"
-                      onClick={previews.handleDeleteSelectedComposerAttachments}
-                      disabled={
-                        previews.selectedComposerAttachmentIds.length === 0
-                      }
-                      className="cursor-pointer bg-transparent p-0 text-sm font-medium text-rose-500 transition-colors hover:text-rose-600 hover:underline hover:underline-offset-2 disabled:cursor-default disabled:text-rose-300 disabled:hover:no-underline"
-                    >
-                      Hapus
-                    </button>
+                    <p className="text-sm font-medium text-slate-500">
+                      {previews.selectedComposerAttachmentIds.length}/
+                      {totalSelectableComposerAttachments} terpilih
+                    </p>
                   </motion.div>
                 ) : (
                   <div />
                 )}
+              </AnimatePresence>
+
+              <div className="min-h-0 overflow-hidden">
+                {composer.composerAttachmentPreviewItems.length > 0 ? (
+                  <ComposerAttachmentPreviewList
+                    attachments={composer.composerAttachmentPreviewItems}
+                    openImageActionsAttachmentId={
+                      previews.openImageActionsAttachmentId
+                    }
+                    isSelectionMode={previews.isComposerAttachmentSelectionMode}
+                    selectedAttachmentIds={
+                      previews.selectedComposerAttachmentIds
+                    }
+                    imageActionsButtonRef={previews.imageActionsButtonRef}
+                    transition={contextualPanelTransition}
+                    onToggleImageActionsMenu={
+                      previews.handleToggleImageActionsMenu
+                    }
+                    onToggleAttachmentSelection={
+                      previews.handleToggleComposerAttachmentSelection
+                    }
+                    onCancelLoadingComposerAttachment={
+                      composer.cancelLoadingComposerAttachment
+                    }
+                    onRemovePendingComposerAttachment={
+                      composer.removePendingComposerAttachment
+                    }
+                  />
+                ) : null}
               </div>
+
+              {previews.isComposerAttachmentSelectionMode ? (
+                <motion.div
+                  layout
+                  transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
+                  className="mt-2 flex items-center justify-between px-1 text-sm"
+                >
+                  <button
+                    type="button"
+                    onClick={previews.handleClearComposerAttachmentSelection}
+                    className="cursor-pointer bg-transparent p-0 text-sm font-medium text-slate-500 transition-colors hover:text-slate-700 hover:underline hover:underline-offset-2"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={previews.handleDeleteSelectedComposerAttachments}
+                    disabled={
+                      previews.selectedComposerAttachmentIds.length === 0
+                    }
+                    className="cursor-pointer bg-transparent p-0 text-sm font-medium text-rose-500 transition-colors hover:text-rose-600 hover:underline hover:underline-offset-2 disabled:cursor-default disabled:text-rose-300 disabled:hover:no-underline"
+                  >
+                    Hapus
+                  </button>
+                </motion.div>
+              ) : (
+                <div />
+              )}
             </motion.div>
           ) : null}
 

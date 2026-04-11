@@ -558,10 +558,12 @@ describe('ComposerPanel', () => {
     const { container } = render(<ComposerPanel runtime={runtime} />);
 
     const tray = container.querySelector(
-      'div[class*="h-0"][class*="flex-1"][class*="overflow-hidden"]'
+      'div[class*="max-h-"][class*="grid-rows-"][class*="overflow-hidden"]'
     );
 
     expect(tray).toBeTruthy();
+    expect(tray?.className).toContain('shrink-0');
+    expect(tray?.className).not.toContain('flex-1');
     expect(screen.getByTestId('composer-attachment-preview-list')).toBeTruthy();
   });
 
