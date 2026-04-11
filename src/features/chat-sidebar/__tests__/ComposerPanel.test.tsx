@@ -16,6 +16,7 @@ const { mockPopupMenuContent } = vi.hoisted(() => ({
 const { mockComposerAttachmentScrollState } = vi.hoisted(() => ({
   mockComposerAttachmentScrollState: {
     hasOverflow: false,
+    isAtTop: true,
     isAtBottom: true,
   },
 }));
@@ -84,6 +85,7 @@ vi.mock('../components/composer/ComposerAttachmentPreviewList', () => ({
   }: {
     onScrollStateChange?: (state: {
       hasOverflow: boolean;
+      isAtTop: boolean;
       isAtBottom: boolean;
     }) => void;
   }) {
@@ -205,6 +207,7 @@ describe('ComposerPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockComposerAttachmentScrollState.hasOverflow = false;
+    mockComposerAttachmentScrollState.isAtTop = true;
     mockComposerAttachmentScrollState.isAtBottom = true;
   });
 
@@ -629,11 +632,13 @@ describe('ComposerPanel', () => {
       },
     ];
     mockComposerAttachmentScrollState.hasOverflow = true;
+    mockComposerAttachmentScrollState.isAtTop = false;
     mockComposerAttachmentScrollState.isAtBottom = false;
 
     render(<ComposerPanel runtime={runtime} />);
 
     expect(screen.getByTestId('composer-attachment-fog')).toBeTruthy();
+    expect(screen.getByTestId('composer-attachment-top-fog')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Batal' })).toBeNull();
   });
 

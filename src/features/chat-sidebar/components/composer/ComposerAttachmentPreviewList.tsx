@@ -44,6 +44,7 @@ interface ComposerAttachmentPreviewListProps {
   onRemovePendingComposerAttachment: (attachmentId: string) => void;
   onScrollStateChange?: (state: {
     hasOverflow: boolean;
+    isAtTop: boolean;
     isAtBottom: boolean;
   }) => void;
 }
@@ -92,6 +93,7 @@ const ComposerAttachmentPreviewList = forwardRef<
 
       onScrollStateChange({
         hasOverflow,
+        isAtTop: scrollContainer.scrollTop <= 2,
         isAtBottom: !hasOverflow || remainingScrollDistance <= 2,
       });
     }, [onScrollStateChange]);

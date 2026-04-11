@@ -43,6 +43,10 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
     setIsComposerAttachmentTrayScrolledToBottom,
   ] = useState(false);
   const [
+    isComposerAttachmentTrayScrolledToTop,
+    setIsComposerAttachmentTrayScrolledToTop,
+  ] = useState(true);
+  const [
     hasComposerAttachmentTrayOverflow,
     setHasComposerAttachmentTrayOverflow,
   ] = useState(false);
@@ -111,19 +115,24 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
   useEffect(() => {
     if (!hasComposerAttachmentTray) {
       setHasComposerAttachmentTrayOverflow(false);
+      setIsComposerAttachmentTrayScrolledToTop(true);
       setIsComposerAttachmentTrayScrolledToBottom(false);
     }
   }, [hasComposerAttachmentTray]);
 
+  const shouldShowComposerAttachmentTopFog =
+    hasComposerAttachmentTrayOverflow && !isComposerAttachmentTrayScrolledToTop;
   const shouldShowComposerAttachmentFog =
     previews.isComposerAttachmentSelectionMode ||
     (hasComposerAttachmentTrayOverflow &&
       !isComposerAttachmentTrayScrolledToBottom);
   const handleComposerAttachmentScrollStateChange = (state: {
     hasOverflow: boolean;
+    isAtTop: boolean;
     isAtBottom: boolean;
   }) => {
     setHasComposerAttachmentTrayOverflow(state.hasOverflow);
+    setIsComposerAttachmentTrayScrolledToTop(state.isAtTop);
     setIsComposerAttachmentTrayScrolledToBottom(state.isAtBottom);
   };
 
@@ -182,7 +191,7 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                   )}
                 </AnimatePresence>
 
-                <div className="min-h-0 overflow-hidden">
+                <div className="relative min-h-0 overflow-hidden">
                   {composer.composerAttachmentPreviewItems.length > 0 ? (
                     <ComposerAttachmentPreviewList
                       attachments={composer.composerAttachmentPreviewItems}
@@ -213,6 +222,23 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                         handleComposerAttachmentScrollStateChange
                       }
                     />
+                  ) : null}
+                  {shouldShowComposerAttachmentTopFog ? (
+                    <motion.div
+                      layout
+                      transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
+                      data-testid="composer-attachment-top-fog"
+                      className="pointer-events-none absolute inset-x-0 top-0 z-[2] h-10"
+                    >
+                      <div
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-x-0 top-0 h-full"
+                        style={{
+                          background:
+                            'linear-gradient(to bottom, rgba(255,255,255,1) 0%, rgba(255,255,255,0.9) 28%, rgba(255,255,255,0.58) 54%, rgba(255,255,255,0.22) 80%, rgba(255,255,255,0) 100%)',
+                        }}
+                      />
+                    </motion.div>
                   ) : null}
                 </div>
 

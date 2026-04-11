@@ -119,6 +119,7 @@ describe('ComposerAttachmentPreviewList', () => {
 
     expect(onScrollStateChange).toHaveBeenLastCalledWith({
       hasOverflow: true,
+      isAtTop: false,
       isAtBottom: true,
     });
   });
