@@ -2,7 +2,7 @@ import type { PopupMenuAction } from '@/components/image-manager/PopupMenuConten
 import PopupMenuContent from '@/components/image-manager/PopupMenuContent';
 import PopupMenuPopover from '@/components/shared/popup-menu-popover';
 import { createPortal } from 'react-dom';
-import type { RefObject } from 'react';
+import { useEffect, useState, type RefObject } from 'react';
 
 const CHAT_POPOVER_ICON_CLASS_NAME =
   '[&>svg]:!text-black hover:[&>svg]:!text-black data-[preselected=true]:[&>svg]:!text-black';
@@ -32,21 +32,65 @@ export const ComposerAttachmentActionMenus = ({
   imageActionsMenuRef,
   pdfCompressionMenuRef,
 }: ComposerAttachmentActionMenusProps) => {
+  const [
+    isImageActionsMenuRepositionAnimationEnabled,
+    setIsImageActionsMenuRepositionAnimationEnabled,
+  ] = useState(false);
+
+  useEffect(() => {
+    setIsImageActionsMenuRepositionAnimationEnabled(false);
+  }, [openImageActionsAttachmentId]);
+
+  useEffect(() => {
+    if (
+      !imageActionsMenuPosition ||
+      isImageActionsMenuRepositionAnimationEnabled
+    ) {
+      return;
+    }
+
+    const rafId = window.requestAnimationFrame(() => {
+      setIsImageActionsMenuRepositionAnimationEnabled(true);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+    };
+  }, [imageActionsMenuPosition, isImageActionsMenuRepositionAnimationEnabled]);
+
   if (typeof document === 'undefined' || !openImageActionsAttachmentId) {
     return null;
   }
 
+  const shouldMountImageActionsMenu = openImageActionsAttachmentId !== null;
+  const imageActionsMenuStyle = imageActionsMenuPosition
+    ? {
+        top: imageActionsMenuPosition.top,
+        left: imageActionsMenuPosition.left,
+      }
+    : {
+        top: -10_000,
+        left: -10_000,
+        visibility: 'hidden' as const,
+        pointerEvents: 'none' as const,
+      };
+  const imageActionsMenuClassName = `fixed z-[120] origin-top-right ${
+    isImageActionsMenuRepositionAnimationEnabled
+      ? 'transition-[top,left] duration-240 ease-[cubic-bezier(0.22,1,0.36,1)]'
+      : ''
+  }`;
+
   return (
     <>
-      {imageActionsMenuPosition
+      {shouldMountImageActionsMenu
         ? createPortal(
             <PopupMenuPopover
               isOpen
-              className="fixed z-[120] origin-top-right transition-[top,left] duration-240 ease-[cubic-bezier(0.22,1,0.36,1)]"
-              style={{
-                top: imageActionsMenuPosition.top,
-                left: imageActionsMenuPosition.left,
-              }}
+              className={imageActionsMenuClassName}
+              style={imageActionsMenuStyle}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
             >
               <div
                 ref={imageActionsMenuRef}
@@ -75,6 +119,9 @@ export const ComposerAttachmentActionMenus = ({
                 top: pdfCompressionMenuPosition.top,
                 left: pdfCompressionMenuPosition.left,
               }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
             >
               <div
                 ref={pdfCompressionMenuRef}

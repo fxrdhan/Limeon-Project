@@ -3,7 +3,14 @@ import {
   CHAT_PDF_COMPRESS_DEFAULT_LEVEL,
   type ChatPdfCompressionLevel,
 } from '../../../../shared/chatFunctionContracts';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   TbEye,
   TbCheckbox,
@@ -487,7 +494,7 @@ export const useComposerAttachmentPreview = ({
   ]);
 
   const handleToggleImageActionsMenu = useCallback(
-    (event: ReactMouseEvent<HTMLButtonElement>, attachmentId: string) => {
+    (_event: ReactMouseEvent<HTMLButtonElement>, attachmentId: string) => {
       if (openImageActionsAttachmentId === attachmentId) {
         closeImageActionsMenu();
         return;
@@ -496,14 +503,11 @@ export const useComposerAttachmentPreview = ({
       onOpenImageActionsMenu();
       closePdfCompressionMenu();
       setOpenImageActionsAttachmentId(attachmentId);
-      setImageActionsMenuPosition(
-        getImageActionsMenuPosition(event.currentTarget)
-      );
+      setImageActionsMenuPosition(null);
     },
     [
       closeImageActionsMenu,
       closePdfCompressionMenu,
-      getImageActionsMenuPosition,
       onOpenImageActionsMenu,
       openImageActionsAttachmentId,
     ]
@@ -558,7 +562,7 @@ export const useComposerAttachmentPreview = ({
     };
   }, [closeImageActionsMenu, openImageActionsAttachmentId]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!openImageActionsAttachmentId) return;
 
     const syncMenuPosition = () => {
