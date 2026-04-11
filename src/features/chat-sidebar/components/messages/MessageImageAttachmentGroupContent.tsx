@@ -149,9 +149,9 @@ export const MessageImageAttachmentGroupContent = ({
   const uploadOverlayLabel =
     pendingUploadCount <= 0
       ? null
-      : pendingUploadCount === messages.length
-        ? `Mengunggah ${messages.length} gambar`
-        : `Mengunggah ${pendingUploadCount} dari ${messages.length} gambar`;
+      : `${Math.round(
+          ((messages.length - pendingUploadCount) / messages.length) * 100
+        )}%`;
   const groupMenuActions = representativeMessage
     ? buildMessageMenuActions({
         message: representativeMessage,
@@ -316,7 +316,7 @@ export const MessageImageAttachmentGroupContent = ({
             <div className="inline-flex items-center gap-2 rounded-full bg-white/92 px-2.5 py-1 text-[11px] font-medium text-slate-700 shadow-sm">
               <span
                 aria-hidden="true"
-                className="h-2 w-2 animate-pulse rounded-full bg-emerald-500"
+                className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-300 border-t-emerald-500"
               />
               <span>{uploadOverlayLabel}</span>
             </div>

@@ -281,7 +281,7 @@ describe('MessageItem', () => {
       />
     );
 
-    expect(screen.getByText('Mengunggah 4 gambar')).toBeTruthy();
+    expect(screen.getByText('0%')).toBeTruthy();
   });
 
   it('anchors grouped image menus to the outer bubble instead of the inner grid button', () => {

@@ -77,6 +77,8 @@ export const MessageBubbleContent = ({
     useState<LinkContextMenuState | null>(null);
   const linkContextMenuRef = useRef<HTMLDivElement | null>(null);
   const isSquareImageAttachment = isImageMessage || isImageFileMessage;
+  const sendingProgressLabel =
+    messageDeliveryStatus === 'sending' ? '0%' : null;
 
   useEffect(() => {
     if (!linkContextMenu) return;
@@ -160,14 +162,14 @@ export const MessageBubbleContent = ({
             Memuat gambar...
           </div>
         )}
-        {messageDeliveryStatus === 'sending' ? (
+        {sendingProgressLabel ? (
           <div className="pointer-events-none absolute inset-0 flex items-end justify-start bg-slate-950/24 p-2">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/92 px-2.5 py-1 text-[11px] font-medium text-slate-700 shadow-sm">
               <span
                 aria-hidden="true"
-                className="h-2 w-2 animate-pulse rounded-full bg-emerald-500"
+                className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-300 border-t-emerald-500"
               />
-              <span>Mengunggah gambar</span>
+              <span>{sendingProgressLabel}</span>
             </div>
           </div>
         ) : null}
