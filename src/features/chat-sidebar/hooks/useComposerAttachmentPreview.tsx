@@ -64,6 +64,10 @@ export const useComposerAttachmentPreview = ({
   const imageActionsMenuRef = useRef<HTMLDivElement | null>(null);
   const pdfCompressionMenuRef = useRef<HTMLDivElement | null>(null);
   const pdfCompressionMenuAnchorRef = useRef<HTMLButtonElement | null>(null);
+  const [
+    isComposerAttachmentSelectionMode,
+    setIsComposerAttachmentSelectionMode,
+  ] = useState(false);
   const [selectedComposerAttachmentIds, setSelectedComposerAttachmentIds] =
     useState<string[]>([]);
   const {
@@ -185,8 +189,12 @@ export const useComposerAttachmentPreview = ({
     });
   }, [selectableComposerAttachmentIds]);
 
-  const isComposerAttachmentSelectionMode =
-    selectedComposerAttachmentIds.length > 0;
+  useEffect(() => {
+    if (selectableComposerAttachmentIds.length === 0) {
+      setIsComposerAttachmentSelectionMode(false);
+      setSelectedComposerAttachmentIds([]);
+    }
+  }, [selectableComposerAttachmentIds.length]);
 
   const handleToggleComposerAttachmentSelection = useCallback(
     (attachmentId: string) => {
@@ -194,6 +202,7 @@ export const useComposerAttachmentPreview = ({
         return;
       }
 
+      setIsComposerAttachmentSelectionMode(true);
       setSelectedComposerAttachmentIds(previousIds =>
         previousIds.includes(attachmentId)
           ? previousIds.filter(id => id !== attachmentId)
@@ -204,10 +213,12 @@ export const useComposerAttachmentPreview = ({
   );
 
   const handleSelectAllComposerAttachments = useCallback(() => {
+    setIsComposerAttachmentSelectionMode(true);
     setSelectedComposerAttachmentIds(selectableComposerAttachmentIds);
   }, [selectableComposerAttachmentIds]);
 
   const handleClearComposerAttachmentSelection = useCallback(() => {
+    setIsComposerAttachmentSelectionMode(false);
     setSelectedComposerAttachmentIds([]);
   }, []);
 

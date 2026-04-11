@@ -143,7 +143,7 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                       <button
                         type="button"
                         onClick={previews.handleSelectAllComposerAttachments}
-                        className="cursor-pointer bg-transparent p-0 text-sm font-medium text-slate-500 transition-colors hover:text-slate-700 hover:underline hover:underline-offset-2"
+                        className="cursor-pointer bg-transparent p-0 text-sm font-medium text-black hover:underline hover:underline-offset-2"
                       >
                         Pilih semua
                       </button>
@@ -199,7 +199,7 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                       className="pointer-events-none absolute inset-x-0 bottom-0 h-full"
                       style={{
                         background:
-                          'linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.18) 24%, rgba(255,255,255,0.48) 52%, rgba(255,255,255,0.82) 78%, rgba(255,255,255,1) 100%)',
+                          'linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.22) 20%, rgba(255,255,255,0.58) 46%, rgba(255,255,255,0.9) 72%, rgba(255,255,255,1) 100%)',
                       }}
                     />
                     <div className="absolute inset-x-0 bottom-px flex items-end justify-between px-3">
@@ -208,22 +208,21 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                         onClick={
                           previews.handleClearComposerAttachmentSelection
                         }
-                        className="pointer-events-auto relative z-[1] cursor-pointer bg-transparent p-0 text-sm leading-tight font-medium text-slate-500 transition-colors hover:text-slate-700 hover:underline hover:underline-offset-2"
+                        className="pointer-events-auto relative z-[1] cursor-pointer bg-transparent p-0 text-sm leading-tight font-medium text-black hover:underline hover:underline-offset-2"
                       >
                         Batal
                       </button>
-                      <button
-                        type="button"
-                        onClick={
-                          previews.handleDeleteSelectedComposerAttachments
-                        }
-                        disabled={
-                          previews.selectedComposerAttachmentIds.length === 0
-                        }
-                        className="pointer-events-auto relative z-[1] cursor-pointer bg-transparent p-0 text-sm leading-tight font-medium text-rose-500 transition-colors hover:text-rose-600 hover:underline hover:underline-offset-2 disabled:cursor-default disabled:text-rose-300 disabled:hover:no-underline"
-                      >
-                        Hapus
-                      </button>
+                      {previews.selectedComposerAttachmentIds.length > 0 ? (
+                        <button
+                          type="button"
+                          onClick={
+                            previews.handleDeleteSelectedComposerAttachments
+                          }
+                          className="pointer-events-auto relative z-[1] cursor-pointer bg-transparent p-0 text-sm leading-tight font-medium text-rose-600 hover:underline hover:underline-offset-2"
+                        >
+                          Hapus
+                        </button>
+                      ) : null}
                     </div>
                   </motion.div>
                 ) : (

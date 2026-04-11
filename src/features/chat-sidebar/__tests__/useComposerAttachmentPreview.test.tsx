@@ -94,6 +94,14 @@ const ComposerAttachmentPreviewHarness = ({
       <span data-testid="selected-ids">
         {preview.selectedComposerAttachmentIds.join(',')}
       </span>
+      <button
+        type="button"
+        onClick={() =>
+          preview.handleToggleComposerAttachmentSelection(attachment.id)
+        }
+      >
+        toggle-selection
+      </button>
       {preview.imageActions.map(action => (
         <button key={action.label} type="button" onClick={action.onClick}>
           {action.label}
@@ -207,6 +215,29 @@ describe('useComposerAttachmentPreview', () => {
     expect(screen.getByTestId('selected-ids').textContent).toBe(
       'attachment-select-doc'
     );
+  });
+
+  it('keeps selection mode open after the last selected attachment is deselected', () => {
+    render(
+      <ComposerAttachmentPreviewHarness
+        attachment={buildAttachment({
+          id: 'attachment-toggle-empty',
+        })}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'toggle' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Pilih' }));
+
+    expect(screen.getByTestId('selection-mode').textContent).toBe('open');
+    expect(screen.getByTestId('selected-ids').textContent).toBe(
+      'attachment-toggle-empty'
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'toggle-selection' }));
+
+    expect(screen.getByTestId('selection-mode').textContent).toBe('open');
+    expect(screen.getByTestId('selected-ids').textContent).toBe('');
   });
 
   it('opens the pdf compression levels menu before compressing', () => {

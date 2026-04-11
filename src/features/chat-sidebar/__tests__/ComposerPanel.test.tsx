@@ -311,6 +311,29 @@ describe('ComposerPanel', () => {
     ).toHaveBeenCalledOnce();
   });
 
+  it('hides the delete action when no composer attachments are selected', () => {
+    const runtime = buildComposerRuntime();
+    runtime.previews.isComposerAttachmentSelectionMode = true;
+    runtime.composer.composerAttachmentPreviewItems = [
+      {
+        id: 'pending-image-1',
+        file: new File(['image'], 'foto.png', { type: 'image/png' }),
+        fileName: 'foto.png',
+        fileTypeLabel: 'PNG',
+        fileKind: 'image',
+        mimeType: 'image/png',
+        previewUrl: 'blob:preview-1',
+        pdfCoverUrl: null,
+        pdfPageCount: null,
+      },
+    ];
+
+    render(<ComposerPanel runtime={runtime} />);
+
+    expect(screen.getByRole('button', { name: 'Batal' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Hapus' })).toBeNull();
+  });
+
   it('renders each hoverable attachment link as a separate inline anchor', () => {
     const runtime = buildComposerRuntime();
 
