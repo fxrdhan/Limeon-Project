@@ -563,4 +563,45 @@ describe('ComposerPanel', () => {
     expect(tray).toBeTruthy();
     expect(screen.getByTestId('composer-attachment-preview-list')).toBeTruthy();
   });
+
+  it('measures only the visible composer stack for viewport spacing', () => {
+    const runtime = buildComposerRuntime();
+    runtime.composer.composerAttachmentPreviewItems = [
+      {
+        id: 'pending-image-1',
+        file: new File(['image'], 'foto.png', { type: 'image/png' }),
+        fileName: 'foto.png',
+        fileTypeLabel: 'PNG',
+        fileKind: 'image',
+        mimeType: 'image/png',
+        previewUrl: 'blob:preview-1',
+        pdfCoverUrl: null,
+        pdfPageCount: null,
+      },
+    ];
+
+    render(<ComposerPanel runtime={runtime} />);
+
+    const composerContainer = runtime.refs.composerContainerRef.current;
+
+    expect(composerContainer).toBeTruthy();
+    expect(composerContainer?.className).toContain('shrink-0');
+    expect(composerContainer?.className).toContain('pointer-events-auto');
+    expect(composerContainer?.className).not.toContain('flex-1');
+    expect(composerContainer).toContain(
+      screen.getByTestId('composer-attachment-preview-list')
+    );
+    expect(composerContainer).toContain(
+      screen.getByRole('button', { name: 'Kirim pesan' })
+    );
+  });
+
+  it('keeps the empty composer overlay transparent to pointer events', () => {
+    const runtime = buildComposerRuntime();
+    const { container } = render(<ComposerPanel runtime={runtime} />);
+
+    const composerOverlay = container.querySelector('div[class*="top-1/2"]');
+
+    expect(composerOverlay?.className).toContain('pointer-events-none');
+  });
 });
