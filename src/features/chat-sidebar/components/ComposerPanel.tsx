@@ -42,6 +42,10 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
     isComposerAttachmentTrayScrolledToBottom,
     setIsComposerAttachmentTrayScrolledToBottom,
   ] = useState(false);
+  const [
+    hasComposerAttachmentTrayOverflow,
+    setHasComposerAttachmentTrayOverflow,
+  ] = useState(false);
   const totalSelectableComposerAttachments =
     composer.composerAttachmentPreviewItems.filter(
       attachment =>
@@ -105,10 +109,23 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
   }, [hasComposerAttachmentTray, refs.composerContainerRef]);
 
   useEffect(() => {
-    if (!previews.isComposerAttachmentSelectionMode) {
+    if (!hasComposerAttachmentTray) {
+      setHasComposerAttachmentTrayOverflow(false);
       setIsComposerAttachmentTrayScrolledToBottom(false);
     }
-  }, [previews.isComposerAttachmentSelectionMode]);
+  }, [hasComposerAttachmentTray]);
+
+  const shouldShowComposerAttachmentFog =
+    previews.isComposerAttachmentSelectionMode ||
+    (hasComposerAttachmentTrayOverflow &&
+      !isComposerAttachmentTrayScrolledToBottom);
+  const handleComposerAttachmentScrollStateChange = (state: {
+    hasOverflow: boolean;
+    isAtBottom: boolean;
+  }) => {
+    setHasComposerAttachmentTrayOverflow(state.hasOverflow);
+    setIsComposerAttachmentTrayScrolledToBottom(state.isAtBottom);
+  };
 
   return (
     <>
@@ -132,9 +149,7 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                 layout
                 initial={false}
                 transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
-                className={`relative mb-[-1px] grid min-h-0 shrink-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-t-3xl rounded-b-none border border-b-0 bg-white px-2.5 pt-2.5 ${
-                  previews.isComposerAttachmentSelectionMode ? 'pb-0' : 'pb-2.5'
-                }`}
+                className="relative mb-[-1px] grid min-h-0 shrink-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-t-3xl rounded-b-none border border-b-0 bg-white px-2.5 pt-2.5 pb-0"
                 style={{
                   borderColor: COMPOSER_BASE_BORDER_COLOR,
                   maxHeight:
@@ -194,17 +209,18 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                       onRemovePendingComposerAttachment={
                         composer.removePendingComposerAttachment
                       }
-                      onBottomStateChange={
-                        setIsComposerAttachmentTrayScrolledToBottom
+                      onScrollStateChange={
+                        handleComposerAttachmentScrollStateChange
                       }
                     />
                   ) : null}
                 </div>
 
-                {previews.isComposerAttachmentSelectionMode ? (
+                {shouldShowComposerAttachmentFog ? (
                   <motion.div
                     layout
                     transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
+                    data-testid="composer-attachment-fog"
                     className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] h-14 text-sm"
                   >
                     <div
@@ -220,28 +236,30 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                           : 'linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.22) 20%, rgba(255,255,255,0.58) 46%, rgba(255,255,255,0.9) 72%, rgba(255,255,255,1) 100%)',
                       }}
                     />
-                    <div className="absolute inset-x-0 bottom-px flex items-end justify-between px-3">
-                      <button
-                        type="button"
-                        onClick={
-                          previews.handleClearComposerAttachmentSelection
-                        }
-                        className="pointer-events-auto relative z-[1] cursor-pointer bg-transparent p-0 text-sm leading-tight font-medium text-black hover:underline hover:underline-offset-2"
-                      >
-                        Batal
-                      </button>
-                      {previews.selectedComposerAttachmentIds.length > 0 ? (
+                    {previews.isComposerAttachmentSelectionMode ? (
+                      <div className="absolute inset-x-0 bottom-px flex items-end justify-between px-3">
                         <button
                           type="button"
                           onClick={
-                            previews.handleDeleteSelectedComposerAttachments
+                            previews.handleClearComposerAttachmentSelection
                           }
-                          className="pointer-events-auto relative z-[1] cursor-pointer bg-transparent p-0 text-sm leading-tight font-medium text-rose-600 hover:underline hover:underline-offset-2"
+                          className="pointer-events-auto relative z-[1] cursor-pointer bg-transparent p-0 text-sm leading-tight font-medium text-black hover:underline hover:underline-offset-2"
                         >
-                          Hapus
+                          Batal
                         </button>
-                      ) : null}
-                    </div>
+                        {previews.selectedComposerAttachmentIds.length > 0 ? (
+                          <button
+                            type="button"
+                            onClick={
+                              previews.handleDeleteSelectedComposerAttachments
+                            }
+                            className="pointer-events-auto relative z-[1] cursor-pointer bg-transparent p-0 text-sm leading-tight font-medium text-rose-600 hover:underline hover:underline-offset-2"
+                          >
+                            Hapus
+                          </button>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </motion.div>
                 ) : (
                   <div />

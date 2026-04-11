@@ -42,7 +42,10 @@ interface ComposerAttachmentPreviewListProps {
   onToggleAttachmentSelection: (attachmentId: string) => void;
   onCancelLoadingComposerAttachment: (attachmentId: string) => void;
   onRemovePendingComposerAttachment: (attachmentId: string) => void;
-  onBottomStateChange?: (isAtBottom: boolean) => void;
+  onScrollStateChange?: (state: {
+    hasOverflow: boolean;
+    isAtBottom: boolean;
+  }) => void;
 }
 
 const ComposerAttachmentPreviewList = forwardRef<
@@ -61,7 +64,7 @@ const ComposerAttachmentPreviewList = forwardRef<
       onToggleAttachmentSelection,
       onCancelLoadingComposerAttachment,
       onRemovePendingComposerAttachment,
-      onBottomStateChange,
+      onScrollStateChange,
     },
     ref
   ) => {
@@ -74,19 +77,24 @@ const ComposerAttachmentPreviewList = forwardRef<
         attachment.loadingKind === 'pdf-compression'
     );
 
-    const updateBottomState = useCallback(() => {
+    const updateScrollState = useCallback(() => {
       const scrollContainer = scrollContainerRef.current;
-      if (!scrollContainer || !onBottomStateChange) {
+      if (!scrollContainer || !onScrollStateChange) {
         return;
       }
 
+      const hasOverflow =
+        scrollContainer.scrollHeight - scrollContainer.clientHeight > 1;
       const remainingScrollDistance =
         scrollContainer.scrollHeight -
         scrollContainer.clientHeight -
         scrollContainer.scrollTop;
 
-      onBottomStateChange(remainingScrollDistance <= 2);
-    }, [onBottomStateChange]);
+      onScrollStateChange({
+        hasOverflow,
+        isAtBottom: !hasOverflow || remainingScrollDistance <= 2,
+      });
+    }, [onScrollStateChange]);
 
     useEffect(() => {
       if (!hasPdfCompressionLoading) {
@@ -104,7 +112,7 @@ const ComposerAttachmentPreviewList = forwardRef<
     }, [hasPdfCompressionLoading]);
 
     useEffect(() => {
-      if (!onBottomStateChange) {
+      if (!onScrollStateChange) {
         return;
       }
 
@@ -113,10 +121,10 @@ const ComposerAttachmentPreviewList = forwardRef<
         return;
       }
 
-      updateBottomState();
+      updateScrollState();
 
       const handleScroll = () => {
-        updateBottomState();
+        updateScrollState();
       };
 
       scrollContainer.addEventListener('scroll', handleScroll, {
@@ -130,7 +138,7 @@ const ComposerAttachmentPreviewList = forwardRef<
       }
 
       const resizeObserver = new ResizeObserver(() => {
-        updateBottomState();
+        updateScrollState();
       });
       resizeObserver.observe(scrollContainer);
 
@@ -138,7 +146,7 @@ const ComposerAttachmentPreviewList = forwardRef<
         scrollContainer.removeEventListener('scroll', handleScroll);
         resizeObserver.disconnect();
       };
-    }, [attachments, isSelectionMode, onBottomStateChange, updateBottomState]);
+    }, [attachments, isSelectionMode, onScrollStateChange, updateScrollState]);
 
     const animatedDots = '.'.repeat(loadingDotCount);
     const resolveCompressionStatusLabel = (
@@ -166,7 +174,7 @@ const ComposerAttachmentPreviewList = forwardRef<
         <div
           ref={scrollContainerRef}
           className={`h-full min-h-0 overflow-y-auto pr-1 overscroll-contain [contain:paint] ${
-            isSelectionMode ? 'pb-9' : ''
+            isSelectionMode ? 'pb-9' : 'pb-2'
           }`}
         >
           {attachments.map(attachment => {

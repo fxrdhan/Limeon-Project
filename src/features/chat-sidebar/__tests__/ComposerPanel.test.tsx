@@ -13,6 +13,13 @@ const { mockPopupMenuContent } = vi.hoisted(() => ({
   )),
 }));
 
+const { mockComposerAttachmentScrollState } = vi.hoisted(() => ({
+  mockComposerAttachmentScrollState: {
+    hasOverflow: false,
+    isAtBottom: true,
+  },
+}));
+
 vi.mock('motion/react', () => ({
   AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
   motion: new Proxy(
@@ -72,7 +79,20 @@ vi.mock('../components/DocumentPreviewPortal', () => ({
 }));
 
 vi.mock('../components/composer/ComposerAttachmentPreviewList', () => ({
-  default: () => <div data-testid="composer-attachment-preview-list" />,
+  default: function MockComposerAttachmentPreviewList({
+    onScrollStateChange,
+  }: {
+    onScrollStateChange?: (state: {
+      hasOverflow: boolean;
+      isAtBottom: boolean;
+    }) => void;
+  }) {
+    React.useEffect(() => {
+      onScrollStateChange?.(mockComposerAttachmentScrollState);
+    }, [onScrollStateChange]);
+
+    return <div data-testid="composer-attachment-preview-list" />;
+  },
 }));
 
 vi.mock('../components/composer/ComposerEditBanner', () => ({
@@ -184,6 +204,8 @@ const buildComposerRuntime = () =>
 describe('ComposerPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockComposerAttachmentScrollState.hasOverflow = false;
+    mockComposerAttachmentScrollState.isAtBottom = true;
   });
 
   it('passes first-item preselection behavior into the composer attachment popup', () => {
@@ -589,6 +611,30 @@ describe('ComposerPanel', () => {
     expect(tray?.className).not.toContain('flex-1');
     expect(tray?.className).not.toContain('max-h-[');
     expect(screen.getByTestId('composer-attachment-preview-list')).toBeTruthy();
+  });
+
+  it('renders the attachment fog in normal mode when the tray overflows', () => {
+    const runtime = buildComposerRuntime();
+    runtime.composer.composerAttachmentPreviewItems = [
+      {
+        id: 'pending-image-1',
+        file: new File(['image'], 'foto.png', { type: 'image/png' }),
+        fileName: 'foto.png',
+        fileTypeLabel: 'PNG',
+        fileKind: 'image',
+        mimeType: 'image/png',
+        previewUrl: 'blob:preview-1',
+        pdfCoverUrl: null,
+        pdfPageCount: null,
+      },
+    ];
+    mockComposerAttachmentScrollState.hasOverflow = true;
+    mockComposerAttachmentScrollState.isAtBottom = false;
+
+    render(<ComposerPanel runtime={runtime} />);
+
+    expect(screen.getByTestId('composer-attachment-fog')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Batal' })).toBeNull();
   });
 
   it('measures only the visible composer stack for viewport spacing', () => {

@@ -60,7 +60,7 @@ describe('ComposerAttachmentPreviewList', () => {
   });
 
   it('reports when the attachment preview list reaches the bottom', () => {
-    const onBottomStateChange = vi.fn();
+    const onScrollStateChange = vi.fn();
     const { container } = render(
       <ComposerAttachmentPreviewList
         attachments={Array.from({ length: 3 }, (_, index) =>
@@ -87,7 +87,7 @@ describe('ComposerAttachmentPreviewList', () => {
         onToggleAttachmentSelection={vi.fn()}
         onCancelLoadingComposerAttachment={vi.fn()}
         onRemovePendingComposerAttachment={vi.fn()}
-        onBottomStateChange={onBottomStateChange}
+        onScrollStateChange={onScrollStateChange}
       />
     );
 
@@ -117,6 +117,9 @@ describe('ComposerAttachmentPreviewList', () => {
     scrollContainer!.scrollTop = 120;
     fireEvent.scroll(scrollContainer!);
 
-    expect(onBottomStateChange).toHaveBeenLastCalledWith(true);
+    expect(onScrollStateChange).toHaveBeenLastCalledWith({
+      hasOverflow: true,
+      isAtBottom: true,
+    });
   });
 });
