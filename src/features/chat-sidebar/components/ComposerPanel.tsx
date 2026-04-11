@@ -122,7 +122,9 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                 layout
                 initial={false}
                 transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
-                className="relative mb-[-1px] grid min-h-0 shrink-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-t-3xl rounded-b-none border border-b-0 bg-white px-2.5 py-2.5"
+                className={`relative mb-[-1px] grid min-h-0 shrink-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-t-3xl rounded-b-none border border-b-0 bg-white px-2.5 pt-2.5 ${
+                  previews.isComposerAttachmentSelectionMode ? 'pb-0' : 'pb-2.5'
+                }`}
                 style={{
                   borderColor: COMPOSER_BASE_BORDER_COLOR,
                   maxHeight:
@@ -190,33 +192,39 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                   <motion.div
                     layout
                     transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
-                    className="relative flex items-center justify-between px-1 text-sm"
+                    className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] h-14 text-sm"
                   >
                     <div
                       aria-hidden="true"
-                      className="pointer-events-none absolute inset-x-0 bottom-full h-4"
+                      className="pointer-events-none absolute inset-x-0 bottom-0 h-full"
                       style={{
                         background:
-                          'linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.42) 58%, rgba(255,255,255,0.9) 100%)',
+                          'linear-gradient(to bottom, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.72) 42%, rgba(255,255,255,1) 100%)',
                       }}
                     />
-                    <button
-                      type="button"
-                      onClick={previews.handleClearComposerAttachmentSelection}
-                      className="relative z-[1] cursor-pointer bg-transparent p-0 text-sm font-medium text-slate-500 transition-colors hover:text-slate-700 hover:underline hover:underline-offset-2"
-                    >
-                      Batal
-                    </button>
-                    <button
-                      type="button"
-                      onClick={previews.handleDeleteSelectedComposerAttachments}
-                      disabled={
-                        previews.selectedComposerAttachmentIds.length === 0
-                      }
-                      className="relative z-[1] cursor-pointer bg-transparent p-0 text-sm font-medium text-rose-500 transition-colors hover:text-rose-600 hover:underline hover:underline-offset-2 disabled:cursor-default disabled:text-rose-300 disabled:hover:no-underline"
-                    >
-                      Hapus
-                    </button>
+                    <div className="absolute inset-x-0 bottom-0 flex items-end justify-between px-3 pb-2">
+                      <button
+                        type="button"
+                        onClick={
+                          previews.handleClearComposerAttachmentSelection
+                        }
+                        className="pointer-events-auto relative z-[1] cursor-pointer bg-transparent p-0 text-sm font-medium text-slate-500 transition-colors hover:text-slate-700 hover:underline hover:underline-offset-2"
+                      >
+                        Batal
+                      </button>
+                      <button
+                        type="button"
+                        onClick={
+                          previews.handleDeleteSelectedComposerAttachments
+                        }
+                        disabled={
+                          previews.selectedComposerAttachmentIds.length === 0
+                        }
+                        className="pointer-events-auto relative z-[1] cursor-pointer bg-transparent p-0 text-sm font-medium text-rose-500 transition-colors hover:text-rose-600 hover:underline hover:underline-offset-2 disabled:cursor-default disabled:text-rose-300 disabled:hover:no-underline"
+                      >
+                        Hapus
+                      </button>
+                    </div>
                   </motion.div>
                 ) : (
                   <div />

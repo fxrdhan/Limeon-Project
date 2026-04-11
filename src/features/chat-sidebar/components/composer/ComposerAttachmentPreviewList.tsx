@@ -107,7 +107,11 @@ const ComposerAttachmentPreviewList = forwardRef<
         transition={transition}
         className="h-full min-h-0 overflow-hidden"
       >
-        <div className="h-full min-h-0 overflow-y-auto pr-1 overscroll-contain [contain:paint]">
+        <div
+          className={`h-full min-h-0 overflow-y-auto pr-1 overscroll-contain [contain:paint] ${
+            isSelectionMode ? 'pb-12' : ''
+          }`}
+        >
           {attachments.map(attachment => {
             if ('status' in attachment && attachment.status === 'loading') {
               const isPdfCompressionLoading =
