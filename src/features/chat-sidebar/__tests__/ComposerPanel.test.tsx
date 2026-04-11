@@ -114,6 +114,7 @@ const buildComposerRuntime = () =>
       ],
       composerAttachmentPreviewItems: [],
       previewComposerImageAttachment: undefined,
+      composerImageExpandedUrl: null,
       isComposerImageExpanded: false,
       isComposerImageExpandedVisible: false,
       attachButtonRef: { current: null },
@@ -602,5 +603,29 @@ describe('ComposerPanel', () => {
     const composerOverlay = container.querySelector('div[class*="top-1/2"]');
 
     expect(composerOverlay?.className).toContain('pointer-events-none');
+  });
+
+  it('prefers the original attachment image when the composer preview is expanded', () => {
+    const runtime = buildComposerRuntime();
+    runtime.composer.previewComposerImageAttachment = {
+      id: 'pending-image-1',
+      file: new File(['image'], 'foto.png', { type: 'image/png' }),
+      fileName: 'foto.png',
+      fileTypeLabel: 'PNG',
+      fileKind: 'image',
+      mimeType: 'image/png',
+      previewUrl: 'blob:thumbnail-preview',
+      pdfCoverUrl: null,
+      pdfPageCount: null,
+    };
+    runtime.composer.composerImageExpandedUrl = 'blob:full-image-preview';
+    runtime.composer.isComposerImageExpanded = true;
+    runtime.composer.isComposerImageExpandedVisible = true;
+
+    render(<ComposerPanel runtime={runtime} />);
+
+    expect(screen.getByAltText('foto.png').getAttribute('src')).toBe(
+      'blob:full-image-preview'
+    );
   });
 });

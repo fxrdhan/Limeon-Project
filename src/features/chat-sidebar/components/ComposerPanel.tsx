@@ -407,7 +407,11 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
             validTypes={['image/png', 'image/jpeg', 'image/jpg', 'image/webp']}
           >
             <img
-              src={composer.previewComposerImageAttachment.previewUrl ?? ''}
+              src={
+                composer.composerImageExpandedUrl ??
+                composer.previewComposerImageAttachment.previewUrl ??
+                ''
+              }
               alt={composer.previewComposerImageAttachment.fileName}
               className="max-h-[92vh] max-w-[92vw] object-contain shadow-xl"
               draggable={false}

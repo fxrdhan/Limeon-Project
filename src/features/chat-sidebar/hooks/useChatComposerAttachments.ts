@@ -88,6 +88,7 @@ export const useChatComposerAttachments = ({
 
   const {
     previewComposerImageAttachment,
+    composerImageExpandedUrl,
     isComposerImageExpanded,
     isComposerImageExpandedVisible,
     openComposerImagePreview,
@@ -234,6 +235,7 @@ export const useChatComposerAttachments = ({
     hoverableAttachmentUrl,
     rawAttachmentUrl,
     previewComposerImageAttachment,
+    composerImageExpandedUrl,
     isComposerImageExpanded,
     isComposerImageExpandedVisible,
     attachButtonRef,

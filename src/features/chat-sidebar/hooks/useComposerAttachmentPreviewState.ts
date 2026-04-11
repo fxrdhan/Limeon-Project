@@ -22,13 +22,26 @@ export const useComposerAttachmentPreviewState = ({
   const [isComposerImageExpanded, setIsComposerImageExpanded] = useState(false);
   const [isComposerImageExpandedVisible, setIsComposerImageExpandedVisible] =
     useState(false);
+  const [composerImageExpandedUrl, setComposerImageExpandedUrl] = useState<
+    string | null
+  >(null);
   const composerImagePreviewCloseTimerRef = useRef<number | null>(null);
+  const composerImageExpandedUrlRef = useRef<string | null>(null);
 
   const previewComposerImageAttachment = pendingComposerAttachments.find(
     attachment =>
       attachment.id === composerImagePreviewAttachmentId &&
       attachment.fileKind === 'image'
   );
+
+  const resetComposerImageExpandedUrl = useCallback(() => {
+    if (composerImageExpandedUrlRef.current) {
+      URL.revokeObjectURL(composerImageExpandedUrlRef.current);
+      composerImageExpandedUrlRef.current = null;
+    }
+
+    setComposerImageExpandedUrl(null);
+  }, []);
 
   const resetComposerImagePreviewState = useCallback(() => {
     if (composerImagePreviewCloseTimerRef.current) {
@@ -39,7 +52,8 @@ export const useComposerAttachmentPreviewState = ({
     setIsComposerImageExpandedVisible(false);
     setIsComposerImageExpanded(false);
     setComposerImagePreviewAttachmentId(null);
-  }, []);
+    resetComposerImageExpandedUrl();
+  }, [resetComposerImageExpandedUrl]);
 
   useEffect(() => {
     if (previewComposerImageAttachment || !isComposerImageExpanded) {
@@ -72,6 +86,7 @@ export const useComposerAttachmentPreviewState = ({
       composerImagePreviewCloseTimerRef.current = window.setTimeout(() => {
         setIsComposerImageExpanded(false);
         setComposerImagePreviewAttachmentId(null);
+        resetComposerImageExpandedUrl();
         composerImagePreviewCloseTimerRef.current = null;
       }, COMPOSER_IMAGE_PREVIEW_EXIT_DURATION);
     };
@@ -80,7 +95,7 @@ export const useComposerAttachmentPreviewState = ({
     return () => {
       document.removeEventListener('keydown', handleEscapeKey);
     };
-  }, [isComposerImageExpanded]);
+  }, [isComposerImageExpanded, resetComposerImageExpandedUrl]);
 
   useEffect(() => {
     resetComposerImagePreviewState();
@@ -92,8 +107,10 @@ export const useComposerAttachmentPreviewState = ({
         window.clearTimeout(composerImagePreviewCloseTimerRef.current);
         composerImagePreviewCloseTimerRef.current = null;
       }
+
+      resetComposerImageExpandedUrl();
     };
-  }, []);
+  }, [resetComposerImageExpandedUrl]);
 
   const closeComposerImagePreview = useCallback(() => {
     setIsComposerImageExpandedVisible(false);
@@ -105,9 +122,10 @@ export const useComposerAttachmentPreviewState = ({
     composerImagePreviewCloseTimerRef.current = window.setTimeout(() => {
       setIsComposerImageExpanded(false);
       setComposerImagePreviewAttachmentId(null);
+      resetComposerImageExpandedUrl();
       composerImagePreviewCloseTimerRef.current = null;
     }, COMPOSER_IMAGE_PREVIEW_EXIT_DURATION);
-  }, []);
+  }, [resetComposerImageExpandedUrl]);
 
   const openComposerImagePreview = useCallback(
     (attachmentId: string) => {
@@ -126,17 +144,27 @@ export const useComposerAttachmentPreviewState = ({
         composerImagePreviewCloseTimerRef.current = null;
       }
 
+      resetComposerImageExpandedUrl();
+      const originalImageUrl = URL.createObjectURL(targetAttachment.file);
+      composerImageExpandedUrlRef.current = originalImageUrl;
+      setComposerImageExpandedUrl(originalImageUrl);
       setComposerImagePreviewAttachmentId(attachmentId);
       setIsComposerImageExpanded(true);
       window.requestAnimationFrame(() => {
         setIsComposerImageExpandedVisible(true);
       });
     },
-    [closeAttachModal, closeMessageMenu, pendingComposerAttachments]
+    [
+      closeAttachModal,
+      closeMessageMenu,
+      pendingComposerAttachments,
+      resetComposerImageExpandedUrl,
+    ]
   );
 
   return {
     previewComposerImageAttachment,
+    composerImageExpandedUrl,
     isComposerImageExpanded,
     isComposerImageExpandedVisible,
     openComposerImagePreview,
