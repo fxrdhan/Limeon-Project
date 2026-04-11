@@ -110,15 +110,6 @@ export const resolveInitialImageThumbnailUrl = (
   currentChannelId: string | null,
   preferredPreviewUrl?: string | null
 ) => {
-  const normalizedPreferredPreviewUrl = preferredPreviewUrl?.trim() || null;
-  if (
-    normalizedPreferredPreviewUrl &&
-    (normalizedPreferredPreviewUrl.startsWith('blob:') ||
-      normalizedPreferredPreviewUrl === message.message.trim())
-  ) {
-    return normalizedPreferredPreviewUrl;
-  }
-
   const normalizedChannelId = currentChannelId?.trim() || null;
   if (normalizedChannelId) {
     const runtimeThumbnailUrl = chatRuntime.imageAssets.getUrl(
@@ -141,6 +132,15 @@ export const resolveInitialImageThumbnailUrl = (
 
   if (persistedPreviewUrl && isDirectChatAssetUrl(persistedPreviewUrl)) {
     return persistedPreviewUrl;
+  }
+
+  const normalizedPreferredPreviewUrl = preferredPreviewUrl?.trim() || null;
+  if (
+    normalizedPreferredPreviewUrl &&
+    (normalizedPreferredPreviewUrl.startsWith('blob:') ||
+      normalizedPreferredPreviewUrl === message.message.trim())
+  ) {
+    return normalizedPreferredPreviewUrl;
   }
 
   return resolveInitialImagePreviewUrl(

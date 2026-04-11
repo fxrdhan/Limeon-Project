@@ -190,14 +190,14 @@ describe('useMessagesPanePreviews', () => {
     expect(result.current.imageGroupPreviewItems).toEqual([
       {
         id: 'image-a',
-        thumbnailUrl: 'blob:full-image-a',
-        previewUrl: 'blob:full-image-a',
-        fullPreviewUrl: 'blob:full-image-a',
+        thumbnailUrl: 'blob:thumbnail-image-a',
+        previewUrl: null,
+        fullPreviewUrl: null,
         previewName: 'A.png',
       },
       {
         id: 'image-b',
-        thumbnailUrl: 'blob:full-image-b',
+        thumbnailUrl: 'blob:thumbnail-image-b',
         previewUrl: 'blob:full-image-b',
         fullPreviewUrl: 'blob:full-image-b',
         previewName: 'B.png',
@@ -250,11 +250,72 @@ describe('useMessagesPanePreviews', () => {
 
     expect(result.current.imageGroupPreviewItems[1]).toEqual({
       id: 'image-b',
-      thumbnailUrl: 'blob:full-image-b',
+      thumbnailUrl: 'blob:thumbnail-image-b',
       previewUrl: 'blob:full-image-b',
       fullPreviewUrl: 'blob:full-image-b',
       previewName: 'B.png',
     });
+  });
+
+  it('keeps non-active grouped items on lightweight thumbnails until selected', async () => {
+    mockGetRuntimeChannelImageAssetUrl.mockImplementation(
+      (_channelId, messageId: string, variant: 'thumbnail' | 'full') => {
+        if (variant === 'thumbnail') {
+          return `blob:thumb-${messageId}`;
+        }
+
+        return null;
+      }
+    );
+
+    const { result } = renderHook(() =>
+      useMessagesPanePreviews({
+        currentChannelId: 'dm_user-a_user-b',
+        closeMessageMenu,
+      })
+    );
+
+    await act(async () => {
+      await result.current.openImageGroupInPortal(
+        [
+          {
+            id: 'image-a',
+            message: 'images/channel/a.png',
+            file_storage_path: 'images/channel/a.png',
+            file_mime_type: 'image/png',
+            file_name: 'A.png',
+            file_preview_url: null,
+          },
+          {
+            id: 'image-b',
+            message: 'images/channel/b.png',
+            file_storage_path: 'images/channel/b.png',
+            file_mime_type: 'image/png',
+            file_name: 'B.png',
+            file_preview_url: null,
+          },
+        ],
+        'image-a'
+      );
+      await flushMicrotasks();
+    });
+
+    expect(result.current.imageGroupPreviewItems).toEqual([
+      {
+        id: 'image-a',
+        thumbnailUrl: 'blob:thumb-image-a',
+        previewUrl: 'blob:full-image-a',
+        fullPreviewUrl: 'blob:full-image-a',
+        previewName: 'A.png',
+      },
+      {
+        id: 'image-b',
+        thumbnailUrl: 'blob:thumb-image-b',
+        previewUrl: null,
+        fullPreviewUrl: null,
+        previewName: 'B.png',
+      },
+    ]);
   });
 
   it('opens pdf previews in a new tab on coarse-pointer devices', async () => {

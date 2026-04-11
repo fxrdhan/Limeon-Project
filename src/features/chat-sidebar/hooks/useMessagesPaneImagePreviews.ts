@@ -30,6 +30,37 @@ type ImagePreviewIntrinsicDimensions = {
   height: number;
 };
 
+const IMAGE_GROUP_THUMBNAIL_PREFETCH_CONCURRENCY = 4;
+
+const runTasksWithConcurrency = async <T>(
+  items: T[],
+  limit: number,
+  task: (item: T) => Promise<void>
+) => {
+  const boundedLimit = Math.max(1, limit);
+  const taskQueue = [...items];
+
+  await Promise.all(
+    Array.from({
+      length: Math.min(boundedLimit, taskQueue.length),
+    }).map(async () => {
+      while (taskQueue.length > 0) {
+        const nextItem = taskQueue.shift();
+        if (!nextItem) {
+          return;
+        }
+
+        await task(nextItem);
+      }
+    })
+  );
+};
+
+const buildImageGroupPreviewLoadKey = (
+  messageId: string,
+  variant: 'thumbnail' | 'full'
+) => `${messageId}::${variant}`;
+
 export const useMessagesPaneImagePreviews = ({
   currentChannelId,
 }: {
@@ -161,6 +192,101 @@ export const useMessagesPaneImagePreviews = ({
     }, 150);
   }, [releaseImageGroupPreviewObjectUrls]);
 
+  const resolveImageGroupThumbnailItem = useCallback(
+    async (
+      messageId: string,
+      requestId = activeImageGroupPreviewRequestIdRef.current
+    ) => {
+      const normalizedMessageId = messageId.trim();
+      if (!normalizedMessageId) {
+        return;
+      }
+
+      if (activeImageGroupPreviewRequestIdRef.current !== requestId) {
+        return;
+      }
+
+      const loadKey = buildImageGroupPreviewLoadKey(
+        normalizedMessageId,
+        'thumbnail'
+      );
+      if (
+        imageGroupPreviewInflightIdsRef.current.has(loadKey) ||
+        imageGroupPreviewResolvedIdsRef.current.has(loadKey)
+      ) {
+        return;
+      }
+
+      const imageGroupEntry =
+        imageGroupPreviewMessagesRef.current.get(normalizedMessageId);
+      if (!imageGroupEntry) {
+        return;
+      }
+
+      const normalizedChannelId = currentChannelId?.trim() || null;
+      const runtimeThumbnailUrl = normalizedChannelId
+        ? chatRuntime.imageAssets.getUrl(
+            normalizedChannelId,
+            normalizedMessageId,
+            'thumbnail'
+          )
+        : null;
+      if (runtimeThumbnailUrl) {
+        imageGroupPreviewResolvedIdsRef.current.add(loadKey);
+        setImageGroupPreviewItems(previousItems =>
+          previousItems.map(previousItem =>
+            previousItem.id === normalizedMessageId
+              ? {
+                  ...previousItem,
+                  thumbnailUrl: runtimeThumbnailUrl,
+                }
+              : previousItem
+          )
+        );
+        return;
+      }
+
+      if (!normalizedChannelId) {
+        return;
+      }
+
+      imageGroupPreviewInflightIdsRef.current.add(loadKey);
+
+      try {
+        const thumbnailUrl = await chatRuntime.imageAssets.ensureUrl(
+          normalizedChannelId,
+          {
+            ...imageGroupEntry.message,
+            message_type: 'image',
+          },
+          'thumbnail'
+        );
+
+        if (
+          !thumbnailUrl ||
+          activeImageGroupPreviewRequestIdRef.current !== requestId
+        ) {
+          return;
+        }
+
+        imageGroupPreviewResolvedIdsRef.current.add(loadKey);
+        setImageGroupPreviewItems(previousItems =>
+          previousItems.map(previousItem =>
+            previousItem.id === normalizedMessageId
+              ? {
+                  ...previousItem,
+                  thumbnailUrl,
+                }
+              : previousItem
+          )
+        );
+      } finally {
+        imageGroupPreviewInflightIdsRef.current.delete(loadKey);
+      }
+    },
+    [currentChannelId]
+  );
+
   const resolveImageGroupPreviewItem = useCallback(
     async (
       messageId: string,
@@ -175,9 +301,13 @@ export const useMessagesPaneImagePreviews = ({
         return;
       }
 
+      const loadKey = buildImageGroupPreviewLoadKey(
+        normalizedMessageId,
+        'full'
+      );
       if (
-        imageGroupPreviewInflightIdsRef.current.has(normalizedMessageId) ||
-        imageGroupPreviewResolvedIdsRef.current.has(normalizedMessageId)
+        imageGroupPreviewInflightIdsRef.current.has(loadKey) ||
+        imageGroupPreviewResolvedIdsRef.current.has(loadKey)
       ) {
         return;
       }
@@ -197,13 +327,14 @@ export const useMessagesPaneImagePreviews = ({
           )
         : null;
       if (runtimeFullPreviewUrl) {
-        imageGroupPreviewResolvedIdsRef.current.add(normalizedMessageId);
+        imageGroupPreviewResolvedIdsRef.current.add(loadKey);
         setImageGroupPreviewItems(previousItems =>
           previousItems.map(previousItem =>
             previousItem.id === normalizedMessageId
               ? {
                   ...previousItem,
-                  thumbnailUrl: runtimeFullPreviewUrl,
+                  thumbnailUrl:
+                    previousItem.thumbnailUrl || runtimeFullPreviewUrl,
                   previewUrl: runtimeFullPreviewUrl,
                   fullPreviewUrl:
                     previousItem.fullPreviewUrl || runtimeFullPreviewUrl,
@@ -214,7 +345,7 @@ export const useMessagesPaneImagePreviews = ({
         return;
       }
 
-      imageGroupPreviewInflightIdsRef.current.add(normalizedMessageId);
+      imageGroupPreviewInflightIdsRef.current.add(loadKey);
 
       try {
         const { previewUrl, revokeOnClose } = await resolveImagePreviewResource(
@@ -236,7 +367,7 @@ export const useMessagesPaneImagePreviews = ({
           imageGroupPreviewObjectUrlsRef.current.push(previewUrl);
         }
 
-        imageGroupPreviewResolvedIdsRef.current.add(normalizedMessageId);
+        imageGroupPreviewResolvedIdsRef.current.add(loadKey);
         const previewName = getChatImagePreviewName(
           imageGroupEntry.message,
           imageGroupEntry.index
@@ -246,7 +377,7 @@ export const useMessagesPaneImagePreviews = ({
             previousItem.id === normalizedMessageId
               ? {
                   ...previousItem,
-                  thumbnailUrl: previewUrl,
+                  thumbnailUrl: previousItem.thumbnailUrl || previewUrl,
                   previewUrl,
                   fullPreviewUrl: previewUrl,
                   previewName,
@@ -255,7 +386,7 @@ export const useMessagesPaneImagePreviews = ({
           )
         );
       } finally {
-        imageGroupPreviewInflightIdsRef.current.delete(normalizedMessageId);
+        imageGroupPreviewInflightIdsRef.current.delete(loadKey);
       }
     },
     [currentChannelId, resolveImagePreviewResource]
@@ -438,8 +569,7 @@ export const useMessagesPaneImagePreviews = ({
           id: message.id,
           thumbnailUrl: resolveInitialImageThumbnailUrl(
             message,
-            currentChannelId,
-            preferredPreviewUrl
+            currentChannelId
           ),
           previewUrl: resolveInitialImagePreviewUrl(
             message,
@@ -469,12 +599,23 @@ export const useMessagesPaneImagePreviews = ({
             .filter(messageId => messageId !== nextActivePreviewId),
         ];
 
-        for (const messageId of prioritizedMessageIds) {
-          if (activeImageGroupPreviewRequestIdRef.current !== requestId) {
-            return;
-          }
+        await runTasksWithConcurrency(
+          prioritizedMessageIds,
+          IMAGE_GROUP_THUMBNAIL_PREFETCH_CONCURRENCY,
+          async messageId => {
+            if (activeImageGroupPreviewRequestIdRef.current !== requestId) {
+              return;
+            }
 
-          await resolveImageGroupPreviewItem(messageId, requestId);
+            await resolveImageGroupThumbnailItem(messageId, requestId);
+          }
+        );
+
+        if (
+          nextActivePreviewId &&
+          activeImageGroupPreviewRequestIdRef.current === requestId
+        ) {
+          await resolveImageGroupPreviewItem(nextActivePreviewId, requestId);
         }
       })().catch(() => {
         // Ignore background prefetch failures; the fallback preview or skeleton remains visible.
@@ -484,6 +625,7 @@ export const useMessagesPaneImagePreviews = ({
       clearImagePreviewStateImmediately,
       currentChannelId,
       releaseImageGroupPreviewObjectUrls,
+      resolveImageGroupThumbnailItem,
       resolveImageGroupPreviewItem,
       resolveImagePreviewResource,
     ]
@@ -535,7 +677,7 @@ export const useMessagesPaneImagePreviews = ({
             previousItem.id === messageId
               ? {
                   ...previousItem,
-                  thumbnailUrl: resolvedPreviewUrl,
+                  thumbnailUrl: previousItem.thumbnailUrl || resolvedPreviewUrl,
                   previewUrl: resolvedPreviewUrl,
                   fullPreviewUrl: resolvedPreviewUrl,
                 }

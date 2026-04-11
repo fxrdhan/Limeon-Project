@@ -411,11 +411,14 @@ const MultiImagePreviewPortal = ({
                           : 'border-slate-300 hover:border-slate-400'
                       } h-full w-full`}
                     >
-                      {previewItem.fullPreviewUrl || previewItem.previewUrl ? (
+                      {previewItem.thumbnailUrl ||
+                      previewItem.previewUrl ||
+                      previewItem.fullPreviewUrl ? (
                         <img
                           src={
-                            previewItem.fullPreviewUrl ||
+                            previewItem.thumbnailUrl ||
                             previewItem.previewUrl ||
+                            previewItem.fullPreviewUrl ||
                             ''
                           }
                           alt={`Thumbnail ${previewItem.previewName}`}

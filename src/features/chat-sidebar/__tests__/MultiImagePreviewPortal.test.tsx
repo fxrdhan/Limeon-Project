@@ -111,4 +111,37 @@ describe('MultiImagePreviewPortal', () => {
       ).disabled
     ).toBe(true);
   });
+
+  it('prefers lightweight thumbnail sources for the sidebar strip', () => {
+    render(
+      <MultiImagePreviewPortal
+        isOpen={true}
+        isVisible={true}
+        previewItems={[
+          {
+            id: 'image-1',
+            thumbnailUrl: 'data:image/png;base64,thumb-light',
+            previewUrl: 'data:image/png;base64,preview-mid',
+            fullPreviewUrl: 'https://example.com/full-heavy.png',
+            previewName: 'photo.png',
+          },
+        ]}
+        activePreviewId="image-1"
+        isActivePreviewForwardable={true}
+        onSelectPreview={() => {}}
+        onDownloadActivePreview={() => {}}
+        onOpenActivePreviewInNewTab={() => {}}
+        onCopyActivePreviewLink={() => {}}
+        onCopyActivePreviewImage={() => {}}
+        onReplyActivePreview={() => {}}
+        onForwardActivePreview={() => {}}
+        onClose={() => {}}
+        backdropClassName="z-[80]"
+      />
+    );
+
+    expect(screen.getByAltText('Thumbnail photo.png').getAttribute('src')).toBe(
+      'data:image/png;base64,thumb-light'
+    );
+  });
 });
