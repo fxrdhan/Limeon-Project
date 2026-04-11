@@ -167,30 +167,6 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                       : undefined,
                 }}
               >
-                <AnimatePresence initial={false} mode="popLayout">
-                  {previews.isComposerAttachmentSelectionMode ? (
-                    <motion.div
-                      layout
-                      transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
-                      className="mb-2 flex items-center justify-between px-1 text-sm"
-                    >
-                      <button
-                        type="button"
-                        onClick={previews.handleSelectAllComposerAttachments}
-                        className="cursor-pointer bg-transparent p-0 text-sm font-medium text-black hover:underline hover:underline-offset-2"
-                      >
-                        Pilih semua
-                      </button>
-                      <p className="text-sm font-medium text-slate-500">
-                        {previews.selectedComposerAttachmentIds.length}/
-                        {totalSelectableComposerAttachments} terpilih
-                      </p>
-                    </motion.div>
-                  ) : (
-                    <div />
-                  )}
-                </AnimatePresence>
-
                 <div className="relative min-h-0 overflow-hidden">
                   {composer.composerAttachmentPreviewItems.length > 0 ? (
                     <ComposerAttachmentPreviewList
@@ -223,19 +199,48 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                       }
                     />
                   ) : null}
-                  {shouldShowComposerAttachmentTopFog ? (
+                  {previews.isComposerAttachmentSelectionMode ? (
                     <motion.div
                       layout
                       transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
-                      data-testid="composer-attachment-top-fog"
-                      className="pointer-events-none absolute inset-x-0 top-0 z-[2] h-10"
+                      data-testid="composer-attachment-selection-fog"
+                      className="pointer-events-none absolute inset-x-0 top-px z-[2] h-14 text-sm"
                     >
                       <div
                         aria-hidden="true"
                         className="pointer-events-none absolute inset-x-0 top-0 h-full"
                         style={{
                           background:
-                            'linear-gradient(to bottom, rgba(255,255,255,1) 0%, rgba(255,255,255,0.9) 28%, rgba(255,255,255,0.58) 54%, rgba(255,255,255,0.22) 80%, rgba(255,255,255,0) 100%)',
+                            'linear-gradient(to top, rgba(255,255,255,0) 0%, rgba(255,255,255,0.22) 20%, rgba(255,255,255,0.58) 46%, rgba(255,255,255,0.9) 72%, rgba(255,255,255,1) 100%)',
+                        }}
+                      />
+                      <div className="absolute inset-x-0 top-0 flex items-start justify-between px-1 pt-0.5">
+                        <button
+                          type="button"
+                          onClick={previews.handleSelectAllComposerAttachments}
+                          className="pointer-events-auto relative z-[1] cursor-pointer bg-transparent p-0 text-sm font-medium text-black hover:underline hover:underline-offset-2"
+                        >
+                          Pilih semua
+                        </button>
+                        <p className="relative z-[1] text-sm font-medium text-slate-500">
+                          {previews.selectedComposerAttachmentIds.length}/
+                          {totalSelectableComposerAttachments} terpilih
+                        </p>
+                      </div>
+                    </motion.div>
+                  ) : shouldShowComposerAttachmentTopFog ? (
+                    <motion.div
+                      layout
+                      transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
+                      data-testid="composer-attachment-top-fog"
+                      className="pointer-events-none absolute inset-x-0 top-px z-[2] h-14 text-sm"
+                    >
+                      <div
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-x-0 top-0 h-full"
+                        style={{
+                          background:
+                            'linear-gradient(to top, rgba(255,255,255,0) 0%, rgba(255,255,255,0.22) 20%, rgba(255,255,255,0.58) 46%, rgba(255,255,255,0.9) 72%, rgba(255,255,255,1) 100%)',
                         }}
                       />
                     </motion.div>

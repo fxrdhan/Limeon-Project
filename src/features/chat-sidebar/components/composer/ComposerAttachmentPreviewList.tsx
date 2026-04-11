@@ -176,7 +176,7 @@ const ComposerAttachmentPreviewList = forwardRef<
         <div
           ref={scrollContainerRef}
           className={`h-full min-h-0 overflow-y-auto pr-1 overscroll-contain [contain:paint] ${
-            isSelectionMode ? 'pb-9' : 'pb-2'
+            isSelectionMode ? 'pt-10 pb-9' : 'pb-2'
           }`}
         >
           {attachments.map(attachment => {
