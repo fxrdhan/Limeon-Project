@@ -199,16 +199,16 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                       className="pointer-events-none absolute inset-x-0 bottom-0 h-full"
                       style={{
                         background:
-                          'linear-gradient(to bottom, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.72) 42%, rgba(255,255,255,1) 100%)',
+                          'linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.18) 24%, rgba(255,255,255,0.48) 52%, rgba(255,255,255,0.82) 78%, rgba(255,255,255,1) 100%)',
                       }}
                     />
-                    <div className="absolute inset-x-0 bottom-0 flex items-end justify-between px-3 pb-2">
+                    <div className="absolute inset-x-0 bottom-px flex items-end justify-between px-3">
                       <button
                         type="button"
                         onClick={
                           previews.handleClearComposerAttachmentSelection
                         }
-                        className="pointer-events-auto relative z-[1] cursor-pointer bg-transparent p-0 text-sm font-medium text-slate-500 transition-colors hover:text-slate-700 hover:underline hover:underline-offset-2"
+                        className="pointer-events-auto relative z-[1] cursor-pointer bg-transparent p-0 text-sm leading-tight font-medium text-slate-500 transition-colors hover:text-slate-700 hover:underline hover:underline-offset-2"
                       >
                         Batal
                       </button>
@@ -220,7 +220,7 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                         disabled={
                           previews.selectedComposerAttachmentIds.length === 0
                         }
-                        className="pointer-events-auto relative z-[1] cursor-pointer bg-transparent p-0 text-sm font-medium text-rose-500 transition-colors hover:text-rose-600 hover:underline hover:underline-offset-2 disabled:cursor-default disabled:text-rose-300 disabled:hover:no-underline"
+                        className="pointer-events-auto relative z-[1] cursor-pointer bg-transparent p-0 text-sm leading-tight font-medium text-rose-500 transition-colors hover:text-rose-600 hover:underline hover:underline-offset-2 disabled:cursor-default disabled:text-rose-300 disabled:hover:no-underline"
                       >
                         Hapus
                       </button>
@@ -287,17 +287,6 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                   : 'rounded-3xl'
               }`}
             >
-              {hasComposerAttachmentTray ? (
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-x-4 top-0 z-0 h-3"
-                  style={{
-                    background:
-                      'linear-gradient(to bottom, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.28) 58%, rgba(255,255,255,0) 100%)',
-                  }}
-                />
-              ) : null}
-
               <motion.div
                 layout
                 transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}

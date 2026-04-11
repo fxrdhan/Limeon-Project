@@ -109,7 +109,7 @@ const ComposerAttachmentPreviewList = forwardRef<
       >
         <div
           className={`h-full min-h-0 overflow-y-auto pr-1 overscroll-contain [contain:paint] ${
-            isSelectionMode ? 'pb-12' : ''
+            isSelectionMode ? 'pb-9' : ''
           }`}
         >
           {attachments.map(attachment => {
