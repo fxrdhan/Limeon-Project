@@ -204,11 +204,11 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                       layout
                       transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
                       data-testid="composer-attachment-selection-fog"
-                      className="pointer-events-none absolute inset-x-0 top-px z-[2] h-14 text-sm"
+                      className="pointer-events-none absolute inset-x-0 top-0 z-[2] h-14 text-sm"
                     >
                       <div
                         aria-hidden="true"
-                        className="pointer-events-none absolute inset-x-0 top-0 h-full"
+                        className="pointer-events-none absolute inset-x-0 -top-2.5 h-[calc(100%+0.625rem)]"
                         style={{
                           background:
                             'linear-gradient(to top, rgba(255,255,255,0) 0%, rgba(255,255,255,0.22) 20%, rgba(255,255,255,0.58) 46%, rgba(255,255,255,0.9) 72%, rgba(255,255,255,1) 100%)',
@@ -233,11 +233,11 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                       layout
                       transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
                       data-testid="composer-attachment-top-fog"
-                      className="pointer-events-none absolute inset-x-0 top-px z-[2] h-14 text-sm"
+                      className="pointer-events-none absolute inset-x-0 top-0 z-[2] h-14 text-sm"
                     >
                       <div
                         aria-hidden="true"
-                        className="pointer-events-none absolute inset-x-0 top-0 h-full"
+                        className="pointer-events-none absolute inset-x-0 -top-2.5 h-[calc(100%+0.625rem)]"
                         style={{
                           background:
                             'linear-gradient(to top, rgba(255,255,255,0) 0%, rgba(255,255,255,0.22) 20%, rgba(255,255,255,0.58) 46%, rgba(255,255,255,0.9) 72%, rgba(255,255,255,1) 100%)',
