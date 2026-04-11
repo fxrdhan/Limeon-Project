@@ -18,12 +18,16 @@ import {
 const {
   mockFetchChatFileBlobWithFallback,
   mockFetchPdfBlobWithFallback,
+  mockDeletePersistedPdfPreviewEntriesByMessageIds,
+  mockPersistPdfPreviewEntry,
   mockRenderPdfPreviewDataUrl,
   mockLoadPersistedPdfPreviewEntry,
   mockResolveChatAssetUrlWithExpiry,
 } = vi.hoisted(() => ({
   mockFetchChatFileBlobWithFallback: vi.fn(),
   mockFetchPdfBlobWithFallback: vi.fn(),
+  mockDeletePersistedPdfPreviewEntriesByMessageIds: vi.fn(),
+  mockPersistPdfPreviewEntry: vi.fn(),
   mockRenderPdfPreviewDataUrl: vi.fn(),
   mockLoadPersistedPdfPreviewEntry: vi.fn(),
   mockResolveChatAssetUrlWithExpiry: vi.fn(),
@@ -43,9 +47,17 @@ vi.mock('../utils/pdf-preview', () => ({
   renderPdfPreviewDataUrl: mockRenderPdfPreviewDataUrl,
 }));
 
-vi.mock('../utils/pdf-preview-persistence', () => ({
-  loadPersistedPdfPreviewEntry: mockLoadPersistedPdfPreviewEntry,
-}));
+vi.mock('../utils/pdf-preview-persistence', async () => {
+  const actual = await vi.importActual('../utils/pdf-preview-persistence');
+
+  return {
+    ...actual,
+    deletePersistedPdfPreviewEntriesByMessageIds:
+      mockDeletePersistedPdfPreviewEntriesByMessageIds,
+    loadPersistedPdfPreviewEntry: mockLoadPersistedPdfPreviewEntry,
+    persistPdfPreviewEntry: mockPersistPdfPreviewEntry,
+  };
+});
 
 const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
   id: overrides.id ?? 'file-1',

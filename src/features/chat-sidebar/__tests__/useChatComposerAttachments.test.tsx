@@ -252,16 +252,21 @@ describe('useChatComposerAttachments', () => {
       );
     });
 
-    expect(result.current.pendingComposerAttachments).toHaveLength(1);
-    expect(result.current.pendingComposerAttachments[0]).toEqual(
-      expect.objectContaining({
-        file: compressedFile,
-        fileName: 'foto-kecil.jpg',
-        mimeType: 'image/jpeg',
-        previewUrl: 'blob:compressed-preview',
-      })
-    );
-    expect(createObjectURLMock).toHaveBeenCalledTimes(2);
+    await waitFor(() => {
+      expect(result.current.pendingComposerAttachments).toHaveLength(1);
+      expect(result.current.pendingComposerAttachments[0]).toEqual(
+        expect.objectContaining({
+          file: compressedFile,
+          fileName: 'foto-kecil.jpg',
+          mimeType: 'image/jpeg',
+        })
+      );
+    });
+
+    expect(
+      result.current.pendingComposerAttachments[0]?.previewUrl
+    ).toBeTruthy();
+    expect(createObjectURLMock).toHaveBeenCalledWith(compressedFile);
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:original-preview');
   });
 

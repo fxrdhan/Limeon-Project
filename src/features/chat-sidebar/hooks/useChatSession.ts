@@ -56,6 +56,7 @@ export const useChatSession = ({
   const [replyTargetMessagesById, setReplyTargetMessagesById] = useState<
     Record<string, ChatMessage>
   >({});
+  const replyTargetMessagesByIdRef = useRef<Record<string, ChatMessage>>({});
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [hasOlderMessages, setHasOlderMessages] = useState(false);
@@ -93,6 +94,10 @@ export const useChatSession = ({
   });
   const { conversationSession } = sessionEngine;
 
+  useEffect(() => {
+    replyTargetMessagesByIdRef.current = replyTargetMessagesById;
+  }, [replyTargetMessagesById]);
+
   const mapMessageForActiveConversation = useCallback(
     (messageItem: ChatMessage) =>
       user && targetUser
@@ -124,7 +129,7 @@ export const useChatSession = ({
       ].filter(
         replyToId =>
           !loadedMessageIds.has(replyToId) &&
-          !replyTargetMessagesById[replyToId] &&
+          !replyTargetMessagesByIdRef.current[replyToId] &&
           !requestedReplyTargetIdsRef.current.has(replyToId)
       );
 
@@ -191,14 +196,18 @@ export const useChatSession = ({
       currentChannelId,
       isOpen,
       mapMessageForActiveConversation,
-      replyTargetMessagesById,
       targetUser,
       user,
     ]
   );
 
   useEffect(() => {
-    setReplyTargetMessagesById({});
+    replyTargetMessagesByIdRef.current = {};
+    setReplyTargetMessagesById(previousReplyTargetMessagesById =>
+      Object.keys(previousReplyTargetMessagesById).length === 0
+        ? previousReplyTargetMessagesById
+        : {}
+    );
     requestedReplyTargetIdsRef.current.clear();
   }, [currentChannelId, isOpen, targetUser?.id, user?.id]);
 
