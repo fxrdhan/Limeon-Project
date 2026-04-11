@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import ImageUploader from '@/components/image-manager';
 import ImageExpandPreview from '@/components/shared/image-expand-preview';
 import { TbArrowUp } from 'react-icons/tb';
@@ -33,6 +34,10 @@ interface ComposerPanelProps {
 
 const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
   const { composer, previews, mutations, refs, viewport } = runtime;
+  const composerBarRef = useRef<HTMLDivElement | null>(null);
+  const [composerTrayMaxHeight, setComposerTrayMaxHeight] = useState<
+    number | null
+  >(null);
   const totalSelectableComposerAttachments =
     composer.composerAttachmentPreviewItems.filter(
       attachment =>
@@ -51,6 +56,49 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
   const hasComposerAttachmentTray =
     previews.isComposerAttachmentSelectionMode ||
     composer.composerAttachmentPreviewItems.length > 0;
+
+  useLayoutEffect(() => {
+    if (!hasComposerAttachmentTray) {
+      setComposerTrayMaxHeight(null);
+      return;
+    }
+
+    const composerContainer = refs.composerContainerRef.current;
+    const composerBar = composerBarRef.current;
+    if (!composerContainer || !composerBar) {
+      return;
+    }
+
+    const updateComposerTrayMaxHeight = () => {
+      const nextMaxHeight = Math.max(
+        Math.floor(
+          composerContainer.getBoundingClientRect().height -
+            composerBar.getBoundingClientRect().height
+        ),
+        0
+      );
+
+      setComposerTrayMaxHeight(previousMaxHeight =>
+        previousMaxHeight === nextMaxHeight ? previousMaxHeight : nextMaxHeight
+      );
+    };
+
+    updateComposerTrayMaxHeight();
+
+    if (typeof ResizeObserver === 'undefined') {
+      return;
+    }
+
+    const resizeObserver = new ResizeObserver(() => {
+      updateComposerTrayMaxHeight();
+    });
+    resizeObserver.observe(composerContainer);
+    resizeObserver.observe(composerBar);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [hasComposerAttachmentTray, refs.composerContainerRef]);
 
   return (
     <>
@@ -73,9 +121,13 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
               layout
               initial={false}
               transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
-              className="mb-[-1px] grid min-h-0 shrink-0 max-h-[min(38vh,19rem)] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-t-3xl rounded-b-none border border-b-0 bg-white px-2.5 py-2.5"
+              className="mb-[-1px] grid min-h-0 shrink-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-t-3xl rounded-b-none border border-b-0 bg-white px-2.5 py-2.5"
               style={{
                 borderColor: COMPOSER_BASE_BORDER_COLOR,
+                maxHeight:
+                  composerTrayMaxHeight && composerTrayMaxHeight > 0
+                    ? composerTrayMaxHeight
+                    : undefined,
               }}
             >
               <AnimatePresence initial={false} mode="popLayout">
@@ -162,6 +214,7 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
           ) : null}
 
           <motion.div
+            ref={composerBarRef}
             layout
             initial={false}
             animate={
