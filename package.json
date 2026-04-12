@@ -53,6 +53,7 @@
     "export": "bun scripts/export.ts",
     "loc-stats": "bun scripts/loc-stats.ts",
     "codex:seed": "bun scripts/seed-codex.ts",
+    "codex:seed:interactive": "bun scripts/seed-codex.ts --interactive",
     "gen:schemas": "bun gen:schemas:db && bun gen:schemas:forms && bun gen:schemas:invoice && bun gen:schemas:purchase",
     "gen:schemas:db": "bunx ts-to-zod --config=database --skipValidation",
     "gen:schemas:forms": "bunx ts-to-zod --config=forms --skipValidation",
