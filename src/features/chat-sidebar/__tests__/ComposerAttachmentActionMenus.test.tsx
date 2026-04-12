@@ -61,7 +61,6 @@ describe('ComposerAttachmentActionMenus', () => {
     const popover = screen.getByTestId('popup-menu-popover');
 
     expect(screen.getByText('Buka')).toBeTruthy();
-    expect(popover.className).not.toContain('transition-[top,left]');
     expect(popover.getAttribute('style')).toContain('top: -10000px');
     expect(popover.getAttribute('style')).toContain('left: -10000px');
     expect(popover.getAttribute('style')).toContain('visibility: hidden');

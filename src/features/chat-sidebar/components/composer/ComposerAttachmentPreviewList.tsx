@@ -5,7 +5,6 @@ import {
   useEffect,
   useRef,
   useState,
-  type MouseEvent,
   type RefObject,
 } from 'react';
 import { TbFileTypeJpg, TbFileTypePng, TbMusic, TbX } from 'react-icons/tb';
@@ -35,10 +34,7 @@ interface ComposerAttachmentPreviewListProps {
       duration: number;
     };
   };
-  onToggleImageActionsMenu: (
-    event: MouseEvent<HTMLButtonElement>,
-    attachmentId: string
-  ) => void;
+  onToggleImageActionsMenu: (attachmentId: string) => void;
   onToggleAttachmentSelection: (attachmentId: string) => void;
   onCancelLoadingComposerAttachment: (attachmentId: string) => void;
   onRemovePendingComposerAttachment: (attachmentId: string) => void;
@@ -301,7 +297,7 @@ const ComposerAttachmentPreviewList = forwardRef<
                           onToggleAttachmentSelection(attachment.id);
                           return;
                         }
-                        onToggleImageActionsMenu(event, attachment.id);
+                        onToggleImageActionsMenu(attachment.id);
                       }}
                     >
                       <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg">
@@ -354,7 +350,7 @@ const ComposerAttachmentPreviewList = forwardRef<
                           onToggleAttachmentSelection(attachment.id);
                           return;
                         }
-                        onToggleImageActionsMenu(event, attachment.id);
+                        onToggleImageActionsMenu(attachment.id);
                       }}
                     >
                       {resolvedAttachment.pdfCoverUrl ? (

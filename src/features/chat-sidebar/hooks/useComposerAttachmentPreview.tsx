@@ -20,7 +20,6 @@ import {
   TbPhotoMinus,
   TbTrash,
 } from 'react-icons/tb';
-import type { MouseEvent as ReactMouseEvent } from 'react';
 import type { PendingComposerAttachment } from '../types';
 import { resolveComposerAttachmentExtension } from '../utils/composer-attachment';
 import { useDocumentPreviewPortal } from './useDocumentPreviewPortal';
@@ -494,7 +493,7 @@ export const useComposerAttachmentPreview = ({
   ]);
 
   const handleToggleImageActionsMenu = useCallback(
-    (_event: ReactMouseEvent<HTMLButtonElement>, attachmentId: string) => {
+    (attachmentId: string) => {
       if (openImageActionsAttachmentId === attachmentId) {
         closeImageActionsMenu();
         return;
@@ -503,7 +502,9 @@ export const useComposerAttachmentPreview = ({
       onOpenImageActionsMenu();
       closePdfCompressionMenu();
       setOpenImageActionsAttachmentId(attachmentId);
-      setImageActionsMenuPosition(null);
+      setImageActionsMenuPosition(currentPosition =>
+        openImageActionsAttachmentId === null ? null : currentPosition
+      );
     },
     [
       closeImageActionsMenu,

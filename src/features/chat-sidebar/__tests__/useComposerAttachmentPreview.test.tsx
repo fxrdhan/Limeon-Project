@@ -73,9 +73,7 @@ const ComposerAttachmentPreviewHarness = ({
       <button
         type="button"
         ref={preview.imageActionsButtonRef}
-        onClick={event =>
-          preview.handleToggleImageActionsMenu(event, attachment.id)
-        }
+        onClick={() => preview.handleToggleImageActionsMenu(attachment.id)}
       >
         toggle
       </button>
@@ -144,9 +142,7 @@ const ComposerAttachmentPreviewMultiHarness = ({
             type="button"
             ref={isMenuOpen ? preview.imageActionsButtonRef : undefined}
             data-chat-composer-attachment-action-trigger="true"
-            onClick={event =>
-              preview.handleToggleImageActionsMenu(event, attachment.id)
-            }
+            onClick={() => preview.handleToggleImageActionsMenu(attachment.id)}
           >
             {attachment.id}
           </button>
@@ -386,6 +382,13 @@ describe('useComposerAttachmentPreview', () => {
 
     expect(screen.getByTestId('multi-open-id').textContent).toBe(
       'attachment-b'
+    );
+    expect(screen.getByTestId('multi-menu-position').textContent).toBe('open');
+
+    fireEvent.click(firstTrigger);
+
+    expect(screen.getByTestId('multi-open-id').textContent).toBe(
+      'attachment-a'
     );
     expect(screen.getByTestId('multi-menu-position').textContent).toBe('open');
   });
