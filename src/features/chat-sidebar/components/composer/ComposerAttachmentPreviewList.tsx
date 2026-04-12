@@ -15,6 +15,8 @@ import type {
 import { resolveComposerAttachmentExtension } from '../../utils/composer-attachment';
 import { formatFileSize } from '../../utils/message-file';
 
+const COMPOSER_ATTACHMENT_FOG_CLEARANCE = 56;
+
 interface ComposerAttachmentPreviewListProps {
   attachments: ComposerAttachmentPreviewItem[];
   openImageActionsAttachmentId: string | null;
@@ -69,6 +71,7 @@ const ComposerAttachmentPreviewList = forwardRef<
   ) => {
     const [loadingDotCount, setLoadingDotCount] = useState(1);
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+    const attachmentRowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
     const hasPdfCompressionLoading = attachments.some(
       attachment =>
         'status' in attachment &&
@@ -121,6 +124,84 @@ const ComposerAttachmentPreviewList = forwardRef<
       onCloseImageActionsMenu,
       openImageActionsAttachmentId,
     ]);
+
+    const setAttachmentRowRef = useCallback(
+      (attachmentId: string, node: HTMLDivElement | null) => {
+        if (node) {
+          attachmentRowRefs.current.set(attachmentId, node);
+          return;
+        }
+
+        attachmentRowRefs.current.delete(attachmentId);
+      },
+      []
+    );
+
+    const ensureAttachmentVisibleOutsideFog = useCallback(
+      (attachmentId: string) => {
+        const scrollContainer = scrollContainerRef.current;
+        const attachmentRow = attachmentRowRefs.current.get(attachmentId);
+        if (!scrollContainer || !attachmentRow) {
+          return;
+        }
+
+        const currentScrollTop = scrollContainer.scrollTop;
+        const hasOverflow =
+          scrollContainer.scrollHeight - scrollContainer.clientHeight > 1;
+        const remainingScrollDistance =
+          scrollContainer.scrollHeight -
+          scrollContainer.clientHeight -
+          currentScrollTop;
+        const topClearance =
+          isSelectionMode || currentScrollTop > 2
+            ? COMPOSER_ATTACHMENT_FOG_CLEARANCE
+            : 0;
+        const bottomClearance =
+          isSelectionMode || (hasOverflow && remainingScrollDistance > 2)
+            ? COMPOSER_ATTACHMENT_FOG_CLEARANCE
+            : 0;
+        const visibleTop = currentScrollTop + topClearance;
+        const visibleBottom =
+          currentScrollTop + scrollContainer.clientHeight - bottomClearance;
+        const attachmentTop = attachmentRow.offsetTop;
+        const attachmentBottom = attachmentTop + attachmentRow.offsetHeight;
+
+        let targetScrollTop: number | null = null;
+        if (attachmentTop < visibleTop) {
+          targetScrollTop = attachmentTop - topClearance;
+        } else if (attachmentBottom > visibleBottom) {
+          targetScrollTop =
+            attachmentBottom - scrollContainer.clientHeight + bottomClearance;
+        }
+
+        if (targetScrollTop === null) {
+          return;
+        }
+
+        const nextScrollTop = Math.min(
+          Math.max(targetScrollTop, 0),
+          Math.max(
+            0,
+            scrollContainer.scrollHeight - scrollContainer.clientHeight
+          )
+        );
+
+        if (Math.abs(nextScrollTop - currentScrollTop) < 1) {
+          return;
+        }
+
+        if (typeof scrollContainer.scrollTo === 'function') {
+          scrollContainer.scrollTo({
+            top: nextScrollTop,
+            behavior: 'smooth',
+          });
+          return;
+        }
+
+        scrollContainer.scrollTop = nextScrollTop;
+      },
+      [isSelectionMode]
+    );
 
     useEffect(() => {
       if (!hasPdfCompressionLoading) {
@@ -186,6 +267,32 @@ const ComposerAttachmentPreviewList = forwardRef<
     useEffect(() => {
       updateOpenAttachmentMenuVisibility();
     }, [updateOpenAttachmentMenuVisibility]);
+
+    useEffect(() => {
+      const activeAttachmentId =
+        openImageActionsAttachmentId ??
+        (isSelectionMode
+          ? (selectedAttachmentIds[selectedAttachmentIds.length - 1] ?? null)
+          : null);
+
+      if (!activeAttachmentId) {
+        return;
+      }
+
+      const rafId = window.requestAnimationFrame(() => {
+        ensureAttachmentVisibleOutsideFog(activeAttachmentId);
+      });
+
+      return () => {
+        window.cancelAnimationFrame(rafId);
+      };
+    }, [
+      attachments,
+      ensureAttachmentVisibleOutsideFog,
+      isSelectionMode,
+      openImageActionsAttachmentId,
+      selectedAttachmentIds,
+    ]);
 
     const animatedDots = '.'.repeat(loadingDotCount);
     const resolveCompressionStatusLabel = (
@@ -294,6 +401,10 @@ const ComposerAttachmentPreviewList = forwardRef<
             return (
               <div
                 key={attachment.id}
+                ref={node => {
+                  setAttachmentRowRef(attachment.id, node);
+                }}
+                data-chat-composer-attachment-id={attachment.id}
                 className="h-[54px]"
                 style={{
                   contentVisibility: 'auto',
