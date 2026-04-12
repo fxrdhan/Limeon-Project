@@ -32,6 +32,11 @@ interface ComposerPanelProps {
   runtime: ComposerPanelRuntime;
 }
 
+const COMPOSER_ATTACHMENT_TOP_FOG_GRADIENT =
+  'linear-gradient(to top, rgba(255,255,255,0) 0%, rgba(255,255,255,0.34) 18%, rgba(255,255,255,0.72) 42%, rgba(255,255,255,0.96) 68%, rgba(255,255,255,1) 84%, rgba(255,255,255,1) 100%)';
+const COMPOSER_ATTACHMENT_BOTTOM_FOG_GRADIENT =
+  'linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.34) 18%, rgba(255,255,255,0.72) 42%, rgba(255,255,255,0.96) 68%, rgba(255,255,255,1) 84%, rgba(255,255,255,1) 100%)';
+
 const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
   const { composer, previews, mutations, refs, viewport } = runtime;
   const composerBarRef = useRef<HTMLDivElement | null>(null);
@@ -210,8 +215,7 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                         aria-hidden="true"
                         className="pointer-events-none absolute inset-x-0 -top-2.5 h-[calc(100%+0.625rem)]"
                         style={{
-                          background:
-                            'linear-gradient(to top, rgba(255,255,255,0) 0%, rgba(255,255,255,0.34) 18%, rgba(255,255,255,0.72) 42%, rgba(255,255,255,0.96) 68%, rgba(255,255,255,1) 84%, rgba(255,255,255,1) 100%)',
+                          background: COMPOSER_ATTACHMENT_TOP_FOG_GRADIENT,
                         }}
                       />
                       <div className="absolute inset-x-0 top-0 flex items-start justify-between px-1 pt-0.5">
@@ -239,8 +243,7 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                         aria-hidden="true"
                         className="pointer-events-none absolute inset-x-0 -top-2.5 h-[calc(100%+0.625rem)]"
                         style={{
-                          background:
-                            'linear-gradient(to top, rgba(255,255,255,0) 0%, rgba(255,255,255,0.34) 18%, rgba(255,255,255,0.72) 42%, rgba(255,255,255,0.96) 68%, rgba(255,255,255,1) 84%, rgba(255,255,255,1) 100%)',
+                          background: COMPOSER_ATTACHMENT_TOP_FOG_GRADIENT,
                         }}
                       />
                     </motion.div>
@@ -264,7 +267,7 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                       style={{
                         background: isComposerAttachmentTrayScrolledToBottom
                           ? 'rgb(255,255,255)'
-                          : 'linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.34) 18%, rgba(255,255,255,0.72) 42%, rgba(255,255,255,0.96) 68%, rgba(255,255,255,1) 84%, rgba(255,255,255,1) 100%)',
+                          : COMPOSER_ATTACHMENT_BOTTOM_FOG_GRADIENT,
                       }}
                     />
                     {previews.isComposerAttachmentSelectionMode ? (

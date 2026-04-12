@@ -6,17 +6,99 @@ import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
 
 const CHAT_POPOVER_ICON_CLASS_NAME =
   '[&>svg]:!text-black hover:[&>svg]:!text-black data-[preselected=true]:[&>svg]:!text-black';
+const IMAGE_ACTIONS_MENU_CLASS_NAME = 'fixed z-[120] origin-top-right';
+const PDF_COMPRESSION_MENU_CLASS_NAME = 'fixed z-[121] origin-top-right';
+const MENU_FADE_TRANSITION = {
+  duration: 0.12,
+  ease: 'easeOut',
+} as const;
+const MENU_REPOSITION_TRANSITION = {
+  duration: 0.18,
+  ease: [0.22, 1, 0.36, 1],
+} as const;
+const MENU_INSTANT_TRANSITION = {
+  duration: 0,
+} as const;
+
+type MenuPosition = {
+  top: number;
+  left: number;
+};
+
+const HIDDEN_MENU_STYLE = {
+  top: -10_000,
+  left: -10_000,
+  visibility: 'hidden' as const,
+  pointerEvents: 'none' as const,
+};
+
+const useVerticalMenuReposition = (position: MenuPosition | null) => {
+  const previousTopRef = useRef<number | null>(null);
+  const [offsetY, setOffsetY] = useState(0);
+  const [isRepositionAnimationEnabled, setIsRepositionAnimationEnabled] =
+    useState(false);
+
+  useLayoutEffect(() => {
+    if (!position) {
+      previousTopRef.current = null;
+      setOffsetY(0);
+      setIsRepositionAnimationEnabled(false);
+      return;
+    }
+
+    const previousTop = previousTopRef.current;
+    previousTopRef.current = position.top;
+
+    if (previousTop === null) {
+      setOffsetY(0);
+      setIsRepositionAnimationEnabled(false);
+      return;
+    }
+
+    const nextOffsetY = previousTop - position.top;
+    if (nextOffsetY === 0) {
+      setOffsetY(0);
+      return;
+    }
+
+    setIsRepositionAnimationEnabled(false);
+    setOffsetY(nextOffsetY);
+
+    const rafId = window.requestAnimationFrame(() => {
+      setIsRepositionAnimationEnabled(true);
+      setOffsetY(0);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+    };
+  }, [position]);
+
+  return {
+    offsetY,
+    yTransition: isRepositionAnimationEnabled
+      ? MENU_REPOSITION_TRANSITION
+      : MENU_INSTANT_TRANSITION,
+  };
+};
+
+const resolveMenuStyle = (position: MenuPosition | null, offsetY: number) => {
+  if (!position) {
+    return HIDDEN_MENU_STYLE;
+  }
+
+  return {
+    top: position.top,
+    left: position.left,
+    transform: offsetY !== 0 ? `translateY(${offsetY}px)` : undefined,
+    willChange: offsetY !== 0 ? ('transform' as const) : undefined,
+  };
+};
 
 interface ComposerAttachmentActionMenusProps {
   openImageActionsAttachmentId: string | null;
-  imageActionsMenuPosition: {
-    top: number;
-    left: number;
-  } | null;
-  pdfCompressionMenuPosition: {
-    top: number;
-    left: number;
-  } | null;
+  imageActionsMenuPosition: MenuPosition | null;
+  pdfCompressionMenuPosition: MenuPosition | null;
   imageActions: PopupMenuAction[];
   pdfCompressionLevelActions: PopupMenuAction[];
   imageActionsMenuRef: RefObject<HTMLDivElement | null>;
@@ -32,138 +114,38 @@ export const ComposerAttachmentActionMenus = ({
   imageActionsMenuRef,
   pdfCompressionMenuRef,
 }: ComposerAttachmentActionMenusProps) => {
-  const previousImageActionsMenuTopRef = useRef<number | null>(null);
-  const previousPdfCompressionMenuTopRef = useRef<number | null>(null);
-  const [imageActionsMenuOffsetY, setImageActionsMenuOffsetY] = useState(0);
-  const [pdfCompressionMenuOffsetY, setPdfCompressionMenuOffsetY] = useState(0);
-  const [
-    isImageActionsMenuRepositionAnimationEnabled,
-    setIsImageActionsMenuRepositionAnimationEnabled,
-  ] = useState(false);
-  const [
-    isPdfCompressionMenuRepositionAnimationEnabled,
-    setIsPdfCompressionMenuRepositionAnimationEnabled,
-  ] = useState(false);
-
-  useLayoutEffect(() => {
-    if (!imageActionsMenuPosition) {
-      previousImageActionsMenuTopRef.current = null;
-      setImageActionsMenuOffsetY(0);
-      setIsImageActionsMenuRepositionAnimationEnabled(false);
-      return;
-    }
-
-    const previousTop = previousImageActionsMenuTopRef.current;
-    previousImageActionsMenuTopRef.current = imageActionsMenuPosition.top;
-
-    if (previousTop === null) {
-      setImageActionsMenuOffsetY(0);
-      setIsImageActionsMenuRepositionAnimationEnabled(false);
-      return;
-    }
-
-    const nextOffsetY = previousTop - imageActionsMenuPosition.top;
-    if (nextOffsetY === 0) {
-      setImageActionsMenuOffsetY(0);
-      return;
-    }
-
-    setIsImageActionsMenuRepositionAnimationEnabled(false);
-    setImageActionsMenuOffsetY(nextOffsetY);
-
-    const rafId = window.requestAnimationFrame(() => {
-      setIsImageActionsMenuRepositionAnimationEnabled(true);
-      setImageActionsMenuOffsetY(0);
-    });
-
-    return () => {
-      window.cancelAnimationFrame(rafId);
-    };
-  }, [imageActionsMenuPosition]);
-
-  useLayoutEffect(() => {
-    if (!pdfCompressionMenuPosition) {
-      previousPdfCompressionMenuTopRef.current = null;
-      setPdfCompressionMenuOffsetY(0);
-      setIsPdfCompressionMenuRepositionAnimationEnabled(false);
-      return;
-    }
-
-    const previousTop = previousPdfCompressionMenuTopRef.current;
-    previousPdfCompressionMenuTopRef.current = pdfCompressionMenuPosition.top;
-
-    if (previousTop === null) {
-      setPdfCompressionMenuOffsetY(0);
-      setIsPdfCompressionMenuRepositionAnimationEnabled(false);
-      return;
-    }
-
-    const nextOffsetY = previousTop - pdfCompressionMenuPosition.top;
-    if (nextOffsetY === 0) {
-      setPdfCompressionMenuOffsetY(0);
-      return;
-    }
-
-    setIsPdfCompressionMenuRepositionAnimationEnabled(false);
-    setPdfCompressionMenuOffsetY(nextOffsetY);
-
-    const rafId = window.requestAnimationFrame(() => {
-      setIsPdfCompressionMenuRepositionAnimationEnabled(true);
-      setPdfCompressionMenuOffsetY(0);
-    });
-
-    return () => {
-      window.cancelAnimationFrame(rafId);
-    };
-  }, [pdfCompressionMenuPosition]);
+  const imageActionsMenuMotion = useVerticalMenuReposition(
+    imageActionsMenuPosition
+  );
+  const pdfCompressionMenuMotion = useVerticalMenuReposition(
+    pdfCompressionMenuPosition
+  );
 
   if (typeof document === 'undefined' || !openImageActionsAttachmentId) {
     return null;
   }
 
-  const imageActionsMenuStyle = imageActionsMenuPosition
-    ? {
-        top: imageActionsMenuPosition.top,
-        left: imageActionsMenuPosition.left,
-        transform:
-          imageActionsMenuOffsetY !== 0
-            ? `translateY(${imageActionsMenuOffsetY}px)`
-            : undefined,
-        willChange:
-          imageActionsMenuOffsetY !== 0 ? ('transform' as const) : undefined,
-      }
-    : {
-        top: -10_000,
-        left: -10_000,
-        visibility: 'hidden' as const,
-        pointerEvents: 'none' as const,
-      };
-  const imageActionsMenuClassName = 'fixed z-[120] origin-top-right';
-  const pdfCompressionMenuClassName = 'fixed z-[121] origin-top-right';
+  const imageActionsMenuStyle = resolveMenuStyle(
+    imageActionsMenuPosition,
+    imageActionsMenuMotion.offsetY
+  );
 
   return (
     <>
       {createPortal(
         <PopupMenuPopover
           isOpen
-          className={imageActionsMenuClassName}
+          className={IMAGE_ACTIONS_MENU_CLASS_NAME}
           style={imageActionsMenuStyle}
           initial={{ opacity: 0 }}
           animate={{
             opacity: imageActionsMenuPosition ? 1 : 0,
-            y: imageActionsMenuOffsetY,
+            y: imageActionsMenuMotion.offsetY,
           }}
           exit={{ opacity: 0 }}
           transition={{
-            opacity: { duration: 0.12, ease: 'easeOut' },
-            y: isImageActionsMenuRepositionAnimationEnabled
-              ? {
-                  duration: 0.18,
-                  ease: [0.22, 1, 0.36, 1],
-                }
-              : {
-                  duration: 0,
-                },
+            opacity: MENU_FADE_TRANSITION,
+            y: imageActionsMenuMotion.yTransition,
           }}
         >
           <div
@@ -187,27 +169,20 @@ export const ComposerAttachmentActionMenus = ({
         ? createPortal(
             <PopupMenuPopover
               isOpen
-              className={pdfCompressionMenuClassName}
-              style={{
-                top: pdfCompressionMenuPosition.top,
-                left: pdfCompressionMenuPosition.left,
-              }}
+              className={PDF_COMPRESSION_MENU_CLASS_NAME}
+              style={resolveMenuStyle(
+                pdfCompressionMenuPosition,
+                pdfCompressionMenuMotion.offsetY
+              )}
               initial={{ opacity: 0 }}
               animate={{
                 opacity: 1,
-                y: pdfCompressionMenuOffsetY,
+                y: pdfCompressionMenuMotion.offsetY,
               }}
               exit={{ opacity: 0 }}
               transition={{
-                opacity: { duration: 0.12, ease: 'easeOut' },
-                y: isPdfCompressionMenuRepositionAnimationEnabled
-                  ? {
-                      duration: 0.18,
-                      ease: [0.22, 1, 0.36, 1],
-                    }
-                  : {
-                      duration: 0,
-                    },
+                opacity: MENU_FADE_TRANSITION,
+                y: pdfCompressionMenuMotion.yTransition,
               }}
             >
               <div
