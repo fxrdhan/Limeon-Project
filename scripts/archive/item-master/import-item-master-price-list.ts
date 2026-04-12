@@ -955,10 +955,10 @@ const runUndoDryRun = async (rows: PriceListRow[]) => {
 
 const printHelp = () => {
   console.log(`Usage:
-  bun run seed:item-master:price-list "<pdf-path>"
-  bun run seed:item-master:price-list "<pdf-path>" --apply
-  bun run seed:item-master:price-list "<pdf-path>" --undo
-  bun run seed:item-master:price-list "<pdf-path>" --undo --apply
+  bun scripts/archive/item-master/import-item-master-price-list.ts "<pdf-path>"
+  bun scripts/archive/item-master/import-item-master-price-list.ts "<pdf-path>" --apply
+  bun scripts/archive/item-master/import-item-master-price-list.ts "<pdf-path>" --undo
+  bun scripts/archive/item-master/import-item-master-price-list.ts "<pdf-path>" --undo --apply
 
 Behavior:
   - default: dry-run preview only

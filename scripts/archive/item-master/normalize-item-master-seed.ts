@@ -1203,7 +1203,7 @@ const main = () => {
 
   if (help) {
     console.log(
-      `Usage: bun run normalize:item-master:seed [--input <path>] [--output <path>]`
+      `Usage: bun scripts/archive/item-master/normalize-item-master-seed.ts [--input <path>] [--output <path>]`
     );
     console.log(`Default input : ${DEFAULT_INPUT}`);
     console.log(`Default output: ${DEFAULT_OUTPUT}`);
