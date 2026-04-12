@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { COMPOSER_IMAGE_PREVIEW_EXIT_DURATION } from '../constants';
 import type { PendingComposerAttachment } from '../types';
+import { isImagePreviewableComposerAttachment } from '../utils/composer-attachment';
 
 interface UseComposerAttachmentPreviewStateProps {
   closeAttachModal: () => void;
@@ -31,7 +32,7 @@ export const useComposerAttachmentPreviewState = ({
   const previewComposerImageAttachment = pendingComposerAttachments.find(
     attachment =>
       attachment.id === composerImagePreviewAttachmentId &&
-      attachment.fileKind === 'image'
+      isImagePreviewableComposerAttachment(attachment)
   );
 
   const resetComposerImageExpandedUrl = useCallback(() => {
@@ -131,7 +132,8 @@ export const useComposerAttachmentPreviewState = ({
     (attachmentId: string) => {
       const targetAttachment = pendingComposerAttachments.find(
         attachment =>
-          attachment.id === attachmentId && attachment.fileKind === 'image'
+          attachment.id === attachmentId &&
+          isImagePreviewableComposerAttachment(attachment)
       );
       if (!targetAttachment) {
         return;

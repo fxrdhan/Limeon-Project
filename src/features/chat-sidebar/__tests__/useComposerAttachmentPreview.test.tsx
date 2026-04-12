@@ -213,6 +213,39 @@ describe('useComposerAttachmentPreview', () => {
     expect(screen.getByTestId('menu-position').textContent).toBe('open');
   });
 
+  it('opens a document image in the composer image viewer instead of the document portal', () => {
+    const onOpenComposerImagePreview = vi.fn();
+
+    render(
+      <ComposerAttachmentPreviewHarness
+        attachment={buildAttachment({
+          id: 'attachment-image-doc',
+          file: new File(['image'], 'diagram.png', {
+            type: 'image/png',
+          }),
+          fileName: 'diagram.png',
+          fileTypeLabel: 'PNG',
+          fileKind: 'document',
+          mimeType: 'image/png',
+          previewUrl: null,
+        })}
+        onOpenComposerImagePreview={onOpenComposerImagePreview}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'toggle' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Buka' }));
+
+    expect(onOpenComposerImagePreview).toHaveBeenCalledWith(
+      'attachment-image-doc'
+    );
+    expect(mockOpenDocumentPreview).not.toHaveBeenCalled();
+    expect(screen.getByTestId('open-id').textContent).toBe(
+      'attachment-image-doc'
+    );
+    expect(screen.getByTestId('menu-position').textContent).toBe('open');
+  });
+
   it('selects an image attachment from the popup menu', () => {
     render(
       <ComposerAttachmentPreviewHarness

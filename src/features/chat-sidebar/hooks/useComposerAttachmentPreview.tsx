@@ -21,7 +21,10 @@ import {
   TbTrash,
 } from 'react-icons/tb';
 import type { PendingComposerAttachment } from '../types';
-import { resolveComposerAttachmentExtension } from '../utils/composer-attachment';
+import {
+  isImagePreviewableComposerAttachment,
+  resolveComposerAttachmentExtension,
+} from '../utils/composer-attachment';
 import { useDocumentPreviewPortal } from './useDocumentPreviewPortal';
 
 const IMAGE_ACTIONS_MENU_SIDE_GAP = 6;
@@ -269,6 +272,11 @@ export const useComposerAttachmentPreview = ({
 
   const openDocumentAttachmentInPortal = useCallback(
     (attachment: PendingComposerAttachment) => {
+      if (isImagePreviewableComposerAttachment(attachment)) {
+        onOpenComposerImagePreview(attachment.id);
+        return;
+      }
+
       const isPdfAttachment =
         resolveComposerAttachmentExtension(attachment) === 'pdf' ||
         attachment.mimeType.toLowerCase().includes('pdf');
@@ -303,7 +311,7 @@ export const useComposerAttachmentPreview = ({
         },
       });
     },
-    [openDocumentPreview]
+    [onOpenComposerImagePreview, openDocumentPreview]
   );
 
   const openImageActionsAttachment = pendingComposerAttachments.find(

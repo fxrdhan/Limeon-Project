@@ -1,5 +1,19 @@
 import type { PendingComposerAttachment } from '../types';
 
+const IMAGE_COMPOSER_ATTACHMENT_EXTENSIONS = new Set([
+  'apng',
+  'avif',
+  'bmp',
+  'gif',
+  'heic',
+  'heif',
+  'jpg',
+  'jpeg',
+  'png',
+  'svg',
+  'webp',
+]);
+
 export const resolveComposerAttachmentExtension = (
   attachment: PendingComposerAttachment
 ) => {
@@ -20,3 +34,12 @@ export const resolveComposerAttachmentExtension = (
   if (mimeSubtype === 'jpeg') return 'jpg';
   return mimeSubtype;
 };
+
+export const isImagePreviewableComposerAttachment = (
+  attachment: PendingComposerAttachment
+) =>
+  attachment.fileKind === 'image' ||
+  attachment.mimeType.toLowerCase().startsWith('image/') ||
+  IMAGE_COMPOSER_ATTACHMENT_EXTENSIONS.has(
+    resolveComposerAttachmentExtension(attachment)
+  );
