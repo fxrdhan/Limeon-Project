@@ -1,6 +1,6 @@
 import { createRef } from 'react';
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vite-plus/test';
 import { ComposerAttachmentActionMenus } from '../components/composer/ComposerAttachmentActionMenus';
 
@@ -65,5 +65,50 @@ describe('ComposerAttachmentActionMenus', () => {
     expect(popover.getAttribute('style')).toContain('left: -10000px');
     expect(popover.getAttribute('style')).toContain('visibility: hidden');
     expect(popover.getAttribute('style')).toContain('pointer-events: none');
+  });
+
+  it('keeps the attachment menu mounted briefly so the exit animation can play', () => {
+    vi.useFakeTimers();
+
+    const { rerender } = render(
+      <ComposerAttachmentActionMenus
+        openImageActionsAttachmentId="attachment-1"
+        imageActionsMenuPosition={{ top: 24, left: 48 }}
+        pdfCompressionMenuPosition={null}
+        imageActions={[
+          {
+            label: 'Buka',
+            icon: <span>icon</span>,
+            onClick: vi.fn(),
+          },
+        ]}
+        pdfCompressionLevelActions={[]}
+        imageActionsMenuRef={createRef<HTMLDivElement>()}
+        pdfCompressionMenuRef={createRef<HTMLDivElement>()}
+      />
+    );
+
+    act(() => {
+      rerender(
+        <ComposerAttachmentActionMenus
+          openImageActionsAttachmentId={null}
+          imageActionsMenuPosition={null}
+          pdfCompressionMenuPosition={null}
+          imageActions={[]}
+          pdfCompressionLevelActions={[]}
+          imageActionsMenuRef={createRef<HTMLDivElement>()}
+          pdfCompressionMenuRef={createRef<HTMLDivElement>()}
+        />
+      );
+    });
+
+    expect(screen.getByText('Buka')).toBeTruthy();
+
+    act(() => {
+      vi.advanceTimersByTime(160);
+    });
+
+    expect(screen.queryByText('Buka')).toBeNull();
+    vi.useRealTimers();
   });
 });
