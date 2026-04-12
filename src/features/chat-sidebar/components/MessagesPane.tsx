@@ -11,6 +11,7 @@ const CHAT_DATE_FORMATTER = new Intl.DateTimeFormat('id-ID', {
   month: 'long',
   year: 'numeric',
 });
+const SCROLL_TO_BOTTOM_BUTTON_OFFSET = 36;
 
 interface MessagesPaneProps {
   runtime: MessagesPaneRuntime;
@@ -162,7 +163,11 @@ const MessagesPane = ({ runtime }: MessagesPaneProps) => {
           aria-label="Scroll ke pesan terbaru"
           className="absolute left-1/2 z-20 flex h-8 w-8 -translate-x-1/2 cursor-pointer items-center justify-center rounded-xl bg-white text-black shadow-sm transition-colors hover:text-black/80"
           style={{
-            bottom: Math.max(runtime.viewport.composerContainerHeight + 24, 46),
+            bottom: Math.max(
+              runtime.viewport.composerContainerHeight +
+                SCROLL_TO_BOTTOM_BUTTON_OFFSET,
+              46
+            ),
           }}
         >
           <TbArrowDown size={18} />
