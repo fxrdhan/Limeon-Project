@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import type { NavbarProps } from '@/types';
 import { useAuthStore } from '@/store/authStore';
 import DateTimeDisplay from './live-datetime';
@@ -52,6 +52,10 @@ const Navbar = ({ sidebarCollapsed, onOnlineUsersIntent }: NavbarProps) => {
     setShouldLoadOnlineUsers(true);
     onOnlineUsersIntent?.();
   }, [onOnlineUsersIntent]);
+
+  useEffect(() => {
+    loadOnlineUsers();
+  }, [loadOnlineUsers]);
 
   return (
     <nav className="sticky top-0 z-40 box-border h-[73px] select-none border-b border-slate-200 bg-white px-4">

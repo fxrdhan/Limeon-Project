@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import Navbar from './index';
 
@@ -36,15 +36,19 @@ describe('Navbar', () => {
     });
   });
 
-  it('loads the online users control after interaction', async () => {
-    render(<Navbar sidebarCollapsed={false} />);
+  it('loads the online users control automatically after mount', async () => {
+    const onOnlineUsersIntent = vi.fn();
 
-    expect(screen.queryByTestId('navbar-online-users-control')).toBeNull();
-
-    fireEvent.click(screen.getByLabelText('Muat daftar pengguna online'));
+    render(
+      <Navbar
+        sidebarCollapsed={false}
+        onOnlineUsersIntent={onOnlineUsersIntent}
+      />
+    );
 
     expect(
       await screen.findByTestId('navbar-online-users-control')
     ).toBeTruthy();
+    expect(onOnlineUsersIntent).toHaveBeenCalledTimes(1);
   });
 });
