@@ -191,6 +191,9 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                         previews.handleToggleImageActionsMenu
                       }
                       onCloseImageActionsMenu={previews.closeImageActionsMenu}
+                      onMenuRepositionPauseChange={
+                        previews.setIsAttachmentMenuRepositionPaused
+                      }
                       onToggleAttachmentSelection={
                         previews.handleToggleComposerAttachmentSelection
                       }
@@ -496,6 +499,7 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
 
           <ComposerAttachmentActionMenus
             openImageActionsAttachmentId={previews.openImageActionsAttachmentId}
+            isMenuRepositionPaused={previews.isAttachmentMenuRepositionPaused}
             imageActionsMenuPosition={previews.imageActionsMenuPosition}
             pdfCompressionMenuPosition={previews.pdfCompressionMenuPosition}
             imageActions={previews.imageActions}

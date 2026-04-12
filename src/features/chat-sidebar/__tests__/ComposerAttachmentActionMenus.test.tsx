@@ -9,12 +9,21 @@ vi.mock('@/components/shared/popup-menu-popover', () => ({
     children,
     className,
     style,
+    animate,
   }: {
     children: React.ReactNode;
     className?: string;
     style?: React.CSSProperties;
+    animate?: {
+      opacity?: number;
+    };
   }) => (
-    <div data-testid="popup-menu-popover" className={className} style={style}>
+    <div
+      data-testid="popup-menu-popover"
+      data-animate-opacity={animate?.opacity}
+      className={className}
+      style={style}
+    >
       {children}
     </div>
   ),
@@ -110,5 +119,77 @@ describe('ComposerAttachmentActionMenus', () => {
 
     expect(screen.queryByText('Buka')).toBeNull();
     vi.useRealTimers();
+  });
+
+  it('keeps the popup mounted but hidden while the initial open is paused', () => {
+    render(
+      <ComposerAttachmentActionMenus
+        openImageActionsAttachmentId="attachment-1"
+        isMenuRepositionPaused
+        imageActionsMenuPosition={{ top: 24, left: 48 }}
+        pdfCompressionMenuPosition={null}
+        imageActions={[
+          {
+            label: 'Buka',
+            icon: <span>icon</span>,
+            onClick: vi.fn(),
+          },
+        ]}
+        pdfCompressionLevelActions={[]}
+        imageActionsMenuRef={createRef<HTMLDivElement>()}
+        pdfCompressionMenuRef={createRef<HTMLDivElement>()}
+      />
+    );
+
+    const popover = screen.getByTestId('popup-menu-popover');
+
+    expect(screen.getByText('Buka')).toBeTruthy();
+    expect(popover.getAttribute('style')).toContain('top: -10000px');
+    expect(popover.dataset.animateOpacity).toBe('0');
+  });
+
+  it('holds the popup at the previous position while reposition is paused', () => {
+    const { rerender } = render(
+      <ComposerAttachmentActionMenus
+        openImageActionsAttachmentId="attachment-1"
+        imageActionsMenuPosition={{ top: 24, left: 48 }}
+        pdfCompressionMenuPosition={null}
+        imageActions={[
+          {
+            label: 'Buka',
+            icon: <span>icon</span>,
+            onClick: vi.fn(),
+          },
+        ]}
+        pdfCompressionLevelActions={[]}
+        imageActionsMenuRef={createRef<HTMLDivElement>()}
+        pdfCompressionMenuRef={createRef<HTMLDivElement>()}
+      />
+    );
+
+    rerender(
+      <ComposerAttachmentActionMenus
+        openImageActionsAttachmentId="attachment-1"
+        isMenuRepositionPaused
+        imageActionsMenuPosition={{ top: 96, left: 120 }}
+        pdfCompressionMenuPosition={null}
+        imageActions={[
+          {
+            label: 'Buka',
+            icon: <span>icon</span>,
+            onClick: vi.fn(),
+          },
+        ]}
+        pdfCompressionLevelActions={[]}
+        imageActionsMenuRef={createRef<HTMLDivElement>()}
+        pdfCompressionMenuRef={createRef<HTMLDivElement>()}
+      />
+    );
+
+    const popover = screen.getByTestId('popup-menu-popover');
+
+    expect(popover.getAttribute('style')).toContain('top: 24px');
+    expect(popover.getAttribute('style')).toContain('left: 48px');
+    expect(popover.dataset.animateOpacity).toBe('1');
   });
 });

@@ -16,6 +16,7 @@ import { resolveComposerAttachmentExtension } from '../../utils/composer-attachm
 import { formatFileSize } from '../../utils/message-file';
 
 const COMPOSER_ATTACHMENT_FOG_CLEARANCE = 56;
+const MENU_REPOSITION_RESUME_DELAY_MS = 150;
 
 interface ComposerAttachmentPreviewListProps {
   attachments: ComposerAttachmentPreviewItem[];
@@ -38,6 +39,7 @@ interface ComposerAttachmentPreviewListProps {
   };
   onToggleImageActionsMenu: (attachmentId: string) => void;
   onCloseImageActionsMenu?: () => void;
+  onMenuRepositionPauseChange?: (isPaused: boolean) => void;
   onToggleAttachmentSelection: (attachmentId: string) => void;
   onCancelLoadingComposerAttachment: (attachmentId: string) => void;
   onRemovePendingComposerAttachment: (attachmentId: string) => void;
@@ -62,6 +64,7 @@ const ComposerAttachmentPreviewList = forwardRef<
       transition,
       onToggleImageActionsMenu,
       onCloseImageActionsMenu,
+      onMenuRepositionPauseChange,
       onToggleAttachmentSelection,
       onCancelLoadingComposerAttachment,
       onRemovePendingComposerAttachment,
@@ -72,6 +75,8 @@ const ComposerAttachmentPreviewList = forwardRef<
     const [loadingDotCount, setLoadingDotCount] = useState(1);
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
     const attachmentRowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+    const isMenuRepositionPausedRef = useRef(false);
+    const menuRepositionResumeTimeoutRef = useRef<number | null>(null);
     const hasPdfCompressionLoading = attachments.some(
       attachment =>
         'status' in attachment &&
@@ -137,6 +142,37 @@ const ComposerAttachmentPreviewList = forwardRef<
       []
     );
 
+    const setMenuRepositionPaused = useCallback(
+      (isPaused: boolean) => {
+        if (
+          !openImageActionsAttachmentId ||
+          !onMenuRepositionPauseChange ||
+          isMenuRepositionPausedRef.current === isPaused
+        ) {
+          return;
+        }
+
+        isMenuRepositionPausedRef.current = isPaused;
+        onMenuRepositionPauseChange(isPaused);
+      },
+      [onMenuRepositionPauseChange, openImageActionsAttachmentId]
+    );
+
+    const scheduleMenuRepositionResume = useCallback(() => {
+      if (!isMenuRepositionPausedRef.current) {
+        return;
+      }
+
+      if (menuRepositionResumeTimeoutRef.current !== null) {
+        window.clearTimeout(menuRepositionResumeTimeoutRef.current);
+      }
+
+      menuRepositionResumeTimeoutRef.current = window.setTimeout(() => {
+        menuRepositionResumeTimeoutRef.current = null;
+        setMenuRepositionPaused(false);
+      }, MENU_REPOSITION_RESUME_DELAY_MS);
+    }, [setMenuRepositionPaused]);
+
     const ensureAttachmentVisibleOutsideFog = useCallback(
       (attachmentId: string) => {
         const scrollContainer = scrollContainerRef.current;
@@ -190,6 +226,11 @@ const ComposerAttachmentPreviewList = forwardRef<
           return;
         }
 
+        if (openImageActionsAttachmentId === attachmentId) {
+          setMenuRepositionPaused(true);
+          scheduleMenuRepositionResume();
+        }
+
         if (typeof scrollContainer.scrollTo === 'function') {
           scrollContainer.scrollTo({
             top: nextScrollTop,
@@ -200,7 +241,12 @@ const ComposerAttachmentPreviewList = forwardRef<
 
         scrollContainer.scrollTop = nextScrollTop;
       },
-      [isSelectionMode]
+      [
+        isSelectionMode,
+        openImageActionsAttachmentId,
+        scheduleMenuRepositionResume,
+        setMenuRepositionPaused,
+      ]
     );
 
     useEffect(() => {
@@ -234,6 +280,7 @@ const ComposerAttachmentPreviewList = forwardRef<
       const handleScroll = () => {
         updateScrollState();
         updateOpenAttachmentMenuVisibility();
+        scheduleMenuRepositionResume();
       };
 
       scrollContainer.addEventListener('scroll', handleScroll, {
@@ -262,11 +309,46 @@ const ComposerAttachmentPreviewList = forwardRef<
       onScrollStateChange,
       updateOpenAttachmentMenuVisibility,
       updateScrollState,
+      scheduleMenuRepositionResume,
     ]);
 
     useEffect(() => {
       updateOpenAttachmentMenuVisibility();
     }, [updateOpenAttachmentMenuVisibility]);
+
+    useEffect(() => {
+      if (openImageActionsAttachmentId) {
+        return;
+      }
+
+      if (menuRepositionResumeTimeoutRef.current !== null) {
+        window.clearTimeout(menuRepositionResumeTimeoutRef.current);
+        menuRepositionResumeTimeoutRef.current = null;
+      }
+
+      if (!isMenuRepositionPausedRef.current) {
+        return;
+      }
+
+      isMenuRepositionPausedRef.current = false;
+      onMenuRepositionPauseChange?.(false);
+    }, [onMenuRepositionPauseChange, openImageActionsAttachmentId]);
+
+    useEffect(() => {
+      return () => {
+        if (menuRepositionResumeTimeoutRef.current !== null) {
+          window.clearTimeout(menuRepositionResumeTimeoutRef.current);
+          menuRepositionResumeTimeoutRef.current = null;
+        }
+
+        if (!isMenuRepositionPausedRef.current) {
+          return;
+        }
+
+        isMenuRepositionPausedRef.current = false;
+        onMenuRepositionPauseChange?.(false);
+      };
+    }, [onMenuRepositionPauseChange]);
 
     useEffect(() => {
       const activeAttachmentId =

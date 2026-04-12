@@ -63,6 +63,10 @@ export const useComposerAttachmentPreview = ({
 }: UseComposerAttachmentPreviewProps) => {
   const [openImageActionsAttachmentId, setOpenImageActionsAttachmentId] =
     useState<string | null>(null);
+  const [
+    isAttachmentMenuRepositionPaused,
+    setIsAttachmentMenuRepositionPaused,
+  ] = useState(false);
   const [imageActionsMenuPosition, setImageActionsMenuPosition] = useState<{
     top: number;
     left: number;
@@ -539,6 +543,14 @@ export const useComposerAttachmentPreview = ({
   ]);
 
   useEffect(() => {
+    if (openImageActionsAttachmentId) {
+      return;
+    }
+
+    setIsAttachmentMenuRepositionPaused(false);
+  }, [openImageActionsAttachmentId]);
+
+  useEffect(() => {
     if (!openImageActionsAttachmentId) return;
 
     const handleMouseDown = (event: MouseEvent) => {
@@ -617,6 +629,7 @@ export const useComposerAttachmentPreview = ({
 
   return {
     openImageActionsAttachmentId,
+    isAttachmentMenuRepositionPaused,
     imageActionsMenuPosition,
     pdfCompressionMenuPosition,
     isComposerAttachmentSelectionMode,
@@ -636,6 +649,7 @@ export const useComposerAttachmentPreview = ({
     handleSelectAllComposerAttachments,
     handleDeleteSelectedComposerAttachments,
     handleToggleComposerAttachmentSelection,
+    setIsAttachmentMenuRepositionPaused,
     openDocumentAttachmentInPortal,
     handleToggleImageActionsMenu,
   };

@@ -108,6 +108,7 @@ const resolveMenuStyle = (position: MenuPosition | null, offsetY: number) => {
 
 interface ComposerAttachmentActionMenusProps {
   openImageActionsAttachmentId: string | null;
+  isMenuRepositionPaused?: boolean;
   imageActionsMenuPosition: MenuPosition | null;
   pdfCompressionMenuPosition: MenuPosition | null;
   imageActions: PopupMenuAction[];
@@ -118,6 +119,7 @@ interface ComposerAttachmentActionMenusProps {
 
 export const ComposerAttachmentActionMenus = ({
   openImageActionsAttachmentId,
+  isMenuRepositionPaused = false,
   imageActionsMenuPosition,
   pdfCompressionMenuPosition,
   imageActions,
@@ -129,6 +131,10 @@ export const ComposerAttachmentActionMenus = ({
     useState<PopupMenuAction[]>(imageActions);
   const [cachedImageActionsMenuPosition, setCachedImageActionsMenuPosition] =
     useState<MenuPosition | null>(imageActionsMenuPosition);
+  const [settledImageActionsMenuPosition, setSettledImageActionsMenuPosition] =
+    useState<MenuPosition | null>(imageActionsMenuPosition);
+  const [hasImageActionsMenuBeenVisible, setHasImageActionsMenuBeenVisible] =
+    useState(false);
   const [
     cachedPdfCompressionLevelActions,
     setCachedPdfCompressionLevelActions,
@@ -137,16 +143,16 @@ export const ComposerAttachmentActionMenus = ({
     cachedPdfCompressionMenuPosition,
     setCachedPdfCompressionMenuPosition,
   ] = useState<MenuPosition | null>(pdfCompressionMenuPosition);
+  const [
+    settledPdfCompressionMenuPosition,
+    setSettledPdfCompressionMenuPosition,
+  ] = useState<MenuPosition | null>(pdfCompressionMenuPosition);
+  const [
+    hasPdfCompressionMenuBeenVisible,
+    setHasPdfCompressionMenuBeenVisible,
+  ] = useState(false);
   const imageMenuCleanupTimeoutRef = useRef<number | null>(null);
   const pdfMenuCleanupTimeoutRef = useRef<number | null>(null);
-  const imageActionsMenuMotion = useVerticalMenuReposition(
-    openImageActionsAttachmentId
-      ? imageActionsMenuPosition
-      : cachedImageActionsMenuPosition
-  );
-  const pdfCompressionMenuMotion = useVerticalMenuReposition(
-    pdfCompressionMenuPosition ?? cachedPdfCompressionMenuPosition
-  );
   const isImageActionsMenuOpen = Boolean(openImageActionsAttachmentId);
   const isPdfCompressionMenuOpen =
     Boolean(pdfCompressionMenuPosition) &&
@@ -167,6 +173,28 @@ export const ComposerAttachmentActionMenus = ({
     isImageActionsMenuOpen || resolvedImageActions.length > 0;
   const shouldRenderPdfCompressionMenu =
     isPdfCompressionMenuOpen || resolvedPdfCompressionLevelActions.length > 0;
+  const displayedImageActionsMenuPosition = isMenuRepositionPaused
+    ? hasImageActionsMenuBeenVisible
+      ? settledImageActionsMenuPosition
+      : null
+    : resolvedImageActionsMenuPosition;
+  const displayedPdfCompressionMenuPosition = isMenuRepositionPaused
+    ? hasPdfCompressionMenuBeenVisible
+      ? settledPdfCompressionMenuPosition
+      : null
+    : resolvedPdfCompressionMenuPosition;
+  const imageActionsMenuMotion = useVerticalMenuReposition(
+    displayedImageActionsMenuPosition
+  );
+  const pdfCompressionMenuMotion = useVerticalMenuReposition(
+    displayedPdfCompressionMenuPosition
+  );
+  const imageActionsMenuOffsetY = isMenuRepositionPaused
+    ? 0
+    : imageActionsMenuMotion.offsetY;
+  const pdfCompressionMenuOffsetY = isMenuRepositionPaused
+    ? 0
+    : pdfCompressionMenuMotion.offsetY;
 
   useEffect(() => {
     if (!isImageActionsMenuOpen) {
@@ -192,6 +220,8 @@ export const ComposerAttachmentActionMenus = ({
     imageMenuCleanupTimeoutRef.current = window.setTimeout(() => {
       setCachedImageActions([]);
       setCachedImageActionsMenuPosition(null);
+      setSettledImageActionsMenuPosition(null);
+      setHasImageActionsMenuBeenVisible(false);
       imageMenuCleanupTimeoutRef.current = null;
     }, MENU_EXIT_ANIMATION_DURATION_MS);
 
@@ -202,6 +232,24 @@ export const ComposerAttachmentActionMenus = ({
       }
     };
   }, [isImageActionsMenuOpen]);
+
+  useEffect(() => {
+    if (isMenuRepositionPaused || !resolvedImageActionsMenuPosition) {
+      return;
+    }
+
+    setSettledImageActionsMenuPosition(previousPosition => {
+      if (
+        previousPosition?.top === resolvedImageActionsMenuPosition.top &&
+        previousPosition?.left === resolvedImageActionsMenuPosition.left
+      ) {
+        return previousPosition;
+      }
+
+      return resolvedImageActionsMenuPosition;
+    });
+    setHasImageActionsMenuBeenVisible(true);
+  }, [isMenuRepositionPaused, resolvedImageActionsMenuPosition]);
 
   useEffect(() => {
     if (!isPdfCompressionMenuOpen) {
@@ -231,6 +279,8 @@ export const ComposerAttachmentActionMenus = ({
     pdfMenuCleanupTimeoutRef.current = window.setTimeout(() => {
       setCachedPdfCompressionLevelActions([]);
       setCachedPdfCompressionMenuPosition(null);
+      setSettledPdfCompressionMenuPosition(null);
+      setHasPdfCompressionMenuBeenVisible(false);
       pdfMenuCleanupTimeoutRef.current = null;
     }, MENU_EXIT_ANIMATION_DURATION_MS);
 
@@ -241,6 +291,24 @@ export const ComposerAttachmentActionMenus = ({
       }
     };
   }, [isPdfCompressionMenuOpen]);
+
+  useEffect(() => {
+    if (isMenuRepositionPaused || !resolvedPdfCompressionMenuPosition) {
+      return;
+    }
+
+    setSettledPdfCompressionMenuPosition(previousPosition => {
+      if (
+        previousPosition?.top === resolvedPdfCompressionMenuPosition.top &&
+        previousPosition?.left === resolvedPdfCompressionMenuPosition.left
+      ) {
+        return previousPosition;
+      }
+
+      return resolvedPdfCompressionMenuPosition;
+    });
+    setHasPdfCompressionMenuBeenVisible(true);
+  }, [isMenuRepositionPaused, resolvedPdfCompressionMenuPosition]);
 
   useEffect(() => {
     return () => {
@@ -261,8 +329,8 @@ export const ComposerAttachmentActionMenus = ({
   }
 
   const imageActionsMenuStyle = resolveMenuStyle(
-    resolvedImageActionsMenuPosition,
-    imageActionsMenuMotion.offsetY
+    displayedImageActionsMenuPosition,
+    imageActionsMenuOffsetY
   );
 
   return (
@@ -277,19 +345,31 @@ export const ComposerAttachmentActionMenus = ({
                 opacity: 0,
                 scale: 0.96,
                 x: -6,
-                y: imageActionsMenuMotion.offsetY,
+                y: imageActionsMenuOffsetY,
               }}
               animate={{
-                opacity: imageActionsMenuPosition ? 1 : 0,
-                scale: imageActionsMenuPosition ? 1 : 0.98,
+                opacity: (
+                  isMenuRepositionPaused
+                    ? hasImageActionsMenuBeenVisible
+                    : Boolean(displayedImageActionsMenuPosition)
+                )
+                  ? 1
+                  : 0,
+                scale: (
+                  isMenuRepositionPaused
+                    ? hasImageActionsMenuBeenVisible
+                    : Boolean(displayedImageActionsMenuPosition)
+                )
+                  ? 1
+                  : 0.98,
                 x: 0,
-                y: imageActionsMenuMotion.offsetY,
+                y: imageActionsMenuOffsetY,
               }}
               exit={{
                 opacity: 0,
                 scale: 0.98,
                 x: 0,
-                y: imageActionsMenuMotion.offsetY,
+                y: imageActionsMenuOffsetY,
               }}
               transition={{
                 opacity: MENU_FADE_TRANSITION,
@@ -322,26 +402,38 @@ export const ComposerAttachmentActionMenus = ({
               isOpen={isPdfCompressionMenuOpen}
               className={PDF_COMPRESSION_MENU_CLASS_NAME}
               style={resolveMenuStyle(
-                resolvedPdfCompressionMenuPosition,
-                pdfCompressionMenuMotion.offsetY
+                displayedPdfCompressionMenuPosition,
+                pdfCompressionMenuOffsetY
               )}
               initial={{
                 opacity: 0,
                 scale: 0.96,
                 x: -6,
-                y: pdfCompressionMenuMotion.offsetY,
+                y: pdfCompressionMenuOffsetY,
               }}
               animate={{
-                opacity: 1,
-                scale: 1,
+                opacity: (
+                  isMenuRepositionPaused
+                    ? hasPdfCompressionMenuBeenVisible
+                    : Boolean(displayedPdfCompressionMenuPosition)
+                )
+                  ? 1
+                  : 0,
+                scale: (
+                  isMenuRepositionPaused
+                    ? hasPdfCompressionMenuBeenVisible
+                    : Boolean(displayedPdfCompressionMenuPosition)
+                )
+                  ? 1
+                  : 0.98,
                 x: 0,
-                y: pdfCompressionMenuMotion.offsetY,
+                y: pdfCompressionMenuOffsetY,
               }}
               exit={{
                 opacity: 0,
                 scale: 0.98,
                 x: 0,
-                y: pdfCompressionMenuMotion.offsetY,
+                y: pdfCompressionMenuOffsetY,
               }}
               transition={{
                 opacity: MENU_FADE_TRANSITION,

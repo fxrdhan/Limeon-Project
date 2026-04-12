@@ -193,6 +193,7 @@ describe('ComposerAttachmentPreviewList', () => {
   });
 
   it('auto-scrolls the selected attachment until it is clear of the tray fog', () => {
+    vi.useFakeTimers();
     const requestAnimationFrameSpy = vi
       .spyOn(window, 'requestAnimationFrame')
       .mockImplementation(callback => {
@@ -202,6 +203,7 @@ describe('ComposerAttachmentPreviewList', () => {
     const cancelAnimationFrameSpy = vi
       .spyOn(window, 'cancelAnimationFrame')
       .mockImplementation(() => {});
+    const onMenuRepositionPauseChange = vi.fn();
     const { container, rerender } = render(
       <ComposerAttachmentPreviewList
         attachments={[
@@ -225,6 +227,7 @@ describe('ComposerAttachmentPreviewList', () => {
           },
         }}
         onToggleImageActionsMenu={vi.fn()}
+        onMenuRepositionPauseChange={onMenuRepositionPauseChange}
         onToggleAttachmentSelection={vi.fn()}
         onCancelLoadingComposerAttachment={vi.fn()}
         onRemovePendingComposerAttachment={vi.fn()}
@@ -282,7 +285,7 @@ describe('ComposerAttachmentPreviewList', () => {
               previewUrl: 'blob:bulk-image-1',
             }),
           ]}
-          openImageActionsAttachmentId={null}
+          openImageActionsAttachmentId="pending-image-1"
           isSelectionMode={true}
           selectedAttachmentIds={['pending-image-1']}
           imageActionsButtonRef={createRef<HTMLButtonElement>()}
@@ -296,6 +299,7 @@ describe('ComposerAttachmentPreviewList', () => {
             },
           }}
           onToggleImageActionsMenu={vi.fn()}
+          onMenuRepositionPauseChange={onMenuRepositionPauseChange}
           onToggleAttachmentSelection={vi.fn()}
           onCancelLoadingComposerAttachment={vi.fn()}
           onRemovePendingComposerAttachment={vi.fn()}
@@ -307,8 +311,16 @@ describe('ComposerAttachmentPreviewList', () => {
       top: 100,
       behavior: 'smooth',
     });
+    expect(onMenuRepositionPauseChange).toHaveBeenCalledWith(true);
+
+    act(() => {
+      vi.advanceTimersByTime(160);
+    });
+
+    expect(onMenuRepositionPauseChange).toHaveBeenLastCalledWith(false);
 
     requestAnimationFrameSpy.mockRestore();
     cancelAnimationFrameSpy.mockRestore();
+    vi.useRealTimers();
   });
 });
