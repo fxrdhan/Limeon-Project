@@ -142,6 +142,50 @@ const ComposerAttachmentPreviewList = forwardRef<
       []
     );
 
+    const getAttachmentFogAwareScrollTarget = useCallback(
+      (attachmentId: string) => {
+        const scrollContainer = scrollContainerRef.current;
+        const attachmentRow = attachmentRowRefs.current.get(attachmentId);
+        if (!scrollContainer || !attachmentRow) {
+          return null;
+        }
+
+        const currentScrollTop = scrollContainer.scrollTop;
+        const hasOverflow =
+          scrollContainer.scrollHeight - scrollContainer.clientHeight > 1;
+        const remainingScrollDistance =
+          scrollContainer.scrollHeight -
+          scrollContainer.clientHeight -
+          currentScrollTop;
+        const topClearance =
+          isSelectionMode || currentScrollTop > 2
+            ? COMPOSER_ATTACHMENT_FOG_CLEARANCE
+            : 0;
+        const bottomClearance =
+          isSelectionMode || (hasOverflow && remainingScrollDistance > 2)
+            ? COMPOSER_ATTACHMENT_FOG_CLEARANCE
+            : 0;
+        const visibleTop = currentScrollTop + topClearance;
+        const visibleBottom =
+          currentScrollTop + scrollContainer.clientHeight - bottomClearance;
+        const attachmentTop = attachmentRow.offsetTop;
+        const attachmentBottom = attachmentTop + attachmentRow.offsetHeight;
+
+        if (attachmentTop < visibleTop) {
+          return attachmentTop - topClearance;
+        }
+
+        if (attachmentBottom > visibleBottom) {
+          return (
+            attachmentBottom - scrollContainer.clientHeight + bottomClearance
+          );
+        }
+
+        return null;
+      },
+      [isSelectionMode]
+    );
+
     const setMenuRepositionPaused = useCallback(
       (isPaused: boolean) => {
         if (
@@ -176,40 +220,12 @@ const ComposerAttachmentPreviewList = forwardRef<
     const ensureAttachmentVisibleOutsideFog = useCallback(
       (attachmentId: string) => {
         const scrollContainer = scrollContainerRef.current;
-        const attachmentRow = attachmentRowRefs.current.get(attachmentId);
-        if (!scrollContainer || !attachmentRow) {
+        if (!scrollContainer) {
           return;
         }
 
         const currentScrollTop = scrollContainer.scrollTop;
-        const hasOverflow =
-          scrollContainer.scrollHeight - scrollContainer.clientHeight > 1;
-        const remainingScrollDistance =
-          scrollContainer.scrollHeight -
-          scrollContainer.clientHeight -
-          currentScrollTop;
-        const topClearance =
-          isSelectionMode || currentScrollTop > 2
-            ? COMPOSER_ATTACHMENT_FOG_CLEARANCE
-            : 0;
-        const bottomClearance =
-          isSelectionMode || (hasOverflow && remainingScrollDistance > 2)
-            ? COMPOSER_ATTACHMENT_FOG_CLEARANCE
-            : 0;
-        const visibleTop = currentScrollTop + topClearance;
-        const visibleBottom =
-          currentScrollTop + scrollContainer.clientHeight - bottomClearance;
-        const attachmentTop = attachmentRow.offsetTop;
-        const attachmentBottom = attachmentTop + attachmentRow.offsetHeight;
-
-        let targetScrollTop: number | null = null;
-        if (attachmentTop < visibleTop) {
-          targetScrollTop = attachmentTop - topClearance;
-        } else if (attachmentBottom > visibleBottom) {
-          targetScrollTop =
-            attachmentBottom - scrollContainer.clientHeight + bottomClearance;
-        }
-
+        const targetScrollTop = getAttachmentFogAwareScrollTarget(attachmentId);
         if (targetScrollTop === null) {
           return;
         }
@@ -242,10 +258,30 @@ const ComposerAttachmentPreviewList = forwardRef<
         scrollContainer.scrollTop = nextScrollTop;
       },
       [
-        isSelectionMode,
+        getAttachmentFogAwareScrollTarget,
         openImageActionsAttachmentId,
         scheduleMenuRepositionResume,
         setMenuRepositionPaused,
+      ]
+    );
+
+    const handleAttachmentMenuIntent = useCallback(
+      (attachmentId: string) => {
+        const shouldPauseBeforeOpen =
+          openImageActionsAttachmentId !== attachmentId &&
+          getAttachmentFogAwareScrollTarget(attachmentId) !== null;
+
+        if (shouldPauseBeforeOpen) {
+          onMenuRepositionPauseChange?.(true);
+        }
+
+        onToggleImageActionsMenu(attachmentId);
+      },
+      [
+        getAttachmentFogAwareScrollTarget,
+        onMenuRepositionPauseChange,
+        onToggleImageActionsMenu,
+        openImageActionsAttachmentId,
       ]
     );
 
@@ -531,7 +567,7 @@ const ComposerAttachmentPreviewList = forwardRef<
                           onToggleAttachmentSelection(attachment.id);
                           return;
                         }
-                        onToggleImageActionsMenu(attachment.id);
+                        handleAttachmentMenuIntent(attachment.id);
                       }}
                     >
                       <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg">
@@ -584,7 +620,7 @@ const ComposerAttachmentPreviewList = forwardRef<
                           onToggleAttachmentSelection(attachment.id);
                           return;
                         }
-                        onToggleImageActionsMenu(attachment.id);
+                        handleAttachmentMenuIntent(attachment.id);
                       }}
                     >
                       {resolvedAttachment.pdfCoverUrl ? (

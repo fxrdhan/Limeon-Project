@@ -192,6 +192,93 @@ describe('ComposerAttachmentPreviewList', () => {
     expect(onCloseImageActionsMenu).toHaveBeenCalledTimes(1);
   });
 
+  it('pauses popup reposition before opening a hidden attachment menu target', () => {
+    const onMenuRepositionPauseChange = vi.fn();
+    const onToggleImageActionsMenu = vi.fn();
+    const { container } = render(
+      <ComposerAttachmentPreviewList
+        attachments={[
+          buildAttachment({
+            id: 'pending-image-1',
+            fileName: 'bulk-image-1.png',
+            previewUrl: 'blob:bulk-image-1',
+          }),
+          buildAttachment({
+            id: 'pending-image-2',
+            fileName: 'bulk-image-2.png',
+            previewUrl: 'blob:bulk-image-2',
+          }),
+        ]}
+        openImageActionsAttachmentId="pending-image-1"
+        isSelectionMode={false}
+        selectedAttachmentIds={[]}
+        imageActionsButtonRef={createRef<HTMLButtonElement>()}
+        transition={{
+          duration: 0.2,
+          ease: 'easeOut',
+          layout: {
+            type: 'tween',
+            ease: [0.22, 1, 0.36, 1],
+            duration: 0.2,
+          },
+        }}
+        onToggleImageActionsMenu={onToggleImageActionsMenu}
+        onCloseImageActionsMenu={vi.fn()}
+        onMenuRepositionPauseChange={onMenuRepositionPauseChange}
+        onToggleAttachmentSelection={vi.fn()}
+        onCancelLoadingComposerAttachment={vi.fn()}
+        onRemovePendingComposerAttachment={vi.fn()}
+      />
+    );
+
+    const scrollContainer = container.querySelector(
+      'div.overflow-y-auto'
+    ) as HTMLDivElement | null;
+    const hiddenAttachmentButton = screen.getAllByRole('button', {
+      name: 'Aksi gambar',
+    })[1];
+    const hiddenAttachmentRow = container.querySelector(
+      '[data-chat-composer-attachment-id="pending-image-2"]'
+    ) as HTMLDivElement | null;
+
+    expect(scrollContainer).toBeTruthy();
+    expect(hiddenAttachmentRow).toBeTruthy();
+
+    Object.defineProperties(scrollContainer!, {
+      clientHeight: {
+        configurable: true,
+        value: 160,
+      },
+      scrollHeight: {
+        configurable: true,
+        value: 360,
+      },
+      scrollTop: {
+        configurable: true,
+        writable: true,
+        value: 40,
+      },
+    });
+    Object.defineProperties(hiddenAttachmentRow!, {
+      offsetTop: {
+        configurable: true,
+        value: 150,
+      },
+      offsetHeight: {
+        configurable: true,
+        value: 54,
+      },
+    });
+
+    fireEvent.click(hiddenAttachmentButton);
+
+    expect(onMenuRepositionPauseChange).toHaveBeenCalledWith(true);
+    expect(onToggleImageActionsMenu).toHaveBeenCalledWith('pending-image-2');
+    expect(
+      onMenuRepositionPauseChange.mock.invocationCallOrder[0]
+    ).toBeLessThan(onToggleImageActionsMenu.mock.invocationCallOrder[0]);
+  });
+
   it('auto-scrolls the selected attachment until it is clear of the tray fog', () => {
     vi.useFakeTimers();
     const requestAnimationFrameSpy = vi
