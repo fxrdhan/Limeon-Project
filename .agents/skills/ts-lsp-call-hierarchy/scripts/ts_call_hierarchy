@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+RUST_DIR="$SCRIPT_DIR/../rust"
+BIN="$RUST_DIR/target/release/ts_call_hierarchy"
+
+if [[ ! -x "$BIN" ]]; then
+  if ! command -v cargo >/dev/null 2>&1; then
+    echo "cargo not found. Install Rust (rustup) to build ts_call_hierarchy." >&2
+    exit 127
+  fi
+  (cd "$RUST_DIR" && cargo build --release)
+fi
+
+exec "$BIN" "$@"

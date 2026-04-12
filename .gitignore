@@ -65,5 +65,8 @@ readme-local.md
 
 # virtual environment
 .venv
+__pycache__/
+.agents/skills/**/rust/target/
+tmp/
 src/output.css
 output.css

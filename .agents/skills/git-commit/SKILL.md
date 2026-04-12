@@ -23,7 +23,7 @@ git diff
 Optional helper:
 
 ```bash
-~/.codex/skills/git-commit/scripts/diff-summary.sh
+.agents/skills/git-commit/scripts/diff-summary.sh
 ```
 
 2. Choose a staging strategy from the diff.
