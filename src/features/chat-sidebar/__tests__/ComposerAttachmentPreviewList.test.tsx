@@ -123,4 +123,72 @@ describe('ComposerAttachmentPreviewList', () => {
       isAtBottom: true,
     });
   });
+
+  it('closes the open attachment menu when its trigger scrolls out of the tray viewport', () => {
+    const onCloseImageActionsMenu = vi.fn();
+    const imageActionsButtonRef = createRef<HTMLButtonElement>();
+    const { container } = render(
+      <ComposerAttachmentPreviewList
+        attachments={[
+          buildAttachment({
+            id: 'pending-image-1',
+            fileName: 'bulk-image-1.png',
+            previewUrl: 'blob:bulk-image-1',
+          }),
+        ]}
+        openImageActionsAttachmentId="pending-image-1"
+        isSelectionMode={false}
+        selectedAttachmentIds={[]}
+        imageActionsButtonRef={imageActionsButtonRef}
+        transition={{
+          duration: 0.2,
+          ease: 'easeOut',
+          layout: {
+            type: 'tween',
+            ease: [0.22, 1, 0.36, 1],
+            duration: 0.2,
+          },
+        }}
+        onToggleImageActionsMenu={vi.fn()}
+        onCloseImageActionsMenu={onCloseImageActionsMenu}
+        onToggleAttachmentSelection={vi.fn()}
+        onCancelLoadingComposerAttachment={vi.fn()}
+        onRemovePendingComposerAttachment={vi.fn()}
+      />
+    );
+
+    const scrollContainer = container.querySelector(
+      'div.overflow-y-auto'
+    ) as HTMLDivElement | null;
+
+    expect(scrollContainer).toBeTruthy();
+    expect(imageActionsButtonRef.current).toBeTruthy();
+
+    scrollContainer!.getBoundingClientRect = vi.fn(() => ({
+      x: 0,
+      y: 0,
+      width: 240,
+      height: 120,
+      top: 0,
+      right: 240,
+      bottom: 120,
+      left: 0,
+      toJSON: () => ({}),
+    }));
+    imageActionsButtonRef.current!.getBoundingClientRect = vi.fn(() => ({
+      x: 0,
+      y: 140,
+      width: 200,
+      height: 44,
+      top: 140,
+      right: 200,
+      bottom: 184,
+      left: 0,
+      toJSON: () => ({}),
+    }));
+
+    fireEvent.scroll(scrollContainer!);
+
+    expect(onCloseImageActionsMenu).toHaveBeenCalledTimes(1);
+  });
 });

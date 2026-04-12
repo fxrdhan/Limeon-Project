@@ -190,6 +190,7 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                       onToggleImageActionsMenu={
                         previews.handleToggleImageActionsMenu
                       }
+                      onCloseImageActionsMenu={previews.closeImageActionsMenu}
                       onToggleAttachmentSelection={
                         previews.handleToggleComposerAttachmentSelection
                       }

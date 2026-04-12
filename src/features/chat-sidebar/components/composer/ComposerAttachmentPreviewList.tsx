@@ -35,6 +35,7 @@ interface ComposerAttachmentPreviewListProps {
     };
   };
   onToggleImageActionsMenu: (attachmentId: string) => void;
+  onCloseImageActionsMenu?: () => void;
   onToggleAttachmentSelection: (attachmentId: string) => void;
   onCancelLoadingComposerAttachment: (attachmentId: string) => void;
   onRemovePendingComposerAttachment: (attachmentId: string) => void;
@@ -58,6 +59,7 @@ const ComposerAttachmentPreviewList = forwardRef<
       imageActionsButtonRef,
       transition,
       onToggleImageActionsMenu,
+      onCloseImageActionsMenu,
       onToggleAttachmentSelection,
       onCancelLoadingComposerAttachment,
       onRemovePendingComposerAttachment,
@@ -94,6 +96,32 @@ const ComposerAttachmentPreviewList = forwardRef<
       });
     }, [onScrollStateChange]);
 
+    const updateOpenAttachmentMenuVisibility = useCallback(() => {
+      if (!openImageActionsAttachmentId || !onCloseImageActionsMenu) {
+        return;
+      }
+
+      const scrollContainer = scrollContainerRef.current;
+      const actionTriggerButton = imageActionsButtonRef.current;
+      if (!scrollContainer || !actionTriggerButton) {
+        return;
+      }
+
+      const scrollContainerRect = scrollContainer.getBoundingClientRect();
+      const triggerRect = actionTriggerButton.getBoundingClientRect();
+      const isTriggerVisible =
+        triggerRect.bottom > scrollContainerRect.top &&
+        triggerRect.top < scrollContainerRect.bottom;
+
+      if (!isTriggerVisible) {
+        onCloseImageActionsMenu();
+      }
+    }, [
+      imageActionsButtonRef,
+      onCloseImageActionsMenu,
+      openImageActionsAttachmentId,
+    ]);
+
     useEffect(() => {
       if (!hasPdfCompressionLoading) {
         setLoadingDotCount(1);
@@ -120,9 +148,11 @@ const ComposerAttachmentPreviewList = forwardRef<
       }
 
       updateScrollState();
+      updateOpenAttachmentMenuVisibility();
 
       const handleScroll = () => {
         updateScrollState();
+        updateOpenAttachmentMenuVisibility();
       };
 
       scrollContainer.addEventListener('scroll', handleScroll, {
@@ -137,6 +167,7 @@ const ComposerAttachmentPreviewList = forwardRef<
 
       const resizeObserver = new ResizeObserver(() => {
         updateScrollState();
+        updateOpenAttachmentMenuVisibility();
       });
       resizeObserver.observe(scrollContainer);
 
@@ -144,7 +175,17 @@ const ComposerAttachmentPreviewList = forwardRef<
         scrollContainer.removeEventListener('scroll', handleScroll);
         resizeObserver.disconnect();
       };
-    }, [attachments, isSelectionMode, onScrollStateChange, updateScrollState]);
+    }, [
+      attachments,
+      isSelectionMode,
+      onScrollStateChange,
+      updateOpenAttachmentMenuVisibility,
+      updateScrollState,
+    ]);
+
+    useEffect(() => {
+      updateOpenAttachmentMenuVisibility();
+    }, [updateOpenAttachmentMenuVisibility]);
 
     const animatedDots = '.'.repeat(loadingDotCount);
     const resolveCompressionStatusLabel = (
