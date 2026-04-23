@@ -658,6 +658,65 @@ describe("useChatSession", () => {
     );
   });
 
+  it("keeps the older-message flag false when reply context reaches the start", async () => {
+    const initialMessageAnimationKeysRef = { current: new Set<string>() };
+    const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
+    const latestMessage = buildMessage({
+      id: "latest-message",
+      created_at: "2026-03-06T09:30:00.000Z",
+      updated_at: "2026-03-06T09:30:00.000Z",
+    });
+    const replyContextMessage = buildMessage({
+      id: "reply-context-message",
+      created_at: "2026-02-22T09:30:00.000Z",
+      updated_at: "2026-02-22T09:30:00.000Z",
+    });
+
+    mockChatService.fetchMessagesBetweenUsers.mockResolvedValueOnce({
+      data: {
+        messages: [latestMessage],
+        hasMore: false,
+      },
+      error: null,
+    });
+
+    const { result } = renderHook(() =>
+      useChatSession({
+        isOpen: true,
+        user: currentUser,
+        targetUser,
+        currentChannelId: "channel-1",
+        initialMessageAnimationKeysRef,
+        initialOpenJumpAnimationKeysRef,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.messages).toHaveLength(1);
+    });
+
+    act(() => {
+      result.current.mergeSearchContextMessages([replyContextMessage], {
+        hasOlderMessages: false,
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.messages.map((message) => message.id)).toEqual([
+        "reply-context-message",
+        "latest-message",
+      ]);
+    });
+
+    expect(result.current.hasOlderMessages).toBe(false);
+
+    await act(async () => {
+      await result.current.loadOlderMessages();
+    });
+
+    expect(mockChatService.fetchMessagesBetweenUsers).toHaveBeenCalledTimes(1);
+  });
+
   it("falls back to a fresh presence snapshot when the roster channel is connected but missing the target user", async () => {
     const initialMessageAnimationKeysRef = { current: new Set<string>() };
     const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };

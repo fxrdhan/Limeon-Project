@@ -3,6 +3,7 @@ import { chatSidebarMessagesGateway, type ChatMessage } from "../data/chatSideba
 import type { AttachmentCaptionData } from "../utils/message-derivations";
 import { buildMessageRenderItems } from "../utils/message-render-items";
 import { useChatComposer } from "./useChatComposer";
+import type { MergeSearchContextMessagesOptions } from "./useChatSession";
 import { useChatSidebarPreviewState } from "./useChatSidebarPreviewState";
 import { useChatSidebarRefs } from "./useChatSidebarRefs";
 import { useChatViewport } from "./useChatViewport";
@@ -19,13 +20,19 @@ interface UseChatSidebarUiStateProps {
   activeSearchMessageId: string | null;
   searchNavigationTick: number;
   markMessageIdsAsRead: (messageIds: string[]) => Promise<void>;
-  mergeSearchContextMessages: (searchContextMessages: ChatMessage[]) => void;
+  mergeSearchContextMessages: (
+    searchContextMessages: ChatMessage[],
+    options?: MergeSearchContextMessagesOptions,
+  ) => void;
   refs: ReturnType<typeof useChatSidebarRefs>;
   closeMessageMenu: () => void;
   getAttachmentFileName: (targetMessage: ChatMessage) => string;
   getAttachmentFileKind: (targetMessage: ChatMessage) => "audio" | "document";
   captionData: AttachmentCaptionData;
 }
+
+const REPLY_TARGET_CONTEXT_BEFORE_LIMIT = 20;
+const REPLY_TARGET_CONTEXT_AFTER_LIMIT = 20;
 
 export const useChatSidebarUiState = ({
   isOpen,
@@ -134,6 +141,73 @@ export const useChatSidebarUiState = ({
           renderItem.messages.some((message) => message.id === messageId),
       ),
     [captionData.captionMessagesByAttachmentId, getAttachmentFileKind],
+  );
+
+  const getReplyTargetContextHasOlderMessages = useCallback(
+    (messageId: string, contextMessages: ChatMessage[]) => {
+      const targetMessage = contextMessages.find((messageItem) => messageItem.id === messageId);
+      if (!targetMessage) {
+        return undefined;
+      }
+
+      const replyTargetAndOlderCount = contextMessages.filter((messageItem) => {
+        const createdAtOrder = messageItem.created_at.localeCompare(targetMessage.created_at);
+        return (
+          createdAtOrder < 0 ||
+          (createdAtOrder === 0 && messageItem.id.localeCompare(targetMessage.id) <= 0)
+        );
+      }).length;
+
+      return replyTargetAndOlderCount > REPLY_TARGET_CONTEXT_BEFORE_LIMIT;
+    },
+    [],
+  );
+
+  const confirmReplyTargetContextHasOlderMessages = useCallback(
+    async (
+      targetConversationUserId: string,
+      contextMessages: ChatMessage[],
+      inferredHasOlderMessages: boolean | undefined,
+    ) => {
+      if (!inferredHasOlderMessages) {
+        return inferredHasOlderMessages;
+      }
+
+      const oldestContextMessage = contextMessages.reduce<ChatMessage | null>(
+        (oldestMessage, messageItem) => {
+          if (!oldestMessage) {
+            return messageItem;
+          }
+
+          const createdAtOrder = messageItem.created_at.localeCompare(oldestMessage.created_at);
+          return createdAtOrder < 0 ||
+            (createdAtOrder === 0 && messageItem.id.localeCompare(oldestMessage.id) < 0)
+            ? messageItem
+            : oldestMessage;
+        },
+        null,
+      );
+      if (!oldestContextMessage) {
+        return inferredHasOlderMessages;
+      }
+
+      const { data: olderMessagesPage, error } =
+        await chatSidebarMessagesGateway.fetchConversationMessages(targetConversationUserId, {
+          beforeCreatedAt: oldestContextMessage.created_at,
+          beforeId: oldestContextMessage.id,
+          limit: 1,
+        });
+
+      if (error || !olderMessagesPage) {
+        if (error) {
+          console.error("Error checking reply target older messages:", error);
+        }
+        return inferredHasOlderMessages;
+      }
+
+      return olderMessagesPage.messages.length > 0;
+    },
+    [],
   );
 
   const cancelPendingReplyTargetFocusFrame = useCallback(() => {
@@ -266,6 +340,10 @@ export const useChatSidebarUiState = ({
             await chatSidebarMessagesGateway.fetchConversationMessageContext(
               targetUserId,
               messageId,
+              {
+                beforeLimit: REPLY_TARGET_CONTEXT_BEFORE_LIMIT,
+                afterLimit: REPLY_TARGET_CONTEXT_AFTER_LIMIT,
+              },
             );
           if (error || !searchContextMessages || searchContextMessages.length === 0) {
             if (error) {
@@ -282,7 +360,15 @@ export const useChatSidebarUiState = ({
               }
             : null;
 
-          mergeSearchContextMessages(searchContextMessages);
+          const hasOlderMessages = await confirmReplyTargetContextHasOlderMessages(
+            targetUserId,
+            searchContextMessages,
+            getReplyTargetContextHasOlderMessages(messageId, searchContextMessages),
+          );
+
+          mergeSearchContextMessages(searchContextMessages, {
+            hasOlderMessages,
+          });
 
           const mergedMessages = [...messages, ...searchContextMessages].reduce<
             Map<string, ChatMessage>
@@ -322,7 +408,9 @@ export const useChatSidebarUiState = ({
       })();
     },
     [
+      confirmReplyTargetContextHasOlderMessages,
       currentChannelId,
+      getReplyTargetContextHasOlderMessages,
       getReplyTargetImageGroup,
       focusReplyTargetFromMessages,
       isOpen,

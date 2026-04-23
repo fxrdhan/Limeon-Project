@@ -1,25 +1,16 @@
-import type { UserDetails } from '@/types/database';
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type MutableRefObject,
-} from 'react';
-import {
-  chatSidebarMessagesGateway,
-  type ChatMessage,
-} from '../data/chatSidebarGateway';
-import type { ChatSidebarPanelTargetUser } from '../types';
+import type { UserDetails } from "@/types/database";
+import { useCallback, useEffect, useRef, useState, type MutableRefObject } from "react";
+import { chatSidebarMessagesGateway, type ChatMessage } from "../data/chatSidebarGateway";
+import type { ChatSidebarPanelTargetUser } from "../types";
 import {
   mapConversationMessageForDisplay,
   mergeConversationContextWithExisting,
-} from '../utils/conversation-sync';
-import { useChatConversationCacheSync } from './useChatConversationCacheSync';
-import { useChatConversationInitialLoad } from './useChatConversationInitialLoad';
-import { useChatConversationRealtime } from './useChatConversationRealtime';
-import { useChatConversationPagination } from './useChatConversationPagination';
-import { useChatSessionEngine } from './useChatSessionEngine';
+} from "../utils/conversation-sync";
+import { useChatConversationCacheSync } from "./useChatConversationCacheSync";
+import { useChatConversationInitialLoad } from "./useChatConversationInitialLoad";
+import { useChatConversationRealtime } from "./useChatConversationRealtime";
+import { useChatConversationPagination } from "./useChatConversationPagination";
+import { useChatSessionEngine } from "./useChatSessionEngine";
 
 interface UseChatSessionProps {
   isOpen: boolean;
@@ -30,13 +21,15 @@ interface UseChatSessionProps {
   initialOpenJumpAnimationKeysRef: MutableRefObject<Set<string>>;
 }
 
+export interface MergeSearchContextMessagesOptions {
+  hasOlderMessages?: boolean;
+}
+
 const compareMessageOrder = (
-  leftMessage: Pick<ChatMessage, 'created_at' | 'id'>,
-  rightMessage: Pick<ChatMessage, 'created_at' | 'id'>
+  leftMessage: Pick<ChatMessage, "created_at" | "id">,
+  rightMessage: Pick<ChatMessage, "created_at" | "id">,
 ) => {
-  const createdAtOrder = leftMessage.created_at.localeCompare(
-    rightMessage.created_at
-  );
+  const createdAtOrder = leftMessage.created_at.localeCompare(rightMessage.created_at);
   if (createdAtOrder !== 0) {
     return createdAtOrder;
   }
@@ -61,27 +54,25 @@ export const useChatSession = ({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [hasOlderMessages, setHasOlderMessages] = useState(false);
   const [isLoadingOlderMessages, setIsLoadingOlderMessages] = useState(false);
-  const [olderMessagesError, setOlderMessagesError] = useState<string | null>(
-    null
-  );
+  const [olderMessagesError, setOlderMessagesError] = useState<string | null>(null);
   const [retryInitialLoadTick, setRetryInitialLoadTick] = useState(0);
   const requestedReplyTargetIdsRef = useRef<Set<string>>(new Set());
 
   const applyMessageUpdate = useCallback(
     (updatedMessage: Partial<ChatMessage> & { id: string }) => {
-      setMessages(previousMessages =>
-        previousMessages.map(previousMessage =>
+      setMessages((previousMessages) =>
+        previousMessages.map((previousMessage) =>
           previousMessage.id === updatedMessage.id
             ? {
                 ...previousMessage,
                 ...updatedMessage,
                 stableKey: previousMessage.stableKey,
               }
-            : previousMessage
-        )
+            : previousMessage,
+        ),
       );
     },
-    []
+    [],
   );
 
   const sessionEngine = useChatSessionEngine({
@@ -105,10 +96,10 @@ export const useChatSession = ({
             messageItem,
             user,
             targetUser,
-            messageItem.stableKey || messageItem.id
+            messageItem.stableKey || messageItem.id,
           )
         : messageItem,
-    [targetUser, user]
+    [targetUser, user],
   );
 
   const primeReplyTargetMessages = useCallback(
@@ -117,32 +108,30 @@ export const useChatSession = ({
         return;
       }
 
-      const loadedMessageIds = new Set(
-        candidateMessages.map(messageItem => messageItem.id)
-      );
+      const loadedMessageIds = new Set(candidateMessages.map((messageItem) => messageItem.id));
       const missingReplyTargetIds = [
         ...new Set(
           candidateMessages
-            .map(messageItem => messageItem.reply_to_id?.trim() || null)
-            .filter((replyToId): replyToId is string => Boolean(replyToId))
+            .map((messageItem) => messageItem.reply_to_id?.trim() || null)
+            .filter((replyToId): replyToId is string => Boolean(replyToId)),
         ),
       ].filter(
-        replyToId =>
+        (replyToId) =>
           !loadedMessageIds.has(replyToId) &&
           !replyTargetMessagesByIdRef.current[replyToId] &&
-          !requestedReplyTargetIdsRef.current.has(replyToId)
+          !requestedReplyTargetIdsRef.current.has(replyToId),
       );
 
       if (missingReplyTargetIds.length === 0) {
         return;
       }
 
-      missingReplyTargetIds.forEach(replyToId => {
+      missingReplyTargetIds.forEach((replyToId) => {
         requestedReplyTargetIdsRef.current.add(replyToId);
       });
 
       const replyTargetEntries = await Promise.all(
-        missingReplyTargetIds.map(async replyToId => {
+        missingReplyTargetIds.map(async (replyToId) => {
           const { data: replyTargetMessage, error } =
             await chatSidebarMessagesGateway.getMessageById(replyToId);
 
@@ -150,63 +139,51 @@ export const useChatSession = ({
             return null;
           }
 
-          if (
-            replyTargetMessage.channel_id &&
-            replyTargetMessage.channel_id !== currentChannelId
-          ) {
+          if (replyTargetMessage.channel_id && replyTargetMessage.channel_id !== currentChannelId) {
             return null;
           }
 
           return {
             replyToId,
-            replyTargetMessage:
-              mapMessageForActiveConversation(replyTargetMessage),
+            replyTargetMessage: mapMessageForActiveConversation(replyTargetMessage),
           };
-        })
+        }),
       );
 
       const resolvedReplyTargetEntries = replyTargetEntries.filter(
         (
-          replyTargetEntry
+          replyTargetEntry,
         ): replyTargetEntry is {
           replyToId: string;
           replyTargetMessage: ChatMessage;
-        } => Boolean(replyTargetEntry)
+        } => Boolean(replyTargetEntry),
       );
 
       if (resolvedReplyTargetEntries.length === 0) {
         return;
       }
 
-      setReplyTargetMessagesById(previousReplyTargetMessagesById => {
+      setReplyTargetMessagesById((previousReplyTargetMessagesById) => {
         const nextReplyTargetMessagesById = {
           ...previousReplyTargetMessagesById,
         };
 
-        resolvedReplyTargetEntries.forEach(
-          ({ replyToId, replyTargetMessage }) => {
-            nextReplyTargetMessagesById[replyToId] = replyTargetMessage;
-          }
-        );
+        resolvedReplyTargetEntries.forEach(({ replyToId, replyTargetMessage }) => {
+          nextReplyTargetMessagesById[replyToId] = replyTargetMessage;
+        });
 
         return nextReplyTargetMessagesById;
       });
     },
-    [
-      currentChannelId,
-      isOpen,
-      mapMessageForActiveConversation,
-      targetUser,
-      user,
-    ]
+    [currentChannelId, isOpen, mapMessageForActiveConversation, targetUser, user],
   );
 
   useEffect(() => {
     replyTargetMessagesByIdRef.current = {};
-    setReplyTargetMessagesById(previousReplyTargetMessagesById =>
+    setReplyTargetMessagesById((previousReplyTargetMessagesById) =>
       Object.keys(previousReplyTargetMessagesById).length === 0
         ? previousReplyTargetMessagesById
-        : {}
+        : {},
     );
     requestedReplyTargetIdsRef.current.clear();
   }, [currentChannelId, isOpen, targetUser?.id, user?.id]);
@@ -227,14 +204,7 @@ export const useChatSession = ({
     return () => {
       isCancelled = true;
     };
-  }, [
-    currentChannelId,
-    isOpen,
-    messages,
-    primeReplyTargetMessages,
-    targetUser,
-    user,
-  ]);
+  }, [currentChannelId, isOpen, messages, primeReplyTargetMessages, targetUser, user]);
 
   const getReplyTargetMessage = useCallback(
     (replyToId: string | null) => {
@@ -244,56 +214,53 @@ export const useChatSession = ({
       }
 
       return (
-        messages.find(messageItem => messageItem.id === normalizedReplyToId) ||
+        messages.find((messageItem) => messageItem.id === normalizedReplyToId) ||
         replyTargetMessagesById[normalizedReplyToId]
       );
     },
-    [messages, replyTargetMessagesById]
+    [messages, replyTargetMessagesById],
   );
 
   const mergeSearchContextMessages = useCallback(
-    (searchContextMessages: ChatMessage[]) => {
+    (searchContextMessages: ChatMessage[], options?: MergeSearchContextMessagesOptions) => {
       if (!currentChannelId || searchContextMessages.length === 0) {
         return;
       }
 
-      const mappedContextMessages = searchContextMessages.map(messageItem =>
-        mapMessageForActiveConversation(messageItem)
+      const mappedContextMessages = searchContextMessages.map((messageItem) =>
+        mapMessageForActiveConversation(messageItem),
       );
       const previousOldestMessage =
         conversationSession.oldestLoadedMessageCreatedAtRef.current &&
         conversationSession.oldestLoadedMessageIdRef.current
           ? {
-              created_at:
-                conversationSession.oldestLoadedMessageCreatedAtRef.current,
+              created_at: conversationSession.oldestLoadedMessageCreatedAtRef.current,
               id: conversationSession.oldestLoadedMessageIdRef.current,
             }
           : null;
       let injectedOlderPersistedMessage = false;
 
-      setMessages(previousMessages => {
+      setMessages((previousMessages) => {
         const knownPersistedMessageIds = new Set(
           previousMessages
-            .filter(messageItem => !messageItem.id.startsWith('temp_'))
-            .map(messageItem => messageItem.id)
+            .filter((messageItem) => !messageItem.id.startsWith("temp_"))
+            .map((messageItem) => messageItem.id),
         );
         const nextMessages = mergeConversationContextWithExisting(
           previousMessages,
           mappedContextMessages,
-          currentChannelId
+          currentChannelId,
         );
         const nextPersistedMessages = nextMessages.filter(
-          messageItem => !messageItem.id.startsWith('temp_')
+          (messageItem) => !messageItem.id.startsWith("temp_"),
         );
 
-        mappedContextMessages.forEach(messageItem => {
+        mappedContextMessages.forEach((messageItem) => {
           if (knownPersistedMessageIds.has(messageItem.id)) {
             return;
           }
 
-          conversationSession.searchContextMessageIdsRef.current.add(
-            messageItem.id
-          );
+          conversationSession.searchContextMessageIdsRef.current.add(messageItem.id);
           if (
             previousOldestMessage &&
             compareMessageOrder(messageItem, previousOldestMessage) < 0
@@ -304,17 +271,18 @@ export const useChatSession = ({
 
         conversationSession.oldestLoadedMessageCreatedAtRef.current =
           nextPersistedMessages[0]?.created_at ?? null;
-        conversationSession.oldestLoadedMessageIdRef.current =
-          nextPersistedMessages[0]?.id ?? null;
+        conversationSession.oldestLoadedMessageIdRef.current = nextPersistedMessages[0]?.id ?? null;
 
         return nextMessages;
       });
 
-      if (injectedOlderPersistedMessage) {
+      if (typeof options?.hasOlderMessages === "boolean") {
+        setHasOlderMessages(options.hasOlderMessages);
+      } else if (injectedOlderPersistedMessage) {
         setHasOlderMessages(true);
       }
     },
-    [conversationSession, currentChannelId, mapMessageForActiveConversation]
+    [conversationSession, currentChannelId, mapMessageForActiveConversation],
   );
 
   const loadOlderMessages = useChatConversationPagination({
@@ -342,8 +310,7 @@ export const useChatSession = ({
     applyMessageUpdate,
     setMessages,
     setLoadError,
-    markConversationRecoverySuccess:
-      sessionEngine.markConversationRecoverySuccess,
+    markConversationRecoverySuccess: sessionEngine.markConversationRecoverySuccess,
     scheduleConversationRecovery: sessionEngine.scheduleConversationRecovery,
   });
 
@@ -363,8 +330,7 @@ export const useChatSession = ({
     conversationSession,
     initialMessageAnimationKeysRef,
     initialOpenJumpAnimationKeysRef,
-    markConversationRecoverySuccess:
-      sessionEngine.markConversationRecoverySuccess,
+    markConversationRecoverySuccess: sessionEngine.markConversationRecoverySuccess,
     markMessageIdsAsDelivered: sessionEngine.markMessageIdsAsDelivered,
     primeReplyTargetMessages,
   });
@@ -374,14 +340,13 @@ export const useChatSession = ({
     currentChannelId,
     messages,
     hasOlderMessages,
-    hasCompletedInitialOpenLoadRef:
-      conversationSession.hasCompletedInitialOpenLoadRef,
+    hasCompletedInitialOpenLoadRef: conversationSession.hasCompletedInitialOpenLoadRef,
     excludedMessageIdsRef: conversationSession.searchContextMessageIdsRef,
   });
 
   const retryLoadMessages = useCallback(() => {
     setLoadError(null);
-    setRetryInitialLoadTick(previousTick => previousTick + 1);
+    setRetryInitialLoadTick((previousTick) => previousTick + 1);
   }, []);
 
   return {
