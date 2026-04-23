@@ -1,27 +1,27 @@
-import { useEffect, useRef } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
-import type { CustomerLevel } from '@/types/database';
-import type { RealtimeChannel } from '@supabase/supabase-js';
-import { realtimeService } from '@/services/realtime/realtime.service';
-import { customerLevelsService } from '@/services/api/customerLevels.service';
+import { useEffect, useRef } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
+import type { CustomerLevel } from "@/types/database";
+import type { RealtimeChannel } from "@supabase/supabase-js";
+import { realtimeService } from "@/services/realtime/realtime.service";
+import { customerLevelsService } from "@/services/api/customerLevels.service";
 
-const CUSTOMER_LEVELS_QUERY_KEY = ['customer-levels'];
+const CUSTOMER_LEVELS_QUERY_KEY = ["customer-levels"];
 const DEFAULT_LEVELS: CreateCustomerLevelInput[] = [
   {
-    level_name: 'Level 1',
+    level_name: "Level 1",
     price_percentage: 100,
-    description: 'Harga penuh',
+    description: "Harga penuh",
   },
   {
-    level_name: 'Level 2',
+    level_name: "Level 2",
     price_percentage: 95,
-    description: 'Diskon 5%',
+    description: "Diskon 5%",
   },
   {
-    level_name: 'Level 3',
+    level_name: "Level 3",
     price_percentage: 90,
-    description: 'Diskon 10%',
+    description: "Diskon 10%",
   },
 ];
 
@@ -43,7 +43,7 @@ interface DeleteCustomerLevelInput {
 }
 
 const normalizeCustomerLevels = (levels: CustomerLevel[]) =>
-  levels.map(level => ({
+  levels.map((level) => ({
     ...level,
     price_percentage: Number(level.price_percentage) || 0,
   }));
@@ -52,6 +52,9 @@ export const useCustomerLevels = () => {
   const queryClient = useQueryClient();
   const hasSeededDefaults = useRef(false);
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const channelNameRef = useRef(
+    `customer-levels-realtime-${Math.random().toString(36).slice(2, 10)}`,
+  );
 
   const levelsQuery = useQuery({
     queryKey: CUSTOMER_LEVELS_QUERY_KEY,
@@ -77,14 +80,14 @@ export const useCustomerLevels = () => {
       return data as CustomerLevel;
     },
     onSuccess: () => {
-      toast.success('Level pelanggan berhasil ditambahkan');
+      toast.success("Level pelanggan berhasil ditambahkan");
       void queryClient.invalidateQueries({
         queryKey: CUSTOMER_LEVELS_QUERY_KEY,
       });
     },
-    onError: error => {
-      console.error('Error creating customer level:', error);
-      toast.error('Gagal menambahkan level pelanggan.');
+    onError: (error) => {
+      console.error("Error creating customer level:", error);
+      toast.error("Gagal menambahkan level pelanggan.");
     },
   });
 
@@ -93,7 +96,7 @@ export const useCustomerLevels = () => {
       if (!payload.length) return [];
 
       await Promise.all(
-        payload.map(async update => {
+        payload.map(async (update) => {
           const updatePayload: {
             price_percentage: number;
             level_name?: string;
@@ -105,28 +108,25 @@ export const useCustomerLevels = () => {
             updatePayload.level_name = update.level_name;
           }
 
-          const { error } = await customerLevelsService.update(
-            update.id,
-            updatePayload
-          );
+          const { error } = await customerLevelsService.update(update.id, updatePayload);
 
           if (error) {
             throw error;
           }
-        })
+        }),
       );
 
       return payload;
     },
     onSuccess: () => {
-      toast.success('Baseline level berhasil diperbarui');
+      toast.success("Baseline level berhasil diperbarui");
       void queryClient.invalidateQueries({
         queryKey: CUSTOMER_LEVELS_QUERY_KEY,
       });
     },
-    onError: error => {
-      console.error('Error updating customer levels:', error);
-      toast.error('Gagal memperbarui baseline level.');
+    onError: (error) => {
+      console.error("Error updating customer levels:", error);
+      toast.error("Gagal memperbarui baseline level.");
     },
   });
 
@@ -140,53 +140,48 @@ export const useCustomerLevels = () => {
         throw error;
       }
 
-      const remaining = levels.filter(level => level.id !== id);
+      const remaining = levels.filter((level) => level.id !== id);
       const renameUpdates = remaining
         .map((level, index) => {
           const nextName = `Level ${index + 1}`;
           if (level.level_name === nextName) return null;
           return { id: level.id, level_name: nextName };
         })
-        .filter(
-          (update): update is { id: string; level_name: string } =>
-            update !== null
-        );
+        .filter((update): update is { id: string; level_name: string } => update !== null);
 
       if (!renameUpdates.length) {
         return { id };
       }
 
       await Promise.all(
-        renameUpdates.map(async update => {
-          const { error: updateError } = await customerLevelsService.update(
-            update.id,
-            { level_name: update.level_name }
-          );
+        renameUpdates.map(async (update) => {
+          const { error: updateError } = await customerLevelsService.update(update.id, {
+            level_name: update.level_name,
+          });
 
           if (updateError) {
             throw updateError;
           }
-        })
+        }),
       );
 
       return { id };
     },
     onSuccess: () => {
-      toast.success('Level pelanggan berhasil dihapus');
+      toast.success("Level pelanggan berhasil dihapus");
       void queryClient.invalidateQueries({
         queryKey: CUSTOMER_LEVELS_QUERY_KEY,
       });
     },
-    onError: error => {
-      console.error('Error deleting customer level:', error);
-      toast.error('Gagal menghapus level pelanggan.');
+    onError: (error) => {
+      console.error("Error deleting customer level:", error);
+      toast.error("Gagal menghapus level pelanggan.");
     },
   });
 
   const seedDefaultsMutation = useMutation({
     mutationFn: async () => {
-      const { error } =
-        await customerLevelsService.seedDefaults(DEFAULT_LEVELS);
+      const { error } = await customerLevelsService.seedDefaults(DEFAULT_LEVELS);
 
       if (error) {
         throw error;
@@ -199,9 +194,9 @@ export const useCustomerLevels = () => {
         queryKey: CUSTOMER_LEVELS_QUERY_KEY,
       });
     },
-    onError: error => {
-      console.error('Error seeding default customer levels:', error);
-      toast.error('Gagal memuat level pelanggan.');
+    onError: (error) => {
+      console.error("Error seeding default customer levels:", error);
+      toast.error("Gagal memuat level pelanggan.");
     },
   });
 
@@ -212,27 +207,18 @@ export const useCustomerLevels = () => {
 
     hasSeededDefaults.current = true;
     seedDefaultsMutation.mutate();
-  }, [
-    levelsQuery.data,
-    levelsQuery.isError,
-    levelsQuery.isLoading,
-    seedDefaultsMutation,
-  ]);
+  }, [levelsQuery.data, levelsQuery.isError, levelsQuery.isLoading, seedDefaultsMutation]);
 
   useEffect(() => {
     if (channelRef.current) return;
 
     const channel = realtimeService
-      .createChannel('customer-levels-realtime')
-      .on(
-        'postgres_changes',
-        { schema: 'public', table: 'customer_levels', event: '*' },
-        () => {
-          void queryClient.invalidateQueries({
-            queryKey: CUSTOMER_LEVELS_QUERY_KEY,
-          });
-        }
-      )
+      .createChannel(channelNameRef.current)
+      .on("postgres_changes", { schema: "public", table: "customer_levels", event: "*" }, () => {
+        void queryClient.invalidateQueries({
+          queryKey: CUSTOMER_LEVELS_QUERY_KEY,
+        });
+      })
       .subscribe();
 
     channelRef.current = channel;
