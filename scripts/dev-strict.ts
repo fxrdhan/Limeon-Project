@@ -1,19 +1,18 @@
 /// <reference types="node" />
 
-import { spawn, type ChildProcess } from 'node:child_process';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { localNetworkEnv, resolveRemoteNetworkEnv } from './network-exposure';
+import { spawn, type ChildProcess } from "node:child_process";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { localNetworkEnv, resolveRemoteNetworkEnv } from "./network-exposure";
 
-const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const bunExecutable = process.execPath;
-const shutdownSignals = ['SIGINT', 'SIGTERM'] as const;
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const shutdownSignals = ["SIGINT", "SIGTERM"] as const;
 const forceKillDelayMs = 5_000;
-const shouldExposeRemote = process.argv.includes('--remote');
+const shouldExposeRemote = process.argv.includes("--remote");
 const devServerEnv = shouldExposeRemote
   ? {
       ...process.env,
-      ...(await resolveRemoteNetworkEnv('development')),
+      ...(await resolveRemoteNetworkEnv("development")),
     }
   : {
       ...process.env,
@@ -29,47 +28,45 @@ interface ManagedProcess {
 
 const spawnManagedProcess = (
   label: string,
+  command: string,
   args: string[],
-  env: NodeJS.ProcessEnv = process.env
+  env: NodeJS.ProcessEnv = process.env,
 ): ManagedProcess => ({
   label,
-  child: spawn(bunExecutable, args, {
+  child: spawn(command, args, {
     cwd: repoRoot,
     env,
-    stdio: 'inherit',
+    stdio: "inherit",
   }),
 });
 
 const managedProcesses = [
-  spawnManagedProcess('dev server', ['x', 'vp', 'dev'], devServerEnv),
-  spawnManagedProcess('typecheck watch', [
-    'x',
-    '--bun',
-    'tsc',
-    '-b',
-    '--noEmit',
-    '--watch',
-    '--preserveWatchOutput',
+  spawnManagedProcess("dev server", "vp", ["dev"], devServerEnv),
+  spawnManagedProcess("typecheck watch", "bun", [
+    "x",
+    "--bun",
+    "tsc",
+    "-b",
+    "--noEmit",
+    "--watch",
+    "--preserveWatchOutput",
   ]),
 ];
 
 let shuttingDown = false;
 
 const waitForExit = (child: ChildProcess) =>
-  new Promise<void>(resolve => {
+  new Promise<void>((resolve) => {
     if (child.exitCode !== null || child.signalCode !== null) {
       resolve();
       return;
     }
 
-    child.once('exit', () => resolve());
-    child.once('error', () => resolve());
+    child.once("exit", () => resolve());
+    child.once("error", () => resolve());
   });
 
-const stopProcess = async (
-  managedProcess: ManagedProcess,
-  signal: ShutdownSignal
-) => {
+const stopProcess = async (managedProcess: ManagedProcess, signal: ShutdownSignal) => {
   const { child } = managedProcess;
   if (child.exitCode !== null || child.signalCode !== null) {
     return;
@@ -79,7 +76,7 @@ const stopProcess = async (
 
   const forceKillTimer = setTimeout(() => {
     if (child.exitCode === null && child.signalCode === null) {
-      child.kill('SIGKILL');
+      child.kill("SIGKILL");
     }
   }, forceKillDelayMs);
 
@@ -87,18 +84,13 @@ const stopProcess = async (
   clearTimeout(forceKillTimer);
 };
 
-const shutdown = async (
-  exitCode: number,
-  signal: ShutdownSignal = 'SIGTERM'
-) => {
+const shutdown = async (exitCode: number, signal: ShutdownSignal = "SIGTERM") => {
   if (shuttingDown) {
     return;
   }
 
   shuttingDown = true;
-  await Promise.all(
-    managedProcesses.map(process => stopProcess(process, signal))
-  );
+  await Promise.all(managedProcesses.map((process) => stopProcess(process, signal)));
   process.exit(exitCode);
 };
 
@@ -109,20 +101,17 @@ for (const signal of shutdownSignals) {
 }
 
 const exitPromises = managedProcesses.map(
-  managedProcess =>
-    new Promise<number>(resolve => {
-      managedProcess.child.once('error', (error: Error) => {
-        console.error(
-          `[dev:strict] Failed to start ${managedProcess.label}:`,
-          error
-        );
+  (managedProcess) =>
+    new Promise<number>((resolve) => {
+      managedProcess.child.once("error", (error: Error) => {
+        console.error(`[dev:strict] Failed to start ${managedProcess.label}:`, error);
         resolve(1);
       });
 
-      managedProcess.child.once('exit', (code: number | null) => {
+      managedProcess.child.once("exit", (code: number | null) => {
         resolve(code ?? 1);
       });
-    })
+    }),
 );
 
 const exitCode = await Promise.race(exitPromises);
