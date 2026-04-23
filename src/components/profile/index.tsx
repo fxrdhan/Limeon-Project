@@ -1,15 +1,9 @@
-import { useState, useRef, useEffect } from 'react';
-import { createPortal } from 'react-dom';
-import ImageUploader from '@/components/image-manager';
-import { useAuthStore } from '@/store/authStore';
-import { motion, AnimatePresence } from 'motion/react';
-import {
-  TbLogout,
-  TbPhotoEdit,
-  TbSettings,
-  TbUserCircle,
-  TbX,
-} from 'react-icons/tb';
+import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
+import ImageUploader from "@/components/image-manager";
+import { useAuthStore } from "@/store/authStore";
+import { motion, AnimatePresence } from "motion/react";
+import { TbBolt, TbLogout, TbPhotoEdit, TbSettings, TbUserCircle, TbX } from "react-icons/tb";
 
 const Profile = () => {
   const { user, logout } = useAuthStore();
@@ -18,31 +12,29 @@ const Profile = () => {
   const [animatingPortal, setAnimatingPortal] = useState(false);
 
   const portalRef = useRef<HTMLDivElement>(null);
-  const smallProfilePhotoUrl =
-    user?.profilephoto_thumb ?? user?.profilephoto ?? null;
-  const largeProfilePhotoUrl =
-    user?.profilephoto ?? user?.profilephoto_thumb ?? null;
+  const smallProfilePhotoUrl = user?.profilephoto_thumb ?? user?.profilephoto ?? null;
+  const largeProfilePhotoUrl = user?.profilephoto ?? user?.profilephoto_thumb ?? null;
 
   const glowShadows = [
-    '0 0 15px rgba(99, 102, 241, 0.7), 0 0 30px rgba(99, 102, 241, 0.5), 0 0 45px rgba(99, 102, 241, 0.3)',
-    '0 0 20px rgba(245, 158, 11, 0.8), 0 0 40px rgba(239, 68, 68, 0.6), 0 0 60px rgba(236, 72, 153, 0.4)',
-    '0 0 18px rgba(16, 185, 129, 0.8), 0 0 35px rgba(6, 182, 212, 0.6), 0 0 55px rgba(59, 130, 246, 0.4)',
-    '0 0 22px rgba(139, 92, 246, 0.9), 0 0 45px rgba(217, 70, 239, 0.7), 0 0 65px rgba(245, 158, 11, 0.5)',
-    '0 0 15px rgba(99, 102, 241, 0.7), 0 0 30px rgba(99, 102, 241, 0.5), 0 0 45px rgba(99, 102, 241, 0.3)',
+    "0 0 15px rgba(99, 102, 241, 0.7), 0 0 30px rgba(99, 102, 241, 0.5), 0 0 45px rgba(99, 102, 241, 0.3)",
+    "0 0 20px rgba(245, 158, 11, 0.8), 0 0 40px rgba(239, 68, 68, 0.6), 0 0 60px rgba(236, 72, 153, 0.4)",
+    "0 0 18px rgba(16, 185, 129, 0.8), 0 0 35px rgba(6, 182, 212, 0.6), 0 0 55px rgba(59, 130, 246, 0.4)",
+    "0 0 22px rgba(139, 92, 246, 0.9), 0 0 45px rgba(217, 70, 239, 0.7), 0 0 65px rgba(245, 158, 11, 0.5)",
+    "0 0 15px rgba(99, 102, 241, 0.7), 0 0 30px rgba(99, 102, 241, 0.5), 0 0 45px rgba(99, 102, 241, 0.3)",
   ];
 
   const glowTransition = {
     repeat: Infinity,
     duration: 4,
-    ease: 'easeInOut' as const,
+    ease: "easeInOut" as const,
   };
 
   const backgroundGradients = [
-    'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%)',
-    'linear-gradient(135deg, #f59e0b 0%, #ef4444 50%, #ec4899 100%)',
-    'linear-gradient(135deg, #10b981 0%, #06b6d4 50%, #3b82f6 100%)',
-    'linear-gradient(135deg, #8b5cf6 0%, #d946ef 50%, #f59e0b 100%)',
-    'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%)',
+    "linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%)",
+    "linear-gradient(135deg, #f59e0b 0%, #ef4444 50%, #ec4899 100%)",
+    "linear-gradient(135deg, #10b981 0%, #06b6d4 50%, #3b82f6 100%)",
+    "linear-gradient(135deg, #8b5cf6 0%, #d946ef 50%, #f59e0b 100%)",
+    "linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%)",
   ];
 
   const handleProfileClick = () => {
@@ -84,26 +76,19 @@ const Profile = () => {
     };
 
     if (portalOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     } else {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     }
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [portalOpen, portalRef]);
 
-  const ProfileImage = ({ size = 'small', className = '' }) => {
-    const sizeClass =
-      size === 'small'
-        ? 'w-11 h-11'
-        : size === 'large'
-          ? 'w-32 h-32'
-          : 'w-24 h-24';
-    const textSizeClass =
-      size === 'small' ? 'text-sm' : size === 'large' ? 'text-3xl' : 'text-2xl';
-    const displayProfileUrl =
-      size === 'large' ? largeProfilePhotoUrl : smallProfilePhotoUrl;
+  const ProfileImage = ({ size = "small", className = "" }) => {
+    const sizeClass = size === "small" ? "w-11 h-11" : size === "large" ? "w-32 h-32" : "w-24 h-24";
+    const textSizeClass = size === "small" ? "text-sm" : size === "large" ? "text-3xl" : "text-2xl";
+    const displayProfileUrl = size === "large" ? largeProfilePhotoUrl : smallProfilePhotoUrl;
 
     return displayProfileUrl ? (
       <img
@@ -119,13 +104,7 @@ const Profile = () => {
           user.name.charAt(0).toUpperCase()
         ) : (
           <TbUserCircle
-            className={
-              size === 'small'
-                ? 'text-base'
-                : size === 'large'
-                  ? 'text-3xl'
-                  : ''
-            }
+            className={size === "small" ? "text-base" : size === "large" ? "text-3xl" : ""}
           />
         )}
       </div>
@@ -145,9 +124,7 @@ const Profile = () => {
           <AnimatePresence>
             {!portalOpen && (
               <motion.div
-                initial={
-                  animatingPortal ? { opacity: 0, scale: 1.5 } : { opacity: 1 }
-                }
+                initial={animatingPortal ? { opacity: 0, scale: 1.5 } : { opacity: 1 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 2.5, y: -20, x: 20 }}
                 transition={{ duration: 0.25 }}
@@ -162,13 +139,10 @@ const Profile = () => {
                     boxShadow: glowTransition,
                   }}
                   style={{
-                    borderRadius: '50%',
+                    borderRadius: "50%",
                   }}
                 >
-                  <ProfileImage
-                    size="small"
-                    className="transition-all duration-200"
-                  />
+                  <ProfileImage size="small" className="transition-all duration-200" />
                 </motion.div>
               </motion.div>
             )}
@@ -176,7 +150,7 @@ const Profile = () => {
         </div>
       </button>
 
-      {typeof document !== 'undefined'
+      {typeof document !== "undefined"
         ? createPortal(
             <AnimatePresence>
               {portalOpen ? (
@@ -196,28 +170,28 @@ const Profile = () => {
                     initial={{
                       opacity: 0,
                       scale: 0.8,
-                      transformOrigin: 'top right',
+                      transformOrigin: "top right",
                     }}
                     animate={{
                       opacity: 1,
                       scale: [0.8, 1.05, 1],
-                      transformOrigin: 'top right',
+                      transformOrigin: "top right",
                     }}
                     exit={{
                       opacity: 0,
                       scale: 0.8,
-                      transformOrigin: 'top right',
+                      transformOrigin: "top right",
                     }}
                     transition={{
                       duration: 0.3,
-                      ease: 'easeOut',
+                      ease: "easeOut",
                       scale: {
                         times: [0, 0.6, 1],
                         duration: 0.3,
                       },
                     }}
                     className="fixed top-0 right-0 w-72 bg-white rounded-bl-2xl shadow-xl z-50 border border-slate-100 overflow-hidden backdrop-blur-xs"
-                    style={{ marginTop: '0px' }}
+                    style={{ marginTop: "0px" }}
                     data-profile-portal="true"
                   >
                     <button
@@ -238,9 +212,9 @@ const Profile = () => {
                               y: -20,
                               opacity: 0,
                               backgroundImage:
-                                'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%)',
+                                "linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%)",
                               boxShadow:
-                                '0 0 15px rgba(99, 102, 241, 0.7), 0 0 30px rgba(99, 102, 241, 0.5), 0 0 45px rgba(99, 102, 241, 0.3)',
+                                "0 0 15px rgba(99, 102, 241, 0.7), 0 0 30px rgba(99, 102, 241, 0.5), 0 0 45px rgba(99, 102, 241, 0.3)",
                             }}
                             animate={{
                               y: 0,
@@ -253,16 +227,16 @@ const Profile = () => {
                               opacity: 0,
                             }}
                             transition={{
-                              y: { duration: 0.3, delay: 0.1, ease: 'easeOut' },
+                              y: { duration: 0.3, delay: 0.1, ease: "easeOut" },
                               opacity: {
                                 duration: 0.3,
                                 delay: 0.1,
-                                ease: 'easeOut',
+                                ease: "easeOut",
                               },
                               backgroundImage: {
                                 repeat: Infinity,
                                 duration: 5,
-                                ease: 'easeInOut',
+                                ease: "easeInOut",
                                 delay: 0.4,
                               },
                               boxShadow: {
@@ -273,17 +247,7 @@ const Profile = () => {
                             }}
                           >
                             <span className="flex items-center space-x-1.5">
-                              <svg
-                                className="w-3 h-3"
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                              >
-                                <path
-                                  fillRule="evenodd"
-                                  d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
-                                  clipRule="evenodd"
-                                />
-                              </svg>
+                              <TbBolt className="h-3 w-3" />
                               <span className="font-bold">Pro Plan</span>
                             </span>
                           </motion.div>
@@ -314,15 +278,11 @@ const Profile = () => {
                               id="profile-upload"
                               className="w-32 h-32"
                               shape="full"
-                              hasImage={Boolean(
-                                user?.profilephoto || user?.profilephoto_thumb
-                              )}
+                              hasImage={Boolean(user?.profilephoto || user?.profilephoto_thumb)}
                               onImageUpload={async (file: File) => {
                                 setIsUploading(true);
                                 try {
-                                  await useAuthStore
-                                    .getState()
-                                    .updateProfilePhoto(file);
+                                  await useAuthStore.getState().updateProfilePhoto(file);
                                 } finally {
                                   setIsUploading(false);
                                 }
@@ -330,17 +290,13 @@ const Profile = () => {
                               onImageDelete={async () => {
                                 setIsUploading(true);
                                 try {
-                                  await useAuthStore
-                                    .getState()
-                                    .deleteProfilePhoto();
+                                  await useAuthStore.getState().deleteProfilePhoto();
                                 } finally {
                                   setIsUploading(false);
                                 }
                               }}
                               disabled={isUploading}
-                              defaultIcon={
-                                <TbPhotoEdit className="text-white h-4.5 w-4.5" />
-                              }
+                              defaultIcon={<TbPhotoEdit className="text-white h-4.5 w-4.5" />}
                             >
                               <ProfileImage
                                 size="large"
@@ -351,16 +307,14 @@ const Profile = () => {
                         </div>
                         <div className="mt-3 text-center">
                           <h3 className="font-semibold text-slate-800 text-lg">
-                            {user?.name || 'User'}
+                            {user?.name || "User"}
                           </h3>
-                          <p className="text-sm text-slate-500 mb-1">
-                            {user?.role || 'Staff'}
-                          </p>
+                          <p className="text-sm text-slate-500 mb-1">{user?.role || "Staff"}</p>
                           <p
                             className="text-xs text-slate-400 truncate max-w-[200px]"
-                            title={user?.email || ''}
+                            title={user?.email || ""}
                           >
-                            {user?.email || 'Email tidak tersedia'}
+                            {user?.email || "Email tidak tersedia"}
                           </p>
                         </div>
                       </div>
@@ -388,7 +342,7 @@ const Profile = () => {
                 </>
               ) : null}
             </AnimatePresence>,
-            document.body
+            document.body,
           )
         : null}
     </div>

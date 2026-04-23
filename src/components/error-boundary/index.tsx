@@ -1,4 +1,5 @@
-import React, { Component, ReactNode } from 'react';
+import React, { Component, ReactNode } from "react";
+import { TbAlertTriangle, TbRefresh } from "react-icons/tb";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -25,45 +26,10 @@ const RetryAction = ({
   <button
     type="button"
     onClick={onClick}
-    className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 ${className ?? ''}`}
+    className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors focus:outline-hidden focus:ring-2 ${className ?? ""}`}
   >
     {children}
   </button>
-);
-
-const WarningIcon = ({ size }: { size: 'sm' | 'lg' }) => (
-  <svg
-    aria-hidden="true"
-    viewBox="0 0 24 24"
-    className={
-      size === 'lg' ? 'mx-auto mb-4 h-16 w-16' : 'mx-auto mb-3 h-8 w-8'
-    }
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M12 4 20 19H4Z" />
-    <path d="M12 9v4" />
-    <path d="M12 16h.01" />
-  </svg>
-);
-
-const RefreshIcon = () => (
-  <svg
-    aria-hidden="true"
-    viewBox="0 0 24 24"
-    className="h-4 w-4"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M20 11a8 8 0 1 0 2 5.5" />
-    <path d="M20 4v7h-7" />
-  </svg>
 );
 
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
@@ -80,7 +46,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    console.error("ErrorBoundary caught an error:", error, errorInfo);
 
     this.setState({
       error,
@@ -109,14 +75,12 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
         <div className="mx-auto mt-8 max-w-2xl rounded-xl border border-slate-200 bg-white p-8 text-center shadow-xs">
           <div className="mb-6">
             <div className="text-red-500">
-              <WarningIcon size="lg" />
+              <TbAlertTriangle aria-hidden="true" className="mx-auto mb-4 h-16 w-16" />
             </div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">
-              Oops! Terjadi Kesalahan
-            </h2>
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">Oops! Terjadi Kesalahan</h2>
             <p className="text-slate-600 mb-4">
-              Aplikasi mengalami masalah yang tidak terduga. Silakan coba lagi
-              atau hubungi tim support jika masalah berlanjut.
+              Aplikasi mengalami masalah yang tidak terduga. Silakan coba lagi atau hubungi tim
+              support jika masalah berlanjut.
             </p>
           </div>
 
@@ -125,7 +89,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
               onClick={this.handleRetry}
               className="bg-primary text-white hover:brightness-95 focus:ring-primary/30"
             >
-              <RefreshIcon />
+              <TbRefresh aria-hidden="true" className="h-4 w-4" />
               Coba Lagi
             </RetryAction>
 
@@ -175,7 +139,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 // eslint-disable-next-line react-refresh/only-export-components
 export const withErrorBoundary = <P extends object>(
   Component: React.ComponentType<P>,
-  errorBoundaryProps?: Omit<ErrorBoundaryProps, 'children'>
+  errorBoundaryProps?: Omit<ErrorBoundaryProps, "children">,
 ) => {
   const WrappedComponent = (props: P) => (
     <ErrorBoundary {...errorBoundaryProps}>
@@ -188,27 +152,27 @@ export const withErrorBoundary = <P extends object>(
 };
 
 // Query Error Boundary - specialized for React Query errors
-interface QueryErrorBoundaryProps extends Omit<ErrorBoundaryProps, 'fallback'> {
+interface QueryErrorBoundaryProps extends Omit<ErrorBoundaryProps, "fallback"> {
   children: ReactNode;
   fallbackMessage?: string;
 }
 
 export const QueryErrorBoundary: React.FC<QueryErrorBoundaryProps> = ({
   children,
-  fallbackMessage = 'Gagal memuat data. Silakan coba lagi.',
+  fallbackMessage = "Gagal memuat data. Silakan coba lagi.",
   ...props
 }) => {
   const queryFallback = (
     <div className="rounded-xl border border-slate-200 bg-white p-6 text-center shadow-xs">
       <div className="text-red-500">
-        <WarningIcon size="sm" />
+        <TbAlertTriangle aria-hidden="true" className="mx-auto mb-3 h-8 w-8" />
       </div>
       <p className="text-slate-600 mb-4">{fallbackMessage}</p>
       <RetryAction
         onClick={() => window.location.reload()}
         className="mx-auto bg-primary text-white hover:brightness-95 focus:ring-primary/30"
       >
-        <RefreshIcon />
+        <TbRefresh aria-hidden="true" className="h-4 w-4" />
         Coba Lagi
       </RetryAction>
     </div>

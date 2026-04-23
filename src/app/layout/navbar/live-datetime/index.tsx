@@ -1,69 +1,14 @@
-import { useState, useEffect, Suspense, lazy, useCallback } from 'react';
+import { useState, useEffect, Suspense, lazy, useCallback } from "react";
+import { TbCalendar, TbMoon, TbSun } from "react-icons/tb";
 
-const Calendar = lazy(() => import('@/components/calendar'));
-
-const DateIcon = () => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className="h-5 w-5 text-slate-600"
-    aria-hidden="true"
-  >
-    <rect x="3.5" y="5" width="17" height="15" rx="2.5" />
-    <path d="M7.5 3.5v3" />
-    <path d="M16.5 3.5v3" />
-    <path d="M3.5 9.5h17" />
-  </svg>
-);
-
-const SunIcon = () => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className="h-4 w-4 text-yellow-500"
-    aria-hidden="true"
-  >
-    <circle cx="12" cy="12" r="4" />
-    <path d="M12 2.5v2.5" />
-    <path d="M12 19v2.5" />
-    <path d="M4.9 4.9l1.8 1.8" />
-    <path d="M17.3 17.3l1.8 1.8" />
-    <path d="M2.5 12H5" />
-    <path d="M19 12h2.5" />
-    <path d="M4.9 19.1l1.8-1.8" />
-    <path d="M17.3 6.7l1.8-1.8" />
-  </svg>
-);
-
-const MoonIcon = () => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className="h-4 w-4 text-slate-500"
-    aria-hidden="true"
-  >
-    <path d="M18.5 14.5A7.5 7.5 0 0 1 9.5 5.5 8.5 8.5 0 1 0 18.5 14.5Z" />
-  </svg>
-);
+const Calendar = lazy(() => import("@/components/calendar"));
 
 const DateTimeDisplay = () => {
-  const [datePart, setDatePart] = useState('');
-  const [hours, setHours] = useState('');
-  const [minutes, setMinutes] = useState('');
-  const [seconds, setSeconds] = useState('');
-  const [ampm, setAmpm] = useState('');
+  const [datePart, setDatePart] = useState("");
+  const [hours, setHours] = useState("");
+  const [minutes, setMinutes] = useState("");
+  const [seconds, setSeconds] = useState("");
+  const [ampm, setAmpm] = useState("");
   const [isDayTime, setIsDayTime] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [is24HourFormat, setIs24HourFormat] = useState(true);
@@ -74,15 +19,15 @@ const DateTimeDisplay = () => {
   }, []);
 
   const handleTimeFormatToggle = () => {
-    setIs24HourFormat(prev => !prev);
+    setIs24HourFormat((prev) => !prev);
   };
 
   useEffect(() => {
-    if (shouldLoadCalendar || typeof window === 'undefined') {
+    if (shouldLoadCalendar || typeof window === "undefined") {
       return;
     }
 
-    if ('requestIdleCallback' in window) {
+    if ("requestIdleCallback" in window) {
       const idleId = window.requestIdleCallback(() => {
         setShouldLoadCalendar(true);
       });
@@ -107,31 +52,26 @@ const DateTimeDisplay = () => {
     const updateClock = () => {
       const now = new Date();
       const optionsDate: Intl.DateTimeFormatOptions = {
-        weekday: 'short',
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
+        weekday: "short",
+        year: "numeric",
+        month: "short",
+        day: "numeric",
       };
-      setDatePart(now.toLocaleDateString('id-ID', optionsDate));
+      setDatePart(now.toLocaleDateString("id-ID", optionsDate));
 
       const currentHour = now.getHours();
 
       if (is24HourFormat) {
-        setHours(String(currentHour).padStart(2, '0'));
-        setAmpm('');
+        setHours(String(currentHour).padStart(2, "0"));
+        setAmpm("");
       } else {
-        const hour12 =
-          currentHour === 0
-            ? 12
-            : currentHour > 12
-              ? currentHour - 12
-              : currentHour;
-        setHours(String(hour12).padStart(2, '0'));
-        setAmpm(currentHour >= 12 ? 'PM' : 'AM');
+        const hour12 = currentHour === 0 ? 12 : currentHour > 12 ? currentHour - 12 : currentHour;
+        setHours(String(hour12).padStart(2, "0"));
+        setAmpm(currentHour >= 12 ? "PM" : "AM");
       }
 
-      setMinutes(String(now.getMinutes()).padStart(2, '0'));
-      setSeconds(String(now.getSeconds()).padStart(2, '0'));
+      setMinutes(String(now.getMinutes()).padStart(2, "0"));
+      setSeconds(String(now.getSeconds()).padStart(2, "0"));
 
       // Determine if it's day time (6 AM - 6 PM)
       setIsDayTime(currentHour >= 6 && currentHour < 18);
@@ -160,10 +100,8 @@ const DateTimeDisplay = () => {
       onFocus={loadCalendar}
       onClick={loadCalendar}
     >
-      <span className="text-sm text-slate-600 tracking-tight font-medium">
-        {datePart}
-      </span>
-      <DateIcon />
+      <span className="text-sm text-slate-600 tracking-tight font-medium">{datePart}</span>
+      <TbCalendar aria-hidden="true" className="h-5 w-5 text-slate-600" />
     </button>
   );
 
@@ -193,27 +131,25 @@ const DateTimeDisplay = () => {
         <div
           className="text-sm text-slate-600 tracking-tight flex items-center tabular-nums font-medium cursor-pointer hover:bg-slate-50 px-2 py-1 rounded-xl transition-colors group"
           onClick={handleTimeFormatToggle}
-          onKeyDown={event => {
-            if (event.key === 'Enter' || event.key === ' ') {
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
               event.preventDefault();
               handleTimeFormatToggle();
             }
           }}
           role="button"
           tabIndex={0}
-          title={`Click to switch to ${is24HourFormat ? '12' : '24'}-hour format`}
+          title={`Click to switch to ${is24HourFormat ? "12" : "24"}-hour format`}
         >
-          <span>{hours || '--'}</span>
+          <span>{hours || "--"}</span>
           <span className="mx-0.5">:</span>
-          <span>{minutes || '--'}</span>
+          <span>{minutes || "--"}</span>
           <span className="mx-0.5">:</span>
-          <span>{seconds || '--'}</span>
+          <span>{seconds || "--"}</span>
 
           <span
             className={`overflow-hidden text-sm font-medium transition-all duration-200 ease-in-out ${
-              !is24HourFormat && ampm
-                ? 'ml-2 max-w-12 opacity-100'
-                : 'ml-0 max-w-0 opacity-0'
+              !is24HourFormat && ampm ? "ml-2 max-w-12 opacity-100" : "ml-0 max-w-0 opacity-0"
             }`}
           >
             {ampm}
@@ -221,14 +157,18 @@ const DateTimeDisplay = () => {
 
           {/* Format indicator badge */}
           <span className="ml-2 text-[10px] font-semibold text-slate-400 group-hover:text-slate-600 transition-colors">
-            {is24HourFormat ? '24h' : '12h'}
+            {is24HourFormat ? "24h" : "12h"}
           </span>
         </div>
       </div>
 
       {/* Sun/Moon Icon - Outside animated group */}
       <div className="flex items-center ml-2">
-        {isDayTime ? <SunIcon /> : <MoonIcon />}
+        {isDayTime ? (
+          <TbSun aria-hidden="true" className="h-4 w-4 text-yellow-500" />
+        ) : (
+          <TbMoon aria-hidden="true" className="h-4 w-4 text-slate-500" />
+        )}
       </div>
     </div>
   );

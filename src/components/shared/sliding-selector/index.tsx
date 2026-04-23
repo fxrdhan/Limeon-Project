@@ -1,6 +1,7 @@
-import classNames from 'classnames';
-import { LayoutGroup, motion } from 'motion/react';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import classNames from "classnames";
+import { LayoutGroup, motion } from "motion/react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { TbChevronRight } from "react-icons/tb";
 
 export interface SlidingSelectorOption<T = unknown> {
   key: string;
@@ -16,9 +17,9 @@ export interface SlidingSelectorProps<T = unknown> {
   onSelectionChange: (key: string, value: T, event?: React.MouseEvent) => void;
 
   // Styling options
-  variant?: 'tabs' | 'selector';
-  size?: 'sm' | 'md' | 'lg';
-  shape?: 'rounded' | 'pill';
+  variant?: "tabs" | "selector";
+  size?: "sm" | "md" | "lg";
+  shape?: "rounded" | "pill";
 
   // Expand/collapse functionality
   collapsible?: boolean;
@@ -28,7 +29,7 @@ export interface SlidingSelectorProps<T = unknown> {
 
   // Animation options
   layoutId?: string;
-  animationPreset?: 'smooth' | 'snappy' | 'fluid';
+  animationPreset?: "smooth" | "snappy" | "fluid";
 
   // Additional props
   className?: string;
@@ -55,32 +56,32 @@ const ANIMATION_PRESETS = {
 
 const SIZE_CLASSES = {
   sm: {
-    container: 'p-0.5',
-    button: 'px-2 py-1 text-sm',
-    text: 'text-sm',
+    container: "p-0.5",
+    button: "px-2 py-1 text-sm",
+    text: "text-sm",
   },
   md: {
-    container: 'p-1',
-    button: 'px-3 py-1.5',
-    text: 'text-base',
+    container: "p-1",
+    button: "px-3 py-1.5",
+    text: "text-base",
   },
   lg: {
-    container: 'p-1.5',
-    button: 'px-6 py-3 text-lg',
-    text: 'text-lg',
+    container: "p-1.5",
+    button: "px-6 py-3 text-lg",
+    text: "text-lg",
   },
 };
 
 const SHAPE_CLASSES = {
   rounded: {
-    container: 'rounded-xl',
-    button: 'rounded-xl',
-    background: 'rounded-xl',
+    container: "rounded-xl",
+    button: "rounded-xl",
+    background: "rounded-xl",
   },
   pill: {
-    container: 'rounded-full',
-    button: 'rounded-full',
-    background: 'rounded-full',
+    container: "rounded-full",
+    button: "rounded-full",
+    background: "rounded-full",
   },
 };
 
@@ -88,15 +89,15 @@ export const SlidingSelector = <T,>({
   options,
   activeKey,
   onSelectionChange,
-  variant = 'selector',
-  size = 'md',
-  shape = 'rounded',
+  variant = "selector",
+  size = "md",
+  shape = "rounded",
   collapsible = false,
   defaultExpanded = true,
   autoCollapseDelay = 300,
   expandOnHover = false,
   layoutId,
-  animationPreset = 'smooth',
+  animationPreset = "smooth",
   className,
   disabled = false,
   onExpandedChange,
@@ -107,7 +108,7 @@ export const SlidingSelector = <T,>({
   const mouseLeaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
-  const activeOption = options.find(option => option.key === activeKey);
+  const activeOption = options.find((option) => option.key === activeKey);
   const animation = ANIMATION_PRESETS[animationPreset];
   const sizeClasses = SIZE_CLASSES[size];
   const shapeClasses = SHAPE_CLASSES[shape];
@@ -122,9 +123,7 @@ export const SlidingSelector = <T,>({
     if (!collapsible || !expandOnHover) return;
 
     // Check if any button has focus (keyboard navigation)
-    const hasFocus = buttonRefs.current.some(
-      btn => btn && document.activeElement === btn
-    );
+    const hasFocus = buttonRefs.current.some((btn) => btn && document.activeElement === btn);
 
     if (!isMouseOver && isExpanded && !hasFocus) {
       mouseLeaveTimeoutRef.current = setTimeout(() => {
@@ -147,21 +146,14 @@ export const SlidingSelector = <T,>({
         clearTimeout(mouseLeaveTimeoutRef.current);
       }
     };
-  }, [
-    isMouseOver,
-    isExpanded,
-    collapsible,
-    expandOnHover,
-    autoCollapseDelay,
-    focusedIndex,
-  ]);
+  }, [isMouseOver, isExpanded, collapsible, expandOnHover, autoCollapseDelay, focusedIndex]);
 
   // Auto-focus active button when expanded via hover to enable keyboard navigation immediately
   useEffect(() => {
     if (isExpanded && isMouseOver && expandOnHover && collapsible) {
       // Very small delay to ensure buttons are rendered
       const timer = setTimeout(() => {
-        const activeIndex = options.findIndex(opt => opt.key === activeKey);
+        const activeIndex = options.findIndex((opt) => opt.key === activeKey);
         if (activeIndex >= 0 && buttonRefs.current[activeIndex]) {
           buttonRefs.current[activeIndex]?.focus();
           setFocusedIndex(activeIndex);
@@ -181,7 +173,7 @@ export const SlidingSelector = <T,>({
     if (expandOnHover) {
       setIsMouseOver(false);
       // Blur all buttons when mouse leaves to allow auto-collapse
-      buttonRefs.current.forEach(btn => {
+      buttonRefs.current.forEach((btn) => {
         if (btn && document.activeElement === btn) {
           btn.blur();
         }
@@ -192,7 +184,7 @@ export const SlidingSelector = <T,>({
 
   const toggleExpanded = useCallback(() => {
     if (collapsible) {
-      setIsExpanded(prev => !prev);
+      setIsExpanded((prev) => !prev);
     }
   }, [collapsible]);
 
@@ -203,7 +195,7 @@ export const SlidingSelector = <T,>({
 
     // Only force focus when expanded via explicit toggle (not hover focus effect)
     if (!expandOnHover) {
-      const activeIndex = options.findIndex(opt => opt.key === activeKey);
+      const activeIndex = options.findIndex((opt) => opt.key === activeKey);
       if (activeIndex >= 0) {
         const timer = setTimeout(() => {
           buttonRefs.current[activeIndex]?.focus();
@@ -225,28 +217,24 @@ export const SlidingSelector = <T,>({
         return;
       }
 
-      const enabledOptions = options.filter(opt => !opt.disabled);
+      const enabledOptions = options.filter((opt) => !opt.disabled);
       const currentIndex =
-        focusedIndex >= 0
-          ? focusedIndex
-          : enabledOptions.findIndex(opt => opt.key === activeKey);
+        focusedIndex >= 0 ? focusedIndex : enabledOptions.findIndex((opt) => opt.key === activeKey);
 
       switch (event.key) {
-        case 'Tab':
+        case "Tab":
           // Prevent default tab behavior to control focus ourselves
           event.preventDefault();
           if (event.shiftKey) {
             // Shift+Tab: Move to previous and change page
-            const prevIndex =
-              currentIndex > 0 ? currentIndex - 1 : enabledOptions.length - 1;
+            const prevIndex = currentIndex > 0 ? currentIndex - 1 : enabledOptions.length - 1;
             const prevOption = enabledOptions[prevIndex];
             setFocusedIndex(prevIndex);
             buttonRefs.current[prevIndex]?.focus();
             onSelectionChange(prevOption.key, prevOption.value);
           } else {
             // Tab: Move to next and change page
-            const nextIndex =
-              currentIndex < enabledOptions.length - 1 ? currentIndex + 1 : 0;
+            const nextIndex = currentIndex < enabledOptions.length - 1 ? currentIndex + 1 : 0;
             const nextOption = enabledOptions[nextIndex];
             setFocusedIndex(nextIndex);
             buttonRefs.current[nextIndex]?.focus();
@@ -254,7 +242,7 @@ export const SlidingSelector = <T,>({
           }
           break;
 
-        case 'Escape':
+        case "Escape":
           event.preventDefault();
           if (collapsible) {
             setIsExpanded(false);
@@ -263,15 +251,7 @@ export const SlidingSelector = <T,>({
           break;
       }
     },
-    [
-      disabled,
-      isExpanded,
-      options,
-      focusedIndex,
-      activeKey,
-      collapsible,
-      onSelectionChange,
-    ]
+    [disabled, isExpanded, options, focusedIndex, activeKey, collapsible, onSelectionChange],
   );
 
   const handleOptionClick = useCallback(
@@ -287,13 +267,10 @@ export const SlidingSelector = <T,>({
       // Note: Hybrid protection (immediate + debounce) handled centrally in parent's handleTabChange
       onSelectionChange(option.key, option.value, event);
     },
-    [disabled, onSelectionChange]
+    [disabled, onSelectionChange],
   );
 
-  const getDisplayLabel = (
-    option: SlidingSelectorOption<T>,
-    isActive: boolean
-  ) => {
+  const getDisplayLabel = (option: SlidingSelectorOption<T>, isActive: boolean) => {
     if (isActive && option.activeLabel) {
       return option.activeLabel;
     }
@@ -307,14 +284,14 @@ export const SlidingSelector = <T,>({
         role="tablist"
         aria-label="Navigation tabs"
         className={classNames(
-          'flex items-center bg-zinc-100 shadow-md text-slate-700 overflow-hidden select-none relative w-fit',
+          "flex items-center bg-zinc-100 shadow-md text-slate-700 overflow-hidden select-none relative w-fit",
           sizeClasses.container,
           shapeClasses.container,
-          className
+          className,
         )}
         transition={{
           layout: {
-            type: 'spring',
+            type: "spring",
             ...animation.container,
           },
         }}
@@ -329,7 +306,7 @@ export const SlidingSelector = <T,>({
             return (
               <button
                 key={option.key}
-                ref={el => {
+                ref={(el) => {
                   buttonRefs.current[index] = el;
                 }}
                 role="tab"
@@ -337,27 +314,26 @@ export const SlidingSelector = <T,>({
                 aria-controls={`${layoutId || variant}-panel-${option.key}`}
                 tabIndex={isActive ? 0 : -1}
                 className={classNames(
-                  'group focus:outline-hidden select-none relative cursor-pointer z-10 transition-colors duration-150',
+                  "group focus:outline-hidden select-none relative cursor-pointer z-10 transition-colors duration-150",
                   sizeClasses.button,
                   shapeClasses.button,
                   {
-                    'hover:bg-emerald-100 hover:text-secondary':
-                      !isActive && !option.disabled,
-                    'opacity-50 cursor-not-allowed': option.disabled,
-                  }
+                    "hover:bg-emerald-100 hover:text-secondary": !isActive && !option.disabled,
+                    "opacity-50 cursor-not-allowed": option.disabled,
+                  },
                 )}
-                onClick={event => handleOptionClick(option, event)}
+                onClick={(event) => handleOptionClick(option, event)}
                 disabled={disabled || option.disabled}
               >
                 {isActive && (
                   <motion.div
                     layoutId={`${layoutId || variant}-selector-bg`}
                     className={classNames(
-                      'absolute inset-0 bg-primary shadow-xs',
-                      shapeClasses.background
+                      "absolute inset-0 bg-primary shadow-xs",
+                      shapeClasses.background,
                     )}
                     transition={{
-                      type: 'spring',
+                      type: "spring",
                       ...animation.background,
                     }}
                   />
@@ -365,13 +341,12 @@ export const SlidingSelector = <T,>({
                 <motion.span
                   layout
                   className={classNames(
-                    'relative z-10 select-none font-medium whitespace-nowrap',
+                    "relative z-10 select-none font-medium whitespace-nowrap",
                     sizeClasses.text,
                     {
-                      'text-white': isActive,
-                      'text-slate-700 group-hover:text-secondary':
-                        !isActive && !option.disabled,
-                    }
+                      "text-white": isActive,
+                      "text-slate-700 group-hover:text-secondary": !isActive && !option.disabled,
+                    },
                   )}
                 >
                   {getDisplayLabel(option, isActive)}
@@ -388,31 +363,29 @@ export const SlidingSelector = <T,>({
               aria-controls={`${layoutId || variant}-panel-${activeKey}`}
               tabIndex={0}
               className={classNames(
-                'group focus:outline-hidden select-none relative cursor-pointer z-10',
+                "group focus:outline-hidden select-none relative cursor-pointer z-10",
                 sizeClasses.button,
-                shapeClasses.button
+                shapeClasses.button,
               )}
-              onClick={event =>
-                activeOption && handleOptionClick(activeOption, event)
-              }
+              onClick={(event) => activeOption && handleOptionClick(activeOption, event)}
               disabled={disabled}
             >
               <motion.div
                 layoutId={`${layoutId || variant}-selector-bg`}
                 className={classNames(
-                  'absolute inset-0 bg-primary shadow-xs',
-                  shapeClasses.background
+                  "absolute inset-0 bg-primary shadow-xs",
+                  shapeClasses.background,
                 )}
                 transition={{
-                  type: 'spring',
+                  type: "spring",
                   ...animation.background,
                 }}
               />
               <motion.span
                 layout
                 className={classNames(
-                  'relative z-10 select-none font-medium text-white whitespace-nowrap',
-                  sizeClasses.text
+                  "relative z-10 select-none font-medium text-white whitespace-nowrap",
+                  sizeClasses.text,
                 )}
               >
                 {activeOption && getDisplayLabel(activeOption, true)}
@@ -421,11 +394,11 @@ export const SlidingSelector = <T,>({
             {collapsible && (
               <button
                 onClick={toggleExpanded}
-                aria-label={isExpanded ? 'Collapse tabs' : 'Expand tabs'}
+                aria-label={isExpanded ? "Collapse tabs" : "Expand tabs"}
                 aria-expanded={isExpanded}
                 className={classNames(
-                  'ml-1 p-2 hover:bg-emerald-100 transition-colors duration-150 group',
-                  shapeClasses.button
+                  "ml-1 p-2 hover:bg-emerald-100 transition-colors duration-150 group",
+                  shapeClasses.button,
                 )}
               >
                 <motion.div
@@ -433,19 +406,7 @@ export const SlidingSelector = <T,>({
                   transition={{ duration: 0.2 }}
                   className="w-4 h-4 text-slate-600 group-hover:text-secondary"
                 >
-                  <svg
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    className="w-full h-full"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
+                  <TbChevronRight className="w-full h-full" />
                 </motion.div>
               </button>
             )}
