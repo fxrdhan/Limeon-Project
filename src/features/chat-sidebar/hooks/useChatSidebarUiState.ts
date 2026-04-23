@@ -1,14 +1,11 @@
-import { useCallback, useLayoutEffect, useRef } from 'react';
-import {
-  chatSidebarMessagesGateway,
-  type ChatMessage,
-} from '../data/chatSidebarGateway';
-import type { AttachmentCaptionData } from '../utils/message-derivations';
-import { buildMessageRenderItems } from '../utils/message-render-items';
-import { useChatComposer } from './useChatComposer';
-import { useChatSidebarPreviewState } from './useChatSidebarPreviewState';
-import { useChatSidebarRefs } from './useChatSidebarRefs';
-import { useChatViewport } from './useChatViewport';
+import { useCallback, useLayoutEffect, useRef } from "react";
+import { chatSidebarMessagesGateway, type ChatMessage } from "../data/chatSidebarGateway";
+import type { AttachmentCaptionData } from "../utils/message-derivations";
+import { buildMessageRenderItems } from "../utils/message-render-items";
+import { useChatComposer } from "./useChatComposer";
+import { useChatSidebarPreviewState } from "./useChatSidebarPreviewState";
+import { useChatSidebarRefs } from "./useChatSidebarRefs";
+import { useChatViewport } from "./useChatViewport";
 
 interface UseChatSidebarUiStateProps {
   isOpen: boolean;
@@ -26,7 +23,7 @@ interface UseChatSidebarUiStateProps {
   refs: ReturnType<typeof useChatSidebarRefs>;
   closeMessageMenu: () => void;
   getAttachmentFileName: (targetMessage: ChatMessage) => string;
-  getAttachmentFileKind: (targetMessage: ChatMessage) => 'audio' | 'document';
+  getAttachmentFileKind: (targetMessage: ChatMessage) => "audio" | "document";
   captionData: AttachmentCaptionData;
 }
 
@@ -50,6 +47,8 @@ export const useChatSidebarUiState = ({
   captionData,
 }: UseChatSidebarUiStateProps) => {
   const loadingReplyContextMessageIdRef = useRef<string | null>(null);
+  const pendingReplyTargetFocusMessageIdRef = useRef<string | null>(null);
+  const pendingReplyTargetFocusFrameRef = useRef<number | null>(null);
   const pendingReplyTargetViewportSnapshotRef = useRef<{
     scrollHeight: number;
     scrollTop: number;
@@ -82,8 +81,7 @@ export const useChatSidebarUiState = ({
     messageInputHeight: composer.messageInputHeight,
     composerContextualOffset: composer.composerContextualOffset,
     isMessageInputMultiline: composer.isMessageInputMultiline,
-    pendingComposerAttachmentsCount:
-      composer.composerAttachmentPreviewItems.length,
+    pendingComposerAttachmentsCount: composer.composerAttachmentPreviewItems.length,
     normalizedMessageSearchQuery,
     isMessageSearchMode,
     activeSearchMessageId,
@@ -100,8 +98,7 @@ export const useChatSidebarUiState = ({
   });
 
   refs.closeMessageMenuRef.current = viewport.closeMessageMenu;
-  refs.scheduleScrollMessagesToBottomRef.current =
-    viewport.scheduleScrollMessagesToBottom;
+  refs.scheduleScrollMessagesToBottomRef.current = viewport.scheduleScrollMessagesToBottom;
 
   const previews = useChatSidebarPreviewState({
     currentChannelId,
@@ -127,87 +124,116 @@ export const useChatSidebarUiState = ({
     (messageId: string, availableMessages: ChatMessage[]) =>
       buildMessageRenderItems({
         messages: availableMessages,
-        captionMessagesByAttachmentId:
-          captionData.captionMessagesByAttachmentId,
+        captionMessagesByAttachmentId: captionData.captionMessagesByAttachmentId,
         getAttachmentFileKind,
         enableImageBubbleGrouping: true,
         enableDocumentBubbleGrouping: true,
       }).find(
-        renderItem =>
-          renderItem.kind === 'image-group' &&
-          renderItem.messages.some(message => message.id === messageId)
+        (renderItem) =>
+          renderItem.kind === "image-group" &&
+          renderItem.messages.some((message) => message.id === messageId),
       ),
-    [captionData.captionMessagesByAttachmentId, getAttachmentFileKind]
+    [captionData.captionMessagesByAttachmentId, getAttachmentFileKind],
   );
+
+  const cancelPendingReplyTargetFocusFrame = useCallback(() => {
+    if (pendingReplyTargetFocusFrameRef.current === null) {
+      return;
+    }
+
+    cancelAnimationFrame(pendingReplyTargetFocusFrameRef.current);
+    pendingReplyTargetFocusFrameRef.current = null;
+  }, []);
 
   const scheduleReplyTargetViewportFocus = useCallback(
     (messageId: string) => {
-      let remainingFrames = 12;
+      pendingReplyTargetFocusMessageIdRef.current = messageId;
+      cancelPendingReplyTargetFocusFrame();
+      let remainingFrames = 60;
 
       const focusWhenBubbleReady = () => {
+        if (pendingReplyTargetFocusMessageIdRef.current !== messageId) {
+          pendingReplyTargetFocusFrameRef.current = null;
+          return;
+        }
+
         if (refs.messageBubbleRefs.current.has(messageId)) {
+          pendingReplyTargetFocusMessageIdRef.current = null;
+          pendingReplyTargetFocusFrameRef.current = null;
           viewport.focusReplyTargetMessage(messageId);
           return;
         }
 
         if (remainingFrames <= 0) {
+          pendingReplyTargetFocusFrameRef.current = null;
           viewport.focusReplyTargetMessage(messageId);
           return;
         }
 
         remainingFrames -= 1;
-        requestAnimationFrame(focusWhenBubbleReady);
+        pendingReplyTargetFocusFrameRef.current = requestAnimationFrame(focusWhenBubbleReady);
       };
 
-      requestAnimationFrame(focusWhenBubbleReady);
+      pendingReplyTargetFocusFrameRef.current = requestAnimationFrame(focusWhenBubbleReady);
     },
-    [refs.messageBubbleRefs, viewport]
+    [cancelPendingReplyTargetFocusFrame, refs.messageBubbleRefs, viewport],
   );
 
   useLayoutEffect(() => {
-    const pendingViewportSnapshot =
-      pendingReplyTargetViewportSnapshotRef.current;
-    if (!pendingViewportSnapshot) {
-      return;
+    const pendingViewportSnapshot = pendingReplyTargetViewportSnapshotRef.current;
+
+    if (pendingViewportSnapshot) {
+      pendingReplyTargetViewportSnapshotRef.current = null;
+
+      const messagesContainer = refs.messagesContainerRef.current;
+      if (messagesContainer) {
+        const scrollHeightDelta =
+          messagesContainer.scrollHeight - pendingViewportSnapshot.scrollHeight;
+        if (scrollHeightDelta > 0) {
+          messagesContainer.scrollTop = pendingViewportSnapshot.scrollTop + scrollHeightDelta;
+        }
+      }
     }
 
-    pendingReplyTargetViewportSnapshotRef.current = null;
-
-    const messagesContainer = refs.messagesContainerRef.current;
-    if (!messagesContainer) {
-      return;
+    const pendingFocusMessageId = pendingReplyTargetFocusMessageIdRef.current;
+    if (
+      pendingFocusMessageId &&
+      (refs.messageBubbleRefs.current.has(pendingFocusMessageId) ||
+        messages.some((messageItem) => messageItem.id === pendingFocusMessageId))
+    ) {
+      scheduleReplyTargetViewportFocus(pendingFocusMessageId);
     }
+  }, [
+    messages,
+    refs.messageBubbleRefs,
+    refs.messagesContainerRef,
+    scheduleReplyTargetViewportFocus,
+  ]);
 
-    const scrollHeightDelta =
-      messagesContainer.scrollHeight - pendingViewportSnapshot.scrollHeight;
-    if (scrollHeightDelta <= 0) {
-      return;
-    }
-
-    messagesContainer.scrollTop =
-      pendingViewportSnapshot.scrollTop + scrollHeightDelta;
-  }, [messages, refs.messagesContainerRef]);
+  useLayoutEffect(
+    () => () => {
+      cancelPendingReplyTargetFocusFrame();
+    },
+    [cancelPendingReplyTargetFocusFrame],
+  );
 
   const focusReplyTargetFromMessages = useCallback(
     (messageId: string, availableMessages: ChatMessage[]) => {
       const { openImageGroupInPortal } = previews;
       const replyingMessage =
-        availableMessages.find(candidate => candidate.id === messageId) || null;
+        availableMessages.find((candidate) => candidate.id === messageId) || null;
       if (!replyingMessage) {
         return false;
       }
 
-      const imageGroupRenderItem = getReplyTargetImageGroup(
-        messageId,
-        availableMessages
-      );
+      const imageGroupRenderItem = getReplyTargetImageGroup(messageId, availableMessages);
 
-      if (imageGroupRenderItem?.kind === 'image-group') {
+      if (imageGroupRenderItem?.kind === "image-group") {
         scheduleReplyTargetViewportFocus(messageId);
         void openImageGroupInPortal(
           imageGroupRenderItem.messages,
           messageId,
-          replyingMessage.file_preview_url || null
+          replyingMessage.file_preview_url || null,
         );
         return true;
       }
@@ -215,12 +241,7 @@ export const useChatSidebarUiState = ({
       viewport.focusReplyTargetMessage(messageId);
       return true;
     },
-    [
-      getReplyTargetImageGroup,
-      previews,
-      scheduleReplyTargetViewportFocus,
-      viewport,
-    ]
+    [getReplyTargetImageGroup, previews, scheduleReplyTargetViewportFocus, viewport],
   );
 
   const focusReplyTargetMessage = useCallback(
@@ -244,15 +265,11 @@ export const useChatSidebarUiState = ({
           const { data: searchContextMessages, error } =
             await chatSidebarMessagesGateway.fetchConversationMessageContext(
               targetUserId,
-              messageId
+              messageId,
             );
-          if (
-            error ||
-            !searchContextMessages ||
-            searchContextMessages.length === 0
-          ) {
+          if (error || !searchContextMessages || searchContextMessages.length === 0) {
             if (error) {
-              console.error('Error loading reply target context:', error);
+              console.error("Error loading reply target context:", error);
             }
             return;
           }
@@ -275,28 +292,23 @@ export const useChatSidebarUiState = ({
           }, new Map());
           const orderedMergedMessages = [...mergedMessages.values()].sort(
             (leftMessage, rightMessage) => {
-              const createdAtOrder = leftMessage.created_at.localeCompare(
-                rightMessage.created_at
-              );
+              const createdAtOrder = leftMessage.created_at.localeCompare(rightMessage.created_at);
               if (createdAtOrder !== 0) {
                 return createdAtOrder;
               }
 
               return leftMessage.id.localeCompare(rightMessage.id);
-            }
+            },
           );
 
-          const imageGroupRenderItem = getReplyTargetImageGroup(
-            messageId,
-            orderedMergedMessages
-          );
-          if (imageGroupRenderItem?.kind === 'image-group') {
+          const imageGroupRenderItem = getReplyTargetImageGroup(messageId, orderedMergedMessages);
+          if (imageGroupRenderItem?.kind === "image-group") {
             scheduleReplyTargetViewportFocus(messageId);
             void previews.openImageGroupInPortal(
               imageGroupRenderItem.messages,
               messageId,
-              searchContextMessages.find(message => message.id === messageId)
-                ?.file_preview_url || null
+              searchContextMessages.find((message) => message.id === messageId)?.file_preview_url ||
+                null,
             );
             return;
           }
@@ -320,20 +332,16 @@ export const useChatSidebarUiState = ({
       scheduleReplyTargetViewportFocus,
       refs.messagesContainerRef,
       targetUserId,
-    ]
+    ],
   );
 
   const toggleMessageMenu = useCallback(
-    (
-      anchor: HTMLElement,
-      messageId: string,
-      preferredSide: 'left' | 'right'
-    ) => {
+    (anchor: HTMLElement, messageId: string, preferredSide: "left" | "right") => {
       composer.closeAttachModal();
       previews.closeImageActionsMenu();
       viewport.toggleMessageMenu(anchor, messageId, preferredSide);
     },
-    [composer, previews, viewport]
+    [composer, previews, viewport],
   );
 
   return {
