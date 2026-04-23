@@ -1,34 +1,26 @@
-import type { ChatMessage } from '../data/chatSidebarGateway';
-import { chatRuntime } from './chatRuntime';
+import type { ChatMessage } from "../data/chatSidebarGateway";
+import { chatRuntime } from "./chatRuntime";
 import {
   fetchChatFileBlobWithFallback,
   fetchPdfBlobWithFallback,
   getCachedResolvedChatAssetUrl,
   isDirectChatAssetUrl,
   resolveChatAssetUrl,
-} from './message-file';
+} from "./message-file";
 
 export type PreviewableMessage = Pick<
   ChatMessage,
-  'id' | 'message' | 'file_storage_path' | 'file_mime_type' | 'file_preview_url'
+  "id" | "message" | "file_storage_path" | "file_mime_type" | "file_preview_url"
 >;
 
 export type PreviewableImageGroupMessage = Pick<
   ChatMessage,
-  | 'id'
-  | 'message'
-  | 'file_storage_path'
-  | 'file_mime_type'
-  | 'file_name'
-  | 'file_preview_url'
+  "id" | "message" | "file_storage_path" | "file_mime_type" | "file_name" | "file_preview_url"
 > & {
   previewUrl?: string | null;
 };
 
-export type PreviewableDocumentMessage = Pick<
-  ChatMessage,
-  'message' | 'file_storage_path'
->;
+export type PreviewableDocumentMessage = Pick<ChatMessage, "message" | "file_storage_path">;
 
 export interface ResolvedPreviewResource {
   previewUrl: string | null;
@@ -36,27 +28,27 @@ export interface ResolvedPreviewResource {
 }
 
 export const shouldPreferExternalPdfPreview = () => {
-  if (typeof window === 'undefined') {
+  if (typeof window === "undefined") {
     return false;
   }
 
-  if (typeof window.matchMedia !== 'function') {
+  if (typeof window.matchMedia !== "function") {
     return false;
   }
 
-  return window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+  return window.matchMedia("(hover: none) and (pointer: coarse)").matches;
 };
 
 export const getChatImagePreviewName = (
-  message: Pick<PreviewableImageGroupMessage, 'file_name' | 'message'>,
-  fallbackIndex: number
+  message: Pick<PreviewableImageGroupMessage, "file_name" | "message">,
+  fallbackIndex: number,
 ) => {
   const explicitName = message.file_name?.trim();
   if (explicitName) {
     return explicitName;
   }
 
-  const pathName = message.message.split('/').pop()?.split('?')[0]?.trim();
+  const pathName = message.message.split("/").pop()?.split("?")[0]?.trim();
   if (pathName) {
     return pathName;
   }
@@ -67,35 +59,27 @@ export const getChatImagePreviewName = (
 export const resolveInitialImagePreviewUrl = (
   message: PreviewableMessage,
   currentChannelId: string | null,
-  preferredPreviewUrl?: string | null
+  preferredPreviewUrl?: string | null,
 ) => {
-  const normalizedPreferredPreviewUrl = preferredPreviewUrl?.trim() || null;
-  if (
-    normalizedPreferredPreviewUrl &&
-    (normalizedPreferredPreviewUrl.startsWith('blob:') ||
-      normalizedPreferredPreviewUrl === message.message.trim())
-  ) {
-    return normalizedPreferredPreviewUrl;
-  }
-
   const normalizedChannelId = currentChannelId?.trim() || null;
   if (normalizedChannelId) {
-    const runtimeFullUrl = chatRuntime.imageAssets.getUrl(
-      normalizedChannelId,
-      message.id,
-      'full'
-    );
+    const runtimeFullUrl = chatRuntime.imageAssets.getUrl(normalizedChannelId, message.id, "full");
     if (runtimeFullUrl) {
       return runtimeFullUrl;
     }
   }
 
-  const persistedPreviewUrl = message.file_preview_url?.trim() || null;
-  const cachedResolvedPreviewUrl = persistedPreviewUrl
-    ? getCachedResolvedChatAssetUrl(persistedPreviewUrl, persistedPreviewUrl)
-    : null;
-  if (cachedResolvedPreviewUrl) {
-    return cachedResolvedPreviewUrl;
+  const normalizedPreferredPreviewUrl = preferredPreviewUrl?.trim() || null;
+  if (normalizedPreferredPreviewUrl) {
+    // The chat thumbnail pipeline produces square crops. Those are valid for
+    // the bubble strip but should never be promoted to the main image viewer.
+    if (!normalizedChannelId && normalizedPreferredPreviewUrl.startsWith("blob:")) {
+      return normalizedPreferredPreviewUrl;
+    }
+
+    if (normalizedPreferredPreviewUrl === message.message.trim()) {
+      return normalizedPreferredPreviewUrl;
+    }
   }
 
   if (isDirectChatAssetUrl(message.message)) {
@@ -108,14 +92,14 @@ export const resolveInitialImagePreviewUrl = (
 export const resolveInitialImageThumbnailUrl = (
   message: PreviewableMessage,
   currentChannelId: string | null,
-  preferredPreviewUrl?: string | null
+  preferredPreviewUrl?: string | null,
 ) => {
   const normalizedChannelId = currentChannelId?.trim() || null;
   if (normalizedChannelId) {
     const runtimeThumbnailUrl = chatRuntime.imageAssets.getUrl(
       normalizedChannelId,
       message.id,
-      'thumbnail'
+      "thumbnail",
     );
     if (runtimeThumbnailUrl) {
       return runtimeThumbnailUrl;
@@ -137,17 +121,13 @@ export const resolveInitialImageThumbnailUrl = (
   const normalizedPreferredPreviewUrl = preferredPreviewUrl?.trim() || null;
   if (
     normalizedPreferredPreviewUrl &&
-    (normalizedPreferredPreviewUrl.startsWith('blob:') ||
+    (normalizedPreferredPreviewUrl.startsWith("blob:") ||
       normalizedPreferredPreviewUrl === message.message.trim())
   ) {
     return normalizedPreferredPreviewUrl;
   }
 
-  return resolveInitialImagePreviewUrl(
-    message,
-    currentChannelId,
-    normalizedPreferredPreviewUrl
-  );
+  return resolveInitialImagePreviewUrl(message, currentChannelId, normalizedPreferredPreviewUrl);
 };
 
 export const resolveImagePreviewResource = async ({
@@ -159,11 +139,7 @@ export const resolveImagePreviewResource = async ({
 }): Promise<ResolvedPreviewResource> => {
   const normalizedChannelId = currentChannelId?.trim() || null;
   if (normalizedChannelId) {
-    const cachedFullUrl = chatRuntime.imageAssets.getUrl(
-      normalizedChannelId,
-      message.id,
-      'full'
-    );
+    const cachedFullUrl = chatRuntime.imageAssets.getUrl(normalizedChannelId, message.id, "full");
     if (cachedFullUrl) {
       return {
         previewUrl: cachedFullUrl,
@@ -176,9 +152,9 @@ export const resolveImagePreviewResource = async ({
         normalizedChannelId,
         {
           ...message,
-          message_type: 'image',
+          message_type: "image",
         },
-        'full'
+        "full",
       ),
       revokeOnClose: false,
     };
@@ -188,17 +164,14 @@ export const resolveImagePreviewResource = async ({
   let revokeOnClose = false;
 
   try {
-    const signedUrl = await resolveChatAssetUrl(
-      message.message,
-      message.file_storage_path
-    );
+    const signedUrl = await resolveChatAssetUrl(message.message, message.file_storage_path);
     if (signedUrl) {
       nextPreviewUrl = signedUrl;
     } else {
       const imageBlob = await fetchChatFileBlobWithFallback(
         message.message,
         message.file_storage_path,
-        message.file_mime_type
+        message.file_mime_type,
       );
 
       if (imageBlob) {
@@ -235,10 +208,7 @@ export const resolveDocumentPreviewResource = async ({
     };
   }
 
-  const resolvedAssetUrl = await resolveChatAssetUrl(
-    message.message,
-    message.file_storage_path
-  );
+  const resolvedAssetUrl = await resolveChatAssetUrl(message.message, message.file_storage_path);
   if (resolvedAssetUrl) {
     return {
       previewUrl: resolvedAssetUrl,
@@ -250,7 +220,7 @@ export const resolveDocumentPreviewResource = async ({
     try {
       const fileBlob = await fetchChatFileBlobWithFallback(
         message.message,
-        message.file_storage_path
+        message.file_storage_path,
       );
       if (fileBlob) {
         return {
@@ -264,10 +234,7 @@ export const resolveDocumentPreviewResource = async ({
   }
 
   try {
-    const pdfBlob = await fetchPdfBlobWithFallback(
-      message.message,
-      message.file_storage_path
-    );
+    const pdfBlob = await fetchPdfBlobWithFallback(message.message, message.file_storage_path);
     if (pdfBlob) {
       return {
         previewUrl: URL.createObjectURL(pdfBlob),
@@ -285,5 +252,5 @@ export const resolveDocumentPreviewResource = async ({
     };
   }
 
-  throw new Error('Document preview is unavailable');
+  throw new Error("Document preview is unavailable");
 };
