@@ -1,23 +1,30 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { RefObject } from "react";
-import toast from "react-hot-toast";
-import { CHAT_SIDEBAR_TOASTER_ID } from "../constants";
-import { CHAT_COPY_LOADING_TOAST_DELAY_MS } from "../constants";
-import type { ChatMessage } from "../data/chatSidebarGateway";
-import type { ChatSidebarPanelTargetUser } from "../types";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import type { RefObject } from 'react';
+import toast from 'react-hot-toast';
+import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
+import { CHAT_COPY_LOADING_TOAST_DELAY_MS } from '../constants';
+import type { ChatMessage } from '../data/chatSidebarGateway';
+import type { ChatSidebarPanelTargetUser } from '../types';
 import {
   getSelectableMessageIdSet,
   getSelectedVisibleMessages,
   serializeSelectedMessages,
   type AttachmentCaptionData,
-} from "../utils/message-derivations";
-import { copyTextToClipboard } from "../utils/clipboard";
-import { useChatMessageSearchMode } from "./useChatMessageSearchMode";
+} from '../utils/message-derivations';
+import { copyTextToClipboard } from '../utils/clipboard';
+import { useChatMessageSearchMode } from './useChatMessageSearchMode';
 
 class EmptySelectedMessagesCopyError extends Error {
   constructor() {
-    super("Tidak ada isi pesan untuk disalin");
-    this.name = "EmptySelectedMessagesCopyError";
+    super('Tidak ada isi pesan untuk disalin');
+    this.name = 'EmptySelectedMessagesCopyError';
   }
 }
 
@@ -50,7 +57,9 @@ export const useChatInteractionModes = ({
   getAttachmentFileName,
 }: UseChatInteractionModesProps) => {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const [selectedMessageIds, setSelectedMessageIds] = useState<Set<string>>(() => new Set());
+  const [selectedMessageIds, setSelectedMessageIds] = useState<Set<string>>(
+    () => new Set()
+  );
   const selectionModeScrollTopRef = useRef<number | null>(null);
   const search = useChatMessageSearchMode({
     isOpen,
@@ -64,15 +73,22 @@ export const useChatInteractionModes = ({
   const { captionMessagesByAttachmentId, captionMessageIds } = captionData;
   const selectableMessageIdSet = useMemo(
     () => getSelectableMessageIdSet(messages, captionMessageIds),
-    [captionMessageIds, messages],
+    [captionMessageIds, messages]
   );
   const selectedVisibleMessages = useMemo(
-    () => getSelectedVisibleMessages(messages, captionMessageIds, selectedMessageIds),
-    [captionMessageIds, messages, selectedMessageIds],
+    () =>
+      getSelectedVisibleMessages(
+        messages,
+        captionMessageIds,
+        selectedMessageIds
+      ),
+    [captionMessageIds, messages, selectedMessageIds]
   );
   const canDeleteSelectedMessages = useMemo(() => {
     if (!user) return false;
-    return selectedVisibleMessages.some((messageItem) => messageItem.sender_id === user.id);
+    return selectedVisibleMessages.some(
+      messageItem => messageItem.sender_id === user.id
+    );
   }, [selectedVisibleMessages, user]);
 
   useEffect(() => {
@@ -106,7 +122,7 @@ export const useChatInteractionModes = ({
 
       activeContainer.scrollTo({
         top: targetScrollTop,
-        behavior: "auto",
+        behavior: 'auto',
       });
       selectionModeScrollTopRef.current = null;
     });
@@ -117,10 +133,10 @@ export const useChatInteractionModes = ({
   }, [isSelectionMode, messagesContainerRef]);
 
   useEffect(() => {
-    setSelectedMessageIds((previousSelectedIds) => {
+    setSelectedMessageIds(previousSelectedIds => {
       let changed = false;
       const nextSelectedIds = new Set<string>();
-      previousSelectedIds.forEach((messageId) => {
+      previousSelectedIds.forEach(messageId => {
         if (selectableMessageIdSet.has(messageId)) {
           nextSelectedIds.add(messageId);
           return;
@@ -143,7 +159,8 @@ export const useChatInteractionModes = ({
   }, [search]);
 
   const handleEnterMessageSelectionMode = useCallback(() => {
-    selectionModeScrollTopRef.current = messagesContainerRef.current?.scrollTop ?? null;
+    selectionModeScrollTopRef.current =
+      messagesContainerRef.current?.scrollTop ?? null;
     closeMessageMenu();
     search.handleExitMessageSearchMode();
     setSelectedMessageIds(new Set());
@@ -165,29 +182,33 @@ export const useChatInteractionModes = ({
 
       const normalizedMessageIds = [
         ...new Set(
-          (Array.isArray(messageIds) ? messageIds : [messageIds]).filter((messageId) =>
-            selectableMessageIdSet.has(messageId),
-          ),
+          (Array.isArray(messageIds) ? messageIds : [messageIds]).filter(
+            messageId => selectableMessageIdSet.has(messageId)
+          )
         ),
       ];
       if (normalizedMessageIds.length === 0) return;
 
-      setSelectedMessageIds((previousSelectedIds) => {
+      setSelectedMessageIds(previousSelectedIds => {
         const nextSelectedIds = new Set(previousSelectedIds);
 
-        if (normalizedMessageIds.every((messageId) => nextSelectedIds.has(messageId))) {
-          normalizedMessageIds.forEach((messageId) => {
+        if (
+          normalizedMessageIds.every(messageId =>
+            nextSelectedIds.has(messageId)
+          )
+        ) {
+          normalizedMessageIds.forEach(messageId => {
             nextSelectedIds.delete(messageId);
           });
         } else {
-          normalizedMessageIds.forEach((messageId) => {
+          normalizedMessageIds.forEach(messageId => {
             nextSelectedIds.add(messageId);
           });
         }
         return nextSelectedIds;
       });
     },
-    [isSelectionMode, selectableMessageIdSet],
+    [isSelectionMode, selectableMessageIdSet]
   );
 
   const handleFocusSearchInput = useCallback(() => {
@@ -204,30 +225,33 @@ export const useChatInteractionModes = ({
 
   const handleCopySelectedMessages = useCallback(async () => {
     if (selectedVisibleMessages.length === 0) {
-      toast.error("Pilih minimal 1 pesan untuk disalin", {
+      toast.error('Pilih minimal 1 pesan untuk disalin', {
         toasterId: CHAT_SIDEBAR_TOASTER_ID,
       });
       return;
     }
 
     try {
-      const loadingToastId = "chat-copy-selected-messages";
+      const loadingToastId = 'chat-copy-selected-messages';
       let didShowLoadingToast = false;
       const loadingToastTimeout = window.setTimeout(() => {
         didShowLoadingToast = true;
-        toast.loading("Menyalin pesan...", {
+        toast.loading('Menyalin pesan...', {
           id: loadingToastId,
           toasterId: CHAT_SIDEBAR_TOASTER_ID,
         });
       }, CHAT_COPY_LOADING_TOAST_DELAY_MS);
 
       try {
-        const serializedMessages = await serializeSelectedMessages(selectedVisibleMessages, {
-          captionMessagesByAttachmentId,
-          currentUser: user,
-          targetUser,
-          getAttachmentFileName,
-        });
+        const serializedMessages = await serializeSelectedMessages(
+          selectedVisibleMessages,
+          {
+            captionMessagesByAttachmentId,
+            currentUser: user,
+            targetUser,
+            getAttachmentFileName,
+          }
+        );
 
         if (!serializedMessages) {
           throw new EmptySelectedMessagesCopyError();
@@ -236,10 +260,13 @@ export const useChatInteractionModes = ({
         await copyTextToClipboard(serializedMessages);
 
         window.clearTimeout(loadingToastTimeout);
-        toast.success(`${selectedVisibleMessages.length} pesan berhasil disalin`, {
-          id: didShowLoadingToast ? loadingToastId : undefined,
-          toasterId: CHAT_SIDEBAR_TOASTER_ID,
-        });
+        toast.success(
+          `${selectedVisibleMessages.length} pesan berhasil disalin`,
+          {
+            id: didShowLoadingToast ? loadingToastId : undefined,
+            toasterId: CHAT_SIDEBAR_TOASTER_ID,
+          }
+        );
       } catch (error) {
         window.clearTimeout(loadingToastTimeout);
 
@@ -250,7 +277,7 @@ export const useChatInteractionModes = ({
           return;
         }
 
-        toast.error("Gagal menyalin pesan terpilih", {
+        toast.error('Gagal menyalin pesan terpilih', {
           id: didShowLoadingToast ? loadingToastId : undefined,
           toasterId: CHAT_SIDEBAR_TOASTER_ID,
         });
@@ -261,7 +288,7 @@ export const useChatInteractionModes = ({
         return;
       }
 
-      console.error("Error copying selected messages:", error);
+      console.error('Error copying selected messages:', error);
     }
   }, [
     captionMessagesByAttachmentId,

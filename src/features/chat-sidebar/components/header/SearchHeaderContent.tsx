@@ -1,7 +1,16 @@
-import type { SearchState } from "@/components/search-bar/constants";
-import SearchBar from "@/components/search-bar/SearchBar";
-import type { ChangeEvent, KeyboardEvent as ReactKeyboardEvent, RefObject } from "react";
-import { TbChevronDown, TbChevronUp, TbLayoutSidebarRightCollapse, TbX } from "react-icons/tb";
+import type { SearchState } from '@/components/search-bar/constants';
+import SearchBar from '@/components/search-bar/SearchBar';
+import type {
+  ChangeEvent,
+  KeyboardEvent as ReactKeyboardEvent,
+  RefObject,
+} from 'react';
+import {
+  TbChevronDown,
+  TbChevronUp,
+  TbLayoutSidebarRightCollapse,
+  TbX,
+} from 'react-icons/tb';
 
 interface SearchHeaderContentProps {
   searchQuery: string;
@@ -19,10 +28,11 @@ interface SearchHeaderContentProps {
   onClose: () => void;
 }
 
-const floatingBlockClass = "rounded-full border border-slate-200/95 bg-white/95";
+const floatingBlockClass =
+  'rounded-full border border-slate-200/95 bg-white/95';
 const floatingIconButtonClass = `${floatingBlockClass} inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center text-black transition-colors hover:bg-slate-50 hover:text-black disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-white`;
 const floatingSplitIconButtonClass =
-  "inline-flex h-1/2 w-full cursor-pointer items-center justify-center text-black transition-colors hover:bg-slate-50 hover:text-black disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-white";
+  'inline-flex h-1/2 w-full cursor-pointer items-center justify-center text-black transition-colors hover:bg-slate-50 hover:text-black disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-white';
 
 const SearchHeaderContent = ({
   searchQuery,
@@ -44,19 +54,19 @@ const SearchHeaderContent = ({
   };
 
   const handleSearchKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "ArrowUp") {
+    if (event.key === 'ArrowUp') {
       event.preventDefault();
       onNavigateSearchUp();
       return;
     }
 
-    if (event.key === "ArrowDown") {
+    if (event.key === 'ArrowDown') {
       event.preventDefault();
       onNavigateSearchDown();
       return;
     }
 
-    if (event.key === "Enter") {
+    if (event.key === 'Enter') {
       event.preventDefault();
       if (event.shiftKey) {
         onNavigateSearchUp();
@@ -66,7 +76,8 @@ const SearchHeaderContent = ({
     }
   };
 
-  const searchResultLabel = searchState === "error" ? "Gagal" : searchResultPositionLabel;
+  const searchResultLabel =
+    searchState === 'error' ? 'Gagal' : searchResultPositionLabel;
 
   return (
     <div className="flex w-full items-center gap-2.5">
@@ -85,8 +96,8 @@ const SearchHeaderContent = ({
         <div
           className={`overflow-hidden transition-[width,opacity,margin] duration-200 ease-out ${
             searchResultCount > 0
-              ? "w-9 opacity-100 mr-0"
-              : "w-0 opacity-0 -mr-1 pointer-events-none"
+              ? 'w-9 opacity-100 mr-0'
+              : 'w-0 opacity-0 -mr-1 pointer-events-none'
           }`}
           aria-hidden={searchResultCount === 0}
         >

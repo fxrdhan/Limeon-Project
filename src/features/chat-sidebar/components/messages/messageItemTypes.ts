@@ -1,12 +1,12 @@
-import type { MutableRefObject } from "react";
-import type { ChatMessage } from "../../data/chatSidebarGateway";
-import type { PdfMessagePreview } from "../../hooks/useMessagePdfPreviews";
+import type { MutableRefObject } from 'react';
+import type { ChatMessage } from '../../data/chatSidebarGateway';
+import type { PdfMessagePreview } from '../../hooks/useMessagePdfPreviews';
 import type {
   ComposerPendingFileKind,
   MenuPlacement,
   MenuSideAnchor,
   MenuVerticalAnchor,
-} from "../../types";
+} from '../../types';
 
 export interface MessageItemLayoutModel {
   isGroupedWithPrevious: boolean;
@@ -38,7 +38,11 @@ export interface MessageItemMenuModel {
   shouldAnimateOpen: boolean;
   transitionSourceId: string | null;
   offsetX: number;
-  toggle: (anchor: HTMLElement, messageId: string, preferredSide: "left" | "right") => void;
+  toggle: (
+    anchor: HTMLElement,
+    messageId: string,
+    preferredSide: 'left' | 'right'
+  ) => void;
 }
 
 export interface MessageItemRefsModel {
@@ -55,31 +59,47 @@ export interface MessageItemContentModel {
   groupedImageMessages?: ChatMessage[];
   pdfMessagePreview?: PdfMessagePreview;
   getAttachmentFileName: (targetMessage: ChatMessage) => string;
-  getAttachmentFileKind: (targetMessage: ChatMessage) => ComposerPendingFileKind;
+  getAttachmentFileKind: (
+    targetMessage: ChatMessage
+  ) => ComposerPendingFileKind;
   getImageMessageUrl: (
     message: Pick<
       ChatMessage,
-      "id" | "message" | "message_type" | "file_name" | "file_mime_type" | "file_preview_url"
-    >,
+      | 'id'
+      | 'message'
+      | 'message_type'
+      | 'file_name'
+      | 'file_mime_type'
+      | 'file_preview_url'
+    >
   ) => string | null;
   getPdfMessagePreview: (
     message: ChatMessage,
-    fileName: string | null,
+    fileName: string | null
   ) => PdfMessagePreview | undefined;
   normalizedSearchQuery: string;
   openImageInPortal: (
     message: Pick<
       ChatMessage,
-      "id" | "message" | "file_storage_path" | "file_mime_type" | "file_preview_url"
+      | 'id'
+      | 'message'
+      | 'file_storage_path'
+      | 'file_mime_type'
+      | 'file_preview_url'
     >,
     previewName: string,
-    initialPreviewUrl?: string | null,
+    initialPreviewUrl?: string | null
   ) => Promise<void>;
   openImageGroupInPortal: (
     messages: Array<
       Pick<
         ChatMessage,
-        "id" | "message" | "file_storage_path" | "file_mime_type" | "file_name" | "file_preview_url"
+        | 'id'
+        | 'message'
+        | 'file_storage_path'
+        | 'file_mime_type'
+        | 'file_name'
+        | 'file_preview_url'
       > & {
         previewUrl?: string | null;
       }
@@ -89,12 +109,12 @@ export interface MessageItemContentModel {
     initialPreviewIntrinsicDimensions?: {
       width: number;
       height: number;
-    } | null,
+    } | null
   ) => Promise<void>;
   openDocumentInPortal: (
-    message: Pick<ChatMessage, "message" | "file_storage_path">,
+    message: Pick<ChatMessage, 'message' | 'file_storage_path'>,
     previewName: string,
-    forcePdfMime?: boolean,
+    forcePdfMime?: boolean
   ) => Promise<void>;
   focusReplyTargetMessage: (messageId: string) => void;
 }
