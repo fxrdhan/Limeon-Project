@@ -620,6 +620,7 @@ describe("useChatSidebarUiState", () => {
   it("loads missing reply target context before focusing a text source message", async () => {
     const mergeSearchContextMessages = vi.fn();
     const focusReplyTargetMessage = vi.fn();
+    const suspendPinnedViewportSync = vi.fn();
     const sourceMessage = buildMessage({
       id: "older-text-1",
       sender_id: "user-b",
@@ -709,6 +710,7 @@ describe("useChatSidebarUiState", () => {
       flashingMessageId: null,
       isFlashHighlightVisible: false,
       handleChatPortalBackgroundClick: vi.fn(),
+      suspendPinnedViewportSync,
       scrollToBottom: vi.fn(),
     });
 
@@ -797,6 +799,10 @@ describe("useChatSidebarUiState", () => {
     expect(mergeSearchContextMessages).toHaveBeenCalledWith([sourceMessage], {
       hasOlderMessages: false,
     });
+    expect(suspendPinnedViewportSync).toHaveBeenCalledTimes(1);
+    expect(suspendPinnedViewportSync.mock.invocationCallOrder[0]).toBeLessThan(
+      mergeSearchContextMessages.mock.invocationCallOrder[0],
+    );
     expect(focusReplyTargetMessage).toHaveBeenCalledWith("older-text-1");
   });
 

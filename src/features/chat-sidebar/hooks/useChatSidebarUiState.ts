@@ -366,6 +366,7 @@ export const useChatSidebarUiState = ({
             getReplyTargetContextHasOlderMessages(messageId, searchContextMessages),
           );
 
+          viewport.suspendPinnedViewportSync?.();
           mergeSearchContextMessages(searchContextMessages, {
             hasOlderMessages,
           });
@@ -420,6 +421,7 @@ export const useChatSidebarUiState = ({
       scheduleReplyTargetViewportFocus,
       refs.messagesContainerRef,
       targetUserId,
+      viewport,
     ],
   );
 
