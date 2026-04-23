@@ -48,7 +48,8 @@ const normalizeCustomerLevels = (levels: CustomerLevel[]) =>
     price_percentage: Number(level.price_percentage) || 0,
   }));
 
-export const useCustomerLevels = () => {
+export const useCustomerLevels = (options?: { enabled?: boolean }) => {
+  const enabled = options?.enabled ?? true;
   const queryClient = useQueryClient();
   const hasSeededDefaults = useRef(false);
   const channelRef = useRef<RealtimeChannel | null>(null);
@@ -67,6 +68,7 @@ export const useCustomerLevels = () => {
 
       return normalizeCustomerLevels((data || []) as CustomerLevel[]);
     },
+    enabled,
   });
 
   const createLevelMutation = useMutation({
@@ -201,15 +203,17 @@ export const useCustomerLevels = () => {
   });
 
   useEffect(() => {
+    if (!enabled) return;
     if (hasSeededDefaults.current) return;
     if (levelsQuery.isLoading || levelsQuery.isError) return;
     if ((levelsQuery.data || []).length > 0) return;
 
     hasSeededDefaults.current = true;
     seedDefaultsMutation.mutate();
-  }, [levelsQuery.data, levelsQuery.isError, levelsQuery.isLoading, seedDefaultsMutation]);
+  }, [enabled, levelsQuery.data, levelsQuery.isError, levelsQuery.isLoading, seedDefaultsMutation]);
 
   useEffect(() => {
+    if (!enabled) return;
     if (channelRef.current) return;
 
     const channel = realtimeService
@@ -229,7 +233,7 @@ export const useCustomerLevels = () => {
       void realtimeService.removeChannel(channelRef.current);
       channelRef.current = null;
     };
-  }, [queryClient]);
+  }, [enabled, queryClient]);
 
   return {
     levels: levelsQuery.data ?? [],

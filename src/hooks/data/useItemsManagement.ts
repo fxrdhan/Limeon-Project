@@ -1,15 +1,11 @@
-import { useState, useMemo } from 'react';
-import { useItems } from '@/hooks/queries/useItems';
-import { fuzzyMatch, getScore } from '@/utils/search';
-import { useEffect } from 'react';
-import type { Item } from '@/types/database';
-import { filterAndRank } from './searchCore';
-import { compareItemsByDisplayName } from '@/lib/item-sort';
-import {
-  preloadImages,
-  removeCachedImageSet,
-  setCachedImageSet,
-} from '@/utils/imageCache';
+import { useState, useMemo } from "react";
+import { useItems } from "@/hooks/queries/useItems";
+import { fuzzyMatch, getScore } from "@/utils/search";
+import { useEffect } from "react";
+import type { Item } from "@/types/database";
+import { filterAndRank } from "./searchCore";
+import { compareItemsByDisplayName } from "@/lib/item-sort";
+import { preloadImages, removeCachedImageSet, setCachedImageSet } from "@/utils/imageCache";
 
 /**
  * Items Management Hook - Focused and Simple
@@ -31,8 +27,54 @@ export interface UseItemsManagementOptions {
   initialSearch?: string;
 }
 
+const ITEM_LIST_SELECT = `
+  id,
+  name,
+  code,
+  barcode,
+  base_price,
+  sell_price,
+  stock,
+  category_id,
+  type_id,
+  package_id,
+  dosage_id,
+  manufacturer_id,
+  base_unit,
+  base_inventory_unit_id,
+  measurement_value,
+  measurement_unit_id,
+  measurement_denominator_value,
+  measurement_denominator_unit_id,
+  is_level_pricing_active,
+  item_categories!inner(id, code, name),
+  item_types!inner(id, code, name),
+  item_packages!inner(id, code, name),
+  item_dosages(id, code, name),
+  item_manufacturers!inner(id, code, name),
+  base_inventory_unit:item_inventory_units!items_base_inventory_unit_id_fkey(
+    id,
+    code,
+    name,
+    kind
+  ),
+  item_unit_hierarchy(
+    id,
+    inventory_unit_id,
+    factor_to_base,
+    inventory_unit:item_inventory_units!item_unit_hierarchy_inventory_unit_id_fkey(
+      id,
+      code,
+      name,
+      kind
+    )
+  ),
+  measurement_unit:item_units!items_measurement_unit_id_fkey(id, code, name),
+  measurement_denominator_unit:item_units!items_measurement_denominator_unit_id_fkey(id, code, name)
+`;
+
 export const useItemsManagement = (options?: UseItemsManagementOptions) => {
-  const { enabled = true, initialSearch = '' } = options || {};
+  const { enabled = true, initialSearch = "" } = options || {};
 
   // Search state management
   const [search, setSearch] = useState(initialSearch);
@@ -51,11 +93,12 @@ export const useItemsManagement = (options?: UseItemsManagementOptions) => {
     refetch,
   } = useItems({
     enabled,
-    orderBy: { column: 'name', ascending: true },
+    orderBy: { column: "name", ascending: true },
+    select: ITEM_LIST_SELECT,
   });
 
   useEffect(() => {
-    (allData as Item[]).forEach(item => {
+    (allData as Item[]).forEach((item) => {
       if (!item.id || !Array.isArray(item.image_urls)) return;
       const cacheKey = `item-images:${item.id}`;
       const urls = item.image_urls;
@@ -70,7 +113,7 @@ export const useItemsManagement = (options?: UseItemsManagementOptions) => {
 
   // Filter items based on search query
   const filteredData = useMemo(() => {
-    if (!search || search.trim() === '') {
+    if (!search || search.trim() === "") {
       return [...(allData as Item[])].sort(compareItemsByDisplayName);
     }
 
@@ -82,18 +125,15 @@ export const useItemsManagement = (options?: UseItemsManagementOptions) => {
           fuzzyMatch(item.display_name || item.name, searchTermLower) ||
           (item.code && fuzzyMatch(item.code, searchTermLower)) ||
           (item.barcode && fuzzyMatch(item.barcode, searchTermLower)) ||
-          (item.category?.name &&
-            fuzzyMatch(item.category.name, searchTermLower)) ||
+          (item.category?.name && fuzzyMatch(item.category.name, searchTermLower)) ||
           (item.type?.name && fuzzyMatch(item.type.name, searchTermLower)) ||
           (item.unit?.name && fuzzyMatch(item.unit.name, searchTermLower)) ||
-          (item.base_price &&
-            fuzzyMatch(item.base_price.toString(), searchTermLower)) ||
-          (item.sell_price &&
-            fuzzyMatch(item.sell_price.toString(), searchTermLower)) ||
+          (item.base_price && fuzzyMatch(item.base_price.toString(), searchTermLower)) ||
+          (item.sell_price && fuzzyMatch(item.sell_price.toString(), searchTermLower)) ||
           (item.stock && fuzzyMatch(item.stock.toString(), searchTermLower)) ||
           (item.package_conversions &&
             item.package_conversions.some(
-              uc => uc.unit?.name && fuzzyMatch(uc.unit.name, searchTermLower)
+              (uc) => uc.unit?.name && fuzzyMatch(uc.unit.name, searchTermLower),
             ))
         );
       },
