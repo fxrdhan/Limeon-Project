@@ -1,65 +1,25 @@
-import { createRef } from 'react';
-import { act, fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vite-plus/test';
-import ComposerAttachmentPreviewList from '../components/composer/ComposerAttachmentPreviewList';
-import type { PendingComposerAttachment } from '../types';
+import { createRef } from "react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vite-plus/test";
+import ComposerAttachmentPreviewList from "../components/composer/ComposerAttachmentPreviewList";
+import type { PendingComposerAttachment } from "../types";
 
 const buildAttachment = (
-  overrides: Partial<PendingComposerAttachment> = {}
+  overrides: Partial<PendingComposerAttachment> = {},
 ): PendingComposerAttachment => ({
-  id: overrides.id ?? 'pending-image-1',
-  file:
-    overrides.file ??
-    new File(['image'], 'bulk-image.png', { type: 'image/png' }),
-  fileName: overrides.fileName ?? 'bulk-image.png',
-  fileTypeLabel: overrides.fileTypeLabel ?? 'PNG',
-  fileKind: overrides.fileKind ?? 'image',
-  mimeType: overrides.mimeType ?? 'image/png',
-  previewUrl: overrides.previewUrl ?? 'blob:bulk-image-preview',
+  id: overrides.id ?? "pending-image-1",
+  file: overrides.file ?? new File(["image"], "bulk-image.png", { type: "image/png" }),
+  fileName: overrides.fileName ?? "bulk-image.png",
+  fileTypeLabel: overrides.fileTypeLabel ?? "PNG",
+  fileKind: overrides.fileKind ?? "image",
+  mimeType: overrides.mimeType ?? "image/png",
+  previewUrl: overrides.previewUrl ?? "blob:bulk-image-preview",
   pdfCoverUrl: overrides.pdfCoverUrl ?? null,
   pdfPageCount: overrides.pdfPageCount ?? null,
 });
 
-describe('ComposerAttachmentPreviewList', () => {
-  it('renders attachment previews inside a scrollable list container', () => {
-    const { container } = render(
-      <ComposerAttachmentPreviewList
-        attachments={Array.from({ length: 12 }, (_, index) =>
-          buildAttachment({
-            id: `pending-image-${index + 1}`,
-            fileName: `bulk-image-${index + 1}.png`,
-            previewUrl: `blob:bulk-image-${index + 1}`,
-          })
-        )}
-        openImageActionsAttachmentId={null}
-        isSelectionMode={false}
-        selectedAttachmentIds={[]}
-        imageActionsButtonRef={createRef<HTMLButtonElement>()}
-        transition={{
-          duration: 0.2,
-          ease: 'easeOut',
-          layout: {
-            type: 'tween',
-            ease: [0.22, 1, 0.36, 1],
-            duration: 0.2,
-          },
-        }}
-        onToggleImageActionsMenu={vi.fn()}
-        onToggleAttachmentSelection={vi.fn()}
-        onCancelLoadingComposerAttachment={vi.fn()}
-        onRemovePendingComposerAttachment={vi.fn()}
-      />
-    );
-
-    expect(screen.getByText('bulk-image-1.png')).toBeTruthy();
-
-    const scrollContainer = container.querySelector('div.overflow-y-auto');
-
-    expect(scrollContainer).toBeTruthy();
-    expect(scrollContainer?.className).toContain('h-full');
-  });
-
-  it('reports when the attachment preview list reaches the bottom', () => {
+describe("ComposerAttachmentPreviewList", () => {
+  it("reports when the attachment preview list reaches the bottom", () => {
     const onScrollStateChange = vi.fn();
     const { container } = render(
       <ComposerAttachmentPreviewList
@@ -68,7 +28,7 @@ describe('ComposerAttachmentPreviewList', () => {
             id: `pending-image-${index + 1}`,
             fileName: `bulk-image-${index + 1}.png`,
             previewUrl: `blob:bulk-image-${index + 1}`,
-          })
+          }),
         )}
         openImageActionsAttachmentId={null}
         isSelectionMode={true}
@@ -76,9 +36,9 @@ describe('ComposerAttachmentPreviewList', () => {
         imageActionsButtonRef={createRef<HTMLButtonElement>()}
         transition={{
           duration: 0.2,
-          ease: 'easeOut',
+          ease: "easeOut",
           layout: {
-            type: 'tween',
+            type: "tween",
             ease: [0.22, 1, 0.36, 1],
             duration: 0.2,
           },
@@ -88,12 +48,10 @@ describe('ComposerAttachmentPreviewList', () => {
         onCancelLoadingComposerAttachment={vi.fn()}
         onRemovePendingComposerAttachment={vi.fn()}
         onScrollStateChange={onScrollStateChange}
-      />
+      />,
     );
 
-    const scrollContainer = container.querySelector(
-      'div.overflow-y-auto'
-    ) as HTMLDivElement | null;
+    const scrollContainer = container.querySelector("div.overflow-y-auto") as HTMLDivElement | null;
 
     expect(scrollContainer).toBeTruthy();
 
@@ -124,16 +82,16 @@ describe('ComposerAttachmentPreviewList', () => {
     });
   });
 
-  it('closes the open attachment menu when its trigger scrolls out of the tray viewport', () => {
+  it("closes the open attachment menu when its trigger scrolls out of the tray viewport", () => {
     const onCloseImageActionsMenu = vi.fn();
     const imageActionsButtonRef = createRef<HTMLButtonElement>();
     const { container } = render(
       <ComposerAttachmentPreviewList
         attachments={[
           buildAttachment({
-            id: 'pending-image-1',
-            fileName: 'bulk-image-1.png',
-            previewUrl: 'blob:bulk-image-1',
+            id: "pending-image-1",
+            fileName: "bulk-image-1.png",
+            previewUrl: "blob:bulk-image-1",
           }),
         ]}
         openImageActionsAttachmentId="pending-image-1"
@@ -142,9 +100,9 @@ describe('ComposerAttachmentPreviewList', () => {
         imageActionsButtonRef={imageActionsButtonRef}
         transition={{
           duration: 0.2,
-          ease: 'easeOut',
+          ease: "easeOut",
           layout: {
-            type: 'tween',
+            type: "tween",
             ease: [0.22, 1, 0.36, 1],
             duration: 0.2,
           },
@@ -154,12 +112,10 @@ describe('ComposerAttachmentPreviewList', () => {
         onToggleAttachmentSelection={vi.fn()}
         onCancelLoadingComposerAttachment={vi.fn()}
         onRemovePendingComposerAttachment={vi.fn()}
-      />
+      />,
     );
 
-    const scrollContainer = container.querySelector(
-      'div.overflow-y-auto'
-    ) as HTMLDivElement | null;
+    const scrollContainer = container.querySelector("div.overflow-y-auto") as HTMLDivElement | null;
 
     expect(scrollContainer).toBeTruthy();
     expect(imageActionsButtonRef.current).toBeTruthy();
@@ -192,21 +148,21 @@ describe('ComposerAttachmentPreviewList', () => {
     expect(onCloseImageActionsMenu).toHaveBeenCalledTimes(1);
   });
 
-  it('pauses popup reposition before opening a hidden attachment menu target', () => {
+  it("pauses popup reposition before opening a hidden attachment menu target", () => {
     const onMenuRepositionPauseChange = vi.fn();
     const onToggleImageActionsMenu = vi.fn();
     const { container } = render(
       <ComposerAttachmentPreviewList
         attachments={[
           buildAttachment({
-            id: 'pending-image-1',
-            fileName: 'bulk-image-1.png',
-            previewUrl: 'blob:bulk-image-1',
+            id: "pending-image-1",
+            fileName: "bulk-image-1.png",
+            previewUrl: "blob:bulk-image-1",
           }),
           buildAttachment({
-            id: 'pending-image-2',
-            fileName: 'bulk-image-2.png',
-            previewUrl: 'blob:bulk-image-2',
+            id: "pending-image-2",
+            fileName: "bulk-image-2.png",
+            previewUrl: "blob:bulk-image-2",
           }),
         ]}
         openImageActionsAttachmentId="pending-image-1"
@@ -215,9 +171,9 @@ describe('ComposerAttachmentPreviewList', () => {
         imageActionsButtonRef={createRef<HTMLButtonElement>()}
         transition={{
           duration: 0.2,
-          ease: 'easeOut',
+          ease: "easeOut",
           layout: {
-            type: 'tween',
+            type: "tween",
             ease: [0.22, 1, 0.36, 1],
             duration: 0.2,
           },
@@ -228,17 +184,15 @@ describe('ComposerAttachmentPreviewList', () => {
         onToggleAttachmentSelection={vi.fn()}
         onCancelLoadingComposerAttachment={vi.fn()}
         onRemovePendingComposerAttachment={vi.fn()}
-      />
+      />,
     );
 
-    const scrollContainer = container.querySelector(
-      'div.overflow-y-auto'
-    ) as HTMLDivElement | null;
-    const hiddenAttachmentButton = screen.getAllByRole('button', {
-      name: 'Aksi gambar',
+    const scrollContainer = container.querySelector("div.overflow-y-auto") as HTMLDivElement | null;
+    const hiddenAttachmentButton = screen.getAllByRole("button", {
+      name: "Aksi gambar",
     })[1];
     const hiddenAttachmentRow = container.querySelector(
-      '[data-chat-composer-attachment-id="pending-image-2"]'
+      '[data-chat-composer-attachment-id="pending-image-2"]',
     ) as HTMLDivElement | null;
 
     expect(scrollContainer).toBeTruthy();
@@ -273,31 +227,31 @@ describe('ComposerAttachmentPreviewList', () => {
     fireEvent.click(hiddenAttachmentButton);
 
     expect(onMenuRepositionPauseChange).toHaveBeenCalledWith(true);
-    expect(onToggleImageActionsMenu).toHaveBeenCalledWith('pending-image-2');
-    expect(
-      onMenuRepositionPauseChange.mock.invocationCallOrder[0]
-    ).toBeLessThan(onToggleImageActionsMenu.mock.invocationCallOrder[0]);
+    expect(onToggleImageActionsMenu).toHaveBeenCalledWith("pending-image-2");
+    expect(onMenuRepositionPauseChange.mock.invocationCallOrder[0]).toBeLessThan(
+      onToggleImageActionsMenu.mock.invocationCallOrder[0],
+    );
   });
 
-  it('auto-scrolls the selected attachment until it is clear of the tray fog', () => {
+  it("auto-scrolls the selected attachment until it is clear of the tray fog", () => {
     vi.useFakeTimers();
     const requestAnimationFrameSpy = vi
-      .spyOn(window, 'requestAnimationFrame')
-      .mockImplementation(callback => {
+      .spyOn(window, "requestAnimationFrame")
+      .mockImplementation((callback) => {
         callback(0);
         return 1;
       });
     const cancelAnimationFrameSpy = vi
-      .spyOn(window, 'cancelAnimationFrame')
+      .spyOn(window, "cancelAnimationFrame")
       .mockImplementation(() => {});
     const onMenuRepositionPauseChange = vi.fn();
     const { container, rerender } = render(
       <ComposerAttachmentPreviewList
         attachments={[
           buildAttachment({
-            id: 'pending-image-1',
-            fileName: 'bulk-image-1.png',
-            previewUrl: 'blob:bulk-image-1',
+            id: "pending-image-1",
+            fileName: "bulk-image-1.png",
+            previewUrl: "blob:bulk-image-1",
           }),
         ]}
         openImageActionsAttachmentId={null}
@@ -306,9 +260,9 @@ describe('ComposerAttachmentPreviewList', () => {
         imageActionsButtonRef={createRef<HTMLButtonElement>()}
         transition={{
           duration: 0.2,
-          ease: 'easeOut',
+          ease: "easeOut",
           layout: {
-            type: 'tween',
+            type: "tween",
             ease: [0.22, 1, 0.36, 1],
             duration: 0.2,
           },
@@ -318,14 +272,12 @@ describe('ComposerAttachmentPreviewList', () => {
         onToggleAttachmentSelection={vi.fn()}
         onCancelLoadingComposerAttachment={vi.fn()}
         onRemovePendingComposerAttachment={vi.fn()}
-      />
+      />,
     );
 
-    const scrollContainer = container.querySelector(
-      'div.overflow-y-auto'
-    ) as HTMLDivElement | null;
+    const scrollContainer = container.querySelector("div.overflow-y-auto") as HTMLDivElement | null;
     const attachmentRow = container.querySelector(
-      '[data-chat-composer-attachment-id="pending-image-1"]'
+      '[data-chat-composer-attachment-id="pending-image-1"]',
     ) as HTMLDivElement | null;
 
     expect(scrollContainer).toBeTruthy();
@@ -367,20 +319,20 @@ describe('ComposerAttachmentPreviewList', () => {
         <ComposerAttachmentPreviewList
           attachments={[
             buildAttachment({
-              id: 'pending-image-1',
-              fileName: 'bulk-image-1.png',
-              previewUrl: 'blob:bulk-image-1',
+              id: "pending-image-1",
+              fileName: "bulk-image-1.png",
+              previewUrl: "blob:bulk-image-1",
             }),
           ]}
           openImageActionsAttachmentId="pending-image-1"
           isSelectionMode={true}
-          selectedAttachmentIds={['pending-image-1']}
+          selectedAttachmentIds={["pending-image-1"]}
           imageActionsButtonRef={createRef<HTMLButtonElement>()}
           transition={{
             duration: 0.2,
-            ease: 'easeOut',
+            ease: "easeOut",
             layout: {
-              type: 'tween',
+              type: "tween",
               ease: [0.22, 1, 0.36, 1],
               duration: 0.2,
             },
@@ -390,13 +342,13 @@ describe('ComposerAttachmentPreviewList', () => {
           onToggleAttachmentSelection={vi.fn()}
           onCancelLoadingComposerAttachment={vi.fn()}
           onRemovePendingComposerAttachment={vi.fn()}
-        />
+        />,
       );
     });
 
     expect(scrollTo).toHaveBeenCalledWith({
       top: 100,
-      behavior: 'smooth',
+      behavior: "smooth",
     });
     expect(onMenuRepositionPauseChange).toHaveBeenCalledWith(true);
 

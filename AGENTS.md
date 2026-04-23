@@ -11,12 +11,19 @@
 - Run `bun run check --fix [filenames path]` after editing or adding complex lines in code files. This repo's canonical validation entrypoint is `vp check` via the `check` script, so do not call raw `tsc`, `vite`, or `vitest` unless the task explicitly requires it.
 - When creating Git commits, use git-commit skills.
 - Development, build, lint, format, check, and test flows are routed through `vp`/VitePlus. Legacy script names such as `dev:vite` are wrappers around `vp`, not plain Vite CLI usage.
-- Testing in this project runs through VitePlus test tooling with Vitest-compatible APIs. Prefer `bun run test:agent` or `bun run test:agent:watch` when running tests. Use `bun run test:run` for regular local terminal output.
-- Do not add low-value tests. Never write tests that only verify static UI text, markup, styling classes, layout values, prop wiring to mocks, or other implementation details without protecting a meaningful regression.
-- Only add tests for critical actions and behaviors: important user flows, state transitions, data transformations, side effects, permissions, failure handling, and bugs that are likely to regress.
-- When a change is simple and low risk, prefer no new test over a noisy or brittle test with little regression value.
 - Do not make remote-only Supabase changes first. Update the relevant files under `supabase/functions` or `supabase/migrations`, confirm the intended changes are tracked by Git, then use Supabase MCP to deploy Edge Functions or apply migrations only when those local changes are ready.
 - If you need to inspect live database state such as tables, columns, schema definitions, RLS policies, or other metadata not represented in `supabase/`, use Supabase MCP.
+
+# Testing Policy
+
+- Testing in this project runs through VitePlus test tooling with Vitest-compatible APIs. Prefer `bun run test:agent` or `bun run test:agent:watch` when running tests. Use `bun run test:run` for regular local terminal output.
+- Tests must protect meaningful behavior, not implementation details. Good test targets include important user flows, state transitions, data transformations, persistence/cache behavior, side effects, permissions, failure handling, integration contracts, and regressions that are likely to recur.
+- Do not add tests that only verify static UI text, markup shape, element existence, Tailwind/class names, styling/layout values, animation props, focus implementation details, prop wiring to mocked children, or other internal rendering details.
+- Do not write "component renders" tests unless the render itself triggers a meaningful behavior or guards a known regression. A test that only proves React mounted a component is noise.
+- For UI tests, assert the outcome a user or system depends on: callbacks invoked with correct payloads, disabled/enabled states that enforce rules, submitted data, navigation, persistence, error recovery, or visible state changes tied to real behavior. Avoid asserting exact labels or DOM structure unless accessibility or contract behavior depends on them.
+- When touching existing tests, remove or rewrite low-value tests in the edited area instead of preserving them by default. If a test would fail after harmless markup/styling refactors, it is probably too brittle for this project.
+- When a change is simple and low risk, prefer no new test over a noisy or brittle test with little regression value.
+- Keep test helpers local unless they remove real duplication across meaningful behavior tests. Do not create shared testing abstractions for one-off cases.
 
 # Code Exploration
 

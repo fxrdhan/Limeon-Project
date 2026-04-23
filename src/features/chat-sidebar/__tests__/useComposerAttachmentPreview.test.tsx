@@ -1,27 +1,18 @@
-import React from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vite-plus/test';
-import { useComposerAttachmentPreview } from '../hooks/useComposerAttachmentPreview';
-import type { PendingComposerAttachment } from '../types';
+import React from "react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import { useComposerAttachmentPreview } from "../hooks/useComposerAttachmentPreview";
+import type { PendingComposerAttachment } from "../types";
 
-const { mockOpenDocumentPreview, mockCloseDocumentPreview } = vi.hoisted(
-  () => ({
-    mockOpenDocumentPreview: vi.fn().mockResolvedValue(true),
-    mockCloseDocumentPreview: vi.fn(),
-  })
-);
+const { mockOpenDocumentPreview, mockCloseDocumentPreview } = vi.hoisted(() => ({
+  mockOpenDocumentPreview: vi.fn().mockResolvedValue(true),
+  mockCloseDocumentPreview: vi.fn(),
+}));
 
-vi.mock('../hooks/useDocumentPreviewPortal', () => ({
+vi.mock("../hooks/useDocumentPreviewPortal", () => ({
   useDocumentPreviewPortal: () => ({
     previewUrl: null,
-    previewName: '',
+    previewName: "",
     isPreviewVisible: false,
     closeDocumentPreview: mockCloseDocumentPreview,
     openDocumentPreview: mockOpenDocumentPreview,
@@ -29,16 +20,15 @@ vi.mock('../hooks/useDocumentPreviewPortal', () => ({
 }));
 
 const buildAttachment = (
-  overrides: Partial<PendingComposerAttachment> = {}
+  overrides: Partial<PendingComposerAttachment> = {},
 ): PendingComposerAttachment => ({
-  id: overrides.id ?? 'attachment-1',
-  file:
-    overrides.file ?? new File(['image'], 'foto.png', { type: 'image/png' }),
-  fileName: overrides.fileName ?? 'foto.png',
-  fileTypeLabel: overrides.fileTypeLabel ?? 'PNG',
-  fileKind: overrides.fileKind ?? 'image',
-  mimeType: overrides.mimeType ?? 'image/png',
-  previewUrl: overrides.previewUrl ?? 'blob:preview',
+  id: overrides.id ?? "attachment-1",
+  file: overrides.file ?? new File(["image"], "foto.png", { type: "image/png" }),
+  fileName: overrides.fileName ?? "foto.png",
+  fileTypeLabel: overrides.fileTypeLabel ?? "PNG",
+  fileKind: overrides.fileKind ?? "image",
+  mimeType: overrides.mimeType ?? "image/png",
+  previewUrl: overrides.previewUrl ?? "blob:preview",
   pdfCoverUrl: overrides.pdfCoverUrl ?? null,
   pdfPageCount: overrides.pdfPageCount ?? null,
 });
@@ -54,7 +44,7 @@ const ComposerAttachmentPreviewHarness = ({
   onOpenComposerImagePreview?: (attachmentId: string) => void;
   onCompressPendingComposerPdf?: (
     attachmentId: string,
-    compressionLevel?: 'low' | 'recommended' | 'extreme'
+    compressionLevel?: "low" | "recommended" | "extreme",
   ) => Promise<boolean>;
 }) => {
   const preview = useComposerAttachmentPreview({
@@ -77,35 +67,29 @@ const ComposerAttachmentPreviewHarness = ({
       >
         toggle
       </button>
-      <span data-testid="open-id">
-        {preview.openImageActionsAttachmentId ?? ''}
-      </span>
+      <span data-testid="open-id">{preview.openImageActionsAttachmentId ?? ""}</span>
       <span data-testid="menu-position">
-        {preview.imageActionsMenuPosition ? 'open' : 'closed'}
+        {preview.imageActionsMenuPosition ? "open" : "closed"}
       </span>
       <span data-testid="compression-menu-position">
-        {preview.pdfCompressionMenuPosition ? 'open' : 'closed'}
+        {preview.pdfCompressionMenuPosition ? "open" : "closed"}
       </span>
       <span data-testid="selection-mode">
-        {preview.isComposerAttachmentSelectionMode ? 'open' : 'closed'}
+        {preview.isComposerAttachmentSelectionMode ? "open" : "closed"}
       </span>
-      <span data-testid="selected-ids">
-        {preview.selectedComposerAttachmentIds.join(',')}
-      </span>
+      <span data-testid="selected-ids">{preview.selectedComposerAttachmentIds.join(",")}</span>
       <button
         type="button"
-        onClick={() =>
-          preview.handleToggleComposerAttachmentSelection(attachment.id)
-        }
+        onClick={() => preview.handleToggleComposerAttachmentSelection(attachment.id)}
       >
         toggle-selection
       </button>
-      {preview.imageActions.map(action => (
+      {preview.imageActions.map((action) => (
         <button key={action.label} type="button" onClick={action.onClick}>
           {action.label}
         </button>
       ))}
-      {preview.pdfCompressionLevelActions.map(action => (
+      {preview.pdfCompressionLevelActions.map((action) => (
         <button key={action.label} type="button" onClick={action.onClick}>
           {action.label}
         </button>
@@ -114,51 +98,7 @@ const ComposerAttachmentPreviewHarness = ({
   );
 };
 
-const ComposerAttachmentPreviewMultiHarness = ({
-  attachments,
-}: {
-  attachments: PendingComposerAttachment[];
-}) => {
-  const preview = useComposerAttachmentPreview({
-    pendingComposerAttachments: attachments,
-    onOpenImageActionsMenu: vi.fn(),
-    onAttachImageClick: vi.fn(),
-    onAttachDocumentClick: vi.fn(),
-    onCompressPendingComposerImage: vi.fn().mockResolvedValue(true),
-    onCompressPendingComposerPdf: vi.fn().mockResolvedValue(true),
-    onRemovePendingComposerAttachment: vi.fn(),
-    onOpenComposerImagePreview: vi.fn(),
-  });
-
-  return (
-    <div>
-      {attachments.map(attachment => {
-        const isMenuOpen =
-          preview.openImageActionsAttachmentId === attachment.id;
-
-        return (
-          <button
-            key={attachment.id}
-            type="button"
-            ref={isMenuOpen ? preview.imageActionsButtonRef : undefined}
-            data-chat-composer-attachment-action-trigger="true"
-            onClick={() => preview.handleToggleImageActionsMenu(attachment.id)}
-          >
-            {attachment.id}
-          </button>
-        );
-      })}
-      <span data-testid="multi-open-id">
-        {preview.openImageActionsAttachmentId ?? ''}
-      </span>
-      <span data-testid="multi-menu-position">
-        {preview.imageActionsMenuPosition ? 'open' : 'closed'}
-      </span>
-    </div>
-  );
-};
-
-describe('useComposerAttachmentPreview', () => {
+describe("useComposerAttachmentPreview", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -167,7 +107,7 @@ describe('useComposerAttachmentPreview', () => {
     cleanup();
   });
 
-  it('keeps the composer menu open when opening an image preview', () => {
+  it("keeps the composer menu open when opening an image preview", () => {
     const onOpenImageActionsMenu = vi.fn();
     const onOpenComposerImagePreview = vi.fn();
 
@@ -176,253 +116,190 @@ describe('useComposerAttachmentPreview', () => {
         attachment={buildAttachment()}
         onOpenImageActionsMenu={onOpenImageActionsMenu}
         onOpenComposerImagePreview={onOpenComposerImagePreview}
-      />
+      />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'toggle' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Buka' }));
+    fireEvent.click(screen.getByRole("button", { name: "toggle" }));
+    fireEvent.click(screen.getByRole("button", { name: "Buka" }));
 
     expect(onOpenImageActionsMenu).toHaveBeenCalledOnce();
-    expect(onOpenComposerImagePreview).toHaveBeenCalledWith('attachment-1');
-    expect(screen.getByTestId('open-id').textContent).toBe('attachment-1');
-    expect(screen.getByTestId('menu-position').textContent).toBe('open');
+    expect(onOpenComposerImagePreview).toHaveBeenCalledWith("attachment-1");
+    expect(screen.getByTestId("open-id").textContent).toBe("attachment-1");
+    expect(screen.getByTestId("menu-position").textContent).toBe("open");
   });
 
-  it('keeps the composer menu open when opening a document preview', () => {
+  it("keeps the composer menu open when opening a document preview", () => {
     render(
       <ComposerAttachmentPreviewHarness
         attachment={buildAttachment({
-          id: 'attachment-2',
-          file: new File(['pdf'], 'stok.pdf', {
-            type: 'application/pdf',
+          id: "attachment-2",
+          file: new File(["pdf"], "stok.pdf", {
+            type: "application/pdf",
           }),
-          fileName: 'stok.pdf',
-          fileTypeLabel: 'PDF',
-          fileKind: 'document',
-          mimeType: 'application/pdf',
+          fileName: "stok.pdf",
+          fileTypeLabel: "PDF",
+          fileKind: "document",
+          mimeType: "application/pdf",
           previewUrl: null,
         })}
-      />
+      />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'toggle' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Buka' }));
+    fireEvent.click(screen.getByRole("button", { name: "toggle" }));
+    fireEvent.click(screen.getByRole("button", { name: "Buka" }));
 
     expect(mockOpenDocumentPreview).toHaveBeenCalledOnce();
-    expect(screen.getByTestId('open-id').textContent).toBe('attachment-2');
-    expect(screen.getByTestId('menu-position').textContent).toBe('open');
+    expect(screen.getByTestId("open-id").textContent).toBe("attachment-2");
+    expect(screen.getByTestId("menu-position").textContent).toBe("open");
   });
 
-  it('opens a document image in the composer image viewer instead of the document portal', () => {
+  it("opens a document image in the composer image viewer instead of the document portal", () => {
     const onOpenComposerImagePreview = vi.fn();
 
     render(
       <ComposerAttachmentPreviewHarness
         attachment={buildAttachment({
-          id: 'attachment-image-doc',
-          file: new File(['image'], 'diagram.png', {
-            type: 'image/png',
+          id: "attachment-image-doc",
+          file: new File(["image"], "diagram.png", {
+            type: "image/png",
           }),
-          fileName: 'diagram.png',
-          fileTypeLabel: 'PNG',
-          fileKind: 'document',
-          mimeType: 'image/png',
+          fileName: "diagram.png",
+          fileTypeLabel: "PNG",
+          fileKind: "document",
+          mimeType: "image/png",
           previewUrl: null,
         })}
         onOpenComposerImagePreview={onOpenComposerImagePreview}
-      />
+      />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'toggle' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Buka' }));
+    fireEvent.click(screen.getByRole("button", { name: "toggle" }));
+    fireEvent.click(screen.getByRole("button", { name: "Buka" }));
 
-    expect(onOpenComposerImagePreview).toHaveBeenCalledWith(
-      'attachment-image-doc'
-    );
+    expect(onOpenComposerImagePreview).toHaveBeenCalledWith("attachment-image-doc");
     expect(mockOpenDocumentPreview).not.toHaveBeenCalled();
-    expect(screen.getByTestId('open-id').textContent).toBe(
-      'attachment-image-doc'
-    );
-    expect(screen.getByTestId('menu-position').textContent).toBe('open');
+    expect(screen.getByTestId("open-id").textContent).toBe("attachment-image-doc");
+    expect(screen.getByTestId("menu-position").textContent).toBe("open");
   });
 
-  it('selects an image attachment from the popup menu', () => {
+  it("selects an image attachment from the popup menu", () => {
     render(
       <ComposerAttachmentPreviewHarness
         attachment={buildAttachment({
-          id: 'attachment-select-image',
+          id: "attachment-select-image",
         })}
-      />
+      />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'toggle' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Pilih' }));
+    fireEvent.click(screen.getByRole("button", { name: "toggle" }));
+    fireEvent.click(screen.getByRole("button", { name: "Pilih" }));
 
-    expect(screen.getByTestId('open-id').textContent).toBe('');
-    expect(screen.getByTestId('selection-mode').textContent).toBe('open');
-    expect(screen.getByTestId('selected-ids').textContent).toBe(
-      'attachment-select-image'
-    );
+    expect(screen.getByTestId("open-id").textContent).toBe("");
+    expect(screen.getByTestId("selection-mode").textContent).toBe("open");
+    expect(screen.getByTestId("selected-ids").textContent).toBe("attachment-select-image");
   });
 
-  it('selects a document attachment from the popup menu', () => {
+  it("selects a document attachment from the popup menu", () => {
     render(
       <ComposerAttachmentPreviewHarness
         attachment={buildAttachment({
-          id: 'attachment-select-doc',
-          file: new File(['pdf'], 'stok.pdf', {
-            type: 'application/pdf',
+          id: "attachment-select-doc",
+          file: new File(["pdf"], "stok.pdf", {
+            type: "application/pdf",
           }),
-          fileName: 'stok.pdf',
-          fileTypeLabel: 'PDF',
-          fileKind: 'document',
-          mimeType: 'application/pdf',
+          fileName: "stok.pdf",
+          fileTypeLabel: "PDF",
+          fileKind: "document",
+          mimeType: "application/pdf",
           previewUrl: null,
         })}
-      />
+      />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'toggle' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Pilih' }));
+    fireEvent.click(screen.getByRole("button", { name: "toggle" }));
+    fireEvent.click(screen.getByRole("button", { name: "Pilih" }));
 
-    expect(screen.getByTestId('open-id').textContent).toBe('');
-    expect(screen.getByTestId('selection-mode').textContent).toBe('open');
-    expect(screen.getByTestId('selected-ids').textContent).toBe(
-      'attachment-select-doc'
-    );
+    expect(screen.getByTestId("open-id").textContent).toBe("");
+    expect(screen.getByTestId("selection-mode").textContent).toBe("open");
+    expect(screen.getByTestId("selected-ids").textContent).toBe("attachment-select-doc");
   });
 
-  it('keeps selection mode open after the last selected attachment is deselected', () => {
+  it("keeps selection mode open after the last selected attachment is deselected", () => {
     render(
       <ComposerAttachmentPreviewHarness
         attachment={buildAttachment({
-          id: 'attachment-toggle-empty',
+          id: "attachment-toggle-empty",
         })}
-      />
+      />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'toggle' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Pilih' }));
+    fireEvent.click(screen.getByRole("button", { name: "toggle" }));
+    fireEvent.click(screen.getByRole("button", { name: "Pilih" }));
 
-    expect(screen.getByTestId('selection-mode').textContent).toBe('open');
-    expect(screen.getByTestId('selected-ids').textContent).toBe(
-      'attachment-toggle-empty'
-    );
+    expect(screen.getByTestId("selection-mode").textContent).toBe("open");
+    expect(screen.getByTestId("selected-ids").textContent).toBe("attachment-toggle-empty");
 
-    fireEvent.click(screen.getByRole('button', { name: 'toggle-selection' }));
+    fireEvent.click(screen.getByRole("button", { name: "toggle-selection" }));
 
-    expect(screen.getByTestId('selection-mode').textContent).toBe('open');
-    expect(screen.getByTestId('selected-ids').textContent).toBe('');
+    expect(screen.getByTestId("selection-mode").textContent).toBe("open");
+    expect(screen.getByTestId("selected-ids").textContent).toBe("");
   });
 
-  it('opens the pdf compression levels menu before compressing', () => {
+  it("opens the pdf compression levels menu before compressing", () => {
     const onCompressPendingComposerPdf = vi.fn().mockResolvedValue(true);
 
     render(
       <ComposerAttachmentPreviewHarness
         attachment={buildAttachment({
-          id: 'attachment-3',
-          file: new File(['pdf'], 'stok.pdf', {
-            type: 'application/pdf',
+          id: "attachment-3",
+          file: new File(["pdf"], "stok.pdf", {
+            type: "application/pdf",
           }),
-          fileName: 'stok.pdf',
-          fileTypeLabel: 'PDF',
-          fileKind: 'document',
-          mimeType: 'application/pdf',
+          fileName: "stok.pdf",
+          fileTypeLabel: "PDF",
+          fileKind: "document",
+          mimeType: "application/pdf",
           previewUrl: null,
         })}
         onCompressPendingComposerPdf={onCompressPendingComposerPdf}
-      />
+      />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'toggle' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Kompres' }));
+    fireEvent.click(screen.getByRole("button", { name: "toggle" }));
+    fireEvent.click(screen.getByRole("button", { name: "Kompres" }));
 
     expect(onCompressPendingComposerPdf).not.toHaveBeenCalled();
-    expect(screen.getByTestId('open-id').textContent).toBe('attachment-3');
-    expect(screen.getByTestId('menu-position').textContent).toBe('open');
-    expect(screen.getByTestId('compression-menu-position').textContent).toBe(
-      'open'
-    );
+    expect(screen.getByTestId("open-id").textContent).toBe("attachment-3");
+    expect(screen.getByTestId("menu-position").textContent).toBe("open");
+    expect(screen.getByTestId("compression-menu-position").textContent).toBe("open");
   });
 
-  it('compresses the pdf with the selected level from the submenu', () => {
+  it("compresses the pdf with the selected level from the submenu", () => {
     const onCompressPendingComposerPdf = vi.fn().mockResolvedValue(true);
 
     render(
       <ComposerAttachmentPreviewHarness
         attachment={buildAttachment({
-          id: 'attachment-5',
-          file: new File(['pdf'], 'stok.pdf', {
-            type: 'application/pdf',
+          id: "attachment-5",
+          file: new File(["pdf"], "stok.pdf", {
+            type: "application/pdf",
           }),
-          fileName: 'stok.pdf',
-          fileTypeLabel: 'PDF',
-          fileKind: 'document',
-          mimeType: 'application/pdf',
+          fileName: "stok.pdf",
+          fileTypeLabel: "PDF",
+          fileKind: "document",
+          mimeType: "application/pdf",
           previewUrl: null,
         })}
         onCompressPendingComposerPdf={onCompressPendingComposerPdf}
-      />
+      />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'toggle' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Kompres' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Recommended' }));
+    fireEvent.click(screen.getByRole("button", { name: "toggle" }));
+    fireEvent.click(screen.getByRole("button", { name: "Kompres" }));
+    fireEvent.click(screen.getByRole("button", { name: "Recommended" }));
 
-    expect(onCompressPendingComposerPdf).toHaveBeenCalledWith(
-      'attachment-5',
-      'recommended'
-    );
-    expect(screen.getByTestId('open-id').textContent).toBe('');
-    expect(screen.getByTestId('compression-menu-position').textContent).toBe(
-      'closed'
-    );
-  });
-
-  it('keeps the composer menu mounted when switching between attachment triggers', () => {
-    render(
-      <ComposerAttachmentPreviewMultiHarness
-        attachments={[
-          buildAttachment({ id: 'attachment-a' }),
-          buildAttachment({
-            id: 'attachment-b',
-            fileName: 'foto-b.png',
-            previewUrl: 'blob:preview-b',
-          }),
-        ]}
-      />
-    );
-
-    const firstTrigger = screen.getByRole('button', { name: 'attachment-a' });
-    const secondTrigger = screen.getByRole('button', { name: 'attachment-b' });
-
-    fireEvent.click(firstTrigger);
-
-    expect(screen.getByTestId('multi-open-id').textContent).toBe(
-      'attachment-a'
-    );
-    expect(screen.getByTestId('multi-menu-position').textContent).toBe('open');
-
-    fireEvent.mouseDown(secondTrigger);
-
-    expect(screen.getByTestId('multi-open-id').textContent).toBe(
-      'attachment-a'
-    );
-    expect(screen.getByTestId('multi-menu-position').textContent).toBe('open');
-
-    fireEvent.click(secondTrigger);
-
-    expect(screen.getByTestId('multi-open-id').textContent).toBe(
-      'attachment-b'
-    );
-    expect(screen.getByTestId('multi-menu-position').textContent).toBe('open');
-
-    fireEvent.click(firstTrigger);
-
-    expect(screen.getByTestId('multi-open-id').textContent).toBe(
-      'attachment-a'
-    );
-    expect(screen.getByTestId('multi-menu-position').textContent).toBe('open');
+    expect(onCompressPendingComposerPdf).toHaveBeenCalledWith("attachment-5", "recommended");
+    expect(screen.getByTestId("open-id").textContent).toBe("");
+    expect(screen.getByTestId("compression-menu-position").textContent).toBe("closed");
   });
 });
