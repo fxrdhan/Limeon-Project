@@ -8,6 +8,7 @@ pnpm-debug.log*
 lerna-debug.log*
 *-this-session-is-being-continued-from-a-previous-co.txt
 artifacts/
+traces/
 
 # Build artifacts (Tailwind CSS output)
 
