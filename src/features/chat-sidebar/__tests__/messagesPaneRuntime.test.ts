@@ -1,22 +1,30 @@
-import { describe, expect, it, vi } from 'vite-plus/test';
-import { MESSAGE_BOTTOM_GAP } from '../constants';
-import { buildMessagesPaneRuntime } from '../components/messagesPaneRuntime';
+import { describe, expect, it, vi } from "vite-plus/test";
+import { MESSAGE_BOTTOM_GAP } from "../constants";
+import { buildMessagesPaneRuntime } from "../components/messagesPaneRuntime";
 
 const createSource = ({
   composerContainerHeight,
   messageInputHeight = 22,
   composerContextualOffset = 0,
+  messages = [],
+  isSelectionMode = false,
+  normalizedMessageSearchQuery = "",
+  getAttachmentFileKind = vi.fn(() => "document"),
 }: {
   composerContainerHeight: number;
   messageInputHeight?: number;
   composerContextualOffset?: number;
+  messages?: unknown[];
+  isSelectionMode?: boolean;
+  normalizedMessageSearchQuery?: string;
+  getAttachmentFileKind?: ReturnType<typeof vi.fn>;
 }) =>
   ({
     user: {
-      id: 'user-a',
+      id: "user-a",
     },
     session: {
-      messages: [],
+      messages,
       loading: false,
       loadError: null,
       retryLoadMessages: vi.fn(),
@@ -26,11 +34,13 @@ const createSource = ({
       loadOlderMessages: vi.fn(),
     },
     interaction: {
-      isSelectionMode: false,
-      normalizedMessageSearchQuery: '',
+      isSelectionMode,
+      normalizedMessageSearchQuery,
       isMessageSearchMode: false,
       searchMatchedMessageIdSet: new Set<string>(),
       activeSearchMessageId: null,
+      selectedMessageIds: new Set<string>(),
+      handleToggleMessageSelection: vi.fn(),
     },
     composer: {
       messageInputHeight,
@@ -44,8 +54,8 @@ const createSource = ({
       isAtBottom: true,
       scrollToBottom: vi.fn(),
       openMenuMessageId: null,
-      menuPlacement: 'up',
-      menuSideAnchor: 'middle',
+      menuPlacement: "up",
+      menuSideAnchor: "middle",
       shouldAnimateMenuOpen: false,
       menuTransitionSourceId: null,
       menuOffsetX: 0,
@@ -71,13 +81,13 @@ const createSource = ({
       closeImagePreview: vi.fn(),
       imagePreviewUrl: null,
       imagePreviewBackdropUrl: null,
-      imagePreviewName: '',
+      imagePreviewName: "",
       imageGroupPreviewItems: [],
       isImageGroupPreviewVisible: false,
       selectImageGroupPreviewItem: vi.fn(),
       closeImageGroupPreview: vi.fn(),
       documentPreviewUrl: null,
-      documentPreviewName: '',
+      documentPreviewName: "",
       isDocumentPreviewVisible: false,
       closeDocumentPreview: vi.fn(),
       getImageMessageUrl: vi.fn(() => null),
@@ -96,32 +106,62 @@ const createSource = ({
       handleDeleteMessage: vi.fn(async () => true),
     },
     actions: {
-      getAttachmentFileName: vi.fn(() => 'Lampiran'),
-      getAttachmentFileKind: vi.fn(() => 'document'),
+      getAttachmentFileName: vi.fn(() => "Lampiran"),
+      getAttachmentFileKind,
       toggleMessageMenu: vi.fn(),
     },
   }) as unknown as Parameters<typeof buildMessagesPaneRuntime>[0];
 
-describe('buildMessagesPaneRuntime', () => {
-  it('prefers the measured composer height once it is available', () => {
+describe("buildMessagesPaneRuntime", () => {
+  it("prefers the measured composer height once it is available", () => {
     const runtime = buildMessagesPaneRuntime(
       createSource({
         composerContainerHeight: 80,
-      })
+      }),
     );
 
     expect(runtime.viewport.paddingBottom).toBe(80 + 8 + MESSAGE_BOTTOM_GAP);
   });
 
-  it('falls back to the composer heuristic before the measurement is ready', () => {
+  it("falls back to the composer heuristic before the measurement is ready", () => {
     const runtime = buildMessagesPaneRuntime(
       createSource({
         composerContainerHeight: 0,
         messageInputHeight: 22,
         composerContextualOffset: 44,
-      })
+      }),
     );
 
     expect(runtime.viewport.paddingBottom).toBe(22 + 84 + 44);
+  });
+
+  it("keeps grouped image bubbles in selection mode", () => {
+    const imageMessages = Array.from({ length: 4 }, (_, index) => ({
+      id: `image-${index + 1}`,
+      sender_id: "user-a",
+      receiver_id: "user-b",
+      channel_id: "channel-1",
+      message: `images/channel/chat-${index + 1}.png`,
+      message_type: "image",
+      created_at: `2026-03-20T10:00:${String(index * 8).padStart(2, "0")}.000Z`,
+      updated_at: `2026-03-20T10:00:${String(index * 8).padStart(2, "0")}.000Z`,
+      is_read: false,
+      is_delivered: false,
+      reply_to_id: null,
+      file_name: `Chat-${index + 1}.png`,
+      file_mime_type: "image/png",
+      file_storage_path: `images/channel/chat-${index + 1}.png`,
+    }));
+
+    const runtime = buildMessagesPaneRuntime(
+      createSource({
+        composerContainerHeight: 80,
+        messages: imageMessages,
+        isSelectionMode: true,
+      }),
+    );
+
+    expect(runtime.conversation.renderItems).toHaveLength(1);
+    expect(runtime.conversation.renderItems[0]?.kind).toBe("image-group");
   });
 });
