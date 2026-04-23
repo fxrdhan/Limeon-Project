@@ -1,9 +1,9 @@
-import { usePresenceStore } from '@/store/presenceStore';
-import { useRealtimeChannelRecovery } from '@/hooks/realtime/useRealtimeChannelRecovery';
-import type { RealtimeChannel } from '@supabase/supabase-js';
-import { useCallback, useEffect, useRef } from 'react';
-import { realtimeService } from '@/services/realtime/realtime.service';
-import type { OnlineUser } from '@/types';
+import { usePresenceStore } from "@/store/presenceStore";
+import { useRealtimeChannelRecovery } from "@/hooks/realtime/useRealtimeChannelRecovery";
+import type { RealtimeChannel } from "@supabase/supabase-js";
+import { useCallback, useEffect, useRef } from "react";
+import { realtimeService } from "@/services/realtime/realtime.service";
+import type { OnlineUser } from "@/types";
 
 interface PresenceRosterUser {
   id: string;
@@ -25,38 +25,32 @@ interface BrowserActivePresencePayload {
 const sortOnlineUsers = (users: OnlineUser[]) =>
   [...users].sort((leftUser, rightUser) =>
     (leftUser.name || leftUser.email || leftUser.id).localeCompare(
-      rightUser.name || rightUser.email || rightUser.id
-    )
+      rightUser.name || rightUser.email || rightUser.id,
+    ),
   );
 
-const getPresenceTimestamp = (
-  presence: Partial<BrowserActivePresencePayload>
-) => new Date(presence.online_at ?? new Date().toISOString()).getTime();
+const getPresenceTimestamp = (presence: Partial<BrowserActivePresencePayload>) =>
+  new Date(presence.online_at ?? new Date().toISOString()).getTime();
 
 const selectLatestPresence = (
-  presences: BrowserActivePresencePayload[]
+  presences: BrowserActivePresencePayload[],
 ): BrowserActivePresencePayload | null => {
   if (presences.length === 0) {
     return null;
   }
 
   return presences.reduce((latestPresence, currentPresence) =>
-    getPresenceTimestamp(currentPresence) >=
-    getPresenceTimestamp(latestPresence)
+    getPresenceTimestamp(currentPresence) >= getPresenceTimestamp(latestPresence)
       ? currentPresence
-      : latestPresence
+      : latestPresence,
   );
 };
 
-export const usePresenceRosterSync = ({
-  user,
-}: {
-  user: PresenceRosterUser | null;
-}) => {
-  const { setChannel, setOnlineUsers, setOnlineUsersList } = usePresenceStore();
+export const usePresenceRosterSync = ({ user }: { user: PresenceRosterUser | null }) => {
+  const { setHasRosterChannel, setOnlineUsers, setOnlineUsersList } = usePresenceStore();
   const rosterChannelRef = useRef<RealtimeChannel | null>(null);
-  const { recoveryTick, scheduleRecovery, markRecoverySuccess } =
-    useRealtimeChannelRecovery();
+  const setupGenerationRef = useRef(0);
+  const { recoveryTick, scheduleRecovery, markRecoverySuccess } = useRealtimeChannelRecovery();
 
   const buildCurrentOnlineUser = useCallback((): OnlineUser | null => {
     if (!user) {
@@ -79,21 +73,18 @@ export const usePresenceRosterSync = ({
       setOnlineUsers(sortedUsers.length);
       setOnlineUsersList(sortedUsers);
     },
-    [setOnlineUsers, setOnlineUsersList]
+    [setOnlineUsers, setOnlineUsersList],
   );
 
   const hydrateRosterFromPresenceState = useCallback(
     (channel: RealtimeChannel) => {
       const currentUser = buildCurrentOnlineUser();
-      const presenceState =
-        channel.presenceState<BrowserActivePresencePayload>();
+      const presenceState = channel.presenceState<BrowserActivePresencePayload>();
 
       const nextUsers = Object.values(presenceState)
         .map(selectLatestPresence)
-        .filter((presence): presence is BrowserActivePresencePayload =>
-          Boolean(presence)
-        )
-        .map<OnlineUser>(presence => ({
+        .filter((presence): presence is BrowserActivePresencePayload => Boolean(presence))
+        .map<OnlineUser>((presence) => ({
           id: presence.user_id,
           name: presence.name,
           email: presence.email,
@@ -102,16 +93,13 @@ export const usePresenceRosterSync = ({
           online_at: presence.online_at,
         }));
 
-      if (
-        currentUser &&
-        !nextUsers.some(onlineUser => onlineUser.id === user?.id)
-      ) {
+      if (currentUser && !nextUsers.some((onlineUser) => onlineUser.id === user?.id)) {
         nextUsers.push(currentUser);
       }
 
       applyOnlineRoster(nextUsers);
     },
-    [applyOnlineRoster, buildCurrentOnlineUser, user?.id]
+    [applyOnlineRoster, buildCurrentOnlineUser, user?.id],
   );
 
   const cleanupRosterChannel = useCallback(async () => {
@@ -125,23 +113,23 @@ export const usePresenceRosterSync = ({
 
     try {
       void currentChannel.untrack();
-      void currentChannel.unsubscribe();
       await realtimeService.removeChannel(currentChannel);
     } catch (cleanupError) {
-      console.warn('Presence roster channel cleanup warning:', cleanupError);
+      console.warn("Presence roster channel cleanup warning:", cleanupError);
     }
   }, []);
 
   const resetPresenceState = useCallback(async () => {
+    setupGenerationRef.current += 1;
     await cleanupRosterChannel();
     markRecoverySuccess();
-    setChannel(null);
+    setHasRosterChannel(false);
     setOnlineUsers(0);
     setOnlineUsersList([]);
   }, [
     cleanupRosterChannel,
     markRecoverySuccess,
-    setChannel,
+    setHasRosterChannel,
     setOnlineUsers,
     setOnlineUsersList,
   ]);
@@ -162,90 +150,115 @@ export const usePresenceRosterSync = ({
         online_at: currentUser.online_at,
       });
 
-      if (trackStatus !== 'ok') {
+      if (trackStatus !== "ok") {
         throw new Error(`Failed to track browser presence: ${trackStatus}`);
       }
 
       hydrateRosterFromPresenceState(channel);
     },
-    [buildCurrentOnlineUser, hydrateRosterFromPresenceState]
+    [buildCurrentOnlineUser, hydrateRosterFromPresenceState],
   );
 
-  const setupPresenceRosterSubscription = useCallback(async () => {
-    if (!user?.id) {
-      return;
-    }
+  const setupPresenceRosterSubscription = useCallback(
+    async (setupGeneration: number) => {
+      if (!user?.id) {
+        return;
+      }
 
-    await cleanupRosterChannel();
+      try {
+        await cleanupRosterChannel();
 
-    const newChannel = realtimeService
-      .createChannel('browser-active', {
-        config: {
-          presence: {
-            key: user.id,
+        if (setupGenerationRef.current !== setupGeneration) {
+          return;
+        }
+
+        const newChannel = await realtimeService.replaceChannel("browser-active", {
+          config: {
+            presence: {
+              key: user.id,
+            },
           },
-        },
-      })
-      .on('presence', { event: 'sync' }, () => {
-        hydrateRosterFromPresenceState(newChannel);
-      })
-      .on('presence', { event: 'join' }, () => {
-        hydrateRosterFromPresenceState(newChannel);
-      })
-      .on('presence', { event: 'leave' }, () => {
-        hydrateRosterFromPresenceState(newChannel);
-      });
+        });
 
-    rosterChannelRef.current = newChannel;
-    setChannel(newChannel);
+        if (setupGenerationRef.current !== setupGeneration) {
+          return;
+        }
 
-    newChannel.subscribe(status => {
-      if (status === 'SUBSCRIBED') {
-        void (async () => {
-          try {
-            await trackCurrentUserPresence(newChannel);
-            markRecoverySuccess();
-          } catch (trackingError) {
-            console.error(
-              'Failed to track browser active presence after subscribe:',
-              trackingError
-            );
+        newChannel
+          .on("presence", { event: "sync" }, () => {
+            hydrateRosterFromPresenceState(newChannel);
+          })
+          .on("presence", { event: "join" }, () => {
+            hydrateRosterFromPresenceState(newChannel);
+          })
+          .on("presence", { event: "leave" }, () => {
+            hydrateRosterFromPresenceState(newChannel);
+          });
+
+        rosterChannelRef.current = newChannel;
+        setHasRosterChannel(true);
+
+        newChannel.subscribe((status) => {
+          if (setupGenerationRef.current !== setupGeneration) {
+            return;
+          }
+
+          if (status === "SUBSCRIBED") {
+            void (async () => {
+              try {
+                await trackCurrentUserPresence(newChannel);
+                markRecoverySuccess();
+              } catch (trackingError) {
+                console.error(
+                  "Failed to track browser active presence after subscribe:",
+                  trackingError,
+                );
+                if (rosterChannelRef.current === newChannel) {
+                  rosterChannelRef.current = null;
+                  setHasRosterChannel(false);
+                  applyOnlineRoster([]);
+                  void realtimeService.removeChannel(newChannel);
+                }
+                void scheduleRecovery();
+              }
+            })();
+            return;
+          }
+
+          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+            console.error("Failed to subscribe browser active presence channel:", status);
             if (rosterChannelRef.current === newChannel) {
               rosterChannelRef.current = null;
-              setChannel(null);
+              setHasRosterChannel(false);
               applyOnlineRoster([]);
               void realtimeService.removeChannel(newChannel);
             }
             void scheduleRecovery();
           }
-        })();
-        return;
-      }
-
-      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-        console.error(
-          'Failed to subscribe browser active presence channel:',
-          status
-        );
-        if (rosterChannelRef.current === newChannel) {
-          rosterChannelRef.current = null;
-          setChannel(null);
-          applyOnlineRoster([]);
-          void realtimeService.removeChannel(newChannel);
+        });
+      } catch (setupError) {
+        if (setupGenerationRef.current !== setupGeneration) {
+          return;
         }
+
+        console.error("Failed to setup browser active presence channel:", setupError);
+        rosterChannelRef.current = null;
+        setHasRosterChannel(false);
+        applyOnlineRoster([]);
         void scheduleRecovery();
       }
-    });
-  }, [
-    applyOnlineRoster,
-    cleanupRosterChannel,
-    hydrateRosterFromPresenceState,
-    markRecoverySuccess,
-    scheduleRecovery,
-    setChannel,
-    trackCurrentUserPresence,
-    user?.id,
-  ]);
+    },
+    [
+      applyOnlineRoster,
+      cleanupRosterChannel,
+      hydrateRosterFromPresenceState,
+      markRecoverySuccess,
+      scheduleRecovery,
+      setHasRosterChannel,
+      trackCurrentUserPresence,
+      user?.id,
+    ],
+  );
 
   useEffect(() => {
     if (!user) {
@@ -257,7 +270,7 @@ export const usePresenceRosterSync = ({
     () => () => {
       void resetPresenceState();
     },
-    [resetPresenceState]
+    [resetPresenceState],
   );
 
   useEffect(() => {
@@ -265,16 +278,18 @@ export const usePresenceRosterSync = ({
       return;
     }
 
-    void setupPresenceRosterSubscription();
+    const setupGeneration = ++setupGenerationRef.current;
+    void setupPresenceRosterSubscription(setupGeneration);
 
     return () => {
+      setupGenerationRef.current += 1;
       void cleanupRosterChannel();
-      setChannel(null);
+      setHasRosterChannel(false);
     };
   }, [
     cleanupRosterChannel,
     recoveryTick,
-    setChannel,
+    setHasRosterChannel,
     setupPresenceRosterSubscription,
     user?.email,
     user?.id,

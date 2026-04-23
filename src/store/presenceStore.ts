@@ -1,18 +1,21 @@
-import { create } from 'zustand';
-import type { RealtimeChannel } from '@supabase/supabase-js';
-import type { PresenceState, OnlineUser } from '@/types';
+import { create } from "zustand";
+import type { PresenceState, OnlineUser } from "@/types";
 
 export const usePresenceStore = create<PresenceState>((set, get) => ({
-  channel: null,
+  hasRosterChannel: false,
   onlineUsers: 0,
   onlineUsersList: [],
   presenceSyncHealth: {
-    status: 'idle',
+    status: "idle",
     errorMessage: null,
     lastSyncedAt: null,
   },
-  setChannel: (channel: RealtimeChannel | null) => {
-    set({ channel });
+  setHasRosterChannel: (hasRosterChannel: boolean) => {
+    if (get().hasRosterChannel === hasRosterChannel) {
+      return;
+    }
+
+    set({ hasRosterChannel });
   },
   setOnlineUsers: (count: number) => {
     // Validate count and ensure it's never negative
@@ -27,7 +30,7 @@ export const usePresenceStore = create<PresenceState>((set, get) => ({
   setOnlineUsersList: (users: OnlineUser[]) => {
     set({ onlineUsersList: users });
   },
-  setPresenceSyncHealth: health => {
+  setPresenceSyncHealth: (health) => {
     const currentHealth = get().presenceSyncHealth;
 
     if (

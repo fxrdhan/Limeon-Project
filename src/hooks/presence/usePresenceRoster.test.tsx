@@ -1,11 +1,11 @@
-import { act, renderHook, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
-import { useAuthStore } from '../../store/authStore';
-import type { DirectoryUser } from '../../store/createDirectoryStore';
-import { usePresenceDirectoryStore } from '../../store/presenceDirectoryStore';
-import { usePresenceStore } from '../../store/presenceStore';
-import type { UserDetails } from '../../types/database';
-import { usePresenceRoster } from './usePresenceRoster';
+import { act, renderHook, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import { useAuthStore } from "../../store/authStore";
+import type { DirectoryUser } from "../../store/createDirectoryStore";
+import { usePresenceDirectoryStore } from "../../store/presenceDirectoryStore";
+import { usePresenceStore } from "../../store/presenceStore";
+import type { UserDetails } from "../../types/database";
+import { usePresenceRoster } from "./usePresenceRoster";
 
 const { mockUsersService } = vi.hoisted(() => ({
   mockUsersService: {
@@ -13,16 +13,16 @@ const { mockUsersService } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('../../services/api/users.service', () => ({
+vi.mock("../../services/api/users.service", () => ({
   usersService: mockUsersService,
 }));
 
 const currentUser: UserDetails = {
-  id: 'user-a',
-  name: 'Admin',
-  email: 'admin@example.com',
+  id: "user-a",
+  name: "Admin",
+  email: "admin@example.com",
   profilephoto: null,
-  role: 'admin',
+  role: "admin",
 };
 
 const buildDirectoryUser = (id: string, name: string) => ({
@@ -32,7 +32,7 @@ const buildDirectoryUser = (id: string, name: string) => ({
   profilephoto: null,
 });
 
-describe('usePresenceRoster', () => {
+describe("usePresenceRoster", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useAuthStore.setState({
@@ -41,7 +41,7 @@ describe('usePresenceRoster', () => {
       error: null,
     });
     usePresenceStore.setState({
-      channel: null,
+      hasRosterChannel: false,
       onlineUsers: 1,
       onlineUsersList: [
         {
@@ -49,11 +49,11 @@ describe('usePresenceRoster', () => {
           name: currentUser.name,
           email: currentUser.email,
           profilephoto: currentUser.profilephoto,
-          online_at: '2026-03-24T10:00:00.000Z',
+          online_at: "2026-03-24T10:00:00.000Z",
         },
       ],
       presenceSyncHealth: {
-        status: 'idle',
+        status: "idle",
         errorMessage: null,
         lastSyncedAt: null,
       },
@@ -61,21 +61,18 @@ describe('usePresenceRoster', () => {
     usePresenceDirectoryStore.getState().resetDirectoryState(null);
   });
 
-  it('shares directory cache and pagination state across multiple consumers', async () => {
+  it("shares directory cache and pagination state across multiple consumers", async () => {
     mockUsersService.getUsersPage
       .mockResolvedValueOnce({
         data: {
-          users: [
-            buildDirectoryUser('user-b', 'Gudang'),
-            buildDirectoryUser('user-c', 'Kasir'),
-          ],
+          users: [buildDirectoryUser("user-b", "Gudang"), buildDirectoryUser("user-c", "Kasir")],
           hasMore: true,
         },
         error: null,
       })
       .mockResolvedValueOnce({
         data: {
-          users: [buildDirectoryUser('user-d', 'Apoteker')],
+          users: [buildDirectoryUser("user-d", "Apoteker")],
           hasMore: false,
         },
         error: null,
@@ -90,17 +87,13 @@ describe('usePresenceRoster', () => {
 
     await waitFor(() => {
       expect(
-        firstRoster.result.current.portalOrderedUsers.map(
-          (user: DirectoryUser) => user.id
-        )
-      ).toEqual(['user-a', 'user-b', 'user-c']);
+        firstRoster.result.current.portalOrderedUsers.map((user: DirectoryUser) => user.id),
+      ).toEqual(["user-a", "user-b", "user-c"]);
     });
 
     expect(
-      secondRoster.result.current.portalOrderedUsers.map(
-        (user: DirectoryUser) => user.id
-      )
-    ).toEqual(['user-a', 'user-b', 'user-c']);
+      secondRoster.result.current.portalOrderedUsers.map((user: DirectoryUser) => user.id),
+    ).toEqual(["user-a", "user-b", "user-c"]);
 
     await act(async () => {
       secondRoster.result.current.loadMoreDirectoryUsers();
@@ -114,16 +107,12 @@ describe('usePresenceRoster', () => {
 
     await waitFor(() => {
       expect(
-        firstRoster.result.current.portalOrderedUsers.map(
-          (user: DirectoryUser) => user.id
-        )
-      ).toEqual(['user-a', 'user-b', 'user-c', 'user-d']);
+        firstRoster.result.current.portalOrderedUsers.map((user: DirectoryUser) => user.id),
+      ).toEqual(["user-a", "user-b", "user-c", "user-d"]);
     });
 
     expect(
-      secondRoster.result.current.portalOrderedUsers.map(
-        (user: DirectoryUser) => user.id
-      )
-    ).toEqual(['user-a', 'user-b', 'user-c', 'user-d']);
+      secondRoster.result.current.portalOrderedUsers.map((user: DirectoryUser) => user.id),
+    ).toEqual(["user-a", "user-b", "user-c", "user-d"]);
   });
 });

@@ -1,35 +1,33 @@
-import { act, renderHook, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
-import type { ChatMessage } from '../../../services/api/chat.service';
-import type { UserDetails } from '../../../types/database';
-import { useChatSession } from '../hooks/useChatSession';
-import { chatRuntimeCache } from '../utils/chatRuntimeCache';
-import { usePresenceStore } from '../../../store/presenceStore';
+import { act, renderHook, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import type { ChatMessage } from "../../../services/api/chat.service";
+import type { UserDetails } from "../../../types/database";
+import { useChatSession } from "../hooks/useChatSession";
+import { chatRuntimeCache } from "../utils/chatRuntimeCache";
+import { usePresenceStore } from "../../../store/presenceStore";
 
-const { createdChannels, mockChatService, mockRealtimeService } = vi.hoisted(
-  () => ({
-    createdChannels: [] as Array<{
-      emitStatus: (status: string) => void;
-      on: ReturnType<typeof vi.fn>;
-      send: ReturnType<typeof vi.fn>;
-      subscribe: ReturnType<typeof vi.fn>;
-    }>,
-    mockChatService: {
-      fetchMessagesBetweenUsers: vi.fn(),
-      getMessageById: vi.fn(),
-      updateUserPresence: vi.fn(),
-      insertUserPresence: vi.fn(),
-      getUserPresence: vi.fn(),
-      markMessageIdsAsDelivered: vi.fn(),
-      markMessageIdsAsRead: vi.fn(),
-      sendUserPresenceUpdateKeepalive: vi.fn(),
-    },
-    mockRealtimeService: {
-      createChannel: vi.fn(),
-      removeChannel: vi.fn(),
-    },
-  })
-);
+const { createdChannels, mockChatService, mockRealtimeService } = vi.hoisted(() => ({
+  createdChannels: [] as Array<{
+    emitStatus: (status: string) => void;
+    on: ReturnType<typeof vi.fn>;
+    send: ReturnType<typeof vi.fn>;
+    subscribe: ReturnType<typeof vi.fn>;
+  }>,
+  mockChatService: {
+    fetchMessagesBetweenUsers: vi.fn(),
+    getMessageById: vi.fn(),
+    updateUserPresence: vi.fn(),
+    insertUserPresence: vi.fn(),
+    getUserPresence: vi.fn(),
+    markMessageIdsAsDelivered: vi.fn(),
+    markMessageIdsAsRead: vi.fn(),
+    sendUserPresenceUpdateKeepalive: vi.fn(),
+  },
+  mockRealtimeService: {
+    createChannel: vi.fn(),
+    removeChannel: vi.fn(),
+  },
+}));
 const { mockResolveChatAssetUrl } = vi.hoisted(() => ({
   mockResolveChatAssetUrl: vi.fn(),
 }));
@@ -37,19 +35,19 @@ const { mockLoadCachedChannelImageAssetUrl } = vi.hoisted(() => ({
   mockLoadCachedChannelImageAssetUrl: vi.fn(),
 }));
 
-vi.mock('@/services/api/chat.service', () => ({
+vi.mock("@/services/api/chat.service", () => ({
   chatService: mockChatService,
   chatMessagesService: mockChatService,
   chatPresenceService: mockChatService,
   chatCleanupService: mockChatService,
 }));
 
-vi.mock('@/services/realtime/realtime.service', () => ({
+vi.mock("@/services/realtime/realtime.service", () => ({
   realtimeService: mockRealtimeService,
 }));
 
-vi.mock('../utils/message-file', async () => {
-  const actual = await vi.importActual('../utils/message-file');
+vi.mock("../utils/message-file", async () => {
+  const actual = await vi.importActual("../utils/message-file");
 
   return {
     ...actual,
@@ -57,8 +55,8 @@ vi.mock('../utils/message-file', async () => {
   };
 });
 
-vi.mock('../utils/channel-image-asset-cache', async () => {
-  const actual = await vi.importActual('../utils/channel-image-asset-cache');
+vi.mock("../utils/channel-image-asset-cache", async () => {
+  const actual = await vi.importActual("../utils/channel-image-asset-cache");
 
   return {
     ...actual,
@@ -67,29 +65,29 @@ vi.mock('../utils/channel-image-asset-cache', async () => {
 });
 
 const currentUser: UserDetails = {
-  id: 'user-a',
-  name: 'Admin',
-  email: 'admin@example.com',
+  id: "user-a",
+  name: "Admin",
+  email: "admin@example.com",
   profilephoto: null,
-  role: 'admin',
+  role: "admin",
 };
 
 const targetUser = {
-  id: 'user-b',
-  name: 'Gudang',
-  email: 'gudang@example.com',
+  id: "user-b",
+  name: "Gudang",
+  email: "gudang@example.com",
   profilephoto: null,
 };
 
 const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
-  id: overrides.id ?? 'message-1',
-  sender_id: overrides.sender_id ?? 'user-b',
+  id: overrides.id ?? "message-1",
+  sender_id: overrides.sender_id ?? "user-b",
   receiver_id: overrides.receiver_id ?? currentUser.id,
-  channel_id: overrides.channel_id ?? 'channel-1',
-  message: overrides.message ?? 'hello',
-  message_type: overrides.message_type ?? 'text',
-  created_at: overrides.created_at ?? '2026-03-06T09:30:00.000Z',
-  updated_at: overrides.updated_at ?? '2026-03-06T09:30:00.000Z',
+  channel_id: overrides.channel_id ?? "channel-1",
+  message: overrides.message ?? "hello",
+  message_type: overrides.message_type ?? "text",
+  created_at: overrides.created_at ?? "2026-03-06T09:30:00.000Z",
+  updated_at: overrides.updated_at ?? "2026-03-06T09:30:00.000Z",
   is_read: overrides.is_read ?? false,
   is_delivered: overrides.is_delivered ?? false,
   reply_to_id: overrides.reply_to_id ?? null,
@@ -119,38 +117,36 @@ const buildMockChannel = () => {
   };
 
   channel.on.mockReturnValue(channel);
-  channel.subscribe.mockImplementation(
-    (callback?: (status: string) => void) => {
-      statusHandler = callback ?? null;
-      callback?.('SUBSCRIBED');
+  channel.subscribe.mockImplementation((callback?: (status: string) => void) => {
+    statusHandler = callback ?? null;
+    callback?.("SUBSCRIBED");
 
-      return channel;
-    }
-  );
+    return channel;
+  });
 
   return channel;
 };
 
 const getCreatedChannelByName = (channelName: string) => {
   const channelIndex = mockRealtimeService.createChannel.mock.calls.findIndex(
-    ([name]) => name === channelName
+    ([name]) => name === channelName,
   );
 
   return channelIndex >= 0 ? createdChannels[channelIndex] : null;
 };
 
-describe('useChatSession', () => {
+describe("useChatSession", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
     chatRuntimeCache.conversation.reset();
     createdChannels.length = 0;
     usePresenceStore.setState({
-      channel: null,
+      hasRosterChannel: false,
       onlineUsers: 0,
       onlineUsersList: [],
       presenceSyncHealth: {
-        status: 'idle',
+        status: "idle",
         errorMessage: null,
         lastSyncedAt: null,
       },
@@ -171,7 +167,7 @@ describe('useChatSession', () => {
         {
           user_id: currentUser.id,
           is_online: true,
-          last_seen: '2026-03-06T09:30:00.000Z',
+          last_seen: "2026-03-06T09:30:00.000Z",
         },
       ],
       error: null,
@@ -182,7 +178,7 @@ describe('useChatSession', () => {
     });
     mockChatService.getUserPresence.mockResolvedValue({
       data: null,
-      error: { code: 'PGRST116' },
+      error: { code: "PGRST116" },
     });
     mockChatService.markMessageIdsAsDelivered.mockResolvedValue({
       data: [],
@@ -201,7 +197,7 @@ describe('useChatSession', () => {
     });
   });
 
-  it('does not mutate current user presence when the sidebar opens or closes', async () => {
+  it("does not mutate current user presence when the sidebar opens or closes", async () => {
     const initialMessageAnimationKeysRef = { current: new Set<string>() };
     const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
 
@@ -211,13 +207,13 @@ describe('useChatSession', () => {
           isOpen,
           user: currentUser,
           targetUser,
-          currentChannelId: 'channel-1',
+          currentChannelId: "channel-1",
           initialMessageAnimationKeysRef,
           initialOpenJumpAnimationKeysRef,
         }),
       {
         initialProps: { isOpen: true },
-      }
+      },
     );
 
     await act(async () => {
@@ -234,24 +230,24 @@ describe('useChatSession', () => {
     expect(mockChatService.insertUserPresence).not.toHaveBeenCalled();
   });
 
-  it('primes recent image preview urls during the first uncached conversation load', async () => {
+  it("primes recent image preview urls during the first uncached conversation load", async () => {
     const initialMessageAnimationKeysRef = { current: new Set<string>() };
     const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
     mockChatService.fetchMessagesBetweenUsers.mockResolvedValue({
       data: [
         buildMessage({
-          id: 'image-1',
-          message: 'images/channel/image-1.png',
-          message_type: 'image',
-          file_mime_type: 'image/png',
-          file_storage_path: 'images/channel/image-1.png',
-          file_preview_url: 'previews/channel/image-1.fit-v2.webp',
+          id: "image-1",
+          message: "images/channel/image-1.png",
+          message_type: "image",
+          file_mime_type: "image/png",
+          file_storage_path: "images/channel/image-1.png",
+          file_preview_url: "previews/channel/image-1.fit-v2.webp",
         }),
       ],
       error: null,
     });
     mockResolveChatAssetUrl.mockResolvedValue(
-      'https://signed.example/previews/channel/image-1.fit-v2.webp'
+      "https://signed.example/previews/channel/image-1.fit-v2.webp",
     );
 
     const { result } = renderHook(() =>
@@ -259,16 +255,16 @@ describe('useChatSession', () => {
         isOpen: true,
         user: currentUser,
         targetUser,
-        currentChannelId: 'channel-1',
+        currentChannelId: "channel-1",
         initialMessageAnimationKeysRef,
         initialOpenJumpAnimationKeysRef,
-      })
+      }),
     );
 
     await waitFor(() => {
       expect(mockResolveChatAssetUrl).toHaveBeenCalledWith(
-        'previews/channel/image-1.fit-v2.webp',
-        'previews/channel/image-1.fit-v2.webp'
+        "previews/channel/image-1.fit-v2.webp",
+        "previews/channel/image-1.fit-v2.webp",
       );
     });
     await waitFor(() => {
@@ -276,19 +272,19 @@ describe('useChatSession', () => {
     });
   });
 
-  it('primes recent cached image blobs before the first uncached snapshot render', async () => {
+  it("primes recent cached image blobs before the first uncached snapshot render", async () => {
     const initialMessageAnimationKeysRef = { current: new Set<string>() };
     const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
 
     mockChatService.fetchMessagesBetweenUsers.mockResolvedValue({
       data: [
         buildMessage({
-          id: 'image-cached',
-          message: 'images/channel/image-cached.png',
-          message_type: 'image',
-          file_mime_type: 'image/png',
-          file_storage_path: 'images/channel/image-cached.png',
-          file_preview_url: 'previews/channel/image-cached.fit-v2.webp',
+          id: "image-cached",
+          message: "images/channel/image-cached.png",
+          message_type: "image",
+          file_mime_type: "image/png",
+          file_storage_path: "images/channel/image-cached.png",
+          file_preview_url: "previews/channel/image-cached.fit-v2.webp",
         }),
       ],
       error: null,
@@ -299,36 +295,36 @@ describe('useChatSession', () => {
         isOpen: true,
         user: currentUser,
         targetUser,
-        currentChannelId: 'channel-1',
+        currentChannelId: "channel-1",
         initialMessageAnimationKeysRef,
         initialOpenJumpAnimationKeysRef,
-      })
+      }),
     );
 
     await waitFor(() => {
       expect(mockLoadCachedChannelImageAssetUrl).toHaveBeenCalledWith(
-        'channel-1',
-        'image-cached',
-        'full'
+        "channel-1",
+        "image-cached",
+        "full",
       );
     });
   });
 
-  it('hydrates missing reply target messages for loaded replies without inserting them into the active list', async () => {
+  it("hydrates missing reply target messages for loaded replies without inserting them into the active list", async () => {
     const initialMessageAnimationKeysRef = { current: new Set<string>() };
     const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
     const replyMessage = buildMessage({
-      id: 'reply-1',
+      id: "reply-1",
       sender_id: currentUser.id,
       receiver_id: targetUser.id,
-      message: 'Balasan baru',
-      reply_to_id: 'older-parent',
+      message: "Balasan baru",
+      reply_to_id: "older-parent",
     });
     const olderParentMessage = buildMessage({
-      id: 'older-parent',
+      id: "older-parent",
       sender_id: targetUser.id,
       receiver_id: currentUser.id,
-      message: 'Pesan lama yang belum termuat',
+      message: "Pesan lama yang belum termuat",
     });
 
     mockChatService.fetchMessagesBetweenUsers.mockResolvedValue({
@@ -345,49 +341,43 @@ describe('useChatSession', () => {
         isOpen: true,
         user: currentUser,
         targetUser,
-        currentChannelId: 'channel-1',
+        currentChannelId: "channel-1",
         initialMessageAnimationKeysRef,
         initialOpenJumpAnimationKeysRef,
-      })
+      }),
     );
 
     await waitFor(() => {
-      expect(mockChatService.getMessageById).toHaveBeenCalledWith(
-        'older-parent'
-      );
+      expect(mockChatService.getMessageById).toHaveBeenCalledWith("older-parent");
     });
     await waitFor(() => {
-      expect(
-        result.current.messages.map(messageItem => messageItem.id)
-      ).toEqual(['reply-1']);
-      expect(result.current.getReplyTargetMessage('older-parent')).toEqual(
+      expect(result.current.messages.map((messageItem) => messageItem.id)).toEqual(["reply-1"]);
+      expect(result.current.getReplyTargetMessage("older-parent")).toEqual(
         expect.objectContaining({
-          id: 'older-parent',
-          message: 'Pesan lama yang belum termuat',
-        })
+          id: "older-parent",
+          message: "Pesan lama yang belum termuat",
+        }),
       );
     });
   });
 
-  it('does not block initial conversation render on preview priming or delivered receipts', async () => {
+  it("does not block initial conversation render on preview priming or delivered receipts", async () => {
     const initialMessageAnimationKeysRef = { current: new Set<string>() };
     const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
     let resolvePreviewUrl: ((value: string | null) => void) | undefined;
-    let resolveDelivered:
-      | ((value: { data: ChatMessage[]; error: null }) => void)
-      | undefined;
+    let resolveDelivered: ((value: { data: ChatMessage[]; error: null }) => void) | undefined;
 
     mockChatService.fetchMessagesBetweenUsers.mockResolvedValue({
       data: [
         buildMessage({
-          id: 'image-delayed',
-          sender_id: 'user-b',
+          id: "image-delayed",
+          sender_id: "user-b",
           receiver_id: currentUser.id,
-          message: 'images/channel/image-delayed.png',
-          message_type: 'image',
-          file_mime_type: 'image/png',
-          file_storage_path: 'images/channel/image-delayed.png',
-          file_preview_url: 'previews/channel/image-delayed.fit-v2.webp',
+          message: "images/channel/image-delayed.png",
+          message_type: "image",
+          file_mime_type: "image/png",
+          file_storage_path: "images/channel/image-delayed.png",
+          file_preview_url: "previews/channel/image-delayed.fit-v2.webp",
           is_delivered: false,
         }),
       ],
@@ -395,15 +385,15 @@ describe('useChatSession', () => {
     });
     mockResolveChatAssetUrl.mockImplementation(
       () =>
-        new Promise(resolve => {
+        new Promise((resolve) => {
           resolvePreviewUrl = resolve;
-        })
+        }),
     );
     mockChatService.markMessageIdsAsDelivered.mockImplementation(
       () =>
-        new Promise(resolve => {
+        new Promise((resolve) => {
           resolveDelivered = resolve;
-        })
+        }),
     );
 
     const { result } = renderHook(() =>
@@ -411,10 +401,10 @@ describe('useChatSession', () => {
         isOpen: true,
         user: currentUser,
         targetUser,
-        currentChannelId: 'channel-1',
+        currentChannelId: "channel-1",
         initialMessageAnimationKeysRef,
         initialOpenJumpAnimationKeysRef,
-      })
+      }),
     );
 
     await waitFor(() => {
@@ -423,9 +413,7 @@ describe('useChatSession', () => {
     });
 
     await act(async () => {
-      resolvePreviewUrl?.(
-        'https://signed.example/previews/channel/image-delayed.fit-v2.webp'
-      );
+      resolvePreviewUrl?.("https://signed.example/previews/channel/image-delayed.fit-v2.webp");
       resolveDelivered?.({
         data: [],
         error: null,
@@ -434,7 +422,7 @@ describe('useChatSession', () => {
     });
   });
 
-  it('does not mutate current user presence on page lifecycle events', async () => {
+  it("does not mutate current user presence on page lifecycle events", async () => {
     const initialMessageAnimationKeysRef = { current: new Set<string>() };
     const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
 
@@ -444,13 +432,13 @@ describe('useChatSession', () => {
           isOpen,
           user: currentUser,
           targetUser,
-          currentChannelId: 'channel-1',
+          currentChannelId: "channel-1",
           initialMessageAnimationKeysRef,
           initialOpenJumpAnimationKeysRef,
         }),
       {
         initialProps: { isOpen: true },
-      }
+      },
     );
 
     await act(async () => {
@@ -459,9 +447,9 @@ describe('useChatSession', () => {
 
     rerender({ isOpen: false });
 
-    window.dispatchEvent(new Event('beforeunload'));
-    const pageHideEvent = new Event('pagehide');
-    Object.defineProperty(pageHideEvent, 'persisted', {
+    window.dispatchEvent(new Event("beforeunload"));
+    const pageHideEvent = new Event("pagehide");
+    Object.defineProperty(pageHideEvent, "persisted", {
       configurable: true,
       value: false,
     });
@@ -472,12 +460,10 @@ describe('useChatSession', () => {
     });
 
     expect(mockChatService.updateUserPresence).not.toHaveBeenCalled();
-    expect(
-      mockChatService.sendUserPresenceUpdateKeepalive
-    ).not.toHaveBeenCalled();
+    expect(mockChatService.sendUserPresenceUpdateKeepalive).not.toHaveBeenCalled();
   });
 
-  it('does not create global presence broadcast channels', async () => {
+  it("does not create global presence broadcast channels", async () => {
     const initialMessageAnimationKeysRef = { current: new Set<string>() };
     const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
 
@@ -486,21 +472,21 @@ describe('useChatSession', () => {
         isOpen: true,
         user: currentUser,
         targetUser,
-        currentChannelId: 'channel-1',
+        currentChannelId: "channel-1",
         initialMessageAnimationKeysRef,
         initialOpenJumpAnimationKeysRef,
-      })
+      }),
     );
 
     await waitFor(() => {
       expect(mockRealtimeService.createChannel).toHaveBeenCalledTimes(1);
     });
 
-    expect(
-      mockRealtimeService.createChannel.mock.calls.map(([name]) => name)
-    ).toEqual(['chat_channel-1']);
+    expect(mockRealtimeService.createChannel.mock.calls.map(([name]) => name)).toEqual([
+      "chat_channel-1",
+    ]);
   });
-  it('reconnects the conversation channel after a channel error', async () => {
+  it("reconnects the conversation channel after a channel error", async () => {
     const initialMessageAnimationKeysRef = { current: new Set<string>() };
     const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
 
@@ -509,10 +495,10 @@ describe('useChatSession', () => {
         isOpen: true,
         user: currentUser,
         targetUser,
-        currentChannelId: 'channel-1',
+        currentChannelId: "channel-1",
         initialMessageAnimationKeysRef,
         initialOpenJumpAnimationKeysRef,
-      })
+      }),
     );
 
     await waitFor(() => {
@@ -520,23 +506,24 @@ describe('useChatSession', () => {
     });
 
     await act(async () => {
-      getCreatedChannelByName('chat_channel-1')?.emitStatus('CHANNEL_ERROR');
-      await new Promise(resolve => {
+      getCreatedChannelByName("chat_channel-1")?.emitStatus("CHANNEL_ERROR");
+      await new Promise((resolve) => {
         setTimeout(resolve, 900);
       });
     });
 
     expect(mockRealtimeService.createChannel).toHaveBeenCalledTimes(2);
-    expect(
-      mockRealtimeService.createChannel.mock.calls.map(([name]) => name)
-    ).toEqual(['chat_channel-1', 'chat_channel-1']);
+    expect(mockRealtimeService.createChannel.mock.calls.map(([name]) => name)).toEqual([
+      "chat_channel-1",
+      "chat_channel-1",
+    ]);
   });
 
-  it('clears stale target presence when switching to a user without presence data', async () => {
+  it("clears stale target presence when switching to a user without presence data", async () => {
     const secondTargetUser = {
-      id: 'user-c',
-      name: 'Kasir',
-      email: 'kasir@example.com',
+      id: "user-c",
+      name: "Kasir",
+      email: "kasir@example.com",
       profilephoto: null,
     };
     const initialMessageAnimationKeysRef = { current: new Set<string>() };
@@ -547,13 +534,13 @@ describe('useChatSession', () => {
         data: {
           user_id: targetUser.id,
           is_online: true,
-          last_seen: '2026-03-06T09:30:00.000Z',
+          last_seen: "2026-03-06T09:30:00.000Z",
         },
         error: null,
       })
       .mockResolvedValueOnce({
         data: null,
-        error: { code: 'PGRST116' },
+        error: { code: "PGRST116" },
       });
 
     const { result, rerender } = renderHook(
@@ -575,18 +562,18 @@ describe('useChatSession', () => {
       {
         initialProps: {
           activeTargetUser: targetUser,
-          channelId: 'channel-1',
+          channelId: "channel-1",
         },
-      }
+      },
     );
 
     await waitFor(() => {
-      expect(result.current.targetUserPresence?.user_id).toBe('user-b');
+      expect(result.current.targetUserPresence?.user_id).toBe("user-b");
     });
 
     rerender({
       activeTargetUser: secondTargetUser,
-      channelId: 'channel-2',
+      channelId: "channel-2",
     });
 
     await waitFor(() => {
@@ -594,18 +581,18 @@ describe('useChatSession', () => {
     });
   });
 
-  it('keeps search context out of the shared cache and advances the older-message cursor', async () => {
+  it("keeps search context out of the shared cache and advances the older-message cursor", async () => {
     const initialMessageAnimationKeysRef = { current: new Set<string>() };
     const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
     const latestMessage = buildMessage({
-      id: 'latest-message',
-      created_at: '2026-03-06T09:30:00.000Z',
-      updated_at: '2026-03-06T09:30:00.000Z',
+      id: "latest-message",
+      created_at: "2026-03-06T09:30:00.000Z",
+      updated_at: "2026-03-06T09:30:00.000Z",
     });
     const searchContextMessage = buildMessage({
-      id: 'search-context-message',
-      created_at: '2026-03-05T09:30:00.000Z',
-      updated_at: '2026-03-05T09:30:00.000Z',
+      id: "search-context-message",
+      created_at: "2026-03-05T09:30:00.000Z",
+      updated_at: "2026-03-05T09:30:00.000Z",
     });
 
     mockChatService.fetchMessagesBetweenUsers
@@ -629,10 +616,10 @@ describe('useChatSession', () => {
         isOpen: true,
         user: currentUser,
         targetUser,
-        currentChannelId: 'channel-1',
+        currentChannelId: "channel-1",
         initialMessageAnimationKeysRef,
         initialOpenJumpAnimationKeysRef,
-      })
+      }),
     );
 
     await waitFor(() => {
@@ -644,18 +631,16 @@ describe('useChatSession', () => {
     });
 
     await waitFor(() => {
-      expect(result.current.messages.map(message => message.id)).toEqual([
-        'search-context-message',
-        'latest-message',
+      expect(result.current.messages.map((message) => message.id)).toEqual([
+        "search-context-message",
+        "latest-message",
       ]);
     });
 
     await waitFor(() => {
-      expect(
-        chatRuntimeCache.conversation.getFreshEntry('channel-1')?.messages
-      ).toEqual([
+      expect(chatRuntimeCache.conversation.getFreshEntry("channel-1")?.messages).toEqual([
         expect.objectContaining({
-          id: 'latest-message',
+          id: "latest-message",
         }),
       ]);
     });
@@ -667,13 +652,13 @@ describe('useChatSession', () => {
     expect(mockChatService.fetchMessagesBetweenUsers).toHaveBeenLastCalledWith(
       targetUser.id,
       expect.objectContaining({
-        beforeCreatedAt: '2026-03-05T09:30:00.000Z',
-        beforeId: 'search-context-message',
-      })
+        beforeCreatedAt: "2026-03-05T09:30:00.000Z",
+        beforeId: "search-context-message",
+      }),
     );
   });
 
-  it('falls back to a fresh presence snapshot when the roster channel is connected but missing the target user', async () => {
+  it("falls back to a fresh presence snapshot when the roster channel is connected but missing the target user", async () => {
     const initialMessageAnimationKeysRef = { current: new Set<string>() };
     const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
 
@@ -697,10 +682,10 @@ describe('useChatSession', () => {
         isOpen: true,
         user: currentUser,
         targetUser,
-        currentChannelId: 'channel-1',
+        currentChannelId: "channel-1",
         initialMessageAnimationKeysRef,
         initialOpenJumpAnimationKeysRef,
-      })
+      }),
     );
 
     await waitFor(() => {
@@ -710,7 +695,7 @@ describe('useChatSession', () => {
     expect(result.current.isTargetOnline).toBe(true);
   });
 
-  it('polls target presence snapshots while the roster channel is unavailable', async () => {
+  it("polls target presence snapshots while the roster channel is unavailable", async () => {
     vi.useFakeTimers();
     try {
       const initialMessageAnimationKeysRef = { current: new Set<string>() };
@@ -730,10 +715,10 @@ describe('useChatSession', () => {
           isOpen: true,
           user: currentUser,
           targetUser,
-          currentChannelId: 'channel-1',
+          currentChannelId: "channel-1",
           initialMessageAnimationKeysRef,
           initialOpenJumpAnimationKeysRef,
-        })
+        }),
       );
 
       await act(async () => {
@@ -752,7 +737,7 @@ describe('useChatSession', () => {
     }
   });
 
-  it('polls target presence snapshots while presence sync is degraded', async () => {
+  it("polls target presence snapshots while presence sync is degraded", async () => {
     vi.useFakeTimers();
     try {
       const initialMessageAnimationKeysRef = { current: new Set<string>() };
@@ -763,8 +748,8 @@ describe('useChatSession', () => {
         onlineUsers: 1,
         onlineUsersList: [],
         presenceSyncHealth: {
-          status: 'degraded',
-          errorMessage: 'sync lag',
+          status: "degraded",
+          errorMessage: "sync lag",
           lastSyncedAt: null,
         },
       });
@@ -772,7 +757,7 @@ describe('useChatSession', () => {
         data: {
           user_id: targetUser.id,
           is_online: false,
-          last_seen: '2026-03-06T09:55:00.000Z',
+          last_seen: "2026-03-06T09:55:00.000Z",
         },
         error: null,
       });
@@ -782,10 +767,10 @@ describe('useChatSession', () => {
           isOpen: true,
           user: currentUser,
           targetUser,
-          currentChannelId: 'channel-1',
+          currentChannelId: "channel-1",
           initialMessageAnimationKeysRef,
           initialOpenJumpAnimationKeysRef,
-        })
+        }),
       );
 
       await act(async () => {
@@ -804,10 +789,10 @@ describe('useChatSession', () => {
     }
   });
 
-  it('expires the fallback presence snapshot after the freshness window elapses', async () => {
+  it("expires the fallback presence snapshot after the freshness window elapses", async () => {
     vi.useFakeTimers();
     try {
-      vi.setSystemTime(new Date('2026-03-06T10:00:00.000Z'));
+      vi.setSystemTime(new Date("2026-03-06T10:00:00.000Z"));
 
       const initialMessageAnimationKeysRef = { current: new Set<string>() };
       const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
@@ -816,7 +801,7 @@ describe('useChatSession', () => {
         data: {
           user_id: targetUser.id,
           is_online: true,
-          last_seen: '2026-03-06T09:59:30.000Z',
+          last_seen: "2026-03-06T09:59:30.000Z",
         },
         error: null,
       });
@@ -826,10 +811,10 @@ describe('useChatSession', () => {
           isOpen: true,
           user: currentUser,
           targetUser,
-          currentChannelId: 'channel-1',
+          currentChannelId: "channel-1",
           initialMessageAnimationKeysRef,
           initialOpenJumpAnimationKeysRef,
-        })
+        }),
       );
 
       await act(async () => {
@@ -850,11 +835,11 @@ describe('useChatSession', () => {
     }
   });
 
-  it('ignores stale target presence responses after switching conversations', async () => {
+  it("ignores stale target presence responses after switching conversations", async () => {
     const secondTargetUser = {
-      id: 'user-c',
-      name: 'Kasir',
-      email: 'kasir@example.com',
+      id: "user-c",
+      name: "Kasir",
+      email: "kasir@example.com",
       profilephoto: null,
     };
     const initialMessageAnimationKeysRef = { current: new Set<string>() };
@@ -874,13 +859,13 @@ describe('useChatSession', () => {
     mockChatService.getUserPresence
       .mockImplementationOnce(
         () =>
-          new Promise(resolve => {
+          new Promise((resolve) => {
             resolveFirstPresenceRequest = resolve;
-          })
+          }),
       )
       .mockResolvedValueOnce({
         data: null,
-        error: { code: 'PGRST116' },
+        error: { code: "PGRST116" },
       });
 
     const { result, rerender } = renderHook(
@@ -902,14 +887,14 @@ describe('useChatSession', () => {
       {
         initialProps: {
           activeTargetUser: targetUser,
-          channelId: 'channel-1',
+          channelId: "channel-1",
         },
-      }
+      },
     );
 
     rerender({
       activeTargetUser: secondTargetUser,
-      channelId: 'channel-2',
+      channelId: "channel-2",
     });
 
     await act(async () => {
@@ -922,7 +907,7 @@ describe('useChatSession', () => {
         data: {
           user_id: targetUser.id,
           is_online: true,
-          last_seen: '2026-03-06T09:30:00.000Z',
+          last_seen: "2026-03-06T09:30:00.000Z",
         },
         error: null,
       });
@@ -934,11 +919,11 @@ describe('useChatSession', () => {
     expect(result.current.targetUserPresence).toBeNull();
   });
 
-  it('keeps user-scoped realtime channels stable while switching conversations', async () => {
+  it("keeps user-scoped realtime channels stable while switching conversations", async () => {
     const secondTargetUser = {
-      id: 'user-c',
-      name: 'Kasir',
-      email: 'kasir@example.com',
+      id: "user-c",
+      name: "Kasir",
+      email: "kasir@example.com",
       profilephoto: null,
     };
     const initialMessageAnimationKeysRef = { current: new Set<string>() };
@@ -963,9 +948,9 @@ describe('useChatSession', () => {
       {
         initialProps: {
           activeTargetUser: targetUser,
-          channelId: 'channel-1',
+          channelId: "channel-1",
         },
-      }
+      },
     );
 
     await waitFor(() => {
@@ -974,7 +959,7 @@ describe('useChatSession', () => {
 
     rerender({
       activeTargetUser: secondTargetUser,
-      channelId: 'channel-2',
+      channelId: "channel-2",
     });
 
     await act(async () => {
@@ -982,37 +967,34 @@ describe('useChatSession', () => {
     });
     expect(mockRealtimeService.createChannel).toHaveBeenCalledTimes(2);
 
-    expect(
-      mockRealtimeService.createChannel.mock.calls.map(([name]) => name)
-    ).toEqual(['chat_channel-1', 'chat_channel-2']);
+    expect(mockRealtimeService.createChannel.mock.calls.map(([name]) => name)).toEqual([
+      "chat_channel-1",
+      "chat_channel-2",
+    ]);
   });
 
-  it('ignores stale fetch results after switching to another conversation', async () => {
-    let resolveFirstFetch:
-      | ((value: { data: ChatMessage[]; error: null }) => void)
-      | undefined;
-    let resolveSecondFetch:
-      | ((value: { data: ChatMessage[]; error: null }) => void)
-      | undefined;
+  it("ignores stale fetch results after switching to another conversation", async () => {
+    let resolveFirstFetch: ((value: { data: ChatMessage[]; error: null }) => void) | undefined;
+    let resolveSecondFetch: ((value: { data: ChatMessage[]; error: null }) => void) | undefined;
 
     mockChatService.fetchMessagesBetweenUsers
       .mockImplementationOnce(
         () =>
-          new Promise(resolve => {
+          new Promise((resolve) => {
             resolveFirstFetch = resolve;
-          })
+          }),
       )
       .mockImplementationOnce(
         () =>
-          new Promise(resolve => {
+          new Promise((resolve) => {
             resolveSecondFetch = resolve;
-          })
+          }),
       );
 
     const secondTargetUser = {
-      id: 'user-c',
-      name: 'Kasir',
-      email: 'kasir@example.com',
+      id: "user-c",
+      name: "Kasir",
+      email: "kasir@example.com",
       profilephoto: null,
     };
     const initialMessageAnimationKeysRef = { current: new Set<string>() };
@@ -1037,92 +1019,84 @@ describe('useChatSession', () => {
       {
         initialProps: {
           activeTargetUser: targetUser,
-          channelId: 'channel-1',
+          channelId: "channel-1",
         },
-      }
+      },
     );
 
     rerender({
       activeTargetUser: secondTargetUser,
-      channelId: 'channel-2',
+      channelId: "channel-2",
     });
 
     resolveSecondFetch?.({
       data: [
         buildMessage({
-          id: 'message-2',
+          id: "message-2",
           sender_id: secondTargetUser.id,
-          channel_id: 'channel-2',
-          message: 'pesan aktif',
+          channel_id: "channel-2",
+          message: "pesan aktif",
         }),
       ],
       error: null,
     });
 
     await waitFor(() => {
-      expect(
-        result.current.messages.map(messageItem => messageItem.id)
-      ).toEqual(['message-2']);
-      expect(result.current.messages[0]?.sender_name).toBe('Kasir');
+      expect(result.current.messages.map((messageItem) => messageItem.id)).toEqual(["message-2"]);
+      expect(result.current.messages[0]?.sender_name).toBe("Kasir");
     });
 
     resolveFirstFetch?.({
       data: [
         buildMessage({
-          id: 'message-1',
+          id: "message-1",
           sender_id: targetUser.id,
-          channel_id: 'channel-1',
-          message: 'pesan stale',
+          channel_id: "channel-1",
+          message: "pesan stale",
         }),
       ],
       error: null,
     });
 
     await waitFor(() => {
-      expect(
-        result.current.messages.map(messageItem => messageItem.id)
-      ).toEqual(['message-2']);
-      expect(result.current.messages[0]?.sender_name).toBe('Kasir');
+      expect(result.current.messages.map((messageItem) => messageItem.id)).toEqual(["message-2"]);
+      expect(result.current.messages[0]?.sender_name).toBe("Kasir");
     });
   });
 
-  it('does not reuse the previous conversation as cache for a new pending channel', async () => {
-    let resolveSecondFetch:
-      | ((value: { data: ChatMessage[]; error: null }) => void)
-      | undefined;
-    let resolveThirdFetch:
-      | ((value: { data: ChatMessage[]; error: null }) => void)
-      | undefined;
+  it("does not reuse the previous conversation as cache for a new pending channel", async () => {
+    let resolveSecondFetch: ((value: { data: ChatMessage[]; error: null }) => void) | undefined;
+    let resolveThirdFetch: ((value: { data: ChatMessage[]; error: null }) => void) | undefined;
 
     mockChatService.fetchMessagesBetweenUsers
       .mockResolvedValueOnce({
         data: [
           buildMessage({
-            id: 'message-1',
+            id: "message-1",
             sender_id: targetUser.id,
-            channel_id: 'channel-1',
-            message: 'pesan channel pertama',
+            channel_id: "channel-1",
+            message: "pesan channel pertama",
           }),
         ],
         error: null,
       })
       .mockImplementationOnce(
         () =>
-          new Promise(resolve => {
+          new Promise((resolve) => {
             resolveSecondFetch = resolve;
-          })
+          }),
       )
       .mockImplementationOnce(
         () =>
-          new Promise(resolve => {
+          new Promise((resolve) => {
             resolveThirdFetch = resolve;
-          })
+          }),
       );
 
     const secondTargetUser = {
-      id: 'user-c',
-      name: 'Kasir',
-      email: 'kasir@example.com',
+      id: "user-c",
+      name: "Kasir",
+      email: "kasir@example.com",
       profilephoto: null,
     };
     const initialMessageAnimationKeysRef = { current: new Set<string>() };
@@ -1150,21 +1124,19 @@ describe('useChatSession', () => {
         initialProps: {
           isOpen: true,
           activeTargetUser: targetUser,
-          channelId: 'channel-1',
+          channelId: "channel-1",
         },
-      }
+      },
     );
 
     await waitFor(() => {
-      expect(
-        result.current.messages.map(messageItem => messageItem.id)
-      ).toEqual(['message-1']);
+      expect(result.current.messages.map((messageItem) => messageItem.id)).toEqual(["message-1"]);
     });
 
     rerender({
       isOpen: true,
       activeTargetUser: secondTargetUser,
-      channelId: 'channel-2',
+      channelId: "channel-2",
     });
 
     await waitFor(() => {
@@ -1174,13 +1146,13 @@ describe('useChatSession', () => {
     rerender({
       isOpen: false,
       activeTargetUser: secondTargetUser,
-      channelId: 'channel-2',
+      channelId: "channel-2",
     });
 
     rerender({
       isOpen: true,
       activeTargetUser: secondTargetUser,
-      channelId: 'channel-2',
+      channelId: "channel-2",
     });
 
     await waitFor(() => {
@@ -1197,11 +1169,11 @@ describe('useChatSession', () => {
     });
   });
 
-  it('does not carry temp messages into another cached conversation', async () => {
+  it("does not carry temp messages into another cached conversation", async () => {
     const secondTargetUser = {
-      id: 'user-c',
-      name: 'Kasir',
-      email: 'kasir@example.com',
+      id: "user-c",
+      name: "Kasir",
+      email: "kasir@example.com",
       profilephoto: null,
     };
     const initialMessageAnimationKeysRef = { current: new Set<string>() };
@@ -1211,10 +1183,10 @@ describe('useChatSession', () => {
       .mockResolvedValueOnce({
         data: [
           buildMessage({
-            id: 'message-2',
+            id: "message-2",
             sender_id: secondTargetUser.id,
-            channel_id: 'channel-2',
-            message: 'pesan channel kedua',
+            channel_id: "channel-2",
+            message: "pesan channel kedua",
           }),
         ],
         error: null,
@@ -1222,10 +1194,10 @@ describe('useChatSession', () => {
       .mockResolvedValueOnce({
         data: [
           buildMessage({
-            id: 'message-1',
+            id: "message-1",
             sender_id: targetUser.id,
-            channel_id: 'channel-1',
-            message: 'pesan channel pertama',
+            channel_id: "channel-1",
+            message: "pesan channel pertama",
           }),
         ],
         error: null,
@@ -1233,10 +1205,10 @@ describe('useChatSession', () => {
       .mockResolvedValueOnce({
         data: [
           buildMessage({
-            id: 'message-2',
+            id: "message-2",
             sender_id: secondTargetUser.id,
-            channel_id: 'channel-2',
-            message: 'pesan channel kedua',
+            channel_id: "channel-2",
+            message: "pesan channel kedua",
           }),
         ],
         error: null,
@@ -1261,62 +1233,54 @@ describe('useChatSession', () => {
       {
         initialProps: {
           activeTargetUser: secondTargetUser,
-          channelId: 'channel-2',
+          channelId: "channel-2",
         },
-      }
+      },
     );
 
     await waitFor(() => {
-      expect(
-        result.current.messages.map(messageItem => messageItem.id)
-      ).toEqual(['message-2']);
+      expect(result.current.messages.map((messageItem) => messageItem.id)).toEqual(["message-2"]);
     });
 
     rerender({
       activeTargetUser: targetUser,
-      channelId: 'channel-1',
+      channelId: "channel-1",
     });
 
     await waitFor(() => {
-      expect(
-        result.current.messages.map(messageItem => messageItem.id)
-      ).toEqual(['message-1']);
+      expect(result.current.messages.map((messageItem) => messageItem.id)).toEqual(["message-1"]);
     });
 
     act(() => {
-      result.current.setMessages(previousMessages => [
+      result.current.setMessages((previousMessages) => [
         ...previousMessages,
         buildMessage({
-          id: 'temp_cross_channel',
+          id: "temp_cross_channel",
           sender_id: currentUser.id,
           receiver_id: targetUser.id,
-          channel_id: 'channel-1',
-          message: 'optimistic message',
+          channel_id: "channel-1",
+          message: "optimistic message",
           sender_name: currentUser.name,
           receiver_name: targetUser.name,
-          stableKey: 'temp-cross-channel',
+          stableKey: "temp-cross-channel",
         }),
       ]);
     });
 
     rerender({
       activeTargetUser: secondTargetUser,
-      channelId: 'channel-2',
+      channelId: "channel-2",
     });
 
     await waitFor(() => {
+      expect(result.current.messages.map((messageItem) => messageItem.id)).toEqual(["message-2"]);
       expect(
-        result.current.messages.map(messageItem => messageItem.id)
-      ).toEqual(['message-2']);
-      expect(
-        result.current.messages.some(
-          messageItem => messageItem.id === 'temp_cross_channel'
-        )
+        result.current.messages.some((messageItem) => messageItem.id === "temp_cross_channel"),
       ).toBe(false);
     });
   });
 
-  it('hydrates incoming messages from postgres inserts when app broadcast is unavailable', async () => {
+  it("hydrates incoming messages from postgres inserts when app broadcast is unavailable", async () => {
     const initialMessageAnimationKeysRef = { current: new Set<string>() };
     const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
 
@@ -1325,20 +1289,19 @@ describe('useChatSession', () => {
         isOpen: true,
         user: currentUser,
         targetUser,
-        currentChannelId: 'channel-1',
+        currentChannelId: "channel-1",
         initialMessageAnimationKeysRef,
         initialOpenJumpAnimationKeysRef,
-      })
+      }),
     );
 
     await waitFor(() => {
-      expect(getCreatedChannelByName('chat_channel-1')).not.toBeNull();
+      expect(getCreatedChannelByName("chat_channel-1")).not.toBeNull();
     });
 
-    const conversationChannel = getCreatedChannelByName('chat_channel-1')!;
+    const conversationChannel = getCreatedChannelByName("chat_channel-1")!;
     const insertListenerCall = conversationChannel.on.mock.calls.find(
-      ([type, config]) =>
-        type === 'postgres_changes' && config?.event === 'INSERT'
+      ([type, config]) => type === "postgres_changes" && config?.event === "INSERT",
     );
 
     expect(insertListenerCall).toBeDefined();
@@ -1349,40 +1312,37 @@ describe('useChatSession', () => {
     act(() => {
       insertListener?.({
         new: buildMessage({
-          id: 'message-inserted',
+          id: "message-inserted",
           sender_id: targetUser.id,
           receiver_id: currentUser.id,
-          channel_id: 'channel-1',
-          message: 'pesan fallback insert',
+          channel_id: "channel-1",
+          message: "pesan fallback insert",
         }),
       });
     });
 
     await waitFor(() => {
+      expect(result.current.messages.map((messageItem) => messageItem.id)).toContain(
+        "message-inserted",
+      );
       expect(
-        result.current.messages.map(messageItem => messageItem.id)
-      ).toContain('message-inserted');
-      expect(
-        result.current.messages.find(
-          messageItem => messageItem.id === 'message-inserted'
-        )?.sender_name
-      ).toBe('Gudang');
+        result.current.messages.find((messageItem) => messageItem.id === "message-inserted")
+          ?.sender_name,
+      ).toBe("Gudang");
     });
 
     expect(mockChatService.markMessageIdsAsDelivered).not.toHaveBeenCalled();
   });
 
-  it('preserves realtime inserts that arrive before the initial fetch resolves', async () => {
+  it("preserves realtime inserts that arrive before the initial fetch resolves", async () => {
     const initialMessageAnimationKeysRef = { current: new Set<string>() };
     const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
-    let resolveFetchMessages:
-      | ((value: { data: ChatMessage[]; error: null }) => void)
-      | null = null;
+    let resolveFetchMessages: ((value: { data: ChatMessage[]; error: null }) => void) | null = null;
 
     mockChatService.fetchMessagesBetweenUsers.mockReturnValueOnce(
-      new Promise(resolve => {
+      new Promise((resolve) => {
         resolveFetchMessages = resolve;
-      })
+      }),
     );
 
     const { result } = renderHook(() =>
@@ -1390,20 +1350,19 @@ describe('useChatSession', () => {
         isOpen: true,
         user: currentUser,
         targetUser,
-        currentChannelId: 'channel-1',
+        currentChannelId: "channel-1",
         initialMessageAnimationKeysRef,
         initialOpenJumpAnimationKeysRef,
-      })
+      }),
     );
 
     await waitFor(() => {
-      expect(getCreatedChannelByName('chat_channel-1')).not.toBeNull();
+      expect(getCreatedChannelByName("chat_channel-1")).not.toBeNull();
     });
 
-    const conversationChannel = getCreatedChannelByName('chat_channel-1')!;
+    const conversationChannel = getCreatedChannelByName("chat_channel-1")!;
     const insertListenerCall = conversationChannel.on.mock.calls.find(
-      ([type, config]) =>
-        type === 'postgres_changes' && config?.event === 'INSERT'
+      ([type, config]) => type === "postgres_changes" && config?.event === "INSERT",
     );
     const insertListener = insertListenerCall?.[2] as
       | ((payload: { new: ChatMessage }) => void)
@@ -1412,11 +1371,11 @@ describe('useChatSession', () => {
     act(() => {
       insertListener?.({
         new: buildMessage({
-          id: 'message-bootstrap-insert',
+          id: "message-bootstrap-insert",
           sender_id: targetUser.id,
           receiver_id: currentUser.id,
-          channel_id: 'channel-1',
-          message: 'pesan masuk saat bootstrap',
+          channel_id: "channel-1",
+          message: "pesan masuk saat bootstrap",
         }),
       });
     });
@@ -1429,27 +1388,25 @@ describe('useChatSession', () => {
     });
 
     await waitFor(() => {
-      expect(
-        result.current.messages.map(messageItem => messageItem.id)
-      ).toContain('message-bootstrap-insert');
+      expect(result.current.messages.map((messageItem) => messageItem.id)).toContain(
+        "message-bootstrap-insert",
+      );
     });
 
     expect(mockChatService.markMessageIdsAsDelivered).toHaveBeenCalledWith([
-      'message-bootstrap-insert',
+      "message-bootstrap-insert",
     ]);
   });
 
-  it('replays queued realtime updates on top of the initial fetch snapshot', async () => {
+  it("replays queued realtime updates on top of the initial fetch snapshot", async () => {
     const initialMessageAnimationKeysRef = { current: new Set<string>() };
     const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
-    let resolveFetchMessages:
-      | ((value: { data: ChatMessage[]; error: null }) => void)
-      | null = null;
+    let resolveFetchMessages: ((value: { data: ChatMessage[]; error: null }) => void) | null = null;
 
     mockChatService.fetchMessagesBetweenUsers.mockReturnValueOnce(
-      new Promise(resolve => {
+      new Promise((resolve) => {
         resolveFetchMessages = resolve;
-      })
+      }),
     );
 
     const { result } = renderHook(() =>
@@ -1457,20 +1414,19 @@ describe('useChatSession', () => {
         isOpen: true,
         user: currentUser,
         targetUser,
-        currentChannelId: 'channel-1',
+        currentChannelId: "channel-1",
         initialMessageAnimationKeysRef,
         initialOpenJumpAnimationKeysRef,
-      })
+      }),
     );
 
     await waitFor(() => {
-      expect(getCreatedChannelByName('chat_channel-1')).not.toBeNull();
+      expect(getCreatedChannelByName("chat_channel-1")).not.toBeNull();
     });
 
-    const conversationChannel = getCreatedChannelByName('chat_channel-1')!;
+    const conversationChannel = getCreatedChannelByName("chat_channel-1")!;
     const updateListenerCall = conversationChannel.on.mock.calls.find(
-      ([type, config]) =>
-        type === 'postgres_changes' && config?.event === 'UPDATE'
+      ([type, config]) => type === "postgres_changes" && config?.event === "UPDATE",
     );
     const updateListener = updateListenerCall?.[2] as
       | ((payload: { new: ChatMessage }) => void)
@@ -1479,12 +1435,12 @@ describe('useChatSession', () => {
     act(() => {
       updateListener?.({
         new: buildMessage({
-          id: 'message-bootstrap-update',
+          id: "message-bootstrap-update",
           sender_id: targetUser.id,
           receiver_id: currentUser.id,
-          channel_id: 'channel-1',
-          message: 'versi terbaru',
-          updated_at: '2026-03-06T09:35:00.000Z',
+          channel_id: "channel-1",
+          message: "versi terbaru",
+          updated_at: "2026-03-06T09:35:00.000Z",
         }),
       });
     });
@@ -1493,12 +1449,12 @@ describe('useChatSession', () => {
       resolveFetchMessages?.({
         data: [
           buildMessage({
-            id: 'message-bootstrap-update',
+            id: "message-bootstrap-update",
             sender_id: targetUser.id,
             receiver_id: currentUser.id,
-            channel_id: 'channel-1',
-            message: 'versi lama',
-            updated_at: '2026-03-06T09:30:00.000Z',
+            channel_id: "channel-1",
+            message: "versi lama",
+            updated_at: "2026-03-06T09:30:00.000Z",
           }),
         ],
         error: null,
@@ -1507,24 +1463,21 @@ describe('useChatSession', () => {
 
     await waitFor(() => {
       expect(
-        result.current.messages.find(
-          messageItem => messageItem.id === 'message-bootstrap-update'
-        )?.message
-      ).toBe('versi terbaru');
+        result.current.messages.find((messageItem) => messageItem.id === "message-bootstrap-update")
+          ?.message,
+      ).toBe("versi terbaru");
     });
   });
 
-  it('replays queued realtime deletes on top of the initial fetch snapshot', async () => {
+  it("replays queued realtime deletes on top of the initial fetch snapshot", async () => {
     const initialMessageAnimationKeysRef = { current: new Set<string>() };
     const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
-    let resolveFetchMessages:
-      | ((value: { data: ChatMessage[]; error: null }) => void)
-      | null = null;
+    let resolveFetchMessages: ((value: { data: ChatMessage[]; error: null }) => void) | null = null;
 
     mockChatService.fetchMessagesBetweenUsers.mockReturnValueOnce(
-      new Promise(resolve => {
+      new Promise((resolve) => {
         resolveFetchMessages = resolve;
-      })
+      }),
     );
 
     const { result } = renderHook(() =>
@@ -1532,20 +1485,19 @@ describe('useChatSession', () => {
         isOpen: true,
         user: currentUser,
         targetUser,
-        currentChannelId: 'channel-1',
+        currentChannelId: "channel-1",
         initialMessageAnimationKeysRef,
         initialOpenJumpAnimationKeysRef,
-      })
+      }),
     );
 
     await waitFor(() => {
-      expect(getCreatedChannelByName('chat_channel-1')).not.toBeNull();
+      expect(getCreatedChannelByName("chat_channel-1")).not.toBeNull();
     });
 
-    const conversationChannel = getCreatedChannelByName('chat_channel-1')!;
+    const conversationChannel = getCreatedChannelByName("chat_channel-1")!;
     const deleteListenerCall = conversationChannel.on.mock.calls.find(
-      ([type, config]) =>
-        type === 'postgres_changes' && config?.event === 'DELETE'
+      ([type, config]) => type === "postgres_changes" && config?.event === "DELETE",
     );
     const deleteListener = deleteListenerCall?.[2] as
       | ((payload: { old: Partial<ChatMessage> }) => void)
@@ -1554,7 +1506,7 @@ describe('useChatSession', () => {
     act(() => {
       deleteListener?.({
         old: {
-          id: 'message-bootstrap-delete',
+          id: "message-bootstrap-delete",
         },
       });
     });
@@ -1563,11 +1515,11 @@ describe('useChatSession', () => {
       resolveFetchMessages?.({
         data: [
           buildMessage({
-            id: 'message-bootstrap-delete',
+            id: "message-bootstrap-delete",
             sender_id: targetUser.id,
             receiver_id: currentUser.id,
-            channel_id: 'channel-1',
-            message: 'hapus saat bootstrap',
+            channel_id: "channel-1",
+            message: "hapus saat bootstrap",
           }),
         ],
         error: null,
@@ -1575,13 +1527,13 @@ describe('useChatSession', () => {
     });
 
     await waitFor(() => {
-      expect(
-        result.current.messages.map(messageItem => messageItem.id)
-      ).not.toContain('message-bootstrap-delete');
+      expect(result.current.messages.map((messageItem) => messageItem.id)).not.toContain(
+        "message-bootstrap-delete",
+      );
     });
   });
 
-  it('hydrates outgoing messages from postgres inserts when app broadcast is unavailable', async () => {
+  it("hydrates outgoing messages from postgres inserts when app broadcast is unavailable", async () => {
     const initialMessageAnimationKeysRef = { current: new Set<string>() };
     const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
 
@@ -1590,20 +1542,19 @@ describe('useChatSession', () => {
         isOpen: true,
         user: currentUser,
         targetUser,
-        currentChannelId: 'channel-1',
+        currentChannelId: "channel-1",
         initialMessageAnimationKeysRef,
         initialOpenJumpAnimationKeysRef,
-      })
+      }),
     );
 
     await waitFor(() => {
-      expect(getCreatedChannelByName('chat_channel-1')).not.toBeNull();
+      expect(getCreatedChannelByName("chat_channel-1")).not.toBeNull();
     });
 
-    const conversationChannel = getCreatedChannelByName('chat_channel-1')!;
+    const conversationChannel = getCreatedChannelByName("chat_channel-1")!;
     const insertListenerCall = conversationChannel.on.mock.calls.find(
-      ([type, config]) =>
-        type === 'postgres_changes' && config?.event === 'INSERT'
+      ([type, config]) => type === "postgres_changes" && config?.event === "INSERT",
     );
 
     expect(insertListenerCall).toBeDefined();
@@ -1614,33 +1565,31 @@ describe('useChatSession', () => {
     act(() => {
       insertListener?.({
         new: buildMessage({
-          id: 'message-outgoing',
+          id: "message-outgoing",
           sender_id: currentUser.id,
           receiver_id: targetUser.id,
-          channel_id: 'channel-1',
-          message: 'pesan fallback outgoing',
+          channel_id: "channel-1",
+          message: "pesan fallback outgoing",
         }),
       });
     });
 
     await waitFor(() => {
+      expect(result.current.messages.map((messageItem) => messageItem.id)).toContain(
+        "message-outgoing",
+      );
       expect(
-        result.current.messages.map(messageItem => messageItem.id)
-      ).toContain('message-outgoing');
+        result.current.messages.find((messageItem) => messageItem.id === "message-outgoing")
+          ?.sender_name,
+      ).toBe("Admin");
       expect(
-        result.current.messages.find(
-          messageItem => messageItem.id === 'message-outgoing'
-        )?.sender_name
-      ).toBe('Admin');
-      expect(
-        result.current.messages.find(
-          messageItem => messageItem.id === 'message-outgoing'
-        )?.receiver_name
-      ).toBe('Gudang');
+        result.current.messages.find((messageItem) => messageItem.id === "message-outgoing")
+          ?.receiver_name,
+      ).toBe("Gudang");
     });
   });
 
-  it('replaces matching optimistic outgoing messages when the persisted insert arrives first', async () => {
+  it("replaces matching optimistic outgoing messages when the persisted insert arrives first", async () => {
     const initialMessageAnimationKeysRef = { current: new Set<string>() };
     const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
 
@@ -1649,33 +1598,32 @@ describe('useChatSession', () => {
         isOpen: true,
         user: currentUser,
         targetUser,
-        currentChannelId: 'channel-1',
+        currentChannelId: "channel-1",
         initialMessageAnimationKeysRef,
         initialOpenJumpAnimationKeysRef,
-      })
+      }),
     );
 
     await waitFor(() => {
-      expect(getCreatedChannelByName('chat_channel-1')).not.toBeNull();
+      expect(getCreatedChannelByName("chat_channel-1")).not.toBeNull();
     });
 
     act(() => {
       result.current.setMessages([
         buildMessage({
-          id: 'temp_message-1',
+          id: "temp_message-1",
           sender_id: currentUser.id,
           receiver_id: targetUser.id,
-          channel_id: 'channel-1',
-          message: 'pesan fallback outgoing',
-          stableKey: 'temp-stable-key',
+          channel_id: "channel-1",
+          message: "pesan fallback outgoing",
+          stableKey: "temp-stable-key",
         }),
       ]);
     });
 
-    const conversationChannel = getCreatedChannelByName('chat_channel-1')!;
+    const conversationChannel = getCreatedChannelByName("chat_channel-1")!;
     const insertListenerCall = conversationChannel.on.mock.calls.find(
-      ([type, config]) =>
-        type === 'postgres_changes' && config?.event === 'INSERT'
+      ([type, config]) => type === "postgres_changes" && config?.event === "INSERT",
     );
 
     expect(insertListenerCall).toBeDefined();
@@ -1686,35 +1634,35 @@ describe('useChatSession', () => {
     act(() => {
       insertListener?.({
         new: buildMessage({
-          id: 'message-outgoing',
+          id: "message-outgoing",
           sender_id: currentUser.id,
           receiver_id: targetUser.id,
-          channel_id: 'channel-1',
-          message: 'pesan fallback outgoing',
+          channel_id: "channel-1",
+          message: "pesan fallback outgoing",
         }),
       });
     });
 
     await waitFor(() => {
       expect(result.current.messages).toHaveLength(1);
-      expect(result.current.messages[0]?.id).toBe('message-outgoing');
-      expect(result.current.messages[0]?.stableKey).toBe('temp-stable-key');
+      expect(result.current.messages[0]?.id).toBe("message-outgoing");
+      expect(result.current.messages[0]?.stableKey).toBe("temp-stable-key");
     });
   });
 
-  it('removes messages from postgres delete events when broadcast delete is unavailable', async () => {
+  it("removes messages from postgres delete events when broadcast delete is unavailable", async () => {
     const initialMessageAnimationKeysRef = { current: new Set<string>() };
     const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
 
     mockChatService.fetchMessagesBetweenUsers.mockResolvedValueOnce({
       data: [
         buildMessage({
-          id: 'message-deleted',
+          id: "message-deleted",
           sender_id: currentUser.id,
           receiver_id: targetUser.id,
-          channel_id: 'channel-1',
+          channel_id: "channel-1",
           is_delivered: true,
-          message: 'pesan akan dihapus',
+          message: "pesan akan dihapus",
         }),
       ],
       error: null,
@@ -1725,29 +1673,28 @@ describe('useChatSession', () => {
         isOpen: true,
         user: currentUser,
         targetUser,
-        currentChannelId: 'channel-1',
+        currentChannelId: "channel-1",
         initialMessageAnimationKeysRef,
         initialOpenJumpAnimationKeysRef,
-      })
+      }),
     );
 
     await waitFor(() => {
-      expect(
-        result.current.messages.map(messageItem => messageItem.id)
-      ).toContain('message-deleted');
+      expect(result.current.messages.map((messageItem) => messageItem.id)).toContain(
+        "message-deleted",
+      );
     });
 
-    const conversationChannel = getCreatedChannelByName('chat_channel-1')!;
+    const conversationChannel = getCreatedChannelByName("chat_channel-1")!;
     const deleteListenerCall = conversationChannel.on.mock.calls.find(
-      ([type, config]) =>
-        type === 'postgres_changes' && config?.event === 'DELETE'
+      ([type, config]) => type === "postgres_changes" && config?.event === "DELETE",
     );
 
     expect(deleteListenerCall).toBeDefined();
     expect(deleteListenerCall?.[1]).toEqual(
       expect.objectContaining({
-        filter: 'channel_id=eq.channel-1',
-      })
+        filter: "channel_id=eq.channel-1",
+      }),
     );
     const deleteListener = deleteListenerCall?.[2] as
       | ((payload: { old: Partial<ChatMessage> }) => void)
@@ -1756,16 +1703,16 @@ describe('useChatSession', () => {
     act(() => {
       deleteListener?.({
         old: {
-          id: 'message-deleted',
-          channel_id: 'channel-1',
+          id: "message-deleted",
+          channel_id: "channel-1",
         },
       });
     });
 
     await waitFor(() => {
-      expect(
-        result.current.messages.map(messageItem => messageItem.id)
-      ).not.toContain('message-deleted');
+      expect(result.current.messages.map((messageItem) => messageItem.id)).not.toContain(
+        "message-deleted",
+      );
     });
   });
 });

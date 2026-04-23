@@ -1,14 +1,14 @@
-import type { UserDetails } from '@/types/database';
-import { usePresenceStore } from '@/store/presenceStore';
+import type { UserDetails } from "@/types/database";
+import { usePresenceStore } from "@/store/presenceStore";
 import {
   PRESENCE_HEARTBEAT_MS,
   getPresenceFreshnessRemainingMs,
   isPresenceFresh,
-} from '@/hooks/presence/presenceStatus';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import type { UserPresence } from '../data/chatSidebarGateway';
-import type { ChatSidebarPanelTargetUser } from '../types';
-import { loadTargetPresenceSnapshot } from '../utils/target-presence';
+} from "@/hooks/presence/presenceStatus";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { UserPresence } from "../data/chatSidebarGateway";
+import type { ChatSidebarPanelTargetUser } from "../types";
+import { loadTargetPresenceSnapshot } from "../utils/target-presence";
 
 interface UseChatSessionPresenceProps {
   isOpen: boolean;
@@ -23,23 +23,14 @@ export const useChatSessionPresence = ({
   targetUser,
   currentChannelId,
 }: UseChatSessionPresenceProps) => {
-  const [targetUserPresence, setTargetUserPresence] =
-    useState<UserPresence | null>(null);
-  const [targetUserPresenceError, setTargetUserPresenceError] = useState<
-    string | null
-  >(null);
-  const hasPresenceRosterChannel = usePresenceStore(
-    state => state.channel !== null
-  );
-  const presenceSyncHealth = usePresenceStore(
-    state => state.presenceSyncHealth
-  );
-  const isTargetOnlineInRoster = usePresenceStore(state =>
+  const [targetUserPresence, setTargetUserPresence] = useState<UserPresence | null>(null);
+  const [targetUserPresenceError, setTargetUserPresenceError] = useState<string | null>(null);
+  const hasPresenceRosterChannel = usePresenceStore((state) => state.hasRosterChannel);
+  const presenceSyncHealth = usePresenceStore((state) => state.presenceSyncHealth);
+  const isTargetOnlineInRoster = usePresenceStore((state) =>
     targetUser
-      ? state.onlineUsersList.some(
-          onlineUser => onlineUser.id === targetUser.id
-        )
-      : false
+      ? state.onlineUsersList.some((onlineUser) => onlineUser.id === targetUser.id)
+      : false,
   );
   const targetPresenceRequestIdRef = useRef(0);
   const previousRosterOnlineRef = useRef<boolean | null>(null);
@@ -61,7 +52,7 @@ export const useChatSessionPresence = ({
     }
     const { presence, errorMessage } = await loadTargetPresenceSnapshot(
       targetUser.id,
-      'Error loading target user presence'
+      "Error loading target user presence",
     );
 
     if (targetPresenceRequestIdRef.current !== requestId) {
@@ -101,15 +92,13 @@ export const useChatSessionPresence = ({
       return;
     }
 
-    const remainingFreshnessMs = getPresenceFreshnessRemainingMs(
-      targetUserPresence.last_seen
-    );
+    const remainingFreshnessMs = getPresenceFreshnessRemainingMs(targetUserPresence.last_seen);
     if (remainingFreshnessMs === null || remainingFreshnessMs <= 0) {
       return;
     }
 
     const timeoutId = window.setTimeout(() => {
-      setPresenceFreshnessTick(previousTick => previousTick + 1);
+      setPresenceFreshnessTick((previousTick) => previousTick + 1);
     }, remainingFreshnessMs + 32);
 
     return () => {
@@ -121,7 +110,7 @@ export const useChatSessionPresence = ({
     const shouldPollTargetPresenceSnapshot =
       isOpen &&
       Boolean(user && targetUser && currentChannelId) &&
-      (!hasPresenceRosterChannel || presenceSyncHealth.status === 'degraded');
+      (!hasPresenceRosterChannel || presenceSyncHealth.status === "degraded");
 
     if (!shouldPollTargetPresenceSnapshot) {
       return;
@@ -148,8 +137,7 @@ export const useChatSessionPresence = ({
     isOpen && targetUser
       ? (() => {
           const hasFreshPresenceSnapshot =
-            targetUserPresence?.is_online === true &&
-            isPresenceFresh(targetUserPresence.last_seen);
+            targetUserPresence?.is_online === true && isPresenceFresh(targetUserPresence.last_seen);
 
           // Browser-active presence remains the primary signal, but a fresh
           // persisted snapshot covers temporary roster gaps while recovery happens.
@@ -163,10 +151,8 @@ export const useChatSessionPresence = ({
 
   const resolvedTargetUserPresenceError =
     targetUserPresenceError ??
-    (presenceSyncHealth.status === 'degraded' &&
-    !isTargetOnline &&
-    !targetUserPresence?.last_seen
-      ? 'Status presence mungkin terlambat'
+    (presenceSyncHealth.status === "degraded" && !isTargetOnline && !targetUserPresence?.last_seen
+      ? "Status presence mungkin terlambat"
       : null);
 
   return {
