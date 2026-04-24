@@ -225,15 +225,8 @@ export const getMessageMenuClasses = (
         : menuPlacement === "down"
           ? "bottom-full mb-2 left-0 origin-bottom-left"
           : "top-full mt-2 left-0 origin-top-left";
-  const sideArrowAnchorClass =
-    menuSideAnchor === "bottom"
-      ? "top-[78%] -translate-y-1/2"
-      : menuSideAnchor === "top"
-        ? "top-[22%] -translate-y-1/2"
-        : "top-1/2 -translate-y-1/2";
 
   return {
     sidePlacementClass,
-    sideArrowAnchorClass,
   };
 };
