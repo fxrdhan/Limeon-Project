@@ -53,6 +53,7 @@ function BaseSelector<T>({
 
   // Internal search term - captured from keystrokes when modal is open
   const [internalSearchTerm, setInternalSearchTerm] = useState("");
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   // Use internal search term (priority) or external search term
   const searchTerm = internalSearchTerm || externalSearchTerm;
@@ -62,6 +63,7 @@ function BaseSelector<T>({
     if (!isOpen) return;
     itemRefs.current = [];
     setInternalSearchTerm("");
+    setHoveredIndex(null);
     if (listContainerRef.current) {
       listContainerRef.current.scrollTop = 0;
     }
@@ -202,6 +204,7 @@ function BaseSelector<T>({
       selectedIndex: typeof value === "function" ? value(prev.selectedIndex) : value,
     }));
   };
+  const backgroundIndex = hoveredIndex ?? selectedIndex;
 
   // Reset internal search term when modal closes
   useEffect(() => {
@@ -234,6 +237,7 @@ function BaseSelector<T>({
       switch (e.key) {
         case "ArrowDown":
           e.preventDefault();
+          setHoveredIndex(null);
           if (filteredItems.length > 0) {
             setSelectedIndex((prev) => {
               const nextIndex = prev + 1;
@@ -243,6 +247,7 @@ function BaseSelector<T>({
           break;
         case "ArrowUp":
           e.preventDefault();
+          setHoveredIndex(null);
           if (filteredItems.length > 0) {
             setSelectedIndex((prev) => {
               return prev === 0 ? filteredItems.length - 1 : prev - 1;
@@ -267,6 +272,7 @@ function BaseSelector<T>({
         case "Backspace":
           e.preventDefault();
           setInternalSearchTerm((prev) => prev.slice(0, -1));
+          setHoveredIndex(null);
           // Reset to first item when search changes
           setSelectedIndex(0);
           break;
@@ -279,6 +285,7 @@ function BaseSelector<T>({
               return;
             }
             setInternalSearchTerm((prev) => prev + e.key);
+            setHoveredIndex(null);
             // Reset to first item when search changes
             setSelectedIndex(0);
           }
@@ -512,10 +519,14 @@ function BaseSelector<T>({
                             : config.noResultsText.replace("{searchTerm}", searchTerm)}
                         </div>
                       ) : (
-                        <div className="pb-1 relative">
+                        <div
+                          className="pb-1 relative isolate"
+                          onMouseLeave={() => setHoveredIndex(null)}
+                        >
                           {/* Items */}
                           {filteredItems.map((item, index) => {
                             const isSelected = index === selectedIndex;
+                            const hasBackground = index === backgroundIndex;
                             const highlightIndices = getHighlightIndices(item);
                             const selectedTextClass =
                               config.theme === "blue"
@@ -530,15 +541,15 @@ function BaseSelector<T>({
                                 ref={(el) => {
                                   itemRefs.current[index] = el;
                                 }}
-                                className="px-3 py-2 cursor-pointer flex items-center gap-3 mx-1 rounded-lg relative z-10 transition-colors duration-150"
+                                className="px-3 py-2 cursor-pointer flex items-center gap-3 mx-1 rounded-lg relative transition-colors duration-150"
                                 onClick={() => onSelect(item)}
-                                onMouseEnter={() => setSelectedIndex(index)}
+                                onMouseEnter={() => setHoveredIndex(index)}
                                 role="button"
                               >
-                                {isSelected && (
+                                {hasBackground && (
                                   <motion.div
                                     layoutId="base-selector-active-background"
-                                    className={`absolute inset-0 rounded-lg pointer-events-none ${
+                                    className={`absolute inset-0 z-0 rounded-lg pointer-events-none ${
                                       config.theme === "blue"
                                         ? "bg-blue-100"
                                         : config.theme === "orange"
