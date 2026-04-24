@@ -1,18 +1,14 @@
-import React from 'react';
+import React from "react";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
-} from '@/components/ui/chart';
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
-import { formatCurrency } from '../constants';
-import type {
-  SalesAnalyticsSummary,
-  SalesPeakSummary,
-  TopMedicineSummary,
-} from '../types';
-import { PanelMessage, SectionHeader } from './DashboardPrimitives';
+} from "@/components/ui/chart";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { formatCurrency } from "../constants";
+import type { SalesAnalyticsSummary, SalesPeakSummary, TopMedicineSummary } from "../types";
+import { PanelMessage, SectionHeader } from "./DashboardPrimitives";
 
 interface PerformanceSectionProps {
   salesData: SalesAnalyticsSummary | null | undefined;
@@ -25,19 +21,19 @@ interface PerformanceSectionProps {
 
 const salesChartConfig = {
   revenue: {
-    label: 'Penjualan Harian',
-    color: '#0f766e',
+    label: "Penjualan Harian",
+    color: "#0f766e",
   },
 } satisfies ChartConfig;
 
-const compactCurrencyFormatter = new Intl.NumberFormat('id-ID', {
-  compactDisplay: 'short',
+const compactCurrencyFormatter = new Intl.NumberFormat("id-ID", {
+  compactDisplay: "short",
   maximumFractionDigits: 1,
-  notation: 'compact',
+  notation: "compact",
 });
 
 const formatSalesDateTick = (value: string) => {
-  const [day, month] = value.split('/');
+  const [day, month] = value.split("/");
 
   if (day && month) {
     return `${day}/${month}`;
@@ -46,8 +42,7 @@ const formatSalesDateTick = (value: string) => {
   return value;
 };
 
-const formatCompactCurrency = (value: number) =>
-  `Rp${compactCurrencyFormatter.format(value)}`;
+const formatCompactCurrency = (value: number) => `Rp${compactCurrencyFormatter.format(value)}`;
 
 const PerformanceSection: React.FC<PerformanceSectionProps> = ({
   salesData,
@@ -72,10 +67,10 @@ const PerformanceSection: React.FC<PerformanceSectionProps> = ({
     if (!salesData || salesData.values.length === 0) return null;
 
     const peakValue = Math.max(...salesData.values);
-    const peakIndex = salesData.values.findIndex(value => value === peakValue);
+    const peakIndex = salesData.values.findIndex((value) => value === peakValue);
 
     return {
-      label: salesData.labels[peakIndex] || '-',
+      label: salesData.labels[peakIndex] || "-",
       value: peakValue,
     };
   }, [salesData]);
@@ -83,7 +78,7 @@ const PerformanceSection: React.FC<PerformanceSectionProps> = ({
   const topMedicineLeader = topMedicines[0] || null;
   const topMedicineMaxQuantity = Math.max(
     1,
-    ...topMedicines.map(item => Number(item.total_quantity))
+    ...topMedicines.map((item) => Number(item.total_quantity)),
   );
 
   return (
@@ -107,10 +102,7 @@ const PerformanceSection: React.FC<PerformanceSectionProps> = ({
           <PanelMessage message={`Error: ${salesErrorMessage}`} tone="error" />
         ) : (
           <>
-            <ChartContainer
-              config={salesChartConfig}
-              className="min-h-[320px] w-full"
-            >
+            <ChartContainer config={salesChartConfig} className="aspect-auto h-[320px] w-full">
               <AreaChart
                 accessibilityLayer
                 data={salesChartData}
@@ -135,14 +127,14 @@ const PerformanceSection: React.FC<PerformanceSectionProps> = ({
                   axisLine={false}
                   tickMargin={8}
                   tickCount={4}
-                  tickFormatter={value => formatCompactCurrency(Number(value))}
+                  tickFormatter={(value) => formatCompactCurrency(Number(value))}
                 />
                 <ChartTooltip
                   cursor={false}
                   content={
                     <ChartTooltipContent
-                      labelFormatter={value => `Tanggal ${String(value)}`}
-                      formatter={value => (
+                      labelFormatter={(value) => `Tanggal ${String(value)}`}
+                      formatter={(value) => (
                         <div className="flex w-full items-center gap-2">
                           <span
                             className="size-2 rounded-full"
@@ -150,9 +142,7 @@ const PerformanceSection: React.FC<PerformanceSectionProps> = ({
                               backgroundColor: salesChartConfig.revenue.color,
                             }}
                           />
-                          <span className="flex-1 text-slate-500">
-                            Penjualan Harian
-                          </span>
+                          <span className="flex-1 text-slate-500">Penjualan Harian</span>
                           <span className="font-mono font-medium tabular-nums text-slate-950">
                             {formatCurrency(Number(value))}
                           </span>
@@ -170,9 +160,9 @@ const PerformanceSection: React.FC<PerformanceSectionProps> = ({
                   strokeWidth={2.5}
                   dot={false}
                   activeDot={{
-                    fill: 'var(--color-revenue)',
+                    fill: "var(--color-revenue)",
                     r: 4,
-                    stroke: '#ffffff',
+                    stroke: "#ffffff",
                     strokeWidth: 2,
                   }}
                 />
@@ -201,10 +191,10 @@ const PerformanceSection: React.FC<PerformanceSectionProps> = ({
                   Puncak Tertinggi
                 </p>
                 <p className="mt-3 text-lg font-semibold text-slate-950">
-                  {salesPeak ? formatCurrency(salesPeak.value) : '-'}
+                  {salesPeak ? formatCurrency(salesPeak.value) : "-"}
                 </p>
                 <p className="mt-1 text-sm text-slate-500">
-                  {salesPeak ? salesPeak.label : 'Belum ada penjualan'}
+                  {salesPeak ? salesPeak.label : "Belum ada penjualan"}
                 </p>
               </div>
             </div>
@@ -218,10 +208,7 @@ const PerformanceSection: React.FC<PerformanceSectionProps> = ({
         {isTopMedicinesLoading ? (
           <div className="space-y-5">
             {Array.from({ length: 5 }).map((_, index) => (
-              <div
-                key={index}
-                className="space-y-3 border-b border-slate-200 pb-4"
-              >
+              <div key={index} className="space-y-3 border-b border-slate-200 pb-4">
                 <div className="flex items-center justify-between gap-3">
                   <div className="h-5 w-40 animate-pulse rounded-full bg-slate-200" />
                   <div className="h-5 w-12 animate-pulse rounded-full bg-slate-200" />
@@ -231,10 +218,7 @@ const PerformanceSection: React.FC<PerformanceSectionProps> = ({
             ))}
           </div>
         ) : topMedicinesErrorMessage ? (
-          <PanelMessage
-            message={`Error: ${topMedicinesErrorMessage}`}
-            tone="error"
-          />
+          <PanelMessage message={`Error: ${topMedicinesErrorMessage}`} tone="error" />
         ) : topMedicines.length > 0 ? (
           <div className="space-y-6">
             {topMedicineLeader ? (
@@ -253,7 +237,7 @@ const PerformanceSection: React.FC<PerformanceSectionProps> = ({
                 const quantity = Number(item.total_quantity);
                 const barWidth = Math.max(
                   10,
-                  Math.round((quantity / topMedicineMaxQuantity) * 100)
+                  Math.round((quantity / topMedicineMaxQuantity) * 100),
                 );
 
                 return (
@@ -263,18 +247,14 @@ const PerformanceSection: React.FC<PerformanceSectionProps> = ({
                   >
                     <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-4">
                       <p className="text-xs font-semibold tracking-[0.2em] text-slate-400">
-                        {String(index + 1).padStart(2, '0')}
+                        {String(index + 1).padStart(2, "0")}
                       </p>
 
                       <div className="min-w-0">
-                        <p className="truncate font-medium text-slate-900">
-                          {item.name}
-                        </p>
+                        <p className="truncate font-medium text-slate-900">{item.name}</p>
                       </div>
 
-                      <p className="text-sm font-semibold text-slate-700">
-                        {quantity} unit
-                      </p>
+                      <p className="text-sm font-semibold text-slate-700">{quantity} unit</p>
                     </div>
 
                     <div className="h-1.5 overflow-hidden bg-slate-200">

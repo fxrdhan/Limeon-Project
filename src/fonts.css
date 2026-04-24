@@ -3,8 +3,6 @@
  * Font family is managed by Tailwind config and this stylesheet.
  */
 
-@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap');
-
 /* Cell content (table data) - Medium weight untuk data */
 .ag-cell {
   font-weight: 500 !important;
