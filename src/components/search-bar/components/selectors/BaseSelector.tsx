@@ -1,36 +1,29 @@
-import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { TbSearch, TbSparkles } from 'react-icons/tb';
-import fuzzysort from 'fuzzysort';
-import { BaseSelectorProps } from '../../types';
-import { SEARCH_CONSTANTS } from '../../constants';
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { TbSearch, TbSparkles } from "react-icons/tb";
+import fuzzysort from "fuzzysort";
+import { BaseSelectorProps } from "../../types";
+import { SEARCH_CONSTANTS } from "../../constants";
 
 // Helper to highlight matched characters
 /* c8 ignore next */
 const HighlightedText: React.FC<{
   text: string;
   indices: readonly number[] | null;
-  theme?: 'purple' | 'blue' | 'orange';
-}> = ({ text, indices, theme = 'purple' }) => {
+  theme?: "purple" | "blue" | "orange";
+}> = ({ text, indices, theme = "purple" }) => {
   if (!indices || indices.length === 0) {
     return <>{text}</>;
   }
 
   const themeColor =
-    theme === 'blue'
-      ? 'text-blue-600'
-      : theme === 'orange'
-        ? 'text-orange-600'
-        : 'text-purple-600';
+    theme === "blue" ? "text-blue-600" : theme === "orange" ? "text-orange-600" : "text-purple-600";
 
   const indexSet = new Set(indices);
   return (
     <>
-      {text.split('').map((char, i) => (
-        <span
-          key={i}
-          className={indexSet.has(i) ? `font-bold ${themeColor}` : ''}
-        >
+      {text.split("").map((char, i) => (
+        <span key={i} className={indexSet.has(i) ? `font-bold ${themeColor}` : ""}>
           {char}
         </span>
       ))}
@@ -44,7 +37,7 @@ function BaseSelector<T>({
   onSelect,
   onClose,
   position,
-  searchTerm: externalSearchTerm = '',
+  searchTerm: externalSearchTerm = "",
   config,
   defaultSelectedIndex,
   onHighlightChange,
@@ -56,7 +49,7 @@ function BaseSelector<T>({
   const listContainerRef = useRef<HTMLDivElement>(null);
 
   // Internal search term - captured from keystrokes when modal is open
-  const [internalSearchTerm, setInternalSearchTerm] = useState('');
+  const [internalSearchTerm, setInternalSearchTerm] = useState("");
 
   // Use internal search term (priority) or external search term
   const searchTerm = internalSearchTerm || externalSearchTerm;
@@ -77,14 +70,11 @@ function BaseSelector<T>({
   // Store fuzzy search results with indices for highlighting
   const searchResults = useMemo(() => {
     if (searchTerm && items.length > 0) {
-      const searchTargets = items.map(item => {
+      const searchTargets = items.map((item) => {
         const searchFields = config.getSearchFields(item);
         return {
           item,
-          ...searchFields.reduce(
-            (acc, field) => ({ ...acc, [field.key]: field.value }),
-            {}
-          ),
+          ...searchFields.reduce((acc, field) => ({ ...acc, [field.key]: field.value }), {}),
         };
       });
 
@@ -94,13 +84,13 @@ function BaseSelector<T>({
       >();
 
       // First pass: collect all matching items with scores
-      searchFieldsConfig.forEach(fieldConfig => {
+      searchFieldsConfig.forEach((fieldConfig) => {
         const results = fuzzysort.go(searchTerm, searchTargets, {
           key: fieldConfig.key,
           threshold: SEARCH_CONSTANTS.FUZZY_SEARCH_THRESHOLD,
         });
 
-        results.forEach(result => {
+        results.forEach((result) => {
           const itemKey = config.getItemKey(result.obj.item);
           const boost = fieldConfig.boost || 0;
           const currentBest = allResults.get(itemKey);
@@ -117,17 +107,17 @@ function BaseSelector<T>({
 
       // Second pass: get label-specific indices for highlighting
       // This ensures we highlight the correct characters in the label text
-      const labelTargets = Array.from(allResults.values()).map(r => ({
+      const labelTargets = Array.from(allResults.values()).map((r) => ({
         item: r.item,
         label: config.getItemLabel(r.item),
       }));
 
       const labelResults = fuzzysort.go(searchTerm, labelTargets, {
-        key: 'label',
+        key: "label",
         threshold: -Infinity, // Accept any match since item already qualified
       });
 
-      labelResults.forEach(result => {
+      labelResults.forEach((result) => {
         const itemKey = config.getItemKey(result.obj.item);
         const existing = allResults.get(itemKey);
         if (existing) {
@@ -140,7 +130,7 @@ function BaseSelector<T>({
 
       return Array.from(allResults.values()).sort((a, b) => b.score - a.score);
     } else {
-      return items.map(item => ({
+      return items.map((item) => ({
         item,
         score: 0,
         labelIndices: null as readonly number[] | null,
@@ -149,20 +139,17 @@ function BaseSelector<T>({
   }, [searchTerm, items, searchFieldsConfig, config]);
 
   // Derive filteredItems from searchResults
-  const filteredItems = useMemo(
-    () => searchResults.map(r => r.item),
-    [searchResults]
-  );
+  const filteredItems = useMemo(() => searchResults.map((r) => r.item), [searchResults]);
 
   // Get highlight indices for an item's label
   const getHighlightIndices = useCallback(
     (item: T): readonly number[] | null => {
       const result = searchResults.find(
-        r => config.getItemKey(r.item) === config.getItemKey(item)
+        (r) => config.getItemKey(r.item) === config.getItemKey(item),
       );
       return result?.labelIndices || null;
     },
-    [searchResults, config]
+    [searchResults, config],
   );
 
   // Use getDerivedStateFromProps pattern to manage selectedIndex resets
@@ -193,10 +180,7 @@ function BaseSelector<T>({
     }
     // Adjust if out of bounds
     /* c8 ignore start */
-    else if (
-      filteredItems.length > 0 &&
-      indexState.selectedIndex >= filteredItems.length
-    ) {
+    else if (filteredItems.length > 0 && indexState.selectedIndex >= filteredItems.length) {
       newIndex = Math.max(0, filteredItems.length - 1);
     } else if (filteredItems.length === 0) {
       newIndex = 0;
@@ -213,10 +197,9 @@ function BaseSelector<T>({
 
   const selectedIndex = indexState.selectedIndex;
   const setSelectedIndex = (value: number | ((prev: number) => number)) => {
-    setIndexState(prev => ({
+    setIndexState((prev) => ({
       ...prev,
-      selectedIndex:
-        typeof value === 'function' ? value(prev.selectedIndex) : value,
+      selectedIndex: typeof value === "function" ? value(prev.selectedIndex) : value,
     }));
   };
 
@@ -240,7 +223,7 @@ function BaseSelector<T>({
         // Reset indicator position so it doesn't animate from old position on next open
         setIndicatorStyle({ top: 0, left: 0, width: 0, height: 0 });
         // Reset internal search term
-        setInternalSearchTerm('');
+        setInternalSearchTerm("");
       }, 100); // Reduced from 200ms to 100ms
     }
   }, [isOpen, showHeader, showContent]);
@@ -251,24 +234,24 @@ function BaseSelector<T>({
       if (e.defaultPrevented) return;
 
       switch (e.key) {
-        case 'ArrowDown':
+        case "ArrowDown":
           e.preventDefault();
           if (filteredItems.length > 0) {
-            setSelectedIndex(prev => {
+            setSelectedIndex((prev) => {
               const nextIndex = prev + 1;
               return nextIndex >= filteredItems.length ? 0 : nextIndex;
             });
           }
           break;
-        case 'ArrowUp':
+        case "ArrowUp":
           e.preventDefault();
           if (filteredItems.length > 0) {
-            setSelectedIndex(prev => {
+            setSelectedIndex((prev) => {
               return prev === 0 ? filteredItems.length - 1 : prev - 1;
             });
           }
           break;
-        case 'Enter':
+        case "Enter":
           e.preventDefault();
           if (
             filteredItems.length > 0 &&
@@ -279,13 +262,13 @@ function BaseSelector<T>({
             onSelect(filteredItems[selectedIndex]);
           }
           break;
-        case 'Escape':
+        case "Escape":
           e.preventDefault();
           onClose();
           break;
-        case 'Backspace':
+        case "Backspace":
           e.preventDefault();
-          setInternalSearchTerm(prev => prev.slice(0, -1));
+          setInternalSearchTerm((prev) => prev.slice(0, -1));
           // Reset to first item when search changes
           setSelectedIndex(0);
           break;
@@ -294,10 +277,10 @@ function BaseSelector<T>({
           if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
             e.preventDefault();
             // Skip space if search term is empty (prevents accidental search when SPACE opens selector)
-            if (e.key === ' ' && internalSearchTerm === '') {
+            if (e.key === " " && internalSearchTerm === "") {
               return;
             }
-            setInternalSearchTerm(prev => prev + e.key);
+            setInternalSearchTerm((prev) => prev + e.key);
             // Reset to first item when search changes
             setSelectedIndex(0);
           }
@@ -305,16 +288,9 @@ function BaseSelector<T>({
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [
-    isOpen,
-    filteredItems,
-    selectedIndex,
-    onSelect,
-    onClose,
-    internalSearchTerm,
-  ]);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, filteredItems, selectedIndex, onSelect, onClose, internalSearchTerm]);
 
   useEffect(() => {
     if (isOpen && itemRefs.current[selectedIndex] && listContainerRef.current) {
@@ -337,7 +313,7 @@ function BaseSelector<T>({
       if (itemTop < containerScrollTop) {
         container.scrollTo({
           top: itemTop,
-          behavior: 'smooth',
+          behavior: "smooth",
         });
       }
       // Check if item is below visible area
@@ -346,12 +322,12 @@ function BaseSelector<T>({
         if (isLastItem) {
           container.scrollTo({
             top: container.scrollHeight - containerHeight,
-            behavior: 'smooth',
+            behavior: "smooth",
           });
         } else {
           container.scrollTo({
             top: itemBottom - containerHeight,
-            behavior: 'smooth',
+            behavior: "smooth",
           });
         }
       }
@@ -376,16 +352,10 @@ function BaseSelector<T>({
           if (selectedElement && containerElement) {
             const containerRect = containerElement.getBoundingClientRect();
             const itemRect = selectedElement.getBoundingClientRect();
-
-            // Shift background slightly upward for better visual alignment
-            const verticalOffset = -4; // Move 4px up
+            const verticalOffset = -2;
 
             setIndicatorStyle({
-              top:
-                itemRect.top -
-                containerRect.top +
-                containerElement.scrollTop +
-                verticalOffset,
+              top: itemRect.top - containerRect.top + containerElement.scrollTop + verticalOffset,
               left: itemRect.left - containerRect.left,
               width: itemRect.width,
               height: itemRect.height,
@@ -434,10 +404,7 @@ function BaseSelector<T>({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        modalRef.current &&
-        !modalRef.current.contains(event.target as Node)
-      ) {
+      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
         if (isOpen) {
           // Just call onClose, let the useEffect handle the animation
           onClose();
@@ -446,11 +413,11 @@ function BaseSelector<T>({
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isOpen, onClose]);
 
@@ -461,14 +428,14 @@ function BaseSelector<T>({
         <div className="flex items-center gap-2 text-xs text-slate-600">
           <TbSearch className="w-3 h-3" />
           <span>
-            Searching:{' '}
+            Searching:{" "}
             <span
               className={`font-medium ${
-                config.theme === 'blue'
-                  ? 'text-blue-600'
-                  : config.theme === 'orange'
-                    ? 'text-orange-600'
-                    : 'text-purple-600'
+                config.theme === "blue"
+                  ? "text-blue-600"
+                  : config.theme === "orange"
+                    ? "text-orange-600"
+                    : "text-purple-600"
               }`}
             >
               {internalSearchTerm}
@@ -508,7 +475,7 @@ function BaseSelector<T>({
                   initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.15, ease: 'easeOut' }}
+                  transition={{ duration: 0.15, ease: "easeOut" }}
                 >
                   {headerContent}
                 </motion.div>
@@ -521,37 +488,31 @@ function BaseSelector<T>({
               <motion.div
                 className="overflow-hidden"
                 initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
+                animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
                 transition={{
                   duration: 0.1,
-                  ease: 'easeOut',
+                  ease: "easeOut",
                 }}
               >
-                <div
-                  ref={listContainerRef}
-                  className="max-h-65 overflow-y-auto py-1"
-                >
+                <div ref={listContainerRef} className="max-h-65 overflow-y-auto py-1">
                   {filteredItems.length === 0 ? (
                     <div className="px-3 py-4 text-sm text-slate-500 text-center">
                       {internalSearchTerm
                         ? `No results for "${internalSearchTerm}"`
-                        : config.noResultsText.replace(
-                            '{searchTerm}',
-                            searchTerm
-                          )}
+                        : config.noResultsText.replace("{searchTerm}", searchTerm)}
                     </div>
                   ) : (
                     <div className="pb-1 relative">
                       {/* Sliding Background Indicator - only render when positioned */}
                       {indicatorStyle.height > 0 && (
                         <motion.div
-                          className={`absolute rounded-xl pointer-events-none ${
-                            config.theme === 'blue'
-                              ? 'bg-blue-100'
-                              : config.theme === 'orange'
-                                ? 'bg-orange-100'
-                                : 'bg-purple-100'
+                          className={`absolute top-0 rounded-lg pointer-events-none ${
+                            config.theme === "blue"
+                              ? "bg-blue-100"
+                              : config.theme === "orange"
+                                ? "bg-orange-100"
+                                : "bg-purple-100"
                           }`}
                           initial={{
                             top: indicatorStyle.top,
@@ -566,7 +527,7 @@ function BaseSelector<T>({
                             height: indicatorStyle.height,
                           }}
                           transition={{
-                            type: 'spring',
+                            type: "spring",
                             stiffness: 400,
                             damping: 30,
                             mass: 0.8,
@@ -578,39 +539,29 @@ function BaseSelector<T>({
                       {filteredItems.map((item, index) => {
                         const isSelected = index === selectedIndex;
                         const highlightIndices = getHighlightIndices(item);
-                        // Theme-based hover colors
-                        const hoverClass =
-                          config.theme === 'blue'
-                            ? 'hover:bg-blue-50'
-                            : config.theme === 'orange'
-                              ? 'hover:bg-orange-50'
-                              : 'hover:bg-purple-50';
-                        // Theme-based text color for selected item
                         const selectedTextClass =
-                          config.theme === 'blue'
-                            ? 'text-blue-700'
-                            : config.theme === 'orange'
-                              ? 'text-orange-700'
-                              : 'text-purple-700';
+                          config.theme === "blue"
+                            ? "text-blue-700"
+                            : config.theme === "orange"
+                              ? "text-orange-700"
+                              : "text-purple-700";
 
                         return (
                           <div
                             key={config.getItemKey(item)}
-                            ref={el => {
+                            ref={(el) => {
                               itemRefs.current[index] = el;
                             }}
-                            className={`px-3 py-2 cursor-pointer flex items-center gap-3 mx-1 rounded-xl relative z-10 transition-colors duration-150 ${
-                              isSelected ? '' : hoverClass
-                            }`}
+                            className="px-3 py-2 cursor-pointer flex items-center gap-3 mx-1 rounded-lg relative z-10 transition-colors duration-150"
                             onClick={() => onSelect(item)}
+                            onMouseEnter={() => setSelectedIndex(index)}
                             role="button"
                           >
                             <div
                               className={`shrink-0 transition-colors duration-150 ${
                                 isSelected
-                                  ? config.getItemActiveColor?.(item) ||
-                                    'text-slate-900'
-                                  : 'text-slate-500'
+                                  ? config.getItemActiveColor?.(item) || "text-slate-900"
+                                  : "text-slate-500"
                               }`}
                             >
                               {config.getItemIcon(item)}
@@ -619,9 +570,7 @@ function BaseSelector<T>({
                               <div className="flex items-center gap-2">
                                 <span
                                   className={`text-sm font-medium transition-colors duration-150 ${
-                                    isSelected
-                                      ? selectedTextClass
-                                      : 'text-slate-700'
+                                    isSelected ? selectedTextClass : "text-slate-700"
                                   }`}
                                 >
                                   <HighlightedText
@@ -636,41 +585,17 @@ function BaseSelector<T>({
                                   </span>
                                 )}
                               </div>
-                              {config.getItemDescription &&
-                                config.getItemDescription(item) && (
-                                  <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
-                                    {config.getItemDescription(item)}
-                                  </p>
-                                )}
+                              {config.getItemDescription && config.getItemDescription(item) && (
+                                <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
+                                  {config.getItemDescription(item)}
+                                </p>
+                              )}
                             </div>
                           </div>
                         );
                       })}
                     </div>
                   )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <AnimatePresence>
-            {showHeader && (
-              <motion.div
-                className="shrink-0 bg-slate-50 border-t border-slate-100 px-3 py-2 rounded-b-lg"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 8 }}
-                transition={{ duration: 0.15, ease: 'easeOut' }}
-              >
-                <div className="flex items-center justify-between text-xs text-slate-500">
-                  <span>
-                    {internalSearchTerm ? 'Type to search' : 'Enter to select'}
-                  </span>
-                  <span>
-                    {filteredItems.length}{' '}
-                    {config.footerSingular.charAt(0).toUpperCase() +
-                      config.footerSingular.slice(1)}
-                  </span>
                 </div>
               </motion.div>
             )}
