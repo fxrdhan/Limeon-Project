@@ -2,14 +2,14 @@ import {
   CHAT_AUDIO_FOLDER as SHARED_CHAT_AUDIO_FOLDER,
   CHAT_DOCUMENT_FOLDER as SHARED_CHAT_DOCUMENT_FOLDER,
   CHAT_IMAGE_FOLDER as SHARED_CHAT_IMAGE_FOLDER,
-} from '../../../shared/chatAttachmentPaths';
+} from "../../../shared/chatAttachmentPaths";
 
 export const MENU_GAP = 8;
 export const MENU_WIDTH = 120;
 export const MENU_HEIGHT = 128;
 export const CHAT_HEADER_OVERLAY_HEIGHT = 128;
 export const MAX_MESSAGE_CHARS = 220;
-export const CHAT_SIDEBAR_TOASTER_ID = 'chat-sidebar-toaster';
+export const CHAT_SIDEBAR_TOASTER_ID = "chat-sidebar-toaster";
 export const CHAT_COPY_LOADING_TOAST_DELAY_MS = 150;
 export const MESSAGE_INPUT_MIN_HEIGHT = 22;
 export const MESSAGE_INPUT_MAX_HEIGHT = 170;
@@ -24,7 +24,7 @@ export const COMPOSER_IMAGE_PREVIEW_OFFSET = 68;
 export const COMPOSER_IMAGE_PREVIEW_EXIT_DURATION = 150;
 export const EDIT_TARGET_FOCUS_PADDING = 12;
 export const EDIT_TARGET_FLASH_PHASE_DURATION = 240;
-export const CHAT_IMAGE_BUCKET = 'chat';
+export const CHAT_IMAGE_BUCKET = "chat";
 export const CHAT_IMAGE_FOLDER = SHARED_CHAT_IMAGE_FOLDER;
 export const CHAT_AUDIO_FOLDER = SHARED_CHAT_AUDIO_FOLDER;
 export const CHAT_DOCUMENT_FOLDER = SHARED_CHAT_DOCUMENT_FOLDER;
@@ -36,23 +36,23 @@ export const PDF_MESSAGE_PREVIEW_CACHE_MAX_ENTRIES = 32;
 export const IMAGE_MESSAGE_PREVIEW_TARGET_SIZE = 512;
 export const IMAGE_EXPAND_STAGE_TARGET_SIZE = Math.max(
   1,
-  Math.round(IMAGE_MESSAGE_PREVIEW_TARGET_SIZE * 0.5)
+  Math.round(IMAGE_MESSAGE_PREVIEW_TARGET_SIZE * 0.5),
 );
 export const IMAGE_MESSAGE_PREVIEW_OUTPUT_QUALITY = 0.82;
 export const COMPOSER_SYNC_LAYOUT_TRANSITION = {
-  type: 'tween' as const,
+  type: "tween" as const,
   ease: [0.22, 1, 0.36, 1] as const,
   duration: 0.22,
 };
-export const COMPOSER_BASE_BORDER_COLOR = 'rgba(226, 232, 240, 0.65)';
-export const COMPOSER_BASE_SHADOW = '0 2px 8px rgba(15, 23, 42, 0.08)';
+export const COMPOSER_BASE_BORDER_COLOR = "rgba(226, 232, 240, 0.65)";
+export const COMPOSER_BASE_SHADOW = "0 2px 8px rgba(15, 23, 42, 0.08)";
 export const COMPOSER_GLOW_SHADOW_PEAK =
-  '0 0 18px oklch(50.8% 0.118 165.612 / 0.32),0 0 30px oklch(50.8% 0.118 165.612 / 0.18),0 2px 8px rgba(15, 23, 42, 0.08)';
+  "0 16px 42px -18px oklch(50.8% 0.118 165.612 / 0.52),0 0 34px -5px oklch(50.8% 0.118 165.612 / 0.38),0 0 52px -18px oklch(50.8% 0.118 165.612 / 0.22),0 2px 8px rgba(15, 23, 42, 0.08)";
 export const COMPOSER_GLOW_SHADOW_HIGH =
-  '0 0 16px oklch(50.8% 0.118 165.612 / 0.28),0 0 27px oklch(50.8% 0.118 165.612 / 0.16),0 2px 8px rgba(15, 23, 42, 0.08)';
+  "0 14px 38px -19px oklch(50.8% 0.118 165.612 / 0.44),0 0 30px -6px oklch(50.8% 0.118 165.612 / 0.3),0 0 44px -18px oklch(50.8% 0.118 165.612 / 0.18),0 2px 8px rgba(15, 23, 42, 0.08)";
 export const COMPOSER_GLOW_SHADOW_MID =
-  '0 0 14px oklch(50.8% 0.118 165.612 / 0.24),0 0 24px oklch(50.8% 0.118 165.612 / 0.14),0 2px 8px rgba(15, 23, 42, 0.08)';
+  "0 12px 34px -20px oklch(50.8% 0.118 165.612 / 0.34),0 0 26px -7px oklch(50.8% 0.118 165.612 / 0.24),0 0 38px -18px oklch(50.8% 0.118 165.612 / 0.14),0 2px 8px rgba(15, 23, 42, 0.08)";
 export const COMPOSER_GLOW_SHADOW_FADE =
-  '0 0 11px oklch(50.8% 0.118 165.612 / 0.18),0 0 19px oklch(50.8% 0.118 165.612 / 0.11),0 2px 8px rgba(15, 23, 42, 0.08)';
+  "0 10px 30px -21px oklch(50.8% 0.118 165.612 / 0.24),0 0 22px -8px oklch(50.8% 0.118 165.612 / 0.17),0 0 30px -18px oklch(50.8% 0.118 165.612 / 0.1),0 2px 8px rgba(15, 23, 42, 0.08)";
 export const COMPOSER_GLOW_SHADOW_LOW =
-  '0 0 8px oklch(50.8% 0.118 165.612 / 0.12),0 0 14px oklch(50.8% 0.118 165.612 / 0.08),0 2px 8px rgba(15, 23, 42, 0.08)';
+  "0 8px 26px -22px oklch(50.8% 0.118 165.612 / 0.16),0 0 18px -9px oklch(50.8% 0.118 165.612 / 0.11),0 0 24px -18px oklch(50.8% 0.118 165.612 / 0.07),0 2px 8px rgba(15, 23, 42, 0.08)";
