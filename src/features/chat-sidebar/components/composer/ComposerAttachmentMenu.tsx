@@ -1,14 +1,9 @@
-import { useLayoutEffect, useRef, useState, type ChangeEvent, type RefObject } from "react";
+import { useState, type ChangeEvent, type RefObject } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { TbFileDescription, TbMusic, TbPhoto, TbPlus } from "react-icons/tb";
+import { AnimatedMenuHighlight } from "@/components/shared/animated-menu-highlight";
+import { useAnimatedMenuHighlight } from "@/components/shared/use-animated-menu-highlight";
 import { COMPOSER_SYNC_LAYOUT_TRANSITION } from "../../constants";
-
-const attachmentMenuHighlightTransition = {
-  type: "spring",
-  stiffness: 520,
-  damping: 42,
-  mass: 0.7,
-} as const;
 
 interface ComposerAttachmentMenuProps {
   isAttachModalOpen: boolean;
@@ -43,14 +38,9 @@ export const ComposerAttachmentMenu = ({
   onDocumentFileChange,
   onAudioFileChange,
 }: ComposerAttachmentMenuProps) => {
-  const actionButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const [hoveredActionIndex, setHoveredActionIndex] = useState<number | null>(null);
-  const [highlightFrame, setHighlightFrame] = useState({
-    top: 0,
-    height: 0,
-    isVisible: false,
-    shouldAnimate: false,
-  });
+  const { highlightFrame, setItemRef } =
+    useAnimatedMenuHighlight<HTMLButtonElement>(hoveredActionIndex);
   const attachmentActions = [
     {
       label: "Gambar",
@@ -71,39 +61,6 @@ export const ComposerAttachmentMenu = ({
       className: "px-1.5",
     },
   ];
-
-  useLayoutEffect(() => {
-    if (hoveredActionIndex === null) {
-      setHighlightFrame((frame) => (frame.isVisible ? { ...frame, isVisible: false } : frame));
-      return;
-    }
-
-    const actionButton = actionButtonRefs.current[hoveredActionIndex];
-    if (!actionButton) {
-      setHighlightFrame((frame) => (frame.isVisible ? { ...frame, isVisible: false } : frame));
-      return;
-    }
-
-    const updateHighlightFrame = () => {
-      setHighlightFrame((currentFrame) => ({
-        top: actionButton.offsetTop,
-        height: actionButton.offsetHeight,
-        isVisible: true,
-        shouldAnimate: currentFrame.isVisible,
-      }));
-    };
-
-    updateHighlightFrame();
-    const animationFrameId = window.requestAnimationFrame(updateHighlightFrame);
-    const resizeObserver =
-      typeof ResizeObserver === "undefined" ? null : new ResizeObserver(updateHighlightFrame);
-    resizeObserver?.observe(actionButton);
-
-    return () => {
-      window.cancelAnimationFrame(animationFrameId);
-      resizeObserver?.disconnect();
-    };
-  }, [hoveredActionIndex]);
 
   return (
     <motion.div
@@ -147,25 +104,14 @@ export const ComposerAttachmentMenu = ({
                 setHoveredActionIndex(null);
               }}
             >
-              <motion.div
-                aria-hidden="true"
-                className="pointer-events-none absolute left-1 right-1 top-0 z-0 rounded-lg bg-slate-100"
-                initial={false}
-                animate={{
-                  opacity: highlightFrame.isVisible ? 1 : 0,
-                  y: highlightFrame.top,
-                  height: highlightFrame.height,
-                }}
-                transition={
-                  highlightFrame.shouldAnimate ? attachmentMenuHighlightTransition : { duration: 0 }
-                }
+              <AnimatedMenuHighlight
+                frame={highlightFrame}
+                className="left-1 right-1 bg-slate-100"
               />
               {attachmentActions.map((action, actionIndex) => (
                 <button
                   key={action.label}
-                  ref={(element) => {
-                    actionButtonRefs.current[actionIndex] = element;
-                  }}
+                  ref={(element) => setItemRef(actionIndex, element)}
                   type="button"
                   onClick={action.onClick}
                   onMouseEnter={() => {

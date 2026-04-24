@@ -1,14 +1,14 @@
 import {
   useCallback,
   useLayoutEffect,
-  useRef,
   useState,
   type KeyboardEvent,
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from "react";
-import { motion } from "motion/react";
 import Button from "@/components/button";
+import { AnimatedMenuHighlight } from "@/components/shared/animated-menu-highlight";
+import { useAnimatedMenuHighlight } from "@/components/shared/use-animated-menu-highlight";
 import {
   POPUP_ACTIVE_BG_CLASS,
   POPUP_DANGER_ACTIVE_BG_CLASS,
@@ -39,13 +39,6 @@ interface PopupMenuContentProps {
   dangerIconClassName?: string;
   enableAnimatedHighlight?: boolean;
 }
-
-const highlightTransition = {
-  type: "spring",
-  stiffness: 520,
-  damping: 42,
-  mass: 0.7,
-} as const;
 
 const resolveInitialActionIndex = ({
   actions,
@@ -88,7 +81,6 @@ const PopupMenuContent = ({
   dangerIconClassName,
   enableAnimatedHighlight = false,
 }: PopupMenuContentProps) => {
-  const actionButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const [focusedActionIndex, setFocusedActionIndex] = useState<number | null>(() =>
     resolveInitialActionIndex({
       actions,
@@ -100,12 +92,11 @@ const PopupMenuContent = ({
   const [hoveredActionIndex, setHoveredActionIndex] = useState<number | null>(null);
   const activeActionIndex = hoveredActionIndex ?? focusedActionIndex;
   const activeAction = activeActionIndex === null ? null : actions[activeActionIndex];
-  const [highlightFrame, setHighlightFrame] = useState({
-    top: 0,
-    height: 0,
-    isVisible: false,
-    shouldAnimate: false,
-  });
+  const { getItemElement, highlightFrame, setItemRef } =
+    useAnimatedMenuHighlight<HTMLButtonElement>(
+      enableAnimatedHighlight && !activeAction?.disabled ? activeActionIndex : null,
+      enableAnimatedHighlight,
+    );
   const setFocusedActionIndexWithSync = useCallback(
     (nextIndex: number) => {
       setFocusedActionIndex(nextIndex);
@@ -113,9 +104,12 @@ const PopupMenuContent = ({
     },
     [onPreselectedIndexChange],
   );
-  const focusActionButton = useCallback((actionIndex: number) => {
-    actionButtonRefs.current[actionIndex]?.focus({ preventScroll: true });
-  }, []);
+  const focusActionButton = useCallback(
+    (actionIndex: number) => {
+      getItemElement(actionIndex)?.focus({ preventScroll: true });
+    },
+    [getItemElement],
+  );
 
   const focusNextEnabledAction = (currentIndex: number, direction: 1 | -1) => {
     if (actions.length === 0) return;
@@ -182,39 +176,6 @@ const PopupMenuContent = ({
     setFocusedActionIndexWithSync,
   ]);
 
-  useLayoutEffect(() => {
-    if (!enableAnimatedHighlight || activeActionIndex === null || activeAction?.disabled) {
-      setHighlightFrame((frame) => (frame.isVisible ? { ...frame, isVisible: false } : frame));
-      return;
-    }
-
-    const actionButton = actionButtonRefs.current[activeActionIndex];
-    if (!actionButton) {
-      setHighlightFrame((frame) => (frame.isVisible ? { ...frame, isVisible: false } : frame));
-      return;
-    }
-
-    const updateHighlightFrame = () => {
-      setHighlightFrame((currentFrame) => ({
-        top: actionButton.offsetTop,
-        height: actionButton.offsetHeight,
-        isVisible: true,
-        shouldAnimate: currentFrame.isVisible,
-      }));
-    };
-
-    updateHighlightFrame();
-    const animationFrameId = window.requestAnimationFrame(updateHighlightFrame);
-    const resizeObserver =
-      typeof ResizeObserver === "undefined" ? null : new ResizeObserver(updateHighlightFrame);
-    resizeObserver?.observe(actionButton);
-
-    return () => {
-      window.cancelAnimationFrame(animationFrameId);
-      resizeObserver?.disconnect();
-    };
-  }, [activeAction, activeActionIndex, enableAnimatedHighlight]);
-
   return (
     <div
       className={`relative px-1 py-1 rounded-xl shadow-lg ${POPUP_SURFACE_CLASS} ${minWidthClassName}`}
@@ -224,18 +185,11 @@ const PopupMenuContent = ({
       }}
     >
       {enableAnimatedHighlight ? (
-        <motion.div
-          aria-hidden="true"
-          className={`pointer-events-none absolute left-1 right-1 top-0 z-0 rounded-lg ${
+        <AnimatedMenuHighlight
+          frame={highlightFrame}
+          className={`left-1 right-1 ${
             activeAction?.tone === "danger" ? "bg-rose-50" : "bg-slate-100"
           }`}
-          initial={false}
-          animate={{
-            opacity: highlightFrame.isVisible ? 1 : 0,
-            y: highlightFrame.top,
-            height: highlightFrame.height,
-          }}
-          transition={highlightFrame.shouldAnimate ? highlightTransition : { duration: 0 }}
         />
       ) : null}
       {header}
@@ -263,9 +217,7 @@ const PopupMenuContent = ({
         return (
           <Button
             key={action.label}
-            ref={(element) => {
-              actionButtonRefs.current[actionIndex] = element;
-            }}
+            ref={(element) => setItemRef(actionIndex, element)}
             variant={action.tone === "danger" ? "text-danger" : "text"}
             size="sm"
             withUnderline={false}

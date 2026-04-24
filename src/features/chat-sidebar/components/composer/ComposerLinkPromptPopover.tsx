@@ -1,7 +1,9 @@
 import { AnimatePresence, motion } from "motion/react";
-import { useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import { useState, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { TbArrowUpRight, TbCopy, TbLink, TbPaperclip } from "react-icons/tb";
+import { AnimatedMenuHighlight } from "@/components/shared/animated-menu-highlight";
+import { useAnimatedMenuHighlight } from "@/components/shared/use-animated-menu-highlight";
 import PopupMenuPopover from "@/components/shared/popup-menu-popover";
 
 const ATTACHMENT_LINK_PROMPT_MIN_WIDTH = 156;
@@ -9,12 +11,6 @@ const ATTACHMENT_PROMPT_BUTTON_CLASS_NAME =
   "relative z-10 flex w-full cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-left text-sm font-medium text-black transition-colors";
 const ATTACHMENT_PROMPT_SECTION_LABEL_CLASS_NAME =
   "px-2.5 pb-1 pt-1.5 text-[11px] font-medium tracking-[0.03em] text-slate-500";
-const linkPromptHighlightTransition = {
-  type: "spring",
-  stiffness: 520,
-  damping: 42,
-  mass: 0.7,
-} as const;
 
 interface ComposerLinkPromptPopoverProps {
   isOpen: boolean;
@@ -57,14 +53,9 @@ const LinkPromptContent = ({
   onUseAsAttachment,
   onUseAsUrl,
 }: LinkPromptContentProps) => {
-  const actionButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const [hoveredActionIndex, setHoveredActionIndex] = useState<number | null>(null);
-  const [highlightFrame, setHighlightFrame] = useState({
-    top: 0,
-    height: 0,
-    isVisible: false,
-    shouldAnimate: false,
-  });
+  const { highlightFrame, setItemRef } =
+    useAnimatedMenuHighlight<HTMLButtonElement>(hoveredActionIndex);
   const primaryActions: LinkPromptAction[] = [
     {
       label: "Buka",
@@ -99,45 +90,10 @@ const LinkPromptContent = ({
     },
   ];
 
-  useLayoutEffect(() => {
-    if (hoveredActionIndex === null) {
-      setHighlightFrame((frame) => (frame.isVisible ? { ...frame, isVisible: false } : frame));
-      return;
-    }
-
-    const actionButton = actionButtonRefs.current[hoveredActionIndex];
-    if (!actionButton) {
-      setHighlightFrame((frame) => (frame.isVisible ? { ...frame, isVisible: false } : frame));
-      return;
-    }
-
-    const updateHighlightFrame = () => {
-      setHighlightFrame((currentFrame) => ({
-        top: actionButton.offsetTop,
-        height: actionButton.offsetHeight,
-        isVisible: true,
-        shouldAnimate: currentFrame.isVisible,
-      }));
-    };
-
-    updateHighlightFrame();
-    const animationFrameId = window.requestAnimationFrame(updateHighlightFrame);
-    const resizeObserver =
-      typeof ResizeObserver === "undefined" ? null : new ResizeObserver(updateHighlightFrame);
-    resizeObserver?.observe(actionButton);
-
-    return () => {
-      window.cancelAnimationFrame(animationFrameId);
-      resizeObserver?.disconnect();
-    };
-  }, [hoveredActionIndex]);
-
   const renderActionButton = (action: LinkPromptAction, actionIndex: number) => (
     <button
       key={action.label}
-      ref={(element) => {
-        actionButtonRefs.current[actionIndex] = element;
-      }}
+      ref={(element) => setItemRef(actionIndex, element)}
       type="button"
       onClick={action.onClick}
       onMouseEnter={() => {
@@ -164,17 +120,7 @@ const LinkPromptContent = ({
       role="dialog"
       aria-label="Aksi link composer"
     >
-      <motion.div
-        aria-hidden="true"
-        className="pointer-events-none absolute left-0.5 right-0.5 top-0 z-0 rounded-lg bg-slate-100"
-        initial={false}
-        animate={{
-          opacity: highlightFrame.isVisible ? 1 : 0,
-          y: highlightFrame.top,
-          height: highlightFrame.height,
-        }}
-        transition={highlightFrame.shouldAnimate ? linkPromptHighlightTransition : { duration: 0 }}
-      />
+      <AnimatedMenuHighlight frame={highlightFrame} className="left-0.5 right-0.5 bg-slate-100" />
       <div className={ATTACHMENT_PROMPT_SECTION_LABEL_CLASS_NAME}>Aksi</div>
       {primaryActions.map((action, actionIndex) => renderActionButton(action, actionIndex))}
       <AnimatePresence initial={false}>
