@@ -11,6 +11,7 @@
 - Run `bun run check --fix [filenames path]` after editing or adding complex lines in code files. This repo's canonical validation entrypoint is `vp check` via the `check` script, so do not call raw `tsc`, `vite`, or `vitest` unless the task explicitly requires it.
 - When creating Git commits, use git-commit skills.
 - Development, build, lint, format, check, and test flows are routed through `vp`/VitePlus. Legacy script names such as `dev:vite` are wrappers around `vp`, not plain Vite CLI usage.
+- Respect the React Fast Refresh lint rule `react-refresh/only-export-components`: in files that export React components, do not also export shared hooks, constants, helpers, or other non-component values. Move those exports into a sibling module instead of mixing them into the component file. Only use an inline disable when the file already follows an established repo pattern and separating the exports would be disproportionate.
 - Do not make remote-only Supabase changes first. Update the relevant files under `supabase/functions` or `supabase/migrations`, confirm the intended changes are tracked by Git, then use Supabase MCP to deploy Edge Functions or apply migrations only when those local changes are ready.
 - If you need to inspect live database state such as tables, columns, schema definitions, RLS policies, or other metadata not represented in `supabase/`, use Supabase MCP.
 
