@@ -73,6 +73,7 @@ export const useChatSidebarUiState = ({
     isOpen,
     currentChannelId,
     messages,
+    userId,
     closeMessageMenu,
     messageInputRef: refs.messageInputRef,
   });

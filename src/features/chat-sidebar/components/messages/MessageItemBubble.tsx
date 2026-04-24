@@ -2,16 +2,18 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
-} from 'react';
-import type { MessageItemDerivations } from './messageItemDerivations';
-import { MessageActionPopover } from './MessageActionPopover';
-import { MessageBubbleContent } from './MessageBubbleContent';
-import { MessageBubbleMeta } from './MessageBubbleMeta';
-import { MessageDocumentAttachmentGroupContent } from './MessageDocumentAttachmentGroupContent';
-import { MessageImageAttachmentGroupContent } from './MessageImageAttachmentGroupContent';
-import { getMessageMenuClasses } from './messageItemUtils';
-import type { MessageItemModel } from './messageItemTypes';
+} from "react";
+import { QuotedMessagePreview } from "../QuotedMessagePreview";
+import type { MessageItemDerivations } from "./messageItemDerivations";
+import { MessageActionPopover } from "./MessageActionPopover";
+import { MessageBubbleContent } from "./MessageBubbleContent";
+import { MessageBubbleMeta } from "./MessageBubbleMeta";
+import { MessageDocumentAttachmentGroupContent } from "./MessageDocumentAttachmentGroupContent";
+import { MessageImageAttachmentGroupContent } from "./MessageImageAttachmentGroupContent";
+import { getMessageMenuClasses } from "./messageItemUtils";
+import type { MessageItemModel } from "./messageItemTypes";
 
 interface MessageItemBubbleProps {
   model: MessageItemModel;
@@ -28,8 +30,9 @@ export const MessageItemBubble = ({
 }: MessageItemBubbleProps) => {
   const { message, interaction, menu, refs, content, actions } = model;
   const groupedBubbleRef = useRef<HTMLDivElement | null>(null);
-  const [groupedMenuPortalElement, setGroupedMenuPortalElement] =
-    useState<HTMLDivElement | null>(null);
+  const [groupedMenuPortalElement, setGroupedMenuPortalElement] = useState<HTMLDivElement | null>(
+    null,
+  );
   const {
     isSelectionMode,
     userId,
@@ -109,37 +112,29 @@ export const MessageItemBubble = ({
   const isDocumentAttachmentGroup = (groupedDocumentMessages?.length ?? 0) > 1;
   const isImageAttachmentGroup = (groupedImageMessages?.length ?? 0) > 1;
   const isAttachmentGroup = isDocumentAttachmentGroup || isImageAttachmentGroup;
-  const { sidePlacementClass, sideArrowAnchorClass } = getMessageMenuClasses(
-    placement,
-    sideAnchor
-  );
+  const { sidePlacementClass, sideArrowAnchorClass } = getMessageMenuClasses(placement, sideAnchor);
   const bubbleMessageIds = groupedDocumentMessages?.length
-    ? groupedDocumentMessages.map(messageItem => messageItem.id)
+    ? groupedDocumentMessages.map((messageItem) => messageItem.id)
     : groupedImageMessages?.length
-      ? groupedImageMessages.map(messageItem => messageItem.id)
+      ? groupedImageMessages.map((messageItem) => messageItem.id)
       : [message.id];
   const disableTextLinks =
-    !isSelectionMode &&
-    openMessageId !== null &&
-    !bubbleMessageIds.includes(openMessageId);
+    !isSelectionMode && openMessageId !== null && !bubbleMessageIds.includes(openMessageId);
   const disableReplyPanelInteraction =
-    isSelectionMode ||
-    (openMessageId !== null && !bubbleMessageIds.includes(openMessageId));
+    isSelectionMode || (openMessageId !== null && !bubbleMessageIds.includes(openMessageId));
   const bubbleStyle: CSSProperties = {
-    overflowWrap:
-      !isImageMessage && !isFileMessage ? ('anywhere' as const) : undefined,
-    wordBreak:
-      !isImageMessage && !isFileMessage ? ('break-word' as const) : undefined,
+    overflowWrap: !isImageMessage && !isFileMessage ? ("anywhere" as const) : undefined,
+    wordBreak: !isImageMessage && !isFileMessage ? ("break-word" as const) : undefined,
   };
   const isReplyPanelInteractive =
-    !disableReplyPanelInteraction &&
-    Boolean(replyTargetMessage?.id) &&
-    hasReplyPreview;
+    !disableReplyPanelInteraction && Boolean(replyTargetMessage?.id) && hasReplyPreview;
   const isReplyTargetCurrentUser = replyTargetMessage?.sender_id === userId;
   const shouldUseIndependentReplyPanelPadding =
     hasReplyPreview && !isImageMessage && !isFileMessage && !isAttachmentGroup;
 
-  const activateReplyPanel = (event: ReactMouseEvent<HTMLButtonElement>) => {
+  const activateReplyPanel = (
+    event: ReactMouseEvent<HTMLElement> | ReactKeyboardEvent<HTMLElement>,
+  ) => {
     if (!replyTargetMessage?.id) {
       return;
     }
@@ -148,27 +143,9 @@ export const MessageItemBubble = ({
     focusReplyTargetMessage(replyTargetMessage.id);
   };
 
-  const replyPanelClassName = isFlashingTarget
-    ? 'bg-white/10'
-    : isCurrentUser
-      ? 'bg-emerald-50'
-      : 'bg-slate-50';
-  const replyPanelStripeClassName = isFlashingTarget
-    ? 'bg-white/20'
-    : isReplyTargetCurrentUser
-      ? 'bg-olive-500'
-      : 'bg-emerald-500';
-  const replyLabelClassName = isFlashingTarget
-    ? 'text-white/80'
-    : isReplyTargetCurrentUser
-      ? 'text-olive-700'
-      : 'text-emerald-600';
-  const replyPreviewClassName = isFlashingTarget
-    ? 'text-white'
-    : 'text-slate-600';
   const replyPanelContainerClassName = shouldUseIndependentReplyPanelPadding
-    ? 'px-1 pt-1 pb-1'
-    : 'mb-2';
+    ? "px-1 pt-1 pb-1"
+    : "mb-2";
 
   const bubbleInnerContent = (
     <>
@@ -180,52 +157,15 @@ export const MessageItemBubble = ({
       />
       {hasReplyPreview ? (
         <div className={replyPanelContainerClassName}>
-          {isReplyPanelInteractive ? (
-            <button
-              type="button"
-              className={`relative block w-full min-w-0 overflow-hidden rounded-lg text-left transition-colors ${replyPanelClassName} cursor-pointer`}
-              onClick={activateReplyPanel}
-              aria-label={`Buka pesan yang dibalas dari ${replyAuthorLabel}`}
-            >
-              <span
-                aria-hidden="true"
-                className={`absolute inset-y-0 left-0 w-1 rounded-l-lg ${replyPanelStripeClassName}`}
-              />
-              <div className="min-w-0 pt-0.5 pr-1.5 pb-0.5 pl-2.5">
-                <p
-                  className={`truncate text-[11px] font-semibold ${replyLabelClassName}`}
-                >
-                  {replyAuthorLabel}
-                </p>
-                <p
-                  className={`truncate text-xs leading-relaxed ${replyPreviewClassName}`}
-                >
-                  {replyPreviewText}
-                </p>
-              </div>
-            </button>
-          ) : (
-            <div
-              className={`relative min-w-0 overflow-hidden rounded-lg text-left transition-colors ${replyPanelClassName}`}
-            >
-              <span
-                aria-hidden="true"
-                className={`absolute inset-y-0 left-0 w-1 rounded-l-lg ${replyPanelStripeClassName}`}
-              />
-              <div className="min-w-0 pt-0.5 pr-1.5 pb-0.5 pl-2.5">
-                <p
-                  className={`truncate text-[11px] font-semibold ${replyLabelClassName}`}
-                >
-                  {replyAuthorLabel}
-                </p>
-                <p
-                  className={`truncate text-xs leading-relaxed ${replyPreviewClassName}`}
-                >
-                  {replyPreviewText}
-                </p>
-              </div>
-            </div>
-          )}
+          <QuotedMessagePreview
+            authorLabel={replyAuthorLabel ?? ""}
+            previewText={replyPreviewText ?? ""}
+            isAuthorCurrentUser={isReplyTargetCurrentUser}
+            isHighlighted={isFlashingTarget}
+            surface={isCurrentUser ? "current-user-message" : "other-user-message"}
+            ariaLabel={`Buka pesan yang dibalas dari ${replyAuthorLabel}`}
+            onActivate={isReplyPanelInteractive ? activateReplyPanel : undefined}
+          />
         </div>
       ) : null}
       {isImageAttachmentGroup && groupedImageMessages ? (
@@ -283,11 +223,7 @@ export const MessageItemBubble = ({
           handleReplyMessage={handleReplyMessage}
         />
       ) : (
-        <div
-          className={
-            shouldUseIndependentReplyPanelPadding ? 'px-3 pt-0 pb-2' : ''
-          }
-        >
+        <div className={shouldUseIndependentReplyPanelPadding ? "px-3 pt-0 pb-2" : ""}>
           <MessageBubbleContent
             message={message}
             isCurrentUser={isCurrentUser}
@@ -320,36 +256,36 @@ export const MessageItemBubble = ({
   );
 
   const bubbleClassName = `${bubbleWrapperClass} max-w-full ${
-    shouldUseIndependentReplyPanelPadding ? 'p-0' : bubbleSpacingClass
+    shouldUseIndependentReplyPanelPadding ? "p-0" : bubbleSpacingClass
   } ${bubbleTypographyClass} ${bubbleToneClass} ${bubbleOpacityClass} ${bubbleShapeClass} ${
     isActiveSearchMatch
-      ? 'shadow-[0_0_0_1px_rgba(15,23,42,0.12)]'
+      ? "shadow-[0_0_0_1px_rgba(15,23,42,0.12)]"
       : isSearchMatch
-        ? 'shadow-[0_0_0_1px_rgba(15,23,42,0.08)]'
-        : ''
-  } ${isAttachmentGroup ? 'cursor-pointer overflow-visible' : 'cursor-pointer'} ${
-    shouldDimBubble ? 'blur-[2px] brightness-95' : ''
+        ? "shadow-[0_0_0_1px_rgba(15,23,42,0.08)]"
+        : ""
+  } ${isAttachmentGroup ? "cursor-pointer overflow-visible" : "cursor-pointer"} ${
+    shouldDimBubble ? "blur-[2px] brightness-95" : ""
   } select-none transition-[background-color,color,opacity,box-shadow,filter] duration-300 ease-in-out`;
 
   return (
     <div
       className={
         isCurrentUser
-          ? 'relative flex min-w-0 max-w-xs flex-col items-end'
-          : 'relative flex min-w-0 max-w-xs flex-col items-start'
+          ? "relative flex min-w-0 max-w-xs flex-col items-end"
+          : "relative flex min-w-0 max-w-xs flex-col items-start"
       }
     >
       <div
         className={
           isFileMessage && !isImageFileMessage
-            ? 'relative min-w-0 w-full max-w-full'
-            : 'relative min-w-0 max-w-full'
+            ? "relative min-w-0 w-full max-w-full"
+            : "relative min-w-0 max-w-full"
         }
       >
         {isAttachmentGroup ? (
           <div
-            ref={bubbleElement => {
-              bubbleMessageIds.forEach(messageId => {
+            ref={(bubbleElement) => {
+              bubbleMessageIds.forEach((messageId) => {
                 if (bubbleElement) {
                   messageBubbleRefs.current.set(messageId, bubbleElement);
                 } else {
@@ -365,8 +301,8 @@ export const MessageItemBubble = ({
           </div>
         ) : (
           <div
-            ref={bubbleElement => {
-              bubbleMessageIds.forEach(messageId => {
+            ref={(bubbleElement) => {
+              bubbleMessageIds.forEach((messageId) => {
                 if (bubbleElement) {
                   messageBubbleRefs.current.set(messageId, bubbleElement);
                 } else {
@@ -376,29 +312,21 @@ export const MessageItemBubble = ({
             }}
             className={bubbleClassName}
             style={bubbleStyle}
-            onClick={event => {
+            onClick={(event) => {
               if (isSelectionMode) return;
               event.stopPropagation();
-              toggle(
-                event.currentTarget,
-                message.id,
-                isCurrentUser ? 'left' : 'right'
-              );
+              toggle(event.currentTarget, message.id, isCurrentUser ? "left" : "right");
             }}
             role="button"
             tabIndex={0}
-            onKeyDown={event => {
-              if (event.key === 'Enter' || event.key === ' ') {
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
                 event.preventDefault();
                 if (isSelectionMode) {
                   onToggleMessageSelection(selectionTargetMessageIds);
                   return;
                 }
-                toggle(
-                  event.currentTarget,
-                  message.id,
-                  isCurrentUser ? 'left' : 'right'
-                );
+                toggle(event.currentTarget, message.id, isCurrentUser ? "left" : "right");
               }
             }}
           >
@@ -407,10 +335,7 @@ export const MessageItemBubble = ({
         )}
 
         {isImageAttachmentGroup ? (
-          <div
-            ref={setGroupedMenuPortalElement}
-            className="pointer-events-none absolute inset-0"
-          />
+          <div ref={setGroupedMenuPortalElement} className="pointer-events-none absolute inset-0" />
         ) : null}
 
         {isAttachmentGroup ? null : (

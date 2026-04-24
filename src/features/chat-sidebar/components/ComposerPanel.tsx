@@ -326,6 +326,8 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                   {composer.editingMessagePreview ? (
                     <ComposerEditBanner
                       messagePreview={composer.editingMessagePreview}
+                      authorLabel={composer.editingMessageAuthorLabel ?? "Anda"}
+                      isAuthorCurrentUser={composer.isEditingMessageFromCurrentUser}
                       mode="edit"
                       onCancelContext={mutations.handleCancelEditMessage}
                       onFocusTargetMessage={viewport.focusEditingTargetMessage}
@@ -334,6 +336,8 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                   ) : composer.replyingMessagePreview ? (
                     <ComposerEditBanner
                       messagePreview={composer.replyingMessagePreview}
+                      authorLabel={composer.replyingMessageAuthorLabel ?? "Pengguna"}
+                      isAuthorCurrentUser={composer.isReplyingMessageFromCurrentUser}
                       mode="reply"
                       onCancelContext={mutations.handleCancelReplyMessage}
                       onFocusTargetMessage={() => {

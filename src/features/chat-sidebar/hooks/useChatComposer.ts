@@ -1,11 +1,5 @@
-import type { RefObject, SetStateAction } from 'react';
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react';
+import type { RefObject, SetStateAction } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   COMPOSER_IMAGE_PREVIEW_OFFSET,
   EDITING_COMPOSER_OFFSET,
@@ -13,19 +7,20 @@ import {
   MESSAGE_INPUT_MIN_HEIGHT,
   SEND_SUCCESS_GLOW_DURATION,
   SEND_SUCCESS_GLOW_RESET_BUFFER,
-} from '../constants';
+} from "../constants";
 import {
   readPersistedComposerDraftMessage,
   writePersistedComposerDraftMessage,
-} from '../utils/composer-draft-persistence';
-import { getAttachmentFileName } from '../utils/attachment';
-import { useChatComposerAttachments } from './useChatComposerAttachments';
-import type { ChatMessage } from '../data/chatSidebarGateway';
+} from "../utils/composer-draft-persistence";
+import { getAttachmentFileName } from "../utils/attachment";
+import { useChatComposerAttachments } from "./useChatComposerAttachments";
+import type { ChatMessage } from "../data/chatSidebarGateway";
 
 interface UseChatComposerProps {
   isOpen: boolean;
   currentChannelId: string | null;
   messages: ChatMessage[];
+  userId?: string;
   closeMessageMenu: () => void;
   messageInputRef: RefObject<HTMLTextAreaElement | null>;
 }
@@ -34,24 +29,18 @@ export const useChatComposer = ({
   isOpen,
   currentChannelId,
   messages,
+  userId,
   closeMessageMenu,
   messageInputRef,
 }: UseChatComposerProps) => {
   const [message, setMessageState] = useState(() =>
-    readPersistedComposerDraftMessage(currentChannelId)
+    readPersistedComposerDraftMessage(currentChannelId),
   );
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
-  const [replyingMessageId, setReplyingMessageId] = useState<string | null>(
-    null
-  );
-  const [messageInputHeight, setMessageInputHeight] = useState(
-    MESSAGE_INPUT_MIN_HEIGHT
-  );
-  const [composerLayoutMode, setComposerLayoutMode] = useState<
-    'inline' | 'multiline'
-  >('inline');
-  const [isSendSuccessGlowVisible, setIsSendSuccessGlowVisible] =
-    useState(false);
+  const [replyingMessageId, setReplyingMessageId] = useState<string | null>(null);
+  const [messageInputHeight, setMessageInputHeight] = useState(MESSAGE_INPUT_MIN_HEIGHT);
+  const [composerLayoutMode, setComposerLayoutMode] = useState<"inline" | "multiline">("inline");
+  const [isSendSuccessGlowVisible, setIsSendSuccessGlowVisible] = useState(false);
 
   const messageInputHeightRafRef = useRef<number | null>(null);
   const sendSuccessGlowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -73,23 +62,18 @@ export const useChatComposer = ({
 
   const setMessage = useCallback(
     (nextMessage: SetStateAction<string>) => {
-      setMessageState(previousMessage => {
+      setMessageState((previousMessage) => {
         const resolvedNextMessage =
-          typeof nextMessage === 'function'
-            ? nextMessage(previousMessage)
-            : nextMessage;
+          typeof nextMessage === "function" ? nextMessage(previousMessage) : nextMessage;
 
         if (!editingMessageId && currentChannelId) {
-          writePersistedComposerDraftMessage(
-            currentChannelId,
-            resolvedNextMessage
-          );
+          writePersistedComposerDraftMessage(currentChannelId, resolvedNextMessage);
         }
 
         return resolvedNextMessage;
       });
     },
-    [currentChannelId, editingMessageId]
+    [currentChannelId, editingMessageId],
   );
 
   const attachments = useChatComposerAttachments({
@@ -157,32 +141,39 @@ export const useChatComposer = ({
     inlineOverflowThresholdRef.current !== null &&
     message.length >= inlineOverflowThresholdRef.current;
   const isTargetMultiline =
-    messageInputHeight > MESSAGE_INPUT_MIN_HEIGHT + 2 ||
-    isHoldingMultilineByInlineOverflow;
-  const isMessageInputMultiline = composerLayoutMode === 'multiline';
-  const editingMessagePreview =
+    messageInputHeight > MESSAGE_INPUT_MIN_HEIGHT + 2 || isHoldingMultilineByInlineOverflow;
+  const isMessageInputMultiline = composerLayoutMode === "multiline";
+  const editingMessage =
     editingMessageId === null
       ? null
-      : (messages.find(candidate => candidate.id === editingMessageId)
-          ?.message ?? null);
-  const replyingMessagePreview =
+      : (messages.find((candidate) => candidate.id === editingMessageId) ?? null);
+  const replyingMessage =
     replyingMessageId === null
       ? null
-      : (() => {
-          const replyingMessage = messages.find(
-            candidate => candidate.id === replyingMessageId
-          );
-          if (!replyingMessage) {
-            return null;
-          }
-
-          if (replyingMessage.message_type === 'text') {
-            const replyText = replyingMessage.message.trim();
-            return replyText.length > 0 ? replyText : null;
-          }
-
-          return getAttachmentFileName(replyingMessage);
-        })();
+      : (messages.find((candidate) => candidate.id === replyingMessageId) ?? null);
+  const editingMessagePreview = editingMessage?.message ?? null;
+  const isEditingMessageFromCurrentUser = editingMessage
+    ? editingMessage.sender_id === userId
+    : false;
+  const editingMessageAuthorLabel = editingMessage
+    ? isEditingMessageFromCurrentUser
+      ? "Anda"
+      : editingMessage.sender_name?.trim() || "Pengguna"
+    : null;
+  const replyingMessagePreview =
+    replyingMessage === null
+      ? null
+      : replyingMessage.message_type === "text"
+        ? replyingMessage.message.replace(/\s+/g, " ").trim() || "Pesan"
+        : getAttachmentFileName(replyingMessage);
+  const isReplyingMessageFromCurrentUser = replyingMessage
+    ? replyingMessage.sender_id === userId
+    : false;
+  const replyingMessageAuthorLabel = replyingMessage
+    ? isReplyingMessageFromCurrentUser
+      ? "Anda"
+      : replyingMessage.sender_name?.trim() || "Pengguna"
+    : null;
   const hasComposerContextBanner =
     editingMessagePreview !== null || replyingMessagePreview !== null;
   const composerContextualOffset =
@@ -208,7 +199,7 @@ export const useChatComposer = ({
 
       setMessage(nextMessage);
     },
-    [attachmentPastePromptUrl, dismissAttachmentPastePrompt, setMessage]
+    [attachmentPastePromptUrl, dismissAttachmentPastePrompt, setMessage],
   );
 
   const resizeMessageInput = useCallback(
@@ -221,9 +212,8 @@ export const useChatComposer = ({
         messageInputHeightRafRef.current = null;
       }
 
-      const currentHeight =
-        textarea.getBoundingClientRect().height || MESSAGE_INPUT_MIN_HEIGHT;
-      textarea.style.height = 'auto';
+      const currentHeight = textarea.getBoundingClientRect().height || MESSAGE_INPUT_MIN_HEIGHT;
+      textarea.style.height = "auto";
 
       const hasValue = value.length > 0;
       const isOverflowingCurrentLayout =
@@ -232,10 +222,7 @@ export const useChatComposer = ({
 
       if (!hasValue) {
         inlineOverflowThresholdRef.current = null;
-      } else if (
-        composerLayoutMode === 'inline' &&
-        isOverflowingCurrentLayout
-      ) {
+      } else if (composerLayoutMode === "inline" && isOverflowingCurrentLayout) {
         if (currentThreshold === null || value.length < currentThreshold) {
           inlineOverflowThresholdRef.current = value.length;
         }
@@ -243,23 +230,20 @@ export const useChatComposer = ({
         inlineOverflowThresholdRef.current = null;
       }
 
-      const contentHeight = hasValue
-        ? textarea.scrollHeight
-        : MESSAGE_INPUT_MIN_HEIGHT;
+      const contentHeight = hasValue ? textarea.scrollHeight : MESSAGE_INPUT_MIN_HEIGHT;
       const nextHeight = Math.min(
         Math.max(contentHeight, MESSAGE_INPUT_MIN_HEIGHT),
-        MESSAGE_INPUT_MAX_HEIGHT
+        MESSAGE_INPUT_MAX_HEIGHT,
       );
 
       const isOverflowingMaxHeight = contentHeight > MESSAGE_INPUT_MAX_HEIGHT;
-      textarea.style.overflowY = isOverflowingMaxHeight ? 'auto' : 'hidden';
+      textarea.style.overflowY = isOverflowingMaxHeight ? "auto" : "hidden";
       if (!isOverflowingMaxHeight) {
         textarea.scrollTop = 0;
       }
 
       const shouldAnimateHeight =
-        Math.abs(nextHeight - currentHeight) > 0.5 &&
-        messageInputHeight !== nextHeight;
+        Math.abs(nextHeight - currentHeight) > 0.5 && messageInputHeight !== nextHeight;
       if (shouldAnimateHeight) {
         textarea.style.height = `${currentHeight}px`;
         if (nextHeight < currentHeight) {
@@ -278,11 +262,11 @@ export const useChatComposer = ({
         textarea.style.height = `${nextHeight}px`;
       }
 
-      setMessageInputHeight(previousHeight =>
-        previousHeight === nextHeight ? previousHeight : nextHeight
+      setMessageInputHeight((previousHeight) =>
+        previousHeight === nextHeight ? previousHeight : nextHeight,
       );
     },
-    [composerLayoutMode, messageInputHeight, messageInputRef]
+    [composerLayoutMode, messageInputHeight, messageInputRef],
   );
 
   useLayoutEffect(() => {
@@ -314,10 +298,8 @@ export const useChatComposer = ({
   }, [clearAttachmentPasteState, message]);
 
   useLayoutEffect(() => {
-    const nextMode = isTargetMultiline ? 'multiline' : 'inline';
-    setComposerLayoutMode(previousMode =>
-      previousMode === nextMode ? previousMode : nextMode
-    );
+    const nextMode = isTargetMultiline ? "multiline" : "inline";
+    setComposerLayoutMode((previousMode) => (previousMode === nextMode ? previousMode : nextMode));
   }, [isTargetMultiline]);
 
   return {
@@ -347,7 +329,11 @@ export const useChatComposer = ({
     isComposerImageExpanded,
     isComposerImageExpandedVisible,
     editingMessagePreview,
+    editingMessageAuthorLabel,
+    isEditingMessageFromCurrentUser,
     replyingMessagePreview,
+    replyingMessageAuthorLabel,
+    isReplyingMessageFromCurrentUser,
     composerContextualOffset,
     attachButtonRef,
     attachModalRef,
