@@ -1,10 +1,10 @@
-import { createRef, type ComponentProps } from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vite-plus/test";
-import type { ChatMessage } from "../data/chatSidebarGateway";
-import MessagesPane from "../components/MessagesPane";
+import { createRef, type ComponentProps } from 'react';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vite-plus/test';
+import type { ChatMessage } from '../data/chatSidebarGateway';
+import MessagesPane from '../components/MessagesPane';
 
-vi.mock("@/components/shared/image-expand-preview", () => ({
+vi.mock('@/components/shared/image-expand-preview', () => ({
   default: ({
     children,
     onClose,
@@ -30,46 +30,48 @@ vi.mock("@/components/shared/image-expand-preview", () => ({
   ),
 }));
 
-vi.mock("../components/DocumentPreviewPortal", () => ({
+vi.mock('../components/DocumentPreviewPortal', () => ({
   default: () => <div data-testid="document-preview-portal" />,
 }));
 
-vi.mock("../components/MultiImagePreviewPortal", () => ({
+vi.mock('../components/MultiImagePreviewPortal', () => ({
   default: () => <div data-testid="multi-image-preview-portal" />,
 }));
 
-vi.mock("../components/ProgressiveImagePreview", () => ({
+vi.mock('../components/ProgressiveImagePreview', () => ({
   default: () => <div data-testid="progressive-image-preview" />,
 }));
 
-vi.mock("../components/messages/MessageItem", () => ({
+vi.mock('../components/messages/MessageItem', () => ({
   default: ({ model }: { model: { message: ChatMessage } }) => (
-    <div data-testid={`message-item-${model.message.id}`}>{model.message.message}</div>
+    <div data-testid={`message-item-${model.message.id}`}>
+      {model.message.message}
+    </div>
   ),
 }));
 
-type MessagesPaneRuntime = ComponentProps<typeof MessagesPane>["runtime"];
+type MessagesPaneRuntime = ComponentProps<typeof MessagesPane>['runtime'];
 
 type MessagesPaneConversationOverrides = Partial<
-  Omit<MessagesPaneRuntime["conversation"], "history" | "search">
+  Omit<MessagesPaneRuntime['conversation'], 'history' | 'search'>
 > & {
-  history?: Partial<MessagesPaneRuntime["conversation"]["history"]>;
-  search?: Partial<MessagesPaneRuntime["conversation"]["search"]>;
+  history?: Partial<MessagesPaneRuntime['conversation']['history']>;
+  search?: Partial<MessagesPaneRuntime['conversation']['search']>;
 };
 
 type MessagesPaneItemOverrides = {
-  interaction?: Partial<MessagesPaneRuntime["item"]["interaction"]>;
-  menu?: Partial<MessagesPaneRuntime["item"]["menu"]>;
-  refs?: Partial<MessagesPaneRuntime["item"]["refs"]>;
-  content?: Partial<MessagesPaneRuntime["item"]["content"]>;
-  actions?: Partial<MessagesPaneRuntime["item"]["actions"]>;
+  interaction?: Partial<MessagesPaneRuntime['item']['interaction']>;
+  menu?: Partial<MessagesPaneRuntime['item']['menu']>;
+  refs?: Partial<MessagesPaneRuntime['item']['refs']>;
+  content?: Partial<MessagesPaneRuntime['item']['content']>;
+  actions?: Partial<MessagesPaneRuntime['item']['actions']>;
 };
 
 type MessagesPaneRuntimeOverrides = {
   conversation?: MessagesPaneConversationOverrides;
-  viewport?: Partial<MessagesPaneRuntime["viewport"]>;
+  viewport?: Partial<MessagesPaneRuntime['viewport']>;
   item?: MessagesPaneItemOverrides;
-  previews?: Partial<MessagesPaneRuntime["previews"]>;
+  previews?: Partial<MessagesPaneRuntime['previews']>;
 };
 
 const createRuntime = (overrides: MessagesPaneRuntimeOverrides = {}) => {
@@ -111,7 +113,7 @@ const createRuntime = (overrides: MessagesPaneRuntimeOverrides = {}) => {
     },
     item: {
       interaction: {
-        userId: "user-a",
+        userId: 'user-a',
         isSelectionMode: false,
         selectedMessageIds: new Set<string>(),
         handleToggleMessageSelection: vi.fn(),
@@ -119,14 +121,14 @@ const createRuntime = (overrides: MessagesPaneRuntimeOverrides = {}) => {
         handleToggleExpand: vi.fn(),
         flashingMessageId: null,
         isFlashHighlightVisible: false,
-        normalizedMessageSearchQuery: "",
+        normalizedMessageSearchQuery: '',
         ...item?.interaction,
       },
       menu: {
         openMessageId: null,
         dimmingMessageId: null,
-        placement: "up",
-        sideAnchor: "middle",
+        placement: 'up',
+        sideAnchor: 'middle',
         shouldAnimateOpen: false,
         transitionSourceId: null,
         offsetX: 0,
@@ -142,8 +144,8 @@ const createRuntime = (overrides: MessagesPaneRuntimeOverrides = {}) => {
       content: {
         getImageMessageUrl: vi.fn(() => null),
         getPdfMessagePreview: vi.fn(() => undefined),
-        getAttachmentFileName: () => "Lampiran",
-        getAttachmentFileKind: () => "document",
+        getAttachmentFileName: () => 'Lampiran',
+        getAttachmentFileKind: () => 'document',
         openImageInPortal: vi.fn(async () => {}),
         openImageGroupInPortal: vi.fn(async () => {}),
         openDocumentInPortal: vi.fn(async () => {}),
@@ -166,7 +168,7 @@ const createRuntime = (overrides: MessagesPaneRuntimeOverrides = {}) => {
       closeImagePreview: vi.fn(),
       imagePreviewUrl: null,
       imagePreviewBackdropUrl: null,
-      imagePreviewName: "",
+      imagePreviewName: '',
       imageGroupPreviewItems: [],
       activeImageGroupPreviewId: null,
       isImageGroupPreviewVisible: false,
@@ -177,7 +179,7 @@ const createRuntime = (overrides: MessagesPaneRuntimeOverrides = {}) => {
       handleOpenForwardMessagePicker: vi.fn(),
       closeImageGroupPreview: vi.fn(),
       documentPreviewUrl: null,
-      documentPreviewName: "",
+      documentPreviewName: '',
       isDocumentPreviewVisible: false,
       closeDocumentPreview: vi.fn(),
       activeImageGroupPreviewMessage: null,
@@ -186,23 +188,23 @@ const createRuntime = (overrides: MessagesPaneRuntimeOverrides = {}) => {
   } as unknown as MessagesPaneRuntime;
 };
 
-describe("MessagesPane", () => {
-  it("closes the single-image preview when the empty content area is clicked", () => {
+describe('MessagesPane', () => {
+  it('closes the single-image preview when the empty content area is clicked', () => {
     const closeImagePreview = vi.fn();
     const runtime = createRuntime({
       previews: {
         isImagePreviewOpen: true,
         isImagePreviewVisible: true,
-        imagePreviewUrl: "https://example.com/full.png",
+        imagePreviewUrl: 'https://example.com/full.png',
         imagePreviewBackdropUrl: null,
-        imagePreviewName: "Lampiran",
+        imagePreviewName: 'Lampiran',
         closeImagePreview,
       },
     });
 
     render(<MessagesPane runtime={runtime} />);
 
-    const previewContent = screen.getByTestId("image-expand-preview-content");
+    const previewContent = screen.getByTestId('image-expand-preview-content');
 
     fireEvent.click(previewContent);
 

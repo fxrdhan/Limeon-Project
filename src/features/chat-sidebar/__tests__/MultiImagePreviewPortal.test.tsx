@@ -1,18 +1,24 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vite-plus/test";
-import MultiImagePreviewPortal from "../components/MultiImagePreviewPortal";
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vite-plus/test';
+import MultiImagePreviewPortal from '../components/MultiImagePreviewPortal';
 
-vi.mock("@/components/shared/image-expand-preview", () => ({
-  default: ({ children, isOpen }: { children?: React.ReactNode; isOpen?: boolean }) =>
+vi.mock('@/components/shared/image-expand-preview', () => ({
+  default: ({
+    children,
+    isOpen,
+  }: {
+    children?: React.ReactNode;
+    isOpen?: boolean;
+  }) =>
     isOpen ? <div data-testid="image-expand-preview">{children}</div> : null,
 }));
 
-vi.mock("../components/ProgressiveImagePreview", () => ({
+vi.mock('../components/ProgressiveImagePreview', () => ({
   default: () => <div data-testid="progressive-image-preview" />,
 }));
 
-describe("MultiImagePreviewPortal", () => {
-  it("wires open, copy, forward, download, and close actions", () => {
+describe('MultiImagePreviewPortal', () => {
+  it('wires open, copy, forward, download, and close actions', () => {
     const onSelectPreview = vi.fn();
     const onDownloadActivePreview = vi.fn();
     const onOpenActivePreviewInNewTab = vi.fn();
@@ -28,11 +34,11 @@ describe("MultiImagePreviewPortal", () => {
         isVisible={true}
         previewItems={[
           {
-            id: "image-1",
-            thumbnailUrl: "data:image/png;base64,thumb",
-            previewUrl: "data:image/png;base64,preview",
-            fullPreviewUrl: "https://example.com/full.png",
-            previewName: "photo.png",
+            id: 'image-1',
+            thumbnailUrl: 'data:image/png;base64,thumb',
+            previewUrl: 'data:image/png;base64,preview',
+            fullPreviewUrl: 'https://example.com/full.png',
+            previewName: 'photo.png',
           },
         ]}
         activePreviewId="image-1"
@@ -46,16 +52,18 @@ describe("MultiImagePreviewPortal", () => {
         onForwardActivePreview={onForwardActivePreview}
         onClose={onClose}
         backdropClassName="z-[80]"
-      />,
+      />
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Buka di tab baru" }));
-    fireEvent.click(screen.getByRole("button", { name: "Salin link" }));
-    fireEvent.click(screen.getByRole("button", { name: "Salin gambar" }));
-    fireEvent.click(screen.getByRole("button", { name: "Balas gambar" }));
-    fireEvent.click(screen.getByRole("button", { name: "Teruskan gambar" }));
-    fireEvent.click(screen.getByRole("button", { name: "Unduh gambar" }));
-    fireEvent.click(screen.getByRole("button", { name: "Tutup preview gambar" }));
+    fireEvent.click(screen.getByRole('button', { name: 'Buka di tab baru' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Salin link' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Salin gambar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Balas gambar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Teruskan gambar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Unduh gambar' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Tutup preview gambar' })
+    );
 
     expect(onOpenActivePreviewInNewTab).toHaveBeenCalledTimes(1);
     expect(onCopyActivePreviewLink).toHaveBeenCalledTimes(1);
@@ -67,18 +75,18 @@ describe("MultiImagePreviewPortal", () => {
     expect(onSelectPreview).not.toHaveBeenCalled();
   });
 
-  it("disables the forward button when the active preview cannot be forwarded", () => {
+  it('disables the forward button when the active preview cannot be forwarded', () => {
     render(
       <MultiImagePreviewPortal
         isOpen={true}
         isVisible={true}
         previewItems={[
           {
-            id: "temp-image-1",
-            thumbnailUrl: "data:image/png;base64,thumb",
-            previewUrl: "data:image/png;base64,preview",
+            id: 'temp-image-1',
+            thumbnailUrl: 'data:image/png;base64,thumb',
+            previewUrl: 'data:image/png;base64,preview',
             fullPreviewUrl: null,
-            previewName: "photo.png",
+            previewName: 'photo.png',
           },
         ]}
         activePreviewId="temp-image-1"
@@ -92,15 +100,15 @@ describe("MultiImagePreviewPortal", () => {
         onForwardActivePreview={() => {}}
         onClose={() => {}}
         backdropClassName="z-[80]"
-      />,
+      />
     );
 
     expect(
       (
-        screen.getByRole("button", {
-          name: "Teruskan gambar",
+        screen.getByRole('button', {
+          name: 'Teruskan gambar',
         }) as HTMLButtonElement
-      ).disabled,
+      ).disabled
     ).toBe(true);
   });
 });

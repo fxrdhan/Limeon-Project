@@ -1,11 +1,16 @@
-import { useCallback, useEffect, type MutableRefObject, type RefObject } from "react";
-import { getComposerVisibleStackMetrics } from "../utils/composer-stack-metrics";
-import type { VisibleBounds } from "../utils/viewport-visibility";
-import { useComposerContainerHeight } from "./useComposerContainerHeight";
-import { useChatViewportFocus } from "./useChatViewportFocus";
-import { useChatViewportReadReceipts } from "./useChatViewportReadReceipts";
-import { useChatViewportMenu } from "./useChatViewportMenu";
-import { useChatViewportScroll } from "./useChatViewportScroll";
+import {
+  useCallback,
+  useEffect,
+  type MutableRefObject,
+  type RefObject,
+} from 'react';
+import { getComposerVisibleStackMetrics } from '../utils/composer-stack-metrics';
+import type { VisibleBounds } from '../utils/viewport-visibility';
+import { useComposerContainerHeight } from './useComposerContainerHeight';
+import { useChatViewportFocus } from './useChatViewportFocus';
+import { useChatViewportReadReceipts } from './useChatViewportReadReceipts';
+import { useChatViewportMenu } from './useChatViewportMenu';
+import { useChatViewportScroll } from './useChatViewportScroll';
 
 interface UseChatViewportProps {
   isOpen: boolean;
@@ -66,16 +71,21 @@ export const useChatViewport = ({
   messageBubbleRefs,
 }: UseChatViewportProps) => {
   const getVisibleMessagesBounds = useCallback((): VisibleBounds | null => {
-    const containerRect = messagesContainerRef.current?.getBoundingClientRect() ?? null;
+    const containerRect =
+      messagesContainerRef.current?.getBoundingClientRect() ?? null;
     if (!containerRect) return null;
 
-    const composerTop = getComposerVisibleStackMetrics(composerContainerRef.current)?.top;
+    const composerTop = getComposerVisibleStackMetrics(
+      composerContainerRef.current
+    )?.top;
     const hasValidComposerTop =
-      typeof composerTop === "number" &&
+      typeof composerTop === 'number' &&
       Number.isFinite(composerTop) &&
       composerTop > containerRect.top &&
       composerTop < containerRect.bottom;
-    const visibleBottom = hasValidComposerTop ? composerTop : containerRect.bottom;
+    const visibleBottom = hasValidComposerTop
+      ? composerTop
+      : containerRect.bottom;
 
     return {
       containerRect,
@@ -165,7 +175,7 @@ export const useChatViewport = ({
 
       if (
         target.closest(
-          'button, [role="button"], a, input, textarea, select, [contenteditable="true"]',
+          'button, [role="button"], a, input, textarea, select, [contenteditable="true"]'
         )
       ) {
         return;
@@ -173,7 +183,7 @@ export const useChatViewport = ({
 
       focusMessageComposer();
     },
-    [focusMessageComposer],
+    [focusMessageComposer]
   );
 
   useEffect(() => {

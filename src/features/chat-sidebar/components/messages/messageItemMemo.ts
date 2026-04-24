@@ -1,5 +1,5 @@
-import type { MessageItemModel } from "./messageItemTypes";
-import { getPdfMessagePreviewUrl } from "../../utils/pdf-message-preview";
+import type { MessageItemModel } from './messageItemTypes';
+import { getPdfMessagePreviewUrl } from '../../utils/pdf-message-preview';
 
 const isMenuOpenForMessage = (model: MessageItemModel) =>
   model.menu.openMessageId === model.message.id;
@@ -15,7 +15,7 @@ const isFlashingMessage = (model: MessageItemModel) =>
 
 export const areMessageItemPropsEqual = (
   previousProps: { model: MessageItemModel },
-  nextProps: { model: MessageItemModel },
+  nextProps: { model: MessageItemModel }
 ) => {
   const previousModel = previousProps.model;
   const nextModel = nextProps.model;
@@ -29,7 +29,8 @@ export const areMessageItemPropsEqual = (
   const nextMenuOpen = isMenuOpenForMessage(nextModel);
   const previousMenuDimming = isMenuDimmingForMessage(previousModel);
   const nextMenuDimming = isMenuDimmingForMessage(nextModel);
-  const previousMenuTransitionSource = isMenuTransitionSourceForMessage(previousModel);
+  const previousMenuTransitionSource =
+    isMenuTransitionSourceForMessage(previousModel);
   const nextMenuTransitionSource = isMenuTransitionSourceForMessage(nextModel);
   const previousHasDimmingMenu = Boolean(previousModel.menu.dimmingMessageId);
   const nextHasDimmingMenu = Boolean(nextModel.menu.dimmingMessageId);
@@ -38,13 +39,19 @@ export const areMessageItemPropsEqual = (
 
   return (
     previousModel.message === nextModel.message &&
-    previousModel.content.resolvedMessageUrl === nextModel.content.resolvedMessageUrl &&
+    previousModel.content.resolvedMessageUrl ===
+      nextModel.content.resolvedMessageUrl &&
     previousModel.interaction.userId === nextModel.interaction.userId &&
-    previousModel.layout.isGroupedWithPrevious === nextModel.layout.isGroupedWithPrevious &&
-    previousModel.layout.isGroupedWithNext === nextModel.layout.isGroupedWithNext &&
-    previousModel.layout.isFirstVisibleMessage === nextModel.layout.isFirstVisibleMessage &&
-    previousModel.layout.hasDateSeparatorBefore === nextModel.layout.hasDateSeparatorBefore &&
-    previousModel.interaction.isSelectionMode === nextModel.interaction.isSelectionMode &&
+    previousModel.layout.isGroupedWithPrevious ===
+      nextModel.layout.isGroupedWithPrevious &&
+    previousModel.layout.isGroupedWithNext ===
+      nextModel.layout.isGroupedWithNext &&
+    previousModel.layout.isFirstVisibleMessage ===
+      nextModel.layout.isFirstVisibleMessage &&
+    previousModel.layout.hasDateSeparatorBefore ===
+      nextModel.layout.hasDateSeparatorBefore &&
+    previousModel.interaction.isSelectionMode ===
+      nextModel.interaction.isSelectionMode &&
     previousModel.interaction.isSelected === nextModel.interaction.isSelected &&
     previousHasDimmingMenu === nextHasDimmingMenu &&
     previousMenuOpen === nextMenuOpen &&
@@ -64,12 +71,17 @@ export const areMessageItemPropsEqual = (
       nextModel.interaction.searchMatchedMessageIds.has(messageId) &&
     (previousModel.interaction.activeSearchMessageId === messageId) ===
       (nextModel.interaction.activeSearchMessageId === messageId) &&
-    previousModel.interaction.maxMessageChars === nextModel.interaction.maxMessageChars &&
+    previousModel.interaction.maxMessageChars ===
+      nextModel.interaction.maxMessageChars &&
     previousModel.content.captionMessage === nextModel.content.captionMessage &&
-    previousModel.content.replyTargetMessage === nextModel.content.replyTargetMessage &&
-    previousModel.content.groupedDocumentMessages === nextModel.content.groupedDocumentMessages &&
-    previousModel.content.groupedImageMessages === nextModel.content.groupedImageMessages &&
-    previousModel.content.normalizedSearchQuery === nextModel.content.normalizedSearchQuery &&
+    previousModel.content.replyTargetMessage ===
+      nextModel.content.replyTargetMessage &&
+    previousModel.content.groupedDocumentMessages ===
+      nextModel.content.groupedDocumentMessages &&
+    previousModel.content.groupedImageMessages ===
+      nextModel.content.groupedImageMessages &&
+    previousModel.content.normalizedSearchQuery ===
+      nextModel.content.normalizedSearchQuery &&
     getPdfMessagePreviewUrl(previousModel.content.pdfMessagePreview) ===
       getPdfMessagePreviewUrl(nextModel.content.pdfMessagePreview) &&
     previousModel.content.pdfMessagePreview?.pageCount ===

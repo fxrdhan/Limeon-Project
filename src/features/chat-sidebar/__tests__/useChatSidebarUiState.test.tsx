@@ -1,8 +1,15 @@
-import { renderHook, act } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
-import type { ChatMessage } from "../data/chatSidebarGateway";
-import type { ChatSidebarRefs } from "../hooks/useChatSidebarRefs";
-import { useChatSidebarUiState } from "../hooks/useChatSidebarUiState";
+import { renderHook, act } from '@testing-library/react';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vite-plus/test';
+import type { ChatMessage } from '../data/chatSidebarGateway';
+import type { ChatSidebarRefs } from '../hooks/useChatSidebarRefs';
+import { useChatSidebarUiState } from '../hooks/useChatSidebarUiState';
 
 const {
   mockUseChatComposer,
@@ -16,19 +23,20 @@ const {
   mockFetchConversationMessageContext: vi.fn(),
 }));
 
-vi.mock("../hooks/useChatComposer", () => ({
+vi.mock('../hooks/useChatComposer', () => ({
   useChatComposer: (...args: unknown[]) => mockUseChatComposer(...args),
 }));
 
-vi.mock("../hooks/useChatViewport", () => ({
+vi.mock('../hooks/useChatViewport', () => ({
   useChatViewport: (...args: unknown[]) => mockUseChatViewport(...args),
 }));
 
-vi.mock("../hooks/useChatSidebarPreviewState", () => ({
-  useChatSidebarPreviewState: (...args: unknown[]) => mockUseChatSidebarPreviewState(...args),
+vi.mock('../hooks/useChatSidebarPreviewState', () => ({
+  useChatSidebarPreviewState: (...args: unknown[]) =>
+    mockUseChatSidebarPreviewState(...args),
 }));
 
-vi.mock("../data/chatSidebarGateway", async () => {
+vi.mock('../data/chatSidebarGateway', async () => {
   return {
     chatSidebarMessagesGateway: {
       fetchConversationMessageContext: (...args: unknown[]) =>
@@ -38,14 +46,14 @@ vi.mock("../data/chatSidebarGateway", async () => {
 });
 
 const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
-  id: overrides.id ?? "message-1",
-  sender_id: overrides.sender_id ?? "user-a",
-  receiver_id: overrides.receiver_id ?? "user-b",
-  channel_id: overrides.channel_id ?? "channel-1",
-  message: overrides.message ?? "hello",
-  message_type: overrides.message_type ?? "text",
-  created_at: overrides.created_at ?? "2026-03-06T09:30:00.000Z",
-  updated_at: overrides.updated_at ?? "2026-03-06T09:30:00.000Z",
+  id: overrides.id ?? 'message-1',
+  sender_id: overrides.sender_id ?? 'user-a',
+  receiver_id: overrides.receiver_id ?? 'user-b',
+  channel_id: overrides.channel_id ?? 'channel-1',
+  message: overrides.message ?? 'hello',
+  message_type: overrides.message_type ?? 'text',
+  created_at: overrides.created_at ?? '2026-03-06T09:30:00.000Z',
+  updated_at: overrides.updated_at ?? '2026-03-06T09:30:00.000Z',
   is_read: overrides.is_read ?? false,
   is_delivered: overrides.is_delivered ?? false,
   reply_to_id: overrides.reply_to_id ?? null,
@@ -81,10 +89,10 @@ const buildRefs = (): ChatSidebarRefs => ({
   handleToggleExpand: vi.fn(),
 });
 
-describe("useChatSidebarUiState", () => {
+describe('useChatSidebarUiState', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => {
       callback(0);
       return 1;
     });
@@ -98,17 +106,17 @@ describe("useChatSidebarUiState", () => {
     vi.restoreAllMocks();
   });
 
-  it("opens the image group viewer when focusing a replied image group target", () => {
+  it('opens the image group viewer when focusing a replied image group target', () => {
     const replyingMessages = Array.from({ length: 5 }, (_, index) =>
       buildMessage({
         id: `image-${index + 1}`,
         message: `images/channel/image-${index + 1}.png`,
-        message_type: "image",
+        message_type: 'image',
         file_name: `image-${index + 1}.png`,
-        file_mime_type: "image/png",
+        file_mime_type: 'image/png',
         file_storage_path: `images/channel/image-${index + 1}.png`,
         file_preview_url: `https://example.com/image-${index + 1}.png`,
-      }),
+      })
     );
     const openImageGroupInPortal = vi.fn(async () => {});
     const focusReplyTargetMessage = vi.fn();
@@ -120,9 +128,9 @@ describe("useChatSidebarUiState", () => {
       pendingComposerAttachments: [],
       loadingComposerAttachments: [],
       editingMessageId: null,
-      replyingMessageId: "image-5",
-      replyingMessagePreview: "image-5.png",
-      message: "",
+      replyingMessageId: 'image-5',
+      replyingMessagePreview: 'image-5.png',
+      message: '',
       setMessage: vi.fn(),
       closeAttachModal: vi.fn(),
       handleAttachImageClick: vi.fn(),
@@ -185,8 +193,8 @@ describe("useChatSidebarUiState", () => {
       composerContainerHeight: 0,
       openMenuMessageId: null,
       menuDimmingMessageId: null,
-      menuPlacement: "up",
-      menuSideAnchor: "middle",
+      menuPlacement: 'up',
+      menuSideAnchor: 'middle',
       shouldAnimateMenuOpen: false,
       menuTransitionSourceId: null,
       menuOffsetX: 0,
@@ -212,9 +220,9 @@ describe("useChatSidebarUiState", () => {
       isImagePreviewVisible: false,
       imagePreviewUrl: null,
       imagePreviewBackdropUrl: null,
-      imagePreviewName: "",
+      imagePreviewName: '',
       documentPreviewUrl: null,
-      documentPreviewName: "",
+      documentPreviewName: '',
       isDocumentPreviewVisible: false,
       selectImageGroupPreviewItem: vi.fn(),
       handleDownloadMessage: vi.fn(),
@@ -232,7 +240,7 @@ describe("useChatSidebarUiState", () => {
       pdfCompressionMenuRef: { current: null },
       handleToggleImageActionsMenu: vi.fn(),
       composerDocumentPreviewUrl: null,
-      composerDocumentPreviewName: "",
+      composerDocumentPreviewName: '',
       isComposerDocumentPreviewVisible: false,
       closeComposerDocumentPreview: vi.fn(),
       closeImageGroupPreviewVisible: vi.fn(),
@@ -243,12 +251,12 @@ describe("useChatSidebarUiState", () => {
     const { result } = renderHook(() =>
       useChatSidebarUiState({
         isOpen: true,
-        currentChannelId: "channel-1",
+        currentChannelId: 'channel-1',
         messages: replyingMessages,
         loading: false,
-        userId: "user-a",
-        targetUserId: "user-b",
-        normalizedMessageSearchQuery: "",
+        userId: 'user-a',
+        targetUserId: 'user-b',
+        normalizedMessageSearchQuery: '',
         isMessageSearchMode: false,
         activeSearchMessageId: null,
         searchNavigationTick: 0,
@@ -256,33 +264,33 @@ describe("useChatSidebarUiState", () => {
         mergeSearchContextMessages: vi.fn(),
         refs: buildRefs(),
         closeMessageMenu: vi.fn(),
-        getAttachmentFileName: (message) => message.file_name || "Lampiran",
-        getAttachmentFileKind: (_message: ChatMessage) => "document",
+        getAttachmentFileName: message => message.file_name || 'Lampiran',
+        getAttachmentFileKind: (_message: ChatMessage) => 'document',
         captionData: {
           captionMessagesByAttachmentId: new Map(),
           captionMessageIds: new Set(),
         },
-      }),
+      })
     );
 
     act(() => {
-      result.current.viewport.focusReplyTargetMessage("image-5");
+      result.current.viewport.focusReplyTargetMessage('image-5');
     });
 
     expect(openImageGroupInPortal).toHaveBeenCalledTimes(1);
     expect(openImageGroupInPortal).toHaveBeenCalledWith(
       replyingMessages,
-      "image-5",
-      "https://example.com/image-5.png",
+      'image-5',
+      'https://example.com/image-5.png'
     );
-    expect(focusReplyTargetMessage).toHaveBeenCalledWith("image-5");
+    expect(focusReplyTargetMessage).toHaveBeenCalledWith('image-5');
   });
 
-  it("keeps text reply targets focused in the message list", () => {
+  it('keeps text reply targets focused in the message list', () => {
     const textMessage = buildMessage({
-      id: "text-1",
-      message: "halo",
-      message_type: "text",
+      id: 'text-1',
+      message: 'halo',
+      message_type: 'text',
     });
     const openImageInPortal = vi.fn(async () => {});
     const focusReplyTargetMessage = vi.fn();
@@ -294,9 +302,9 @@ describe("useChatSidebarUiState", () => {
       pendingComposerAttachments: [],
       loadingComposerAttachments: [],
       editingMessageId: null,
-      replyingMessageId: "text-1",
-      replyingMessagePreview: "halo",
-      message: "",
+      replyingMessageId: 'text-1',
+      replyingMessagePreview: 'halo',
+      message: '',
       setMessage: vi.fn(),
       closeAttachModal: vi.fn(),
       handleAttachImageClick: vi.fn(),
@@ -359,8 +367,8 @@ describe("useChatSidebarUiState", () => {
       composerContainerHeight: 0,
       openMenuMessageId: null,
       menuDimmingMessageId: null,
-      menuPlacement: "up",
-      menuSideAnchor: "middle",
+      menuPlacement: 'up',
+      menuSideAnchor: 'middle',
       shouldAnimateMenuOpen: false,
       menuTransitionSourceId: null,
       menuOffsetX: 0,
@@ -386,9 +394,9 @@ describe("useChatSidebarUiState", () => {
       isImagePreviewVisible: false,
       imagePreviewUrl: null,
       imagePreviewBackdropUrl: null,
-      imagePreviewName: "",
+      imagePreviewName: '',
       documentPreviewUrl: null,
-      documentPreviewName: "",
+      documentPreviewName: '',
       isDocumentPreviewVisible: false,
       selectImageGroupPreviewItem: vi.fn(),
       handleDownloadMessage: vi.fn(),
@@ -406,7 +414,7 @@ describe("useChatSidebarUiState", () => {
       pdfCompressionMenuRef: { current: null },
       handleToggleImageActionsMenu: vi.fn(),
       composerDocumentPreviewUrl: null,
-      composerDocumentPreviewName: "",
+      composerDocumentPreviewName: '',
       isComposerDocumentPreviewVisible: false,
       closeComposerDocumentPreview: vi.fn(),
       closeImageGroupPreviewVisible: vi.fn(),
@@ -417,12 +425,12 @@ describe("useChatSidebarUiState", () => {
     const { result } = renderHook(() =>
       useChatSidebarUiState({
         isOpen: true,
-        currentChannelId: "channel-1",
+        currentChannelId: 'channel-1',
         messages: [textMessage],
         loading: false,
-        userId: "user-a",
-        targetUserId: "user-b",
-        normalizedMessageSearchQuery: "",
+        userId: 'user-a',
+        targetUserId: 'user-b',
+        normalizedMessageSearchQuery: '',
         isMessageSearchMode: false,
         activeSearchMessageId: null,
         searchNavigationTick: 0,
@@ -430,32 +438,32 @@ describe("useChatSidebarUiState", () => {
         mergeSearchContextMessages: vi.fn(),
         refs: buildRefs(),
         closeMessageMenu: vi.fn(),
-        getAttachmentFileName: (message) => message.file_name || "Lampiran",
-        getAttachmentFileKind: (_message: ChatMessage) => "document",
+        getAttachmentFileName: message => message.file_name || 'Lampiran',
+        getAttachmentFileKind: (_message: ChatMessage) => 'document',
         captionData: {
           captionMessagesByAttachmentId: new Map(),
           captionMessageIds: new Set(),
         },
-      }),
+      })
     );
 
     act(() => {
-      result.current.viewport.focusReplyTargetMessage("text-1");
+      result.current.viewport.focusReplyTargetMessage('text-1');
     });
 
     expect(openImageInPortal).not.toHaveBeenCalled();
-    expect(focusReplyTargetMessage).toHaveBeenCalledWith("text-1");
+    expect(focusReplyTargetMessage).toHaveBeenCalledWith('text-1');
   });
 
-  it("keeps single image reply targets focused in the message list", () => {
+  it('keeps single image reply targets focused in the message list', () => {
     const replyingMessage = buildMessage({
-      id: "image-1",
-      message: "images/channel/image-1.png",
-      message_type: "image",
-      file_name: "image-1.png",
-      file_mime_type: "image/png",
-      file_storage_path: "images/channel/image-1.png",
-      file_preview_url: "https://example.com/image-1.png",
+      id: 'image-1',
+      message: 'images/channel/image-1.png',
+      message_type: 'image',
+      file_name: 'image-1.png',
+      file_mime_type: 'image/png',
+      file_storage_path: 'images/channel/image-1.png',
+      file_preview_url: 'https://example.com/image-1.png',
     });
     const openImageInPortal = vi.fn(async () => {});
     const focusReplyTargetMessage = vi.fn();
@@ -467,9 +475,9 @@ describe("useChatSidebarUiState", () => {
       pendingComposerAttachments: [],
       loadingComposerAttachments: [],
       editingMessageId: null,
-      replyingMessageId: "image-1",
-      replyingMessagePreview: "image-1.png",
-      message: "",
+      replyingMessageId: 'image-1',
+      replyingMessagePreview: 'image-1.png',
+      message: '',
       setMessage: vi.fn(),
       closeAttachModal: vi.fn(),
       handleAttachImageClick: vi.fn(),
@@ -532,8 +540,8 @@ describe("useChatSidebarUiState", () => {
       composerContainerHeight: 0,
       openMenuMessageId: null,
       menuDimmingMessageId: null,
-      menuPlacement: "up",
-      menuSideAnchor: "middle",
+      menuPlacement: 'up',
+      menuSideAnchor: 'middle',
       shouldAnimateMenuOpen: false,
       menuTransitionSourceId: null,
       menuOffsetX: 0,
@@ -559,9 +567,9 @@ describe("useChatSidebarUiState", () => {
       isImagePreviewVisible: false,
       imagePreviewUrl: null,
       imagePreviewBackdropUrl: null,
-      imagePreviewName: "",
+      imagePreviewName: '',
       documentPreviewUrl: null,
-      documentPreviewName: "",
+      documentPreviewName: '',
       isDocumentPreviewVisible: false,
       selectImageGroupPreviewItem: vi.fn(),
       handleDownloadMessage: vi.fn(),
@@ -579,7 +587,7 @@ describe("useChatSidebarUiState", () => {
       pdfCompressionMenuRef: { current: null },
       handleToggleImageActionsMenu: vi.fn(),
       composerDocumentPreviewUrl: null,
-      composerDocumentPreviewName: "",
+      composerDocumentPreviewName: '',
       isComposerDocumentPreviewVisible: false,
       closeComposerDocumentPreview: vi.fn(),
       closeImageGroupPreviewVisible: vi.fn(),
@@ -590,12 +598,12 @@ describe("useChatSidebarUiState", () => {
     const { result } = renderHook(() =>
       useChatSidebarUiState({
         isOpen: true,
-        currentChannelId: "channel-1",
+        currentChannelId: 'channel-1',
         messages: [replyingMessage],
         loading: false,
-        userId: "user-a",
-        targetUserId: "user-b",
-        normalizedMessageSearchQuery: "",
+        userId: 'user-a',
+        targetUserId: 'user-b',
+        normalizedMessageSearchQuery: '',
         isMessageSearchMode: false,
         activeSearchMessageId: null,
         searchNavigationTick: 0,
@@ -603,35 +611,35 @@ describe("useChatSidebarUiState", () => {
         mergeSearchContextMessages: vi.fn(),
         refs: buildRefs(),
         closeMessageMenu: vi.fn(),
-        getAttachmentFileName: (message) => message.file_name || "Lampiran",
-        getAttachmentFileKind: (_message: ChatMessage) => "document",
+        getAttachmentFileName: message => message.file_name || 'Lampiran',
+        getAttachmentFileKind: (_message: ChatMessage) => 'document',
         captionData: {
           captionMessagesByAttachmentId: new Map(),
           captionMessageIds: new Set(),
         },
-      }),
+      })
     );
 
     act(() => {
-      result.current.viewport.focusReplyTargetMessage("image-1");
+      result.current.viewport.focusReplyTargetMessage('image-1');
     });
 
     expect(openImageInPortal).not.toHaveBeenCalled();
-    expect(focusReplyTargetMessage).toHaveBeenCalledWith("image-1");
+    expect(focusReplyTargetMessage).toHaveBeenCalledWith('image-1');
   });
 
-  it("loads missing reply target context before focusing a text source message", async () => {
+  it('loads missing reply target context before focusing a text source message', async () => {
     const mergeSearchContextMessages = vi.fn();
     const focusReplyTargetMessage = vi.fn();
     const suspendPinnedViewportSync = vi.fn();
     const sourceMessage = buildMessage({
-      id: "older-text-1",
-      sender_id: "user-b",
-      receiver_id: "user-a",
-      message: "Pesan lama",
-      message_type: "text",
-      created_at: "2026-03-05T09:30:00.000Z",
-      updated_at: "2026-03-05T09:30:00.000Z",
+      id: 'older-text-1',
+      sender_id: 'user-b',
+      receiver_id: 'user-a',
+      message: 'Pesan lama',
+      message_type: 'text',
+      created_at: '2026-03-05T09:30:00.000Z',
+      updated_at: '2026-03-05T09:30:00.000Z',
     });
 
     mockUseChatComposer.mockReturnValue({
@@ -643,7 +651,7 @@ describe("useChatSidebarUiState", () => {
       editingMessageId: null,
       replyingMessageId: null,
       replyingMessagePreview: null,
-      message: "",
+      message: '',
       setMessage: vi.fn(),
       closeAttachModal: vi.fn(),
       handleAttachImageClick: vi.fn(),
@@ -706,8 +714,8 @@ describe("useChatSidebarUiState", () => {
       composerContainerHeight: 0,
       openMenuMessageId: null,
       menuDimmingMessageId: null,
-      menuPlacement: "up",
-      menuSideAnchor: "middle",
+      menuPlacement: 'up',
+      menuSideAnchor: 'middle',
       shouldAnimateMenuOpen: false,
       menuTransitionSourceId: null,
       menuOffsetX: 0,
@@ -734,9 +742,9 @@ describe("useChatSidebarUiState", () => {
       isImagePreviewVisible: false,
       imagePreviewUrl: null,
       imagePreviewBackdropUrl: null,
-      imagePreviewName: "",
+      imagePreviewName: '',
       documentPreviewUrl: null,
-      documentPreviewName: "",
+      documentPreviewName: '',
       isDocumentPreviewVisible: false,
       selectImageGroupPreviewItem: vi.fn(),
       handleDownloadMessage: vi.fn(),
@@ -754,7 +762,7 @@ describe("useChatSidebarUiState", () => {
       pdfCompressionMenuRef: { current: null },
       handleToggleImageActionsMenu: vi.fn(),
       composerDocumentPreviewUrl: null,
-      composerDocumentPreviewName: "",
+      composerDocumentPreviewName: '',
       isComposerDocumentPreviewVisible: false,
       closeComposerDocumentPreview: vi.fn(),
       closeImageGroupPreviewVisible: vi.fn(),
@@ -769,12 +777,12 @@ describe("useChatSidebarUiState", () => {
     const { result } = renderHook(() =>
       useChatSidebarUiState({
         isOpen: true,
-        currentChannelId: "channel-1",
+        currentChannelId: 'channel-1',
         messages: [],
         loading: false,
-        userId: "user-a",
-        targetUserId: "user-b",
-        normalizedMessageSearchQuery: "",
+        userId: 'user-a',
+        targetUserId: 'user-b',
+        normalizedMessageSearchQuery: '',
         isMessageSearchMode: false,
         activeSearchMessageId: null,
         searchNavigationTick: 0,
@@ -782,62 +790,68 @@ describe("useChatSidebarUiState", () => {
         mergeSearchContextMessages,
         refs: buildRefs(),
         closeMessageMenu: vi.fn(),
-        getAttachmentFileName: (message) => message.file_name || "Lampiran",
-        getAttachmentFileKind: (_message: ChatMessage) => "document",
+        getAttachmentFileName: message => message.file_name || 'Lampiran',
+        getAttachmentFileKind: (_message: ChatMessage) => 'document',
         captionData: {
           captionMessagesByAttachmentId: new Map(),
           captionMessageIds: new Set(),
         },
-      }),
+      })
     );
 
     await act(async () => {
-      result.current.viewport.focusReplyTargetMessage("older-text-1");
+      result.current.viewport.focusReplyTargetMessage('older-text-1');
       await Promise.resolve();
     });
 
-    expect(mockFetchConversationMessageContext).toHaveBeenCalledWith("user-b", "older-text-1", {
-      beforeLimit: 20,
-      afterLimit: 20,
-    });
+    expect(mockFetchConversationMessageContext).toHaveBeenCalledWith(
+      'user-b',
+      'older-text-1',
+      {
+        beforeLimit: 20,
+        afterLimit: 20,
+      }
+    );
     expect(mergeSearchContextMessages).toHaveBeenCalledWith([sourceMessage], {
       hasOlderMessages: false,
     });
     expect(suspendPinnedViewportSync).toHaveBeenCalledTimes(1);
     expect(suspendPinnedViewportSync.mock.invocationCallOrder[0]).toBeLessThan(
-      mergeSearchContextMessages.mock.invocationCallOrder[0],
+      mergeSearchContextMessages.mock.invocationCallOrder[0]
     );
-    expect(focusReplyTargetMessage).toHaveBeenCalledWith("older-text-1");
+    expect(focusReplyTargetMessage).toHaveBeenCalledWith('older-text-1');
   });
 
-  it("preserves the current viewport when older reply context is injected above it", async () => {
+  it('preserves the current viewport when older reply context is injected above it', async () => {
     let hookMessages: ChatMessage[] = [];
     let contentScrollHeight = 520;
     let scrollTop = 180;
     const sourceMessage = buildMessage({
-      id: "older-text-viewport",
-      sender_id: "user-b",
-      receiver_id: "user-a",
-      message: "Pesan lama viewport",
-      message_type: "text",
-      created_at: "2026-03-05T09:20:00.000Z",
-      updated_at: "2026-03-05T09:20:00.000Z",
+      id: 'older-text-viewport',
+      sender_id: 'user-b',
+      receiver_id: 'user-a',
+      message: 'Pesan lama viewport',
+      message_type: 'text',
+      created_at: '2026-03-05T09:20:00.000Z',
+      updated_at: '2026-03-05T09:20:00.000Z',
     });
-    const mergeSearchContextMessages = vi.fn((searchContextMessages: ChatMessage[]) => {
-      hookMessages = searchContextMessages;
-      contentScrollHeight = 720;
-    });
+    const mergeSearchContextMessages = vi.fn(
+      (searchContextMessages: ChatMessage[]) => {
+        hookMessages = searchContextMessages;
+        contentScrollHeight = 720;
+      }
+    );
     const focusReplyTargetMessage = vi.fn();
-    const messagesContainer = document.createElement("div");
+    const messagesContainer = document.createElement('div');
 
-    Object.defineProperty(messagesContainer, "scrollTop", {
+    Object.defineProperty(messagesContainer, 'scrollTop', {
       configurable: true,
       get: () => scrollTop,
-      set: (value) => {
+      set: value => {
         scrollTop = Number(value);
       },
     });
-    Object.defineProperty(messagesContainer, "scrollHeight", {
+    Object.defineProperty(messagesContainer, 'scrollHeight', {
       configurable: true,
       get: () => contentScrollHeight,
     });
@@ -851,7 +865,7 @@ describe("useChatSidebarUiState", () => {
       editingMessageId: null,
       replyingMessageId: null,
       replyingMessagePreview: null,
-      message: "",
+      message: '',
       setMessage: vi.fn(),
       closeAttachModal: vi.fn(),
       handleAttachImageClick: vi.fn(),
@@ -914,8 +928,8 @@ describe("useChatSidebarUiState", () => {
       composerContainerHeight: 0,
       openMenuMessageId: null,
       menuDimmingMessageId: null,
-      menuPlacement: "up",
-      menuSideAnchor: "middle",
+      menuPlacement: 'up',
+      menuSideAnchor: 'middle',
       shouldAnimateMenuOpen: false,
       menuTransitionSourceId: null,
       menuOffsetX: 0,
@@ -941,9 +955,9 @@ describe("useChatSidebarUiState", () => {
       isImagePreviewVisible: false,
       imagePreviewUrl: null,
       imagePreviewBackdropUrl: null,
-      imagePreviewName: "",
+      imagePreviewName: '',
       documentPreviewUrl: null,
-      documentPreviewName: "",
+      documentPreviewName: '',
       isDocumentPreviewVisible: false,
       selectImageGroupPreviewItem: vi.fn(),
       handleDownloadMessage: vi.fn(),
@@ -961,7 +975,7 @@ describe("useChatSidebarUiState", () => {
       pdfCompressionMenuRef: { current: null },
       handleToggleImageActionsMenu: vi.fn(),
       composerDocumentPreviewUrl: null,
-      composerDocumentPreviewName: "",
+      composerDocumentPreviewName: '',
       isComposerDocumentPreviewVisible: false,
       closeComposerDocumentPreview: vi.fn(),
       closeImageGroupPreviewVisible: vi.fn(),
@@ -979,12 +993,12 @@ describe("useChatSidebarUiState", () => {
     const { result, rerender } = renderHook(() =>
       useChatSidebarUiState({
         isOpen: true,
-        currentChannelId: "channel-1",
+        currentChannelId: 'channel-1',
         messages: hookMessages,
         loading: false,
-        userId: "user-a",
-        targetUserId: "user-b",
-        normalizedMessageSearchQuery: "",
+        userId: 'user-a',
+        targetUserId: 'user-b',
+        normalizedMessageSearchQuery: '',
         isMessageSearchMode: false,
         activeSearchMessageId: null,
         searchNavigationTick: 0,
@@ -992,17 +1006,17 @@ describe("useChatSidebarUiState", () => {
         mergeSearchContextMessages,
         refs,
         closeMessageMenu: vi.fn(),
-        getAttachmentFileName: (message) => message.file_name || "Lampiran",
-        getAttachmentFileKind: (_message: ChatMessage) => "document",
+        getAttachmentFileName: message => message.file_name || 'Lampiran',
+        getAttachmentFileKind: (_message: ChatMessage) => 'document',
         captionData: {
           captionMessagesByAttachmentId: new Map(),
           captionMessageIds: new Set(),
         },
-      }),
+      })
     );
 
     await act(async () => {
-      result.current.viewport.focusReplyTargetMessage("older-text-viewport");
+      result.current.viewport.focusReplyTargetMessage('older-text-viewport');
       await Promise.resolve();
     });
 
@@ -1016,20 +1030,20 @@ describe("useChatSidebarUiState", () => {
     expect(scrollTop).toBe(380);
   });
 
-  it("waits for an injected reply target bubble ref before focusing it", async () => {
+  it('waits for an injected reply target bubble ref before focusing it', async () => {
     const mergeSearchContextMessages = vi.fn();
     const focusReplyTargetMessage = vi.fn();
     const sourceMessage = buildMessage({
-      id: "older-text-2",
-      sender_id: "user-b",
-      receiver_id: "user-a",
-      message: "Pesan lama lain",
-      message_type: "text",
-      created_at: "2026-03-05T09:31:00.000Z",
-      updated_at: "2026-03-05T09:31:00.000Z",
+      id: 'older-text-2',
+      sender_id: 'user-b',
+      receiver_id: 'user-a',
+      message: 'Pesan lama lain',
+      message_type: 'text',
+      created_at: '2026-03-05T09:31:00.000Z',
+      updated_at: '2026-03-05T09:31:00.000Z',
     });
     const frameQueue: FrameRequestCallback[] = [];
-    vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => {
       frameQueue.push(callback);
       return frameQueue.length;
     });
@@ -1043,7 +1057,7 @@ describe("useChatSidebarUiState", () => {
       editingMessageId: null,
       replyingMessageId: null,
       replyingMessagePreview: null,
-      message: "",
+      message: '',
       setMessage: vi.fn(),
       closeAttachModal: vi.fn(),
       handleAttachImageClick: vi.fn(),
@@ -1106,8 +1120,8 @@ describe("useChatSidebarUiState", () => {
       composerContainerHeight: 0,
       openMenuMessageId: null,
       menuDimmingMessageId: null,
-      menuPlacement: "up",
-      menuSideAnchor: "middle",
+      menuPlacement: 'up',
+      menuSideAnchor: 'middle',
       shouldAnimateMenuOpen: false,
       menuTransitionSourceId: null,
       menuOffsetX: 0,
@@ -1133,9 +1147,9 @@ describe("useChatSidebarUiState", () => {
       isImagePreviewVisible: false,
       imagePreviewUrl: null,
       imagePreviewBackdropUrl: null,
-      imagePreviewName: "",
+      imagePreviewName: '',
       documentPreviewUrl: null,
-      documentPreviewName: "",
+      documentPreviewName: '',
       isDocumentPreviewVisible: false,
       selectImageGroupPreviewItem: vi.fn(),
       handleDownloadMessage: vi.fn(),
@@ -1153,7 +1167,7 @@ describe("useChatSidebarUiState", () => {
       pdfCompressionMenuRef: { current: null },
       handleToggleImageActionsMenu: vi.fn(),
       composerDocumentPreviewUrl: null,
-      composerDocumentPreviewName: "",
+      composerDocumentPreviewName: '',
       isComposerDocumentPreviewVisible: false,
       closeComposerDocumentPreview: vi.fn(),
       closeImageGroupPreviewVisible: vi.fn(),
@@ -1169,12 +1183,12 @@ describe("useChatSidebarUiState", () => {
     const { result } = renderHook(() =>
       useChatSidebarUiState({
         isOpen: true,
-        currentChannelId: "channel-1",
+        currentChannelId: 'channel-1',
         messages: [],
         loading: false,
-        userId: "user-a",
-        targetUserId: "user-b",
-        normalizedMessageSearchQuery: "",
+        userId: 'user-a',
+        targetUserId: 'user-b',
+        normalizedMessageSearchQuery: '',
         isMessageSearchMode: false,
         activeSearchMessageId: null,
         searchNavigationTick: 0,
@@ -1182,23 +1196,26 @@ describe("useChatSidebarUiState", () => {
         mergeSearchContextMessages,
         refs,
         closeMessageMenu: vi.fn(),
-        getAttachmentFileName: (message) => message.file_name || "Lampiran",
-        getAttachmentFileKind: (_message: ChatMessage) => "document",
+        getAttachmentFileName: message => message.file_name || 'Lampiran',
+        getAttachmentFileKind: (_message: ChatMessage) => 'document',
         captionData: {
           captionMessagesByAttachmentId: new Map(),
           captionMessageIds: new Set(),
         },
-      }),
+      })
     );
 
     await act(async () => {
-      result.current.viewport.focusReplyTargetMessage("older-text-2");
+      result.current.viewport.focusReplyTargetMessage('older-text-2');
       await Promise.resolve();
     });
 
     expect(focusReplyTargetMessage).not.toHaveBeenCalled();
 
-    refs.messageBubbleRefs.current.set("older-text-2", document.createElement("div"));
+    refs.messageBubbleRefs.current.set(
+      'older-text-2',
+      document.createElement('div')
+    );
 
     act(() => {
       while (frameQueue.length > 0) {
@@ -1207,34 +1224,38 @@ describe("useChatSidebarUiState", () => {
       }
     });
 
-    expect(mockFetchConversationMessageContext).toHaveBeenCalledWith("user-b", "older-text-2", {
-      beforeLimit: 20,
-      afterLimit: 20,
-    });
+    expect(mockFetchConversationMessageContext).toHaveBeenCalledWith(
+      'user-b',
+      'older-text-2',
+      {
+        beforeLimit: 20,
+        afterLimit: 20,
+      }
+    );
     expect(mergeSearchContextMessages).toHaveBeenCalledWith([sourceMessage], {
       hasOlderMessages: false,
     });
-    expect(focusReplyTargetMessage).toHaveBeenCalledWith("older-text-2");
+    expect(focusReplyTargetMessage).toHaveBeenCalledWith('older-text-2');
   });
 
-  it("loads missing reply target context before opening an image group source message", async () => {
+  it('loads missing reply target context before opening an image group source message', async () => {
     const mergeSearchContextMessages = vi.fn();
     const openImageGroupInPortal = vi.fn(async () => {});
     const focusReplyTargetMessage = vi.fn();
     const sourceMessages = Array.from({ length: 5 }, (_, index) =>
       buildMessage({
         id: `older-image-${index + 1}`,
-        sender_id: "user-b",
-        receiver_id: "user-a",
+        sender_id: 'user-b',
+        receiver_id: 'user-a',
         message: `images/channel/older-image-${index + 1}.png`,
-        message_type: "image",
+        message_type: 'image',
         file_name: `older-image-${index + 1}.png`,
-        file_mime_type: "image/png",
+        file_mime_type: 'image/png',
         file_storage_path: `images/channel/older-image-${index + 1}.png`,
         file_preview_url: `https://example.com/older-image-${index + 1}.png`,
-        created_at: `2026-03-05T09:30:${String(index * 8).padStart(2, "0")}.000Z`,
-        updated_at: `2026-03-05T09:30:${String(index * 8).padStart(2, "0")}.000Z`,
-      }),
+        created_at: `2026-03-05T09:30:${String(index * 8).padStart(2, '0')}.000Z`,
+        updated_at: `2026-03-05T09:30:${String(index * 8).padStart(2, '0')}.000Z`,
+      })
     );
 
     mockUseChatComposer.mockReturnValue({
@@ -1246,7 +1267,7 @@ describe("useChatSidebarUiState", () => {
       editingMessageId: null,
       replyingMessageId: null,
       replyingMessagePreview: null,
-      message: "",
+      message: '',
       setMessage: vi.fn(),
       closeAttachModal: vi.fn(),
       handleAttachImageClick: vi.fn(),
@@ -1309,8 +1330,8 @@ describe("useChatSidebarUiState", () => {
       composerContainerHeight: 0,
       openMenuMessageId: null,
       menuDimmingMessageId: null,
-      menuPlacement: "up",
-      menuSideAnchor: "middle",
+      menuPlacement: 'up',
+      menuSideAnchor: 'middle',
       shouldAnimateMenuOpen: false,
       menuTransitionSourceId: null,
       menuOffsetX: 0,
@@ -1336,9 +1357,9 @@ describe("useChatSidebarUiState", () => {
       isImagePreviewVisible: false,
       imagePreviewUrl: null,
       imagePreviewBackdropUrl: null,
-      imagePreviewName: "",
+      imagePreviewName: '',
       documentPreviewUrl: null,
-      documentPreviewName: "",
+      documentPreviewName: '',
       isDocumentPreviewVisible: false,
       selectImageGroupPreviewItem: vi.fn(),
       handleDownloadMessage: vi.fn(),
@@ -1356,7 +1377,7 @@ describe("useChatSidebarUiState", () => {
       pdfCompressionMenuRef: { current: null },
       handleToggleImageActionsMenu: vi.fn(),
       composerDocumentPreviewUrl: null,
-      composerDocumentPreviewName: "",
+      composerDocumentPreviewName: '',
       isComposerDocumentPreviewVisible: false,
       closeComposerDocumentPreview: vi.fn(),
       closeImageGroupPreviewVisible: vi.fn(),
@@ -1371,12 +1392,12 @@ describe("useChatSidebarUiState", () => {
     const { result } = renderHook(() =>
       useChatSidebarUiState({
         isOpen: true,
-        currentChannelId: "channel-1",
+        currentChannelId: 'channel-1',
         messages: [],
         loading: false,
-        userId: "user-a",
-        targetUserId: "user-b",
-        normalizedMessageSearchQuery: "",
+        userId: 'user-a',
+        targetUserId: 'user-b',
+        normalizedMessageSearchQuery: '',
         isMessageSearchMode: false,
         activeSearchMessageId: null,
         searchNavigationTick: 0,
@@ -1384,51 +1405,55 @@ describe("useChatSidebarUiState", () => {
         mergeSearchContextMessages,
         refs: buildRefs(),
         closeMessageMenu: vi.fn(),
-        getAttachmentFileName: (message) => message.file_name || "Lampiran",
-        getAttachmentFileKind: (_message: ChatMessage) => "document",
+        getAttachmentFileName: message => message.file_name || 'Lampiran',
+        getAttachmentFileKind: (_message: ChatMessage) => 'document',
         captionData: {
           captionMessagesByAttachmentId: new Map(),
           captionMessageIds: new Set(),
         },
-      }),
+      })
     );
 
     await act(async () => {
-      result.current.viewport.focusReplyTargetMessage("older-image-5");
+      result.current.viewport.focusReplyTargetMessage('older-image-5');
       await Promise.resolve();
     });
 
-    expect(mockFetchConversationMessageContext).toHaveBeenCalledWith("user-b", "older-image-5", {
-      beforeLimit: 20,
-      afterLimit: 20,
-    });
+    expect(mockFetchConversationMessageContext).toHaveBeenCalledWith(
+      'user-b',
+      'older-image-5',
+      {
+        beforeLimit: 20,
+        afterLimit: 20,
+      }
+    );
     expect(mergeSearchContextMessages).toHaveBeenCalledWith(sourceMessages, {
       hasOlderMessages: false,
     });
     expect(openImageGroupInPortal).toHaveBeenCalledWith(
       sourceMessages,
-      "older-image-5",
-      "https://example.com/older-image-5.png",
+      'older-image-5',
+      'https://example.com/older-image-5.png'
     );
-    expect(focusReplyTargetMessage).toHaveBeenCalledWith("older-image-5");
+    expect(focusReplyTargetMessage).toHaveBeenCalledWith('older-image-5');
   });
 
-  it("loads missing reply target context before focusing a single image source message", async () => {
+  it('loads missing reply target context before focusing a single image source message', async () => {
     const mergeSearchContextMessages = vi.fn();
     const openImageInPortal = vi.fn(async () => {});
     const focusReplyTargetMessage = vi.fn();
     const sourceMessage = buildMessage({
-      id: "older-image-1",
-      sender_id: "user-b",
-      receiver_id: "user-a",
-      message: "images/channel/older-image-1.png",
-      message_type: "image",
-      file_name: "older-image-1.png",
-      file_mime_type: "image/png",
-      file_storage_path: "images/channel/older-image-1.png",
-      file_preview_url: "https://example.com/older-image-1.png",
-      created_at: "2026-03-05T09:30:00.000Z",
-      updated_at: "2026-03-05T09:30:00.000Z",
+      id: 'older-image-1',
+      sender_id: 'user-b',
+      receiver_id: 'user-a',
+      message: 'images/channel/older-image-1.png',
+      message_type: 'image',
+      file_name: 'older-image-1.png',
+      file_mime_type: 'image/png',
+      file_storage_path: 'images/channel/older-image-1.png',
+      file_preview_url: 'https://example.com/older-image-1.png',
+      created_at: '2026-03-05T09:30:00.000Z',
+      updated_at: '2026-03-05T09:30:00.000Z',
     });
 
     mockUseChatComposer.mockReturnValue({
@@ -1440,7 +1465,7 @@ describe("useChatSidebarUiState", () => {
       editingMessageId: null,
       replyingMessageId: null,
       replyingMessagePreview: null,
-      message: "",
+      message: '',
       setMessage: vi.fn(),
       closeAttachModal: vi.fn(),
       handleAttachImageClick: vi.fn(),
@@ -1503,8 +1528,8 @@ describe("useChatSidebarUiState", () => {
       composerContainerHeight: 0,
       openMenuMessageId: null,
       menuDimmingMessageId: null,
-      menuPlacement: "up",
-      menuSideAnchor: "middle",
+      menuPlacement: 'up',
+      menuSideAnchor: 'middle',
       shouldAnimateMenuOpen: false,
       menuTransitionSourceId: null,
       menuOffsetX: 0,
@@ -1530,9 +1555,9 @@ describe("useChatSidebarUiState", () => {
       isImagePreviewVisible: false,
       imagePreviewUrl: null,
       imagePreviewBackdropUrl: null,
-      imagePreviewName: "",
+      imagePreviewName: '',
       documentPreviewUrl: null,
-      documentPreviewName: "",
+      documentPreviewName: '',
       isDocumentPreviewVisible: false,
       selectImageGroupPreviewItem: vi.fn(),
       handleDownloadMessage: vi.fn(),
@@ -1550,7 +1575,7 @@ describe("useChatSidebarUiState", () => {
       pdfCompressionMenuRef: { current: null },
       handleToggleImageActionsMenu: vi.fn(),
       composerDocumentPreviewUrl: null,
-      composerDocumentPreviewName: "",
+      composerDocumentPreviewName: '',
       isComposerDocumentPreviewVisible: false,
       closeComposerDocumentPreview: vi.fn(),
       closeImageGroupPreviewVisible: vi.fn(),
@@ -1565,12 +1590,12 @@ describe("useChatSidebarUiState", () => {
     const { result } = renderHook(() =>
       useChatSidebarUiState({
         isOpen: true,
-        currentChannelId: "channel-1",
+        currentChannelId: 'channel-1',
         messages: [],
         loading: false,
-        userId: "user-a",
-        targetUserId: "user-b",
-        normalizedMessageSearchQuery: "",
+        userId: 'user-a',
+        targetUserId: 'user-b',
+        normalizedMessageSearchQuery: '',
         isMessageSearchMode: false,
         activeSearchMessageId: null,
         searchNavigationTick: 0,
@@ -1578,28 +1603,32 @@ describe("useChatSidebarUiState", () => {
         mergeSearchContextMessages,
         refs: buildRefs(),
         closeMessageMenu: vi.fn(),
-        getAttachmentFileName: (message) => message.file_name || "Lampiran",
-        getAttachmentFileKind: (_message: ChatMessage) => "document",
+        getAttachmentFileName: message => message.file_name || 'Lampiran',
+        getAttachmentFileKind: (_message: ChatMessage) => 'document',
         captionData: {
           captionMessagesByAttachmentId: new Map(),
           captionMessageIds: new Set(),
         },
-      }),
+      })
     );
 
     await act(async () => {
-      result.current.viewport.focusReplyTargetMessage("older-image-1");
+      result.current.viewport.focusReplyTargetMessage('older-image-1');
       await Promise.resolve();
     });
 
-    expect(mockFetchConversationMessageContext).toHaveBeenCalledWith("user-b", "older-image-1", {
-      beforeLimit: 20,
-      afterLimit: 20,
-    });
+    expect(mockFetchConversationMessageContext).toHaveBeenCalledWith(
+      'user-b',
+      'older-image-1',
+      {
+        beforeLimit: 20,
+        afterLimit: 20,
+      }
+    );
     expect(mergeSearchContextMessages).toHaveBeenCalledWith([sourceMessage], {
       hasOlderMessages: false,
     });
     expect(openImageInPortal).not.toHaveBeenCalled();
-    expect(focusReplyTargetMessage).toHaveBeenCalledWith("older-image-1");
+    expect(focusReplyTargetMessage).toHaveBeenCalledWith('older-image-1');
   });
 });

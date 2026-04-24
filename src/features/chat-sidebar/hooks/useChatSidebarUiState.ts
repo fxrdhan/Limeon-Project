@@ -1,12 +1,15 @@
-import { useCallback, useLayoutEffect, useRef } from "react";
-import { chatSidebarMessagesGateway, type ChatMessage } from "../data/chatSidebarGateway";
-import type { AttachmentCaptionData } from "../utils/message-derivations";
-import { buildMessageRenderItems } from "../utils/message-render-items";
-import { useChatComposer } from "./useChatComposer";
-import type { MergeSearchContextMessagesOptions } from "./useChatSession";
-import { useChatSidebarPreviewState } from "./useChatSidebarPreviewState";
-import { useChatSidebarRefs } from "./useChatSidebarRefs";
-import { useChatViewport } from "./useChatViewport";
+import { useCallback, useLayoutEffect, useRef } from 'react';
+import {
+  chatSidebarMessagesGateway,
+  type ChatMessage,
+} from '../data/chatSidebarGateway';
+import type { AttachmentCaptionData } from '../utils/message-derivations';
+import { buildMessageRenderItems } from '../utils/message-render-items';
+import { useChatComposer } from './useChatComposer';
+import type { MergeSearchContextMessagesOptions } from './useChatSession';
+import { useChatSidebarPreviewState } from './useChatSidebarPreviewState';
+import { useChatSidebarRefs } from './useChatSidebarRefs';
+import { useChatViewport } from './useChatViewport';
 
 interface UseChatSidebarUiStateProps {
   isOpen: boolean;
@@ -22,12 +25,12 @@ interface UseChatSidebarUiStateProps {
   markMessageIdsAsRead: (messageIds: string[]) => Promise<void>;
   mergeSearchContextMessages: (
     searchContextMessages: ChatMessage[],
-    options?: MergeSearchContextMessagesOptions,
+    options?: MergeSearchContextMessagesOptions
   ) => void;
   refs: ReturnType<typeof useChatSidebarRefs>;
   closeMessageMenu: () => void;
   getAttachmentFileName: (targetMessage: ChatMessage) => string;
-  getAttachmentFileKind: (targetMessage: ChatMessage) => "audio" | "document";
+  getAttachmentFileKind: (targetMessage: ChatMessage) => 'audio' | 'document';
   captionData: AttachmentCaptionData;
 }
 
@@ -89,7 +92,8 @@ export const useChatSidebarUiState = ({
     messageInputHeight: composer.messageInputHeight,
     composerContextualOffset: composer.composerContextualOffset,
     isMessageInputMultiline: composer.isMessageInputMultiline,
-    pendingComposerAttachmentsCount: composer.composerAttachmentPreviewItems.length,
+    pendingComposerAttachmentsCount:
+      composer.composerAttachmentPreviewItems.length,
     normalizedMessageSearchQuery,
     isMessageSearchMode,
     activeSearchMessageId,
@@ -106,7 +110,8 @@ export const useChatSidebarUiState = ({
   });
 
   refs.closeMessageMenuRef.current = viewport.closeMessageMenu;
-  refs.scheduleScrollMessagesToBottomRef.current = viewport.scheduleScrollMessagesToBottom;
+  refs.scheduleScrollMessagesToBottomRef.current =
+    viewport.scheduleScrollMessagesToBottom;
 
   const previews = useChatSidebarPreviewState({
     currentChannelId,
@@ -132,43 +137,49 @@ export const useChatSidebarUiState = ({
     (messageId: string, availableMessages: ChatMessage[]) =>
       buildMessageRenderItems({
         messages: availableMessages,
-        captionMessagesByAttachmentId: captionData.captionMessagesByAttachmentId,
+        captionMessagesByAttachmentId:
+          captionData.captionMessagesByAttachmentId,
         getAttachmentFileKind,
         enableImageBubbleGrouping: true,
         enableDocumentBubbleGrouping: true,
       }).find(
-        (renderItem) =>
-          renderItem.kind === "image-group" &&
-          renderItem.messages.some((message) => message.id === messageId),
+        renderItem =>
+          renderItem.kind === 'image-group' &&
+          renderItem.messages.some(message => message.id === messageId)
       ),
-    [captionData.captionMessagesByAttachmentId, getAttachmentFileKind],
+    [captionData.captionMessagesByAttachmentId, getAttachmentFileKind]
   );
 
   const getReplyTargetContextHasOlderMessages = useCallback(
     (messageId: string, contextMessages: ChatMessage[]) => {
-      const targetMessage = contextMessages.find((messageItem) => messageItem.id === messageId);
+      const targetMessage = contextMessages.find(
+        messageItem => messageItem.id === messageId
+      );
       if (!targetMessage) {
         return undefined;
       }
 
-      const replyTargetAndOlderCount = contextMessages.filter((messageItem) => {
-        const createdAtOrder = messageItem.created_at.localeCompare(targetMessage.created_at);
+      const replyTargetAndOlderCount = contextMessages.filter(messageItem => {
+        const createdAtOrder = messageItem.created_at.localeCompare(
+          targetMessage.created_at
+        );
         return (
           createdAtOrder < 0 ||
-          (createdAtOrder === 0 && messageItem.id.localeCompare(targetMessage.id) <= 0)
+          (createdAtOrder === 0 &&
+            messageItem.id.localeCompare(targetMessage.id) <= 0)
         );
       }).length;
 
       return replyTargetAndOlderCount > REPLY_TARGET_CONTEXT_BEFORE_LIMIT;
     },
-    [],
+    []
   );
 
   const confirmReplyTargetContextHasOlderMessages = useCallback(
     async (
       targetConversationUserId: string,
       contextMessages: ChatMessage[],
-      inferredHasOlderMessages: boolean | undefined,
+      inferredHasOlderMessages: boolean | undefined
     ) => {
       if (!inferredHasOlderMessages) {
         return inferredHasOlderMessages;
@@ -180,35 +191,41 @@ export const useChatSidebarUiState = ({
             return messageItem;
           }
 
-          const createdAtOrder = messageItem.created_at.localeCompare(oldestMessage.created_at);
+          const createdAtOrder = messageItem.created_at.localeCompare(
+            oldestMessage.created_at
+          );
           return createdAtOrder < 0 ||
-            (createdAtOrder === 0 && messageItem.id.localeCompare(oldestMessage.id) < 0)
+            (createdAtOrder === 0 &&
+              messageItem.id.localeCompare(oldestMessage.id) < 0)
             ? messageItem
             : oldestMessage;
         },
-        null,
+        null
       );
       if (!oldestContextMessage) {
         return inferredHasOlderMessages;
       }
 
       const { data: olderMessagesPage, error } =
-        await chatSidebarMessagesGateway.fetchConversationMessages(targetConversationUserId, {
-          beforeCreatedAt: oldestContextMessage.created_at,
-          beforeId: oldestContextMessage.id,
-          limit: 1,
-        });
+        await chatSidebarMessagesGateway.fetchConversationMessages(
+          targetConversationUserId,
+          {
+            beforeCreatedAt: oldestContextMessage.created_at,
+            beforeId: oldestContextMessage.id,
+            limit: 1,
+          }
+        );
 
       if (error || !olderMessagesPage) {
         if (error) {
-          console.error("Error checking reply target older messages:", error);
+          console.error('Error checking reply target older messages:', error);
         }
         return inferredHasOlderMessages;
       }
 
       return olderMessagesPage.messages.length > 0;
     },
-    [],
+    []
   );
 
   const cancelPendingReplyTargetFocusFrame = useCallback(() => {
@@ -246,16 +263,19 @@ export const useChatSidebarUiState = ({
         }
 
         remainingFrames -= 1;
-        pendingReplyTargetFocusFrameRef.current = requestAnimationFrame(focusWhenBubbleReady);
+        pendingReplyTargetFocusFrameRef.current =
+          requestAnimationFrame(focusWhenBubbleReady);
       };
 
-      pendingReplyTargetFocusFrameRef.current = requestAnimationFrame(focusWhenBubbleReady);
+      pendingReplyTargetFocusFrameRef.current =
+        requestAnimationFrame(focusWhenBubbleReady);
     },
-    [cancelPendingReplyTargetFocusFrame, refs.messageBubbleRefs, viewport],
+    [cancelPendingReplyTargetFocusFrame, refs.messageBubbleRefs, viewport]
   );
 
   useLayoutEffect(() => {
-    const pendingViewportSnapshot = pendingReplyTargetViewportSnapshotRef.current;
+    const pendingViewportSnapshot =
+      pendingReplyTargetViewportSnapshotRef.current;
 
     if (pendingViewportSnapshot) {
       pendingReplyTargetViewportSnapshotRef.current = null;
@@ -265,7 +285,8 @@ export const useChatSidebarUiState = ({
         const scrollHeightDelta =
           messagesContainer.scrollHeight - pendingViewportSnapshot.scrollHeight;
         if (scrollHeightDelta > 0) {
-          messagesContainer.scrollTop = pendingViewportSnapshot.scrollTop + scrollHeightDelta;
+          messagesContainer.scrollTop =
+            pendingViewportSnapshot.scrollTop + scrollHeightDelta;
         }
       }
     }
@@ -274,7 +295,7 @@ export const useChatSidebarUiState = ({
     if (
       pendingFocusMessageId &&
       (refs.messageBubbleRefs.current.has(pendingFocusMessageId) ||
-        messages.some((messageItem) => messageItem.id === pendingFocusMessageId))
+        messages.some(messageItem => messageItem.id === pendingFocusMessageId))
     ) {
       scheduleReplyTargetViewportFocus(pendingFocusMessageId);
     }
@@ -289,26 +310,29 @@ export const useChatSidebarUiState = ({
     () => () => {
       cancelPendingReplyTargetFocusFrame();
     },
-    [cancelPendingReplyTargetFocusFrame],
+    [cancelPendingReplyTargetFocusFrame]
   );
 
   const focusReplyTargetFromMessages = useCallback(
     (messageId: string, availableMessages: ChatMessage[]) => {
       const { openImageGroupInPortal } = previews;
       const replyingMessage =
-        availableMessages.find((candidate) => candidate.id === messageId) || null;
+        availableMessages.find(candidate => candidate.id === messageId) || null;
       if (!replyingMessage) {
         return false;
       }
 
-      const imageGroupRenderItem = getReplyTargetImageGroup(messageId, availableMessages);
+      const imageGroupRenderItem = getReplyTargetImageGroup(
+        messageId,
+        availableMessages
+      );
 
-      if (imageGroupRenderItem?.kind === "image-group") {
+      if (imageGroupRenderItem?.kind === 'image-group') {
         scheduleReplyTargetViewportFocus(messageId);
         void openImageGroupInPortal(
           imageGroupRenderItem.messages,
           messageId,
-          replyingMessage.file_preview_url || null,
+          replyingMessage.file_preview_url || null
         );
         return true;
       }
@@ -316,7 +340,12 @@ export const useChatSidebarUiState = ({
       viewport.focusReplyTargetMessage(messageId);
       return true;
     },
-    [getReplyTargetImageGroup, previews, scheduleReplyTargetViewportFocus, viewport],
+    [
+      getReplyTargetImageGroup,
+      previews,
+      scheduleReplyTargetViewportFocus,
+      viewport,
+    ]
   );
 
   const focusReplyTargetMessage = useCallback(
@@ -344,11 +373,15 @@ export const useChatSidebarUiState = ({
               {
                 beforeLimit: REPLY_TARGET_CONTEXT_BEFORE_LIMIT,
                 afterLimit: REPLY_TARGET_CONTEXT_AFTER_LIMIT,
-              },
+              }
             );
-          if (error || !searchContextMessages || searchContextMessages.length === 0) {
+          if (
+            error ||
+            !searchContextMessages ||
+            searchContextMessages.length === 0
+          ) {
             if (error) {
-              console.error("Error loading reply target context:", error);
+              console.error('Error loading reply target context:', error);
             }
             return;
           }
@@ -361,11 +394,15 @@ export const useChatSidebarUiState = ({
               }
             : null;
 
-          const hasOlderMessages = await confirmReplyTargetContextHasOlderMessages(
-            targetUserId,
-            searchContextMessages,
-            getReplyTargetContextHasOlderMessages(messageId, searchContextMessages),
-          );
+          const hasOlderMessages =
+            await confirmReplyTargetContextHasOlderMessages(
+              targetUserId,
+              searchContextMessages,
+              getReplyTargetContextHasOlderMessages(
+                messageId,
+                searchContextMessages
+              )
+            );
 
           viewport.suspendPinnedViewportSync?.();
           mergeSearchContextMessages(searchContextMessages, {
@@ -380,23 +417,28 @@ export const useChatSidebarUiState = ({
           }, new Map());
           const orderedMergedMessages = [...mergedMessages.values()].sort(
             (leftMessage, rightMessage) => {
-              const createdAtOrder = leftMessage.created_at.localeCompare(rightMessage.created_at);
+              const createdAtOrder = leftMessage.created_at.localeCompare(
+                rightMessage.created_at
+              );
               if (createdAtOrder !== 0) {
                 return createdAtOrder;
               }
 
               return leftMessage.id.localeCompare(rightMessage.id);
-            },
+            }
           );
 
-          const imageGroupRenderItem = getReplyTargetImageGroup(messageId, orderedMergedMessages);
-          if (imageGroupRenderItem?.kind === "image-group") {
+          const imageGroupRenderItem = getReplyTargetImageGroup(
+            messageId,
+            orderedMergedMessages
+          );
+          if (imageGroupRenderItem?.kind === 'image-group') {
             scheduleReplyTargetViewportFocus(messageId);
             void previews.openImageGroupInPortal(
               imageGroupRenderItem.messages,
               messageId,
-              searchContextMessages.find((message) => message.id === messageId)?.file_preview_url ||
-                null,
+              searchContextMessages.find(message => message.id === messageId)
+                ?.file_preview_url || null
             );
             return;
           }
@@ -423,16 +465,20 @@ export const useChatSidebarUiState = ({
       refs.messagesContainerRef,
       targetUserId,
       viewport,
-    ],
+    ]
   );
 
   const toggleMessageMenu = useCallback(
-    (anchor: HTMLElement, messageId: string, preferredSide: "left" | "right") => {
+    (
+      anchor: HTMLElement,
+      messageId: string,
+      preferredSide: 'left' | 'right'
+    ) => {
       composer.closeAttachModal();
       previews.closeImageActionsMenu();
       viewport.toggleMessageMenu(anchor, messageId, preferredSide);
     },
-    [composer, previews, viewport],
+    [composer, previews, viewport]
   );
 
   return {

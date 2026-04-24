@@ -2,32 +2,34 @@ import type {
   KeyboardEvent as ReactKeyboardEvent,
   MouseEvent as ReactMouseEvent,
   ReactNode,
-} from "react";
+} from 'react';
 
 interface QuotedMessagePreviewProps {
   authorLabel: string;
   previewText: string;
   isAuthorCurrentUser: boolean;
   isHighlighted?: boolean;
-  surface?: "composer" | "current-user-message" | "other-user-message";
+  surface?: 'composer' | 'current-user-message' | 'other-user-message';
   action?: ReactNode;
   ariaLabel?: string;
   title?: string;
-  interactiveElement?: "button" | "div";
+  interactiveElement?: 'button' | 'div';
   containerClassName?: string;
   contentClassName?: string;
-  onActivate?: (event: ReactMouseEvent<HTMLElement> | ReactKeyboardEvent<HTMLElement>) => void;
+  onActivate?: (
+    event: ReactMouseEvent<HTMLElement> | ReactKeyboardEvent<HTMLElement>
+  ) => void;
 }
 
 const getSurfaceClassName = (
-  surface: NonNullable<QuotedMessagePreviewProps["surface"]>,
-  isHighlighted: boolean,
+  surface: NonNullable<QuotedMessagePreviewProps['surface']>,
+  isHighlighted: boolean
 ) => {
   if (isHighlighted) {
-    return "bg-white/10";
+    return 'bg-white/10';
   }
 
-  return surface === "current-user-message" ? "bg-emerald-50" : "bg-slate-50";
+  return surface === 'current-user-message' ? 'bg-emerald-50' : 'bg-slate-50';
 };
 
 export const QuotedMessagePreview = ({
@@ -35,29 +37,29 @@ export const QuotedMessagePreview = ({
   previewText,
   isAuthorCurrentUser,
   isHighlighted = false,
-  surface = "composer",
+  surface = 'composer',
   action,
   ariaLabel,
   title,
-  interactiveElement = "button",
-  containerClassName = "",
-  contentClassName = "min-w-0 pt-0.5 pr-1.5 pb-0.5 pl-2.5",
+  interactiveElement = 'button',
+  containerClassName = '',
+  contentClassName = 'min-w-0 pt-0.5 pr-1.5 pb-0.5 pl-2.5',
   onActivate,
 }: QuotedMessagePreviewProps) => {
   const surfaceClassName = getSurfaceClassName(surface, isHighlighted);
   const stripeClassName = isHighlighted
-    ? "bg-white/20"
+    ? 'bg-white/20'
     : isAuthorCurrentUser
-      ? "bg-olive-500"
-      : "bg-emerald-500";
+      ? 'bg-olive-500'
+      : 'bg-emerald-500';
   const labelClassName = isHighlighted
-    ? "text-white/80"
+    ? 'text-white/80'
     : isAuthorCurrentUser
-      ? "text-olive-700"
-      : "text-emerald-600";
-  const previewClassName = isHighlighted ? "text-white" : "text-slate-600";
+      ? 'text-olive-700'
+      : 'text-emerald-600';
+  const previewClassName = isHighlighted ? 'text-white' : 'text-slate-600';
   const sharedClassName = `relative min-w-0 overflow-hidden rounded-lg text-left transition-colors ${surfaceClassName} ${
-    onActivate ? "cursor-pointer" : ""
+    onActivate ? 'cursor-pointer' : ''
   } ${containerClassName}`;
   const content = (
     <>
@@ -66,8 +68,12 @@ export const QuotedMessagePreview = ({
         className={`absolute inset-y-0 left-0 w-1 rounded-l-lg ${stripeClassName}`}
       />
       <div className={contentClassName}>
-        <p className={`truncate text-[11px] font-semibold ${labelClassName}`}>{authorLabel}</p>
-        <p className={`truncate text-xs leading-relaxed ${previewClassName}`}>{previewText}</p>
+        <p className={`truncate text-[11px] font-semibold ${labelClassName}`}>
+          {authorLabel}
+        </p>
+        <p className={`truncate text-xs leading-relaxed ${previewClassName}`}>
+          {previewText}
+        </p>
       </div>
       {action}
     </>
@@ -81,9 +87,9 @@ export const QuotedMessagePreview = ({
     );
   }
 
-  if (interactiveElement === "div") {
+  if (interactiveElement === 'div') {
     const handleKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
-      if (event.key === "Enter" || event.key === " ") {
+      if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
         onActivate(event);
       }
@@ -97,7 +103,7 @@ export const QuotedMessagePreview = ({
         tabIndex={0}
         aria-label={ariaLabel}
         title={title}
-        onClick={(event) => onActivate(event)}
+        onClick={event => onActivate(event)}
         onKeyDown={handleKeyDown}
       >
         {content}
@@ -112,7 +118,7 @@ export const QuotedMessagePreview = ({
       data-chat-quoted-message-preview="true"
       aria-label={ariaLabel}
       title={title}
-      onClick={(event) => onActivate(event)}
+      onClick={event => onActivate(event)}
     >
       {content}
     </button>

@@ -1,8 +1,15 @@
-import { act, renderHook } from "@testing-library/react";
-import { createRef } from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
-import { MESSAGE_BOTTOM_GAP } from "../constants";
-import { useChatViewport } from "../hooks/useChatViewport";
+import { act, renderHook } from '@testing-library/react';
+import { createRef } from 'react';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vite-plus/test';
+import { MESSAGE_BOTTOM_GAP } from '../constants';
+import { useChatViewport } from '../hooks/useChatViewport';
 
 const createRect = (top: number, bottom: number): DOMRect =>
   ({
@@ -17,7 +24,7 @@ const createRect = (top: number, bottom: number): DOMRect =>
     toJSON: () => ({}),
   }) as DOMRect;
 
-describe("useChatViewport", () => {
+describe('useChatViewport', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     const requestAnimationFrameMock = ((callback: FrameRequestCallback) => {
@@ -25,16 +32,16 @@ describe("useChatViewport", () => {
       return 1;
     }) as typeof requestAnimationFrame;
     const cancelAnimationFrameMock = vi.fn() as typeof cancelAnimationFrame;
-    vi.stubGlobal("requestAnimationFrame", requestAnimationFrameMock);
-    vi.stubGlobal("cancelAnimationFrame", cancelAnimationFrameMock);
+    vi.stubGlobal('requestAnimationFrame', requestAnimationFrameMock);
+    vi.stubGlobal('cancelAnimationFrame', cancelAnimationFrameMock);
     window.requestAnimationFrame = requestAnimationFrameMock;
     window.cancelAnimationFrame = cancelAnimationFrameMock;
     vi.stubGlobal(
-      "ResizeObserver",
+      'ResizeObserver',
       class {
         observe() {}
         disconnect() {}
-      },
+      }
     );
   });
 
@@ -42,27 +49,27 @@ describe("useChatViewport", () => {
     vi.useRealTimers();
   });
 
-  it("coalesces read receipt checks while the user is actively scrolling", () => {
-    const messagesContainer = document.createElement("div");
-    const messagesEnd = document.createElement("div");
-    const composerContainer = document.createElement("div");
-    const chatHeaderContainer = document.createElement("div");
-    const messageBubble = document.createElement("div");
+  it('coalesces read receipt checks while the user is actively scrolling', () => {
+    const messagesContainer = document.createElement('div');
+    const messagesEnd = document.createElement('div');
+    const composerContainer = document.createElement('div');
+    const chatHeaderContainer = document.createElement('div');
+    const messageBubble = document.createElement('div');
 
-    Object.defineProperty(messagesContainer, "clientHeight", {
+    Object.defineProperty(messagesContainer, 'clientHeight', {
       configurable: true,
       value: 400,
     });
-    Object.defineProperty(messagesContainer, "scrollHeight", {
+    Object.defineProperty(messagesContainer, 'scrollHeight', {
       configurable: true,
       value: 800,
     });
-    Object.defineProperty(messagesContainer, "scrollTop", {
+    Object.defineProperty(messagesContainer, 'scrollTop', {
       configurable: true,
       value: 120,
       writable: true,
     });
-    Object.defineProperty(composerContainer, "offsetHeight", {
+    Object.defineProperty(composerContainer, 'offsetHeight', {
       configurable: true,
       value: 80,
     });
@@ -77,7 +84,7 @@ describe("useChatViewport", () => {
     const composerContainerRef = createRef<HTMLDivElement>();
     const chatHeaderContainerRef = createRef<HTMLDivElement>();
     const messageBubbleRefs = {
-      current: new Map<string, HTMLDivElement>([["incoming-1", messageBubble]]),
+      current: new Map<string, HTMLDivElement>([['incoming-1', messageBubble]]),
     };
 
     messagesContainerRef.current = messagesContainer;
@@ -90,24 +97,24 @@ describe("useChatViewport", () => {
     const { unmount } = renderHook(() =>
       useChatViewport({
         isOpen: true,
-        currentChannelId: "channel-1",
+        currentChannelId: 'channel-1',
         messages: [
           {
-            id: "incoming-1",
-            sender_id: "user-b",
-            receiver_id: "user-a",
+            id: 'incoming-1',
+            sender_id: 'user-b',
+            receiver_id: 'user-a',
             is_read: false,
           },
         ],
-        userId: "user-a",
-        targetUserId: "user-b",
+        userId: 'user-a',
+        targetUserId: 'user-b',
         messagesCount: 1,
         loading: false,
         messageInputHeight: 22,
         composerContextualOffset: 0,
         isMessageInputMultiline: false,
         pendingComposerAttachmentsCount: 0,
-        normalizedMessageSearchQuery: "",
+        normalizedMessageSearchQuery: '',
         isMessageSearchMode: false,
         activeSearchMessageId: null,
         searchNavigationTick: 0,
@@ -119,7 +126,7 @@ describe("useChatViewport", () => {
         composerContainerRef,
         chatHeaderContainerRef,
         messageBubbleRefs,
-      }),
+      })
     );
 
     act(() => {
@@ -128,9 +135,9 @@ describe("useChatViewport", () => {
     markMessageIdsAsRead.mockClear();
 
     act(() => {
-      messagesContainer.dispatchEvent(new Event("scroll"));
-      messagesContainer.dispatchEvent(new Event("scroll"));
-      messagesContainer.dispatchEvent(new Event("scroll"));
+      messagesContainer.dispatchEvent(new Event('scroll'));
+      messagesContainer.dispatchEvent(new Event('scroll'));
+      messagesContainer.dispatchEvent(new Event('scroll'));
     });
 
     act(() => {
@@ -142,32 +149,32 @@ describe("useChatViewport", () => {
       vi.advanceTimersByTime(1);
     });
     expect(markMessageIdsAsRead).toHaveBeenCalledTimes(1);
-    expect(markMessageIdsAsRead).toHaveBeenCalledWith(["incoming-1"]);
+    expect(markMessageIdsAsRead).toHaveBeenCalledWith(['incoming-1']);
 
     unmount();
   });
 
-  it("does not mark an incoming message as read while it is still hidden behind the sticky header", () => {
-    const messagesContainer = document.createElement("div");
-    const messagesEnd = document.createElement("div");
-    const composerContainer = document.createElement("div");
-    const chatHeaderContainer = document.createElement("div");
-    const messageBubble = document.createElement("div");
+  it('does not mark an incoming message as read while it is still hidden behind the sticky header', () => {
+    const messagesContainer = document.createElement('div');
+    const messagesEnd = document.createElement('div');
+    const composerContainer = document.createElement('div');
+    const chatHeaderContainer = document.createElement('div');
+    const messageBubble = document.createElement('div');
 
-    Object.defineProperty(messagesContainer, "clientHeight", {
+    Object.defineProperty(messagesContainer, 'clientHeight', {
       configurable: true,
       value: 400,
     });
-    Object.defineProperty(messagesContainer, "scrollHeight", {
+    Object.defineProperty(messagesContainer, 'scrollHeight', {
       configurable: true,
       value: 800,
     });
-    Object.defineProperty(messagesContainer, "scrollTop", {
+    Object.defineProperty(messagesContainer, 'scrollTop', {
       configurable: true,
       value: 120,
       writable: true,
     });
-    Object.defineProperty(composerContainer, "offsetHeight", {
+    Object.defineProperty(composerContainer, 'offsetHeight', {
       configurable: true,
       value: 80,
     });
@@ -183,7 +190,7 @@ describe("useChatViewport", () => {
     const composerContainerRef = createRef<HTMLDivElement>();
     const chatHeaderContainerRef = createRef<HTMLDivElement>();
     const messageBubbleRefs = {
-      current: new Map<string, HTMLDivElement>([["incoming-1", messageBubble]]),
+      current: new Map<string, HTMLDivElement>([['incoming-1', messageBubble]]),
     };
 
     messagesContainerRef.current = messagesContainer;
@@ -196,24 +203,24 @@ describe("useChatViewport", () => {
     const { unmount } = renderHook(() =>
       useChatViewport({
         isOpen: true,
-        currentChannelId: "channel-1",
+        currentChannelId: 'channel-1',
         messages: [
           {
-            id: "incoming-1",
-            sender_id: "user-b",
-            receiver_id: "user-a",
+            id: 'incoming-1',
+            sender_id: 'user-b',
+            receiver_id: 'user-a',
             is_read: false,
           },
         ],
-        userId: "user-a",
-        targetUserId: "user-b",
+        userId: 'user-a',
+        targetUserId: 'user-b',
         messagesCount: 1,
         loading: false,
         messageInputHeight: 22,
         composerContextualOffset: 0,
         isMessageInputMultiline: false,
         pendingComposerAttachmentsCount: 0,
-        normalizedMessageSearchQuery: "",
+        normalizedMessageSearchQuery: '',
         isMessageSearchMode: false,
         activeSearchMessageId: null,
         searchNavigationTick: 0,
@@ -225,7 +232,7 @@ describe("useChatViewport", () => {
         composerContainerRef,
         chatHeaderContainerRef,
         messageBubbleRefs,
-      }),
+      })
     );
 
     act(() => {
@@ -237,27 +244,27 @@ describe("useChatViewport", () => {
     unmount();
   });
 
-  it("marks a tall incoming message as read when a meaningful portion is visible below the sticky header", () => {
-    const messagesContainer = document.createElement("div");
-    const messagesEnd = document.createElement("div");
-    const composerContainer = document.createElement("div");
-    const chatHeaderContainer = document.createElement("div");
-    const messageBubble = document.createElement("div");
+  it('marks a tall incoming message as read when a meaningful portion is visible below the sticky header', () => {
+    const messagesContainer = document.createElement('div');
+    const messagesEnd = document.createElement('div');
+    const composerContainer = document.createElement('div');
+    const chatHeaderContainer = document.createElement('div');
+    const messageBubble = document.createElement('div');
 
-    Object.defineProperty(messagesContainer, "clientHeight", {
+    Object.defineProperty(messagesContainer, 'clientHeight', {
       configurable: true,
       value: 400,
     });
-    Object.defineProperty(messagesContainer, "scrollHeight", {
+    Object.defineProperty(messagesContainer, 'scrollHeight', {
       configurable: true,
       value: 800,
     });
-    Object.defineProperty(messagesContainer, "scrollTop", {
+    Object.defineProperty(messagesContainer, 'scrollTop', {
       configurable: true,
       value: 120,
       writable: true,
     });
-    Object.defineProperty(composerContainer, "offsetHeight", {
+    Object.defineProperty(composerContainer, 'offsetHeight', {
       configurable: true,
       value: 80,
     });
@@ -273,7 +280,7 @@ describe("useChatViewport", () => {
     const composerContainerRef = createRef<HTMLDivElement>();
     const chatHeaderContainerRef = createRef<HTMLDivElement>();
     const messageBubbleRefs = {
-      current: new Map<string, HTMLDivElement>([["incoming-1", messageBubble]]),
+      current: new Map<string, HTMLDivElement>([['incoming-1', messageBubble]]),
     };
 
     messagesContainerRef.current = messagesContainer;
@@ -286,24 +293,24 @@ describe("useChatViewport", () => {
     const { unmount } = renderHook(() =>
       useChatViewport({
         isOpen: true,
-        currentChannelId: "channel-1",
+        currentChannelId: 'channel-1',
         messages: [
           {
-            id: "incoming-1",
-            sender_id: "user-b",
-            receiver_id: "user-a",
+            id: 'incoming-1',
+            sender_id: 'user-b',
+            receiver_id: 'user-a',
             is_read: false,
           },
         ],
-        userId: "user-a",
-        targetUserId: "user-b",
+        userId: 'user-a',
+        targetUserId: 'user-b',
         messagesCount: 1,
         loading: false,
         messageInputHeight: 22,
         composerContextualOffset: 0,
         isMessageInputMultiline: false,
         pendingComposerAttachmentsCount: 0,
-        normalizedMessageSearchQuery: "",
+        normalizedMessageSearchQuery: '',
         isMessageSearchMode: false,
         activeSearchMessageId: null,
         searchNavigationTick: 0,
@@ -315,24 +322,24 @@ describe("useChatViewport", () => {
         composerContainerRef,
         chatHeaderContainerRef,
         messageBubbleRefs,
-      }),
+      })
     );
 
     act(() => {
       vi.runAllTimers();
     });
 
-    expect(markMessageIdsAsRead).toHaveBeenCalledWith(["incoming-1"]);
+    expect(markMessageIdsAsRead).toHaveBeenCalledWith(['incoming-1']);
 
     unmount();
   });
 
-  it("uses the post-scroll menu placement immediately when the bubble starts behind the header overlay", () => {
-    const messagesContainer = document.createElement("div");
-    const messagesEnd = document.createElement("div");
-    const composerContainer = document.createElement("div");
-    const chatHeaderContainer = document.createElement("div");
-    const anchor = document.createElement("div");
+  it('uses the post-scroll menu placement immediately when the bubble starts behind the header overlay', () => {
+    const messagesContainer = document.createElement('div');
+    const messagesEnd = document.createElement('div');
+    const composerContainer = document.createElement('div');
+    const chatHeaderContainer = document.createElement('div');
+    const anchor = document.createElement('div');
     const anchorDocumentTop = 212;
     const anchorHeight = 96;
     let scrollTop = 120;
@@ -340,22 +347,22 @@ describe("useChatViewport", () => {
     document.body.append(messagesContainer);
     messagesContainer.append(anchor);
 
-    Object.defineProperty(messagesContainer, "clientHeight", {
+    Object.defineProperty(messagesContainer, 'clientHeight', {
       configurable: true,
       value: 400,
     });
-    Object.defineProperty(messagesContainer, "scrollHeight", {
+    Object.defineProperty(messagesContainer, 'scrollHeight', {
       configurable: true,
       value: 800,
     });
-    Object.defineProperty(messagesContainer, "scrollTop", {
+    Object.defineProperty(messagesContainer, 'scrollTop', {
       configurable: true,
       get: () => scrollTop,
-      set: (value) => {
+      set: value => {
         scrollTop = value;
       },
     });
-    Object.defineProperty(composerContainer, "offsetHeight", {
+    Object.defineProperty(composerContainer, 'offsetHeight', {
       configurable: true,
       value: 80,
     });
@@ -392,17 +399,17 @@ describe("useChatViewport", () => {
     const { result } = renderHook(() =>
       useChatViewport({
         isOpen: true,
-        currentChannelId: "channel-1",
+        currentChannelId: 'channel-1',
         messages: [],
-        userId: "user-a",
-        targetUserId: "user-b",
+        userId: 'user-a',
+        targetUserId: 'user-b',
         messagesCount: 0,
         loading: false,
         messageInputHeight: 22,
         composerContextualOffset: 0,
         isMessageInputMultiline: false,
         pendingComposerAttachmentsCount: 0,
-        normalizedMessageSearchQuery: "",
+        normalizedMessageSearchQuery: '',
         isMessageSearchMode: false,
         activeSearchMessageId: null,
         searchNavigationTick: 0,
@@ -414,25 +421,25 @@ describe("useChatViewport", () => {
         composerContainerRef,
         chatHeaderContainerRef,
         messageBubbleRefs,
-      }),
+      })
     );
 
     act(() => {
-      result.current.toggleMessageMenu(anchor, "message-1", "left");
+      result.current.toggleMessageMenu(anchor, 'message-1', 'left');
     });
 
-    expect(result.current.menuPlacement).toBe("left");
+    expect(result.current.menuPlacement).toBe('left');
     expect(messagesContainer.scrollTop).toBe(76);
 
     messagesContainer.remove();
   });
 
-  it("repositions an open message menu while the user scrolls", () => {
-    const messagesContainer = document.createElement("div");
-    const messagesEnd = document.createElement("div");
-    const composerContainer = document.createElement("div");
-    const chatHeaderContainer = document.createElement("div");
-    const anchor = document.createElement("div");
+  it('repositions an open message menu while the user scrolls', () => {
+    const messagesContainer = document.createElement('div');
+    const messagesEnd = document.createElement('div');
+    const composerContainer = document.createElement('div');
+    const chatHeaderContainer = document.createElement('div');
+    const anchor = document.createElement('div');
     const anchorHeight = 96;
     let anchorDocumentTop = 212;
     let scrollTop = 120;
@@ -440,22 +447,22 @@ describe("useChatViewport", () => {
     document.body.append(messagesContainer);
     messagesContainer.append(anchor);
 
-    Object.defineProperty(messagesContainer, "clientHeight", {
+    Object.defineProperty(messagesContainer, 'clientHeight', {
       configurable: true,
       value: 400,
     });
-    Object.defineProperty(messagesContainer, "scrollHeight", {
+    Object.defineProperty(messagesContainer, 'scrollHeight', {
       configurable: true,
       value: 800,
     });
-    Object.defineProperty(messagesContainer, "scrollTop", {
+    Object.defineProperty(messagesContainer, 'scrollTop', {
       configurable: true,
       get: () => scrollTop,
-      set: (value) => {
+      set: value => {
         scrollTop = value;
       },
     });
-    Object.defineProperty(composerContainer, "offsetHeight", {
+    Object.defineProperty(composerContainer, 'offsetHeight', {
       configurable: true,
       value: 80,
     });
@@ -492,17 +499,17 @@ describe("useChatViewport", () => {
     const { result } = renderHook(() =>
       useChatViewport({
         isOpen: true,
-        currentChannelId: "channel-1",
+        currentChannelId: 'channel-1',
         messages: [],
-        userId: "user-a",
-        targetUserId: "user-b",
+        userId: 'user-a',
+        targetUserId: 'user-b',
         messagesCount: 0,
         loading: false,
         messageInputHeight: 22,
         composerContextualOffset: 0,
         isMessageInputMultiline: false,
         pendingComposerAttachmentsCount: 0,
-        normalizedMessageSearchQuery: "",
+        normalizedMessageSearchQuery: '',
         isMessageSearchMode: false,
         activeSearchMessageId: null,
         searchNavigationTick: 0,
@@ -514,52 +521,52 @@ describe("useChatViewport", () => {
         composerContainerRef,
         chatHeaderContainerRef,
         messageBubbleRefs,
-      }),
+      })
     );
 
     act(() => {
-      result.current.toggleMessageMenu(anchor, "message-1", "left");
+      result.current.toggleMessageMenu(anchor, 'message-1', 'left');
     });
 
-    expect(result.current.menuPlacement).toBe("left");
+    expect(result.current.menuPlacement).toBe('left');
     expect(messagesContainer.scrollTop).toBe(76);
 
     act(() => {
       anchorDocumentTop = scrollTop + 240;
-      messagesContainer.dispatchEvent(new Event("scroll"));
+      messagesContainer.dispatchEvent(new Event('scroll'));
       vi.runAllTimers();
     });
 
-    expect(result.current.menuPlacement).toBe("left");
+    expect(result.current.menuPlacement).toBe('left');
     expect(messagesContainer.scrollTop).toBe(76);
 
     messagesContainer.remove();
   });
 
-  it("keeps a bubble menu on the preferred side when the available side room matches the rendered popup width", () => {
-    const messagesContainer = document.createElement("div");
-    const messagesEnd = document.createElement("div");
-    const composerContainer = document.createElement("div");
-    const chatHeaderContainer = document.createElement("div");
-    const anchor = document.createElement("div");
+  it('keeps a bubble menu on the preferred side when the available side room matches the rendered popup width', () => {
+    const messagesContainer = document.createElement('div');
+    const messagesEnd = document.createElement('div');
+    const composerContainer = document.createElement('div');
+    const chatHeaderContainer = document.createElement('div');
+    const anchor = document.createElement('div');
 
     document.body.append(messagesContainer);
     messagesContainer.append(anchor);
 
-    Object.defineProperty(messagesContainer, "clientHeight", {
+    Object.defineProperty(messagesContainer, 'clientHeight', {
       configurable: true,
       value: 400,
     });
-    Object.defineProperty(messagesContainer, "scrollHeight", {
+    Object.defineProperty(messagesContainer, 'scrollHeight', {
       configurable: true,
       value: 800,
     });
-    Object.defineProperty(messagesContainer, "scrollTop", {
+    Object.defineProperty(messagesContainer, 'scrollTop', {
       configurable: true,
       value: 120,
       writable: true,
     });
-    Object.defineProperty(composerContainer, "offsetHeight", {
+    Object.defineProperty(composerContainer, 'offsetHeight', {
       configurable: true,
       value: 80,
     });
@@ -596,17 +603,17 @@ describe("useChatViewport", () => {
     const { result } = renderHook(() =>
       useChatViewport({
         isOpen: true,
-        currentChannelId: "channel-1",
+        currentChannelId: 'channel-1',
         messages: [],
-        userId: "user-a",
-        targetUserId: "user-b",
+        userId: 'user-a',
+        targetUserId: 'user-b',
         messagesCount: 0,
         loading: false,
         messageInputHeight: 22,
         composerContextualOffset: 0,
         isMessageInputMultiline: false,
         pendingComposerAttachmentsCount: 0,
-        normalizedMessageSearchQuery: "",
+        normalizedMessageSearchQuery: '',
         isMessageSearchMode: false,
         activeSearchMessageId: null,
         searchNavigationTick: 0,
@@ -618,24 +625,24 @@ describe("useChatViewport", () => {
         composerContainerRef,
         chatHeaderContainerRef,
         messageBubbleRefs,
-      }),
+      })
     );
 
     act(() => {
-      result.current.toggleMessageMenu(anchor, "message-1", "left");
+      result.current.toggleMessageMenu(anchor, 'message-1', 'left');
     });
 
-    expect(result.current.menuPlacement).toBe("left");
+    expect(result.current.menuPlacement).toBe('left');
 
     messagesContainer.remove();
   });
 
-  it("auto-scrolls the messages viewport when opening a menu for a bubble near the composer", () => {
-    const messagesContainer = document.createElement("div");
-    const messagesEnd = document.createElement("div");
-    const composerContainer = document.createElement("div");
-    const chatHeaderContainer = document.createElement("div");
-    const anchor = document.createElement("div");
+  it('auto-scrolls the messages viewport when opening a menu for a bubble near the composer', () => {
+    const messagesContainer = document.createElement('div');
+    const messagesEnd = document.createElement('div');
+    const composerContainer = document.createElement('div');
+    const chatHeaderContainer = document.createElement('div');
+    const anchor = document.createElement('div');
     const anchorDocumentTop = 368;
     const anchorHeight = 96;
     let scrollTop = 120;
@@ -643,22 +650,22 @@ describe("useChatViewport", () => {
     document.body.append(messagesContainer);
     messagesContainer.append(anchor);
 
-    Object.defineProperty(messagesContainer, "clientHeight", {
+    Object.defineProperty(messagesContainer, 'clientHeight', {
       configurable: true,
       value: 400,
     });
-    Object.defineProperty(messagesContainer, "scrollHeight", {
+    Object.defineProperty(messagesContainer, 'scrollHeight', {
       configurable: true,
       value: 800,
     });
-    Object.defineProperty(messagesContainer, "scrollTop", {
+    Object.defineProperty(messagesContainer, 'scrollTop', {
       configurable: true,
       get: () => scrollTop,
-      set: (value) => {
+      set: value => {
         scrollTop = value;
       },
     });
-    Object.defineProperty(composerContainer, "offsetHeight", {
+    Object.defineProperty(composerContainer, 'offsetHeight', {
       configurable: true,
       value: 80,
     });
@@ -695,17 +702,17 @@ describe("useChatViewport", () => {
     const { result } = renderHook(() =>
       useChatViewport({
         isOpen: true,
-        currentChannelId: "channel-1",
+        currentChannelId: 'channel-1',
         messages: [],
-        userId: "user-a",
-        targetUserId: "user-b",
+        userId: 'user-a',
+        targetUserId: 'user-b',
         messagesCount: 0,
         loading: false,
         messageInputHeight: 22,
         composerContextualOffset: 0,
         isMessageInputMultiline: false,
         pendingComposerAttachmentsCount: 0,
-        normalizedMessageSearchQuery: "",
+        normalizedMessageSearchQuery: '',
         isMessageSearchMode: false,
         activeSearchMessageId: null,
         searchNavigationTick: 0,
@@ -717,38 +724,40 @@ describe("useChatViewport", () => {
         composerContainerRef,
         chatHeaderContainerRef,
         messageBubbleRefs,
-      }),
+      })
     );
 
     act(() => {
-      result.current.toggleMessageMenu(anchor, "message-1", "left");
+      result.current.toggleMessageMenu(anchor, 'message-1', 'left');
     });
 
-    expect(result.current.openMenuMessageId).toBe("message-1");
+    expect(result.current.openMenuMessageId).toBe('message-1');
     expect(messagesContainer.scrollTop).toBe(152);
 
     messagesContainer.remove();
   });
 
-  it("waits for the menu auto-scroll to finish before opening the popup", () => {
+  it('waits for the menu auto-scroll to finish before opening the popup', () => {
     const frameQueue: FrameRequestCallback[] = [];
-    const requestAnimationFrameMock = vi.fn((callback: FrameRequestCallback) => {
-      frameQueue.push(callback);
-      return frameQueue.length;
-    }) as typeof requestAnimationFrame;
+    const requestAnimationFrameMock = vi.fn(
+      (callback: FrameRequestCallback) => {
+        frameQueue.push(callback);
+        return frameQueue.length;
+      }
+    ) as typeof requestAnimationFrame;
     const cancelAnimationFrameMock = vi.fn((frameId: number) => {
       frameQueue[frameId - 1] = () => 0;
     }) as typeof cancelAnimationFrame;
-    vi.stubGlobal("requestAnimationFrame", requestAnimationFrameMock);
-    vi.stubGlobal("cancelAnimationFrame", cancelAnimationFrameMock);
+    vi.stubGlobal('requestAnimationFrame', requestAnimationFrameMock);
+    vi.stubGlobal('cancelAnimationFrame', cancelAnimationFrameMock);
     window.requestAnimationFrame = requestAnimationFrameMock;
     window.cancelAnimationFrame = cancelAnimationFrameMock;
 
-    const messagesContainer = document.createElement("div");
-    const messagesEnd = document.createElement("div");
-    const composerContainer = document.createElement("div");
-    const chatHeaderContainer = document.createElement("div");
-    const anchor = document.createElement("div");
+    const messagesContainer = document.createElement('div');
+    const messagesEnd = document.createElement('div');
+    const composerContainer = document.createElement('div');
+    const chatHeaderContainer = document.createElement('div');
+    const anchor = document.createElement('div');
     const anchorDocumentTop = 368;
     const anchorHeight = 96;
     let scrollTop = 120;
@@ -756,22 +765,22 @@ describe("useChatViewport", () => {
     document.body.append(messagesContainer);
     messagesContainer.append(anchor);
 
-    Object.defineProperty(messagesContainer, "clientHeight", {
+    Object.defineProperty(messagesContainer, 'clientHeight', {
       configurable: true,
       value: 400,
     });
-    Object.defineProperty(messagesContainer, "scrollHeight", {
+    Object.defineProperty(messagesContainer, 'scrollHeight', {
       configurable: true,
       value: 800,
     });
-    Object.defineProperty(messagesContainer, "scrollTop", {
+    Object.defineProperty(messagesContainer, 'scrollTop', {
       configurable: true,
       get: () => scrollTop,
-      set: (value) => {
+      set: value => {
         scrollTop = value;
       },
     });
-    Object.defineProperty(composerContainer, "offsetHeight", {
+    Object.defineProperty(composerContainer, 'offsetHeight', {
       configurable: true,
       value: 80,
     });
@@ -808,17 +817,17 @@ describe("useChatViewport", () => {
     const { result } = renderHook(() =>
       useChatViewport({
         isOpen: true,
-        currentChannelId: "channel-1",
+        currentChannelId: 'channel-1',
         messages: [],
-        userId: "user-a",
-        targetUserId: "user-b",
+        userId: 'user-a',
+        targetUserId: 'user-b',
         messagesCount: 0,
         loading: false,
         messageInputHeight: 22,
         composerContextualOffset: 0,
         isMessageInputMultiline: false,
         pendingComposerAttachmentsCount: 0,
-        normalizedMessageSearchQuery: "",
+        normalizedMessageSearchQuery: '',
         isMessageSearchMode: false,
         activeSearchMessageId: null,
         searchNavigationTick: 0,
@@ -830,15 +839,15 @@ describe("useChatViewport", () => {
         composerContainerRef,
         chatHeaderContainerRef,
         messageBubbleRefs,
-      }),
+      })
     );
 
     act(() => {
-      result.current.toggleMessageMenu(anchor, "message-1", "left");
+      result.current.toggleMessageMenu(anchor, 'message-1', 'left');
     });
 
     expect(result.current.openMenuMessageId).toBeNull();
-    expect(result.current.menuDimmingMessageId).toBe("message-1");
+    expect(result.current.menuDimmingMessageId).toBe('message-1');
 
     act(() => {
       while (frameQueue.length > 0) {
@@ -847,19 +856,19 @@ describe("useChatViewport", () => {
       }
     });
 
-    expect(result.current.openMenuMessageId).toBe("message-1");
-    expect(result.current.menuDimmingMessageId).toBe("message-1");
+    expect(result.current.openMenuMessageId).toBe('message-1');
+    expect(result.current.menuDimmingMessageId).toBe('message-1');
     expect(messagesContainer.scrollTop).toBe(152);
 
     messagesContainer.remove();
   });
 
-  it("closes the message menu when its anchor scrolls out of the visible viewport", () => {
-    const messagesContainer = document.createElement("div");
-    const messagesEnd = document.createElement("div");
-    const composerContainer = document.createElement("div");
-    const chatHeaderContainer = document.createElement("div");
-    const anchor = document.createElement("div");
+  it('closes the message menu when its anchor scrolls out of the visible viewport', () => {
+    const messagesContainer = document.createElement('div');
+    const messagesEnd = document.createElement('div');
+    const composerContainer = document.createElement('div');
+    const chatHeaderContainer = document.createElement('div');
+    const anchor = document.createElement('div');
 
     let anchorTop = 220;
     let anchorBottom = 316;
@@ -867,21 +876,21 @@ describe("useChatViewport", () => {
     document.body.append(messagesContainer);
     messagesContainer.append(anchor);
 
-    Object.defineProperty(messagesContainer, "clientHeight", {
+    Object.defineProperty(messagesContainer, 'clientHeight', {
       configurable: true,
       value: 400,
     });
-    Object.defineProperty(messagesContainer, "scrollHeight", {
+    Object.defineProperty(messagesContainer, 'scrollHeight', {
       configurable: true,
       value: 800,
     });
-    Object.defineProperty(messagesContainer, "scrollTop", {
+    Object.defineProperty(messagesContainer, 'scrollTop', {
       configurable: true,
       value: 120,
       writable: true,
     });
     messagesContainer.scrollTo = vi.fn();
-    Object.defineProperty(composerContainer, "offsetHeight", {
+    Object.defineProperty(composerContainer, 'offsetHeight', {
       configurable: true,
       value: 80,
     });
@@ -918,17 +927,17 @@ describe("useChatViewport", () => {
     const { result } = renderHook(() =>
       useChatViewport({
         isOpen: true,
-        currentChannelId: "channel-1",
+        currentChannelId: 'channel-1',
         messages: [],
-        userId: "user-a",
-        targetUserId: "user-b",
+        userId: 'user-a',
+        targetUserId: 'user-b',
         messagesCount: 0,
         loading: false,
         messageInputHeight: 22,
         composerContextualOffset: 0,
         isMessageInputMultiline: false,
         pendingComposerAttachmentsCount: 0,
-        normalizedMessageSearchQuery: "",
+        normalizedMessageSearchQuery: '',
         isMessageSearchMode: false,
         activeSearchMessageId: null,
         searchNavigationTick: 0,
@@ -940,19 +949,19 @@ describe("useChatViewport", () => {
         composerContainerRef,
         chatHeaderContainerRef,
         messageBubbleRefs,
-      }),
+      })
     );
 
     act(() => {
-      result.current.toggleMessageMenu(anchor, "message-1", "left");
+      result.current.toggleMessageMenu(anchor, 'message-1', 'left');
     });
 
-    expect(result.current.openMenuMessageId).toBe("message-1");
+    expect(result.current.openMenuMessageId).toBe('message-1');
 
     act(() => {
       anchorTop = 12;
       anchorBottom = 108;
-      messagesContainer.dispatchEvent(new Event("scroll"));
+      messagesContainer.dispatchEvent(new Event('scroll'));
       vi.runAllTimers();
     });
 
@@ -962,43 +971,45 @@ describe("useChatViewport", () => {
     messagesContainer.remove();
   });
 
-  it("keeps the user position when a new latest message arrives after the initial open pin", () => {
-    const messagesContainer = document.createElement("div");
-    const messagesEnd = document.createElement("div");
-    const composerContainer = document.createElement("div");
-    const chatHeaderContainer = document.createElement("div");
+  it('keeps the user position when a new latest message arrives after the initial open pin', () => {
+    const messagesContainer = document.createElement('div');
+    const messagesEnd = document.createElement('div');
+    const composerContainer = document.createElement('div');
+    const chatHeaderContainer = document.createElement('div');
 
     let scrollTop = 0;
     let scrollHeight = 800;
     let messagesEndTop = 760;
 
-    Object.defineProperty(messagesContainer, "clientHeight", {
+    Object.defineProperty(messagesContainer, 'clientHeight', {
       configurable: true,
       value: 400,
     });
-    Object.defineProperty(messagesContainer, "scrollHeight", {
+    Object.defineProperty(messagesContainer, 'scrollHeight', {
       configurable: true,
       get: () => scrollHeight,
     });
-    Object.defineProperty(messagesContainer, "scrollTop", {
+    Object.defineProperty(messagesContainer, 'scrollTop', {
       configurable: true,
       get: () => scrollTop,
-      set: (value) => {
+      set: value => {
         scrollTop = value;
       },
     });
     const scrollTo = vi.fn(({ top }: ScrollToOptions) => {
       scrollTop = top ?? scrollTop;
     });
-    messagesContainer.scrollTo = scrollTo as unknown as typeof messagesContainer.scrollTo;
-    Object.defineProperty(composerContainer, "offsetHeight", {
+    messagesContainer.scrollTo =
+      scrollTo as unknown as typeof messagesContainer.scrollTo;
+    Object.defineProperty(composerContainer, 'offsetHeight', {
       configurable: true,
       value: 80,
     });
 
     messagesContainer.getBoundingClientRect = () => createRect(0, 400);
     composerContainer.getBoundingClientRect = () => createRect(320, 400);
-    messagesEnd.getBoundingClientRect = () => createRect(messagesEndTop, messagesEndTop);
+    messagesEnd.getBoundingClientRect = () =>
+      createRect(messagesEndTop, messagesEndTop);
 
     const messagesContainerRef = createRef<HTMLDivElement>();
     const messagesEndRef = createRef<HTMLDivElement>();
@@ -1016,9 +1027,9 @@ describe("useChatViewport", () => {
     const markMessageIdsAsRead = vi.fn().mockResolvedValue(undefined);
     const initialMessages = [
       {
-        id: "message-1",
-        sender_id: "user-b",
-        receiver_id: "user-a",
+        id: 'message-1',
+        sender_id: 'user-b',
+        receiver_id: 'user-a',
         is_read: false,
       },
     ];
@@ -1027,17 +1038,17 @@ describe("useChatViewport", () => {
       ({ messages, messagesCount }) =>
         useChatViewport({
           isOpen: true,
-          currentChannelId: "channel-1",
+          currentChannelId: 'channel-1',
           messages,
-          userId: "user-a",
-          targetUserId: "user-b",
+          userId: 'user-a',
+          targetUserId: 'user-b',
           messagesCount,
           loading: false,
           messageInputHeight: 22,
           composerContextualOffset: 0,
           isMessageInputMultiline: false,
           pendingComposerAttachmentsCount: 0,
-          normalizedMessageSearchQuery: "",
+          normalizedMessageSearchQuery: '',
           isMessageSearchMode: false,
           activeSearchMessageId: null,
           searchNavigationTick: 0,
@@ -1055,7 +1066,7 @@ describe("useChatViewport", () => {
           messages: initialMessages,
           messagesCount: initialMessages.length,
         },
-      },
+      }
     );
 
     act(() => {
@@ -1066,7 +1077,7 @@ describe("useChatViewport", () => {
 
     act(() => {
       scrollTop = 120;
-      messagesContainer.dispatchEvent(new Event("scroll"));
+      messagesContainer.dispatchEvent(new Event('scroll'));
       vi.runAllTimers();
     });
 
@@ -1078,9 +1089,9 @@ describe("useChatViewport", () => {
     const nextMessages = [
       ...initialMessages,
       {
-        id: "message-2",
-        sender_id: "user-b",
-        receiver_id: "user-a",
+        id: 'message-2',
+        sender_id: 'user-b',
+        receiver_id: 'user-a',
         is_read: false,
       },
     ];
@@ -1101,11 +1112,11 @@ describe("useChatViewport", () => {
     unmount();
   });
 
-  it("waits for the restored draft composer height before completing the initial open pin", () => {
-    const messagesContainer = document.createElement("div");
-    const messagesEnd = document.createElement("div");
-    const composerContainer = document.createElement("div");
-    const chatHeaderContainer = document.createElement("div");
+  it('waits for the restored draft composer height before completing the initial open pin', () => {
+    const messagesContainer = document.createElement('div');
+    const messagesEnd = document.createElement('div');
+    const composerContainer = document.createElement('div');
+    const chatHeaderContainer = document.createElement('div');
 
     let scrollTop = 0;
     let scrollHeight = 800;
@@ -1113,26 +1124,27 @@ describe("useChatViewport", () => {
     let composerHeight = 0;
     const endMarkerContentTop = 760;
 
-    Object.defineProperty(messagesContainer, "clientHeight", {
+    Object.defineProperty(messagesContainer, 'clientHeight', {
       configurable: true,
       value: 400,
     });
-    Object.defineProperty(messagesContainer, "scrollHeight", {
+    Object.defineProperty(messagesContainer, 'scrollHeight', {
       configurable: true,
       get: () => scrollHeight,
     });
-    Object.defineProperty(messagesContainer, "scrollTop", {
+    Object.defineProperty(messagesContainer, 'scrollTop', {
       configurable: true,
       get: () => scrollTop,
-      set: (value) => {
+      set: value => {
         scrollTop = value;
       },
     });
     const scrollTo = vi.fn(({ top }: ScrollToOptions) => {
       scrollTop = top ?? scrollTop;
     });
-    messagesContainer.scrollTo = scrollTo as unknown as typeof messagesContainer.scrollTo;
-    Object.defineProperty(composerContainer, "offsetHeight", {
+    messagesContainer.scrollTo =
+      scrollTo as unknown as typeof messagesContainer.scrollTo;
+    Object.defineProperty(composerContainer, 'offsetHeight', {
       configurable: true,
       get: () => composerHeight,
     });
@@ -1141,7 +1153,10 @@ describe("useChatViewport", () => {
     composerContainer.getBoundingClientRect = () =>
       createRect(composerTop, composerTop + composerHeight);
     messagesEnd.getBoundingClientRect = () =>
-      createRect(endMarkerContentTop - scrollTop, endMarkerContentTop - scrollTop);
+      createRect(
+        endMarkerContentTop - scrollTop,
+        endMarkerContentTop - scrollTop
+      );
 
     const messagesContainerRef = createRef<HTMLDivElement>();
     const messagesEndRef = createRef<HTMLDivElement>();
@@ -1158,9 +1173,9 @@ describe("useChatViewport", () => {
 
     const messages = [
       {
-        id: "message-1",
-        sender_id: "user-b",
-        receiver_id: "user-a",
+        id: 'message-1',
+        sender_id: 'user-b',
+        receiver_id: 'user-a',
         is_read: false,
       },
     ];
@@ -1169,17 +1184,17 @@ describe("useChatViewport", () => {
       ({ messageInputHeight }) =>
         useChatViewport({
           isOpen: true,
-          currentChannelId: "channel-1",
+          currentChannelId: 'channel-1',
           messages,
-          userId: "user-a",
-          targetUserId: "user-b",
+          userId: 'user-a',
+          targetUserId: 'user-b',
           messagesCount: messages.length,
           loading: false,
           messageInputHeight,
           composerContextualOffset: 0,
           isMessageInputMultiline: messageInputHeight > 22,
           pendingComposerAttachmentsCount: 0,
-          normalizedMessageSearchQuery: "",
+          normalizedMessageSearchQuery: '',
           isMessageSearchMode: false,
           activeSearchMessageId: null,
           searchNavigationTick: 0,
@@ -1196,7 +1211,7 @@ describe("useChatViewport", () => {
         initialProps: {
           messageInputHeight: 22,
         },
-      },
+      }
     );
 
     act(() => {
@@ -1218,7 +1233,7 @@ describe("useChatViewport", () => {
     });
 
     expect(scrollTo).toHaveBeenCalledWith({
-      behavior: "auto",
+      behavior: 'auto',
       top: 512,
     });
     expect(scrollTop).toBe(512);
@@ -1226,12 +1241,12 @@ describe("useChatViewport", () => {
     unmount();
   });
 
-  it("keeps the viewport pinned when message content height grows after the initial open pin", () => {
-    const messagesContainer = document.createElement("div");
-    const messagesContent = document.createElement("div");
-    const messagesEnd = document.createElement("div");
-    const composerContainer = document.createElement("div");
-    const chatHeaderContainer = document.createElement("div");
+  it('keeps the viewport pinned when message content height grows after the initial open pin', () => {
+    const messagesContainer = document.createElement('div');
+    const messagesContent = document.createElement('div');
+    const messagesEnd = document.createElement('div');
+    const composerContainer = document.createElement('div');
+    const chatHeaderContainer = document.createElement('div');
 
     let scrollTop = 452;
     let scrollHeight = 852;
@@ -1242,7 +1257,7 @@ describe("useChatViewport", () => {
     const resizeObserverCallbacks = new Map<Element, ResizeObserverCallback>();
 
     vi.stubGlobal(
-      "ResizeObserver",
+      'ResizeObserver',
       class {
         private readonly callback: ResizeObserverCallback;
 
@@ -1257,29 +1272,30 @@ describe("useChatViewport", () => {
         disconnect() {
           resizeObserverCallbacks.clear();
         }
-      },
+      }
     );
 
-    Object.defineProperty(messagesContainer, "clientHeight", {
+    Object.defineProperty(messagesContainer, 'clientHeight', {
       configurable: true,
       value: 400,
     });
-    Object.defineProperty(messagesContainer, "scrollHeight", {
+    Object.defineProperty(messagesContainer, 'scrollHeight', {
       configurable: true,
       get: () => scrollHeight,
     });
-    Object.defineProperty(messagesContainer, "scrollTop", {
+    Object.defineProperty(messagesContainer, 'scrollTop', {
       configurable: true,
       get: () => scrollTop,
-      set: (value) => {
+      set: value => {
         scrollTop = value;
       },
     });
     const scrollTo = vi.fn(({ top }: ScrollToOptions) => {
       scrollTop = top ?? scrollTop;
     });
-    messagesContainer.scrollTo = scrollTo as unknown as typeof messagesContainer.scrollTo;
-    Object.defineProperty(composerContainer, "offsetHeight", {
+    messagesContainer.scrollTo =
+      scrollTo as unknown as typeof messagesContainer.scrollTo;
+    Object.defineProperty(composerContainer, 'offsetHeight', {
       configurable: true,
       value: composerHeight,
     });
@@ -1289,7 +1305,10 @@ describe("useChatViewport", () => {
     composerContainer.getBoundingClientRect = () =>
       createRect(composerTop, composerTop + composerHeight);
     messagesEnd.getBoundingClientRect = () =>
-      createRect(endMarkerContentTop - scrollTop, endMarkerContentTop - scrollTop);
+      createRect(
+        endMarkerContentTop - scrollTop,
+        endMarkerContentTop - scrollTop
+      );
 
     const messagesContainerRef = createRef<HTMLDivElement>();
     const messagesContentRef = createRef<HTMLDivElement>();
@@ -1308,9 +1327,9 @@ describe("useChatViewport", () => {
 
     const messages = [
       {
-        id: "message-1",
-        sender_id: "user-b",
-        receiver_id: "user-a",
+        id: 'message-1',
+        sender_id: 'user-b',
+        receiver_id: 'user-a',
         is_read: false,
       },
     ];
@@ -1318,17 +1337,17 @@ describe("useChatViewport", () => {
     const { unmount } = renderHook(() =>
       useChatViewport({
         isOpen: true,
-        currentChannelId: "channel-1",
+        currentChannelId: 'channel-1',
         messages,
-        userId: "user-a",
-        targetUserId: "user-b",
+        userId: 'user-a',
+        targetUserId: 'user-b',
         messagesCount: messages.length,
         loading: false,
         messageInputHeight: 22,
         composerContextualOffset: 0,
         isMessageInputMultiline: false,
         pendingComposerAttachmentsCount: 0,
-        normalizedMessageSearchQuery: "",
+        normalizedMessageSearchQuery: '',
         isMessageSearchMode: false,
         activeSearchMessageId: null,
         searchNavigationTick: 0,
@@ -1341,7 +1360,7 @@ describe("useChatViewport", () => {
         composerContainerRef,
         chatHeaderContainerRef,
         messageBubbleRefs,
-      }),
+      })
     );
 
     act(() => {
@@ -1360,7 +1379,7 @@ describe("useChatViewport", () => {
     });
 
     expect(scrollTo).toHaveBeenCalledWith({
-      behavior: "auto",
+      behavior: 'auto',
       top: 512,
     });
     expect(scrollTop).toBe(512);
@@ -1368,12 +1387,12 @@ describe("useChatViewport", () => {
     unmount();
   });
 
-  it("can suspend pinned bottom sync while older reply context is injected", () => {
-    const messagesContainer = document.createElement("div");
-    const messagesContent = document.createElement("div");
-    const messagesEnd = document.createElement("div");
-    const composerContainer = document.createElement("div");
-    const chatHeaderContainer = document.createElement("div");
+  it('can suspend pinned bottom sync while older reply context is injected', () => {
+    const messagesContainer = document.createElement('div');
+    const messagesContent = document.createElement('div');
+    const messagesEnd = document.createElement('div');
+    const composerContainer = document.createElement('div');
+    const chatHeaderContainer = document.createElement('div');
 
     let scrollTop = 452;
     let scrollHeight = 852;
@@ -1384,7 +1403,7 @@ describe("useChatViewport", () => {
     const resizeObserverCallbacks = new Map<Element, ResizeObserverCallback>();
 
     vi.stubGlobal(
-      "ResizeObserver",
+      'ResizeObserver',
       class {
         private readonly callback: ResizeObserverCallback;
 
@@ -1399,29 +1418,30 @@ describe("useChatViewport", () => {
         disconnect() {
           resizeObserverCallbacks.clear();
         }
-      },
+      }
     );
 
-    Object.defineProperty(messagesContainer, "clientHeight", {
+    Object.defineProperty(messagesContainer, 'clientHeight', {
       configurable: true,
       value: 400,
     });
-    Object.defineProperty(messagesContainer, "scrollHeight", {
+    Object.defineProperty(messagesContainer, 'scrollHeight', {
       configurable: true,
       get: () => scrollHeight,
     });
-    Object.defineProperty(messagesContainer, "scrollTop", {
+    Object.defineProperty(messagesContainer, 'scrollTop', {
       configurable: true,
       get: () => scrollTop,
-      set: (value) => {
+      set: value => {
         scrollTop = value;
       },
     });
     const scrollTo = vi.fn(({ top }: ScrollToOptions) => {
       scrollTop = top ?? scrollTop;
     });
-    messagesContainer.scrollTo = scrollTo as unknown as typeof messagesContainer.scrollTo;
-    Object.defineProperty(composerContainer, "offsetHeight", {
+    messagesContainer.scrollTo =
+      scrollTo as unknown as typeof messagesContainer.scrollTo;
+    Object.defineProperty(composerContainer, 'offsetHeight', {
       configurable: true,
       value: composerHeight,
     });
@@ -1431,7 +1451,10 @@ describe("useChatViewport", () => {
     composerContainer.getBoundingClientRect = () =>
       createRect(composerTop, composerTop + composerHeight);
     messagesEnd.getBoundingClientRect = () =>
-      createRect(endMarkerContentTop - scrollTop, endMarkerContentTop - scrollTop);
+      createRect(
+        endMarkerContentTop - scrollTop,
+        endMarkerContentTop - scrollTop
+      );
 
     const messagesContainerRef = createRef<HTMLDivElement>();
     const messagesContentRef = createRef<HTMLDivElement>();
@@ -1450,9 +1473,9 @@ describe("useChatViewport", () => {
 
     const messages = [
       {
-        id: "message-1",
-        sender_id: "user-b",
-        receiver_id: "user-a",
+        id: 'message-1',
+        sender_id: 'user-b',
+        receiver_id: 'user-a',
         is_read: false,
       },
     ];
@@ -1460,17 +1483,17 @@ describe("useChatViewport", () => {
     const { result, unmount } = renderHook(() =>
       useChatViewport({
         isOpen: true,
-        currentChannelId: "channel-1",
+        currentChannelId: 'channel-1',
         messages,
-        userId: "user-a",
-        targetUserId: "user-b",
+        userId: 'user-a',
+        targetUserId: 'user-b',
         messagesCount: messages.length,
         loading: false,
         messageInputHeight: 22,
         composerContextualOffset: 0,
         isMessageInputMultiline: false,
         pendingComposerAttachmentsCount: 0,
-        normalizedMessageSearchQuery: "",
+        normalizedMessageSearchQuery: '',
         isMessageSearchMode: false,
         activeSearchMessageId: null,
         searchNavigationTick: 0,
@@ -1483,7 +1506,7 @@ describe("useChatViewport", () => {
         composerContainerRef,
         chatHeaderContainerRef,
         messageBubbleRefs,
-      }),
+      })
     );
 
     act(() => {
@@ -1511,11 +1534,11 @@ describe("useChatViewport", () => {
     unmount();
   });
 
-  it("keeps the viewport pinned when the messages viewport height changes after the initial open pin", () => {
-    const messagesContainer = document.createElement("div");
-    const messagesEnd = document.createElement("div");
-    const composerContainer = document.createElement("div");
-    const chatHeaderContainer = document.createElement("div");
+  it('keeps the viewport pinned when the messages viewport height changes after the initial open pin', () => {
+    const messagesContainer = document.createElement('div');
+    const messagesEnd = document.createElement('div');
+    const composerContainer = document.createElement('div');
+    const chatHeaderContainer = document.createElement('div');
 
     let clientHeight = 400;
     let scrollTop = 452;
@@ -1526,7 +1549,7 @@ describe("useChatViewport", () => {
     const resizeObserverCallbacks = new Map<Element, ResizeObserverCallback>();
 
     vi.stubGlobal(
-      "ResizeObserver",
+      'ResizeObserver',
       class {
         private readonly callback: ResizeObserverCallback;
 
@@ -1541,29 +1564,30 @@ describe("useChatViewport", () => {
         disconnect() {
           resizeObserverCallbacks.clear();
         }
-      },
+      }
     );
 
-    Object.defineProperty(messagesContainer, "clientHeight", {
+    Object.defineProperty(messagesContainer, 'clientHeight', {
       configurable: true,
       get: () => clientHeight,
     });
-    Object.defineProperty(messagesContainer, "scrollHeight", {
+    Object.defineProperty(messagesContainer, 'scrollHeight', {
       configurable: true,
       get: () => scrollHeight,
     });
-    Object.defineProperty(messagesContainer, "scrollTop", {
+    Object.defineProperty(messagesContainer, 'scrollTop', {
       configurable: true,
       get: () => scrollTop,
-      set: (value) => {
+      set: value => {
         scrollTop = value;
       },
     });
     const scrollTo = vi.fn(({ top }: ScrollToOptions) => {
       scrollTop = top ?? scrollTop;
     });
-    messagesContainer.scrollTo = scrollTo as unknown as typeof messagesContainer.scrollTo;
-    Object.defineProperty(composerContainer, "offsetHeight", {
+    messagesContainer.scrollTo =
+      scrollTo as unknown as typeof messagesContainer.scrollTo;
+    Object.defineProperty(composerContainer, 'offsetHeight', {
       configurable: true,
       value: composerHeight,
     });
@@ -1572,7 +1596,10 @@ describe("useChatViewport", () => {
     composerContainer.getBoundingClientRect = () =>
       createRect(composerTop, composerTop + composerHeight);
     messagesEnd.getBoundingClientRect = () =>
-      createRect(endMarkerContentTop - scrollTop, endMarkerContentTop - scrollTop);
+      createRect(
+        endMarkerContentTop - scrollTop,
+        endMarkerContentTop - scrollTop
+      );
 
     const messagesContainerRef = createRef<HTMLDivElement>();
     const messagesEndRef = createRef<HTMLDivElement>();
@@ -1589,9 +1616,9 @@ describe("useChatViewport", () => {
 
     const messages = [
       {
-        id: "message-1",
-        sender_id: "user-b",
-        receiver_id: "user-a",
+        id: 'message-1',
+        sender_id: 'user-b',
+        receiver_id: 'user-a',
         is_read: false,
       },
     ];
@@ -1599,17 +1626,17 @@ describe("useChatViewport", () => {
     const { unmount } = renderHook(() =>
       useChatViewport({
         isOpen: true,
-        currentChannelId: "channel-1",
+        currentChannelId: 'channel-1',
         messages,
-        userId: "user-a",
-        targetUserId: "user-b",
+        userId: 'user-a',
+        targetUserId: 'user-b',
         messagesCount: messages.length,
         loading: false,
         messageInputHeight: 22,
         composerContextualOffset: 0,
         isMessageInputMultiline: false,
         pendingComposerAttachmentsCount: 0,
-        normalizedMessageSearchQuery: "",
+        normalizedMessageSearchQuery: '',
         isMessageSearchMode: false,
         activeSearchMessageId: null,
         searchNavigationTick: 0,
@@ -1621,7 +1648,7 @@ describe("useChatViewport", () => {
         composerContainerRef,
         chatHeaderContainerRef,
         messageBubbleRefs,
-      }),
+      })
     );
 
     act(() => {
@@ -1635,14 +1662,17 @@ describe("useChatViewport", () => {
     composerTop = 280;
 
     act(() => {
-      resizeObserverCallbacks.get(messagesContainer)?.([], {} as ResizeObserver);
+      resizeObserverCallbacks.get(messagesContainer)?.(
+        [],
+        {} as ResizeObserver
+      );
       vi.runAllTimers();
     });
 
     const expectedScrollTop = endMarkerContentTop - (280 - MESSAGE_BOTTOM_GAP);
 
     expect(scrollTo).toHaveBeenCalledWith({
-      behavior: "auto",
+      behavior: 'auto',
       top: expectedScrollTop,
     });
     expect(scrollTop).toBe(expectedScrollTop);
@@ -1650,11 +1680,11 @@ describe("useChatViewport", () => {
     unmount();
   });
 
-  it("keeps the latest bubble visible while composer resize finishes settling", () => {
-    const messagesContainer = document.createElement("div");
-    const messagesEnd = document.createElement("div");
-    const composerContainer = document.createElement("div");
-    const chatHeaderContainer = document.createElement("div");
+  it('keeps the latest bubble visible while composer resize finishes settling', () => {
+    const messagesContainer = document.createElement('div');
+    const messagesEnd = document.createElement('div');
+    const composerContainer = document.createElement('div');
+    const chatHeaderContainer = document.createElement('div');
 
     let scrollTop = 452;
     let scrollHeight = 852;
@@ -1662,26 +1692,27 @@ describe("useChatViewport", () => {
     let composerHeight = 80;
     const endMarkerContentTop = 760;
 
-    Object.defineProperty(messagesContainer, "clientHeight", {
+    Object.defineProperty(messagesContainer, 'clientHeight', {
       configurable: true,
       value: 400,
     });
-    Object.defineProperty(messagesContainer, "scrollHeight", {
+    Object.defineProperty(messagesContainer, 'scrollHeight', {
       configurable: true,
       get: () => scrollHeight,
     });
-    Object.defineProperty(messagesContainer, "scrollTop", {
+    Object.defineProperty(messagesContainer, 'scrollTop', {
       configurable: true,
       get: () => scrollTop,
-      set: (value) => {
+      set: value => {
         scrollTop = value;
       },
     });
     const scrollTo = vi.fn(({ top }: ScrollToOptions) => {
       scrollTop = top ?? scrollTop;
     });
-    messagesContainer.scrollTo = scrollTo as unknown as typeof messagesContainer.scrollTo;
-    Object.defineProperty(composerContainer, "offsetHeight", {
+    messagesContainer.scrollTo =
+      scrollTo as unknown as typeof messagesContainer.scrollTo;
+    Object.defineProperty(composerContainer, 'offsetHeight', {
       configurable: true,
       get: () => composerHeight,
     });
@@ -1690,7 +1721,10 @@ describe("useChatViewport", () => {
     composerContainer.getBoundingClientRect = () =>
       createRect(composerTop, composerTop + composerHeight);
     messagesEnd.getBoundingClientRect = () =>
-      createRect(endMarkerContentTop - scrollTop, endMarkerContentTop - scrollTop);
+      createRect(
+        endMarkerContentTop - scrollTop,
+        endMarkerContentTop - scrollTop
+      );
 
     const messagesContainerRef = createRef<HTMLDivElement>();
     const messagesEndRef = createRef<HTMLDivElement>();
@@ -1708,9 +1742,9 @@ describe("useChatViewport", () => {
     const markMessageIdsAsRead = vi.fn().mockResolvedValue(undefined);
     const messages = [
       {
-        id: "message-1",
-        sender_id: "user-b",
-        receiver_id: "user-a",
+        id: 'message-1',
+        sender_id: 'user-b',
+        receiver_id: 'user-a',
         is_read: false,
       },
     ];
@@ -1719,17 +1753,17 @@ describe("useChatViewport", () => {
       ({ messageInputHeight }) =>
         useChatViewport({
           isOpen: true,
-          currentChannelId: "channel-1",
+          currentChannelId: 'channel-1',
           messages,
-          userId: "user-a",
-          targetUserId: "user-b",
+          userId: 'user-a',
+          targetUserId: 'user-b',
           messagesCount: messages.length,
           loading: false,
           messageInputHeight,
           composerContextualOffset: 0,
           isMessageInputMultiline: messageInputHeight > 22,
           pendingComposerAttachmentsCount: 0,
-          normalizedMessageSearchQuery: "",
+          normalizedMessageSearchQuery: '',
           isMessageSearchMode: false,
           activeSearchMessageId: null,
           searchNavigationTick: 0,
@@ -1746,7 +1780,7 @@ describe("useChatViewport", () => {
         initialProps: {
           messageInputHeight: 22,
         },
-      },
+      }
     );
 
     act(() => {
@@ -1766,7 +1800,7 @@ describe("useChatViewport", () => {
 
     expect(scrollTop).toBe(452);
     expect(scrollTo).toHaveBeenNthCalledWith(1, {
-      behavior: "auto",
+      behavior: 'auto',
       top: 452,
     });
 
@@ -1777,7 +1811,7 @@ describe("useChatViewport", () => {
     });
 
     expect(scrollTo).toHaveBeenLastCalledWith({
-      behavior: "auto",
+      behavior: 'auto',
       top: 512,
     });
     expect(scrollTop).toBe(512);
@@ -1786,27 +1820,27 @@ describe("useChatViewport", () => {
     unmount();
   });
 
-  it("does not surface a new-message indicator when older history is prepended", () => {
-    const messagesContainer = document.createElement("div");
-    const messagesEnd = document.createElement("div");
-    const composerContainer = document.createElement("div");
-    const chatHeaderContainer = document.createElement("div");
+  it('does not surface a new-message indicator when older history is prepended', () => {
+    const messagesContainer = document.createElement('div');
+    const messagesEnd = document.createElement('div');
+    const composerContainer = document.createElement('div');
+    const chatHeaderContainer = document.createElement('div');
 
-    Object.defineProperty(messagesContainer, "clientHeight", {
+    Object.defineProperty(messagesContainer, 'clientHeight', {
       configurable: true,
       value: 400,
     });
-    Object.defineProperty(messagesContainer, "scrollHeight", {
+    Object.defineProperty(messagesContainer, 'scrollHeight', {
       configurable: true,
       value: 800,
     });
-    Object.defineProperty(messagesContainer, "scrollTop", {
+    Object.defineProperty(messagesContainer, 'scrollTop', {
       configurable: true,
       value: 120,
       writable: true,
     });
     messagesContainer.scrollTo = vi.fn();
-    Object.defineProperty(composerContainer, "offsetHeight", {
+    Object.defineProperty(composerContainer, 'offsetHeight', {
       configurable: true,
       value: 80,
     });
@@ -1831,9 +1865,9 @@ describe("useChatViewport", () => {
     const markMessageIdsAsRead = vi.fn().mockResolvedValue(undefined);
     const initialMessages = [
       {
-        id: "message-latest",
-        sender_id: "user-b",
-        receiver_id: "user-a",
+        id: 'message-latest',
+        sender_id: 'user-b',
+        receiver_id: 'user-a',
         is_read: false,
       },
     ];
@@ -1842,17 +1876,17 @@ describe("useChatViewport", () => {
       ({ messages, messagesCount }) =>
         useChatViewport({
           isOpen: true,
-          currentChannelId: "channel-1",
+          currentChannelId: 'channel-1',
           messages,
-          userId: "user-a",
-          targetUserId: "user-b",
+          userId: 'user-a',
+          targetUserId: 'user-b',
           messagesCount,
           loading: false,
           messageInputHeight: 22,
           composerContextualOffset: 0,
           isMessageInputMultiline: false,
           pendingComposerAttachmentsCount: 0,
-          normalizedMessageSearchQuery: "",
+          normalizedMessageSearchQuery: '',
           isMessageSearchMode: false,
           activeSearchMessageId: null,
           searchNavigationTick: 0,
@@ -1870,7 +1904,7 @@ describe("useChatViewport", () => {
           messages: initialMessages,
           messagesCount: initialMessages.length,
         },
-      },
+      }
     );
 
     act(() => {
@@ -1881,9 +1915,9 @@ describe("useChatViewport", () => {
 
     const olderMessages = [
       {
-        id: "message-older",
-        sender_id: "user-b",
-        receiver_id: "user-a",
+        id: 'message-older',
+        sender_id: 'user-b',
+        receiver_id: 'user-a',
         is_read: true,
       },
       ...initialMessages,
@@ -1903,11 +1937,11 @@ describe("useChatViewport", () => {
     unmount();
   });
 
-  it("preserves the visible messages when the composer tray grows while not pinned to bottom", () => {
-    const messagesContainer = document.createElement("div");
-    const messagesEnd = document.createElement("div");
-    const composerContainer = document.createElement("div");
-    const chatHeaderContainer = document.createElement("div");
+  it('preserves the visible messages when the composer tray grows while not pinned to bottom', () => {
+    const messagesContainer = document.createElement('div');
+    const messagesEnd = document.createElement('div');
+    const composerContainer = document.createElement('div');
+    const chatHeaderContainer = document.createElement('div');
 
     let scrollTop = 300;
     const scrollHeight = 1000;
@@ -1915,26 +1949,27 @@ describe("useChatViewport", () => {
     let composerHeight = 80;
     const endMarkerContentTop = 900;
 
-    Object.defineProperty(messagesContainer, "clientHeight", {
+    Object.defineProperty(messagesContainer, 'clientHeight', {
       configurable: true,
       value: 400,
     });
-    Object.defineProperty(messagesContainer, "scrollHeight", {
+    Object.defineProperty(messagesContainer, 'scrollHeight', {
       configurable: true,
       value: scrollHeight,
     });
-    Object.defineProperty(messagesContainer, "scrollTop", {
+    Object.defineProperty(messagesContainer, 'scrollTop', {
       configurable: true,
       get: () => scrollTop,
-      set: (value) => {
+      set: value => {
         scrollTop = value;
       },
     });
     const scrollTo = vi.fn(({ top }: ScrollToOptions) => {
       scrollTop = top ?? scrollTop;
     });
-    messagesContainer.scrollTo = scrollTo as unknown as typeof messagesContainer.scrollTo;
-    Object.defineProperty(composerContainer, "offsetHeight", {
+    messagesContainer.scrollTo =
+      scrollTo as unknown as typeof messagesContainer.scrollTo;
+    Object.defineProperty(composerContainer, 'offsetHeight', {
       configurable: true,
       get: () => composerHeight,
     });
@@ -1943,7 +1978,10 @@ describe("useChatViewport", () => {
     composerContainer.getBoundingClientRect = () =>
       createRect(composerTop, composerTop + composerHeight);
     messagesEnd.getBoundingClientRect = () =>
-      createRect(endMarkerContentTop - scrollTop, endMarkerContentTop - scrollTop);
+      createRect(
+        endMarkerContentTop - scrollTop,
+        endMarkerContentTop - scrollTop
+      );
 
     const messagesContainerRef = createRef<HTMLDivElement>();
     const messagesEndRef = createRef<HTMLDivElement>();
@@ -1960,9 +1998,9 @@ describe("useChatViewport", () => {
 
     const messages = [
       {
-        id: "message-1",
-        sender_id: "user-b",
-        receiver_id: "user-a",
+        id: 'message-1',
+        sender_id: 'user-b',
+        receiver_id: 'user-a',
         is_read: false,
       },
     ];
@@ -1971,17 +2009,17 @@ describe("useChatViewport", () => {
       ({ messageInputHeight }) =>
         useChatViewport({
           isOpen: true,
-          currentChannelId: "channel-1",
+          currentChannelId: 'channel-1',
           messages,
-          userId: "user-a",
-          targetUserId: "user-b",
+          userId: 'user-a',
+          targetUserId: 'user-b',
           messagesCount: messages.length,
           loading: false,
           messageInputHeight,
           composerContextualOffset: 0,
           isMessageInputMultiline: messageInputHeight > 22,
           pendingComposerAttachmentsCount: 0,
-          normalizedMessageSearchQuery: "",
+          normalizedMessageSearchQuery: '',
           isMessageSearchMode: false,
           activeSearchMessageId: null,
           searchNavigationTick: 0,
@@ -1998,7 +2036,7 @@ describe("useChatViewport", () => {
         initialProps: {
           messageInputHeight: 22,
         },
-      },
+      }
     );
 
     act(() => {
@@ -2009,7 +2047,7 @@ describe("useChatViewport", () => {
     scrollTop = 300;
 
     act(() => {
-      messagesContainer.dispatchEvent(new Event("scroll"));
+      messagesContainer.dispatchEvent(new Event('scroll'));
     });
 
     composerTop = 260;
@@ -2022,7 +2060,7 @@ describe("useChatViewport", () => {
     });
 
     expect(scrollTo).toHaveBeenCalledWith({
-      behavior: "auto",
+      behavior: 'auto',
       top: 360,
     });
     expect(scrollTop).toBe(360);

@@ -1,20 +1,24 @@
-import { motion } from "motion/react";
-import { forwardRef } from "react";
-import { TbX } from "react-icons/tb";
-import { QuotedMessagePreview } from "../QuotedMessagePreview";
+import { motion } from 'motion/react';
+import { forwardRef } from 'react';
+import { TbX } from 'react-icons/tb';
+import { QuotedMessagePreview } from '../QuotedMessagePreview';
 
 interface ComposerEditBannerProps {
   messagePreview: string;
   authorLabel: string;
   isAuthorCurrentUser: boolean;
-  mode: "edit" | "reply";
+  mode: 'edit' | 'reply';
   onCancelContext: () => void;
   onFocusTargetMessage: () => void;
   transition: {
     duration: number;
-    ease: "easeIn" | "easeOut" | "easeInOut" | readonly [number, number, number, number];
+    ease:
+      | 'easeIn'
+      | 'easeOut'
+      | 'easeInOut'
+      | readonly [number, number, number, number];
     layout: {
-      type: "tween";
+      type: 'tween';
       ease: readonly [number, number, number, number];
       duration: number;
     };
@@ -32,18 +36,26 @@ const ComposerEditBanner = forwardRef<HTMLDivElement, ComposerEditBannerProps>(
       onFocusTargetMessage,
       transition,
     },
-    ref,
+    ref
   ) => {
     const ariaLabel =
-      mode === "reply" ? "Lihat pesan yang dibalas" : "Lihat pesan yang sedang diedit";
-    const cancelButtonAriaLabel = mode === "reply" ? "Hapus balasan" : "Batalkan edit";
-    const cancelButtonTitle = mode === "reply" ? "Hapus balasan" : "Batalkan edit";
+      mode === 'reply'
+        ? 'Lihat pesan yang dibalas'
+        : 'Lihat pesan yang sedang diedit';
+    const cancelButtonAriaLabel =
+      mode === 'reply' ? 'Hapus balasan' : 'Batalkan edit';
+    const cancelButtonTitle =
+      mode === 'reply' ? 'Hapus balasan' : 'Batalkan edit';
 
     return (
       <motion.div
         ref={ref}
         layout
-        key={mode === "reply" ? "replying-preview-inline" : "editing-preview-inline"}
+        key={
+          mode === 'reply'
+            ? 'replying-preview-inline'
+            : 'editing-preview-inline'
+        }
         initial={{ opacity: 0, y: 4 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 2 }}
@@ -66,7 +78,7 @@ const ComposerEditBanner = forwardRef<HTMLDivElement, ComposerEditBannerProps>(
               type="button"
               aria-label={cancelButtonAriaLabel}
               title={cancelButtonTitle}
-              onClick={(event) => {
+              onClick={event => {
                 event.stopPropagation();
                 onCancelContext();
               }}
@@ -78,9 +90,9 @@ const ComposerEditBanner = forwardRef<HTMLDivElement, ComposerEditBannerProps>(
         />
       </motion.div>
     );
-  },
+  }
 );
 
-ComposerEditBanner.displayName = "ComposerEditBanner";
+ComposerEditBanner.displayName = 'ComposerEditBanner';
 
 export default ComposerEditBanner;

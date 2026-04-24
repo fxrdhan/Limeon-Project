@@ -1,8 +1,8 @@
-import { MESSAGE_BOTTOM_GAP } from "../constants";
-import type { ChatMessage } from "../data/chatSidebarGateway";
-import type { ChatSidebarRuntimeState } from "../hooks/useChatSidebarRuntimeState";
-import type { MessageRenderItem } from "../utils/message-render-items";
-import { buildMessageRenderItems } from "../utils/message-render-items";
+import { MESSAGE_BOTTOM_GAP } from '../constants';
+import type { ChatMessage } from '../data/chatSidebarGateway';
+import type { ChatSidebarRuntimeState } from '../hooks/useChatSidebarRuntimeState';
+import type { MessageRenderItem } from '../utils/message-render-items';
+import { buildMessageRenderItems } from '../utils/message-render-items';
 
 const COMPOSER_BOTTOM_OFFSET = 8;
 const EMPTY_MESSAGE_IDS = new Set<string>();
@@ -10,88 +10,88 @@ const EMPTY_MESSAGE_IDS = new Set<string>();
 export interface MessageItemRuntime {
   interaction: {
     userId: string | undefined;
-    isSelectionMode: ChatSidebarRuntimeState["interaction"]["isSelectionMode"];
-    selectedMessageIds: ChatSidebarRuntimeState["interaction"]["selectedMessageIds"];
-    handleToggleMessageSelection: ChatSidebarRuntimeState["interaction"]["handleToggleMessageSelection"];
-    expandedMessageIds: ChatSidebarRuntimeState["refs"]["expandedMessageIds"];
-    handleToggleExpand: ChatSidebarRuntimeState["refs"]["handleToggleExpand"];
-    flashingMessageId: ChatSidebarRuntimeState["viewport"]["flashingMessageId"];
-    isFlashHighlightVisible: ChatSidebarRuntimeState["viewport"]["isFlashHighlightVisible"];
-    normalizedMessageSearchQuery: ChatSidebarRuntimeState["interaction"]["normalizedMessageSearchQuery"];
+    isSelectionMode: ChatSidebarRuntimeState['interaction']['isSelectionMode'];
+    selectedMessageIds: ChatSidebarRuntimeState['interaction']['selectedMessageIds'];
+    handleToggleMessageSelection: ChatSidebarRuntimeState['interaction']['handleToggleMessageSelection'];
+    expandedMessageIds: ChatSidebarRuntimeState['refs']['expandedMessageIds'];
+    handleToggleExpand: ChatSidebarRuntimeState['refs']['handleToggleExpand'];
+    flashingMessageId: ChatSidebarRuntimeState['viewport']['flashingMessageId'];
+    isFlashHighlightVisible: ChatSidebarRuntimeState['viewport']['isFlashHighlightVisible'];
+    normalizedMessageSearchQuery: ChatSidebarRuntimeState['interaction']['normalizedMessageSearchQuery'];
   };
   menu: {
-    openMessageId: ChatSidebarRuntimeState["viewport"]["openMenuMessageId"];
-    dimmingMessageId: ChatSidebarRuntimeState["viewport"]["menuDimmingMessageId"];
-    placement: ChatSidebarRuntimeState["viewport"]["menuPlacement"];
-    sideAnchor: ChatSidebarRuntimeState["viewport"]["menuSideAnchor"];
-    verticalAnchor: ChatSidebarRuntimeState["viewport"]["menuVerticalAnchor"];
-    shouldAnimateOpen: ChatSidebarRuntimeState["viewport"]["shouldAnimateMenuOpen"];
-    transitionSourceId: ChatSidebarRuntimeState["viewport"]["menuTransitionSourceId"];
-    offsetX: ChatSidebarRuntimeState["viewport"]["menuOffsetX"];
-    toggle: ChatSidebarRuntimeState["actions"]["toggleMessageMenu"];
+    openMessageId: ChatSidebarRuntimeState['viewport']['openMenuMessageId'];
+    dimmingMessageId: ChatSidebarRuntimeState['viewport']['menuDimmingMessageId'];
+    placement: ChatSidebarRuntimeState['viewport']['menuPlacement'];
+    sideAnchor: ChatSidebarRuntimeState['viewport']['menuSideAnchor'];
+    verticalAnchor: ChatSidebarRuntimeState['viewport']['menuVerticalAnchor'];
+    shouldAnimateOpen: ChatSidebarRuntimeState['viewport']['shouldAnimateMenuOpen'];
+    transitionSourceId: ChatSidebarRuntimeState['viewport']['menuTransitionSourceId'];
+    offsetX: ChatSidebarRuntimeState['viewport']['menuOffsetX'];
+    toggle: ChatSidebarRuntimeState['actions']['toggleMessageMenu'];
   };
   refs: {
-    messageBubbleRefs: ChatSidebarRuntimeState["refs"]["messageBubbleRefs"];
-    initialMessageAnimationKeysRef: ChatSidebarRuntimeState["refs"]["initialMessageAnimationKeysRef"];
-    initialOpenJumpAnimationKeysRef: ChatSidebarRuntimeState["refs"]["initialOpenJumpAnimationKeysRef"];
+    messageBubbleRefs: ChatSidebarRuntimeState['refs']['messageBubbleRefs'];
+    initialMessageAnimationKeysRef: ChatSidebarRuntimeState['refs']['initialMessageAnimationKeysRef'];
+    initialOpenJumpAnimationKeysRef: ChatSidebarRuntimeState['refs']['initialOpenJumpAnimationKeysRef'];
   };
   content: {
-    getImageMessageUrl: ChatSidebarRuntimeState["previews"]["getImageMessageUrl"];
-    getPdfMessagePreview: ChatSidebarRuntimeState["previews"]["getPdfMessagePreview"];
-    getAttachmentFileName: ChatSidebarRuntimeState["actions"]["getAttachmentFileName"];
-    getAttachmentFileKind: ChatSidebarRuntimeState["actions"]["getAttachmentFileKind"];
-    getReplyTargetMessage: ChatSidebarRuntimeState["session"]["getReplyTargetMessage"];
-    openImageInPortal: ChatSidebarRuntimeState["previews"]["openImageInPortal"];
-    openImageGroupInPortal: ChatSidebarRuntimeState["previews"]["openImageGroupInPortal"];
-    openDocumentInPortal: ChatSidebarRuntimeState["previews"]["openDocumentInPortal"];
-    focusReplyTargetMessage: ChatSidebarRuntimeState["viewport"]["focusReplyTargetMessage"];
+    getImageMessageUrl: ChatSidebarRuntimeState['previews']['getImageMessageUrl'];
+    getPdfMessagePreview: ChatSidebarRuntimeState['previews']['getPdfMessagePreview'];
+    getAttachmentFileName: ChatSidebarRuntimeState['actions']['getAttachmentFileName'];
+    getAttachmentFileKind: ChatSidebarRuntimeState['actions']['getAttachmentFileKind'];
+    getReplyTargetMessage: ChatSidebarRuntimeState['session']['getReplyTargetMessage'];
+    openImageInPortal: ChatSidebarRuntimeState['previews']['openImageInPortal'];
+    openImageGroupInPortal: ChatSidebarRuntimeState['previews']['openImageGroupInPortal'];
+    openDocumentInPortal: ChatSidebarRuntimeState['previews']['openDocumentInPortal'];
+    focusReplyTargetMessage: ChatSidebarRuntimeState['viewport']['focusReplyTargetMessage'];
   };
   actions: {
-    handleEditMessage: ChatSidebarRuntimeState["mutations"]["handleEditMessage"];
-    handleReplyMessage: ChatSidebarRuntimeState["mutations"]["handleReplyMessage"];
-    handleCopyMessage: ChatSidebarRuntimeState["mutations"]["handleCopyMessage"];
-    handleDownloadMessage: ChatSidebarRuntimeState["mutations"]["handleDownloadMessage"];
-    handleDownloadImageGroup: ChatSidebarRuntimeState["mutations"]["handleDownloadImageGroup"];
-    handleDownloadDocumentGroup: ChatSidebarRuntimeState["mutations"]["handleDownloadDocumentGroup"];
-    handleDeleteMessages: ChatSidebarRuntimeState["mutations"]["handleDeleteMessages"];
-    handleOpenForwardMessagePicker: ChatSidebarRuntimeState["mutations"]["handleOpenForwardMessagePicker"];
-    handleDeleteMessage: ChatSidebarRuntimeState["mutations"]["handleDeleteMessage"];
+    handleEditMessage: ChatSidebarRuntimeState['mutations']['handleEditMessage'];
+    handleReplyMessage: ChatSidebarRuntimeState['mutations']['handleReplyMessage'];
+    handleCopyMessage: ChatSidebarRuntimeState['mutations']['handleCopyMessage'];
+    handleDownloadMessage: ChatSidebarRuntimeState['mutations']['handleDownloadMessage'];
+    handleDownloadImageGroup: ChatSidebarRuntimeState['mutations']['handleDownloadImageGroup'];
+    handleDownloadDocumentGroup: ChatSidebarRuntimeState['mutations']['handleDownloadDocumentGroup'];
+    handleDeleteMessages: ChatSidebarRuntimeState['mutations']['handleDeleteMessages'];
+    handleOpenForwardMessagePicker: ChatSidebarRuntimeState['mutations']['handleOpenForwardMessagePicker'];
+    handleDeleteMessage: ChatSidebarRuntimeState['mutations']['handleDeleteMessage'];
   };
 }
 
 export interface MessagesPanePreviewRuntime {
-  isImagePreviewOpen: ChatSidebarRuntimeState["previews"]["isImagePreviewOpen"];
-  isImagePreviewVisible: ChatSidebarRuntimeState["previews"]["isImagePreviewVisible"];
-  closeImagePreview: ChatSidebarRuntimeState["previews"]["closeImagePreview"];
-  imagePreviewUrl: ChatSidebarRuntimeState["previews"]["imagePreviewUrl"];
-  imagePreviewBackdropUrl: ChatSidebarRuntimeState["previews"]["imagePreviewBackdropUrl"];
-  imagePreviewName: ChatSidebarRuntimeState["previews"]["imagePreviewName"];
-  imageGroupPreviewItems: ChatSidebarRuntimeState["previews"]["imageGroupPreviewItems"];
-  activeImageGroupPreviewId: ChatSidebarRuntimeState["previews"]["activeImageGroupPreviewId"];
-  isImageGroupPreviewVisible: ChatSidebarRuntimeState["previews"]["isImageGroupPreviewVisible"];
-  selectImageGroupPreviewItem: ChatSidebarRuntimeState["previews"]["selectImageGroupPreviewItem"];
-  handleDownloadMessage: ChatSidebarRuntimeState["mutations"]["handleDownloadMessage"];
-  handleCopyMessage: ChatSidebarRuntimeState["mutations"]["handleCopyMessage"];
-  handleReplyMessage: ChatSidebarRuntimeState["mutations"]["handleReplyMessage"];
-  handleOpenForwardMessagePicker: ChatSidebarRuntimeState["mutations"]["handleOpenForwardMessagePicker"];
-  closeImageGroupPreview: ChatSidebarRuntimeState["previews"]["closeImageGroupPreview"];
-  documentPreviewUrl: ChatSidebarRuntimeState["previews"]["documentPreviewUrl"];
-  documentPreviewName: ChatSidebarRuntimeState["previews"]["documentPreviewName"];
-  isDocumentPreviewVisible: ChatSidebarRuntimeState["previews"]["isDocumentPreviewVisible"];
-  closeDocumentPreview: ChatSidebarRuntimeState["previews"]["closeDocumentPreview"];
+  isImagePreviewOpen: ChatSidebarRuntimeState['previews']['isImagePreviewOpen'];
+  isImagePreviewVisible: ChatSidebarRuntimeState['previews']['isImagePreviewVisible'];
+  closeImagePreview: ChatSidebarRuntimeState['previews']['closeImagePreview'];
+  imagePreviewUrl: ChatSidebarRuntimeState['previews']['imagePreviewUrl'];
+  imagePreviewBackdropUrl: ChatSidebarRuntimeState['previews']['imagePreviewBackdropUrl'];
+  imagePreviewName: ChatSidebarRuntimeState['previews']['imagePreviewName'];
+  imageGroupPreviewItems: ChatSidebarRuntimeState['previews']['imageGroupPreviewItems'];
+  activeImageGroupPreviewId: ChatSidebarRuntimeState['previews']['activeImageGroupPreviewId'];
+  isImageGroupPreviewVisible: ChatSidebarRuntimeState['previews']['isImageGroupPreviewVisible'];
+  selectImageGroupPreviewItem: ChatSidebarRuntimeState['previews']['selectImageGroupPreviewItem'];
+  handleDownloadMessage: ChatSidebarRuntimeState['mutations']['handleDownloadMessage'];
+  handleCopyMessage: ChatSidebarRuntimeState['mutations']['handleCopyMessage'];
+  handleReplyMessage: ChatSidebarRuntimeState['mutations']['handleReplyMessage'];
+  handleOpenForwardMessagePicker: ChatSidebarRuntimeState['mutations']['handleOpenForwardMessagePicker'];
+  closeImageGroupPreview: ChatSidebarRuntimeState['previews']['closeImageGroupPreview'];
+  documentPreviewUrl: ChatSidebarRuntimeState['previews']['documentPreviewUrl'];
+  documentPreviewName: ChatSidebarRuntimeState['previews']['documentPreviewName'];
+  isDocumentPreviewVisible: ChatSidebarRuntimeState['previews']['isDocumentPreviewVisible'];
+  closeDocumentPreview: ChatSidebarRuntimeState['previews']['closeDocumentPreview'];
   activeImageGroupPreviewMessage: ChatMessage | null;
 }
 
 export interface MessagesPaneConversationRuntime {
   messages: ChatMessage[];
-  loading: ChatSidebarRuntimeState["session"]["loading"];
-  loadError: ChatSidebarRuntimeState["session"]["loadError"];
-  retryLoadMessages: ChatSidebarRuntimeState["session"]["retryLoadMessages"];
+  loading: ChatSidebarRuntimeState['session']['loading'];
+  loadError: ChatSidebarRuntimeState['session']['loadError'];
+  retryLoadMessages: ChatSidebarRuntimeState['session']['retryLoadMessages'];
   history: {
-    hasOlderMessages: ChatSidebarRuntimeState["session"]["hasOlderMessages"];
-    isLoadingOlderMessages: ChatSidebarRuntimeState["session"]["isLoadingOlderMessages"];
-    olderMessagesError: ChatSidebarRuntimeState["session"]["olderMessagesError"];
-    loadOlderMessages: ChatSidebarRuntimeState["session"]["loadOlderMessages"];
+    hasOlderMessages: ChatSidebarRuntimeState['session']['hasOlderMessages'];
+    isLoadingOlderMessages: ChatSidebarRuntimeState['session']['isLoadingOlderMessages'];
+    olderMessagesError: ChatSidebarRuntimeState['session']['olderMessagesError'];
+    loadOlderMessages: ChatSidebarRuntimeState['session']['loadOlderMessages'];
   };
   renderItems: MessageRenderItem[];
   search: {
@@ -101,16 +101,16 @@ export interface MessagesPaneConversationRuntime {
 }
 
 export interface MessagesPaneViewportRuntime {
-  messagesContainerRef: ChatSidebarRuntimeState["refs"]["messagesContainerRef"];
-  messagesContentRef: ChatSidebarRuntimeState["refs"]["messagesContentRef"];
-  messagesEndRef: ChatSidebarRuntimeState["refs"]["messagesEndRef"];
+  messagesContainerRef: ChatSidebarRuntimeState['refs']['messagesContainerRef'];
+  messagesContentRef: ChatSidebarRuntimeState['refs']['messagesContentRef'];
+  messagesEndRef: ChatSidebarRuntimeState['refs']['messagesEndRef'];
   paddingBottom: number;
   isInitialOpenPinPending: boolean;
-  closeMessageMenu: ChatSidebarRuntimeState["viewport"]["closeMessageMenu"];
-  hasNewMessages: ChatSidebarRuntimeState["viewport"]["hasNewMessages"];
-  isAtBottom: ChatSidebarRuntimeState["viewport"]["isAtBottom"];
-  scrollToBottom: ChatSidebarRuntimeState["viewport"]["scrollToBottom"];
-  composerContainerHeight: ChatSidebarRuntimeState["viewport"]["composerContainerHeight"];
+  closeMessageMenu: ChatSidebarRuntimeState['viewport']['closeMessageMenu'];
+  hasNewMessages: ChatSidebarRuntimeState['viewport']['hasNewMessages'];
+  isAtBottom: ChatSidebarRuntimeState['viewport']['isAtBottom'];
+  scrollToBottom: ChatSidebarRuntimeState['viewport']['scrollToBottom'];
+  composerContainerHeight: ChatSidebarRuntimeState['viewport']['composerContainerHeight'];
 }
 
 export interface MessagesPaneRuntime {
@@ -122,28 +122,32 @@ export interface MessagesPaneRuntime {
 
 type MessagesPaneRuntimeSource = Pick<
   ChatSidebarRuntimeState,
-  | "user"
-  | "session"
-  | "interaction"
-  | "composer"
-  | "viewport"
-  | "refs"
-  | "previews"
-  | "mutations"
-  | "actions"
+  | 'user'
+  | 'session'
+  | 'interaction'
+  | 'composer'
+  | 'viewport'
+  | 'refs'
+  | 'previews'
+  | 'mutations'
+  | 'actions'
 >;
 
-const buildMessageItemRuntime = (runtime: MessagesPaneRuntimeSource): MessageItemRuntime => ({
+const buildMessageItemRuntime = (
+  runtime: MessagesPaneRuntimeSource
+): MessageItemRuntime => ({
   interaction: {
     userId: runtime.user?.id,
     isSelectionMode: runtime.interaction.isSelectionMode,
     selectedMessageIds: runtime.interaction.selectedMessageIds,
-    handleToggleMessageSelection: runtime.interaction.handleToggleMessageSelection,
+    handleToggleMessageSelection:
+      runtime.interaction.handleToggleMessageSelection,
     expandedMessageIds: runtime.refs.expandedMessageIds,
     handleToggleExpand: runtime.refs.handleToggleExpand,
     flashingMessageId: runtime.viewport.flashingMessageId,
     isFlashHighlightVisible: runtime.viewport.isFlashHighlightVisible,
-    normalizedMessageSearchQuery: runtime.interaction.normalizedMessageSearchQuery,
+    normalizedMessageSearchQuery:
+      runtime.interaction.normalizedMessageSearchQuery,
   },
   menu: {
     openMessageId: runtime.viewport.openMenuMessageId,
@@ -159,7 +163,8 @@ const buildMessageItemRuntime = (runtime: MessagesPaneRuntimeSource): MessageIte
   refs: {
     messageBubbleRefs: runtime.refs.messageBubbleRefs,
     initialMessageAnimationKeysRef: runtime.refs.initialMessageAnimationKeysRef,
-    initialOpenJumpAnimationKeysRef: runtime.refs.initialOpenJumpAnimationKeysRef,
+    initialOpenJumpAnimationKeysRef:
+      runtime.refs.initialOpenJumpAnimationKeysRef,
   },
   content: {
     getImageMessageUrl: runtime.previews.getImageMessageUrl,
@@ -180,14 +185,15 @@ const buildMessageItemRuntime = (runtime: MessagesPaneRuntimeSource): MessageIte
     handleDownloadImageGroup: runtime.mutations.handleDownloadImageGroup,
     handleDownloadDocumentGroup: runtime.mutations.handleDownloadDocumentGroup,
     handleDeleteMessages: runtime.mutations.handleDeleteMessages,
-    handleOpenForwardMessagePicker: runtime.mutations.handleOpenForwardMessagePicker,
+    handleOpenForwardMessagePicker:
+      runtime.mutations.handleOpenForwardMessagePicker,
     handleDeleteMessage: runtime.mutations.handleDeleteMessage,
   },
 });
 
 const buildMessagesPanePreviewRuntime = (
   runtime: MessagesPaneRuntimeSource,
-  activeImageGroupPreviewMessage: ChatMessage | null,
+  activeImageGroupPreviewMessage: ChatMessage | null
 ): MessagesPanePreviewRuntime => ({
   isImagePreviewOpen: runtime.previews.isImagePreviewOpen,
   isImagePreviewVisible: runtime.previews.isImagePreviewVisible,
@@ -202,7 +208,8 @@ const buildMessagesPanePreviewRuntime = (
   handleDownloadMessage: runtime.mutations.handleDownloadMessage,
   handleCopyMessage: runtime.mutations.handleCopyMessage,
   handleReplyMessage: runtime.mutations.handleReplyMessage,
-  handleOpenForwardMessagePicker: runtime.mutations.handleOpenForwardMessagePicker,
+  handleOpenForwardMessagePicker:
+    runtime.mutations.handleOpenForwardMessagePicker,
   closeImageGroupPreview: runtime.previews.closeImageGroupPreview,
   documentPreviewUrl: runtime.previews.documentPreviewUrl,
   documentPreviewName: runtime.previews.documentPreviewName,
@@ -212,23 +219,27 @@ const buildMessagesPanePreviewRuntime = (
 });
 
 export const buildMessagesPaneRuntime = (
-  runtime: MessagesPaneRuntimeSource,
+  runtime: MessagesPaneRuntimeSource
 ): MessagesPaneRuntime => {
   const messages = runtime.session.messages;
   const renderItems = buildMessageRenderItems({
     messages: messages.filter(
-      (messageItem) => !runtime.previews.captionMessageIds.has(messageItem.id),
+      messageItem => !runtime.previews.captionMessageIds.has(messageItem.id)
     ),
-    captionMessagesByAttachmentId: runtime.previews.captionMessagesByAttachmentId,
+    captionMessagesByAttachmentId:
+      runtime.previews.captionMessagesByAttachmentId,
     getAttachmentFileKind: runtime.actions.getAttachmentFileKind,
-    enableImageBubbleGrouping: runtime.interaction.normalizedMessageSearchQuery.length === 0,
+    enableImageBubbleGrouping:
+      runtime.interaction.normalizedMessageSearchQuery.length === 0,
     enableDocumentBubbleGrouping:
       !runtime.interaction.isSelectionMode &&
       runtime.interaction.normalizedMessageSearchQuery.length === 0,
   });
-  const activeImageGroupPreviewMessage = runtime.previews.activeImageGroupPreviewId
+  const activeImageGroupPreviewMessage = runtime.previews
+    .activeImageGroupPreviewId
     ? messages.find(
-        (messageItem) => messageItem.id === runtime.previews.activeImageGroupPreviewId,
+        messageItem =>
+          messageItem.id === runtime.previews.activeImageGroupPreviewId
       ) || null
     : null;
 
@@ -260,8 +271,12 @@ export const buildMessagesPaneRuntime = (
       messagesEndRef: runtime.refs.messagesEndRef,
       paddingBottom:
         runtime.viewport.composerContainerHeight > 0
-          ? runtime.viewport.composerContainerHeight + COMPOSER_BOTTOM_OFFSET + MESSAGE_BOTTOM_GAP
-          : runtime.composer.messageInputHeight + 84 + runtime.composer.composerContextualOffset,
+          ? runtime.viewport.composerContainerHeight +
+            COMPOSER_BOTTOM_OFFSET +
+            MESSAGE_BOTTOM_GAP
+          : runtime.composer.messageInputHeight +
+            84 +
+            runtime.composer.composerContextualOffset,
       isInitialOpenPinPending: runtime.viewport.isInitialOpenPinPending,
       closeMessageMenu: runtime.viewport.closeMessageMenu,
       hasNewMessages: runtime.viewport.hasNewMessages,
@@ -270,6 +285,9 @@ export const buildMessagesPaneRuntime = (
       composerContainerHeight: runtime.viewport.composerContainerHeight,
     },
     item: buildMessageItemRuntime(runtime),
-    previews: buildMessagesPanePreviewRuntime(runtime, activeImageGroupPreviewMessage),
+    previews: buildMessagesPanePreviewRuntime(
+      runtime,
+      activeImageGroupPreviewMessage
+    ),
   };
 };

@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import toast from "react-hot-toast";
-import { CHAT_SIDEBAR_TOASTER_ID } from "../constants";
-import { chatRuntime } from "../utils/chatRuntime";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import toast from 'react-hot-toast';
+import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
+import { chatRuntime } from '../utils/chatRuntime';
 import {
   getChatImagePreviewName,
   resolveImagePreviewResource as resolveChatImagePreviewResource,
@@ -9,7 +9,7 @@ import {
   resolveInitialImageThumbnailUrl,
   type PreviewableImageGroupMessage,
   type PreviewableMessage,
-} from "../utils/message-preview-assets";
+} from '../utils/message-preview-assets';
 
 type ImagePreviewState = {
   backdropUrl: string | null;
@@ -35,7 +35,7 @@ const IMAGE_GROUP_THUMBNAIL_PREFETCH_CONCURRENCY = 4;
 const runTasksWithConcurrency = async <T>(
   items: T[],
   limit: number,
-  task: (item: T) => Promise<void>,
+  task: (item: T) => Promise<void>
 ) => {
   const boundedLimit = Math.max(1, limit);
   const taskQueue = [...items];
@@ -52,28 +52,37 @@ const runTasksWithConcurrency = async <T>(
 
         await task(nextItem);
       }
-    }),
+    })
   );
 };
 
-const buildImageGroupPreviewLoadKey = (messageId: string, variant: "thumbnail" | "full") =>
-  `${messageId}::${variant}`;
+const buildImageGroupPreviewLoadKey = (
+  messageId: string,
+  variant: 'thumbnail' | 'full'
+) => `${messageId}::${variant}`;
 
 export const useMessagesPaneImagePreviews = ({
   currentChannelId,
 }: {
   currentChannelId: string | null;
 }) => {
-  const [imagePreviewState, setImagePreviewState] = useState<ImagePreviewState>({
-    backdropUrl: null,
-    fullUrl: null,
-    previewName: "",
-  });
+  const [imagePreviewState, setImagePreviewState] = useState<ImagePreviewState>(
+    {
+      backdropUrl: null,
+      fullUrl: null,
+      previewName: '',
+    }
+  );
   const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
   const [isImagePreviewVisible, setIsImagePreviewVisible] = useState(false);
-  const [imageGroupPreviewItems, setImageGroupPreviewItems] = useState<ImageGroupPreviewItem[]>([]);
-  const [activeImageGroupPreviewId, setActiveImageGroupPreviewId] = useState<string | null>(null);
-  const [isImageGroupPreviewVisible, setIsImageGroupPreviewVisible] = useState(false);
+  const [imageGroupPreviewItems, setImageGroupPreviewItems] = useState<
+    ImageGroupPreviewItem[]
+  >([]);
+  const [activeImageGroupPreviewId, setActiveImageGroupPreviewId] = useState<
+    string | null
+  >(null);
+  const [isImageGroupPreviewVisible, setIsImageGroupPreviewVisible] =
+    useState(false);
   const imagePreviewCloseTimerRef = useRef<number | null>(null);
   const imageGroupPreviewCloseTimerRef = useRef<number | null>(null);
   const imagePreviewObjectUrlRef = useRef<string | null>(null);
@@ -100,7 +109,7 @@ export const useMessagesPaneImagePreviews = ({
       return;
     }
 
-    imageGroupPreviewObjectUrlsRef.current.forEach((objectUrl) => {
+    imageGroupPreviewObjectUrlsRef.current.forEach(objectUrl => {
       URL.revokeObjectURL(objectUrl);
     });
     imageGroupPreviewObjectUrlsRef.current = [];
@@ -117,7 +126,7 @@ export const useMessagesPaneImagePreviews = ({
     setImagePreviewState({
       backdropUrl: null,
       fullUrl: null,
-      previewName: "",
+      previewName: '',
     });
     releaseImagePreviewObjectUrl();
   }, [releaseImagePreviewObjectUrl]);
@@ -143,7 +152,7 @@ export const useMessagesPaneImagePreviews = ({
         currentChannelId,
         message,
       }),
-    [currentChannelId],
+    [currentChannelId]
   );
 
   const closeImagePreview = useCallback(() => {
@@ -158,7 +167,7 @@ export const useMessagesPaneImagePreviews = ({
       setImagePreviewState({
         backdropUrl: null,
         fullUrl: null,
-        previewName: "",
+        previewName: '',
       });
       releaseImagePreviewObjectUrl();
       imagePreviewCloseTimerRef.current = null;
@@ -184,7 +193,10 @@ export const useMessagesPaneImagePreviews = ({
   }, [releaseImageGroupPreviewObjectUrls]);
 
   const resolveImageGroupThumbnailItem = useCallback(
-    async (messageId: string, requestId = activeImageGroupPreviewRequestIdRef.current) => {
+    async (
+      messageId: string,
+      requestId = activeImageGroupPreviewRequestIdRef.current
+    ) => {
       const normalizedMessageId = messageId.trim();
       if (!normalizedMessageId) {
         return;
@@ -194,7 +206,10 @@ export const useMessagesPaneImagePreviews = ({
         return;
       }
 
-      const loadKey = buildImageGroupPreviewLoadKey(normalizedMessageId, "thumbnail");
+      const loadKey = buildImageGroupPreviewLoadKey(
+        normalizedMessageId,
+        'thumbnail'
+      );
       if (
         imageGroupPreviewInflightIdsRef.current.has(loadKey) ||
         imageGroupPreviewResolvedIdsRef.current.has(loadKey)
@@ -202,26 +217,31 @@ export const useMessagesPaneImagePreviews = ({
         return;
       }
 
-      const imageGroupEntry = imageGroupPreviewMessagesRef.current.get(normalizedMessageId);
+      const imageGroupEntry =
+        imageGroupPreviewMessagesRef.current.get(normalizedMessageId);
       if (!imageGroupEntry) {
         return;
       }
 
       const normalizedChannelId = currentChannelId?.trim() || null;
       const runtimeThumbnailUrl = normalizedChannelId
-        ? chatRuntime.imageAssets.getUrl(normalizedChannelId, normalizedMessageId, "thumbnail")
+        ? chatRuntime.imageAssets.getUrl(
+            normalizedChannelId,
+            normalizedMessageId,
+            'thumbnail'
+          )
         : null;
       if (runtimeThumbnailUrl) {
         imageGroupPreviewResolvedIdsRef.current.add(loadKey);
-        setImageGroupPreviewItems((previousItems) =>
-          previousItems.map((previousItem) =>
+        setImageGroupPreviewItems(previousItems =>
+          previousItems.map(previousItem =>
             previousItem.id === normalizedMessageId
               ? {
                   ...previousItem,
                   thumbnailUrl: runtimeThumbnailUrl,
                 }
-              : previousItem,
-          ),
+              : previousItem
+          )
         );
         return;
       }
@@ -237,35 +257,41 @@ export const useMessagesPaneImagePreviews = ({
           normalizedChannelId,
           {
             ...imageGroupEntry.message,
-            message_type: "image",
+            message_type: 'image',
           },
-          "thumbnail",
+          'thumbnail'
         );
 
-        if (!thumbnailUrl || activeImageGroupPreviewRequestIdRef.current !== requestId) {
+        if (
+          !thumbnailUrl ||
+          activeImageGroupPreviewRequestIdRef.current !== requestId
+        ) {
           return;
         }
 
         imageGroupPreviewResolvedIdsRef.current.add(loadKey);
-        setImageGroupPreviewItems((previousItems) =>
-          previousItems.map((previousItem) =>
+        setImageGroupPreviewItems(previousItems =>
+          previousItems.map(previousItem =>
             previousItem.id === normalizedMessageId
               ? {
                   ...previousItem,
                   thumbnailUrl,
                 }
-              : previousItem,
-          ),
+              : previousItem
+          )
         );
       } finally {
         imageGroupPreviewInflightIdsRef.current.delete(loadKey);
       }
     },
-    [currentChannelId],
+    [currentChannelId]
   );
 
   const resolveImageGroupPreviewItem = useCallback(
-    async (messageId: string, requestId = activeImageGroupPreviewRequestIdRef.current) => {
+    async (
+      messageId: string,
+      requestId = activeImageGroupPreviewRequestIdRef.current
+    ) => {
       const normalizedMessageId = messageId.trim();
       if (!normalizedMessageId) {
         return;
@@ -275,7 +301,10 @@ export const useMessagesPaneImagePreviews = ({
         return;
       }
 
-      const loadKey = buildImageGroupPreviewLoadKey(normalizedMessageId, "full");
+      const loadKey = buildImageGroupPreviewLoadKey(
+        normalizedMessageId,
+        'full'
+      );
       if (
         imageGroupPreviewInflightIdsRef.current.has(loadKey) ||
         imageGroupPreviewResolvedIdsRef.current.has(loadKey)
@@ -283,28 +312,35 @@ export const useMessagesPaneImagePreviews = ({
         return;
       }
 
-      const imageGroupEntry = imageGroupPreviewMessagesRef.current.get(normalizedMessageId);
+      const imageGroupEntry =
+        imageGroupPreviewMessagesRef.current.get(normalizedMessageId);
       if (!imageGroupEntry) {
         return;
       }
 
       const normalizedChannelId = currentChannelId?.trim() || null;
       const runtimeFullPreviewUrl = normalizedChannelId
-        ? chatRuntime.imageAssets.getUrl(normalizedChannelId, normalizedMessageId, "full")
+        ? chatRuntime.imageAssets.getUrl(
+            normalizedChannelId,
+            normalizedMessageId,
+            'full'
+          )
         : null;
       if (runtimeFullPreviewUrl) {
         imageGroupPreviewResolvedIdsRef.current.add(loadKey);
-        setImageGroupPreviewItems((previousItems) =>
-          previousItems.map((previousItem) =>
+        setImageGroupPreviewItems(previousItems =>
+          previousItems.map(previousItem =>
             previousItem.id === normalizedMessageId
               ? {
                   ...previousItem,
-                  thumbnailUrl: previousItem.thumbnailUrl || runtimeFullPreviewUrl,
+                  thumbnailUrl:
+                    previousItem.thumbnailUrl || runtimeFullPreviewUrl,
                   previewUrl: runtimeFullPreviewUrl,
-                  fullPreviewUrl: previousItem.fullPreviewUrl || runtimeFullPreviewUrl,
+                  fullPreviewUrl:
+                    previousItem.fullPreviewUrl || runtimeFullPreviewUrl,
                 }
-              : previousItem,
-          ),
+              : previousItem
+          )
         );
         return;
       }
@@ -313,7 +349,7 @@ export const useMessagesPaneImagePreviews = ({
 
       try {
         const { previewUrl, revokeOnClose } = await resolveImagePreviewResource(
-          imageGroupEntry.message,
+          imageGroupEntry.message
         );
 
         if (!previewUrl) {
@@ -332,9 +368,12 @@ export const useMessagesPaneImagePreviews = ({
         }
 
         imageGroupPreviewResolvedIdsRef.current.add(loadKey);
-        const previewName = getChatImagePreviewName(imageGroupEntry.message, imageGroupEntry.index);
-        setImageGroupPreviewItems((previousItems) =>
-          previousItems.map((previousItem) =>
+        const previewName = getChatImagePreviewName(
+          imageGroupEntry.message,
+          imageGroupEntry.index
+        );
+        setImageGroupPreviewItems(previousItems =>
+          previousItems.map(previousItem =>
             previousItem.id === normalizedMessageId
               ? {
                   ...previousItem,
@@ -343,18 +382,22 @@ export const useMessagesPaneImagePreviews = ({
                   fullPreviewUrl: previewUrl,
                   previewName,
                 }
-              : previousItem,
-          ),
+              : previousItem
+          )
         );
       } finally {
         imageGroupPreviewInflightIdsRef.current.delete(loadKey);
       }
     },
-    [currentChannelId, resolveImagePreviewResource],
+    [currentChannelId, resolveImagePreviewResource]
   );
 
   const openImageInPortal = useCallback(
-    async (message: PreviewableMessage, previewName: string, initialPreviewUrl?: string | null) => {
+    async (
+      message: PreviewableMessage,
+      previewName: string,
+      initialPreviewUrl?: string | null
+    ) => {
       clearImageGroupPreviewStateImmediately();
 
       const requestId = activeImagePreviewRequestIdRef.current + 1;
@@ -367,21 +410,26 @@ export const useMessagesPaneImagePreviews = ({
       releaseImagePreviewObjectUrl();
       const normalizedChannelId = currentChannelId?.trim() || null;
       const runtimeFullPreviewUrl = normalizedChannelId
-        ? chatRuntime.imageAssets.getUrl(normalizedChannelId, message.id, "full")
+        ? chatRuntime.imageAssets.getUrl(
+            normalizedChannelId,
+            message.id,
+            'full'
+          )
         : null;
       const seededPreviewUrl = resolveInitialImagePreviewUrl(
         message,
         currentChannelId,
-        initialPreviewUrl,
+        initialPreviewUrl
       );
       let resolvedPreviewBeforeOpen = seededPreviewUrl;
       let resolvedPreviewBeforeOpenRequiresCleanup = false;
 
       if (!resolvedPreviewBeforeOpen) {
-        const { previewUrl, revokeOnClose } = await resolveImagePreviewResource(message);
+        const { previewUrl, revokeOnClose } =
+          await resolveImagePreviewResource(message);
 
         if (!previewUrl) {
-          toast.error("Preview gambar tidak tersedia", {
+          toast.error('Preview gambar tidak tersedia', {
             toasterId: CHAT_SIDEBAR_TOASTER_ID,
           });
           return;
@@ -397,16 +445,20 @@ export const useMessagesPaneImagePreviews = ({
         fullUrl: runtimeFullPreviewUrl || resolvedPreviewBeforeOpen,
         previewName,
       });
-      imagePreviewObjectUrlRef.current = resolvedPreviewBeforeOpenRequiresCleanup
-        ? resolvedPreviewBeforeOpen
-        : null;
+      imagePreviewObjectUrlRef.current =
+        resolvedPreviewBeforeOpenRequiresCleanup
+          ? resolvedPreviewBeforeOpen
+          : null;
       requestAnimationFrame(() => {
         if (activeImagePreviewRequestIdRef.current === requestId) {
           setIsImagePreviewVisible(true);
         }
       });
 
-      if (runtimeFullPreviewUrl || resolvedPreviewBeforeOpen === seededPreviewUrl) {
+      if (
+        runtimeFullPreviewUrl ||
+        resolvedPreviewBeforeOpen === seededPreviewUrl
+      ) {
         return;
       }
 
@@ -415,7 +467,7 @@ export const useMessagesPaneImagePreviews = ({
 
       if (!nextPreviewUrl) {
         clearImagePreviewStateImmediately();
-        toast.error("Preview gambar tidak tersedia", {
+        toast.error('Preview gambar tidak tersedia', {
           toasterId: CHAT_SIDEBAR_TOASTER_ID,
         });
         return;
@@ -428,7 +480,7 @@ export const useMessagesPaneImagePreviews = ({
         return;
       }
 
-      setImagePreviewState((previousState) => ({
+      setImagePreviewState(previousState => ({
         backdropUrl: previousState.backdropUrl || nextPreviewUrl,
         fullUrl: nextPreviewUrl,
         previewName,
@@ -440,7 +492,7 @@ export const useMessagesPaneImagePreviews = ({
       currentChannelId,
       releaseImagePreviewObjectUrl,
       resolveImagePreviewResource,
-    ],
+    ]
   );
 
   const openImageGroupInPortal = useCallback(
@@ -448,7 +500,7 @@ export const useMessagesPaneImagePreviews = ({
       messages: PreviewableImageGroupMessage[],
       initialMessageId?: string | null,
       initialPreviewUrl?: string | null,
-      _initialPreviewIntrinsicDimensions?: ImagePreviewIntrinsicDimensions | null,
+      _initialPreviewIntrinsicDimensions?: ImagePreviewIntrinsicDimensions | null
     ) => {
       if (messages.length === 0) {
         return;
@@ -467,22 +519,23 @@ export const useMessagesPaneImagePreviews = ({
       imageGroupPreviewInflightIdsRef.current.clear();
       imageGroupPreviewResolvedIdsRef.current.clear();
       imageGroupPreviewMessagesRef.current = new Map(
-        messages.map((message, index) => [message.id, { message, index }]),
+        messages.map((message, index) => [message.id, { message, index }])
       );
       const nextActivePreviewId =
-        initialMessageId && messages.some((message) => message.id === initialMessageId)
+        initialMessageId &&
+        messages.some(message => message.id === initialMessageId)
           ? initialMessageId
           : messages[0]?.id || null;
       const activePreviewMessage =
         (nextActivePreviewId
-          ? messages.find((message) => message.id === nextActivePreviewId)
+          ? messages.find(message => message.id === nextActivePreviewId)
           : null) || null;
       let seededActivePreviewUrl =
         activePreviewMessage &&
         resolveInitialImagePreviewUrl(
           activePreviewMessage,
           currentChannelId,
-          initialPreviewUrl || activePreviewMessage.previewUrl || null,
+          initialPreviewUrl || activePreviewMessage.previewUrl || null
         );
 
       if (activePreviewMessage && !seededActivePreviewUrl) {
@@ -498,20 +551,36 @@ export const useMessagesPaneImagePreviews = ({
       const nextPreviewItems = messages.map((message, index) => {
         const preferredPreviewUrl =
           message.id === nextActivePreviewId
-            ? seededActivePreviewUrl || initialPreviewUrl || message.previewUrl || null
+            ? seededActivePreviewUrl ||
+              initialPreviewUrl ||
+              message.previewUrl ||
+              null
             : message.previewUrl || null;
         const normalizedChannelId = currentChannelId?.trim() || null;
         const runtimeFullPreviewUrl = normalizedChannelId
-          ? chatRuntime.imageAssets.getUrl(normalizedChannelId, message.id, "full")
+          ? chatRuntime.imageAssets.getUrl(
+              normalizedChannelId,
+              message.id,
+              'full'
+            )
           : null;
 
         return {
           id: message.id,
-          thumbnailUrl: resolveInitialImageThumbnailUrl(message, currentChannelId),
-          previewUrl: resolveInitialImagePreviewUrl(message, currentChannelId, preferredPreviewUrl),
+          thumbnailUrl: resolveInitialImageThumbnailUrl(
+            message,
+            currentChannelId
+          ),
+          previewUrl: resolveInitialImagePreviewUrl(
+            message,
+            currentChannelId,
+            preferredPreviewUrl
+          ),
           fullPreviewUrl:
             runtimeFullPreviewUrl ||
-            (message.id === nextActivePreviewId ? seededActivePreviewUrl || null : null),
+            (message.id === nextActivePreviewId
+              ? seededActivePreviewUrl || null
+              : null),
           previewName: getChatImagePreviewName(message, index),
         };
       });
@@ -526,23 +595,26 @@ export const useMessagesPaneImagePreviews = ({
         const prioritizedMessageIds = [
           ...(nextActivePreviewId ? [nextActivePreviewId] : []),
           ...messages
-            .map((message) => message.id)
-            .filter((messageId) => messageId !== nextActivePreviewId),
+            .map(message => message.id)
+            .filter(messageId => messageId !== nextActivePreviewId),
         ];
 
         await runTasksWithConcurrency(
           prioritizedMessageIds,
           IMAGE_GROUP_THUMBNAIL_PREFETCH_CONCURRENCY,
-          async (messageId) => {
+          async messageId => {
             if (activeImageGroupPreviewRequestIdRef.current !== requestId) {
               return;
             }
 
             await resolveImageGroupThumbnailItem(messageId, requestId);
-          },
+          }
         );
 
-        if (nextActivePreviewId && activeImageGroupPreviewRequestIdRef.current === requestId) {
+        if (
+          nextActivePreviewId &&
+          activeImageGroupPreviewRequestIdRef.current === requestId
+        ) {
           await resolveImageGroupPreviewItem(nextActivePreviewId, requestId);
         }
       })().catch(() => {
@@ -556,13 +628,15 @@ export const useMessagesPaneImagePreviews = ({
       resolveImageGroupThumbnailItem,
       resolveImageGroupPreviewItem,
       resolveImagePreviewResource,
-    ],
+    ]
   );
 
   useEffect(() => {
     const imageGroupPreviewMessages = imageGroupPreviewMessagesRef.current;
-    const imageGroupPreviewInflightIds = imageGroupPreviewInflightIdsRef.current;
-    const imageGroupPreviewResolvedIds = imageGroupPreviewResolvedIdsRef.current;
+    const imageGroupPreviewInflightIds =
+      imageGroupPreviewInflightIdsRef.current;
+    const imageGroupPreviewResolvedIds =
+      imageGroupPreviewResolvedIdsRef.current;
 
     return () => {
       activeImagePreviewRequestIdRef.current += 1;
@@ -585,7 +659,8 @@ export const useMessagesPaneImagePreviews = ({
 
   const selectImageGroupPreviewItem = useCallback(
     (messageId: string) => {
-      const previewMessage = imageGroupPreviewMessagesRef.current.get(messageId)?.message;
+      const previewMessage =
+        imageGroupPreviewMessagesRef.current.get(messageId)?.message;
       if (!previewMessage) {
         return;
       }
@@ -594,13 +669,13 @@ export const useMessagesPaneImagePreviews = ({
 
       const normalizedChannelId = currentChannelId?.trim() || null;
       const runtimeFullPreviewUrl = normalizedChannelId
-        ? chatRuntime.imageAssets.getUrl(normalizedChannelId, messageId, "full")
+        ? chatRuntime.imageAssets.getUrl(normalizedChannelId, messageId, 'full')
         : null;
 
       const applyResolvedPreviewUrl = (resolvedPreviewUrl: string) => {
         setActiveImageGroupPreviewId(messageId);
-        setImageGroupPreviewItems((previousItems) =>
-          previousItems.map((previousItem) =>
+        setImageGroupPreviewItems(previousItems =>
+          previousItems.map(previousItem =>
             previousItem.id === messageId
               ? {
                   ...previousItem,
@@ -608,8 +683,8 @@ export const useMessagesPaneImagePreviews = ({
                   previewUrl: resolvedPreviewUrl,
                   fullPreviewUrl: resolvedPreviewUrl,
                 }
-              : previousItem,
-          ),
+              : previousItem
+          )
         );
       };
 
@@ -619,11 +694,15 @@ export const useMessagesPaneImagePreviews = ({
       }
 
       const targetPreviewItem =
-        imageGroupPreviewItems.find((previousItem) => previousItem.id === messageId) ?? null;
+        imageGroupPreviewItems.find(
+          previousItem => previousItem.id === messageId
+        ) ?? null;
       const seededPreviewUrl = resolveInitialImagePreviewUrl(
         previewMessage,
         currentChannelId,
-        targetPreviewItem?.fullPreviewUrl || targetPreviewItem?.previewUrl || null,
+        targetPreviewItem?.fullPreviewUrl ||
+          targetPreviewItem?.previewUrl ||
+          null
       );
 
       if (seededPreviewUrl) {
@@ -633,7 +712,8 @@ export const useMessagesPaneImagePreviews = ({
       }
 
       void (async () => {
-        const { previewUrl, revokeOnClose } = await resolveImagePreviewResource(previewMessage);
+        const { previewUrl, revokeOnClose } =
+          await resolveImagePreviewResource(previewMessage);
         if (!previewUrl) {
           return;
         }
@@ -650,7 +730,7 @@ export const useMessagesPaneImagePreviews = ({
       imageGroupPreviewItems,
       resolveImageGroupPreviewItem,
       resolveImagePreviewResource,
-    ],
+    ]
   );
 
   return {

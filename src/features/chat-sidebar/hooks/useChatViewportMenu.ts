@@ -1,13 +1,23 @@
-import { useCallback, useLayoutEffect, useRef, useState, type RefObject } from "react";
-import { CHAT_HEADER_OVERLAY_HEIGHT, MENU_GAP } from "../constants";
-import type { MenuPlacement, MenuSideAnchor, MenuVerticalAnchor } from "../types";
+import {
+  useCallback,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from 'react';
+import { CHAT_HEADER_OVERLAY_HEIGHT, MENU_GAP } from '../constants';
+import type {
+  MenuPlacement,
+  MenuSideAnchor,
+  MenuVerticalAnchor,
+} from '../types';
 import {
   createAnimationFrameController,
   getMenuOpenScrollPlan,
   getViewportMenuLayout,
   isAnchorVisibleWithinViewport,
   type VisibleBounds,
-} from "../utils/chatViewportMenu";
+} from '../utils/chatViewportMenu';
 
 interface UseChatViewportMenuProps {
   getVisibleMessagesBounds: () => VisibleBounds | null;
@@ -34,21 +44,24 @@ const getProjectedMenuRect = ({
   let top = anchorRect.top;
   let left = anchorRect.left;
 
-  if (menuPlacement === "left" || menuPlacement === "right") {
+  if (menuPlacement === 'left' || menuPlacement === 'right') {
     top =
-      menuSideAnchor === "bottom"
+      menuSideAnchor === 'bottom'
         ? anchorRect.bottom - menuHeight
-        : menuSideAnchor === "top"
+        : menuSideAnchor === 'top'
           ? anchorRect.top
           : anchorRect.top + (anchorRect.height - menuHeight) / 2;
     left =
-      menuPlacement === "left"
+      menuPlacement === 'left'
         ? anchorRect.left - MENU_GAP - menuWidth
         : anchorRect.right + MENU_GAP;
   } else {
-    left = menuVerticalAnchor === "right" ? anchorRect.right - menuWidth : anchorRect.left;
+    left =
+      menuVerticalAnchor === 'right'
+        ? anchorRect.right - menuWidth
+        : anchorRect.left;
     top =
-      menuPlacement === "down"
+      menuPlacement === 'down'
         ? anchorRect.top - MENU_GAP - menuHeight
         : anchorRect.bottom + MENU_GAP;
   }
@@ -70,10 +83,12 @@ const getVerticalMenuOverflow = ({
   minVisibleTop,
   maxVisibleBottom,
 }: {
-  rect: Pick<DOMRect, "top" | "bottom">;
+  rect: Pick<DOMRect, 'top' | 'bottom'>;
   minVisibleTop: number;
   maxVisibleBottom: number;
-}) => Math.max(minVisibleTop - rect.top, 0) + Math.max(rect.bottom - maxVisibleBottom, 0);
+}) =>
+  Math.max(minVisibleTop - rect.top, 0) +
+  Math.max(rect.bottom - maxVisibleBottom, 0);
 
 const animationFrameController = createAnimationFrameController();
 
@@ -81,22 +96,32 @@ export const useChatViewportMenu = ({
   getVisibleMessagesBounds,
   messagesContainerRef,
 }: UseChatViewportMenuProps) => {
-  const [openMenuMessageId, setOpenMenuMessageId] = useState<string | null>(null);
-  const [menuPlacement, setMenuPlacement] = useState<MenuPlacement>("up");
-  const [menuSideAnchor, setMenuSideAnchor] = useState<MenuSideAnchor>("middle");
-  const [menuVerticalAnchor, setMenuVerticalAnchor] = useState<MenuVerticalAnchor>("left");
+  const [openMenuMessageId, setOpenMenuMessageId] = useState<string | null>(
+    null
+  );
+  const [menuPlacement, setMenuPlacement] = useState<MenuPlacement>('up');
+  const [menuSideAnchor, setMenuSideAnchor] =
+    useState<MenuSideAnchor>('middle');
+  const [menuVerticalAnchor, setMenuVerticalAnchor] =
+    useState<MenuVerticalAnchor>('left');
   const [shouldAnimateMenuOpen, setShouldAnimateMenuOpen] = useState(true);
-  const [menuDimmingMessageId, setMenuDimmingMessageId] = useState<string | null>(null);
-  const [menuTransitionSourceId, setMenuTransitionSourceId] = useState<string | null>(null);
+  const [menuDimmingMessageId, setMenuDimmingMessageId] = useState<
+    string | null
+  >(null);
+  const [menuTransitionSourceId, setMenuTransitionSourceId] = useState<
+    string | null
+  >(null);
   const [menuOffsetX, setMenuOffsetX] = useState(0);
   const [menuViewportTick, setMenuViewportTick] = useState(0);
 
-  const menuTransitionSourceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const menuTransitionSourceTimeoutRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
   const pendingMenuRepositionAnimationFrameRef = useRef<number | null>(null);
   const menuOpenScrollAnimationFrameRef = useRef<number | null>(null);
   const openMenuMessageIdRef = useRef<string | null>(null);
   const openMenuAnchorRef = useRef<HTMLElement | null>(null);
-  const openMenuPreferredSideRef = useRef<"left" | "right">("left");
+  const openMenuPreferredSideRef = useRef<'left' | 'right'>('left');
   const lockedMenuLayoutRef = useRef<{ messageId: string } | null>(null);
 
   const cancelNextFrame = useCallback((frameId: number) => {
@@ -117,7 +142,11 @@ export const useChatViewportMenu = ({
   }, [cancelNextFrame]);
 
   const animateMenuOpenScroll = useCallback(
-    (container: HTMLDivElement, targetScrollTop: number, onComplete?: () => void) => {
+    (
+      container: HTMLDivElement,
+      targetScrollTop: number,
+      onComplete?: () => void
+    ) => {
       const startScrollTop = container.scrollTop;
       const distance = targetScrollTop - startScrollTop;
 
@@ -129,7 +158,10 @@ export const useChatViewportMenu = ({
 
       cancelMenuOpenScrollAnimation();
 
-      const totalFrames = Math.min(18, Math.max(8, Math.round(Math.abs(distance) / 18)));
+      const totalFrames = Math.min(
+        18,
+        Math.max(8, Math.round(Math.abs(distance) / 18))
+      );
       let currentFrame = 0;
 
       const step = () => {
@@ -151,7 +183,7 @@ export const useChatViewportMenu = ({
 
       menuOpenScrollAnimationFrameRef.current = requestNextFrame(step);
     },
-    [cancelMenuOpenScrollAnimation, requestNextFrame],
+    [cancelMenuOpenScrollAnimation, requestNextFrame]
   );
 
   const getMenuOpenScrollPlanForAnchor = useCallback(
@@ -161,7 +193,7 @@ export const useChatViewportMenu = ({
         bounds: getVisibleMessagesBounds(),
         container: messagesContainerRef.current,
       }),
-    [getVisibleMessagesBounds, messagesContainerRef],
+    [getVisibleMessagesBounds, messagesContainerRef]
   );
 
   const closeMessageMenu = useCallback(() => {
@@ -181,12 +213,12 @@ export const useChatViewportMenu = ({
     setMenuDimmingMessageId(null);
     setMenuTransitionSourceId(null);
     setMenuOffsetX(0);
-    setMenuVerticalAnchor("left");
+    setMenuVerticalAnchor('left');
     setShouldAnimateMenuOpen(true);
   }, [cancelMenuOpenScrollAnimation, cancelNextFrame]);
 
   const syncOpenMenuLayout = useCallback(
-    (anchor: HTMLElement, preferredSide: "left" | "right") => {
+    (anchor: HTMLElement, preferredSide: 'left' | 'right') => {
       const anchorRect = anchor.getBoundingClientRect();
       const bounds = getVisibleMessagesBounds();
 
@@ -201,20 +233,20 @@ export const useChatViewportMenu = ({
         preferredSide,
       });
 
-      setMenuPlacement((previousPlacement) =>
+      setMenuPlacement(previousPlacement =>
         previousPlacement === nextMenuLayout.placement
           ? previousPlacement
-          : nextMenuLayout.placement,
+          : nextMenuLayout.placement
       );
-      setMenuSideAnchor((previousSideAnchor) =>
+      setMenuSideAnchor(previousSideAnchor =>
         previousSideAnchor === nextMenuLayout.sideAnchor
           ? previousSideAnchor
-          : nextMenuLayout.sideAnchor,
+          : nextMenuLayout.sideAnchor
       );
       setMenuOffsetX(0);
-      setMenuViewportTick((previousTick) => previousTick + 1);
+      setMenuViewportTick(previousTick => previousTick + 1);
     },
-    [closeMessageMenu, getVisibleMessagesBounds],
+    [closeMessageMenu, getVisibleMessagesBounds]
   );
 
   const requestOpenMenuReposition = useCallback(() => {
@@ -244,25 +276,31 @@ export const useChatViewportMenu = ({
     });
   }, [closeMessageMenu, requestNextFrame, syncOpenMenuLayout]);
 
-  const applyMenuTransitionSource = useCallback((previousMessageId: string | null) => {
-    if (previousMessageId === null || previousMessageId === openMenuMessageIdRef.current) {
-      setMenuTransitionSourceId(null);
-      return;
-    }
+  const applyMenuTransitionSource = useCallback(
+    (previousMessageId: string | null) => {
+      if (
+        previousMessageId === null ||
+        previousMessageId === openMenuMessageIdRef.current
+      ) {
+        setMenuTransitionSourceId(null);
+        return;
+      }
 
-    setMenuTransitionSourceId(previousMessageId);
-    menuTransitionSourceTimeoutRef.current = setTimeout(() => {
-      setMenuTransitionSourceId(null);
-      menuTransitionSourceTimeoutRef.current = null;
-    }, 220);
-  }, []);
+      setMenuTransitionSourceId(previousMessageId);
+      menuTransitionSourceTimeoutRef.current = setTimeout(() => {
+        setMenuTransitionSourceId(null);
+        menuTransitionSourceTimeoutRef.current = null;
+      }, 220);
+    },
+    []
+  );
 
   const openMenuAtAnchor = useCallback(
     (
       anchor: HTMLElement,
       messageId: string,
-      preferredSide: "left" | "right",
-      shouldAnimateOpen: boolean,
+      preferredSide: 'left' | 'right',
+      shouldAnimateOpen: boolean
     ) => {
       const nextMenuLayout = getViewportMenuLayout({
         anchorRect: anchor.getBoundingClientRect(),
@@ -271,18 +309,22 @@ export const useChatViewportMenu = ({
       });
 
       setMenuOffsetX(0);
-      setMenuVerticalAnchor("left");
+      setMenuVerticalAnchor('left');
       setMenuPlacement(nextMenuLayout.placement);
       setMenuSideAnchor(nextMenuLayout.sideAnchor);
       setShouldAnimateMenuOpen(shouldAnimateOpen);
       setMenuDimmingMessageId(messageId);
       setOpenMenuMessageId(messageId);
     },
-    [getVisibleMessagesBounds],
+    [getVisibleMessagesBounds]
   );
 
   const toggleMessageMenu = useCallback(
-    (anchor: HTMLElement, messageId: string, preferredSide: "left" | "right") => {
+    (
+      anchor: HTMLElement,
+      messageId: string,
+      preferredSide: 'left' | 'right'
+    ) => {
       const currentOpenMenuMessageId = openMenuMessageIdRef.current;
 
       if (currentOpenMenuMessageId === messageId) {
@@ -293,7 +335,8 @@ export const useChatViewportMenu = ({
       const anchorRect = anchor.getBoundingClientRect();
       const menuOpenScrollPlan = getMenuOpenScrollPlanForAnchor(anchorRect);
       const isSwitchingMenuMessage =
-        currentOpenMenuMessageId !== null && currentOpenMenuMessageId !== messageId;
+        currentOpenMenuMessageId !== null &&
+        currentOpenMenuMessageId !== messageId;
 
       if (menuTransitionSourceTimeoutRef.current) {
         clearTimeout(menuTransitionSourceTimeoutRef.current);
@@ -318,31 +361,43 @@ export const useChatViewportMenu = ({
           };
           setOpenMenuMessageId(null);
           setMenuOffsetX(0);
-          animateMenuOpenScroll(container, menuOpenScrollPlan.targetScrollTop, () => {
-            if (openMenuMessageIdRef.current !== messageId) {
-              return;
+          animateMenuOpenScroll(
+            container,
+            menuOpenScrollPlan.targetScrollTop,
+            () => {
+              if (openMenuMessageIdRef.current !== messageId) {
+                return;
+              }
+
+              lockedMenuLayoutRef.current = null;
+
+              const currentAnchor = openMenuAnchorRef.current;
+              if (!currentAnchor || !currentAnchor.isConnected) {
+                closeMessageMenu();
+                return;
+              }
+
+              syncOpenMenuLayout(
+                currentAnchor,
+                openMenuPreferredSideRef.current
+              );
+              openMenuAtAnchor(
+                currentAnchor,
+                messageId,
+                openMenuPreferredSideRef.current,
+                !isSwitchingMenuMessage
+              );
             }
-
-            lockedMenuLayoutRef.current = null;
-
-            const currentAnchor = openMenuAnchorRef.current;
-            if (!currentAnchor || !currentAnchor.isConnected) {
-              closeMessageMenu();
-              return;
-            }
-
-            syncOpenMenuLayout(currentAnchor, openMenuPreferredSideRef.current);
-            openMenuAtAnchor(
-              currentAnchor,
-              messageId,
-              openMenuPreferredSideRef.current,
-              !isSwitchingMenuMessage,
-            );
-          });
+          );
         }
       } else {
         lockedMenuLayoutRef.current = null;
-        openMenuAtAnchor(anchor, messageId, preferredSide, !isSwitchingMenuMessage);
+        openMenuAtAnchor(
+          anchor,
+          messageId,
+          preferredSide,
+          !isSwitchingMenuMessage
+        );
       }
     },
     [
@@ -354,15 +409,20 @@ export const useChatViewportMenu = ({
       messagesContainerRef,
       openMenuAtAnchor,
       syncOpenMenuLayout,
-    ],
+    ]
   );
 
   const ensureMenuFullyVisible = useCallback(
     (messageId: string) => {
-      const menuRoot = typeof document !== "undefined" ? document : messagesContainerRef.current;
+      const menuRoot =
+        typeof document !== 'undefined'
+          ? document
+          : messagesContainerRef.current;
       if (!menuRoot) return;
 
-      const menuElement = menuRoot.querySelector<HTMLElement>(`[data-chat-menu-id="${messageId}"]`);
+      const menuElement = menuRoot.querySelector<HTMLElement>(
+        `[data-chat-menu-id="${messageId}"]`
+      );
 
       if (!menuElement) return;
 
@@ -402,7 +462,8 @@ export const useChatViewportMenu = ({
               width: measuredMenuRect.width,
               height: measuredMenuRect.height,
             };
-      const minVisibleTop = containerRect.top + CHAT_HEADER_OVERLAY_HEIGHT + MENU_GAP;
+      const minVisibleTop =
+        containerRect.top + CHAT_HEADER_OVERLAY_HEIGHT + MENU_GAP;
       const maxVisibleBottom = bounds.visibleBottom - MENU_GAP;
       const currentVerticalOverflow = getVerticalMenuOverflow({
         rect: menuRect,
@@ -413,7 +474,7 @@ export const useChatViewportMenu = ({
       if (currentVerticalOverflow > 0 && anchorRect) {
         const upMenuRect = getProjectedMenuRect({
           anchorRect,
-          menuPlacement: "up",
+          menuPlacement: 'up',
           menuSideAnchor,
           menuVerticalAnchor,
           menuOffsetX,
@@ -422,7 +483,7 @@ export const useChatViewportMenu = ({
         });
         const downMenuRect = getProjectedMenuRect({
           anchorRect,
-          menuPlacement: "down",
+          menuPlacement: 'down',
           menuSideAnchor,
           menuVerticalAnchor,
           menuOffsetX,
@@ -439,7 +500,8 @@ export const useChatViewportMenu = ({
           minVisibleTop,
           maxVisibleBottom,
         });
-        const nextPlacement: MenuPlacement = upOverflow <= downOverflow ? "up" : "down";
+        const nextPlacement: MenuPlacement =
+          upOverflow <= downOverflow ? 'up' : 'down';
 
         if (
           menuPlacement !== nextPlacement &&
@@ -454,7 +516,10 @@ export const useChatViewportMenu = ({
       const minMenuLeft = containerRect.left + MENU_GAP;
       const maxMenuRight = containerRect.right - MENU_GAP;
 
-      if ((menuPlacement === "up" || menuPlacement === "down") && anchorRect !== null) {
+      if (
+        (menuPlacement === 'up' || menuPlacement === 'down') &&
+        anchorRect !== null
+      ) {
         const leftAnchoredOverflow =
           Math.max(minMenuLeft - anchorRect.left, 0) +
           Math.max(anchorRect.left + menuRect.width - maxMenuRight, 0);
@@ -463,7 +528,7 @@ export const useChatViewportMenu = ({
           Math.max(minMenuLeft - rightAnchoredLeft, 0) +
           Math.max(anchorRect.right - maxMenuRight, 0);
         const nextVerticalAnchor: MenuVerticalAnchor =
-          leftAnchoredOverflow <= rightAnchoredOverflow ? "left" : "right";
+          leftAnchoredOverflow <= rightAnchoredOverflow ? 'left' : 'right';
 
         if (menuVerticalAnchor !== nextVerticalAnchor) {
           setMenuVerticalAnchor(nextVerticalAnchor);
@@ -475,10 +540,14 @@ export const useChatViewportMenu = ({
       const shiftMin = minMenuLeft - menuRect.left;
       const shiftMax = maxMenuRight - menuRect.right;
       const nextOffsetX =
-        shiftMin > shiftMax ? shiftMin : Math.min(Math.max(0, shiftMin), shiftMax);
+        shiftMin > shiftMax
+          ? shiftMin
+          : Math.min(Math.max(0, shiftMin), shiftMax);
 
-      setMenuOffsetX((previousOffset) =>
-        Math.abs(previousOffset - nextOffsetX) < 0.5 ? previousOffset : nextOffsetX,
+      setMenuOffsetX(previousOffset =>
+        Math.abs(previousOffset - nextOffsetX) < 0.5
+          ? previousOffset
+          : nextOffsetX
       );
     },
     [
@@ -489,14 +558,20 @@ export const useChatViewportMenu = ({
       menuSideAnchor,
       menuVerticalAnchor,
       messagesContainerRef,
-    ],
+    ]
   );
 
   useLayoutEffect(() => {
     if (!openMenuMessageId) return;
 
     ensureMenuFullyVisible(openMenuMessageId);
-  }, [ensureMenuFullyVisible, menuPlacement, menuSideAnchor, openMenuMessageId, menuViewportTick]);
+  }, [
+    ensureMenuFullyVisible,
+    menuPlacement,
+    menuSideAnchor,
+    openMenuMessageId,
+    menuViewportTick,
+  ]);
 
   useLayoutEffect(() => {
     if (!openMenuMessageId) {
@@ -512,14 +587,14 @@ export const useChatViewportMenu = ({
       requestOpenMenuReposition();
     };
 
-    container.addEventListener("scroll", handleViewportChange, {
+    container.addEventListener('scroll', handleViewportChange, {
       passive: true,
     });
-    window.addEventListener("resize", handleViewportChange);
+    window.addEventListener('resize', handleViewportChange);
 
     return () => {
-      container.removeEventListener("scroll", handleViewportChange);
-      window.removeEventListener("resize", handleViewportChange);
+      container.removeEventListener('scroll', handleViewportChange);
+      window.removeEventListener('resize', handleViewportChange);
     };
   }, [messagesContainerRef, openMenuMessageId, requestOpenMenuReposition]);
 
