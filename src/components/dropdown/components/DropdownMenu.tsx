@@ -56,14 +56,14 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
         ? Array.from(container.querySelectorAll<HTMLElement>('[role="option"]'))
         : [];
       const targetElement = optionElements[pendingHighlightedIndex];
-      const currentElement =
+      const sourceElement =
         pendingHighlightSourceIndex !== null
           ? optionElements[pendingHighlightSourceIndex]
           : highlightedIndex >= 0
             ? optionElements[highlightedIndex]
-            : targetElement;
+            : null;
 
-      if (!container || !menuElement || !targetElement || !currentElement) return;
+      if (!container || !menuElement || !targetElement) return;
 
       const itemTop = targetElement.offsetTop;
       const itemBottom = itemTop + targetElement.offsetHeight;
@@ -71,14 +71,17 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
       const containerHeight = container.clientHeight;
       const visibilityInset = 4;
       let scrollTop: number | null = null;
+      let scrollDirection: "up" | "down" | null = null;
 
       if (itemTop < containerScrollTop + visibilityInset) {
         scrollTop = Math.max(0, itemTop - visibilityInset);
+        scrollDirection = "up";
       } else if (itemBottom > containerScrollTop + containerHeight - visibilityInset) {
         scrollTop =
           pendingHighlightedIndex === filteredOptions.length - 1
             ? container.scrollHeight - containerHeight
             : itemBottom - containerHeight + visibilityInset;
+        scrollDirection = "down";
       }
 
       if (scrollTop !== null) {
@@ -86,13 +89,30 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
           window.clearTimeout(releaseHeldHighlightTimeoutRef.current);
         }
 
-        const currentRect = currentElement.getBoundingClientRect();
+        const sourceTop = sourceElement?.offsetTop ?? itemTop;
+        const sourceBottom =
+          sourceTop + (sourceElement?.offsetHeight ?? targetElement.offsetHeight);
+        const sourceIsPinnedToEdge =
+          scrollDirection === "up"
+            ? sourceTop <= containerScrollTop + visibilityInset
+            : sourceBottom >= containerScrollTop + containerHeight - visibilityInset;
+        const frameElement = sourceIsPinnedToEdge
+          ? (sourceElement ?? targetElement)
+          : targetElement;
+        const frameRect = frameElement.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
         const menuRect = menuElement.getBoundingClientRect();
+        const frameTop = sourceIsPinnedToEdge
+          ? frameRect.top - menuRect.top
+          : scrollDirection === "up"
+            ? containerRect.top + visibilityInset - menuRect.top
+            : containerRect.bottom - visibilityInset - targetElement.offsetHeight - menuRect.top;
+
         setHeldHighlightFrame({
-          top: currentRect.top - menuRect.top,
-          left: currentRect.left - menuRect.left,
-          width: currentRect.width,
-          height: currentRect.height,
+          top: frameTop,
+          left: frameRect.left - menuRect.left,
+          width: frameRect.width,
+          height: frameRect.height,
         });
         container.scrollTo({ top: scrollTop, behavior: "smooth" });
         releaseHeldHighlightTimeoutRef.current = window.setTimeout(() => {
