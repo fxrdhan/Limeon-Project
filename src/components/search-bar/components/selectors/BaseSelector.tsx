@@ -207,7 +207,7 @@ function BaseSelector<T>({
       selectedIndex: typeof value === "function" ? value(prev.selectedIndex) : value,
     }));
   };
-  const backgroundIndex = isHoverDisabled ? selectedIndex : (hoveredIndex ?? selectedIndex);
+  const backgroundIndex = hoveredIndex ?? selectedIndex;
 
   // Reset internal search term when modal closes
   useEffect(() => {
@@ -240,22 +240,21 @@ function BaseSelector<T>({
       switch (e.key) {
         case "ArrowDown":
           e.preventDefault();
-          setHoveredIndex(null);
-          setIsHoverDisabled(true);
           if (filteredItems.length > 0) {
-            setSelectedIndex((prev) => {
-              const nextIndex = prev + 1;
-              return nextIndex >= filteredItems.length ? 0 : nextIndex;
+            setIsHoverDisabled(true);
+            setHoveredIndex((prev) => {
+              const baseIndex = prev ?? selectedIndex;
+              return baseIndex + 1 >= filteredItems.length ? 0 : baseIndex + 1;
             });
           }
           break;
         case "ArrowUp":
           e.preventDefault();
-          setHoveredIndex(null);
-          setIsHoverDisabled(true);
           if (filteredItems.length > 0) {
-            setSelectedIndex((prev) => {
-              return prev === 0 ? filteredItems.length - 1 : prev - 1;
+            setIsHoverDisabled(true);
+            setHoveredIndex((prev) => {
+              const baseIndex = prev ?? selectedIndex;
+              return baseIndex === 0 ? filteredItems.length - 1 : baseIndex - 1;
             });
           }
           break;
@@ -263,11 +262,11 @@ function BaseSelector<T>({
           e.preventDefault();
           if (
             filteredItems.length > 0 &&
-            selectedIndex >= 0 &&
-            selectedIndex < filteredItems.length &&
-            filteredItems[selectedIndex]
+            backgroundIndex >= 0 &&
+            backgroundIndex < filteredItems.length &&
+            filteredItems[backgroundIndex]
           ) {
-            onSelect(filteredItems[selectedIndex]);
+            onSelect(filteredItems[backgroundIndex]);
           }
           break;
         case "Escape":
@@ -302,7 +301,15 @@ function BaseSelector<T>({
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, filteredItems, selectedIndex, onSelect, onClose, internalSearchTerm]);
+  }, [
+    isOpen,
+    filteredItems,
+    backgroundIndex,
+    selectedIndex,
+    onSelect,
+    onClose,
+    internalSearchTerm,
+  ]);
 
   useEffect(() => {
     if (!isOpen || !showContent) return;
