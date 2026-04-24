@@ -319,7 +319,7 @@ export const MessageDocumentAttachmentGroupContent = ({
                 key={message.id}
                 data-chat-attachment-row-id={message.id}
                 className={`relative overflow-visible transition-[filter,opacity,transform] duration-150 ${
-                  isMenuOpen ? "z-[80]" : "z-0"
+                  isMenuOpen ? "z-30" : "z-0"
                 } ${isAnotherAttachmentFocused ? "blur-[2px] brightness-95" : ""}`}
               >
                 <button
@@ -383,7 +383,7 @@ export const MessageDocumentAttachmentGroupContent = ({
                 width: menuAnchorPosition.width,
                 height: menuAnchorPosition.height,
               }}
-              className="pointer-events-none fixed z-[200]"
+              className="pointer-events-none fixed z-40"
             >
               <div
                 className="relative h-full w-full pointer-events-auto"
