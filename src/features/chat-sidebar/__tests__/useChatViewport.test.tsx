@@ -838,6 +838,7 @@ describe("useChatViewport", () => {
     });
 
     expect(result.current.openMenuMessageId).toBeNull();
+    expect(result.current.menuDimmingMessageId).toBe("message-1");
 
     act(() => {
       while (frameQueue.length > 0) {
@@ -847,6 +848,7 @@ describe("useChatViewport", () => {
     });
 
     expect(result.current.openMenuMessageId).toBe("message-1");
+    expect(result.current.menuDimmingMessageId).toBe("message-1");
     expect(messagesContainer.scrollTop).toBe(152);
 
     messagesContainer.remove();
@@ -955,6 +957,7 @@ describe("useChatViewport", () => {
     });
 
     expect(result.current.openMenuMessageId).toBeNull();
+    expect(result.current.menuDimmingMessageId).toBeNull();
 
     messagesContainer.remove();
   });

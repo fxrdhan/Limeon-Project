@@ -1,8 +1,11 @@
-import type { MessageItemModel } from './messageItemTypes';
-import { getPdfMessagePreviewUrl } from '../../utils/pdf-message-preview';
+import type { MessageItemModel } from "./messageItemTypes";
+import { getPdfMessagePreviewUrl } from "../../utils/pdf-message-preview";
 
 const isMenuOpenForMessage = (model: MessageItemModel) =>
   model.menu.openMessageId === model.message.id;
+
+const isMenuDimmingForMessage = (model: MessageItemModel) =>
+  model.menu.dimmingMessageId === model.message.id;
 
 const isMenuTransitionSourceForMessage = (model: MessageItemModel) =>
   model.menu.transitionSourceId === model.message.id;
@@ -12,7 +15,7 @@ const isFlashingMessage = (model: MessageItemModel) =>
 
 export const areMessageItemPropsEqual = (
   previousProps: { model: MessageItemModel },
-  nextProps: { model: MessageItemModel }
+  nextProps: { model: MessageItemModel },
 ) => {
   const previousModel = previousProps.model;
   const nextModel = nextProps.model;
@@ -24,32 +27,28 @@ export const areMessageItemPropsEqual = (
 
   const previousMenuOpen = isMenuOpenForMessage(previousModel);
   const nextMenuOpen = isMenuOpenForMessage(nextModel);
-  const previousMenuTransitionSource =
-    isMenuTransitionSourceForMessage(previousModel);
+  const previousMenuDimming = isMenuDimmingForMessage(previousModel);
+  const nextMenuDimming = isMenuDimmingForMessage(nextModel);
+  const previousMenuTransitionSource = isMenuTransitionSourceForMessage(previousModel);
   const nextMenuTransitionSource = isMenuTransitionSourceForMessage(nextModel);
-  const previousHasOpenMenu = Boolean(previousModel.menu.openMessageId);
-  const nextHasOpenMenu = Boolean(nextModel.menu.openMessageId);
+  const previousHasDimmingMenu = Boolean(previousModel.menu.dimmingMessageId);
+  const nextHasDimmingMenu = Boolean(nextModel.menu.dimmingMessageId);
   const previousFlashingMessage = isFlashingMessage(previousModel);
   const nextFlashingMessage = isFlashingMessage(nextModel);
 
   return (
     previousModel.message === nextModel.message &&
-    previousModel.content.resolvedMessageUrl ===
-      nextModel.content.resolvedMessageUrl &&
+    previousModel.content.resolvedMessageUrl === nextModel.content.resolvedMessageUrl &&
     previousModel.interaction.userId === nextModel.interaction.userId &&
-    previousModel.layout.isGroupedWithPrevious ===
-      nextModel.layout.isGroupedWithPrevious &&
-    previousModel.layout.isGroupedWithNext ===
-      nextModel.layout.isGroupedWithNext &&
-    previousModel.layout.isFirstVisibleMessage ===
-      nextModel.layout.isFirstVisibleMessage &&
-    previousModel.layout.hasDateSeparatorBefore ===
-      nextModel.layout.hasDateSeparatorBefore &&
-    previousModel.interaction.isSelectionMode ===
-      nextModel.interaction.isSelectionMode &&
+    previousModel.layout.isGroupedWithPrevious === nextModel.layout.isGroupedWithPrevious &&
+    previousModel.layout.isGroupedWithNext === nextModel.layout.isGroupedWithNext &&
+    previousModel.layout.isFirstVisibleMessage === nextModel.layout.isFirstVisibleMessage &&
+    previousModel.layout.hasDateSeparatorBefore === nextModel.layout.hasDateSeparatorBefore &&
+    previousModel.interaction.isSelectionMode === nextModel.interaction.isSelectionMode &&
     previousModel.interaction.isSelected === nextModel.interaction.isSelected &&
-    previousHasOpenMenu === nextHasOpenMenu &&
+    previousHasDimmingMenu === nextHasDimmingMenu &&
     previousMenuOpen === nextMenuOpen &&
+    previousMenuDimming === nextMenuDimming &&
     previousMenuTransitionSource === nextMenuTransitionSource &&
     previousModel.menu.placement === nextModel.menu.placement &&
     previousModel.menu.sideAnchor === nextModel.menu.sideAnchor &&
@@ -65,17 +64,12 @@ export const areMessageItemPropsEqual = (
       nextModel.interaction.searchMatchedMessageIds.has(messageId) &&
     (previousModel.interaction.activeSearchMessageId === messageId) ===
       (nextModel.interaction.activeSearchMessageId === messageId) &&
-    previousModel.interaction.maxMessageChars ===
-      nextModel.interaction.maxMessageChars &&
+    previousModel.interaction.maxMessageChars === nextModel.interaction.maxMessageChars &&
     previousModel.content.captionMessage === nextModel.content.captionMessage &&
-    previousModel.content.replyTargetMessage ===
-      nextModel.content.replyTargetMessage &&
-    previousModel.content.groupedDocumentMessages ===
-      nextModel.content.groupedDocumentMessages &&
-    previousModel.content.groupedImageMessages ===
-      nextModel.content.groupedImageMessages &&
-    previousModel.content.normalizedSearchQuery ===
-      nextModel.content.normalizedSearchQuery &&
+    previousModel.content.replyTargetMessage === nextModel.content.replyTargetMessage &&
+    previousModel.content.groupedDocumentMessages === nextModel.content.groupedDocumentMessages &&
+    previousModel.content.groupedImageMessages === nextModel.content.groupedImageMessages &&
+    previousModel.content.normalizedSearchQuery === nextModel.content.normalizedSearchQuery &&
     getPdfMessagePreviewUrl(previousModel.content.pdfMessagePreview) ===
       getPdfMessagePreviewUrl(nextModel.content.pdfMessagePreview) &&
     previousModel.content.pdfMessagePreview?.pageCount ===

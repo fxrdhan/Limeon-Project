@@ -1,7 +1,7 @@
-import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
-import ChatSidebarPanel from '../index';
+import React from "react";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import ChatSidebarPanel from "../index";
 
 const { mockComposerState } = vi.hoisted(() => ({
   mockComposerState: {
@@ -9,13 +9,13 @@ const { mockComposerState } = vi.hoisted(() => ({
       id: string;
       fileName: string;
       sourceUrl: string;
-      status: 'loading';
+      status: "loading";
     }>,
     isLoadingAttachmentComposerAttachments: false,
   },
 }));
 
-vi.mock('motion/react', () => ({
+vi.mock("motion/react", () => ({
   AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
   LayoutGroup: ({ children }: { children: React.ReactNode }) => children,
   motion: new Proxy(
@@ -40,41 +40,41 @@ vi.mock('motion/react', () => ({
           transition?: unknown;
         }) =>
           React.createElement(element as string, props, children),
-    }
+    },
   ),
 }));
 
-vi.mock('@/store/authStore', () => ({
+vi.mock("@/store/authStore", () => ({
   useAuthStore: () => ({
     user: {
-      id: 'user-a',
-      name: 'Admin',
+      id: "user-a",
+      name: "Admin",
     },
   }),
 }));
 
-vi.mock('@/hooks/presence/usePresenceRoster', () => ({
+vi.mock("@/hooks/presence/usePresenceRoster", () => ({
   usePresenceRoster: () => ({
-    onlineUserIds: new Set(['user-b']),
+    onlineUserIds: new Set(["user-b"]),
   }),
 }));
 
-vi.mock('../hooks/useTargetProfilePhoto', () => ({
+vi.mock("../hooks/useTargetProfilePhoto", () => ({
   useTargetProfilePhoto: () => ({
     displayTargetPhotoUrl: null,
   }),
 }));
 
-vi.mock('../hooks/useChatSession', () => ({
+vi.mock("../hooks/useChatSession", () => ({
   useChatSession: () => ({
     messages: [],
     setMessages: vi.fn(),
     loading: false,
     isTargetOnline: true,
     targetUserPresence: {
-      user_id: 'user-b',
+      user_id: "user-b",
       is_online: true,
-      last_seen: '2026-03-07T09:59:40.000Z',
+      last_seen: "2026-03-07T09:59:40.000Z",
     },
     broadcastNewMessage: vi.fn(),
     broadcastUpdatedMessage: vi.fn(),
@@ -83,9 +83,9 @@ vi.mock('../hooks/useChatSession', () => ({
   }),
 }));
 
-vi.mock('../hooks/useChatComposer', () => ({
+vi.mock("../hooks/useChatComposer", () => ({
   useChatComposer: () => ({
-    message: '',
+    message: "",
     setMessage: vi.fn(),
     editingMessageId: null,
     setEditingMessageId: vi.fn(),
@@ -164,7 +164,7 @@ vi.mock('../hooks/useChatComposer', () => ({
   }),
 }));
 
-vi.mock('../hooks/useChatConversationMutations', () => ({
+vi.mock("../hooks/useChatConversationMutations", () => ({
   useChatConversationMutations: () => ({
     handleEditMessage: vi.fn(),
     handleDeleteMessage: vi.fn(),
@@ -192,11 +192,11 @@ vi.mock('../hooks/useChatConversationMutations', () => ({
   }),
 }));
 
-vi.mock('../hooks/useChatInteractionModes', () => ({
+vi.mock("../hooks/useChatInteractionModes", () => ({
   useChatInteractionModes: () => ({
     isMessageSearchMode: false,
-    messageSearchQuery: '',
-    messageSearchState: 'idle',
+    messageSearchQuery: "",
+    messageSearchState: "idle",
     searchMatchedMessageIds: [],
     activeSearchResultIndex: -1,
     canNavigateSearchUp: false,
@@ -215,7 +215,7 @@ vi.mock('../hooks/useChatInteractionModes', () => ({
     handleNavigateSearchDown: vi.fn(),
     handleFocusSearchInput: vi.fn(),
     handleCopySelectedMessages: vi.fn(),
-    normalizedMessageSearchQuery: '',
+    normalizedMessageSearchQuery: "",
     activeSearchMessageId: null,
     searchNavigationTick: 0,
     selectedMessageIds: new Set<string>(),
@@ -225,7 +225,7 @@ vi.mock('../hooks/useChatInteractionModes', () => ({
   }),
 }));
 
-vi.mock('../hooks/useChatViewport', () => ({
+vi.mock("../hooks/useChatViewport", () => ({
   useChatViewport: () => ({
     closeMessageMenu: vi.fn(),
     scheduleScrollMessagesToBottom: vi.fn(),
@@ -235,8 +235,9 @@ vi.mock('../hooks/useChatViewport', () => ({
     composerContainerHeight: 0,
     isInitialOpenPinPending: false,
     openMenuMessageId: null,
-    menuPlacement: 'up',
-    menuSideAnchor: 'middle',
+    menuDimmingMessageId: null,
+    menuPlacement: "up",
+    menuSideAnchor: "middle",
     shouldAnimateMenuOpen: true,
     menuTransitionSourceId: null,
     menuOffsetX: 0,
@@ -249,21 +250,21 @@ vi.mock('../hooks/useChatViewport', () => ({
   }),
 }));
 
-describe('ChatSidebarPanel integration', () => {
+describe("ChatSidebarPanel integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockComposerState.loadingComposerAttachments = [];
     mockComposerState.isLoadingAttachmentComposerAttachments = false;
   });
 
-  it('disables send while a remote attachment is still converting', () => {
+  it("disables send while a remote attachment is still converting", () => {
     mockComposerState.loadingComposerAttachments = [
       {
-        id: 'loading-1',
-        fileName: 'quokka.jpg',
+        id: "loading-1",
+        fileName: "quokka.jpg",
         sourceUrl:
-          'https://betanews.com/wp-content/uploads/2025/10/Ubuntu-25.10-Questing-Quokka.jpg',
-        status: 'loading',
+          "https://betanews.com/wp-content/uploads/2025/10/Ubuntu-25.10-Questing-Quokka.jpg",
+        status: "loading",
       },
     ];
     mockComposerState.isLoadingAttachmentComposerAttachments = true;
@@ -273,21 +274,20 @@ describe('ChatSidebarPanel integration', () => {
         isOpen
         onClose={vi.fn()}
         targetUser={{
-          id: 'user-b',
-          name: 'Gudang',
-          email: 'gudang@example.com',
+          id: "user-b",
+          name: "Gudang",
+          email: "gudang@example.com",
           profilephoto: null,
         }}
-      />
+      />,
     );
 
     expect(
-      (screen.getByRole('button', { name: 'Kirim pesan' }) as HTMLButtonElement)
-        .disabled
+      (screen.getByRole("button", { name: "Kirim pesan" }) as HTMLButtonElement).disabled,
     ).toBe(true);
   });
 
-  it('closes through the real header action', () => {
+  it("closes through the real header action", () => {
     const onClose = vi.fn();
 
     render(
@@ -295,15 +295,15 @@ describe('ChatSidebarPanel integration', () => {
         isOpen
         onClose={onClose}
         targetUser={{
-          id: 'user-b',
-          name: 'Gudang',
-          email: 'gudang@example.com',
+          id: "user-b",
+          name: "Gudang",
+          email: "gudang@example.com",
           profilephoto: null,
         }}
-      />
+      />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Tutup sidebar chat' }));
+    fireEvent.click(screen.getByRole("button", { name: "Tutup sidebar chat" }));
 
     expect(onClose).toHaveBeenCalledOnce();
   });

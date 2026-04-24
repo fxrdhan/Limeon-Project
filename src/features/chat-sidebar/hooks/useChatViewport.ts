@@ -191,6 +191,7 @@ export const useChatViewport = ({
     isInitialOpenPinPending: scroll.isInitialOpenPinPending,
     composerContainerHeight,
     openMenuMessageId: menu.openMenuMessageId,
+    menuDimmingMessageId: menu.menuDimmingMessageId,
     menuPlacement: menu.menuPlacement,
     menuSideAnchor: menu.menuSideAnchor,
     menuVerticalAnchor: menu.menuVerticalAnchor,

@@ -74,7 +74,11 @@ export const QuotedMessagePreview = ({
   );
 
   if (!onActivate) {
-    return <div className={sharedClassName}>{content}</div>;
+    return (
+      <div className={sharedClassName} data-chat-quoted-message-preview="true">
+        {content}
+      </div>
+    );
   }
 
   if (interactiveElement === "div") {
@@ -88,6 +92,7 @@ export const QuotedMessagePreview = ({
     return (
       <div
         className={sharedClassName}
+        data-chat-quoted-message-preview="true"
         role="button"
         tabIndex={0}
         aria-label={ariaLabel}
@@ -104,6 +109,7 @@ export const QuotedMessagePreview = ({
     <button
       type="button"
       className={`block w-full ${sharedClassName}`}
+      data-chat-quoted-message-preview="true"
       aria-label={ariaLabel}
       title={title}
       onClick={(event) => onActivate(event)}

@@ -1,26 +1,25 @@
-import type { ChatMessage } from '../data/chatSidebarGateway';
-import type { ComposerPendingFileKind } from '../types';
+import type { ChatMessage } from "../data/chatSidebarGateway";
+import type { ComposerPendingFileKind } from "../types";
 
 const MULTI_DOCUMENT_BUBBLE_MAX_GAP_MS = 60_000;
-const MULTI_IMAGE_BUBBLE_MIN_MESSAGES = 4;
 
 export type MessageRenderItem =
   | {
-      kind: 'message';
+      kind: "message";
       key: string;
       anchorMessage: ChatMessage;
       messages: [ChatMessage];
       captionMessage?: ChatMessage;
     }
   | {
-      kind: 'document-group';
+      kind: "document-group";
       key: string;
       anchorMessage: ChatMessage;
       messages: ChatMessage[];
       captionMessage?: ChatMessage;
     }
   | {
-      kind: 'image-group';
+      kind: "image-group";
       key: string;
       anchorMessage: ChatMessage;
       messages: ChatMessage[];
@@ -29,22 +28,15 @@ export type MessageRenderItem =
 
 const isDocumentAttachmentMessage = (
   message: ChatMessage,
-  getAttachmentFileKind: (targetMessage: ChatMessage) => ComposerPendingFileKind
-) =>
-  message.message_type === 'file' &&
-  getAttachmentFileKind(message) === 'document';
+  getAttachmentFileKind: (targetMessage: ChatMessage) => ComposerPendingFileKind,
+) => message.message_type === "file" && getAttachmentFileKind(message) === "document";
 
-const isImageAttachmentMessage = (message: ChatMessage) =>
-  message.message_type === 'image';
+const isImageAttachmentMessage = (message: ChatMessage) => message.message_type === "image";
 
 const isSameCalendarDay = (left: ChatMessage, right: ChatMessage) =>
-  new Date(left.created_at).toDateString() ===
-  new Date(right.created_at).toDateString();
+  new Date(left.created_at).toDateString() === new Date(right.created_at).toDateString();
 
-const isWithinMultiDocumentBubbleGap = (
-  left: ChatMessage,
-  right: ChatMessage
-) => {
+const isWithinMultiDocumentBubbleGap = (left: ChatMessage, right: ChatMessage) => {
   const leftTimestamp = new Date(left.created_at).getTime();
   const rightTimestamp = new Date(right.created_at).getTime();
 
@@ -52,15 +44,13 @@ const isWithinMultiDocumentBubbleGap = (
     return false;
   }
 
-  return (
-    Math.abs(rightTimestamp - leftTimestamp) <= MULTI_DOCUMENT_BUBBLE_MAX_GAP_MS
-  );
+  return Math.abs(rightTimestamp - leftTimestamp) <= MULTI_DOCUMENT_BUBBLE_MAX_GAP_MS;
 };
 
 const canAppendGroupedAttachmentMessage = (
   lastGroupedMessage: ChatMessage,
   nextMessage: ChatMessage,
-  captionMessagesByAttachmentId: Map<string, ChatMessage>
+  captionMessagesByAttachmentId: Map<string, ChatMessage>,
 ) => {
   if (lastGroupedMessage.sender_id !== nextMessage.sender_id) {
     return false;
@@ -74,12 +64,25 @@ const canAppendGroupedAttachmentMessage = (
     return false;
   }
 
+  if ((lastGroupedMessage.reply_to_id ?? null) !== (nextMessage.reply_to_id ?? null)) {
+    return false;
+  }
+
+  if (
+    (lastGroupedMessage.message_relation_kind ?? null) !==
+    (nextMessage.message_relation_kind ?? null)
+  ) {
+    return false;
+  }
+
   if (captionMessagesByAttachmentId.has(lastGroupedMessage.id)) {
     return false;
   }
 
   return true;
 };
+
+const shouldGroupImageAttachments = (messages: ChatMessage[]) => messages.length > 1;
 
 export const buildMessageRenderItems = ({
   messages,
@@ -90,15 +93,13 @@ export const buildMessageRenderItems = ({
 }: {
   messages: ChatMessage[];
   captionMessagesByAttachmentId: Map<string, ChatMessage>;
-  getAttachmentFileKind: (
-    targetMessage: ChatMessage
-  ) => ComposerPendingFileKind;
+  getAttachmentFileKind: (targetMessage: ChatMessage) => ComposerPendingFileKind;
   enableImageBubbleGrouping: boolean;
   enableDocumentBubbleGrouping: boolean;
 }): MessageRenderItem[] => {
   if (!enableImageBubbleGrouping && !enableDocumentBubbleGrouping) {
-    return messages.map(message => ({
-      kind: 'message' as const,
+    return messages.map((message) => ({
+      kind: "message" as const,
       key: message.stableKey || message.id,
       anchorMessage: message,
       messages: [message] as [ChatMessage],
@@ -126,7 +127,7 @@ export const buildMessageRenderItems = ({
           !canAppendGroupedAttachmentMessage(
             lastGroupedMessage,
             nextMessage,
-            captionMessagesByAttachmentId
+            captionMessagesByAttachmentId,
           )
         ) {
           break;
@@ -136,11 +137,11 @@ export const buildMessageRenderItems = ({
         lastGroupedMessage = nextMessage;
       }
 
-      if (groupedMessages.length >= MULTI_IMAGE_BUBBLE_MIN_MESSAGES) {
+      if (shouldGroupImageAttachments(groupedMessages)) {
         const anchorMessage = groupedMessages[groupedMessages.length - 1];
 
         renderItems.push({
-          kind: 'image-group',
+          kind: "image-group",
           key: anchorMessage.stableKey || anchorMessage.id,
           anchorMessage,
           messages: groupedMessages,
@@ -154,7 +155,7 @@ export const buildMessageRenderItems = ({
 
     if (!isDocumentAttachmentMessage(currentMessage, getAttachmentFileKind)) {
       renderItems.push({
-        kind: 'message',
+        kind: "message",
         key: currentMessage.stableKey || currentMessage.id,
         anchorMessage: currentMessage,
         messages: [currentMessage],
@@ -177,7 +178,7 @@ export const buildMessageRenderItems = ({
         !canAppendGroupedAttachmentMessage(
           lastGroupedMessage,
           nextMessage,
-          captionMessagesByAttachmentId
+          captionMessagesByAttachmentId,
         )
       ) {
         break;
@@ -191,7 +192,7 @@ export const buildMessageRenderItems = ({
       const anchorMessage = groupedMessages[groupedMessages.length - 1];
 
       renderItems.push({
-        kind: 'document-group',
+        kind: "document-group",
         key: anchorMessage.stableKey || anchorMessage.id,
         anchorMessage,
         messages: groupedMessages,
@@ -203,7 +204,7 @@ export const buildMessageRenderItems = ({
     }
 
     renderItems.push({
-      kind: 'message',
+      kind: "message",
       key: currentMessage.stableKey || currentMessage.id,
       anchorMessage: currentMessage,
       messages: [currentMessage],

@@ -1,8 +1,8 @@
-import { MAX_MESSAGE_CHARS } from '../../constants';
-import type { ChatMessage } from '../../data/chatSidebarGateway';
-import type { MessageRenderItem } from '../../utils/message-render-items';
-import type { MessageItemRuntime } from '../messagesPaneRuntime';
-import type { MessageItemModel } from './messageItemTypes';
+import { MAX_MESSAGE_CHARS } from "../../constants";
+import type { ChatMessage } from "../../data/chatSidebarGateway";
+import type { MessageRenderItem } from "../../utils/message-render-items";
+import type { MessageItemRuntime } from "../messagesPaneRuntime";
+import type { MessageItemModel } from "./messageItemTypes";
 
 interface BuildMessageItemModelOptions {
   runtime: MessageItemRuntime;
@@ -28,17 +28,14 @@ export const buildMessageItemModel = ({
   const previousMessageDate = previousMessage
     ? new Date(previousMessage.created_at).toDateString()
     : null;
-  const shouldRenderDateSeparator =
-    index === 0 || previousMessageDate !== currentMessageDate;
+  const shouldRenderDateSeparator = index === 0 || previousMessageDate !== currentMessageDate;
   const isGroupedWithPrevious =
     previousMessage?.sender_id === messageItem.sender_id &&
     previousMessageDate === currentMessageDate;
   const isGroupedWithNext =
     nextMessage?.sender_id === messageItem.sender_id &&
     new Date(nextMessage.created_at).toDateString() === currentMessageDate;
-  const selectionTargetMessageIds = renderItem.messages.map(
-    targetMessage => targetMessage.id
-  );
+  const selectionTargetMessageIds = renderItem.messages.map((targetMessage) => targetMessage.id);
 
   return {
     message: messageItem,
@@ -51,8 +48,8 @@ export const buildMessageItemModel = ({
     interaction: {
       userId: runtime.interaction.userId,
       isSelectionMode: runtime.interaction.isSelectionMode,
-      isSelected: selectionTargetMessageIds.every(targetMessageId =>
-        runtime.interaction.selectedMessageIds.has(targetMessageId)
+      isSelected: selectionTargetMessageIds.every((targetMessageId) =>
+        runtime.interaction.selectedMessageIds.has(targetMessageId),
       ),
       selectionTargetMessageIds,
       expandedMessageIds: runtime.interaction.expandedMessageIds,
@@ -61,12 +58,12 @@ export const buildMessageItemModel = ({
       searchMatchedMessageIds,
       activeSearchMessageId,
       maxMessageChars: MAX_MESSAGE_CHARS,
-      onToggleMessageSelection:
-        runtime.interaction.handleToggleMessageSelection,
+      onToggleMessageSelection: runtime.interaction.handleToggleMessageSelection,
       handleToggleExpand: runtime.interaction.handleToggleExpand,
     },
     menu: {
       openMessageId: runtime.menu.openMessageId,
+      dimmingMessageId: runtime.menu.dimmingMessageId,
       placement: runtime.menu.placement,
       sideAnchor: runtime.menu.sideAnchor,
       verticalAnchor: runtime.menu.verticalAnchor,
@@ -77,24 +74,19 @@ export const buildMessageItemModel = ({
     },
     refs: {
       messageBubbleRefs: runtime.refs.messageBubbleRefs,
-      initialMessageAnimationKeysRef:
-        runtime.refs.initialMessageAnimationKeysRef,
-      initialOpenJumpAnimationKeysRef:
-        runtime.refs.initialOpenJumpAnimationKeysRef,
+      initialMessageAnimationKeysRef: runtime.refs.initialMessageAnimationKeysRef,
+      initialOpenJumpAnimationKeysRef: runtime.refs.initialOpenJumpAnimationKeysRef,
     },
     content: {
       resolvedMessageUrl: runtime.content.getImageMessageUrl(messageItem),
       captionMessage: renderItem.captionMessage,
-      replyTargetMessage: runtime.content.getReplyTargetMessage(
-        messageItem.reply_to_id
-      ),
+      replyTargetMessage: runtime.content.getReplyTargetMessage(messageItem.reply_to_id),
       groupedDocumentMessages:
-        renderItem.kind === 'document-group' ? renderItem.messages : undefined,
-      groupedImageMessages:
-        renderItem.kind === 'image-group' ? renderItem.messages : undefined,
+        renderItem.kind === "document-group" ? renderItem.messages : undefined,
+      groupedImageMessages: renderItem.kind === "image-group" ? renderItem.messages : undefined,
       pdfMessagePreview: runtime.content.getPdfMessagePreview(
         messageItem,
-        runtime.content.getAttachmentFileName(messageItem)
+        runtime.content.getAttachmentFileName(messageItem),
       ),
       getAttachmentFileName: runtime.content.getAttachmentFileName,
       getAttachmentFileKind: runtime.content.getAttachmentFileKind,
@@ -114,8 +106,7 @@ export const buildMessageItemModel = ({
       handleDownloadImageGroup: runtime.actions.handleDownloadImageGroup,
       handleDownloadDocumentGroup: runtime.actions.handleDownloadDocumentGroup,
       handleDeleteMessages: runtime.actions.handleDeleteMessages,
-      handleOpenForwardMessagePicker:
-        runtime.actions.handleOpenForwardMessagePicker,
+      handleOpenForwardMessagePicker: runtime.actions.handleOpenForwardMessagePicker,
       handleDeleteMessage: runtime.actions.handleDeleteMessage,
     },
   };

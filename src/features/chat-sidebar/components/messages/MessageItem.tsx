@@ -1,9 +1,9 @@
-import { motion } from 'motion/react';
-import { memo } from 'react';
-import { areMessageItemPropsEqual } from './messageItemMemo';
-import { MessageItemBubble } from './MessageItemBubble';
-import { buildMessageItemDerivations } from './messageItemDerivations';
-import type { MessageItemModel } from './messageItemTypes';
+import { motion } from "motion/react";
+import { memo } from "react";
+import { areMessageItemPropsEqual } from "./messageItemMemo";
+import { MessageItemBubble } from "./MessageItemBubble";
+import { buildMessageItemDerivations } from "./messageItemDerivations";
+import type { MessageItemModel } from "./messageItemTypes";
 export type {
   MessageItemActionsModel,
   MessageItemContentModel,
@@ -12,7 +12,7 @@ export type {
   MessageItemMenuModel,
   MessageItemModel,
   MessageItemRefsModel,
-} from './messageItemTypes';
+} from "./messageItemTypes";
 
 const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
   const { message, layout, interaction, menu, refs, content, actions } = model;
@@ -35,9 +35,8 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
     maxMessageChars,
     onToggleMessageSelection,
   } = interaction;
-  const { openMessageId, transitionSourceId } = menu;
-  const { initialMessageAnimationKeysRef, initialOpenJumpAnimationKeysRef } =
-    refs;
+  const { openMessageId, dimmingMessageId, transitionSourceId } = menu;
+  const { initialMessageAnimationKeysRef, initialOpenJumpAnimationKeysRef } = refs;
   const {
     resolvedMessageUrl,
     captionMessage,
@@ -88,11 +87,9 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
   });
   const { isCurrentUser } = derivations;
   const animationKey = message.stableKey || message.id;
-  const shouldAnimateEnter =
-    !initialMessageAnimationKeysRef.current.has(animationKey);
+  const shouldAnimateEnter = !initialMessageAnimationKeysRef.current.has(animationKey);
   const shouldAnimateOpenJump =
-    !shouldAnimateEnter &&
-    initialOpenJumpAnimationKeysRef.current.has(animationKey);
+    !shouldAnimateEnter && initialOpenJumpAnimationKeysRef.current.has(animationKey);
   const targetAnimation = shouldAnimateOpenJump
     ? {
         opacity: 1,
@@ -109,41 +106,25 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
     : {
         duration: 0.3,
         ease: [0.23, 1, 0.32, 1] as const,
-        type: 'spring' as const,
+        type: "spring" as const,
         stiffness: 300,
         damping: 24,
       };
   const rowSpacingClass =
-    isFirstVisibleMessage || hasDateSeparatorBefore
-      ? ''
-      : isGroupedWithPrevious
-        ? 'mt-1'
-        : 'mt-3';
-  const outgoingTopCornerClass = isGroupedWithPrevious
-    ? 'rounded-tr-md'
-    : 'rounded-tr-[2px]';
-  const outgoingBottomCornerClass = isGroupedWithNext
-    ? 'rounded-br-md'
-    : 'rounded-br-xl';
-  const incomingTopCornerClass = isGroupedWithPrevious
-    ? 'rounded-tl-xl'
-    : 'rounded-tl-[2px]';
-  const incomingBottomCornerClass = isGroupedWithNext
-    ? 'rounded-bl-md'
-    : 'rounded-bl-xl';
+    isFirstVisibleMessage || hasDateSeparatorBefore ? "" : isGroupedWithPrevious ? "mt-1" : "mt-3";
+  const outgoingTopCornerClass = isGroupedWithPrevious ? "rounded-tr-md" : "rounded-tr-[2px]";
+  const outgoingBottomCornerClass = isGroupedWithNext ? "rounded-br-md" : "rounded-br-xl";
+  const incomingTopCornerClass = isGroupedWithPrevious ? "rounded-tl-xl" : "rounded-tl-[2px]";
+  const incomingBottomCornerClass = isGroupedWithNext ? "rounded-bl-md" : "rounded-bl-xl";
   const bubbleShapeClass = isCurrentUser
     ? `rounded-tl-xl rounded-bl-xl ${outgoingTopCornerClass} ${outgoingBottomCornerClass}`
     : `rounded-tr-xl rounded-br-xl ${incomingTopCornerClass} ${incomingBottomCornerClass}`;
   const bubbleMessageIds =
     groupedDocumentMessages?.length || groupedImageMessages?.length
-      ? (groupedDocumentMessages ?? groupedImageMessages ?? []).map(
-          messageItem => messageItem.id
-        )
+      ? (groupedDocumentMessages ?? groupedImageMessages ?? []).map((messageItem) => messageItem.id)
       : [message.id];
   const isAnotherMessageMenuOpen =
-    !isSelectionMode &&
-    openMessageId !== null &&
-    !bubbleMessageIds.includes(openMessageId);
+    !isSelectionMode && dimmingMessageId !== null && !bubbleMessageIds.includes(dimmingMessageId);
 
   return (
     <motion.div
@@ -160,7 +141,7 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
       }
       animate={targetAnimation}
       style={{
-        transformOrigin: isCurrentUser ? 'right bottom' : 'left bottom',
+        transformOrigin: isCurrentUser ? "right bottom" : "left bottom",
       }}
       transition={animationTransition}
       onAnimationComplete={() => {
@@ -169,8 +150,8 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
         }
       }}
       className={`relative flex w-full ${
-        isCurrentUser ? 'justify-end' : 'justify-start'
-      } ${rowSpacingClass} ${isSelectionMode ? 'group cursor-pointer' : ''}`}
+        isCurrentUser ? "justify-end" : "justify-start"
+      } ${rowSpacingClass} ${isSelectionMode ? "group cursor-pointer" : ""}`}
       onClick={() => {
         if (!isSelectionMode) return;
         onToggleMessageSelection(selectionTargetMessageIds);
@@ -180,9 +161,7 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
         <div
           aria-hidden="true"
           className={`pointer-events-none absolute inset-y-0 -inset-x-3 transition-colors duration-200 ease-out ${
-            isSelected
-              ? 'bg-slate-200'
-              : 'bg-transparent group-hover:bg-slate-100'
+            isSelected ? "bg-slate-200" : "bg-transparent group-hover:bg-slate-100"
           }`}
         />
       ) : null}
@@ -198,6 +177,6 @@ const MessageItemComponent = ({ model }: { model: MessageItemModel }) => {
 
 const MessageItem = memo(MessageItemComponent, areMessageItemPropsEqual);
 
-MessageItem.displayName = 'MessageItem';
+MessageItem.displayName = "MessageItem";
 
 export default MessageItem;

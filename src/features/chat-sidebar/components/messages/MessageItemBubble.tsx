@@ -42,6 +42,7 @@ export const MessageItemBubble = ({
   } = interaction;
   const {
     openMessageId,
+    dimmingMessageId,
     placement,
     sideAnchor,
     verticalAnchor,
@@ -119,9 +120,8 @@ export const MessageItemBubble = ({
       ? groupedImageMessages.map((messageItem) => messageItem.id)
       : [message.id];
   const disableTextLinks =
-    !isSelectionMode && openMessageId !== null && !bubbleMessageIds.includes(openMessageId);
-  const disableReplyPanelInteraction =
-    isSelectionMode || (openMessageId !== null && !bubbleMessageIds.includes(openMessageId));
+    !isSelectionMode && dimmingMessageId !== null && !bubbleMessageIds.includes(dimmingMessageId);
+  const disableReplyPanelInteraction = isSelectionMode || dimmingMessageId !== null;
   const bubbleStyle: CSSProperties = {
     overflowWrap: !isImageMessage && !isFileMessage ? ("anywhere" as const) : undefined,
     wordBreak: !isImageMessage && !isFileMessage ? ("break-word" as const) : undefined,
@@ -296,6 +296,31 @@ export const MessageItemBubble = ({
             }}
             className={bubbleClassName}
             style={bubbleStyle}
+            onClick={(event) => {
+              if (isSelectionMode) return;
+              if (
+                !(
+                  event.target instanceof Element &&
+                  event.target.closest("[data-chat-quoted-message-preview]")
+                )
+              ) {
+                return;
+              }
+              event.stopPropagation();
+              toggle(event.currentTarget, message.id, isCurrentUser ? "left" : "right");
+            }}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                if (isSelectionMode) {
+                  onToggleMessageSelection(selectionTargetMessageIds);
+                  return;
+                }
+                toggle(event.currentTarget, message.id, isCurrentUser ? "left" : "right");
+              }
+            }}
           >
             {bubbleInnerContent}
           </div>

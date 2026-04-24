@@ -55,6 +55,7 @@ const createModel = (
     },
     menu: {
       openMessageId: null,
+      dimmingMessageId: null,
       placement: "up",
       sideAnchor: "middle",
       verticalAnchor: "left",
@@ -164,6 +165,7 @@ describe("MessageItem", () => {
           },
           menu: {
             openMessageId: "message-other",
+            dimmingMessageId: "message-other",
             toggle,
           },
           content: {
@@ -191,6 +193,52 @@ describe("MessageItem", () => {
       "left" | "right",
     ];
     expect(anchorElement.getAttribute("role")).toBe("button");
+    expect(messageId).toBe("message-3");
+    expect(preferredSide).toBe("left");
+  });
+
+  it("lets the bubble capture reply-panel clicks when its own menu is active", () => {
+    const toggle = vi.fn();
+    const focusReplyTargetMessage = vi.fn();
+
+    render(
+      <MessageItem
+        model={createModel({
+          message: {
+            ...baseMessage,
+            id: "message-3",
+            message: "balasan baru",
+            reply_to_id: "message-2",
+          },
+          menu: {
+            openMessageId: "message-3",
+            dimmingMessageId: "message-3",
+            toggle,
+          },
+          content: {
+            replyTargetMessage: {
+              ...baseMessage,
+              id: "message-2",
+              sender_id: "user-b",
+              receiver_id: "user-a",
+              message: "pesan asal",
+              sender_name: "Tester",
+            },
+            focusReplyTargetMessage,
+          },
+        })}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("pesan asal"));
+
+    expect(focusReplyTargetMessage).not.toHaveBeenCalled();
+    expect(toggle).toHaveBeenCalledTimes(1);
+    const [, messageId, preferredSide] = toggle.mock.calls[0] as unknown as [
+      HTMLElement,
+      string,
+      "left" | "right",
+    ];
     expect(messageId).toBe("message-3");
     expect(preferredSide).toBe("left");
   });
@@ -270,6 +318,64 @@ describe("MessageItem", () => {
     );
 
     expect(screen.getByText("0%")).toBeTruthy();
+  });
+
+  it("uses a one-row grid for grouped image bubbles with two attachments", () => {
+    const groupedMessages = Array.from({ length: 2 }, (_, index) => ({
+      ...baseMessage,
+      id: `image-${index + 1}`,
+      message: `images/channel/chat-${index + 1}.png`,
+      message_type: "image" as const,
+      file_mime_type: "image/png",
+      file_storage_path: `images/channel/chat-${index + 1}.png`,
+      file_name: `Chat-${index + 1}.png`,
+    }));
+
+    render(
+      <MessageItem
+        model={createModel({
+          message: groupedMessages[1],
+          content: {
+            groupedImageMessages: groupedMessages,
+            getImageMessageUrl: (targetMessage) => targetMessage.message,
+          },
+        })}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Aksi grup gambar" }).style.aspectRatio).toBe(
+      "2 / 1",
+    );
+  });
+
+  it("shows two tiles with an overflow count for grouped image bubbles with three attachments", () => {
+    const groupedMessages = Array.from({ length: 3 }, (_, index) => ({
+      ...baseMessage,
+      id: `image-${index + 1}`,
+      message: `images/channel/chat-${index + 1}.png`,
+      message_type: "image" as const,
+      file_mime_type: "image/png",
+      file_storage_path: `images/channel/chat-${index + 1}.png`,
+      file_name: `Chat-${index + 1}.png`,
+    }));
+
+    const { container } = render(
+      <MessageItem
+        model={createModel({
+          message: groupedMessages[2],
+          content: {
+            groupedImageMessages: groupedMessages,
+            getImageMessageUrl: (targetMessage) => targetMessage.message,
+          },
+        })}
+      />,
+    );
+
+    expect(container.querySelectorAll("[data-chat-image-group-tile-id]")).toHaveLength(2);
+    expect(screen.getByText("+1")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Aksi grup gambar" }).style.aspectRatio).toBe(
+      "2 / 1",
+    );
   });
 
   it("selects every image id in a grouped bubble during selection mode", () => {
@@ -457,6 +563,59 @@ describe("MessageItem", () => {
     );
 
     expect(container.querySelector('[data-chat-menu-id="grouped-image-menu"]')).toBeTruthy();
+  });
+
+  it("lets grouped image bubbles capture reply-panel clicks while a message menu is active", () => {
+    const groupedMessages = Array.from({ length: 2 }, (_, index) => ({
+      ...baseMessage,
+      id: `image-${index + 1}`,
+      message: `images/channel/chat-${index + 1}.png`,
+      message_type: "image" as const,
+      file_mime_type: "image/png",
+      file_storage_path: `images/channel/chat-${index + 1}.png`,
+      file_name: `Chat-${index + 1}.png`,
+      reply_to_id: "message-source",
+    }));
+    const toggle = vi.fn();
+    const focusReplyTargetMessage = vi.fn();
+
+    render(
+      <MessageItem
+        model={createModel({
+          message: groupedMessages[1],
+          menu: {
+            openMessageId: "image-2",
+            dimmingMessageId: "image-2",
+            toggle,
+          },
+          content: {
+            replyTargetMessage: {
+              ...baseMessage,
+              id: "message-source",
+              sender_id: "user-b",
+              receiver_id: "user-a",
+              message: "pesan asal",
+              sender_name: "Tester",
+            },
+            groupedImageMessages: groupedMessages,
+            getImageMessageUrl: (targetMessage) => targetMessage.message,
+            focusReplyTargetMessage,
+          },
+        })}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("pesan asal"));
+
+    expect(focusReplyTargetMessage).not.toHaveBeenCalled();
+    expect(toggle).toHaveBeenCalledTimes(1);
+    const [, messageId, preferredSide] = toggle.mock.calls[0] as unknown as [
+      HTMLElement,
+      string,
+      "left" | "right",
+    ];
+    expect(messageId).toBe("image-2");
+    expect(preferredSide).toBe("left");
   });
 
   it("anchors grouped document menus to the outer bubble when clicking the bubble area", () => {
