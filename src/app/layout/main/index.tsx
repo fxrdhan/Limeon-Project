@@ -1,36 +1,36 @@
-import { Suspense, lazy, useCallback, useEffect, useState } from 'react';
-import { Outlet } from 'react-router-dom';
-import Navbar from '@/app/layout/navbar';
-import Sidebar from '@/app/layout/sidebar';
-import ChatSidebar from '@/app/layout/chat-sidebar';
-import { usePageFocusBlockStore } from '@/store/pageFocusBlockStore';
-import { useChatSidebarStore } from '@/store/chatSidebarStore';
+import { Suspense, lazy, useCallback, useEffect, useState } from "react";
+import { Outlet } from "react-router-dom";
+import Navbar from "@/app/layout/navbar";
+import Sidebar from "@/app/layout/sidebar";
+import ChatSidebar from "@/app/layout/chat-sidebar";
+import { usePageFocusBlockStore } from "@/store/pageFocusBlockStore";
+import { useChatSidebarStore } from "@/store/chatSidebarStore";
 
-const PresenceRuntimeHost = lazy(
-  () => import('@/features/chat-sidebar/presence-host')
-);
-const ChatRuntimeHost = lazy(
-  () => import('@/features/chat-sidebar/runtime-host')
-);
+const PresenceRuntimeHost = lazy(() => import("@/features/chat-sidebar/presence-host"));
+const ChatRuntimeHost = lazy(() => import("@/features/chat-sidebar/runtime-host"));
+
+const SIDEBAR_LOCK_STORAGE_KEY = "pharmasys.sidebar.locked";
+
+const readInitialSidebarLocked = () =>
+  window.localStorage.getItem(SIDEBAR_LOCK_STORAGE_KEY) === "true";
 
 const MainLayout = () => {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
-  const [isLocked, setLockState] = useState(false);
-  const [shouldLoadPresenceRuntime, setShouldLoadPresenceRuntime] =
-    useState(false);
+  const [initialSidebarLocked] = useState(readInitialSidebarLocked);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(!initialSidebarLocked);
+  const [isLocked, setLockState] = useState(initialSidebarLocked);
+  const [shouldLoadPresenceRuntime, setShouldLoadPresenceRuntime] = useState(false);
   const [shouldLoadChatRuntime, setShouldLoadChatRuntime] = useState(false);
-  const setIsLocked = useCallback(
-    (updater: boolean | ((prev: boolean) => boolean)) => {
-      setLockState(prev =>
-        typeof updater === 'function' ? updater(prev) : updater
-      );
-    },
-    []
-  );
-  const isChatSidebarOpen = useChatSidebarStore(state => state.isOpen);
-  const chatTargetUser = useChatSidebarStore(state => state.targetUser);
-  const closeChatSidebar = useChatSidebarStore(state => state.closeChat);
-  const setPageFocusBlocked = usePageFocusBlockStore(state => state.setBlocked);
+  const setIsLocked = useCallback((updater: boolean | ((prev: boolean) => boolean)) => {
+    setLockState((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      window.localStorage.setItem(SIDEBAR_LOCK_STORAGE_KEY, String(next));
+      return next;
+    });
+  }, []);
+  const isChatSidebarOpen = useChatSidebarStore((state) => state.isOpen);
+  const chatTargetUser = useChatSidebarStore((state) => state.targetUser);
+  const closeChatSidebar = useChatSidebarStore((state) => state.closeChat);
+  const setPageFocusBlocked = usePageFocusBlockStore((state) => state.setBlocked);
 
   const expandSidebar = useCallback(() => {
     if (!isLocked) {
@@ -45,7 +45,7 @@ const MainLayout = () => {
   }, [isLocked]);
 
   const toggleLock = useCallback(() => {
-    setIsLocked(prevIsLocked => {
+    setIsLocked((prevIsLocked) => {
       const newLockState = !prevIsLocked;
       if (newLockState && sidebarCollapsed) {
         setSidebarCollapsed(false);
@@ -68,7 +68,7 @@ const MainLayout = () => {
     () => () => {
       setPageFocusBlocked(false);
     },
-    [setPageFocusBlocked]
+    [setPageFocusBlocked],
   );
 
   const loadPresenceRuntime = useCallback(() => {
@@ -90,17 +90,17 @@ const MainLayout = () => {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.ctrlKey && (event.key === 's' || event.key === 'S')) {
+      if (event.ctrlKey && (event.key === "s" || event.key === "S")) {
         event.preventDefault();
         // Toggle sidebar state and lock it
-        setSidebarCollapsed(prevCollapsed => !prevCollapsed);
+        setSidebarCollapsed((prevCollapsed) => !prevCollapsed);
         setIsLocked(true);
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, [setIsLocked, setSidebarCollapsed]);
 
@@ -119,10 +119,7 @@ const MainLayout = () => {
           {shouldLoadPresenceRuntime ? <PresenceRuntimeHost /> : null}
           {shouldLoadChatRuntime ? <ChatRuntimeHost /> : null}
         </Suspense>
-        <Navbar
-          sidebarCollapsed={sidebarCollapsed}
-          onOnlineUsersIntent={loadPresenceRuntime}
-        />
+        <Navbar sidebarCollapsed={sidebarCollapsed} onOnlineUsersIntent={loadPresenceRuntime} />
 
         <div className="flex flex-1 overflow-hidden">
           <main className="flex-1 overflow-y-auto bg-white p-4 text-slate-800">

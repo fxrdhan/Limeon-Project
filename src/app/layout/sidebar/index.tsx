@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type JSX } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type JSX } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import {
@@ -16,10 +16,25 @@ import {
 } from "react-icons/tb";
 
 const ITEM_MASTER_PATH = "/master-data/item-master";
+const BRAND_NAME = "PharmaSys";
 const SUBMENU_ITEM_HEIGHT = 48;
 const EXPANDED_CONTENT_DELAY_MS = 90;
+const HOVER_HIGHLIGHT_CLEAR_DELAY_MS = 80;
 
 type SubmenuItem = { name: string; path: string };
+
+type SidebarHoverTarget =
+  | { type: "menu"; menuKey: string }
+  | { type: "submenu"; menuKey: string; index: number };
+
+type SidebarHighlightFrame = {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  isVisible: boolean;
+  shouldAnimate: boolean;
+};
 
 interface MenuItem {
   key: string;
@@ -189,19 +204,53 @@ const submenuItemVariants = {
   },
 } as const;
 
+const brandTitleVariants = {
+  hidden: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.018,
+      staggerDirection: -1,
+    },
+  },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.026,
+      delayChildren: 0.02,
+    },
+  },
+} as const;
+
+const brandTitleCharacterVariants = {
+  hidden: {
+    opacity: 0,
+    x: -3,
+  },
+  visible: {
+    opacity: 1,
+    x: 0,
+  },
+} as const;
+
+const sidebarBackgroundTransition = {
+  type: "spring",
+  stiffness: 520,
+  damping: 42,
+  mass: 0.7,
+} as const;
+
+const getSidebarTargetId = (target: SidebarHoverTarget) =>
+  target.type === "menu" ? `menu:${target.menuKey}` : `submenu:${target.menuKey}:${target.index}`;
+
 const getMenuButtonClassName = ({
-  collapsed,
   isActive,
+  isHighlighted,
 }: {
-  collapsed: boolean;
   isActive: boolean;
+  isHighlighted: boolean;
 }) =>
-  `relative flex h-10 w-full cursor-pointer items-center justify-between rounded-xl py-6 pl-2 pr-4 text-left transition-all duration-150 group focus-visible:outline-hidden outline-hidden border-0 focus:outline-hidden active:outline-hidden ${
-    isActive
-      ? collapsed
-        ? "font-medium text-primary"
-        : "bg-primary font-medium text-white"
-      : "text-slate-600 hover:bg-slate-100"
+  `relative flex h-10 w-full cursor-pointer items-center justify-between overflow-hidden rounded-xl py-6 pl-2 pr-4 text-left transition-all duration-150 group focus-visible:outline-hidden outline-hidden border-0 focus:outline-hidden active:outline-hidden ${
+    isActive || isHighlighted ? "font-medium text-primary" : "text-slate-600 hover:text-primary"
   }`;
 
 const isRouteActive = (pathname: string, path: string) => {
@@ -261,26 +310,20 @@ const getActiveSubmenuIndex = (pathname: string, children: SubmenuItem[]) =>
 const SidebarMenuLabel = ({
   collapsed,
   icon,
-  isActive,
   name,
 }: {
   collapsed: boolean;
   icon: JSX.Element;
-  isActive: boolean;
   name: string;
 }) => (
-  <div className="flex items-center overflow-hidden">
-    <div
-      className={`flex shrink-0 items-center justify-center transition-colors duration-200 ${
-        isActive && !collapsed ? "text-white" : ""
-      }`}
-    >
+  <div className="relative z-10 flex items-center overflow-hidden">
+    <div className="flex shrink-0 items-center justify-center transition-colors duration-200">
       {icon}
     </div>
     <span
       className={`ml-3 truncate transition-all duration-300 ease-in-out ${
         collapsed ? "max-w-0 opacity-0" : "max-w-full opacity-100"
-      } ${isActive && !collapsed ? "text-white" : ""}`}
+      }`}
     >
       {name}
     </span>
@@ -289,6 +332,27 @@ const SidebarMenuLabel = ({
 
 const LockToggleIcon = ({ isLocked }: { isLocked: boolean }) => (
   <div className="transition-all duration-200">{isLocked ? <LockIcon /> : <UnlockIcon />}</div>
+);
+
+const BrandTitle = () => (
+  <motion.h2
+    className="ml-4 flex overflow-hidden whitespace-nowrap text-lg font-bold text-slate-800"
+    initial="hidden"
+    animate="visible"
+    exit="hidden"
+    variants={brandTitleVariants}
+  >
+    {BRAND_NAME.split("").map((character, index) => (
+      <motion.span
+        key={`${character}-${index}`}
+        className="inline-block"
+        variants={brandTitleCharacterVariants}
+        transition={{ duration: 0.08, ease: "easeOut" }}
+      >
+        {character}
+      </motion.span>
+    ))}
+  </motion.h2>
 );
 
 const Sidebar = ({
@@ -308,12 +372,75 @@ const Sidebar = ({
       >,
   );
   const [manuallyClosedMenus, setManuallyClosedMenus] = useState<Set<string>>(() => new Set());
+  const [hoveredSidebarItem, setHoveredSidebarItem] = useState<SidebarHoverTarget | null>(null);
+  const [highlightFrame, setHighlightFrame] = useState<SidebarHighlightFrame>({
+    left: 0,
+    top: 0,
+    width: 0,
+    height: 0,
+    isVisible: false,
+    shouldAnimate: false,
+  });
   const [isExpandedContentReady, setIsExpandedContentReady] = useState(!collapsed);
+  const navRef = useRef<HTMLElement | null>(null);
+  const sidebarItemRefs = useRef(new Map<string, HTMLElement>());
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const menuHoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const highlightClearTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const showExpandedContent = !collapsed && isExpandedContentReady;
   const isVisuallyCollapsed = collapsed || !isExpandedContentReady;
+  const highlightedSidebarItem = hoveredSidebarItem;
+  const highlightedSidebarItemId = highlightedSidebarItem
+    ? getSidebarTargetId(highlightedSidebarItem)
+    : null;
+
+  const setSidebarItemRef = useCallback(
+    (target: SidebarHoverTarget, element: HTMLElement | null) => {
+      const targetId = getSidebarTargetId(target);
+
+      if (element) {
+        sidebarItemRefs.current.set(targetId, element);
+        return;
+      }
+
+      sidebarItemRefs.current.delete(targetId);
+    },
+    [],
+  );
+
+  const clearHighlightClearTimeout = useCallback(() => {
+    if (highlightClearTimeoutRef.current) {
+      clearTimeout(highlightClearTimeoutRef.current);
+      highlightClearTimeoutRef.current = null;
+    }
+  }, []);
+
+  const setHoveredSidebarTarget = useCallback(
+    (target: SidebarHoverTarget) => {
+      clearHighlightClearTimeout();
+      setHoveredSidebarItem(target);
+    },
+    [clearHighlightClearTimeout],
+  );
+
+  const scheduleHoveredSidebarClear = useCallback(
+    (menuKey?: string) => {
+      clearHighlightClearTimeout();
+
+      highlightClearTimeoutRef.current = setTimeout(() => {
+        setHoveredSidebarItem((currentItem) => {
+          if (menuKey && currentItem?.menuKey !== menuKey) {
+            return currentItem;
+          }
+
+          return null;
+        });
+        highlightClearTimeoutRef.current = null;
+      }, HOVER_HIGHLIGHT_CLEAR_DELAY_MS);
+    },
+    [clearHighlightClearTimeout],
+  );
 
   const toggleMenu = useCallback(
     (menuKey: string) => {
@@ -373,12 +500,14 @@ const Sidebar = ({
       menuHoverTimeoutRef.current = null;
     }
 
+    clearHighlightClearTimeout();
+
     if (!isLocked && collapsed) {
       hoverTimeoutRef.current = setTimeout(() => {
         expandSidebar();
       }, 100);
     }
-  }, [collapsed, expandSidebar, isLocked]);
+  }, [clearHighlightClearTimeout, collapsed, expandSidebar, isLocked]);
 
   const handleMouseLeaveSidebar = useCallback(() => {
     if (hoverTimeoutRef.current) {
@@ -390,6 +519,9 @@ const Sidebar = ({
       collapseSidebar();
     }
 
+    clearHighlightClearTimeout();
+    setHoveredSidebarItem(null);
+
     if (!collapsed) {
       menuHoverTimeoutRef.current = setTimeout(() => {
         setOpenMenus(
@@ -400,7 +532,14 @@ const Sidebar = ({
         );
       }, 200);
     }
-  }, [collapseSidebar, collapsed, isLocked, manuallyClosedMenus, pathname]);
+  }, [
+    clearHighlightClearTimeout,
+    collapseSidebar,
+    collapsed,
+    isLocked,
+    manuallyClosedMenus,
+    pathname,
+  ]);
 
   useEffect(() => {
     if (collapsed) {
@@ -429,6 +568,9 @@ const Sidebar = ({
       }
       if (menuHoverTimeoutRef.current) {
         clearTimeout(menuHoverTimeoutRef.current);
+      }
+      if (highlightClearTimeoutRef.current) {
+        clearTimeout(highlightClearTimeoutRef.current);
       }
     },
     [],
@@ -463,6 +605,55 @@ const Sidebar = ({
     };
   }, [collapsed, pathname]);
 
+  useLayoutEffect(() => {
+    const navElement = navRef.current;
+
+    if (!navElement || !highlightedSidebarItemId) {
+      setHighlightFrame((currentFrame) =>
+        currentFrame.isVisible ? { ...currentFrame, isVisible: false } : currentFrame,
+      );
+      return;
+    }
+
+    const targetElement = sidebarItemRefs.current.get(highlightedSidebarItemId);
+
+    if (!targetElement) {
+      setHighlightFrame((currentFrame) =>
+        currentFrame.isVisible ? { ...currentFrame, isVisible: false } : currentFrame,
+      );
+      return;
+    }
+
+    const updateHighlightFrame = () => {
+      const navRect = navElement.getBoundingClientRect();
+      const targetRect = targetElement.getBoundingClientRect();
+
+      setHighlightFrame((currentFrame) => ({
+        left: targetRect.left - navRect.left + navElement.scrollLeft,
+        top: targetRect.top - navRect.top + navElement.scrollTop,
+        width: targetRect.width,
+        height: targetRect.height,
+        isVisible: true,
+        shouldAnimate: currentFrame.isVisible,
+      }));
+    };
+
+    updateHighlightFrame();
+    const animationFrameId = requestAnimationFrame(updateHighlightFrame);
+    const resizeObserver =
+      typeof ResizeObserver === "undefined" ? null : new ResizeObserver(updateHighlightFrame);
+
+    resizeObserver?.observe(navElement);
+    resizeObserver?.observe(targetElement);
+    window.addEventListener("resize", updateHighlightFrame);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", updateHighlightFrame);
+    };
+  }, [highlightedSidebarItemId, openMenus, showExpandedContent]);
+
   return (
     <aside
       onMouseEnter={handleMouseEnterSidebar}
@@ -477,13 +668,9 @@ const Sidebar = ({
             <div className="flex h-10 w-10 min-w-8 shrink-0 items-center justify-center rounded-xl bg-primary">
               <span className="text-xl font-bold text-white">P</span>
             </div>
-            <h2
-              className={`ml-2 text-lg font-bold text-slate-800 transition-all duration-200 ${
-                isVisuallyCollapsed ? "w-0 scale-0 opacity-0" : "w-auto scale-100 opacity-100"
-              }`}
-            >
-              PharmaSys
-            </h2>
+            <AnimatePresence initial={false}>
+              {isVisuallyCollapsed ? null : <BrandTitle />}
+            </AnimatePresence>
           </div>
 
           {showExpandedContent ? (
@@ -499,26 +686,65 @@ const Sidebar = ({
           ) : null}
         </div>
 
-        <nav className="grow overflow-y-auto px-4 py-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <nav
+          ref={navRef}
+          className="relative grow overflow-y-auto px-4 py-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        >
+          <motion.div
+            aria-hidden="true"
+            className={`pointer-events-none absolute left-0 top-0 z-0 bg-primary-light ${
+              highlightedSidebarItem?.type === "submenu" ? "rounded-r-xl" : "rounded-xl"
+            }`}
+            initial={false}
+            animate={{
+              opacity: highlightFrame.isVisible ? 1 : 0,
+              x: highlightFrame.left,
+              y: highlightFrame.top,
+              width: highlightFrame.width,
+              height: highlightFrame.height,
+            }}
+            transition={
+              highlightFrame.shouldAnimate ? sidebarBackgroundTransition : { duration: 0 }
+            }
+          />
           {MENU_ITEMS.map((item) => {
             const menuKey = item.key;
             const isMenuActive =
               isRouteActive(pathname, item.path) || hasActiveChildRoute(pathname, item.children);
-            const menuButtonClassName = getMenuButtonClassName({
-              collapsed: isVisuallyCollapsed,
-              isActive: isMenuActive,
-            });
 
             if (item.children) {
               const children = item.children;
               const activeChildIndex = getActiveSubmenuIndex(pathname, children);
+              const isHoveredMenu =
+                hoveredSidebarItem?.type === "menu" && hoveredSidebarItem.menuKey === item.key;
+              const isHighlightedMenu =
+                isHoveredMenu || (!hoveredSidebarItem && isMenuActive && activeChildIndex === -1);
+              const menuButtonClassName = getMenuButtonClassName({
+                isActive: isMenuActive,
+                isHighlighted: isHighlightedMenu,
+              });
 
               return (
-                <div key={item.key}>
+                <div
+                  key={item.key}
+                  className="relative z-10"
+                  onMouseLeave={() => {
+                    scheduleHoveredSidebarClear(menuKey);
+                  }}
+                >
                   <button
+                    ref={(element) => {
+                      setSidebarItemRef({ type: "menu", menuKey }, element);
+                    }}
                     type="button"
                     onClick={() => toggleMenu(menuKey)}
-                    onMouseEnter={() => handleMenuMouseEnter(menuKey)}
+                    onMouseEnter={() => {
+                      setHoveredSidebarTarget({ type: "menu", menuKey });
+                      handleMenuMouseEnter(menuKey);
+                    }}
+                    onFocus={() => {
+                      setHoveredSidebarTarget({ type: "menu", menuKey });
+                    }}
                     aria-expanded={showExpandedContent && openMenus[menuKey]}
                     className={menuButtonClassName}
                     style={menuButtonStyle}
@@ -526,7 +752,6 @@ const Sidebar = ({
                     <SidebarMenuLabel
                       collapsed={isVisuallyCollapsed}
                       icon={item.icon}
-                      isActive={isMenuActive}
                       name={item.name}
                     />
 
@@ -536,7 +761,7 @@ const Sidebar = ({
                           rotate: openMenus[menuKey] ? 180 : 0,
                         }}
                         transition={{ duration: 0.3, ease: "easeInOut" }}
-                        className={isMenuActive ? "text-white" : ""}
+                        className="relative z-10"
                       >
                         <ChevronDownIcon />
                       </motion.div>
@@ -558,14 +783,20 @@ const Sidebar = ({
                           duration: 0.4,
                           ease: "easeInOut",
                         }}
-                        onMouseEnter={() => handleMenuMouseEnter(menuKey)}
+                        onMouseEnter={() => {
+                          clearHighlightClearTimeout();
+                          handleMenuMouseEnter(menuKey);
+                        }}
+                        onMouseLeave={() => {
+                          scheduleHoveredSidebarClear(menuKey);
+                        }}
                         className="overflow-hidden"
                       >
                         <motion.div
                           variants={submenuContainerVariants}
                           className="relative py-2 pl-5 pr-4"
                         >
-                          <div className="absolute bottom-4 left-5 top-4 w-0.5 bg-slate-300" />
+                          <div className="absolute bottom-2 left-5 top-2 z-10 w-0.5 bg-slate-300" />
 
                           <AnimatePresence>
                             {activeChildIndex !== -1 ? (
@@ -599,14 +830,44 @@ const Sidebar = ({
                             ) : null}
                           </AnimatePresence>
 
-                          {children.map((child) => {
+                          {children.map((child, childIndex) => {
                             const isActiveChild = isSubmenuItemActive(pathname, child.path);
+                            const isHoveredChild =
+                              hoveredSidebarItem?.type === "submenu" &&
+                              hoveredSidebarItem.menuKey === item.key &&
+                              hoveredSidebarItem.index === childIndex;
+                            const isHighlightedChild =
+                              isHoveredChild || (!hoveredSidebarItem && isActiveChild);
 
                             return (
                               <div
+                                ref={(element) => {
+                                  setSidebarItemRef(
+                                    {
+                                      type: "submenu",
+                                      menuKey: item.key,
+                                      index: childIndex,
+                                    },
+                                    element,
+                                  );
+                                }}
                                 key={child.path}
-                                className="relative"
+                                className="relative z-10"
                                 style={{ height: SUBMENU_ITEM_HEIGHT }}
+                                onMouseEnter={() => {
+                                  setHoveredSidebarTarget({
+                                    type: "submenu",
+                                    menuKey: item.key,
+                                    index: childIndex,
+                                  });
+                                }}
+                                onFocus={() => {
+                                  setHoveredSidebarTarget({
+                                    type: "submenu",
+                                    menuKey: item.key,
+                                    index: childIndex,
+                                  });
+                                }}
                               >
                                 <AnimatePresence>
                                   {isActiveChild ? (
@@ -634,7 +895,10 @@ const Sidebar = ({
                                   ) : null}
                                 </AnimatePresence>
 
-                                <motion.div variants={submenuItemVariants}>
+                                <motion.div
+                                  variants={submenuItemVariants}
+                                  className="relative z-10"
+                                >
                                   <Link
                                     to={child.path}
                                     onClick={(event) => {
@@ -646,12 +910,13 @@ const Sidebar = ({
                                       }
                                     }}
                                     className={`block overflow-hidden text-ellipsis whitespace-nowrap rounded-xl px-6 py-3 text-sm transition-all duration-200 focus-visible:outline-hidden outline-hidden focus:outline-hidden active:outline-hidden ${
-                                      isActiveChild ? "font-medium" : ""
+                                      isActiveChild || isHighlightedChild ? "font-medium" : ""
                                     }`}
                                     style={{
-                                      color: isActiveChild
-                                        ? submenuLinkColors.active
-                                        : submenuLinkColors.inactive,
+                                      color:
+                                        isActiveChild || isHighlightedChild
+                                          ? submenuLinkColors.active
+                                          : submenuLinkColors.inactive,
                                     }}
                                   >
                                     {child.name}
@@ -668,14 +933,34 @@ const Sidebar = ({
               );
             }
 
+            const isHoveredMenu =
+              hoveredSidebarItem?.type === "menu" && hoveredSidebarItem.menuKey === item.key;
+            const isHighlightedMenu = isHoveredMenu || (!hoveredSidebarItem && isMenuActive);
+            const menuButtonClassName = getMenuButtonClassName({
+              isActive: isMenuActive,
+              isHighlighted: isHighlightedMenu,
+            });
+
             return (
-              <div key={item.key}>
+              <div key={item.key} className="relative z-10">
                 <button
+                  ref={(element) => {
+                    setSidebarItemRef({ type: "menu", menuKey }, element);
+                  }}
                   type="button"
                   onClick={() => {
                     if (pathname !== item.path) {
                       void navigate(item.path);
                     }
+                  }}
+                  onMouseEnter={() => {
+                    setHoveredSidebarTarget({ type: "menu", menuKey });
+                  }}
+                  onMouseLeave={() => {
+                    scheduleHoveredSidebarClear(menuKey);
+                  }}
+                  onFocus={() => {
+                    setHoveredSidebarTarget({ type: "menu", menuKey });
                   }}
                   className={menuButtonClassName}
                   style={menuButtonStyle}
@@ -683,7 +968,6 @@ const Sidebar = ({
                   <SidebarMenuLabel
                     collapsed={isVisuallyCollapsed}
                     icon={item.icon}
-                    isActive={isMenuActive}
                     name={item.name}
                   />
                 </button>

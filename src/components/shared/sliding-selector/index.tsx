@@ -318,7 +318,7 @@ export const SlidingSelector = <T,>({
                   sizeClasses.button,
                   shapeClasses.button,
                   {
-                    "hover:bg-emerald-100 hover:text-secondary": !isActive && !option.disabled,
+                    "hover:bg-primary-light hover:text-secondary": !isActive && !option.disabled,
                     "opacity-50 cursor-not-allowed": option.disabled,
                   },
                 )}
@@ -397,7 +397,7 @@ export const SlidingSelector = <T,>({
                 aria-label={isExpanded ? "Collapse tabs" : "Expand tabs"}
                 aria-expanded={isExpanded}
                 className={classNames(
-                  "ml-1 p-2 hover:bg-emerald-100 transition-colors duration-150 group",
+                  "ml-1 p-2 hover:bg-primary-light transition-colors duration-150 group",
                   shapeClasses.button,
                 )}
               >

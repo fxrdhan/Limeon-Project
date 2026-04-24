@@ -20,7 +20,7 @@ export const PaginationButton: React.FC<PaginationButtonProps> = ({
         "p-2 rounded-full focus:outline-hidden transition-colors duration-150 cursor-pointer select-none border-0 bg-transparent",
         disabled
           ? "opacity-50 cursor-not-allowed"
-          : "hover:bg-emerald-100 hover:text-secondary transition-all duration-300 ease-in-out",
+          : "hover:bg-primary-light hover:text-secondary transition-all duration-300 ease-in-out",
       )}
       aria-label={ariaLabel}
     >
