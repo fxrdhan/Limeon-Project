@@ -1,4 +1,4 @@
-import { RefObject, useEffect, useRef, useState } from "react";
+import { RefObject, useLayoutEffect, useRef, useState } from "react";
 
 export interface Position {
   top: number;
@@ -26,7 +26,7 @@ export const useSelectorPosition = ({
   const [position, setPosition] = useState<Position>({ top: 0, left: 0 });
   const positionRef = useRef<Position>({ top: 0, left: 0 });
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isOpen) return;
 
     const readPosition = (): Position | null => {

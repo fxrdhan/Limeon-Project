@@ -58,10 +58,11 @@ function BaseSelector<T>({
   // Use internal search term (priority) or external search term
   const searchTerm = internalSearchTerm || externalSearchTerm;
   const activeContentKey = contentKey ?? config.headerText;
+  const activeContentKeyRef = useRef(activeContentKey);
+  activeContentKeyRef.current = activeContentKey;
 
   useLayoutEffect(() => {
     if (!isOpen) return;
-    itemRefs.current = [];
     setInternalSearchTerm("");
     setHoveredIndex(null);
     if (listContainerRef.current) {
@@ -300,20 +301,21 @@ function BaseSelector<T>({
   useEffect(() => {
     if (!isOpen || !showContent) return;
 
-    const scrollSelectedItemIntoView = () => {
+    const scrollActiveBackgroundItemIntoView = () => {
       const container = listContainerRef.current;
-      const selectedElement = itemRefs.current[selectedIndex];
+      const selectedElement = itemRefs.current[backgroundIndex];
 
       if (!container || !selectedElement) return;
 
-      const isLastItem = selectedIndex === filteredItems.length - 1;
+      const isLastItem = backgroundIndex === filteredItems.length - 1;
+      const containerRect = container.getBoundingClientRect();
       const itemRect = selectedElement.getBoundingClientRect();
 
-      const itemTop = selectedElement.offsetTop;
+      const itemTop = itemRect.top - containerRect.top + container.scrollTop;
       const itemBottom = itemTop + itemRect.height;
       const containerScrollTop = container.scrollTop;
       const containerHeight = container.clientHeight;
-      const visibilityInset = 12;
+      const visibilityInset = 4;
 
       // Check if item is above visible area
       /* c8 ignore start */
@@ -341,9 +343,22 @@ function BaseSelector<T>({
       /* c8 ignore end */
     };
 
-    const animationFrameId = requestAnimationFrame(scrollSelectedItemIntoView);
-    return () => cancelAnimationFrame(animationFrameId);
-  }, [selectedIndex, isOpen, filteredItems, showContent]);
+    const frameIds: number[] = [];
+    const scheduleScroll = (remainingFrames: number) => {
+      const frameId = requestAnimationFrame(() => {
+        scrollActiveBackgroundItemIntoView();
+        if (remainingFrames > 0) {
+          scheduleScroll(remainingFrames - 1);
+        }
+      });
+      frameIds.push(frameId);
+    };
+
+    scheduleScroll(2);
+    return () => {
+      frameIds.forEach((frameId) => cancelAnimationFrame(frameId));
+    };
+  }, [activeContentKey, backgroundIndex, isOpen, filteredItems, showContent]);
 
   // Notify parent of highlighted item changes for live preview
   useEffect(() => {
@@ -509,7 +524,11 @@ function BaseSelector<T>({
                     }}
                   >
                     <div
-                      ref={listContainerRef}
+                      ref={(element) => {
+                        if (activeContentKey === activeContentKeyRef.current) {
+                          listContainerRef.current = element;
+                        }
+                      }}
                       className="max-h-65 overflow-y-auto overflow-x-hidden py-1"
                     >
                       {filteredItems.length === 0 ? (
@@ -520,7 +539,7 @@ function BaseSelector<T>({
                         </div>
                       ) : (
                         <div
-                          className="pb-1 relative isolate"
+                          className="relative isolate"
                           onMouseLeave={() => setHoveredIndex(null)}
                         >
                           {/* Items */}
@@ -539,7 +558,9 @@ function BaseSelector<T>({
                               <div
                                 key={config.getItemKey(item)}
                                 ref={(el) => {
-                                  itemRefs.current[index] = el;
+                                  if (activeContentKey === activeContentKeyRef.current) {
+                                    itemRefs.current[index] = el;
+                                  }
                                 }}
                                 className="px-3 py-2 cursor-pointer flex items-center gap-3 mx-1 rounded-lg relative transition-colors duration-150"
                                 onClick={() => onSelect(item)}
