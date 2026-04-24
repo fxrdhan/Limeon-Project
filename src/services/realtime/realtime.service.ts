@@ -4,7 +4,24 @@ import type { RealtimeChannel, RealtimeChannelOptions } from "@supabase/supabase
 const getRealtimeTopic = (name: string) => `realtime:${name}`;
 
 type InternalRealtimeClient = typeof supabase.realtime & {
+  channels: RealtimeChannel[];
   _remove: (channel: RealtimeChannel) => void;
+  __pharmaSysRemoveChannelPatch?: true;
+};
+
+const getRealtimeClient = (): InternalRealtimeClient => {
+  const realtimeClient = supabase.realtime as InternalRealtimeClient;
+
+  if (!realtimeClient.__pharmaSysRemoveChannelPatch) {
+    realtimeClient._remove = (channel: RealtimeChannel) => {
+      realtimeClient.channels = realtimeClient.channels.filter(
+        (currentChannel) => currentChannel !== channel,
+      );
+    };
+    realtimeClient.__pharmaSysRemoveChannelPatch = true;
+  }
+
+  return realtimeClient;
 };
 
 export const realtimeService = {
@@ -16,13 +33,21 @@ export const realtimeService = {
     return this.createChannel(name, options);
   },
   async removeChannel(channel: RealtimeChannel) {
-    const realtimeClient = supabase.realtime as InternalRealtimeClient;
-    const status = await channel.unsubscribe();
+    const realtimeClient = getRealtimeClient();
 
-    // Force local cleanup even when Supabase returns timeout/error so
-    // the topic does not stay registered during StrictMode/HMR reruns.
-    channel.teardown();
+    // Detach locally before awaiting the server leave ack. In React dev
+    // StrictMode, the replacement channel can be created immediately after
+    // cleanup starts, and Supabase reuses registered topics synchronously.
     realtimeClient._remove(channel);
+    let status: "ok" | "timed out" | "error" = "ok";
+
+    try {
+      status = await channel.unsubscribe();
+    } catch {
+      status = "error";
+    } finally {
+      channel.teardown();
+    }
 
     if (supabase.getChannels().length === 0) {
       void realtimeClient.disconnect();
