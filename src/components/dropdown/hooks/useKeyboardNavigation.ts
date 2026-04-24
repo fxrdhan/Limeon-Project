@@ -33,6 +33,9 @@ export const useKeyboardNavigation = ({
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
   const [isKeyboardNavigation, setIsKeyboardNavigation] = useState(false);
   const [pendingHighlightedIndex, setPendingHighlightedIndex] = useState<number | null>(null);
+  const [pendingHighlightSourceIndex, setPendingHighlightSourceIndex] = useState<number | null>(
+    null,
+  );
 
   // Track mouse movement to exit keyboard mode
   const mouseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -47,6 +50,7 @@ export const useKeyboardNavigation = ({
     }
     keyboardHighlightIndexRef.current = null;
     setPendingHighlightedIndex(null);
+    setPendingHighlightSourceIndex(null);
   }, []);
 
   const setHighlightedIndexSafely = useCallback(
@@ -260,7 +264,9 @@ export const useKeyboardNavigation = ({
             if (pendingHighlightTimeoutRef.current) {
               clearTimeout(pendingHighlightTimeoutRef.current);
             }
+            const sourceIndex = keyboardHighlightIndexRef.current ?? highlightedIndex;
             keyboardHighlightIndexRef.current = newIndex;
+            setPendingHighlightSourceIndex(sourceIndex);
             setPendingHighlightedIndex(newIndex);
             setHighlightedIndex(newIndex);
             if (newIndex >= 0 && items[newIndex]) {
@@ -270,7 +276,7 @@ export const useKeyboardNavigation = ({
               setPendingHighlightedIndex(null);
               keyboardHighlightIndexRef.current = null;
               pendingHighlightTimeoutRef.current = null;
-            }, 340);
+            }, 260);
             return;
           }
 
@@ -312,6 +318,7 @@ export const useKeyboardNavigation = ({
     isKeyboardNavigation,
     setIsKeyboardNavigation,
     pendingHighlightedIndex,
+    pendingHighlightSourceIndex,
     handleDropdownKeyDown,
     handleKeyDown,
   };

@@ -1,4 +1,5 @@
 import React, { RefObject } from "react";
+import { motion } from "motion/react";
 import type { DropdownOption } from "@/types";
 import { truncateText, shouldTruncateText } from "@/utils/text";
 import { DROPDOWN_CONSTANTS } from "../../constants";
@@ -12,6 +13,7 @@ interface OptionRowProps {
   // Visual states
   isSelected: boolean;
   isHighlighted: boolean;
+  suppressHighlightBackground: boolean;
   isKeyboardNavigation: boolean;
   isExpanded?: boolean;
 
@@ -40,7 +42,8 @@ const OptionRow: React.FC<OptionRowProps> = ({
   option,
   index,
   isSelected,
-  isHighlighted: _isHighlighted,
+  isHighlighted,
+  suppressHighlightBackground,
   isKeyboardNavigation,
   isExpanded = false,
   portalWidth,
@@ -140,9 +143,21 @@ const OptionRow: React.FC<OptionRowProps> = ({
       onFocus={handleFocus}
       onBlur={handleBlur}
     >
+      {isHighlighted && !suppressHighlightBackground && (
+        <motion.div
+          layoutId="dropdown-active-background"
+          className="pointer-events-none absolute inset-0 z-0 rounded-lg bg-primary/10"
+          transition={{
+            type: "spring",
+            stiffness: 400,
+            damping: 30,
+            mass: 0.8,
+          }}
+        />
+      )}
       {withRadio && <RadioIndicator isSelected={isSelected} isExpanded={shouldExpand} />}
       {withCheckbox && <CheckboxIndicator isSelected={isSelected} isExpanded={shouldExpand} />}
-      <span className="flex min-w-0 flex-1 items-center gap-2">
+      <span className="relative z-10 flex min-w-0 flex-1 items-center gap-2">
         <span
           className={`${baseTextClass} transition-all duration-200 text-left ${textStateClass} min-w-0 flex-1`}
           title={willTruncate && !shouldExpand ? option.name : undefined}

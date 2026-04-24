@@ -21,6 +21,7 @@ export interface DropdownContextType {
   highlightedIndex: number;
   isKeyboardNavigation: boolean;
   pendingHighlightedIndex: number | null;
+  pendingHighlightSourceIndex: number | null;
   expandedId: string | null;
 
   // Validation state

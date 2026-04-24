@@ -1,13 +1,14 @@
-import { type FC } from 'react';
-import OptionRow from './options/OptionRow';
-import { useDropdownContext } from '../hooks/useDropdownContext';
-import type { OptionItemProps } from '../types';
+import { type FC } from "react";
+import OptionRow from "./options/OptionRow";
+import { useDropdownContext } from "../hooks/useDropdownContext";
+import type { OptionItemProps } from "../types";
 
 const OptionItem: FC<OptionItemProps> = ({
   option,
   index,
   isSelected,
   isHighlighted,
+  suppressHighlightBackground,
   isExpanded,
   onHighlight,
   dropdownMenuRef,
@@ -28,6 +29,7 @@ const OptionItem: FC<OptionItemProps> = ({
       index={index}
       isSelected={isSelected}
       isHighlighted={isHighlighted}
+      suppressHighlightBackground={suppressHighlightBackground}
       isKeyboardNavigation={isKeyboardNavigation}
       isExpanded={isExpanded}
       portalWidth={portalStyle?.width}

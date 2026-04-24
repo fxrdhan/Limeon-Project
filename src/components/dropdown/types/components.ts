@@ -1,4 +1,4 @@
-import { RefObject } from 'react';
+import { RefObject } from "react";
 
 export interface DropdownMenuProps {
   isFrozen?: boolean;
@@ -11,6 +11,7 @@ export interface OptionItemProps {
   index: number;
   isSelected: boolean;
   isHighlighted: boolean;
+  suppressHighlightBackground: boolean;
   isExpanded: boolean;
   onHighlight: (index: number) => void;
   dropdownMenuRef: RefObject<HTMLDivElement | null>;

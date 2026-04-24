@@ -307,6 +307,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     highlightedIndex,
     isKeyboardNavigation,
     pendingHighlightedIndex,
+    pendingHighlightSourceIndex,
     setHighlightedIndex,
     setIsKeyboardNavigation,
     handleDropdownKeyDown,
@@ -532,6 +533,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     highlightedIndex,
     isKeyboardNavigation,
     pendingHighlightedIndex,
+    pendingHighlightSourceIndex,
     expandedId,
 
     // Validation state
