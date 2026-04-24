@@ -1,12 +1,9 @@
-import type { Dispatch, SetStateAction } from 'react';
-import { useCallback } from 'react';
-import toast from 'react-hot-toast';
-import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
-import type { ChatMessage } from '../data/chatSidebarGateway';
-import type {
-  DeleteMessagesOptions,
-  DeleteMessagesResult,
-} from './chatComposerActionTypes';
+import type { Dispatch, SetStateAction } from "react";
+import { useCallback } from "react";
+import toast from "react-hot-toast";
+import { CHAT_SIDEBAR_TOASTER_ID } from "../constants";
+import type { ChatMessage } from "../data/chatSidebarGateway";
+import type { DeleteMessagesOptions, DeleteMessagesResult } from "./chatComposerActionTypes";
 
 interface UseChatBulkDeleteProps {
   user?: {
@@ -16,7 +13,7 @@ interface UseChatBulkDeleteProps {
   setSelectedMessageIds: Dispatch<SetStateAction<Set<string>>>;
   deleteMessages: (
     targetMessages: ChatMessage[],
-    options?: DeleteMessagesOptions
+    options?: DeleteMessagesOptions,
   ) => Promise<DeleteMessagesResult>;
 }
 
@@ -29,32 +26,27 @@ export const useChatBulkDelete = ({
   useCallback(async () => {
     if (!user) return;
 
-    const deletableMessages = selectedVisibleMessages.filter(
-      messageItem => messageItem.sender_id === user.id
-    );
+    const deletableMessages = selectedVisibleMessages;
 
     if (deletableMessages.length === 0) {
-      toast.error('Pilih minimal 1 pesan Anda untuk dihapus', {
+      toast.error("Pilih minimal 1 pesan untuk dihapus", {
         toasterId: CHAT_SIDEBAR_TOASTER_ID,
       });
       return;
     }
 
-    const {
-      deletedTargetMessageIds,
-      failedTargetMessageIds,
-      cleanupWarningTargetMessageIds,
-    } = await deleteMessages(deletableMessages, {
-      suppressErrorToast: true,
-    });
+    const { deletedTargetMessageIds, failedTargetMessageIds, cleanupWarningTargetMessageIds } =
+      await deleteMessages(deletableMessages, {
+        suppressErrorToast: true,
+      });
     const deletedMessageIds = new Set(deletedTargetMessageIds);
     const deletedCount = deletedTargetMessageIds.length;
     const failedCount = failedTargetMessageIds.length;
     const cleanupWarningCount = cleanupWarningTargetMessageIds.length;
 
-    setSelectedMessageIds(previousSelectedIds => {
+    setSelectedMessageIds((previousSelectedIds) => {
       const nextSelectedIds = new Set<string>();
-      previousSelectedIds.forEach(messageId => {
+      previousSelectedIds.forEach((messageId) => {
         if (!deletedMessageIds.has(messageId)) {
           nextSelectedIds.add(messageId);
         }
@@ -81,7 +73,7 @@ export const useChatBulkDelete = ({
     }
 
     if (deletedCount === 0) {
-      toast.error('Gagal menghapus pesan terpilih', {
+      toast.error("Gagal menghapus pesan terpilih", {
         toasterId: CHAT_SIDEBAR_TOASTER_ID,
       });
       return;

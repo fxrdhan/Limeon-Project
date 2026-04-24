@@ -21,12 +21,12 @@ export interface ChatCleanupFailureRecord {
 }
 
 export interface ChatCleanupRepository {
-  getOwnedParentMessage: (
+  getDeletableParentMessage: (
     messageId: string,
-    userId: string
+    userId: string,
   ) => Promise<{ message: ChatCleanupMessageRecord | null; error: string | null }>;
   deleteMessageThread: (
-    messageId: string
+    messageId: string,
   ) => Promise<{ deletedMessageIds: string[]; error: string | null }>;
   deleteStoragePaths: (storagePaths: string[]) => Promise<string[]>;
   recordCleanupFailure: (params: {
@@ -38,27 +38,27 @@ export interface ChatCleanupRepository {
   }) => Promise<void>;
   listPendingCleanupFailures: (
     userId: string,
-    limit: number
+    limit: number,
   ) => Promise<{ failures: ChatCleanupFailureRecord[]; error: string | null }>;
   resolveCleanupFailure: (failureId: string) => Promise<void>;
   updateCleanupFailureAttempt: (
     failureId: string,
     attempts: number,
     lastError: string,
-    storagePaths?: string[]
+    storagePaths?: string[],
   ) => Promise<void>;
 }
 
 export const normalizeStoragePaths = (storagePaths: Array<string | null | undefined>) =>
   [...new Set(storagePaths)]
-    .map(storagePath => storagePath?.trim() || null)
+    .map((storagePath) => storagePath?.trim() || null)
     .filter((storagePath): storagePath is string => Boolean(storagePath));
 
 export const partitionOwnedChatPaths = (storagePaths: string[], userId: string) => {
   const ownedStoragePaths: string[] = [];
   const foreignStoragePaths: string[] = [];
 
-  normalizeStoragePaths(storagePaths).forEach(storagePath => {
+  normalizeStoragePaths(storagePaths).forEach((storagePath) => {
     if (isOwnedChatPath(storagePath, userId)) {
       ownedStoragePaths.push(storagePath);
       return;
@@ -76,12 +76,12 @@ export const partitionOwnedChatPaths = (storagePaths: string[], userId: string) 
 const normalizeDeletedMessageIds = (deletedMessageIds: string[]) =>
   deletedMessageIds.filter(
     (deletedMessageId): deletedMessageId is string =>
-      typeof deletedMessageId === "string" && deletedMessageId.length > 0
+      typeof deletedMessageId === "string" && deletedMessageId.length > 0,
   );
 
 const normalizeMessageIds = (messageIds: Array<string | null | undefined>) =>
   [...new Set(messageIds)]
-    .map(messageId => messageId?.trim() || null)
+    .map((messageId) => messageId?.trim() || null)
     .filter((messageId): messageId is string => Boolean(messageId));
 
 export const deleteThreadAndCleanup = async ({
@@ -102,7 +102,7 @@ export const deleteThreadAndCleanup = async ({
   }
 
   const { message: parentMessage, error: parentMessageError } =
-    await repository.getOwnedParentMessage(normalizedMessageId, userId);
+    await repository.getDeletableParentMessage(normalizedMessageId, userId);
 
   if (parentMessageError) {
     return {
@@ -111,7 +111,10 @@ export const deleteThreadAndCleanup = async ({
     };
   }
 
-  if (!parentMessage || parentMessage.sender_id !== userId) {
+  if (
+    !parentMessage ||
+    (parentMessage.sender_id !== userId && parentMessage.receiver_id !== userId)
+  ) {
     return {
       status: 403,
       body: { error: "Forbidden" },
@@ -119,10 +122,6 @@ export const deleteThreadAndCleanup = async ({
   }
 
   const storagePaths = resolveChatMessageStoragePaths(parentMessage);
-  const { ownedStoragePaths, foreignStoragePaths } = partitionOwnedChatPaths(
-    storagePaths,
-    userId
-  );
 
   const { deletedMessageIds, error: deleteError } =
     await repository.deleteMessageThread(normalizedMessageId);
@@ -134,21 +133,15 @@ export const deleteThreadAndCleanup = async ({
     };
   }
 
-  const deletedOwnedStoragePaths =
-    ownedStoragePaths.length > 0
-      ? await repository.deleteStoragePaths(ownedStoragePaths)
-      : [];
-  const failedStoragePaths = normalizeStoragePaths([
-    ...foreignStoragePaths,
-    ...deletedOwnedStoragePaths,
-  ]);
+  const failedStoragePaths =
+    storagePaths.length > 0 ? await repository.deleteStoragePaths(storagePaths) : [];
 
-  if (deletedOwnedStoragePaths.length > 0) {
+  if (failedStoragePaths.length > 0) {
     await repository.recordCleanupFailure({
       requestedBy: userId,
       messageId: normalizedMessageId,
       failureStage: "delete_thread",
-      storagePaths: deletedOwnedStoragePaths,
+      storagePaths: failedStoragePaths,
       lastError: "Failed to fully clean up chat storage after deleting a thread",
     });
   }
@@ -191,19 +184,16 @@ export const deleteThreadsAndCleanup = async ({
     messageIndex < normalizedMessageIds.length;
     messageIndex += BATCH_SIZE
   ) {
-    const batchMessageIds = normalizedMessageIds.slice(
-      messageIndex,
-      messageIndex + BATCH_SIZE
-    );
+    const batchMessageIds = normalizedMessageIds.slice(messageIndex, messageIndex + BATCH_SIZE);
     const batchResults = await Promise.all(
-      batchMessageIds.map(async messageId => ({
+      batchMessageIds.map(async (messageId) => ({
         messageId,
         result: await deleteThreadAndCleanup({
           repository,
           userId,
           messageId,
         }),
-      }))
+      })),
     );
 
     batchResults.forEach(({ messageId, result }) => {
@@ -221,7 +211,7 @@ export const deleteThreadsAndCleanup = async ({
         return;
       }
 
-      resolvedDeletedMessageIds.forEach(deletedMessageId => {
+      resolvedDeletedMessageIds.forEach((deletedMessageId) => {
         deletedMessageIds.add(deletedMessageId);
       });
       deletedTargetMessageIds.push(messageId);
@@ -269,7 +259,7 @@ export const cleanupStoragePaths = async ({
   }
 
   const hasForeignPath = normalizedStoragePaths.some(
-    storagePath => !isOwnedChatPath(storagePath, userId)
+    (storagePath) => !isOwnedChatPath(storagePath, userId),
   );
   if (hasForeignPath) {
     return {
@@ -278,8 +268,7 @@ export const cleanupStoragePaths = async ({
     };
   }
 
-  const failedStoragePaths =
-    await repository.deleteStoragePaths(normalizedStoragePaths);
+  const failedStoragePaths = await repository.deleteStoragePaths(normalizedStoragePaths);
 
   if (failedStoragePaths.length > 0) {
     await repository.recordCleanupFailure({
@@ -304,10 +293,7 @@ export const retryCleanupFailures = async ({
   repository: ChatCleanupRepository;
   userId: string;
 }) => {
-  const { failures, error } = await repository.listPendingCleanupFailures(
-    userId,
-    20
-  );
+  const { failures, error } = await repository.listPendingCleanupFailures(userId, 20);
   if (error) {
     return {
       status: 500,
@@ -322,7 +308,7 @@ export const retryCleanupFailures = async ({
   for (const failure of failures) {
     const { ownedStoragePaths, foreignStoragePaths } = partitionOwnedChatPaths(
       failure.storage_paths ?? [],
-      userId
+      userId,
     );
     const hasForeignStoragePaths = foreignStoragePaths.length > 0;
 
@@ -337,9 +323,7 @@ export const retryCleanupFailures = async ({
     }
 
     const retriedOwnedStoragePaths =
-      ownedStoragePaths.length > 0
-        ? await repository.deleteStoragePaths(ownedStoragePaths)
-        : [];
+      ownedStoragePaths.length > 0 ? await repository.deleteStoragePaths(ownedStoragePaths) : [];
     const failedStoragePaths = normalizeStoragePaths(retriedOwnedStoragePaths);
 
     if (failedStoragePaths.length === 0) {
@@ -356,7 +340,7 @@ export const retryCleanupFailures = async ({
       failure.id,
       (failure.attempts ?? 0) + 1,
       "Failed to fully clean up chat storage during retry",
-      failedStoragePaths
+      failedStoragePaths,
     );
   }
 

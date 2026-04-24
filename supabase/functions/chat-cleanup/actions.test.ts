@@ -12,10 +12,11 @@ import {
 const USER_ID = "user-1";
 
 const buildParentMessage = (
-  overrides: Partial<ChatCleanupMessageRecord> = {}
+  overrides: Partial<ChatCleanupMessageRecord> = {},
 ): ChatCleanupMessageRecord => ({
   id: overrides.id ?? "message-1",
   sender_id: overrides.sender_id ?? USER_ID,
+  receiver_id: overrides.receiver_id ?? "user-2",
   message: overrides.message ?? `documents/channel/${USER_ID}_report.pdf`,
   message_type: overrides.message_type ?? "file",
   file_name: overrides.file_name ?? "report.pdf",
@@ -23,22 +24,22 @@ const buildParentMessage = (
   file_preview_url:
     overrides.file_preview_url ??
     `/storage/v1/object/public/chat/previews/channel/${USER_ID}_report.png`,
-  file_storage_path:
-    overrides.file_storage_path ??
-    `documents/channel/${USER_ID}_report.pdf`,
+  file_storage_path: overrides.file_storage_path ?? `documents/channel/${USER_ID}_report.pdf`,
 });
 
-const createRepository = (overrides: {
-  parentMessage?: ChatCleanupMessageRecord | null;
-  parentMessageError?: string | null;
-  deletedMessageIds?: string[];
-  deleteMessageError?: string | null;
-  failedStoragePaths?: string[];
-  failures?: ChatCleanupFailureRecord[];
-  failuresError?: string | null;
-} = {}) => {
+const createRepository = (
+  overrides: {
+    parentMessage?: ChatCleanupMessageRecord | null;
+    parentMessageError?: string | null;
+    deletedMessageIds?: string[];
+    deleteMessageError?: string | null;
+    failedStoragePaths?: string[];
+    failures?: ChatCleanupFailureRecord[];
+    failuresError?: string | null;
+  } = {},
+) => {
   const repository: ChatCleanupRepository = {
-    getOwnedParentMessage: vi.fn(async () => ({
+    getDeletableParentMessage: vi.fn(async () => ({
       message: overrides.parentMessage ?? buildParentMessage(),
       error: overrides.parentMessageError ?? null,
     })),
@@ -46,9 +47,7 @@ const createRepository = (overrides: {
       deletedMessageIds: overrides.deletedMessageIds ?? ["message-1"],
       error: overrides.deleteMessageError ?? null,
     })),
-    deleteStoragePaths: vi.fn(
-      async () => overrides.failedStoragePaths ?? []
-    ),
+    deleteStoragePaths: vi.fn(async () => overrides.failedStoragePaths ?? []),
     recordCleanupFailure: vi.fn(async () => {}),
     listPendingCleanupFailures: vi.fn(async () => ({
       failures: overrides.failures ?? [],
@@ -85,11 +84,14 @@ describe("chat-cleanup actions", () => {
     expect(repository.recordCleanupFailure).not.toHaveBeenCalled();
   });
 
-  it("does not persist retryable cleanup failures for foreign storage paths that cannot be retried", async () => {
+  it("deletes storage paths for any participant-deletable thread", async () => {
     const repository = createRepository({
       parentMessage: buildParentMessage({
-        file_preview_url:
-          "/storage/v1/object/public/chat/previews/channel/user-2_report.png",
+        sender_id: "user-2",
+        receiver_id: USER_ID,
+        file_storage_path: "documents/channel/user-2_report.pdf",
+        message: "documents/channel/user-2_report.pdf",
+        file_preview_url: "/storage/v1/object/public/chat/previews/channel/user-2_report.png",
       }),
     });
 
@@ -103,45 +105,44 @@ describe("chat-cleanup actions", () => {
       status: 200,
       body: {
         deletedMessageIds: ["message-1"],
-        failedStoragePaths: ["previews/channel/user-2_report.png"],
+        failedStoragePaths: [],
       },
     });
+    expect(repository.deleteStoragePaths).toHaveBeenCalledWith([
+      "documents/channel/user-2_report.pdf",
+      "previews/channel/user-2_report.png",
+    ]);
     expect(repository.recordCleanupFailure).not.toHaveBeenCalled();
   });
 
   it("deletes multiple threads in one request and preserves partial failures", async () => {
     const repository = createRepository();
 
-    vi.mocked(repository.getOwnedParentMessage).mockImplementation(
-      async messageId => ({
-        message:
-          messageId === "message-1"
-            ? buildParentMessage({
-                file_preview_url:
-                  "/storage/v1/object/public/chat/previews/channel/user-2_report.png",
-              })
-            : buildParentMessage({
-                id: "message-2",
-                message: `documents/channel/${USER_ID}_second-report.pdf`,
-                file_name: "second-report.pdf",
-                file_storage_path: `documents/channel/${USER_ID}_second-report.pdf`,
-                file_preview_url:
-                  `/storage/v1/object/public/chat/previews/channel/${USER_ID}_second-report.png`,
-              }),
-        error: null,
-      })
-    );
-    vi.mocked(repository.deleteMessageThread).mockImplementation(
-      async messageId =>
-        messageId === "message-2"
-          ? {
-              deletedMessageIds: [],
-              error: "delete failed",
-            }
-          : {
-              deletedMessageIds: [messageId],
-              error: null,
-            }
+    vi.mocked(repository.getDeletableParentMessage).mockImplementation(async (messageId) => ({
+      message:
+        messageId === "message-1"
+          ? buildParentMessage({
+              file_preview_url: "/storage/v1/object/public/chat/previews/channel/user-2_report.png",
+            })
+          : buildParentMessage({
+              id: "message-2",
+              message: `documents/channel/${USER_ID}_second-report.pdf`,
+              file_name: "second-report.pdf",
+              file_storage_path: `documents/channel/${USER_ID}_second-report.pdf`,
+              file_preview_url: `/storage/v1/object/public/chat/previews/channel/${USER_ID}_second-report.png`,
+            }),
+      error: null,
+    }));
+    vi.mocked(repository.deleteMessageThread).mockImplementation(async (messageId) =>
+      messageId === "message-2"
+        ? {
+            deletedMessageIds: [],
+            error: "delete failed",
+          }
+        : {
+            deletedMessageIds: [messageId],
+            error: null,
+          },
     );
 
     const result = await deleteThreadsAndCleanup({
@@ -156,8 +157,8 @@ describe("chat-cleanup actions", () => {
         deletedMessageIds: ["message-1"],
         deletedTargetMessageIds: ["message-1"],
         failedTargetMessageIds: ["message-2"],
-        cleanupWarningTargetMessageIds: ["message-1"],
-        failedStoragePaths: ["previews/channel/user-2_report.png"],
+        cleanupWarningTargetMessageIds: [],
+        failedStoragePaths: [],
       },
     });
   });
@@ -224,9 +225,7 @@ describe("chat-cleanup actions", () => {
       ],
     });
 
-    vi.mocked(repository.deleteStoragePaths)
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([]);
+    vi.mocked(repository.deleteStoragePaths).mockResolvedValueOnce([]).mockResolvedValueOnce([]);
 
     const result = await retryCleanupFailures({
       repository,

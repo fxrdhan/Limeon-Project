@@ -16,13 +16,11 @@ const STORAGE_DELETE_RETRY_DELAY_MS = 180;
 
 const buildCorsHeaders = (req: Request) => {
   const requestOrigin = req.headers.get("Origin");
-  const accessControlAllowOrigin =
-    requestOrigin && requestOrigin.length > 0 ? requestOrigin : "*";
+  const accessControlAllowOrigin = requestOrigin && requestOrigin.length > 0 ? requestOrigin : "*";
 
   return {
     "Access-Control-Allow-Origin": accessControlAllowOrigin,
-    "Access-Control-Allow-Headers":
-      "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Max-Age": "86400",
     Vary: "Origin",
@@ -39,13 +37,13 @@ const json = (req: Request, status: number, body: Record<string, unknown>) =>
   });
 
 const wait = (durationMs: number) =>
-  new Promise(resolve => {
+  new Promise((resolve) => {
     setTimeout(resolve, durationMs);
   });
 
 const deleteStoragePathsWithRetry = async (
   adminClient: ReturnType<typeof createClient>,
-  storagePaths: string[]
+  storagePaths: string[],
 ) => {
   let pendingPaths = normalizeStoragePaths(storagePaths);
 
@@ -56,25 +54,20 @@ const deleteStoragePathsWithRetry = async (
   ) {
     const currentAttemptPaths = [...pendingPaths];
     const results = await Promise.allSettled(
-      currentAttemptPaths.map(async storagePath => {
-        const { error } = await adminClient.storage
-          .from(CHAT_BUCKET)
-          .remove([storagePath]);
+      currentAttemptPaths.map(async (storagePath) => {
+        const { error } = await adminClient.storage.from(CHAT_BUCKET).remove([storagePath]);
 
         if (error) {
           throw error;
         }
-      })
+      }),
     );
 
     pendingPaths = results.flatMap((result, resultIndex) =>
-      result.status === "rejected" ? [currentAttemptPaths[resultIndex]] : []
+      result.status === "rejected" ? [currentAttemptPaths[resultIndex]] : [],
     );
 
-    if (
-      pendingPaths.length > 0 &&
-      attemptIndex < STORAGE_DELETE_MAX_ATTEMPTS - 1
-    ) {
+    if (pendingPaths.length > 0 && attemptIndex < STORAGE_DELETE_MAX_ATTEMPTS - 1) {
       await wait(STORAGE_DELETE_RETRY_DELAY_MS * (attemptIndex + 1));
     }
   }
@@ -102,17 +95,15 @@ const recordStoredCleanupFailure = async ({
     return;
   }
 
-  const { error } = await adminClient
-    .from("chat_storage_cleanup_failures")
-    .insert({
-      requested_by: requestedBy,
-      message_id: messageId ?? null,
-      failure_stage: failureStage,
-      storage_paths: normalizedStoragePaths,
-      attempts: 1,
-      last_error: lastError,
-      updated_at: new Date().toISOString(),
-    });
+  const { error } = await adminClient.from("chat_storage_cleanup_failures").insert({
+    requested_by: requestedBy,
+    message_id: messageId ?? null,
+    failure_stage: failureStage,
+    storage_paths: normalizedStoragePaths,
+    attempts: 1,
+    last_error: lastError,
+    updated_at: new Date().toISOString(),
+  });
 
   if (error) {
     console.error("Failed to record chat cleanup failure", error);
@@ -121,7 +112,7 @@ const recordStoredCleanupFailure = async ({
 
 const resolveStoredCleanupFailure = async (
   adminClient: ReturnType<typeof createClient>,
-  failureId: string
+  failureId: string,
 ) => {
   const { error } = await adminClient
     .from("chat_storage_cleanup_failures")
@@ -142,11 +133,9 @@ const updateStoredCleanupFailureAttempt = async (
   failureId: string,
   attempts: number,
   lastError: string,
-  storagePaths?: string[]
+  storagePaths?: string[],
 ) => {
-  const normalizedStoragePaths = storagePaths
-    ? normalizeStoragePaths(storagePaths)
-    : null;
+  const normalizedStoragePaths = storagePaths ? normalizeStoragePaths(storagePaths) : null;
   const { error } = await adminClient
     .from("chat_storage_cleanup_failures")
     .update({
@@ -169,14 +158,14 @@ const createChatCleanupRepository = ({
   adminClient: ReturnType<typeof createClient>;
   userClient: ReturnType<typeof createClient>;
 }): ChatCleanupRepository => ({
-  async getOwnedParentMessage(messageId, userId) {
+  async getDeletableParentMessage(messageId, userId) {
     const { data, error } = await userClient
       .from("chat_messages")
       .select(
-        "id, sender_id, message, message_type, file_name, file_mime_type, file_preview_url, file_storage_path"
+        "id, sender_id, receiver_id, message, message_type, file_name, file_mime_type, file_preview_url, file_storage_path",
       )
       .eq("id", messageId)
-      .eq("sender_id", userId)
+      .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
       .maybeSingle();
 
     return {
@@ -220,23 +209,18 @@ const createChatCleanupRepository = ({
   async resolveCleanupFailure(failureId) {
     await resolveStoredCleanupFailure(adminClient, failureId);
   },
-  async updateCleanupFailureAttempt(
-    failureId,
-    attempts,
-    lastError,
-    storagePaths
-  ) {
+  async updateCleanupFailureAttempt(failureId, attempts, lastError, storagePaths) {
     await updateStoredCleanupFailureAttempt(
       adminClient,
       failureId,
       attempts,
       lastError,
-      storagePaths
+      storagePaths,
     );
   },
 });
 
-Deno.serve(async req => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", {
       status: 200,
