@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { TbSearch, TbSparkles } from "react-icons/tb";
 import fuzzysort from "fuzzysort";
@@ -41,6 +41,9 @@ function BaseSelector<T>({
   config,
   defaultSelectedIndex,
   onHighlightChange,
+  contentKey,
+  contentSlideDirection = 0,
+  outsideClickIgnoreRef,
 }: BaseSelectorProps<T>) {
   const [showHeader, setShowHeader] = useState(false);
   const [showContent, setShowContent] = useState(false);
@@ -53,6 +56,7 @@ function BaseSelector<T>({
 
   // Use internal search term (priority) or external search term
   const searchTerm = internalSearchTerm || externalSearchTerm;
+  const activeContentKey = contentKey ?? config.headerText;
 
   // Track selected item position for sliding background
   const [indicatorStyle, setIndicatorStyle] = useState({
@@ -61,6 +65,16 @@ function BaseSelector<T>({
     width: 0,
     height: 0,
   });
+
+  useLayoutEffect(() => {
+    if (!isOpen) return;
+    itemRefs.current = [];
+    setInternalSearchTerm("");
+    setIndicatorStyle({ top: 0, left: 0, width: 0, height: 0 });
+    if (listContainerRef.current) {
+      listContainerRef.current.scrollTop = 0;
+    }
+  }, [activeContentKey, isOpen]);
 
   const searchFieldsConfig = useMemo(() => {
     if (items.length === 0) return [];
@@ -155,6 +169,7 @@ function BaseSelector<T>({
   // Use getDerivedStateFromProps pattern to manage selectedIndex resets
   const [indexState, setIndexState] = useState({
     isOpen: false,
+    contentKey: activeContentKey,
     filteredLength: 0,
     selectedIndex: 0,
     lastDefaultIndex: defaultSelectedIndex,
@@ -162,13 +177,14 @@ function BaseSelector<T>({
 
   if (
     isOpen !== indexState.isOpen ||
+    activeContentKey !== indexState.contentKey ||
     filteredItems.length !== indexState.filteredLength ||
     (isOpen && defaultSelectedIndex !== indexState.lastDefaultIndex)
   ) {
     let newIndex = indexState.selectedIndex;
 
     // Reset to defaultSelectedIndex (or 0) when opening
-    if (isOpen && !indexState.isOpen) {
+    if (isOpen && (!indexState.isOpen || activeContentKey !== indexState.contentKey)) {
       newIndex = defaultSelectedIndex ?? 0;
     }
     // Also reset when defaultSelectedIndex changes while modal is open
@@ -189,6 +205,7 @@ function BaseSelector<T>({
 
     setIndexState({
       isOpen,
+      contentKey: activeContentKey,
       filteredLength: filteredItems.length,
       selectedIndex: newIndex,
       lastDefaultIndex: defaultSelectedIndex,
@@ -293,31 +310,33 @@ function BaseSelector<T>({
   }, [isOpen, filteredItems, selectedIndex, onSelect, onClose, internalSearchTerm]);
 
   useEffect(() => {
-    if (isOpen && itemRefs.current[selectedIndex] && listContainerRef.current) {
+    if (!isOpen || !showContent) return;
+
+    const scrollSelectedItemIntoView = () => {
       const container = listContainerRef.current;
       const selectedElement = itemRefs.current[selectedIndex];
 
-      if (!selectedElement) return;
+      if (!container || !selectedElement) return;
 
       const isLastItem = selectedIndex === filteredItems.length - 1;
-      const containerRect = container.getBoundingClientRect();
       const itemRect = selectedElement.getBoundingClientRect();
 
       const itemTop = selectedElement.offsetTop;
       const itemBottom = itemTop + itemRect.height;
       const containerScrollTop = container.scrollTop;
-      const containerHeight = containerRect.height;
+      const containerHeight = container.clientHeight;
+      const visibilityInset = 12;
 
       // Check if item is above visible area
       /* c8 ignore start */
-      if (itemTop < containerScrollTop) {
+      if (itemTop < containerScrollTop + visibilityInset) {
         container.scrollTo({
-          top: itemTop,
+          top: Math.max(0, itemTop - visibilityInset),
           behavior: "smooth",
         });
       }
       // Check if item is below visible area
-      else if (itemBottom > containerScrollTop + containerHeight) {
+      else if (itemBottom > containerScrollTop + containerHeight - visibilityInset) {
         // If it's the last item, scroll to absolute bottom
         if (isLastItem) {
           container.scrollTo({
@@ -326,14 +345,17 @@ function BaseSelector<T>({
           });
         } else {
           container.scrollTo({
-            top: itemBottom - containerHeight,
+            top: itemBottom - containerHeight + visibilityInset,
             behavior: "smooth",
           });
         }
       }
       /* c8 ignore end */
-    }
-  }, [selectedIndex, isOpen, filteredItems]);
+    };
+
+    const animationFrameId = requestAnimationFrame(scrollSelectedItemIntoView);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [selectedIndex, isOpen, filteredItems, showContent]);
 
   // Update sliding background position when selectedIndex changes
   useEffect(() => {
@@ -404,7 +426,12 @@ function BaseSelector<T>({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        modalRef.current &&
+        !modalRef.current.contains(target) &&
+        !outsideClickIgnoreRef?.current?.contains(target)
+      ) {
         if (isOpen) {
           // Just call onClose, let the useEffect handle the animation
           onClose();
@@ -419,7 +446,7 @@ function BaseSelector<T>({
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, outsideClickIgnoreRef]);
 
   // Determine header content
   const headerContent = useMemo(() => {
@@ -452,6 +479,18 @@ function BaseSelector<T>({
     );
   }, [internalSearchTerm, config.headerText, config.theme]);
 
+  const contentSlideDistance = contentSlideDirection * 24;
+  const modalPosition = {
+    x: position.left,
+    y: position.top + 5,
+  };
+  const modalPositionTransition = {
+    type: "spring",
+    stiffness: 520,
+    damping: 42,
+    mass: 0.7,
+  } as const;
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -459,146 +498,178 @@ function BaseSelector<T>({
           ref={modalRef}
           className="fixed z-50 bg-white border border-slate-200 rounded-xl shadow-lg min-w-[180px] overflow-hidden"
           style={{
-            top: position.top + 5,
-            left: position.left,
+            top: 0,
+            left: 0,
           }}
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={{
+            opacity: 0,
+            scale: 0.95,
+            x: modalPosition.x,
+            y: modalPosition.y,
+          }}
+          animate={{
+            opacity: 1,
+            scale: 1,
+            x: modalPosition.x,
+            y: modalPosition.y,
+          }}
           exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ duration: 0.15 }}
+          transition={{
+            opacity: { duration: 0.15 },
+            scale: { duration: 0.15 },
+            x: modalPositionTransition,
+            y: modalPositionTransition,
+          }}
         >
-          <AnimatePresence>
-            {showHeader && (
-              <>
-                <motion.div
-                  className="shrink-0 bg-white border-b border-slate-100 px-3 py-2 rounded-t-lg"
-                  initial={{ opacity: 0, y: -8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.15, ease: "easeOut" }}
-                >
-                  {headerContent}
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>
+          <AnimatePresence initial={false} mode="popLayout">
+            <motion.div
+              key={activeContentKey}
+              className="overflow-hidden"
+              initial={{
+                opacity: contentSlideDirection === 0 ? 1 : 0,
+                x: contentSlideDistance,
+              }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{
+                opacity: contentSlideDirection === 0 ? 1 : 0,
+                x: -contentSlideDistance,
+              }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
+            >
+              <AnimatePresence>
+                {showHeader && (
+                  <>
+                    <motion.div
+                      className="shrink-0 bg-white border-b border-slate-100 px-3 py-2 rounded-t-lg"
+                      initial={{ opacity: 0, y: -8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.15, ease: "easeOut" }}
+                    >
+                      {headerContent}
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
 
-          <AnimatePresence>
-            {showContent && (
-              <motion.div
-                className="overflow-hidden"
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{
-                  duration: 0.1,
-                  ease: "easeOut",
-                }}
-              >
-                <div ref={listContainerRef} className="max-h-65 overflow-y-auto py-1">
-                  {filteredItems.length === 0 ? (
-                    <div className="px-3 py-4 text-sm text-slate-500 text-center">
-                      {internalSearchTerm
-                        ? `No results for "${internalSearchTerm}"`
-                        : config.noResultsText.replace("{searchTerm}", searchTerm)}
-                    </div>
-                  ) : (
-                    <div className="pb-1 relative">
-                      {/* Sliding Background Indicator - only render when positioned */}
-                      {indicatorStyle.height > 0 && (
-                        <motion.div
-                          className={`absolute top-0 rounded-lg pointer-events-none ${
-                            config.theme === "blue"
-                              ? "bg-blue-100"
-                              : config.theme === "orange"
-                                ? "bg-orange-100"
-                                : "bg-purple-100"
-                          }`}
-                          initial={{
-                            top: indicatorStyle.top,
-                            left: indicatorStyle.left,
-                            width: indicatorStyle.width,
-                            height: indicatorStyle.height,
-                          }}
-                          animate={{
-                            top: indicatorStyle.top,
-                            left: indicatorStyle.left,
-                            width: indicatorStyle.width,
-                            height: indicatorStyle.height,
-                          }}
-                          transition={{
-                            type: "spring",
-                            stiffness: 400,
-                            damping: 30,
-                            mass: 0.8,
-                          }}
-                        />
-                      )}
-
-                      {/* Items */}
-                      {filteredItems.map((item, index) => {
-                        const isSelected = index === selectedIndex;
-                        const highlightIndices = getHighlightIndices(item);
-                        const selectedTextClass =
-                          config.theme === "blue"
-                            ? "text-blue-700"
-                            : config.theme === "orange"
-                              ? "text-orange-700"
-                              : "text-purple-700";
-
-                        return (
-                          <div
-                            key={config.getItemKey(item)}
-                            ref={(el) => {
-                              itemRefs.current[index] = el;
-                            }}
-                            className="px-3 py-2 cursor-pointer flex items-center gap-3 mx-1 rounded-lg relative z-10 transition-colors duration-150"
-                            onClick={() => onSelect(item)}
-                            onMouseEnter={() => setSelectedIndex(index)}
-                            role="button"
-                          >
-                            <div
-                              className={`shrink-0 transition-colors duration-150 ${
-                                isSelected
-                                  ? config.getItemActiveColor?.(item) || "text-slate-900"
-                                  : "text-slate-500"
+              <AnimatePresence>
+                {showContent && (
+                  <motion.div
+                    className="overflow-hidden"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{
+                      duration: 0.1,
+                      ease: "easeOut",
+                    }}
+                  >
+                    <div ref={listContainerRef} className="max-h-65 overflow-y-auto py-1">
+                      {filteredItems.length === 0 ? (
+                        <div className="px-3 py-4 text-sm text-slate-500 text-center">
+                          {internalSearchTerm
+                            ? `No results for "${internalSearchTerm}"`
+                            : config.noResultsText.replace("{searchTerm}", searchTerm)}
+                        </div>
+                      ) : (
+                        <div className="pb-1 relative">
+                          {/* Sliding Background Indicator - only render when positioned */}
+                          {indicatorStyle.height > 0 && (
+                            <motion.div
+                              className={`absolute top-0 rounded-lg pointer-events-none ${
+                                config.theme === "blue"
+                                  ? "bg-blue-100"
+                                  : config.theme === "orange"
+                                    ? "bg-orange-100"
+                                    : "bg-purple-100"
                               }`}
-                            >
-                              {config.getItemIcon(item)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span
-                                  className={`text-sm font-medium transition-colors duration-150 ${
-                                    isSelected ? selectedTextClass : "text-slate-700"
+                              initial={{
+                                top: indicatorStyle.top,
+                                left: indicatorStyle.left,
+                                width: indicatorStyle.width,
+                                height: indicatorStyle.height,
+                              }}
+                              animate={{
+                                top: indicatorStyle.top,
+                                left: indicatorStyle.left,
+                                width: indicatorStyle.width,
+                                height: indicatorStyle.height,
+                              }}
+                              transition={{
+                                type: "spring",
+                                stiffness: 400,
+                                damping: 30,
+                                mass: 0.8,
+                              }}
+                            />
+                          )}
+
+                          {/* Items */}
+                          {filteredItems.map((item, index) => {
+                            const isSelected = index === selectedIndex;
+                            const highlightIndices = getHighlightIndices(item);
+                            const selectedTextClass =
+                              config.theme === "blue"
+                                ? "text-blue-700"
+                                : config.theme === "orange"
+                                  ? "text-orange-700"
+                                  : "text-purple-700";
+
+                            return (
+                              <div
+                                key={config.getItemKey(item)}
+                                ref={(el) => {
+                                  itemRefs.current[index] = el;
+                                }}
+                                className="px-3 py-2 cursor-pointer flex items-center gap-3 mx-1 rounded-lg relative z-10 transition-colors duration-150"
+                                onClick={() => onSelect(item)}
+                                onMouseEnter={() => setSelectedIndex(index)}
+                                role="button"
+                              >
+                                <div
+                                  className={`shrink-0 transition-colors duration-150 ${
+                                    isSelected
+                                      ? config.getItemActiveColor?.(item) || "text-slate-900"
+                                      : "text-slate-500"
                                   }`}
                                 >
-                                  <HighlightedText
-                                    text={config.getItemLabel(item)}
-                                    indices={highlightIndices}
-                                    theme={config.theme}
-                                  />
-                                </span>
-                                {config.getItemSecondaryText && (
-                                  <span className="text-xs text-slate-400">
-                                    {config.getItemSecondaryText(item)}
-                                  </span>
-                                )}
+                                  {config.getItemIcon(item)}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span
+                                      className={`text-sm font-medium transition-colors duration-150 ${
+                                        isSelected ? selectedTextClass : "text-slate-700"
+                                      }`}
+                                    >
+                                      <HighlightedText
+                                        text={config.getItemLabel(item)}
+                                        indices={highlightIndices}
+                                        theme={config.theme}
+                                      />
+                                    </span>
+                                    {config.getItemSecondaryText && (
+                                      <span className="text-xs text-slate-400">
+                                        {config.getItemSecondaryText(item)}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {config.getItemDescription && config.getItemDescription(item) && (
+                                    <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
+                                      {config.getItemDescription(item)}
+                                    </p>
+                                  )}
+                                </div>
                               </div>
-                              {config.getItemDescription && config.getItemDescription(item) && (
-                                <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
-                                  {config.getItemDescription(item)}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              </motion.div>
-            )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
           </AnimatePresence>
         </motion.div>
       )}

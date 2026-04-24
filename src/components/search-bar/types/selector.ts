@@ -1,5 +1,5 @@
-import React from 'react';
-import { SearchColumn } from './search';
+import React from "react";
+import { SearchColumn } from "./search";
 
 export interface FilterOperator {
   value: string;
@@ -20,10 +20,8 @@ export interface BaseSelectorConfig<T> {
   getItemActiveColor?: (item: T) => string;
   getItemSecondaryText?: (item: T) => string;
   getItemDescription?: (item: T) => string;
-  getSearchFields: (
-    item: T
-  ) => Array<{ key: string; value: string; boost?: number }>;
-  theme?: 'purple' | 'blue' | 'orange';
+  getSearchFields: (item: T) => Array<{ key: string; value: string; boost?: number }>;
+  theme?: "purple" | "blue" | "orange";
 }
 
 export interface BaseSelectorProps<T> {
@@ -36,6 +34,9 @@ export interface BaseSelectorProps<T> {
   config: BaseSelectorConfig<T>;
   defaultSelectedIndex?: number; // Pre-select item at this index when opening
   onHighlightChange?: (item: T | null) => void; // Called when highlighted item changes (for live preview)
+  contentKey?: string;
+  contentSlideDirection?: -1 | 0 | 1;
+  outsideClickIgnoreRef?: React.RefObject<HTMLElement | null>;
 }
 
 export interface ColumnSelectorProps {

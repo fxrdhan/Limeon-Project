@@ -1,12 +1,10 @@
 /* eslint-disable react-refresh/only-export-components */
 import fuzzysort from "fuzzysort";
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { TbSearch } from "react-icons/tb";
+import { TbFilter, TbNumber12Small, TbSearch, TbTypography } from "react-icons/tb";
 import SearchBadge from "./components/SearchBadge";
 import SearchIcon from "./components/SearchIcon";
-import ColumnSelector from "./components/selectors/ColumnSelector";
-import JoinOperatorSelector from "./components/selectors/JoinOperatorSelector";
-import OperatorSelector from "./components/selectors/OperatorSelector";
+import BaseSelector from "./components/selectors/BaseSelector";
 import { SEARCH_CONSTANTS } from "./constants";
 import { useBadgeHandlers } from "./hooks/useBadgeHandlers";
 import { useSearchInput } from "./hooks/useSearchInput";
@@ -18,6 +16,7 @@ import { JOIN_OPERATORS, JoinOperator } from "./operators";
 import {
   EnhancedSearchBarProps,
   EnhancedSearchState,
+  BaseSelectorConfig,
   FilterConditionNode,
   FilterExpression,
   FilterGroup,
@@ -44,6 +43,33 @@ import { buildColumnValue, findColumn } from "./utils/searchUtils";
 const withFallback = <T,>(value: T | undefined, fallback: T): T => value ?? fallback;
 
 const withEmptyString = (value: string | undefined): string => withFallback(value, "");
+
+type ActiveSelectorKind = "column" | "operator" | "join";
+type ActiveSelectorItem = SearchColumn | FilterOperator | JoinOperator;
+
+const getColumnSelectorIcon = (column: SearchColumn) => {
+  switch (column.type) {
+    case "number":
+    case "currency":
+      return <TbNumber12Small className="w-5 h-5" />;
+    case "date":
+      return <TbFilter className="w-4 h-4" />;
+    default:
+      return <TbTypography className="w-4 h-4" />;
+  }
+};
+
+const getColumnSelectorActiveColor = (column: SearchColumn) => {
+  switch (column.type) {
+    case "number":
+    case "currency":
+      return "text-blue-500";
+    case "date":
+      return "text-purple-500";
+    default:
+      return "text-purple-500";
+  }
+};
 
 export const updateGroupConditionValue = (
   group: FilterGroup,
@@ -2905,6 +2931,197 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     searchMode.filterSearch,
   ]);
 
+  const currentJoinSelectorValue =
+    activeGroupState.depth > 0
+      ? activeGroupState.join
+      : currentJoinOperator || searchMode.partialJoin || searchMode.filterSearch?.joinOperator;
+
+  const defaultJoinOperatorIndex = useMemo(() => {
+    if (!currentJoinSelectorValue) return 0;
+    const index = restrictedJoinOperators.findIndex((op) => op.label === currentJoinSelectorValue);
+    return index >= 0 ? index : 0;
+  }, [currentJoinSelectorValue, restrictedJoinOperators]);
+
+  const columnSelectorConfig = useMemo(
+    (): BaseSelectorConfig<SearchColumn> => ({
+      headerText: "Pilih kolom untuk pencarian targeted",
+      footerSingular: "kolom",
+      maxHeight: "320px",
+      noResultsText: 'Tidak ada kolom yang ditemukan untuk "{searchTerm}"',
+      getItemKey: (column) => column.field,
+      getItemLabel: (column) => column.headerName,
+      getItemIcon: getColumnSelectorIcon,
+      getItemActiveColor: getColumnSelectorActiveColor,
+      getSearchFields: (column) => [{ key: "headerName", value: column.headerName, boost: 1000 }],
+    }),
+    [],
+  );
+
+  const operatorSelectorConfig = useMemo(
+    (): BaseSelectorConfig<FilterOperator> => ({
+      headerText: "Pilih operator filter untuk kolom",
+      footerSingular: "operator",
+      maxHeight: "320px",
+      noResultsText: 'Tidak ada operator yang ditemukan untuk "{searchTerm}"',
+      getItemKey: (operator) => operator.value,
+      getItemLabel: (operator) => operator.label,
+      getItemIcon: (operator) => operator.icon,
+      getItemActiveColor: (operator) => operator.activeColor || "text-slate-900",
+      getSearchFields: (operator) => [{ key: "label", value: operator.label, boost: 1000 }],
+      theme: "blue",
+    }),
+    [],
+  );
+
+  const joinSelectorConfig = useMemo(
+    (): BaseSelectorConfig<JoinOperator> => ({
+      headerText: "Pilih operator join untuk kondisi",
+      footerSingular: "operator",
+      maxHeight: "200px",
+      noResultsText: 'Tidak ada operator yang ditemukan untuk "{searchTerm}"',
+      getItemKey: (operator) => operator.value,
+      getItemLabel: (operator) => operator.label,
+      getItemIcon: (operator) => operator.icon,
+      getItemActiveColor: (operator) => operator.activeColor || "text-slate-900",
+      getSearchFields: (operator) => [{ key: "label", value: operator.label, boost: 1000 }],
+      theme: "orange",
+    }),
+    [],
+  );
+
+  const activeSelector = useMemo(() => {
+    const targetKey = groupEditingSelectorTarget
+      ? `group:${groupEditingSelectorTarget.target}:${groupEditingSelectorTarget.path.join(".")}:${
+          groupEditingSelectorTarget.joinIndex ?? "none"
+        }`
+      : editingSelectorTarget
+        ? `edit:${editingSelectorTarget.target}:${editingSelectorTarget.conditionIndex}`
+        : `active:${activeConditionIndex}`;
+    const targetOrder =
+      groupEditingSelectorTarget?.path[groupEditingSelectorTarget.path.length - 1] ??
+      editingSelectorTarget?.conditionIndex ??
+      activeConditionIndex;
+
+    const buildOrder = (kind: ActiveSelectorKind) =>
+      targetOrder * 3 + (kind === "column" ? 0 : kind === "operator" ? 1 : 2);
+
+    if (searchMode.showColumnSelector) {
+      return {
+        kind: "column" as const,
+        contentKey: `column:${targetKey}`,
+        order: buildOrder("column"),
+        items: sortedColumns as readonly ActiveSelectorItem[],
+        onSelect: handleColumnSelectWithGroups as (item: ActiveSelectorItem) => void,
+        onClose: handleCloseColumnSelector,
+        position: columnSelectorPosition,
+        searchTerm,
+        defaultSelectedIndex: defaultColumnIndex,
+        config: columnSelectorConfig as BaseSelectorConfig<ActiveSelectorItem>,
+        onHighlightChange: (item: ActiveSelectorItem | null) => {
+          setPreviewColumn(item as SearchColumn | null);
+          setPreviewOperator(null);
+        },
+      };
+    }
+
+    if (searchMode.showOperatorSelector) {
+      return {
+        kind: "operator" as const,
+        contentKey: `operator:${targetKey}`,
+        order: buildOrder("operator"),
+        items: operators as readonly ActiveSelectorItem[],
+        onSelect: handleOperatorSelectWithGroups as (item: ActiveSelectorItem) => void,
+        onClose: handleCloseOperatorSelector,
+        position: operatorSelectorPosition,
+        searchTerm: operatorSearchTerm,
+        defaultSelectedIndex: defaultOperatorIndex,
+        config: operatorSelectorConfig as BaseSelectorConfig<ActiveSelectorItem>,
+        onHighlightChange: (item: ActiveSelectorItem | null) => {
+          setPreviewColumn(null);
+          setPreviewOperator(item as FilterOperator | null);
+        },
+      };
+    }
+
+    if (searchMode.showJoinOperatorSelector) {
+      return {
+        kind: "join" as const,
+        contentKey: `join:${targetKey}`,
+        order: buildOrder("join"),
+        items: restrictedJoinOperators as readonly ActiveSelectorItem[],
+        onSelect: handleJoinOperatorSelectWithGroups as (item: ActiveSelectorItem) => void,
+        onClose: handleCloseJoinOperatorSelector,
+        position: joinOperatorSelectorPosition,
+        searchTerm: "",
+        defaultSelectedIndex: defaultJoinOperatorIndex,
+        config: joinSelectorConfig as BaseSelectorConfig<ActiveSelectorItem>,
+        onHighlightChange: () => {
+          setPreviewColumn(null);
+          setPreviewOperator(null);
+        },
+      };
+    }
+
+    return null;
+  }, [
+    activeConditionIndex,
+    columnSelectorConfig,
+    columnSelectorPosition,
+    defaultColumnIndex,
+    defaultJoinOperatorIndex,
+    defaultOperatorIndex,
+    editingSelectorTarget,
+    groupEditingSelectorTarget,
+    handleCloseColumnSelector,
+    handleCloseJoinOperatorSelector,
+    handleCloseOperatorSelector,
+    handleColumnSelectWithGroups,
+    handleJoinOperatorSelectWithGroups,
+    handleOperatorSelectWithGroups,
+    joinOperatorSelectorPosition,
+    joinSelectorConfig,
+    operatorSearchTerm,
+    operatorSelectorConfig,
+    operatorSelectorPosition,
+    operators,
+    restrictedJoinOperators,
+    searchMode.showColumnSelector,
+    searchMode.showJoinOperatorSelector,
+    searchMode.showOperatorSelector,
+    searchTerm,
+    sortedColumns,
+  ]);
+
+  const selectorSlideStateRef = useRef<{
+    contentKey: string;
+    order: number;
+    left: number;
+  } | null>(null);
+  let selectorContentSlideDirection: -1 | 0 | 1 = 0;
+  if (activeSelector) {
+    const previous = selectorSlideStateRef.current;
+    if (previous && previous.contentKey !== activeSelector.contentKey) {
+      const hasMeasuredPositions = previous.left > 0 && activeSelector.position.left > 0;
+      if (hasMeasuredPositions && Math.abs(activeSelector.position.left - previous.left) > 2) {
+        selectorContentSlideDirection = activeSelector.position.left > previous.left ? 1 : -1;
+      } else {
+        selectorContentSlideDirection =
+          activeSelector.order > previous.order
+            ? 1
+            : activeSelector.order < previous.order
+              ? -1
+              : 0;
+      }
+    }
+    selectorSlideStateRef.current = {
+      contentKey: activeSelector.contentKey,
+      order: activeSelector.order,
+      left: activeSelector.position.left,
+    };
+  } else {
+    selectorSlideStateRef.current = null;
+  }
+
   // Determine if icon should be on the left (active state) // Show active animated mode when typing or focused filters exist
   const hasExplicitOperator =
     searchMode.isFilterMode ||
@@ -3033,40 +3250,22 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         )}
       </div>
 
-      <ColumnSelector
-        columns={sortedColumns}
-        isOpen={searchMode.showColumnSelector}
-        onSelect={handleColumnSelectWithGroups}
-        onClose={handleCloseColumnSelector}
-        position={columnSelectorPosition}
-        searchTerm={searchTerm}
-        defaultSelectedIndex={defaultColumnIndex}
-        onHighlightChange={setPreviewColumn}
-      />
-
-      <OperatorSelector
-        operators={operators}
-        isOpen={searchMode.showOperatorSelector}
-        onSelect={handleOperatorSelectWithGroups}
-        onClose={handleCloseOperatorSelector}
-        position={operatorSelectorPosition}
-        searchTerm={operatorSearchTerm}
-        defaultSelectedIndex={defaultOperatorIndex}
-        onHighlightChange={setPreviewOperator}
-      />
-
-      <JoinOperatorSelector
-        operators={restrictedJoinOperators}
-        isOpen={searchMode.showJoinOperatorSelector}
-        onSelect={handleJoinOperatorSelectWithGroups}
-        onClose={handleCloseJoinOperatorSelector}
-        position={joinOperatorSelectorPosition}
-        currentValue={
-          activeGroupState.depth > 0
-            ? activeGroupState.join
-            : currentJoinOperator || searchMode.partialJoin || searchMode.filterSearch?.joinOperator
-        }
-      />
+      {activeSelector && (
+        <BaseSelector<ActiveSelectorItem>
+          items={activeSelector.items}
+          isOpen={true}
+          onSelect={activeSelector.onSelect}
+          onClose={activeSelector.onClose}
+          position={activeSelector.position}
+          searchTerm={activeSelector.searchTerm}
+          config={activeSelector.config}
+          defaultSelectedIndex={activeSelector.defaultSelectedIndex}
+          onHighlightChange={activeSelector.onHighlightChange}
+          contentKey={activeSelector.contentKey}
+          contentSlideDirection={selectorContentSlideDirection}
+          outsideClickIgnoreRef={containerRef}
+        />
+      )}
     </>
   );
 };

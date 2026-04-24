@@ -34,6 +34,7 @@ interface BadgeProps {
 
 const Badge: React.FC<BadgeProps> = ({ config }) => {
   const colors = BADGE_COLORS[config.type];
+  const badgeRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   // Flag to prevent blur handler after intentional clear actions (Delete, Backspace on empty)
   const isClearing = useRef(false);
@@ -41,7 +42,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
   const cursorPosition = useRef<number | null>(null);
   // Shake animation state for validation feedback
   const [isShaking, setIsShaking] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const isEditing = config.isEditing || false;
   const editingValue = config.editingValue || "";
@@ -50,6 +51,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
   const isSelected = config.isSelected || false;
   const columnType = config.columnType;
   const onHoverChange = config.onHoverChange;
+  const hasActionMenu = !!config.canEdit || !!config.canClear || !!config.canInsert;
 
   // Format display label for currency columns (only for value badges)
   const displayLabel = useMemo(() => {
@@ -76,12 +78,26 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
   // Only position cursor once when entering edit mode, not on every value change
   useEffect(() => {
     if (isEditing && inputRef.current) {
+      setIsMenuOpen(false);
       inputRef.current.focus();
       // Position cursor at end
       inputRef.current.setSelectionRange(editingValue.length, editingValue.length);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditing]); // Only trigger on edit mode change, not value length change
+
+  useEffect(() => {
+    if (!isMenuOpen) return;
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!badgeRef.current?.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [isMenuOpen]);
 
   // Auto-enter edit mode if badge value is invalid (for value badges only)
   // Track if we've already triggered for this label to prevent infinite loop
@@ -246,9 +262,9 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
 
   // Error state styles - persistent for invalid values, temporary during shake
   const errorClass = isShaking || hasInvalidValue ? "!bg-rose-200 !text-rose-800" : "";
-  const wantsEditButton = isEditing || isSelected || isHovered;
-  const wantsDeleteButton = !isEditing && (isSelected || isHovered);
-  const wantsInsertButton = !isEditing && !!config.canInsert && (isSelected || isHovered);
+  const wantsEditButton = isEditing || isSelected || isMenuOpen;
+  const wantsDeleteButton = !isEditing && (isSelected || isMenuOpen);
+  const wantsInsertButton = !isEditing && !!config.canInsert && (isSelected || isMenuOpen);
   const [editIconVisible, setEditIconVisible] = useState(wantsEditButton);
   const [deleteIconVisible, setDeleteIconVisible] = useState(wantsDeleteButton);
   const [insertIconVisible, setInsertIconVisible] = useState(wantsInsertButton);
@@ -303,22 +319,33 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
   const showInsertButtonSpace = wantsInsertButton || insertIconVisible;
   const wantsAnyButtons = wantsEditButton || wantsDeleteButton || wantsInsertButton;
   const badgeTransform = wantsAnyButtons ? "scaleX(1.02)" : "scaleX(1)";
+  const hasMenuAction = hasActionMenu && !isEditing;
 
   return (
     <div
+      ref={badgeRef}
       className={`rounded-lg text-sm font-medium ${colors.bg} ${colors.text} flex-shrink-0 transition-[box-shadow] duration-150 ease-out ${selectedClass} ${errorClass}`}
       data-selected={isSelected}
       style={{
         ...shakeStyle,
       }}
-      onMouseEnter={() => {
-        setIsHovered(true);
-        onHoverChange?.(true);
-      }}
-      onMouseLeave={() => {
-        setIsHovered(false);
-        onHoverChange?.(false);
-      }}
+      {...(hasMenuAction
+        ? {
+            onClick: () => {
+              setIsMenuOpen((prev) => !prev);
+              onHoverChange?.(true);
+            },
+            onKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                setIsMenuOpen((prev) => !prev);
+                onHoverChange?.(true);
+              }
+            },
+            role: "button" as const,
+            tabIndex: 0,
+          }
+        : {})}
     >
       <div className="flex items-center">
         <div className="flex items-center py-1.5 pl-2.5">
@@ -334,25 +361,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
               style={{ width: `${Math.max(editingValue.length * 8, 20)}px` }}
             />
           ) : (
-            <span
-              onClick={config.canEdit && config.onEdit ? config.onEdit : undefined}
-              onKeyDown={
-                config.canEdit && config.onEdit
-                  ? (event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        config.onEdit?.();
-                      }
-                    }
-                  : undefined
-              }
-              onMouseDown={config.canEdit && config.onEdit ? (e) => e.stopPropagation() : undefined}
-              className={config.canEdit && config.onEdit ? "cursor-pointer" : ""}
-              role="button"
-              tabIndex={0}
-            >
-              {displayLabel}
-            </span>
+            <span className={hasActionMenu ? "cursor-pointer" : ""}>{displayLabel}</span>
           )}
         </div>
         <div
@@ -370,7 +379,15 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
               }`}
             >
               <button
-                onClick={isEditing ? () => onEditComplete?.(editingValue) : config.onEdit}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (isEditing) {
+                    onEditComplete?.(editingValue);
+                    return;
+                  }
+                  setIsMenuOpen(false);
+                  config.onEdit?.();
+                }}
                 onMouseDown={(e) => {
                   e.stopPropagation();
                   // Set flag to prevent blur validation when clicking X to cancel edit
@@ -406,6 +423,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
                   // Blur the button to release focus before clearing
                   // This allows the parent handler to focus the input
                   e.currentTarget.blur();
+                  setIsMenuOpen(false);
                   config.onClear?.();
                 }}
                 onMouseDown={(e) => e.stopPropagation()}
@@ -432,6 +450,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
                 onClick={(e) => {
                   e.stopPropagation();
                   e.currentTarget.blur();
+                  setIsMenuOpen(false);
                   config.onInsert?.();
                 }}
                 onMouseDown={(e) => e.stopPropagation()}
