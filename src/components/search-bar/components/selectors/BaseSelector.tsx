@@ -54,6 +54,7 @@ function BaseSelector<T>({
   // Internal search term - captured from keystrokes when modal is open
   const [internalSearchTerm, setInternalSearchTerm] = useState("");
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [isHoverDisabled, setIsHoverDisabled] = useState(false);
 
   // Use internal search term (priority) or external search term
   const searchTerm = internalSearchTerm || externalSearchTerm;
@@ -65,6 +66,7 @@ function BaseSelector<T>({
     if (!isOpen) return;
     setInternalSearchTerm("");
     setHoveredIndex(null);
+    setIsHoverDisabled(false);
     if (listContainerRef.current) {
       listContainerRef.current.scrollTop = 0;
     }
@@ -205,7 +207,7 @@ function BaseSelector<T>({
       selectedIndex: typeof value === "function" ? value(prev.selectedIndex) : value,
     }));
   };
-  const backgroundIndex = hoveredIndex ?? selectedIndex;
+  const backgroundIndex = isHoverDisabled ? selectedIndex : (hoveredIndex ?? selectedIndex);
 
   // Reset internal search term when modal closes
   useEffect(() => {
@@ -239,6 +241,7 @@ function BaseSelector<T>({
         case "ArrowDown":
           e.preventDefault();
           setHoveredIndex(null);
+          setIsHoverDisabled(true);
           if (filteredItems.length > 0) {
             setSelectedIndex((prev) => {
               const nextIndex = prev + 1;
@@ -249,6 +252,7 @@ function BaseSelector<T>({
         case "ArrowUp":
           e.preventDefault();
           setHoveredIndex(null);
+          setIsHoverDisabled(true);
           if (filteredItems.length > 0) {
             setSelectedIndex((prev) => {
               return prev === 0 ? filteredItems.length - 1 : prev - 1;
@@ -274,6 +278,7 @@ function BaseSelector<T>({
           e.preventDefault();
           setInternalSearchTerm((prev) => prev.slice(0, -1));
           setHoveredIndex(null);
+          setIsHoverDisabled(false);
           // Reset to first item when search changes
           setSelectedIndex(0);
           break;
@@ -287,6 +292,7 @@ function BaseSelector<T>({
             }
             setInternalSearchTerm((prev) => prev + e.key);
             setHoveredIndex(null);
+            setIsHoverDisabled(false);
             // Reset to first item when search changes
             setSelectedIndex(0);
           }
@@ -530,6 +536,10 @@ function BaseSelector<T>({
                         }
                       }}
                       className="max-h-65 overflow-y-auto overflow-x-hidden py-1"
+                      onMouseLeave={() => {
+                        setHoveredIndex(null);
+                        setIsHoverDisabled(false);
+                      }}
                     >
                       {filteredItems.length === 0 ? (
                         <div className="px-3 py-4 text-sm text-slate-500 text-center">
@@ -538,10 +548,7 @@ function BaseSelector<T>({
                             : config.noResultsText.replace("{searchTerm}", searchTerm)}
                         </div>
                       ) : (
-                        <div
-                          className="relative isolate"
-                          onMouseLeave={() => setHoveredIndex(null)}
-                        >
+                        <div className="relative isolate">
                           {/* Items */}
                           {filteredItems.map((item, index) => {
                             const isSelected = index === selectedIndex;
@@ -564,7 +571,17 @@ function BaseSelector<T>({
                                 }}
                                 className="px-3 py-2 cursor-pointer flex items-center gap-3 mx-1 rounded-lg relative transition-colors duration-150"
                                 onClick={() => onSelect(item)}
-                                onMouseEnter={() => setHoveredIndex(index)}
+                                onMouseEnter={() => {
+                                  if (!isHoverDisabled) {
+                                    setHoveredIndex(index);
+                                  }
+                                }}
+                                onMouseMove={() => {
+                                  if (isHoverDisabled) {
+                                    setIsHoverDisabled(false);
+                                    setHoveredIndex(index);
+                                  }
+                                }}
                                 role="button"
                               >
                                 {hasBackground && (
