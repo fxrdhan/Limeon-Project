@@ -58,19 +58,10 @@ function BaseSelector<T>({
   const searchTerm = internalSearchTerm || externalSearchTerm;
   const activeContentKey = contentKey ?? config.headerText;
 
-  // Track selected item position for sliding background
-  const [indicatorStyle, setIndicatorStyle] = useState({
-    top: 0,
-    left: 0,
-    width: 0,
-    height: 0,
-  });
-
   useLayoutEffect(() => {
     if (!isOpen) return;
     itemRefs.current = [];
     setInternalSearchTerm("");
-    setIndicatorStyle({ top: 0, left: 0, width: 0, height: 0 });
     if (listContainerRef.current) {
       listContainerRef.current.scrollTop = 0;
     }
@@ -178,20 +169,12 @@ function BaseSelector<T>({
   if (
     isOpen !== indexState.isOpen ||
     activeContentKey !== indexState.contentKey ||
-    filteredItems.length !== indexState.filteredLength ||
-    (isOpen && defaultSelectedIndex !== indexState.lastDefaultIndex)
+    filteredItems.length !== indexState.filteredLength
   ) {
     let newIndex = indexState.selectedIndex;
 
     // Reset to defaultSelectedIndex (or 0) when opening
     if (isOpen && (!indexState.isOpen || activeContentKey !== indexState.contentKey)) {
-      newIndex = defaultSelectedIndex ?? 0;
-    }
-    // Also reset when defaultSelectedIndex changes while modal is open
-    // This handles switching between editing different badges
-    // Also handles when defaultSelectedIndex becomes undefined (e.g., after clearing via trash button)
-    else if (isOpen && defaultSelectedIndex !== indexState.lastDefaultIndex) {
-      // Reset to the new defaultSelectedIndex, or 0 if undefined (cleared state)
       newIndex = defaultSelectedIndex ?? 0;
     }
     // Adjust if out of bounds
@@ -237,8 +220,6 @@ function BaseSelector<T>({
       }, 0);
       setTimeout(() => {
         setShowHeader(false);
-        // Reset indicator position so it doesn't animate from old position on next open
-        setIndicatorStyle({ top: 0, left: 0, width: 0, height: 0 });
         // Reset internal search term
         setInternalSearchTerm("");
       }, 100); // Reduced from 200ms to 100ms
@@ -356,55 +337,6 @@ function BaseSelector<T>({
     const animationFrameId = requestAnimationFrame(scrollSelectedItemIntoView);
     return () => cancelAnimationFrame(animationFrameId);
   }, [selectedIndex, isOpen, filteredItems, showContent]);
-
-  // Update sliding background position when selectedIndex changes
-  useEffect(() => {
-    if (
-      itemRefs.current[selectedIndex] &&
-      listContainerRef.current &&
-      filteredItems.length > 0 &&
-      showContent
-    ) {
-      const calculatePosition = () => {
-        requestAnimationFrame(() => {
-          const selectedElement = itemRefs.current[selectedIndex];
-          const containerElement = listContainerRef.current;
-
-          /* c8 ignore start */
-          if (selectedElement && containerElement) {
-            const containerRect = containerElement.getBoundingClientRect();
-            const itemRect = selectedElement.getBoundingClientRect();
-            const verticalOffset = -2;
-
-            setIndicatorStyle({
-              top: itemRect.top - containerRect.top + containerElement.scrollTop + verticalOffset,
-              left: itemRect.left - containerRect.left,
-              width: itemRect.width,
-              height: itemRect.height,
-            });
-          }
-          /* c8 ignore end */
-        });
-      };
-
-      // On initial open (indicator not yet positioned), calculate position immediately
-      // using double RAF to ensure DOM is ready after content animation starts
-      const isInitialPosition = indicatorStyle.height === 0;
-      if (isInitialPosition) {
-        // Use double RAF instead of setTimeout for faster, more reliable positioning
-        // First RAF: content starts rendering, Second RAF: layout is calculated
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            calculatePosition();
-          });
-        });
-      } else {
-        // For subsequent changes (keyboard navigation), calculate immediately
-        /* c8 ignore next */
-        calculatePosition();
-      }
-    }
-  }, [selectedIndex, filteredItems, showContent, indicatorStyle.height]);
 
   // Notify parent of highlighted item changes for live preview
   useEffect(() => {
@@ -569,7 +501,10 @@ function BaseSelector<T>({
                       ease: "easeOut",
                     }}
                   >
-                    <div ref={listContainerRef} className="max-h-65 overflow-y-auto py-1">
+                    <div
+                      ref={listContainerRef}
+                      className="max-h-65 overflow-y-auto overflow-x-hidden py-1"
+                    >
                       {filteredItems.length === 0 ? (
                         <div className="px-3 py-4 text-sm text-slate-500 text-center">
                           {internalSearchTerm
@@ -578,37 +513,6 @@ function BaseSelector<T>({
                         </div>
                       ) : (
                         <div className="pb-1 relative">
-                          {/* Sliding Background Indicator - only render when positioned */}
-                          {indicatorStyle.height > 0 && (
-                            <motion.div
-                              className={`absolute top-0 rounded-lg pointer-events-none ${
-                                config.theme === "blue"
-                                  ? "bg-blue-100"
-                                  : config.theme === "orange"
-                                    ? "bg-orange-100"
-                                    : "bg-purple-100"
-                              }`}
-                              initial={{
-                                top: indicatorStyle.top,
-                                left: indicatorStyle.left,
-                                width: indicatorStyle.width,
-                                height: indicatorStyle.height,
-                              }}
-                              animate={{
-                                top: indicatorStyle.top,
-                                left: indicatorStyle.left,
-                                width: indicatorStyle.width,
-                                height: indicatorStyle.height,
-                              }}
-                              transition={{
-                                type: "spring",
-                                stiffness: 400,
-                                damping: 30,
-                                mass: 0.8,
-                              }}
-                            />
-                          )}
-
                           {/* Items */}
                           {filteredItems.map((item, index) => {
                             const isSelected = index === selectedIndex;
@@ -631,8 +535,26 @@ function BaseSelector<T>({
                                 onMouseEnter={() => setSelectedIndex(index)}
                                 role="button"
                               >
+                                {isSelected && (
+                                  <motion.div
+                                    layoutId="base-selector-active-background"
+                                    className={`absolute inset-0 rounded-lg pointer-events-none ${
+                                      config.theme === "blue"
+                                        ? "bg-blue-100"
+                                        : config.theme === "orange"
+                                          ? "bg-orange-100"
+                                          : "bg-purple-100"
+                                    }`}
+                                    transition={{
+                                      type: "spring",
+                                      stiffness: 400,
+                                      damping: 30,
+                                      mass: 0.8,
+                                    }}
+                                  />
+                                )}
                                 <div
-                                  className={`shrink-0 transition-colors duration-150 ${
+                                  className={`shrink-0 relative z-10 transition-colors duration-150 ${
                                     isSelected
                                       ? config.getItemActiveColor?.(item) || "text-slate-900"
                                       : "text-slate-500"
@@ -640,7 +562,7 @@ function BaseSelector<T>({
                                 >
                                   {config.getItemIcon(item)}
                                 </div>
-                                <div className="flex-1 min-w-0">
+                                <div className="flex-1 min-w-0 relative z-10">
                                   <div className="flex items-center gap-2">
                                     <span
                                       className={`text-sm font-medium transition-colors duration-150 ${
