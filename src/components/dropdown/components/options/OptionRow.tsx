@@ -113,15 +113,13 @@ const OptionRow: React.FC<OptionRowProps> = ({
       ? "text-slate-800 font-semibold"
       : "text-slate-800";
 
-  const backgroundClass = isHighlighted ? "bg-slate-100" : "hover:bg-slate-100";
-
   return (
     <button
       id={`dropdown-option-${option.id}`}
       role="option"
       aria-selected={Boolean(isSelected)}
       type="button"
-      className={`flex ${shouldExpand ? "items-start" : "items-center"} w-full py-2 px-3 rounded-lg text-sm text-slate-800 cursor-pointer focus:outline-hidden ${backgroundClass} transition-colors duration-150`}
+      className={`relative z-10 flex ${shouldExpand ? "items-start" : "items-center"} w-full py-2 px-3 rounded-lg text-sm text-slate-800 cursor-pointer focus:outline-hidden transition-colors duration-150`}
       onClick={() => onSelect(option.id)}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
