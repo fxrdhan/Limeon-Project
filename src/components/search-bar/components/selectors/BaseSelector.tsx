@@ -51,6 +51,7 @@ function BaseSelector<T>({
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const listContainerRef = useRef<HTMLDivElement>(null);
   const releaseHeldBackgroundTimeoutRef = useRef<number | null>(null);
+  const keyboardBackgroundIndexRef = useRef<number | null>(null);
 
   // Internal search term - captured from keystrokes when modal is open
   const [internalSearchTerm, setInternalSearchTerm] = useState("");
@@ -74,6 +75,11 @@ function BaseSelector<T>({
     setInternalSearchTerm("");
     setHoveredIndex(null);
     setIsHoverDisabled(false);
+    keyboardBackgroundIndexRef.current = null;
+    if (releaseHeldBackgroundTimeoutRef.current !== null) {
+      window.clearTimeout(releaseHeldBackgroundTimeoutRef.current);
+      releaseHeldBackgroundTimeoutRef.current = null;
+    }
     setHeldBackgroundStyle(null);
     if (listContainerRef.current) {
       listContainerRef.current.scrollTop = 0;
@@ -85,6 +91,7 @@ function BaseSelector<T>({
       if (releaseHeldBackgroundTimeoutRef.current !== null) {
         window.clearTimeout(releaseHeldBackgroundTimeoutRef.current);
       }
+      keyboardBackgroundIndexRef.current = null;
     };
   }, []);
 
@@ -274,9 +281,10 @@ function BaseSelector<T>({
       });
       container.scrollTo({ top: scrollTop, behavior: "smooth" });
       releaseHeldBackgroundTimeoutRef.current = window.setTimeout(() => {
+        keyboardBackgroundIndexRef.current = null;
         setHeldBackgroundStyle(null);
         releaseHeldBackgroundTimeoutRef.current = null;
-      }, 180);
+      }, 260);
 
       return true;
     },
@@ -317,17 +325,23 @@ function BaseSelector<T>({
           if (filteredItems.length > 0) {
             setIsHoverDisabled(true);
             setHoveredIndex((prev) => {
-              const baseIndex = prev ?? selectedIndex;
+              const visualBaseIndex = prev ?? selectedIndex;
+              const baseIndex = keyboardBackgroundIndexRef.current ?? visualBaseIndex;
               const nextIndex = baseIndex + 1 >= filteredItems.length ? 0 : baseIndex + 1;
-              if (nextIndex !== 0) {
-                scrollKeyboardTargetIntoView(baseIndex, nextIndex);
-              } else {
+              keyboardBackgroundIndexRef.current = nextIndex;
+              if (nextIndex === 0) {
                 if (releaseHeldBackgroundTimeoutRef.current !== null) {
                   window.clearTimeout(releaseHeldBackgroundTimeoutRef.current);
                   releaseHeldBackgroundTimeoutRef.current = null;
                 }
+                keyboardBackgroundIndexRef.current = null;
                 setHeldBackgroundStyle(null);
+                return nextIndex;
               }
+              if (scrollKeyboardTargetIntoView(visualBaseIndex, nextIndex)) {
+                return nextIndex;
+              }
+              keyboardBackgroundIndexRef.current = null;
               return nextIndex;
             });
           }
@@ -337,17 +351,23 @@ function BaseSelector<T>({
           if (filteredItems.length > 0) {
             setIsHoverDisabled(true);
             setHoveredIndex((prev) => {
-              const baseIndex = prev ?? selectedIndex;
+              const visualBaseIndex = prev ?? selectedIndex;
+              const baseIndex = keyboardBackgroundIndexRef.current ?? visualBaseIndex;
               const nextIndex = baseIndex === 0 ? filteredItems.length - 1 : baseIndex - 1;
-              if (nextIndex !== filteredItems.length - 1) {
-                scrollKeyboardTargetIntoView(baseIndex, nextIndex);
-              } else {
+              keyboardBackgroundIndexRef.current = nextIndex;
+              if (nextIndex === filteredItems.length - 1) {
                 if (releaseHeldBackgroundTimeoutRef.current !== null) {
                   window.clearTimeout(releaseHeldBackgroundTimeoutRef.current);
                   releaseHeldBackgroundTimeoutRef.current = null;
                 }
+                keyboardBackgroundIndexRef.current = null;
                 setHeldBackgroundStyle(null);
+                return nextIndex;
               }
+              if (scrollKeyboardTargetIntoView(visualBaseIndex, nextIndex)) {
+                return nextIndex;
+              }
+              keyboardBackgroundIndexRef.current = null;
               return nextIndex;
             });
           }
@@ -372,6 +392,7 @@ function BaseSelector<T>({
           setInternalSearchTerm((prev) => prev.slice(0, -1));
           setHoveredIndex(null);
           setIsHoverDisabled(false);
+          keyboardBackgroundIndexRef.current = null;
           setHeldBackgroundStyle(null);
           // Reset to first item when search changes
           setSelectedIndex(0);
@@ -387,6 +408,7 @@ function BaseSelector<T>({
             setInternalSearchTerm((prev) => prev + e.key);
             setHoveredIndex(null);
             setIsHoverDisabled(false);
+            keyboardBackgroundIndexRef.current = null;
             setHeldBackgroundStyle(null);
             // Reset to first item when search changes
             setSelectedIndex(0);
@@ -409,7 +431,13 @@ function BaseSelector<T>({
   ]);
 
   useEffect(() => {
-    if (!isOpen || !showContent) return;
+    if (
+      !isOpen ||
+      !showContent ||
+      heldBackgroundStyle ||
+      keyboardBackgroundIndexRef.current !== null
+    )
+      return;
 
     const scrollActiveBackgroundItemIntoView = () => {
       const container = listContainerRef.current;
@@ -468,7 +496,7 @@ function BaseSelector<T>({
     return () => {
       frameIds.forEach((frameId) => cancelAnimationFrame(frameId));
     };
-  }, [activeContentKey, backgroundIndex, isOpen, filteredItems, showContent]);
+  }, [activeContentKey, backgroundIndex, isOpen, filteredItems, showContent, heldBackgroundStyle]);
 
   // Notify parent of highlighted item changes for live preview
   useEffect(() => {
@@ -657,6 +685,12 @@ function BaseSelector<T>({
                       onMouseLeave={() => {
                         setHoveredIndex(null);
                         setIsHoverDisabled(false);
+                        keyboardBackgroundIndexRef.current = null;
+                        if (releaseHeldBackgroundTimeoutRef.current !== null) {
+                          window.clearTimeout(releaseHeldBackgroundTimeoutRef.current);
+                          releaseHeldBackgroundTimeoutRef.current = null;
+                        }
+                        setHeldBackgroundStyle(null);
                       }}
                     >
                       {filteredItems.length === 0 ? (
@@ -697,6 +731,11 @@ function BaseSelector<T>({
                                 onMouseMove={() => {
                                   if (isHoverDisabled) {
                                     setIsHoverDisabled(false);
+                                    keyboardBackgroundIndexRef.current = null;
+                                    if (releaseHeldBackgroundTimeoutRef.current !== null) {
+                                      window.clearTimeout(releaseHeldBackgroundTimeoutRef.current);
+                                      releaseHeldBackgroundTimeoutRef.current = null;
+                                    }
                                     setHeldBackgroundStyle(null);
                                     setHoveredIndex(index);
                                   }

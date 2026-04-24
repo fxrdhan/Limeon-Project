@@ -1,4 +1,4 @@
-import { forwardRef, RefObject, useLayoutEffect, useRef, useState } from "react";
+import { forwardRef, RefObject, useCallback, useLayoutEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import MenuPortal from "./menu/MenuPortal";
 import MenuContent from "./menu/MenuContent";
@@ -30,6 +30,7 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
       searchState,
       filteredOptions,
       highlightedIndex,
+      pendingHighlightedIndex,
       expandedId,
       value,
       withCheckbox,
@@ -66,17 +67,84 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
       width: number;
       height: number;
     } | null>(null);
-    const updateHeldHighlightFrame = (
-      frame: {
-        top: number;
-        left: number;
-        width: number;
-        height: number;
-      } | null,
-    ) => {
-      heldHighlightFrameRef.current = frame;
-      setHeldHighlightFrame(frame);
-    };
+    const updateHeldHighlightFrame = useCallback(
+      (
+        frame: {
+          top: number;
+          left: number;
+          width: number;
+          height: number;
+        } | null,
+      ) => {
+        heldHighlightFrameRef.current = frame;
+        setHeldHighlightFrame(frame);
+      },
+      [],
+    );
+
+    useLayoutEffect(() => {
+      if (pendingHighlightedIndex === null || !isKeyboardNavigation) return;
+
+      const container = optionsContainerRef.current;
+      const menuElement = dropdownMenuRef.current;
+      const optionElements = container
+        ? Array.from(container.querySelectorAll<HTMLElement>('[role="option"]'))
+        : [];
+      const targetElement = optionElements[pendingHighlightedIndex];
+      const previousHighlightedIndex = previousHighlightedIndexRef.current;
+      const currentElement =
+        previousHighlightedIndex !== null
+          ? optionElements[previousHighlightedIndex]
+          : highlightedIndex >= 0
+            ? optionElements[highlightedIndex]
+            : targetElement;
+
+      if (!container || !menuElement || !targetElement || !currentElement) return;
+
+      if (releaseHeldHighlightTimeoutRef.current !== null) {
+        window.clearTimeout(releaseHeldHighlightTimeoutRef.current);
+        releaseHeldHighlightTimeoutRef.current = null;
+      }
+
+      if (!heldHighlightFrameRef.current) {
+        const currentRect = currentElement.getBoundingClientRect();
+        const menuRect = menuElement.getBoundingClientRect();
+        updateHeldHighlightFrame({
+          top: currentRect.top - menuRect.top,
+          left: currentRect.left - menuRect.left,
+          width: currentRect.width,
+          height: currentRect.height,
+        });
+      }
+
+      const itemTop = targetElement.offsetTop;
+      const itemBottom = itemTop + targetElement.offsetHeight;
+      const containerScrollTop = container.scrollTop;
+      const containerHeight = container.clientHeight;
+      const visibilityInset = 4;
+      let scrollTop: number | null = null;
+
+      if (itemTop < containerScrollTop + visibilityInset) {
+        scrollTop = Math.max(0, itemTop - visibilityInset);
+      } else if (itemBottom > containerScrollTop + containerHeight - visibilityInset) {
+        scrollTop =
+          pendingHighlightedIndex === filteredOptions.length - 1
+            ? container.scrollHeight - containerHeight
+            : itemBottom - containerHeight + visibilityInset;
+      }
+
+      if (scrollTop !== null) {
+        container.scrollTo({ top: scrollTop, behavior: "smooth" });
+      }
+    }, [
+      dropdownMenuRef,
+      filteredOptions.length,
+      highlightedIndex,
+      isKeyboardNavigation,
+      optionsContainerRef,
+      pendingHighlightedIndex,
+      updateHeldHighlightFrame,
+    ]);
 
     useLayoutEffect(() => {
       const container = optionsContainerRef.current;
@@ -105,73 +173,12 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
         }));
       };
 
-      const previousHighlightedIndex = previousHighlightedIndexRef.current;
+      if (pendingHighlightedIndex !== null) {
+        updateHighlightFrame(false);
+        return;
+      }
+
       previousHighlightedIndexRef.current = highlightedIndex >= 0 ? highlightedIndex : null;
-      const menuElement = dropdownMenuRef.current;
-
-      const isWrappedNavigation =
-        previousHighlightedIndex !== null &&
-        ((previousHighlightedIndex === filteredOptions.length - 1 && highlightedIndex === 0) ||
-          (previousHighlightedIndex === 0 && highlightedIndex === filteredOptions.length - 1));
-      const itemTop = optionElement.offsetTop;
-      const itemBottom = itemTop + optionElement.offsetHeight;
-      const containerScrollTop = container.scrollTop;
-      const containerHeight = container.clientHeight;
-      const visibilityInset = 4;
-      let scrollTop: number | null = null;
-
-      if (itemTop < containerScrollTop + visibilityInset) {
-        scrollTop = Math.max(0, itemTop - visibilityInset);
-      } else if (itemBottom > containerScrollTop + containerHeight - visibilityInset) {
-        scrollTop =
-          highlightedIndex === filteredOptions.length - 1
-            ? container.scrollHeight - containerHeight
-            : itemBottom - containerHeight + visibilityInset;
-      }
-
-      if (
-        isKeyboardNavigation &&
-        highlightFrame.isVisible &&
-        menuElement &&
-        scrollTop !== null &&
-        !isWrappedNavigation
-      ) {
-        if (releaseHeldHighlightTimeoutRef.current !== null) {
-          window.clearTimeout(releaseHeldHighlightTimeoutRef.current);
-        }
-
-        if (!heldHighlightFrameRef.current) {
-          const currentOptionElement =
-            previousHighlightedIndex === null
-              ? null
-              : Array.from(container.querySelectorAll<HTMLElement>('[role="option"]'))[
-                  previousHighlightedIndex
-                ];
-          const heldElement = currentOptionElement ?? optionElement;
-          const heldRect = heldElement.getBoundingClientRect();
-          const menuRect = menuElement.getBoundingClientRect();
-
-          updateHeldHighlightFrame({
-            top: heldRect.top - menuRect.top,
-            left: heldRect.left - menuRect.left,
-            width: heldRect.width,
-            height: heldRect.height,
-          });
-        }
-        container.scrollTo({ top: scrollTop, behavior: "smooth" });
-        releaseHeldHighlightTimeoutRef.current = window.setTimeout(() => {
-          updateHeldHighlightFrame(null);
-          updateHighlightFrame(false);
-          releaseHeldHighlightTimeoutRef.current = null;
-        }, 280);
-
-        return () => {
-          if (releaseHeldHighlightTimeoutRef.current !== null) {
-            window.clearTimeout(releaseHeldHighlightTimeoutRef.current);
-            releaseHeldHighlightTimeoutRef.current = null;
-          }
-        };
-      }
 
       if (releaseHeldHighlightTimeoutRef.current !== null) {
         window.clearTimeout(releaseHeldHighlightTimeoutRef.current);
@@ -203,6 +210,8 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
       isKeyboardNavigation,
       dropdownMenuRef,
       optionsContainerRef,
+      pendingHighlightedIndex,
+      updateHeldHighlightFrame,
     ]);
 
     return (

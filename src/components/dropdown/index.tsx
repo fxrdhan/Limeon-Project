@@ -306,6 +306,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
   const {
     highlightedIndex,
     isKeyboardNavigation,
+    pendingHighlightedIndex,
     setHighlightedIndex,
     setIsKeyboardNavigation,
     handleDropdownKeyDown,
@@ -321,6 +322,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     onCloseDropdown: closeDropdownAndReleasePin,
     onCloseValidation: handleCloseValidation,
     autoHighlightOnOpen: mode !== "text",
+    optionsContainerRef: optionsContainerRef as RefObject<HTMLDivElement>,
   });
 
   useEffect(() => {
@@ -529,6 +531,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     // Navigation state
     highlightedIndex,
     isKeyboardNavigation,
+    pendingHighlightedIndex,
     expandedId,
 
     // Validation state

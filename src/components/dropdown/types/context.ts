@@ -1,6 +1,6 @@
-import { RefObject } from 'react';
-import { DropDirection } from '../constants';
-import type { DropdownOption } from '@/types';
+import { RefObject } from "react";
+import { DropDirection } from "../constants";
+import type { DropdownOption } from "@/types";
 
 export interface DropdownContextType {
   // State
@@ -20,6 +20,7 @@ export interface DropdownContextType {
   // Navigation state
   highlightedIndex: number;
   isKeyboardNavigation: boolean;
+  pendingHighlightedIndex: number | null;
   expandedId: string | null;
 
   // Validation state
@@ -57,7 +58,7 @@ export interface DropdownContextType {
   onHoverDetailShow?: (
     optionId: string,
     element: HTMLElement,
-    optionData?: Partial<DropdownOption>
+    optionData?: Partial<DropdownOption>,
   ) => Promise<void>;
   onHoverDetailHide?: () => void;
 }

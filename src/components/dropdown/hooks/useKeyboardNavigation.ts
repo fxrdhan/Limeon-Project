@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { RefObject, useState, useCallback, useEffect, useRef } from "react";
 import { KEYBOARD_KEYS, DROPDOWN_CONSTANTS, SEARCH_STATES } from "../constants";
 
 interface UseKeyboardNavigationProps {
@@ -13,6 +13,7 @@ interface UseKeyboardNavigationProps {
   onCloseDropdown: () => void;
   onCloseValidation: () => void;
   autoHighlightOnOpen?: boolean;
+  optionsContainerRef: RefObject<HTMLDivElement>;
 }
 
 export const useKeyboardNavigation = ({
@@ -27,16 +28,66 @@ export const useKeyboardNavigation = ({
   onCloseDropdown,
   onCloseValidation,
   autoHighlightOnOpen = true,
+  optionsContainerRef,
 }: UseKeyboardNavigationProps) => {
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
   const [isKeyboardNavigation, setIsKeyboardNavigation] = useState(false);
+  const [pendingHighlightedIndex, setPendingHighlightedIndex] = useState<number | null>(null);
 
   // Track mouse movement to exit keyboard mode
   const mouseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingHighlightTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const keyboardHighlightIndexRef = useRef<number | null>(null);
   const lastMousePositionRef = useRef({ x: 0, y: 0 });
+
+  const clearPendingHighlight = useCallback(() => {
+    if (pendingHighlightTimeoutRef.current) {
+      clearTimeout(pendingHighlightTimeoutRef.current);
+      pendingHighlightTimeoutRef.current = null;
+    }
+    keyboardHighlightIndexRef.current = null;
+    setPendingHighlightedIndex(null);
+  }, []);
+
+  const setHighlightedIndexSafely = useCallback(
+    (index: number) => {
+      clearPendingHighlight();
+      setHighlightedIndex(index);
+    },
+    [clearPendingHighlight],
+  );
+
+  const getRequiredScrollTop = useCallback(
+    (index: number): number | null => {
+      const container = optionsContainerRef.current;
+      const optionElement = container?.querySelectorAll<HTMLElement>('[role="option"]')[index];
+
+      if (!container || !optionElement) return null;
+
+      const itemTop = optionElement.offsetTop;
+      const itemBottom = itemTop + optionElement.offsetHeight;
+      const containerScrollTop = container.scrollTop;
+      const containerHeight = container.clientHeight;
+      const visibilityInset = 4;
+
+      if (itemTop < containerScrollTop + visibilityInset) {
+        return Math.max(0, itemTop - visibilityInset);
+      }
+
+      if (itemBottom > containerScrollTop + containerHeight - visibilityInset) {
+        return index === currentFilteredOptions.length - 1
+          ? container.scrollHeight - containerHeight
+          : itemBottom - containerHeight + visibilityInset;
+      }
+
+      return null;
+    },
+    [currentFilteredOptions.length, optionsContainerRef],
+  );
 
   useEffect(() => {
     if (!isOpen) {
+      clearPendingHighlight();
       if (highlightedIndex !== -1 || isKeyboardNavigation) {
         queueMicrotask(() => {
           if (highlightedIndex !== -1) {
@@ -76,7 +127,14 @@ export const useKeyboardNavigation = ({
     isKeyboardNavigation,
     highlightedIndex,
     autoHighlightOnOpen,
+    clearPendingHighlight,
   ]);
+
+  useEffect(() => {
+    return () => {
+      clearPendingHighlight();
+    };
+  }, [clearPendingHighlight]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -125,30 +183,31 @@ export const useKeyboardNavigation = ({
         return;
 
       let newIndex = highlightedIndex;
+      const navigationBaseIndex = keyboardHighlightIndexRef.current ?? highlightedIndex;
       const keyActions: Record<string, () => void> = {
         [KEYBOARD_KEYS.ARROW_DOWN]: () => {
-          newIndex = items.length ? (highlightedIndex + 1) % items.length : -1;
+          newIndex = items.length ? (navigationBaseIndex + 1) % items.length : -1;
         },
         [KEYBOARD_KEYS.ARROW_UP]: () => {
-          newIndex = items.length ? (highlightedIndex - 1 + items.length) % items.length : -1;
+          newIndex = items.length ? (navigationBaseIndex - 1 + items.length) % items.length : -1;
         },
         [KEYBOARD_KEYS.TAB]: () => {
           if (items.length) {
             newIndex = e.shiftKey
-              ? highlightedIndex <= 0
+              ? navigationBaseIndex <= 0
                 ? items.length - 1
-                : highlightedIndex - 1
-              : highlightedIndex >= items.length - 1
+                : navigationBaseIndex - 1
+              : navigationBaseIndex >= items.length - 1
                 ? 0
-                : highlightedIndex + 1;
+                : navigationBaseIndex + 1;
           }
         },
         [KEYBOARD_KEYS.PAGE_DOWN]: () => {
           if (items.length) {
             newIndex = Math.min(
-              highlightedIndex === -1
+              navigationBaseIndex === -1
                 ? DROPDOWN_CONSTANTS.PAGE_SIZE - 1
-                : highlightedIndex + DROPDOWN_CONSTANTS.PAGE_SIZE,
+                : navigationBaseIndex + DROPDOWN_CONSTANTS.PAGE_SIZE,
               items.length - 1,
             );
           }
@@ -156,9 +215,9 @@ export const useKeyboardNavigation = ({
         [KEYBOARD_KEYS.PAGE_UP]: () => {
           if (items.length) {
             newIndex =
-              highlightedIndex === -1
+              navigationBaseIndex === -1
                 ? 0
-                : Math.max(highlightedIndex - DROPDOWN_CONSTANTS.PAGE_SIZE, 0);
+                : Math.max(navigationBaseIndex - DROPDOWN_CONSTANTS.PAGE_SIZE, 0);
           }
         },
         [KEYBOARD_KEYS.ENTER]: () => {
@@ -190,6 +249,32 @@ export const useKeyboardNavigation = ({
         }
         keyActions[e.key]();
         if (!([KEYBOARD_KEYS.ENTER, KEYBOARD_KEYS.ESCAPE] as string[]).includes(e.key)) {
+          const isWrappedNavigation =
+            items.length > 0 &&
+            ((navigationBaseIndex === items.length - 1 && newIndex === 0) ||
+              (navigationBaseIndex === 0 && newIndex === items.length - 1));
+          const shouldPinHighlight =
+            newIndex >= 0 && getRequiredScrollTop(newIndex) !== null && !isWrappedNavigation;
+
+          if (shouldPinHighlight) {
+            if (pendingHighlightTimeoutRef.current) {
+              clearTimeout(pendingHighlightTimeoutRef.current);
+            }
+            keyboardHighlightIndexRef.current = newIndex;
+            setPendingHighlightedIndex(newIndex);
+            setHighlightedIndex(newIndex);
+            if (newIndex >= 0 && items[newIndex]) {
+              setExpandedId(items[newIndex].id);
+            }
+            pendingHighlightTimeoutRef.current = setTimeout(() => {
+              setPendingHighlightedIndex(null);
+              keyboardHighlightIndexRef.current = null;
+              pendingHighlightTimeoutRef.current = null;
+            }, 340);
+            return;
+          }
+
+          clearPendingHighlight();
           setHighlightedIndex(newIndex);
           if (newIndex >= 0 && items[newIndex]) {
             setExpandedId(items[newIndex].id);
@@ -209,6 +294,8 @@ export const useKeyboardNavigation = ({
       onCloseValidation,
       setHighlightedIndex,
       setExpandedId,
+      getRequiredScrollTop,
+      clearPendingHighlight,
     ],
   );
 
@@ -221,9 +308,10 @@ export const useKeyboardNavigation = ({
 
   return {
     highlightedIndex,
-    setHighlightedIndex,
+    setHighlightedIndex: setHighlightedIndexSafely,
     isKeyboardNavigation,
     setIsKeyboardNavigation,
+    pendingHighlightedIndex,
     handleDropdownKeyDown,
     handleKeyDown,
   };
