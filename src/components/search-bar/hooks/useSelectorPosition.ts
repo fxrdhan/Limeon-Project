@@ -1,4 +1,4 @@
-import { RefObject, useEffect, useState } from 'react';
+import { RefObject, useEffect, useRef, useState } from "react";
 
 export interface Position {
   top: number;
@@ -11,7 +11,7 @@ interface UseSelectorPositionProps {
   /** Optional anchor element to position relative to (e.g., badge). Falls back to containerRef. */
   anchorRef?: RefObject<HTMLElement | null>;
   /** Position relative to anchor: 'left', 'right', or 'center' */
-  anchorAlign?: 'left' | 'right' | 'center';
+  anchorAlign?: "left" | "right" | "center";
   /** Optional offset ratio (0-1) from anchor's left edge. Overrides anchorAlign when provided. */
   anchorOffsetRatio?: number;
 }
@@ -20,14 +20,17 @@ export const useSelectorPosition = ({
   isOpen,
   containerRef,
   anchorRef,
-  anchorAlign = 'left',
+  anchorAlign = "left",
   anchorOffsetRatio,
 }: UseSelectorPositionProps): Position => {
   const [position, setPosition] = useState<Position>({ top: 0, left: 0 });
+  const positionRef = useRef<Position>({ top: 0, left: 0 });
 
   useEffect(() => {
-    const updatePosition = () => {
-      if (!isOpen || !containerRef.current) return;
+    if (!isOpen) return;
+
+    const readPosition = (): Position | null => {
+      if (!containerRef.current) return null;
 
       const containerRect = containerRef.current.getBoundingClientRect();
 
@@ -41,72 +44,81 @@ export const useSelectorPosition = ({
         if (anchorOffsetRatio !== undefined) {
           // Use offset ratio: 0 = left edge, 0.5 = center, 1 = right edge
           left = anchorRect.left + anchorRect.width * anchorOffsetRatio;
-        } else if (anchorAlign === 'right') {
+        } else if (anchorAlign === "right") {
           left = anchorRect.right;
-        } else if (anchorAlign === 'center') {
+        } else if (anchorAlign === "center") {
           left = anchorRect.left + anchorRect.width / 2;
         } else {
           left = anchorRect.left;
         }
 
-        setPosition({
+        return {
           top: containerRect.bottom,
           left,
-        });
-      } else {
-        setPosition({
-          top: containerRect.bottom,
-          left: containerRect.left,
-        });
+        };
       }
+
+      return {
+        top: containerRect.bottom,
+        left: containerRect.left,
+      };
+    };
+
+    const updatePosition = () => {
+      const nextPosition = readPosition();
+      if (!nextPosition) return;
+
+      const currentPosition = positionRef.current;
+      if (
+        Math.abs(nextPosition.top - currentPosition.top) < 0.5 &&
+        Math.abs(nextPosition.left - currentPosition.left) < 0.5
+      ) {
+        return;
+      }
+
+      positionRef.current = nextPosition;
+      setPosition(nextPosition);
     };
 
     // Initial position calculation
     updatePosition();
 
-    if (isOpen) {
-      const handleResize = () => updatePosition();
-      const handleScroll = () => updatePosition();
+    const handleResize = () => updatePosition();
+    const handleScroll = () => updatePosition();
 
-      window.addEventListener('resize', handleResize);
-      window.addEventListener('scroll', handleScroll, true);
-      document.addEventListener('scroll', handleScroll, true);
+    window.addEventListener("resize", handleResize);
+    window.addEventListener("scroll", handleScroll, true);
+    document.addEventListener("scroll", handleScroll, true);
 
-      let resizeObserver: ResizeObserver | null = null;
+    let resizeObserver: ResizeObserver | null = null;
 
-      // Observe both container and anchor for size changes
-      if ('ResizeObserver' in window) {
-        resizeObserver = new ResizeObserver(updatePosition);
-        if (containerRef.current) {
-          resizeObserver.observe(containerRef.current);
-        }
-        if (anchorRef?.current) {
-          resizeObserver.observe(anchorRef.current);
-        }
+    // Observe both container and anchor for size changes
+    if ("ResizeObserver" in window) {
+      resizeObserver = new ResizeObserver(updatePosition);
+      if (containerRef.current) {
+        resizeObserver.observe(containerRef.current);
       }
-
-      // CRITICAL FIX: Recalculate position after a frame to ensure refs are updated
-      // React batches state updates and refs might not be assigned when effect first runs
-      // Also recalculate after badge animations settle (300ms)
-      // Added: Extra recalculation at 100ms for ref assignment timing issues
-      const rafId = requestAnimationFrame(updatePosition);
-      const delayedUpdateId = setTimeout(updatePosition, 50);
-      const extraDelayId = setTimeout(updatePosition, 100); // Extra check for ref timing
-      const animationSettleId = setTimeout(updatePosition, 300);
-
-      return () => {
-        window.removeEventListener('resize', handleResize);
-        window.removeEventListener('scroll', handleScroll, true);
-        document.removeEventListener('scroll', handleScroll, true);
-        if (resizeObserver) {
-          resizeObserver.disconnect();
-        }
-        cancelAnimationFrame(rafId);
-        clearTimeout(delayedUpdateId);
-        clearTimeout(extraDelayId);
-        clearTimeout(animationSettleId);
-      };
+      if (anchorRef?.current) {
+        resizeObserver.observe(anchorRef.current);
+      }
     }
+
+    let trackingFrameId = 0;
+    const trackPosition = () => {
+      updatePosition();
+      trackingFrameId = requestAnimationFrame(trackPosition);
+    };
+    trackingFrameId = requestAnimationFrame(trackPosition);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("scroll", handleScroll, true);
+      document.removeEventListener("scroll", handleScroll, true);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
+      cancelAnimationFrame(trackingFrameId);
+    };
   }, [isOpen, containerRef, anchorRef, anchorAlign, anchorOffsetRatio]);
 
   return position;
