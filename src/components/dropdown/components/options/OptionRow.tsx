@@ -40,7 +40,7 @@ const OptionRow: React.FC<OptionRowProps> = ({
   option,
   index,
   isSelected,
-  isHighlighted,
+  isHighlighted: _isHighlighted,
   isKeyboardNavigation,
   isExpanded = false,
   portalWidth,
@@ -88,6 +88,23 @@ const OptionRow: React.FC<OptionRowProps> = ({
     }
   };
 
+  const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    if (!isKeyboardNavigation) return;
+    onHighlight(index);
+
+    if (onHoverDetailShow) {
+      void onHoverDetailShow(option.id, e.currentTarget, {
+        id: option.id,
+        name: option.name,
+        code: option.code,
+        description: option.description,
+        metaLabel: option.metaLabel,
+        metaTone: option.metaTone,
+        updated_at: option.updated_at,
+      });
+    }
+  };
+
   const handleMouseLeave = () => {
     if (isKeyboardNavigation) return;
     if (onHoverDetailHide) onHoverDetailHide();
@@ -107,11 +124,7 @@ const OptionRow: React.FC<OptionRowProps> = ({
 
   const baseTextClass = shouldExpand ? "whitespace-normal break-words leading-relaxed" : "truncate";
 
-  const textStateClass = isSelected
-    ? "text-primary font-semibold"
-    : isHighlighted
-      ? "text-slate-800 font-semibold"
-      : "text-slate-800";
+  const textStateClass = isSelected ? "text-primary font-semibold" : "text-slate-800";
 
   return (
     <button
@@ -122,6 +135,7 @@ const OptionRow: React.FC<OptionRowProps> = ({
       className={`relative z-10 flex ${shouldExpand ? "items-start" : "items-center"} w-full py-2 px-3 rounded-lg text-sm text-slate-800 cursor-pointer focus:outline-hidden transition-colors duration-150`}
       onClick={() => onSelect(option.id)}
       onMouseEnter={handleMouseEnter}
+      onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onFocus={handleFocus}
       onBlur={handleBlur}

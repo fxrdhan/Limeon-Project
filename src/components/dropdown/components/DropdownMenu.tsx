@@ -1,4 +1,4 @@
-import { forwardRef, RefObject, useLayoutEffect, useState } from "react";
+import { forwardRef, RefObject, useLayoutEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import MenuPortal from "./menu/MenuPortal";
 import MenuContent from "./menu/MenuContent";
@@ -40,21 +40,48 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
       onMenuEnter,
       onMenuLeave,
       onScroll,
+      dropdownMenuRef,
       searchInputRef,
       optionsContainerRef,
       scrollState,
     } = useDropdownContext();
     const highlightedOptionId = filteredOptions[highlightedIndex]?.id;
+    const previousHighlightedIndexRef = useRef<number | null>(null);
+    const releaseHeldHighlightTimeoutRef = useRef<number | null>(null);
+    const heldHighlightFrameRef = useRef<{
+      top: number;
+      left: number;
+      width: number;
+      height: number;
+    } | null>(null);
     const [highlightFrame, setHighlightFrame] = useState({
       top: 0,
       height: 0,
       isVisible: false,
       shouldAnimate: false,
     });
+    const [heldHighlightFrame, setHeldHighlightFrame] = useState<{
+      top: number;
+      left: number;
+      width: number;
+      height: number;
+    } | null>(null);
+    const updateHeldHighlightFrame = (
+      frame: {
+        top: number;
+        left: number;
+        width: number;
+        height: number;
+      } | null,
+    ) => {
+      heldHighlightFrameRef.current = frame;
+      setHeldHighlightFrame(frame);
+    };
 
     useLayoutEffect(() => {
       const container = optionsContainerRef.current;
       if (!container || !highlightedOptionId) {
+        previousHighlightedIndexRef.current = highlightedIndex >= 0 ? highlightedIndex : null;
         setHighlightFrame((frame) => (frame.isVisible ? { ...frame, isVisible: false } : frame));
         return;
       }
@@ -64,30 +91,119 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
       ).find((element) => element.id === `dropdown-option-${highlightedOptionId}`);
 
       if (!optionElement) {
+        previousHighlightedIndexRef.current = highlightedIndex >= 0 ? highlightedIndex : null;
         setHighlightFrame((frame) => (frame.isVisible ? { ...frame, isVisible: false } : frame));
         return;
       }
 
-      const updateHighlightFrame = () => {
+      const updateHighlightFrame = (shouldAnimateOverride?: boolean) => {
         setHighlightFrame((currentFrame) => ({
           top: optionElement.offsetTop,
           height: optionElement.offsetHeight,
           isVisible: true,
-          shouldAnimate: currentFrame.isVisible,
+          shouldAnimate: shouldAnimateOverride ?? currentFrame.isVisible,
         }));
       };
 
+      const previousHighlightedIndex = previousHighlightedIndexRef.current;
+      previousHighlightedIndexRef.current = highlightedIndex >= 0 ? highlightedIndex : null;
+      const menuElement = dropdownMenuRef.current;
+
+      const isWrappedNavigation =
+        previousHighlightedIndex !== null &&
+        ((previousHighlightedIndex === filteredOptions.length - 1 && highlightedIndex === 0) ||
+          (previousHighlightedIndex === 0 && highlightedIndex === filteredOptions.length - 1));
+      const itemTop = optionElement.offsetTop;
+      const itemBottom = itemTop + optionElement.offsetHeight;
+      const containerScrollTop = container.scrollTop;
+      const containerHeight = container.clientHeight;
+      const visibilityInset = 4;
+      let scrollTop: number | null = null;
+
+      if (itemTop < containerScrollTop + visibilityInset) {
+        scrollTop = Math.max(0, itemTop - visibilityInset);
+      } else if (itemBottom > containerScrollTop + containerHeight - visibilityInset) {
+        scrollTop =
+          highlightedIndex === filteredOptions.length - 1
+            ? container.scrollHeight - containerHeight
+            : itemBottom - containerHeight + visibilityInset;
+      }
+
+      if (
+        isKeyboardNavigation &&
+        highlightFrame.isVisible &&
+        menuElement &&
+        scrollTop !== null &&
+        !isWrappedNavigation
+      ) {
+        if (releaseHeldHighlightTimeoutRef.current !== null) {
+          window.clearTimeout(releaseHeldHighlightTimeoutRef.current);
+        }
+
+        if (!heldHighlightFrameRef.current) {
+          const currentOptionElement =
+            previousHighlightedIndex === null
+              ? null
+              : Array.from(container.querySelectorAll<HTMLElement>('[role="option"]'))[
+                  previousHighlightedIndex
+                ];
+          const heldElement = currentOptionElement ?? optionElement;
+          const heldRect = heldElement.getBoundingClientRect();
+          const menuRect = menuElement.getBoundingClientRect();
+
+          updateHeldHighlightFrame({
+            top: heldRect.top - menuRect.top,
+            left: heldRect.left - menuRect.left,
+            width: heldRect.width,
+            height: heldRect.height,
+          });
+        }
+        container.scrollTo({ top: scrollTop, behavior: "smooth" });
+        releaseHeldHighlightTimeoutRef.current = window.setTimeout(() => {
+          updateHeldHighlightFrame(null);
+          updateHighlightFrame(false);
+          releaseHeldHighlightTimeoutRef.current = null;
+        }, 280);
+
+        return () => {
+          if (releaseHeldHighlightTimeoutRef.current !== null) {
+            window.clearTimeout(releaseHeldHighlightTimeoutRef.current);
+            releaseHeldHighlightTimeoutRef.current = null;
+          }
+        };
+      }
+
+      if (releaseHeldHighlightTimeoutRef.current !== null) {
+        window.clearTimeout(releaseHeldHighlightTimeoutRef.current);
+        releaseHeldHighlightTimeoutRef.current = null;
+      }
+      updateHeldHighlightFrame(null);
       updateHighlightFrame();
-      const animationFrameId = requestAnimationFrame(updateHighlightFrame);
+      const animationFrameId = requestAnimationFrame(() => {
+        updateHighlightFrame();
+      });
       const resizeObserver =
-        typeof ResizeObserver === "undefined" ? null : new ResizeObserver(updateHighlightFrame);
+        typeof ResizeObserver === "undefined"
+          ? null
+          : new ResizeObserver(() => {
+              updateHighlightFrame();
+            });
       resizeObserver?.observe(optionElement);
 
       return () => {
         cancelAnimationFrame(animationFrameId);
         resizeObserver?.disconnect();
       };
-    }, [highlightedOptionId, expandedId, filteredOptions.length, optionsContainerRef]);
+    }, [
+      highlightedOptionId,
+      expandedId,
+      filteredOptions.length,
+      highlightedIndex,
+      highlightFrame.isVisible,
+      isKeyboardNavigation,
+      dropdownMenuRef,
+      optionsContainerRef,
+    ]);
 
     return (
       <MenuPortal
@@ -103,7 +219,17 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
         onMouseEnter={onMenuEnter}
         onMouseLeave={onMenuLeave}
       >
-        <div>
+        <div className="relative">
+          {heldHighlightFrame && (
+            <motion.div
+              aria-hidden="true"
+              className="pointer-events-none absolute z-0 rounded-lg bg-primary/10"
+              style={heldHighlightFrame}
+              initial={false}
+              animate={heldHighlightFrame}
+              transition={highlightTransition}
+            />
+          )}
           {searchList && (
             <SearchBar
               ref={searchInputRef}
@@ -124,10 +250,10 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
             >
               <motion.div
                 aria-hidden="true"
-                className="pointer-events-none absolute left-1 right-1 top-0 z-0 rounded-lg bg-slate-100"
+                className="pointer-events-none absolute left-1 right-1 top-0 z-0 rounded-lg bg-primary/10"
                 initial={false}
                 animate={{
-                  opacity: highlightFrame.isVisible ? 1 : 0,
+                  opacity: highlightFrame.isVisible && !heldHighlightFrame ? 1 : 0,
                   y: highlightFrame.top,
                   height: highlightFrame.height,
                 }}

@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect, RefObject, useRef } from 'react';
-import { KEYBOARD_KEYS, DROPDOWN_CONSTANTS, SEARCH_STATES } from '../constants';
+import { useState, useCallback, useEffect, useRef } from "react";
+import { KEYBOARD_KEYS, DROPDOWN_CONSTANTS, SEARCH_STATES } from "../constants";
 
 interface UseKeyboardNavigationProps {
   isOpen: boolean;
@@ -12,7 +12,6 @@ interface UseKeyboardNavigationProps {
   onAddNew?: (term: string) => void;
   onCloseDropdown: () => void;
   onCloseValidation: () => void;
-  optionsContainerRef: RefObject<HTMLDivElement | null>;
   autoHighlightOnOpen?: boolean;
 }
 
@@ -27,7 +26,6 @@ export const useKeyboardNavigation = ({
   onAddNew,
   onCloseDropdown,
   onCloseValidation,
-  optionsContainerRef,
   autoHighlightOnOpen = true,
 }: UseKeyboardNavigationProps) => {
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
@@ -57,9 +55,7 @@ export const useKeyboardNavigation = ({
     ) {
       queueMicrotask(() => {
         if (value) {
-          const selectedIndex = currentFilteredOptions.findIndex(
-            option => option.id === value
-          );
+          const selectedIndex = currentFilteredOptions.findIndex((option) => option.id === value);
           if (selectedIndex >= 0) {
             if (selectedIndex !== highlightedIndex) {
               setHighlightedIndex(selectedIndex);
@@ -90,8 +86,7 @@ export const useKeyboardNavigation = ({
       const lastPos = lastMousePositionRef.current;
 
       const mouseMoved =
-        Math.abs(currentPos.x - lastPos.x) > 5 ||
-        Math.abs(currentPos.y - lastPos.y) > 5;
+        Math.abs(currentPos.x - lastPos.x) > 5 || Math.abs(currentPos.y - lastPos.y) > 5;
 
       if (mouseMoved && isKeyboardNavigation) {
         if (mouseTimeoutRef.current) {
@@ -106,10 +101,10 @@ export const useKeyboardNavigation = ({
       lastMousePositionRef.current = currentPos;
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener("mousemove", handleMouseMove);
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener("mousemove", handleMouseMove);
       if (mouseTimeoutRef.current) {
         clearTimeout(mouseTimeoutRef.current);
       }
@@ -123,13 +118,9 @@ export const useKeyboardNavigation = ({
       const items = currentFilteredOptions;
       if (
         !items.length &&
-        !(
-          [
-            KEYBOARD_KEYS.ESCAPE,
-            KEYBOARD_KEYS.TAB,
-            KEYBOARD_KEYS.ENTER,
-          ] as string[]
-        ).includes(e.key)
+        !([KEYBOARD_KEYS.ESCAPE, KEYBOARD_KEYS.TAB, KEYBOARD_KEYS.ENTER] as string[]).includes(
+          e.key,
+        )
       )
         return;
 
@@ -139,9 +130,7 @@ export const useKeyboardNavigation = ({
           newIndex = items.length ? (highlightedIndex + 1) % items.length : -1;
         },
         [KEYBOARD_KEYS.ARROW_UP]: () => {
-          newIndex = items.length
-            ? (highlightedIndex - 1 + items.length) % items.length
-            : -1;
+          newIndex = items.length ? (highlightedIndex - 1 + items.length) % items.length : -1;
         },
         [KEYBOARD_KEYS.TAB]: () => {
           if (items.length) {
@@ -160,7 +149,7 @@ export const useKeyboardNavigation = ({
               highlightedIndex === -1
                 ? DROPDOWN_CONSTANTS.PAGE_SIZE - 1
                 : highlightedIndex + DROPDOWN_CONSTANTS.PAGE_SIZE,
-              items.length - 1
+              items.length - 1,
             );
           }
         },
@@ -177,10 +166,9 @@ export const useKeyboardNavigation = ({
             onSelect(items[highlightedIndex].id);
           } else if (
             (searchState === SEARCH_STATES.NOT_FOUND ||
-              (searchState === SEARCH_STATES.TYPING &&
-                currentFilteredOptions.length === 0)) &&
+              (searchState === SEARCH_STATES.TYPING && currentFilteredOptions.length === 0)) &&
             onAddNew &&
-            searchTerm.trim() !== ''
+            searchTerm.trim() !== ""
           ) {
             onCloseValidation();
             onAddNew(searchTerm);
@@ -196,37 +184,16 @@ export const useKeyboardNavigation = ({
 
       if (keyActions[e.key]) {
         e.preventDefault();
-        if (
-          !([KEYBOARD_KEYS.ENTER, KEYBOARD_KEYS.ESCAPE] as string[]).includes(
-            e.key
-          )
-        ) {
+        if (!([KEYBOARD_KEYS.ENTER, KEYBOARD_KEYS.ESCAPE] as string[]).includes(e.key)) {
           setIsKeyboardNavigation(true);
           setExpandedId(null);
         }
         keyActions[e.key]();
-        if (
-          !([KEYBOARD_KEYS.ENTER, KEYBOARD_KEYS.ESCAPE] as string[]).includes(
-            e.key
-          )
-        ) {
+        if (!([KEYBOARD_KEYS.ENTER, KEYBOARD_KEYS.ESCAPE] as string[]).includes(e.key)) {
           setHighlightedIndex(newIndex);
           if (newIndex >= 0 && items[newIndex]) {
             setExpandedId(items[newIndex].id);
           }
-
-          requestAnimationFrame(() => {
-            if (optionsContainerRef.current && newIndex >= 0) {
-              const optionElements =
-                optionsContainerRef.current.querySelectorAll('[role="option"]');
-              if (optionElements[newIndex]) {
-                (optionElements[newIndex] as HTMLElement).scrollIntoView({
-                  block: 'nearest',
-                  behavior: 'auto',
-                });
-              }
-            }
-          });
         }
       }
     },
@@ -242,15 +209,14 @@ export const useKeyboardNavigation = ({
       onCloseValidation,
       setHighlightedIndex,
       setExpandedId,
-      optionsContainerRef,
-    ]
+    ],
   );
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLElement>) => {
       handleDropdownKeyDown(e);
     },
-    [handleDropdownKeyDown]
+    [handleDropdownKeyDown],
   );
 
   return {
