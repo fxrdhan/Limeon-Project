@@ -49,6 +49,7 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
       top: 0,
       height: 0,
       isVisible: false,
+      shouldAnimate: false,
     });
 
     useLayoutEffect(() => {
@@ -68,11 +69,12 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
       }
 
       const updateHighlightFrame = () => {
-        setHighlightFrame({
+        setHighlightFrame((currentFrame) => ({
           top: optionElement.offsetTop,
           height: optionElement.offsetHeight,
           isVisible: true,
-        });
+          shouldAnimate: currentFrame.isVisible,
+        }));
       };
 
       updateHighlightFrame();
@@ -129,7 +131,7 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
                   y: highlightFrame.top,
                   height: highlightFrame.height,
                 }}
-                transition={highlightTransition}
+                transition={highlightFrame.shouldAnimate ? highlightTransition : { duration: 0 }}
               />
               {filteredOptions.length > 0 ? (
                 filteredOptions.map((option, index) => (

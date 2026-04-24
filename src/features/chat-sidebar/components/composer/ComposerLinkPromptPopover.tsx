@@ -63,6 +63,7 @@ const LinkPromptContent = ({
     top: 0,
     height: 0,
     isVisible: false,
+    shouldAnimate: false,
   });
   const primaryActions: LinkPromptAction[] = [
     {
@@ -111,11 +112,12 @@ const LinkPromptContent = ({
     }
 
     const updateHighlightFrame = () => {
-      setHighlightFrame({
+      setHighlightFrame((currentFrame) => ({
         top: actionButton.offsetTop,
         height: actionButton.offsetHeight,
         isVisible: true,
-      });
+        shouldAnimate: currentFrame.isVisible,
+      }));
     };
 
     updateHighlightFrame();
@@ -171,7 +173,7 @@ const LinkPromptContent = ({
           y: highlightFrame.top,
           height: highlightFrame.height,
         }}
-        transition={linkPromptHighlightTransition}
+        transition={highlightFrame.shouldAnimate ? linkPromptHighlightTransition : { duration: 0 }}
       />
       <div className={ATTACHMENT_PROMPT_SECTION_LABEL_CLASS_NAME}>Aksi</div>
       {primaryActions.map((action, actionIndex) => renderActionButton(action, actionIndex))}

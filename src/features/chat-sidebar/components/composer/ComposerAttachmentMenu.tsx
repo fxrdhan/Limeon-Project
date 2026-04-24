@@ -49,6 +49,7 @@ export const ComposerAttachmentMenu = ({
     top: 0,
     height: 0,
     isVisible: false,
+    shouldAnimate: false,
   });
   const attachmentActions = [
     {
@@ -84,11 +85,12 @@ export const ComposerAttachmentMenu = ({
     }
 
     const updateHighlightFrame = () => {
-      setHighlightFrame({
+      setHighlightFrame((currentFrame) => ({
         top: actionButton.offsetTop,
         height: actionButton.offsetHeight,
         isVisible: true,
-      });
+        shouldAnimate: currentFrame.isVisible,
+      }));
     };
 
     updateHighlightFrame();
@@ -154,7 +156,9 @@ export const ComposerAttachmentMenu = ({
                   y: highlightFrame.top,
                   height: highlightFrame.height,
                 }}
-                transition={attachmentMenuHighlightTransition}
+                transition={
+                  highlightFrame.shouldAnimate ? attachmentMenuHighlightTransition : { duration: 0 }
+                }
               />
               {attachmentActions.map((action, actionIndex) => (
                 <button

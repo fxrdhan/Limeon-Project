@@ -104,6 +104,7 @@ const PopupMenuContent = ({
     top: 0,
     height: 0,
     isVisible: false,
+    shouldAnimate: false,
   });
   const setFocusedActionIndexWithSync = useCallback(
     (nextIndex: number) => {
@@ -194,11 +195,12 @@ const PopupMenuContent = ({
     }
 
     const updateHighlightFrame = () => {
-      setHighlightFrame({
+      setHighlightFrame((currentFrame) => ({
         top: actionButton.offsetTop,
         height: actionButton.offsetHeight,
         isVisible: true,
-      });
+        shouldAnimate: currentFrame.isVisible,
+      }));
     };
 
     updateHighlightFrame();
@@ -233,7 +235,7 @@ const PopupMenuContent = ({
             y: highlightFrame.top,
             height: highlightFrame.height,
           }}
-          transition={highlightTransition}
+          transition={highlightFrame.shouldAnimate ? highlightTransition : { duration: 0 }}
         />
       ) : null}
       {header}
