@@ -253,12 +253,7 @@ export const useKeyboardNavigation = ({
         }
         keyActions[e.key]();
         if (!([KEYBOARD_KEYS.ENTER, KEYBOARD_KEYS.ESCAPE] as string[]).includes(e.key)) {
-          const isWrappedNavigation =
-            items.length > 0 &&
-            ((navigationBaseIndex === items.length - 1 && newIndex === 0) ||
-              (navigationBaseIndex === 0 && newIndex === items.length - 1));
-          const shouldPinHighlight =
-            newIndex >= 0 && getRequiredScrollTop(newIndex) !== null && !isWrappedNavigation;
+          const shouldPinHighlight = newIndex >= 0 && getRequiredScrollTop(newIndex) !== null;
 
           if (shouldPinHighlight) {
             if (pendingHighlightTimeoutRef.current) {
