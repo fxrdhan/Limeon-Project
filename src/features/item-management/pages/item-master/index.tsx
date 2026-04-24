@@ -2,6 +2,7 @@ import { createTextColumn } from "@/components/ag-grid/columns";
 import type { ColDef, GridApi, GridReadyEvent } from "ag-grid-community";
 import {
   memo,
+  Suspense,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -2234,6 +2235,51 @@ const ItemMasterNew = memo(() => {
   const activeOnItemSelect = isItemTab ? handleItemSelect : undefined;
 
   const enableTabShortcuts = isItemMasterTab(activeTab);
+  const isAnyMasterDataModalOpen =
+    isAddItemModalOpen ||
+    isItemModalClosing ||
+    entityManager.isAddModalOpen ||
+    entityManager.isEditModalOpen ||
+    isAddSupplierModalOpen ||
+    isEditSupplierModalOpen ||
+    isAddCustomerModalOpen ||
+    isEditCustomerModalOpen ||
+    isAddPatientModalOpen ||
+    isEditPatientModalOpen ||
+    isAddDoctorModalOpen ||
+    isEditDoctorModalOpen;
+
+  useEffect(() => {
+    if (!isItemTab || !unifiedGridApi || unifiedGridApi.isDestroyed()) {
+      return;
+    }
+
+    const syncItemsGrid = () => {
+      if (unifiedGridApi.isDestroyed()) {
+        return;
+      }
+
+      const nextRowData = itemsManagement.data as ItemDataType[];
+      const shouldShowItemsLoading = activeIsLoading && nextRowData.length === 0;
+
+      unifiedGridApi.setGridOption("loading", shouldShowItemsLoading);
+      unifiedGridApi.setGridOption("rowData", nextRowData);
+    };
+
+    syncItemsGrid();
+    const rafId = requestAnimationFrame(syncItemsGrid);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+    };
+  }, [
+    activeIsLoading,
+    isAddItemModalOpen,
+    isItemModalClosing,
+    isItemTab,
+    itemsManagement.data,
+    unifiedGridApi,
+  ]);
 
   // Removed unified column handlers - now handled by live save in EntityGrid
 
@@ -2310,6 +2356,7 @@ const ItemMasterNew = memo(() => {
             doesExternalFilterPass={activeDoesExternalFilterPass}
             onGridApiReady={handleUnifiedGridApiReady}
             itemsPerPage={activeItemsPerPage}
+            hideFloatingPagination={isAnyMasterDataModalOpen}
             isRowGroupingEnabled={activeTab === "items" ? isRowGroupingEnabled : false}
             defaultExpanded={activeTab === "items" ? defaultExpanded : 1}
             showGroupPanel={activeTab === "items" ? showGroupPanel : true}
@@ -2319,235 +2366,253 @@ const ItemMasterNew = memo(() => {
 
       {/* Item Management Modal - only render for items tab */}
       {activeTab === "items" && (isAddItemModalOpen || isItemModalClosing) && (
-        <ItemModal
-          key={`${editingItemId ?? "new"}-${currentSearchQueryForModal ?? ""}-${modalRenderId}`}
-          isOpen={isAddItemModalOpen}
-          onClose={closeAddItemModal}
-          itemId={editingItemId}
-          initialItemData={editingItemData}
-          initialSearchQuery={currentSearchQueryForModal}
-          isClosing={isItemModalClosing}
-          setIsClosing={setIsItemModalClosing}
-          refetchItems={itemsManagement.refetchItems}
-        />
+        <Suspense fallback={null}>
+          <ItemModal
+            key={`${editingItemId ?? "new"}-${currentSearchQueryForModal ?? ""}-${modalRenderId}`}
+            isOpen={isAddItemModalOpen}
+            onClose={closeAddItemModal}
+            itemId={editingItemId}
+            initialItemData={editingItemData}
+            initialSearchQuery={currentSearchQueryForModal}
+            isClosing={isItemModalClosing}
+            setIsClosing={setIsItemModalClosing}
+            refetchItems={itemsManagement.refetchItems}
+          />
+        </Suspense>
       )}
 
       {/* Entity Management Modal - only render for entity tabs */}
       {isItemEntityTab && (entityManager.isAddModalOpen || entityManager.isEditModalOpen) && (
-        <EntityModal
-          isOpen={true}
-          onClose={
-            entityManager.isEditModalOpen
-              ? entityManager.closeEditModal
-              : entityManager.closeAddModal
-          }
-          onSubmit={entityManager.handleSubmit}
-          initialData={entityManager.editingEntity}
-          onDelete={
-            entityManager.editingEntity
-              ? () => entityManager.handleDelete(entityManager.editingEntity!)
-              : undefined
-          }
-          isLoading={false}
-          isDeleting={false}
-          entityName={entityCurrentConfig?.entityName || "Entity"}
-        />
+        <Suspense fallback={null}>
+          <EntityModal
+            isOpen={true}
+            onClose={
+              entityManager.isEditModalOpen
+                ? entityManager.closeEditModal
+                : entityManager.closeAddModal
+            }
+            onSubmit={entityManager.handleSubmit}
+            initialData={entityManager.editingEntity}
+            onDelete={
+              entityManager.editingEntity
+                ? () => entityManager.handleDelete(entityManager.editingEntity!)
+                : undefined
+            }
+            isLoading={false}
+            isDeleting={false}
+            entityName={entityCurrentConfig?.entityName || "Entity"}
+          />
+        </Suspense>
       )}
 
       {(isSupplierTab || isAddSupplierModalOpen || isEditSupplierModalOpen) && (
-        <SupplierModals
-          isActive={isSupplierTab}
-          supplierFields={supplierFields}
-          supplierSearch={supplierSearch}
-          isAddSupplierModalOpen={isAddSupplierModalOpen}
-          isEditSupplierModalOpen={isEditSupplierModalOpen}
-          editingSupplier={editingSupplier}
-          supplierMutations={supplierMutations}
-          openConfirmDialog={openConfirmDialog}
-          closeAddSupplierModal={closeAddSupplierModal}
-          closeEditSupplierModal={closeEditSupplierModal}
-        />
+        <Suspense fallback={null}>
+          <SupplierModals
+            isActive={isSupplierTab}
+            supplierFields={supplierFields}
+            supplierSearch={supplierSearch}
+            isAddSupplierModalOpen={isAddSupplierModalOpen}
+            isEditSupplierModalOpen={isEditSupplierModalOpen}
+            editingSupplier={editingSupplier}
+            supplierMutations={supplierMutations}
+            openConfirmDialog={openConfirmDialog}
+            closeAddSupplierModal={closeAddSupplierModal}
+            closeEditSupplierModal={closeEditSupplierModal}
+          />
+        </Suspense>
       )}
 
       {/* Customer Modals */}
       {isCustomerTab && isAddCustomerModalOpen && (
-        <IdentityDataModal
-          title="Tambah Pelanggan Baru"
-          data={{ customer_level_id: defaultCustomerLevelId }}
-          fields={customerFields}
-          isOpen={isCustomerTab && isAddCustomerModalOpen}
-          onClose={() => setIsAddCustomerModalOpen(false)}
-          onSave={async (data) => {
-            return await handleCustomerModalSubmit({
-              data: toCustomerPayload(data),
-            });
-          }}
-          mode="add"
-          initialNameFromSearch={customerDebouncedSearch}
-          showImageUploader={false}
-          useInlineFieldActions={false}
-        />
+        <Suspense fallback={null}>
+          <IdentityDataModal
+            title="Tambah Pelanggan Baru"
+            data={{ customer_level_id: defaultCustomerLevelId }}
+            fields={customerFields}
+            isOpen={isCustomerTab && isAddCustomerModalOpen}
+            onClose={() => setIsAddCustomerModalOpen(false)}
+            onSave={async (data) => {
+              return await handleCustomerModalSubmit({
+                data: toCustomerPayload(data),
+              });
+            }}
+            mode="add"
+            initialNameFromSearch={customerDebouncedSearch}
+            showImageUploader={false}
+            useInlineFieldActions={false}
+          />
+        </Suspense>
       )}
 
       {isCustomerTab && isEditCustomerModalOpen && (
-        <IdentityDataModal
-          title="Edit Pelanggan"
-          data={
-            (editingCustomer as unknown as Record<string, string | number | boolean | null>) || {}
-          }
-          fields={customerFields}
-          isOpen={isCustomerTab && isEditCustomerModalOpen}
-          onClose={() => setIsEditCustomerModalOpen(false)}
-          onSave={async (data) => {
-            return await handleCustomerModalSubmit({
-              id: editingCustomer?.id,
-              data: toCustomerPayload(data),
-            });
-          }}
-          onFieldSave={async (key, value) => {
-            await handleCustomerFieldAutosave(editingCustomer?.id, key, value);
-          }}
-          onDeleteRequest={
-            editingCustomer
-              ? () => {
-                  openConfirmDialog({
-                    title: "Konfirmasi Hapus",
-                    message: `Apakah Anda yakin ingin menghapus pelanggan "${editingCustomer.name}"?`,
-                    variant: "danger",
-                    confirmText: "Ya, Hapus",
-                    onConfirm: async () => {
-                      await handleCustomerDelete(editingCustomer.id);
-                    },
-                  });
-                }
-              : undefined
-          }
-          mode="edit"
-          showImageUploader={false}
-          useInlineFieldActions={false}
-        />
+        <Suspense fallback={null}>
+          <IdentityDataModal
+            title="Edit Pelanggan"
+            data={
+              (editingCustomer as unknown as Record<string, string | number | boolean | null>) || {}
+            }
+            fields={customerFields}
+            isOpen={isCustomerTab && isEditCustomerModalOpen}
+            onClose={() => setIsEditCustomerModalOpen(false)}
+            onSave={async (data) => {
+              return await handleCustomerModalSubmit({
+                id: editingCustomer?.id,
+                data: toCustomerPayload(data),
+              });
+            }}
+            onFieldSave={async (key, value) => {
+              await handleCustomerFieldAutosave(editingCustomer?.id, key, value);
+            }}
+            onDeleteRequest={
+              editingCustomer
+                ? () => {
+                    openConfirmDialog({
+                      title: "Konfirmasi Hapus",
+                      message: `Apakah Anda yakin ingin menghapus pelanggan "${editingCustomer.name}"?`,
+                      variant: "danger",
+                      confirmText: "Ya, Hapus",
+                      onConfirm: async () => {
+                        await handleCustomerDelete(editingCustomer.id);
+                      },
+                    });
+                  }
+                : undefined
+            }
+            mode="edit"
+            showImageUploader={false}
+            useInlineFieldActions={false}
+          />
+        </Suspense>
       )}
 
       {/* Patient Modals */}
       {isPatientTab && isAddPatientModalOpen && (
-        <IdentityDataModal
-          title="Tambah Pasien Baru"
-          data={{}}
-          fields={patientFields}
-          isOpen={isPatientTab && isAddPatientModalOpen}
-          onClose={() => setIsAddPatientModalOpen(false)}
-          onSave={async (data) => {
-            return await handlePatientModalSubmit({
-              data: toPatientPayload(data),
-              id: undefined,
-            });
-          }}
-          mode="add"
-          initialNameFromSearch={patientDebouncedSearch}
-          useInlineFieldActions={false}
-        />
+        <Suspense fallback={null}>
+          <IdentityDataModal
+            title="Tambah Pasien Baru"
+            data={{}}
+            fields={patientFields}
+            isOpen={isPatientTab && isAddPatientModalOpen}
+            onClose={() => setIsAddPatientModalOpen(false)}
+            onSave={async (data) => {
+              return await handlePatientModalSubmit({
+                data: toPatientPayload(data),
+                id: undefined,
+              });
+            }}
+            mode="add"
+            initialNameFromSearch={patientDebouncedSearch}
+            useInlineFieldActions={false}
+          />
+        </Suspense>
       )}
 
       {isPatientTab && isEditPatientModalOpen && (
-        <IdentityDataModal
-          title="Edit Pasien"
-          data={
-            (editingPatient as unknown as Record<string, string | number | boolean | null>) || {}
-          }
-          fields={patientFields}
-          isOpen={isPatientTab && isEditPatientModalOpen}
-          onClose={() => setIsEditPatientModalOpen(false)}
-          onSave={async (data) => {
-            return await handlePatientModalSubmit({
-              data: toPatientPayload(data),
-              id: editingPatient?.id,
-            });
-          }}
-          onFieldSave={async (key, value) => {
-            await handlePatientFieldAutosave(editingPatient?.id, key, value);
-          }}
-          onDeleteRequest={
-            editingPatient
-              ? () => {
-                  openConfirmDialog({
-                    title: "Konfirmasi Hapus",
-                    message: `Apakah Anda yakin ingin menghapus pasien "${editingPatient.name}"?`,
-                    variant: "danger",
-                    confirmText: "Ya, Hapus",
-                    onConfirm: async () => {
-                      await handlePatientDelete(editingPatient.id);
-                    },
-                  });
-                }
-              : undefined
-          }
-          mode="edit"
-          imageUrl={(editingPatient as PatientType)?.image_url || undefined}
-          onImageSave={handlePatientImageSave}
-          onImageDelete={handlePatientImageDelete}
-          useInlineFieldActions={false}
-        />
+        <Suspense fallback={null}>
+          <IdentityDataModal
+            title="Edit Pasien"
+            data={
+              (editingPatient as unknown as Record<string, string | number | boolean | null>) || {}
+            }
+            fields={patientFields}
+            isOpen={isPatientTab && isEditPatientModalOpen}
+            onClose={() => setIsEditPatientModalOpen(false)}
+            onSave={async (data) => {
+              return await handlePatientModalSubmit({
+                data: toPatientPayload(data),
+                id: editingPatient?.id,
+              });
+            }}
+            onFieldSave={async (key, value) => {
+              await handlePatientFieldAutosave(editingPatient?.id, key, value);
+            }}
+            onDeleteRequest={
+              editingPatient
+                ? () => {
+                    openConfirmDialog({
+                      title: "Konfirmasi Hapus",
+                      message: `Apakah Anda yakin ingin menghapus pasien "${editingPatient.name}"?`,
+                      variant: "danger",
+                      confirmText: "Ya, Hapus",
+                      onConfirm: async () => {
+                        await handlePatientDelete(editingPatient.id);
+                      },
+                    });
+                  }
+                : undefined
+            }
+            mode="edit"
+            imageUrl={(editingPatient as PatientType)?.image_url || undefined}
+            onImageSave={handlePatientImageSave}
+            onImageDelete={handlePatientImageDelete}
+            useInlineFieldActions={false}
+          />
+        </Suspense>
       )}
 
       {/* Doctor Modals */}
       {isDoctorTab && isAddDoctorModalOpen && (
-        <IdentityDataModal
-          title="Tambah Dokter Baru"
-          data={{}}
-          fields={doctorFields}
-          isOpen={isDoctorTab && isAddDoctorModalOpen}
-          onClose={() => setIsAddDoctorModalOpen(false)}
-          onSave={async (data) => {
-            return await handleDoctorModalSubmit({
-              data: toDoctorPayload(data),
-              id: undefined,
-            });
-          }}
-          mode="add"
-          initialNameFromSearch={doctorDebouncedSearch}
-          useInlineFieldActions={false}
-        />
+        <Suspense fallback={null}>
+          <IdentityDataModal
+            title="Tambah Dokter Baru"
+            data={{}}
+            fields={doctorFields}
+            isOpen={isDoctorTab && isAddDoctorModalOpen}
+            onClose={() => setIsAddDoctorModalOpen(false)}
+            onSave={async (data) => {
+              return await handleDoctorModalSubmit({
+                data: toDoctorPayload(data),
+                id: undefined,
+              });
+            }}
+            mode="add"
+            initialNameFromSearch={doctorDebouncedSearch}
+            useInlineFieldActions={false}
+          />
+        </Suspense>
       )}
 
       {isDoctorTab && isEditDoctorModalOpen && (
-        <IdentityDataModal
-          title="Edit Dokter"
-          data={
-            (editingDoctor as unknown as Record<string, string | number | boolean | null>) || {}
-          }
-          fields={doctorFields}
-          isOpen={isDoctorTab && isEditDoctorModalOpen}
-          onClose={() => setIsEditDoctorModalOpen(false)}
-          onSave={async (data) => {
-            return await handleDoctorModalSubmit({
-              data: toDoctorPayload(data),
-              id: editingDoctor?.id,
-            });
-          }}
-          onFieldSave={async (key, value) => {
-            await handleDoctorFieldAutosave(editingDoctor?.id, key, value);
-          }}
-          onDeleteRequest={
-            editingDoctor
-              ? () => {
-                  openConfirmDialog({
-                    title: "Konfirmasi Hapus",
-                    message: `Apakah Anda yakin ingin menghapus dokter "${editingDoctor.name}"?`,
-                    variant: "danger",
-                    confirmText: "Ya, Hapus",
-                    onConfirm: async () => {
-                      await handleDoctorDelete(editingDoctor.id);
-                    },
-                  });
-                }
-              : undefined
-          }
-          mode="edit"
-          imageUrl={(editingDoctor as DoctorType)?.image_url || undefined}
-          onImageSave={handleDoctorImageSave}
-          onImageDelete={handleDoctorImageDelete}
-          useInlineFieldActions={false}
-        />
+        <Suspense fallback={null}>
+          <IdentityDataModal
+            title="Edit Dokter"
+            data={
+              (editingDoctor as unknown as Record<string, string | number | boolean | null>) || {}
+            }
+            fields={doctorFields}
+            isOpen={isDoctorTab && isEditDoctorModalOpen}
+            onClose={() => setIsEditDoctorModalOpen(false)}
+            onSave={async (data) => {
+              return await handleDoctorModalSubmit({
+                data: toDoctorPayload(data),
+                id: editingDoctor?.id,
+              });
+            }}
+            onFieldSave={async (key, value) => {
+              await handleDoctorFieldAutosave(editingDoctor?.id, key, value);
+            }}
+            onDeleteRequest={
+              editingDoctor
+                ? () => {
+                    openConfirmDialog({
+                      title: "Konfirmasi Hapus",
+                      message: `Apakah Anda yakin ingin menghapus dokter "${editingDoctor.name}"?`,
+                      variant: "danger",
+                      confirmText: "Ya, Hapus",
+                      onConfirm: async () => {
+                        await handleDoctorDelete(editingDoctor.id);
+                      },
+                    });
+                  }
+                : undefined
+            }
+            mode="edit"
+            imageUrl={(editingDoctor as DoctorType)?.image_url || undefined}
+            onImageSave={handleDoctorImageSave}
+            onImageDelete={handleDoctorImageDelete}
+            useInlineFieldActions={false}
+          />
+        </Suspense>
       )}
     </>
   );

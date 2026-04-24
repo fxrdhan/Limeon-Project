@@ -108,6 +108,7 @@ interface EntityGridProps {
 
   // Pagination (for items)
   itemsPerPage?: number;
+  hideFloatingPagination?: boolean;
 }
 
 const EntityGrid = memo<EntityGridProps>(function EntityGrid({
@@ -135,6 +136,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
   onGridApiReady,
   onFilterChanged,
   itemsPerPage = 25,
+  hideFloatingPagination = false,
 }) {
   // Single grid API for all tabs
   const [gridApi, setGridApi] = useState<GridApi | null>(null);
@@ -789,6 +791,8 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
     );
   }
 
+  const shouldShowGridLoading = isLoading && rowData.length === 0;
+
   return (
     <>
       <div className="relative">
@@ -801,7 +805,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
           onGridReady={handleGridReady}
           onFirstDataRendered={handleFirstDataRendered}
           onRowDataUpdated={handleRowDataUpdated}
-          loading={isLoading}
+          loading={shouldShowGridLoading}
           overlayNoRowsTemplate={overlayNoRowsTemplate}
           isExternalFilterPresent={isExternalFilterPresent}
           doesExternalFilterPass={doesExternalFilterPass}
@@ -855,7 +859,11 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
       </div>
 
       {/* Custom Pagination Component using AG Grid API */}
-      <StandardPagination gridApi={gridApi} onPageSizeChange={handlePageSizeChange} />
+      <StandardPagination
+        gridApi={gridApi}
+        hideFloatingWhenModalOpen={hideFloatingPagination}
+        onPageSizeChange={handlePageSizeChange}
+      />
     </>
   );
 });
