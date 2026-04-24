@@ -1,9 +1,9 @@
-import React, { RefObject } from 'react';
-import type { DropdownOption } from '@/types';
-import { truncateText, shouldTruncateText } from '@/utils/text';
-import { DROPDOWN_CONSTANTS } from '../../constants';
-import RadioIndicator from './RadioIndicator';
-import CheckboxIndicator from './CheckboxIndicator';
+import React, { RefObject } from "react";
+import type { DropdownOption } from "@/types";
+import { truncateText, shouldTruncateText } from "@/utils/text";
+import { DROPDOWN_CONSTANTS } from "../../constants";
+import RadioIndicator from "./RadioIndicator";
+import CheckboxIndicator from "./CheckboxIndicator";
 
 interface OptionRowProps {
   option: DropdownOption;
@@ -31,7 +31,7 @@ interface OptionRowProps {
   onHoverDetailShow?: (
     optionId: string,
     element: HTMLElement,
-    optionData?: Partial<DropdownOption>
+    optionData?: Partial<DropdownOption>,
   ) => Promise<void>;
   onHoverDetailHide?: () => void;
 }
@@ -55,28 +55,23 @@ const OptionRow: React.FC<OptionRowProps> = ({
   const DEFAULT_WIDTH = 200;
   const numericPortalWidth = (() => {
     if (portalWidth == null) return DEFAULT_WIDTH;
-    if (typeof portalWidth === 'number') return portalWidth;
-    const parsed = parseInt(String(portalWidth).replace('px', ''), 10);
+    if (typeof portalWidth === "number") return portalWidth;
+    const parsed = parseInt(String(portalWidth).replace("px", ""), 10);
     return Number.isFinite(parsed) ? parsed : DEFAULT_WIDTH;
   })();
 
   const maxTextWidth =
     numericPortalWidth -
     (withRadio || withCheckbox
-      ? DROPDOWN_CONSTANTS.BUTTON_PADDING +
-        DROPDOWN_CONSTANTS.RADIO_EXTRA_PADDING
+      ? DROPDOWN_CONSTANTS.BUTTON_PADDING + DROPDOWN_CONSTANTS.RADIO_EXTRA_PADDING
       : DROPDOWN_CONSTANTS.BUTTON_PADDING);
 
   const willTruncate = shouldTruncateText(option.name, maxTextWidth);
   const shouldExpand = isExpanded && willTruncate;
   const displayText =
-    willTruncate && !shouldExpand
-      ? truncateText(option.name, maxTextWidth)
-      : option.name;
+    willTruncate && !shouldExpand ? truncateText(option.name, maxTextWidth) : option.name;
 
-  const handleMouseEnter = async (
-    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
-  ) => {
+  const handleMouseEnter = async (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     if (isKeyboardNavigation) return;
     onHighlight(index);
 
@@ -110,21 +105,15 @@ const OptionRow: React.FC<OptionRowProps> = ({
     }, 0);
   };
 
-  const baseTextClass = shouldExpand
-    ? 'whitespace-normal break-words leading-relaxed'
-    : 'truncate';
+  const baseTextClass = shouldExpand ? "whitespace-normal break-words leading-relaxed" : "truncate";
 
   const textStateClass = isSelected
-    ? 'text-primary font-semibold'
+    ? "text-primary font-semibold"
     : isHighlighted
-      ? 'text-slate-800 font-semibold'
-      : 'text-slate-800';
+      ? "text-slate-800 font-semibold"
+      : "text-slate-800";
 
-  const backgroundClass = isHighlighted
-    ? 'bg-slate-100'
-    : isSelected
-      ? 'bg-slate-100'
-      : 'hover:bg-slate-100';
+  const backgroundClass = isHighlighted ? "bg-slate-100" : "hover:bg-slate-100";
 
   return (
     <button
@@ -132,19 +121,15 @@ const OptionRow: React.FC<OptionRowProps> = ({
       role="option"
       aria-selected={Boolean(isSelected)}
       type="button"
-      className={`flex ${shouldExpand ? 'items-start' : 'items-center'} w-full py-2 px-3 rounded-lg text-sm text-slate-800 cursor-pointer focus:outline-hidden ${backgroundClass} transition-colors duration-150`}
+      className={`flex ${shouldExpand ? "items-start" : "items-center"} w-full py-2 px-3 rounded-lg text-sm text-slate-800 cursor-pointer focus:outline-hidden ${backgroundClass} transition-colors duration-150`}
       onClick={() => onSelect(option.id)}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onFocus={handleFocus}
       onBlur={handleBlur}
     >
-      {withRadio && (
-        <RadioIndicator isSelected={isSelected} isExpanded={shouldExpand} />
-      )}
-      {withCheckbox && (
-        <CheckboxIndicator isSelected={isSelected} isExpanded={shouldExpand} />
-      )}
+      {withRadio && <RadioIndicator isSelected={isSelected} isExpanded={shouldExpand} />}
+      {withCheckbox && <CheckboxIndicator isSelected={isSelected} isExpanded={shouldExpand} />}
       <span className="flex min-w-0 flex-1 items-center gap-2">
         <span
           className={`${baseTextClass} transition-all duration-200 text-left ${textStateClass} min-w-0 flex-1`}
