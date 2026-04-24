@@ -34,6 +34,7 @@ interface OptionRowProps {
     optionId: string,
     element: HTMLElement,
     optionData?: Partial<DropdownOption>,
+    options?: { immediate?: boolean },
   ) => Promise<void>;
   onHoverDetailHide?: () => void;
 }

@@ -1,4 +1,5 @@
 import { RefObject } from "react";
+import type { DropdownOption } from "@/types";
 
 export interface DropdownMenuProps {
   isFrozen?: boolean;
@@ -7,7 +8,7 @@ export interface DropdownMenuProps {
 }
 
 export interface OptionItemProps {
-  option: { id: string; name: string };
+  option: DropdownOption;
   index: number;
   isSelected: boolean;
   isHighlighted: boolean;

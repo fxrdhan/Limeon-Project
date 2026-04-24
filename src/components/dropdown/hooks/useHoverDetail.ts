@@ -1,10 +1,10 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
-import type { HoverDetailData } from '@/types';
+import { useState, useCallback, useRef, useEffect } from "react";
+import type { HoverDetailData } from "@/types";
 
 interface HoverDetailPosition {
   top: number;
   left: number;
-  direction: 'right' | 'left';
+  direction: "right" | "left";
   anchorCenterY: number;
 }
 
@@ -30,7 +30,7 @@ export const useHoverDetail = ({
   const [position, setPosition] = useState<HoverDetailPosition>({
     top: 0,
     left: 0,
-    direction: 'right',
+    direction: "right",
     anchorCenterY: 0,
   });
   const [data, setData] = useState<HoverDetailData | null>(null);
@@ -64,62 +64,60 @@ export const useHoverDetail = ({
     }, 200);
   }, []);
 
-  const calculatePosition = useCallback(
-    (element: HTMLElement): HoverDetailPosition => {
-      const rect = element.getBoundingClientRect();
-      const viewportWidth = window.innerWidth;
+  const calculatePosition = useCallback((element: HTMLElement): HoverDetailPosition => {
+    const rect = element.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
 
-      const top = rect.top;
-      const anchorCenterY = rect.top + rect.height / 2;
-      const padding = 10;
-      const minPortalWidth = 280;
-      const maxPortalWidth = 580;
+    const top = rect.top;
+    const anchorCenterY = rect.top + rect.height / 2;
+    const padding = 10;
+    const minPortalWidth = 280;
+    const maxPortalWidth = 580;
 
-      const spaceOnRight = viewportWidth - rect.right;
-      const spaceOnLeft = rect.left;
+    const spaceOnRight = viewportWidth - rect.right;
+    const spaceOnLeft = rect.left;
 
-      if (spaceOnRight >= minPortalWidth + padding) {
-        return {
-          left: rect.right + padding,
-          top,
-          direction: 'right',
-          anchorCenterY,
-        };
-      }
+    if (spaceOnRight >= minPortalWidth + padding) {
+      return {
+        left: rect.right + padding,
+        top,
+        direction: "right",
+        anchorCenterY,
+      };
+    }
 
-      if (spaceOnLeft >= minPortalWidth + padding) {
-        return {
-          left: rect.left - minPortalWidth - padding,
-          top,
-          direction: 'left',
-          anchorCenterY,
-        };
-      }
+    if (spaceOnLeft >= minPortalWidth + padding) {
+      return {
+        left: rect.left - minPortalWidth - padding,
+        top,
+        direction: "left",
+        anchorCenterY,
+      };
+    }
 
-      if (spaceOnRight >= spaceOnLeft) {
-        return {
-          left: Math.max(padding, rect.right + padding),
-          top,
-          direction: 'right',
-          anchorCenterY,
-        };
-      } else {
-        return {
-          left: Math.max(padding, rect.left - maxPortalWidth - padding),
-          top,
-          direction: 'left',
-          anchorCenterY,
-        };
-      }
-    },
-    []
-  );
+    if (spaceOnRight >= spaceOnLeft) {
+      return {
+        left: Math.max(padding, rect.right + padding),
+        top,
+        direction: "right",
+        anchorCenterY,
+      };
+    } else {
+      return {
+        left: Math.max(padding, rect.left - maxPortalWidth - padding),
+        top,
+        direction: "left",
+        anchorCenterY,
+      };
+    }
+  }, []);
 
   const handleOptionHover = useCallback(
     async (
       optionId: string,
       element: HTMLElement,
-      optionData?: Partial<HoverDetailData>
+      optionData?: Partial<HoverDetailData>,
+      options: { immediate?: boolean } = {},
     ) => {
       if (!isEnabled) return;
 
@@ -131,12 +129,15 @@ export const useHoverDetail = ({
       setPosition(pos);
 
       // If portal is already shown, update data immediately without delay
-      if (isPortalShownRef.current) {
+      if (isPortalShownRef.current || options.immediate) {
+        isPortalShownRef.current = true;
+        setIsVisible(true);
+
         // Update with basic data first for immediate response
         if (optionData) {
           setData({
             id: optionId,
-            name: optionData.name || 'Unknown',
+            name: optionData.name || "Unknown",
             code: optionData.code,
             description: optionData.description,
             metaLabel: optionData.metaLabel,
@@ -152,13 +153,13 @@ export const useHoverDetail = ({
           try {
             const detailedData = await onFetchData(optionId);
             if (currentOptionIdRef.current === optionId && detailedData) {
-              setData(previousData => ({
+              setData((previousData) => ({
                 ...previousData,
                 ...detailedData,
               }));
             }
           } catch (error) {
-            console.error('Failed to fetch hover detail data:', error);
+            console.error("Failed to fetch hover detail data:", error);
           } finally {
             setIsLoading(false);
           }
@@ -170,7 +171,7 @@ export const useHoverDetail = ({
       if (optionData) {
         setData({
           id: optionId,
-          name: optionData.name || 'Unknown',
+          name: optionData.name || "Unknown",
           code: optionData.code,
           description: optionData.description,
           metaLabel: optionData.metaLabel,
@@ -193,20 +194,20 @@ export const useHoverDetail = ({
           try {
             const detailedData = await onFetchData(optionId);
             if (currentOptionIdRef.current === optionId && detailedData) {
-              setData(previousData => ({
+              setData((previousData) => ({
                 ...previousData,
                 ...detailedData,
               }));
             }
           } catch (error) {
-            console.error('Failed to fetch hover detail data:', error);
+            console.error("Failed to fetch hover detail data:", error);
           } finally {
             setIsLoading(false);
           }
         }
       }, hoverDelay);
     },
-    [isEnabled, hoverDelay, clearTimeouts, calculatePosition, onFetchData]
+    [isEnabled, hoverDelay, clearTimeouts, calculatePosition, onFetchData],
   );
 
   const handleOptionLeave = useCallback(() => {

@@ -15,7 +15,7 @@ export interface DropdownContextType {
   // Search state
   searchTerm: string;
   searchState: string;
-  filteredOptions: Array<{ id: string; name: string }>;
+  filteredOptions: DropdownOption[];
 
   // Navigation state
   highlightedIndex: number;
@@ -60,6 +60,7 @@ export interface DropdownContextType {
     optionId: string,
     element: HTMLElement,
     optionData?: Partial<DropdownOption>,
+    options?: { immediate?: boolean },
   ) => Promise<void>;
   onHoverDetailHide?: () => void;
 }

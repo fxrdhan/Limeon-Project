@@ -34,18 +34,22 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
       onMenuEnter,
       onMenuLeave,
       onScroll,
+      onHoverDetailShow,
+      onHoverDetailHide,
       dropdownMenuRef,
       searchInputRef,
       optionsContainerRef,
       scrollState,
     } = useDropdownContext();
     const releaseHeldHighlightTimeoutRef = useRef<number | null>(null);
+    const revealSuppressedHighlightTimeoutRef = useRef<number | null>(null);
     const [heldHighlightFrame, setHeldHighlightFrame] = useState<{
       top: number;
       left: number;
       width: number;
       height: number;
     } | null>(null);
+    const [isHighlightBackgroundSuppressed, setIsHighlightBackgroundSuppressed] = useState(false);
 
     useLayoutEffect(() => {
       if (pendingHighlightedIndex === null || !isKeyboardNavigation) return;
@@ -88,7 +92,29 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
         if (releaseHeldHighlightTimeoutRef.current !== null) {
           window.clearTimeout(releaseHeldHighlightTimeoutRef.current);
         }
+        if (revealSuppressedHighlightTimeoutRef.current !== null) {
+          window.clearTimeout(revealSuppressedHighlightTimeoutRef.current);
+        }
 
+        const lastOptionIndex = filteredOptions.length - 1;
+        const isWrappedLongScroll =
+          pendingHighlightSourceIndex !== null &&
+          lastOptionIndex > 0 &&
+          ((pendingHighlightSourceIndex === lastOptionIndex && pendingHighlightedIndex === 0) ||
+            (pendingHighlightSourceIndex === 0 && pendingHighlightedIndex === lastOptionIndex));
+
+        if (isWrappedLongScroll) {
+          setHeldHighlightFrame(null);
+          setIsHighlightBackgroundSuppressed(true);
+          container.scrollTo({ top: scrollTop, behavior: "smooth" });
+          revealSuppressedHighlightTimeoutRef.current = window.setTimeout(() => {
+            setIsHighlightBackgroundSuppressed(false);
+            revealSuppressedHighlightTimeoutRef.current = null;
+          }, 210);
+          return;
+        }
+
+        setIsHighlightBackgroundSuppressed(false);
         const sourceTop = sourceElement?.offsetTop ?? itemTop;
         const sourceBottom =
           sourceTop + (sourceElement?.offsetHeight ?? targetElement.offsetHeight);
@@ -136,7 +162,12 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
         window.clearTimeout(releaseHeldHighlightTimeoutRef.current);
         releaseHeldHighlightTimeoutRef.current = null;
       }
+      if (revealSuppressedHighlightTimeoutRef.current !== null) {
+        window.clearTimeout(revealSuppressedHighlightTimeoutRef.current);
+        revealSuppressedHighlightTimeoutRef.current = null;
+      }
       setHeldHighlightFrame(null);
+      setIsHighlightBackgroundSuppressed(false);
     }, [isKeyboardNavigation]);
 
     useEffect(() => {
@@ -144,8 +175,61 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
         if (releaseHeldHighlightTimeoutRef.current !== null) {
           window.clearTimeout(releaseHeldHighlightTimeoutRef.current);
         }
+        if (revealSuppressedHighlightTimeoutRef.current !== null) {
+          window.clearTimeout(revealSuppressedHighlightTimeoutRef.current);
+        }
       };
     }, []);
+
+    useEffect(() => {
+      if (!onHoverDetailShow) return;
+
+      if (!isOpen || highlightedIndex < 0) {
+        onHoverDetailHide?.();
+        return;
+      }
+
+      if (!isKeyboardNavigation) return;
+
+      if (isHighlightBackgroundSuppressed) {
+        onHoverDetailHide?.();
+        return;
+      }
+
+      const container = optionsContainerRef.current;
+      const highlightedOption = filteredOptions[highlightedIndex];
+      const highlightedElement =
+        container?.querySelectorAll<HTMLElement>('[role="option"]')[highlightedIndex];
+
+      if (!highlightedOption || !highlightedElement) {
+        onHoverDetailHide?.();
+        return;
+      }
+
+      void onHoverDetailShow(
+        highlightedOption.id,
+        highlightedElement,
+        {
+          id: highlightedOption.id,
+          name: highlightedOption.name,
+          code: highlightedOption.code,
+          description: highlightedOption.description,
+          metaLabel: highlightedOption.metaLabel,
+          metaTone: highlightedOption.metaTone,
+          updated_at: highlightedOption.updated_at,
+        },
+        { immediate: true },
+      );
+    }, [
+      filteredOptions,
+      highlightedIndex,
+      isHighlightBackgroundSuppressed,
+      isKeyboardNavigation,
+      isOpen,
+      onHoverDetailHide,
+      onHoverDetailShow,
+      optionsContainerRef,
+    ]);
 
     return (
       <MenuPortal
@@ -199,7 +283,9 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
                         : option.id === value,
                     )}
                     isHighlighted={highlightedIndex === index}
-                    suppressHighlightBackground={Boolean(heldHighlightFrame)}
+                    suppressHighlightBackground={
+                      Boolean(heldHighlightFrame) || isHighlightBackgroundSuppressed
+                    }
                     isExpanded={expandedId === option.id}
                     onHighlight={(index) => {
                       onSetIsKeyboardNavigation(false);
