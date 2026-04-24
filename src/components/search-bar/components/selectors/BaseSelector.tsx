@@ -496,6 +496,7 @@ function BaseSelector<T>({
       {isOpen && (
         <motion.div
           ref={modalRef}
+          layout
           className="fixed z-50 bg-white border border-slate-200 rounded-xl shadow-lg min-w-[180px] overflow-hidden"
           style={{
             top: 0,
@@ -519,6 +520,10 @@ function BaseSelector<T>({
             scale: { duration: 0.15 },
             x: modalPositionTransition,
             y: modalPositionTransition,
+            layout: {
+              duration: 0.18,
+              ease: "easeOut",
+            },
           }}
         >
           <AnimatePresence initial={false} mode="popLayout">
@@ -556,9 +561,9 @@ function BaseSelector<T>({
                 {showContent && (
                   <motion.div
                     className="overflow-hidden"
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
                     transition={{
                       duration: 0.1,
                       ease: "easeOut",
