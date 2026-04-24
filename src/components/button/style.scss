@@ -83,12 +83,12 @@
     opacity: 0.8;
 
     &:not(:disabled):hover {
-      @apply bg-red-200;
+      @apply bg-rose-50;
       opacity: 1 !important;
     }
 
     &:not(:disabled)[data-preselected='true'] {
-      @apply bg-red-200;
+      @apply bg-rose-50;
       opacity: 1 !important;
     }
   }
