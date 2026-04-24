@@ -50,11 +50,18 @@ function BaseSelector<T>({
   const modalRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const listContainerRef = useRef<HTMLDivElement>(null);
+  const releaseHeldBackgroundTimeoutRef = useRef<number | null>(null);
 
   // Internal search term - captured from keystrokes when modal is open
   const [internalSearchTerm, setInternalSearchTerm] = useState("");
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [isHoverDisabled, setIsHoverDisabled] = useState(false);
+  const [heldBackgroundStyle, setHeldBackgroundStyle] = useState<{
+    top: number;
+    left: number;
+    width: number;
+    height: number;
+  } | null>(null);
 
   // Use internal search term (priority) or external search term
   const searchTerm = internalSearchTerm || externalSearchTerm;
@@ -67,10 +74,19 @@ function BaseSelector<T>({
     setInternalSearchTerm("");
     setHoveredIndex(null);
     setIsHoverDisabled(false);
+    setHeldBackgroundStyle(null);
     if (listContainerRef.current) {
       listContainerRef.current.scrollTop = 0;
     }
   }, [activeContentKey, isOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (releaseHeldBackgroundTimeoutRef.current !== null) {
+        window.clearTimeout(releaseHeldBackgroundTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const searchFieldsConfig = useMemo(() => {
     if (items.length === 0) return [];
@@ -208,6 +224,64 @@ function BaseSelector<T>({
     }));
   };
   const backgroundIndex = hoveredIndex ?? selectedIndex;
+  const getBackgroundColorClass = () =>
+    config.theme === "blue"
+      ? "bg-blue-100"
+      : config.theme === "orange"
+        ? "bg-orange-100"
+        : "bg-purple-100";
+
+  const scrollKeyboardTargetIntoView = useCallback(
+    (currentIndex: number, nextIndex: number): boolean => {
+      const container = listContainerRef.current;
+      const nextElement = itemRefs.current[nextIndex];
+      const currentElement = itemRefs.current[currentIndex];
+      const modalElement = modalRef.current;
+
+      if (!container || !nextElement || !currentElement || !modalElement) return false;
+
+      const containerRect = container.getBoundingClientRect();
+      const nextRect = nextElement.getBoundingClientRect();
+      const currentRect = currentElement.getBoundingClientRect();
+      const modalRect = modalElement.getBoundingClientRect();
+      const nextTop = nextRect.top - containerRect.top + container.scrollTop;
+      const nextBottom = nextTop + nextRect.height;
+      const containerScrollTop = container.scrollTop;
+      const containerHeight = container.clientHeight;
+      const visibilityInset = 4;
+      let scrollTop: number | null = null;
+
+      if (nextTop < containerScrollTop + visibilityInset) {
+        scrollTop = Math.max(0, nextTop - visibilityInset);
+      } else if (nextBottom > containerScrollTop + containerHeight - visibilityInset) {
+        scrollTop =
+          nextIndex === filteredItems.length - 1
+            ? container.scrollHeight - containerHeight
+            : nextBottom - containerHeight + visibilityInset;
+      }
+
+      if (scrollTop === null) return false;
+
+      if (releaseHeldBackgroundTimeoutRef.current !== null) {
+        window.clearTimeout(releaseHeldBackgroundTimeoutRef.current);
+      }
+
+      setHeldBackgroundStyle({
+        top: currentRect.top - modalRect.top,
+        left: currentRect.left - modalRect.left,
+        width: currentRect.width,
+        height: currentRect.height,
+      });
+      container.scrollTo({ top: scrollTop, behavior: "smooth" });
+      releaseHeldBackgroundTimeoutRef.current = window.setTimeout(() => {
+        setHeldBackgroundStyle(null);
+        releaseHeldBackgroundTimeoutRef.current = null;
+      }, 180);
+
+      return true;
+    },
+    [filteredItems.length],
+  );
 
   // Reset internal search term when modal closes
   useEffect(() => {
@@ -244,7 +318,17 @@ function BaseSelector<T>({
             setIsHoverDisabled(true);
             setHoveredIndex((prev) => {
               const baseIndex = prev ?? selectedIndex;
-              return baseIndex + 1 >= filteredItems.length ? 0 : baseIndex + 1;
+              const nextIndex = baseIndex + 1 >= filteredItems.length ? 0 : baseIndex + 1;
+              if (nextIndex !== 0) {
+                scrollKeyboardTargetIntoView(baseIndex, nextIndex);
+              } else {
+                if (releaseHeldBackgroundTimeoutRef.current !== null) {
+                  window.clearTimeout(releaseHeldBackgroundTimeoutRef.current);
+                  releaseHeldBackgroundTimeoutRef.current = null;
+                }
+                setHeldBackgroundStyle(null);
+              }
+              return nextIndex;
             });
           }
           break;
@@ -254,7 +338,17 @@ function BaseSelector<T>({
             setIsHoverDisabled(true);
             setHoveredIndex((prev) => {
               const baseIndex = prev ?? selectedIndex;
-              return baseIndex === 0 ? filteredItems.length - 1 : baseIndex - 1;
+              const nextIndex = baseIndex === 0 ? filteredItems.length - 1 : baseIndex - 1;
+              if (nextIndex !== filteredItems.length - 1) {
+                scrollKeyboardTargetIntoView(baseIndex, nextIndex);
+              } else {
+                if (releaseHeldBackgroundTimeoutRef.current !== null) {
+                  window.clearTimeout(releaseHeldBackgroundTimeoutRef.current);
+                  releaseHeldBackgroundTimeoutRef.current = null;
+                }
+                setHeldBackgroundStyle(null);
+              }
+              return nextIndex;
             });
           }
           break;
@@ -278,6 +372,7 @@ function BaseSelector<T>({
           setInternalSearchTerm((prev) => prev.slice(0, -1));
           setHoveredIndex(null);
           setIsHoverDisabled(false);
+          setHeldBackgroundStyle(null);
           // Reset to first item when search changes
           setSelectedIndex(0);
           break;
@@ -292,6 +387,7 @@ function BaseSelector<T>({
             setInternalSearchTerm((prev) => prev + e.key);
             setHoveredIndex(null);
             setIsHoverDisabled(false);
+            setHeldBackgroundStyle(null);
             // Reset to first item when search changes
             setSelectedIndex(0);
           }
@@ -306,6 +402,7 @@ function BaseSelector<T>({
     filteredItems,
     backgroundIndex,
     selectedIndex,
+    scrollKeyboardTargetIntoView,
     onSelect,
     onClose,
     internalSearchTerm,
@@ -493,10 +590,24 @@ function BaseSelector<T>({
             },
           }}
         >
+          {heldBackgroundStyle && (
+            <motion.div
+              className={`absolute z-0 rounded-lg pointer-events-none ${getBackgroundColorClass()}`}
+              style={heldBackgroundStyle}
+              initial={false}
+              animate={heldBackgroundStyle}
+              transition={{
+                type: "spring",
+                stiffness: 400,
+                damping: 30,
+                mass: 0.8,
+              }}
+            />
+          )}
           <AnimatePresence initial={false} mode="popLayout">
             <motion.div
               key={activeContentKey}
-              className="overflow-hidden"
+              className="overflow-hidden relative z-10"
               initial={{
                 opacity: contentSlideDirection === 0 ? 1 : 0,
                 x: contentSlideDistance,
@@ -586,21 +697,16 @@ function BaseSelector<T>({
                                 onMouseMove={() => {
                                   if (isHoverDisabled) {
                                     setIsHoverDisabled(false);
+                                    setHeldBackgroundStyle(null);
                                     setHoveredIndex(index);
                                   }
                                 }}
                                 role="button"
                               >
-                                {hasBackground && (
+                                {hasBackground && !heldBackgroundStyle && (
                                   <motion.div
                                     layoutId="base-selector-active-background"
-                                    className={`absolute inset-0 z-0 rounded-lg pointer-events-none ${
-                                      config.theme === "blue"
-                                        ? "bg-blue-100"
-                                        : config.theme === "orange"
-                                          ? "bg-orange-100"
-                                          : "bg-purple-100"
-                                    }`}
+                                    className={`absolute inset-0 z-0 rounded-lg pointer-events-none ${getBackgroundColorClass()}`}
                                     transition={{
                                       type: "spring",
                                       stiffness: 400,
