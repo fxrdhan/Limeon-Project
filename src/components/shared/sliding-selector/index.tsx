@@ -31,6 +31,7 @@ export interface SlidingSelectorProps<T = unknown> {
   // Animation options
   layoutId?: string;
   animationPreset?: 'smooth' | 'snappy' | 'fluid';
+  swapVerticalItemsOnSelect?: boolean;
 
   // Additional props
   className?: string;
@@ -60,6 +61,11 @@ const DIRECT_HOVER_TRANSITION = {
   ease: 'easeOut',
 } as const;
 
+const DIRECT_DROPDOWN_TRANSITION = {
+  duration: 0.32,
+  ease: 'easeOut',
+} as const;
+
 const CHEVRON_ROTATE_TRANSITION = {
   duration: 0.28,
   ease: 'easeInOut',
@@ -82,14 +88,9 @@ const ACTIVE_FILL_COLLAPSE_TRANSITION = {
   ease: 'easeInOut',
 } as const;
 
-const VERTICAL_SWAP_TRANSITION = {
-  layout: {
-    type: 'spring',
-    stiffness: 420,
-    damping: 34,
-    mass: 0.72,
-  },
-} as const;
+const canUseHoverPointer = () =>
+  typeof window === 'undefined' ||
+  window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
 const SIZE_CLASSES = {
   sm: {
@@ -136,6 +137,7 @@ export const SlidingSelector = <T,>({
   expandDirection = 'horizontal',
   layoutId,
   animationPreset = 'smooth',
+  swapVerticalItemsOnSelect = false,
   className,
   disabled = false,
   onExpandedChange,
@@ -147,16 +149,11 @@ export const SlidingSelector = <T,>({
   const [isVerticalActiveFillVisible, setIsVerticalActiveFillVisible] =
     useState(defaultExpanded && expandDirection === 'vertical');
   const mouseLeaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
   const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   const activeOption = options.find(option => option.key === activeKey);
-  const verticalSwapOptions =
-    expandDirection === 'vertical' && activeOption
-      ? [
-          activeOption,
-          ...options.filter(option => option.key !== activeOption.key),
-        ]
-      : options;
+  const baseLayoutId = layoutId || variant;
   const animation = ANIMATION_PRESETS[animationPreset];
   const sizeClasses = SIZE_CLASSES[size];
   const shapeClasses = SHAPE_CLASSES[shape];
@@ -186,6 +183,26 @@ export const SlidingSelector = <T,>({
 
     return () => clearTimeout(timer);
   }, [expandDirection, isExpanded]);
+
+  useEffect(() => {
+    if (!collapsible || !isExpanded) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      if (target && rootRef.current?.contains(target)) return;
+
+      setIsExpanded(false);
+      setIsMouseOver(false);
+      setHoveredIndex(null);
+      setFocusedIndex(-1);
+      buttonRefs.current.forEach(button => button?.blur());
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+    };
+  }, [collapsible, isExpanded]);
 
   // Auto-collapse logic - don't collapse if keyboard navigating
   useEffect(() => {
@@ -242,7 +259,7 @@ export const SlidingSelector = <T,>({
   }, [isExpanded, isMouseOver, expandOnHover, collapsible, options, activeKey]);
 
   const handleMouseEnter = useCallback(() => {
-    if (expandOnHover) {
+    if (expandOnHover && canUseHoverPointer()) {
       setIsMouseOver(true);
     }
   }, [expandOnHover]);
@@ -354,6 +371,7 @@ export const SlidingSelector = <T,>({
 
       // Reset focused index to allow fresh keyboard navigation next time
       setFocusedIndex(-1);
+      setHoveredIndex(null);
 
       // Note: Hybrid protection (immediate + debounce) handled centrally in parent's handleTabChange
       onSelectionChange(option.key, option.value, event);
@@ -379,12 +397,15 @@ export const SlidingSelector = <T,>({
     const isActive = option.key === activeKey;
     const isHovered =
       hoveredIndex === index && !isActive && !disabled && !option.disabled;
+    const verticalItemLayoutId =
+      isVerticalItem && swapVerticalItemsOnSelect
+        ? `${baseLayoutId}-vertical-item-${option.key}`
+        : undefined;
 
     return (
       <motion.button
         key={option.key}
-        layout={isVerticalItem ? 'position' : undefined}
-        transition={isVerticalItem ? VERTICAL_SWAP_TRANSITION : undefined}
+        layoutId={verticalItemLayoutId}
         ref={el => {
           buttonRefs.current[index] = el;
         }}
@@ -403,7 +424,16 @@ export const SlidingSelector = <T,>({
             'opacity-50 cursor-not-allowed': option.disabled,
           }
         )}
-        onMouseEnter={() => setHoveredIndex(index)}
+        onPointerDown={event => {
+          if (event.pointerType !== 'mouse') {
+            setHoveredIndex(null);
+          }
+        }}
+        onMouseEnter={() => {
+          if (canUseHoverPointer()) {
+            setHoveredIndex(index);
+          }
+        }}
         onClick={event => handleOptionClick(option, event)}
         disabled={disabled || option.disabled}
       >
@@ -468,7 +498,13 @@ export const SlidingSelector = <T,>({
           }
         />
       )}
-      <button
+      <motion.button
+        key={activeKey}
+        layoutId={
+          swapVerticalItemsOnSelect
+            ? `${baseLayoutId}-vertical-item-${activeKey}`
+            : undefined
+        }
         role="tab"
         aria-selected="true"
         aria-controls={`${layoutId || variant}-panel-${activeKey}`}
@@ -507,7 +543,7 @@ export const SlidingSelector = <T,>({
         >
           {activeOption && getDisplayLabel(activeOption, true)}
         </motion.span>
-      </button>
+      </motion.button>
       {collapsible && (
         <button
           onClick={toggleExpanded}
@@ -576,6 +612,7 @@ export const SlidingSelector = <T,>({
     return (
       <LayoutGroup id={layoutId || `sliding-selector-${variant}`}>
         <div
+          ref={rootRef}
           role="tablist"
           aria-label="Navigation tabs"
           className={classNames(
@@ -608,25 +645,31 @@ export const SlidingSelector = <T,>({
               ...animation.container,
             }}
           >
-            {isExpanded ? (
-              <motion.div
-                layout
-                className="inline-flex flex-col items-stretch overflow-hidden"
-                transition={VERTICAL_SWAP_TRANSITION}
-              >
-                {verticalSwapOptions.map(option =>
-                  renderOption(
-                    option,
-                    options.findIndex(item => item.key === option.key),
-                    true
-                  )
-                )}
-              </motion.div>
-            ) : (
-              <div className="inline-flex items-center relative w-fit">
-                {renderCollapsedContent()}
-              </div>
-            )}
+            <div className="inline-flex items-center relative w-fit">
+              {renderCollapsedContent()}
+            </div>
+
+            <motion.div
+              aria-hidden={!isExpanded}
+              animate={{
+                height: isExpanded ? 'auto' : 0,
+                opacity: isExpanded ? 1 : 0,
+              }}
+              className={classNames(
+                'inline-flex max-h-[calc(100vh-10rem)] flex-col items-stretch overflow-y-auto overscroll-contain',
+                {
+                  'pointer-events-none': !isExpanded,
+                }
+              )}
+              initial={false}
+              transition={DIRECT_DROPDOWN_TRANSITION}
+            >
+              {options.map((option, index) =>
+                option.key === activeKey
+                  ? null
+                  : renderOption(option, index, true)
+              )}
+            </motion.div>
           </motion.div>
         </div>
       </LayoutGroup>
@@ -636,13 +679,14 @@ export const SlidingSelector = <T,>({
   return (
     <LayoutGroup id={layoutId || `sliding-selector-${variant}`}>
       <motion.div
+        ref={rootRef}
         layout
         role="tablist"
         aria-label="Navigation tabs"
         className={classNames(
           'bg-zinc-100 shadow-md text-slate-700 overflow-hidden select-none relative w-fit',
           isVerticalExpanded
-            ? 'inline-flex max-w-[calc(100vw-3rem)] flex-col items-stretch overflow-hidden'
+            ? 'inline-flex max-h-[calc(100vh-7rem)] max-w-[calc(100vw-3rem)] flex-col items-stretch overflow-y-auto overscroll-contain'
             : 'inline-flex items-center',
           sizeClasses.container,
           shapeClasses.container,

@@ -72,11 +72,6 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
           // Tab: Next tab
           onTabNext?.();
         }
-
-        // Refocus searchbar after tab change to maintain keyboard control
-        setTimeout(() => {
-          searchInputRef.current?.focus();
-        }, 150);
       }, 0);
 
       return;

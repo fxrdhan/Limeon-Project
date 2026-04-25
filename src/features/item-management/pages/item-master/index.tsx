@@ -70,7 +70,6 @@ import type {
   Supplier as SupplierType,
 } from '@/types';
 import type { FilterSearch, SearchColumn } from '@/types/search';
-import { isPageFocusBlocked } from '@/store/pageFocusBlockStore';
 
 import { fuzzyMatch } from '@/utils/search';
 
@@ -329,11 +328,7 @@ const ItemMasterNew = memo(() => {
   }, [activeTab]);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Track SlidingSelector expanded state to avoid focus "tug-of-war".
-  // Rule: collapsed -> focus SearchBar; expanded -> let tabs keep focus.
-  const [isTabSelectorExpanded, setIsTabSelectorExpanded] = useState(false);
-
-  const wasAnyModalOpenRef = useRef(false);
+  const [, setIsTabSelectorExpanded] = useState(false);
 
   // 🚦 Hybrid tab change protection: immediate first click, debounced rapid clicks
   // Smart detection: single click = instant navigation, rapid clicks = debounced to final tab
@@ -1630,311 +1625,6 @@ const ItemMasterNew = memo(() => {
     };
   }, []);
 
-  // Auto-focus searchbar on keyboard input (text only)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const isAnyModalOpen =
-        isAddItemModalOpen ||
-        entityManager.isAddModalOpen ||
-        entityManager.isEditModalOpen ||
-        isAddCustomerModalOpen ||
-        isEditCustomerModalOpen ||
-        isAddPatientModalOpen ||
-        isEditPatientModalOpen ||
-        isAddDoctorModalOpen ||
-        isEditDoctorModalOpen;
-      const activeDialog = document.querySelector(
-        '[role="dialog"][aria-modal="true"]'
-      );
-      if (isAnyModalOpen || activeDialog) return;
-      if (isPageFocusBlocked()) return;
-
-      // Check if user is already typing in an input/textarea/select
-      const target = e.target as HTMLElement;
-      /* c8 ignore next 3 */
-      if (target.closest('[role="dialog"][aria-modal="true"]')) {
-        return;
-      }
-      const isInputFocused =
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.tagName === 'SELECT' ||
-        target.isContentEditable;
-
-      // If already focused on an input, don't interfere
-      if (isInputFocused) return;
-
-      // Check if it's a text character (letters, numbers, space)
-      // Exclude special keys like Ctrl, Alt, Shift, Arrow keys, Escape, etc.
-      const isTextChar =
-        e.key.length === 1 &&
-        !e.ctrlKey &&
-        !e.metaKey &&
-        !e.altKey &&
-        !/^F\d+$/.test(e.key); // Exclude function keys
-
-      if (isTextChar && searchInputRef.current) {
-        // Focus the search input
-        searchInputRef.current.focus();
-
-        // The character will be automatically typed into the input
-        // because we're not preventing default behavior
-      }
-    };
-
-    // Add event listener
-    document.addEventListener('keydown', handleKeyDown);
-
-    // Cleanup
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [
-    entityManager.isAddModalOpen,
-    entityManager.isEditModalOpen,
-    isAddItemModalOpen,
-    isAddCustomerModalOpen,
-    isEditCustomerModalOpen,
-    isAddPatientModalOpen,
-    isEditPatientModalOpen,
-    isAddDoctorModalOpen,
-    isEditDoctorModalOpen,
-  ]);
-
-  // Auto-focus SearchBar on initial mount and tab (sub-page) changes.
-  // We intentionally prefer focusing our SearchBar over AG Grid internals.
-  useEffect(() => {
-    if (isTabSelectorExpanded) return;
-
-    const isAnyModalOpen =
-      isAddItemModalOpen ||
-      entityManager.isAddModalOpen ||
-      entityManager.isEditModalOpen ||
-      isAddCustomerModalOpen ||
-      isEditCustomerModalOpen ||
-      isAddPatientModalOpen ||
-      isEditPatientModalOpen ||
-      isAddDoctorModalOpen ||
-      isEditDoctorModalOpen;
-    if (isAnyModalOpen) return;
-
-    let cancelled = false;
-    let attempts = 0;
-
-    const focusSearch = (): boolean => {
-      if (
-        isAddItemModalOpen ||
-        entityManager.isAddModalOpen ||
-        entityManager.isEditModalOpen ||
-        isAddCustomerModalOpen ||
-        isEditCustomerModalOpen ||
-        isAddPatientModalOpen ||
-        isEditPatientModalOpen ||
-        isAddDoctorModalOpen ||
-        isEditDoctorModalOpen
-      ) {
-        /* c8 ignore next */
-        return false;
-      }
-      const activeDialog = document.querySelector(
-        '[role="dialog"][aria-modal="true"]'
-      );
-      if (activeDialog) return false;
-      if (isPageFocusBlocked()) return false;
-
-      const input = searchInputRef.current;
-      if (!input) return false;
-
-      const active = document.activeElement as HTMLElement | null;
-      const isTypingElsewhere =
-        !!active &&
-        active !== document.body &&
-        active !== input &&
-        (active.tagName === 'INPUT' ||
-          active.tagName === 'TEXTAREA' ||
-          active.isContentEditable);
-
-      if (isTypingElsewhere) return false;
-
-      input.focus();
-      return document.activeElement === input;
-    };
-
-    const tryFocus = () => {
-      if (cancelled) return;
-      if (focusSearch()) return;
-
-      // SearchBar input can re-mount during grid/tab transitions.
-      // Retry briefly so we win focus consistently.
-      if (attempts < 12) {
-        attempts += 1;
-        setTimeout(tryFocus, 50);
-      }
-    };
-
-    const rafId = requestAnimationFrame(tryFocus);
-
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(rafId);
-    };
-  }, [
-    activeTab,
-    entityManager.isAddModalOpen,
-    entityManager.isEditModalOpen,
-    isAddItemModalOpen,
-    isAddCustomerModalOpen,
-    isEditCustomerModalOpen,
-    isAddPatientModalOpen,
-    isEditPatientModalOpen,
-    isAddDoctorModalOpen,
-    isEditDoctorModalOpen,
-    isTabSelectorExpanded,
-  ]);
-
-  // Keep focus on SearchBar when clicking non-input UI.
-  // This makes the page feel "type-to-search" by default.
-  useEffect(() => {
-    if (isTabSelectorExpanded) return;
-
-    const isAnyModalOpen =
-      isAddItemModalOpen ||
-      entityManager.isAddModalOpen ||
-      entityManager.isEditModalOpen ||
-      isAddCustomerModalOpen ||
-      isEditCustomerModalOpen ||
-      isAddPatientModalOpen ||
-      isEditPatientModalOpen ||
-      isAddDoctorModalOpen ||
-      isEditDoctorModalOpen;
-
-    if (isAnyModalOpen) return;
-
-    const handlePointerDownCapture = (event: PointerEvent) => {
-      if (event.button !== 0) return;
-      if (isPageFocusBlocked()) return;
-
-      const target = event.target as HTMLElement | null;
-      if (!target) return;
-
-      const input = searchInputRef.current;
-      if (!input) return;
-
-      // If user explicitly interacts with any input-like element, don't steal focus.
-      const isTypingTarget =
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable;
-
-      if (isTypingTarget) return;
-
-      // Don't override focus when clicking inside dialogs/overlays.
-      if (target.closest('[role="dialog"]')) return;
-
-      // If click happens on the SearchBar itself, do nothing.
-      if (target === input) return;
-
-      // Re-assert focus after the click's default focus behavior.
-      setTimeout(() => {
-        // If a modal opens as a result of the click, don't refocus.
-        // We must check the DOM (not React state) because this callback runs
-        // before state updates are reflected in closures.
-        const dialog = document.querySelector(
-          '[role="dialog"][aria-modal="true"]'
-        );
-        if (dialog) return;
-        if (isPageFocusBlocked()) return;
-
-        input.focus();
-      }, 0);
-    };
-
-    document.addEventListener('pointerdown', handlePointerDownCapture, true);
-    return () => {
-      document.removeEventListener(
-        'pointerdown',
-        handlePointerDownCapture,
-        true
-      );
-    };
-  }, [
-    entityManager.isAddModalOpen,
-    entityManager.isEditModalOpen,
-    isAddItemModalOpen,
-    isAddCustomerModalOpen,
-    isEditCustomerModalOpen,
-    isAddPatientModalOpen,
-    isEditPatientModalOpen,
-    isAddDoctorModalOpen,
-    isEditDoctorModalOpen,
-    isTabSelectorExpanded,
-  ]);
-
-  // When any modal closes, return focus to SearchBar.
-  useEffect(() => {
-    if (isTabSelectorExpanded) return;
-
-    const input = searchInputRef.current;
-    if (!input) return;
-
-    const isAnyModalOpen =
-      isAddItemModalOpen ||
-      entityManager.isAddModalOpen ||
-      entityManager.isEditModalOpen ||
-      isAddCustomerModalOpen ||
-      isEditCustomerModalOpen ||
-      isAddPatientModalOpen ||
-      isEditPatientModalOpen ||
-      isAddDoctorModalOpen ||
-      isEditDoctorModalOpen;
-
-    const prev = wasAnyModalOpenRef.current;
-    wasAnyModalOpenRef.current = isAnyModalOpen;
-
-    if (!prev || isAnyModalOpen) return;
-
-    let cancelled = false;
-    let attempts = 0;
-
-    const tryFocus = () => {
-      /* c8 ignore next */
-      if (cancelled) return;
-      if (isPageFocusBlocked()) return;
-
-      // Wait until all dialogs are actually removed from DOM (exit animations).
-      /* c8 ignore start */
-      const dialog = document.querySelector(
-        '[role="dialog"][aria-modal="true"]'
-      );
-      if (dialog && attempts < 20) {
-        attempts += 1;
-        setTimeout(tryFocus, 50);
-        return;
-      }
-
-      input.focus();
-      /* c8 ignore end */
-    };
-
-    setTimeout(tryFocus, 0);
-    setTimeout(tryFocus, 200);
-
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    entityManager.isAddModalOpen,
-    entityManager.isEditModalOpen,
-    isAddItemModalOpen,
-    isAddCustomerModalOpen,
-    isEditCustomerModalOpen,
-    isAddPatientModalOpen,
-    isEditPatientModalOpen,
-    isAddDoctorModalOpen,
-    isEditDoctorModalOpen,
-    isTabSelectorExpanded,
-  ]);
-
   // Navigation logic extracted for reuse
   const performNavigation = useCallback(
     (targetTab: MasterDataType) => {
@@ -1992,35 +1682,6 @@ const ItemMasterNew = memo(() => {
       // 🔒 Block SearchBar from clearing grid filters during tab switch
       // This prevents the cascade: clearSearch → useSearchState → onFilterSearch(null)
       isTabSwitchingRef.current = true;
-
-      // After navigation, aggressively return focus to SearchBar.
-      // Clicking the tab leaves focus on the tab button; also, the SearchBar input
-      // can re-mount during transitions, so we retry once after a short delay.
-      const focusSearch = () => {
-        if (isPageFocusBlocked()) return;
-
-        const input = searchInputRef.current;
-        if (!input) return;
-
-        const active = document.activeElement as HTMLElement | null;
-        const isTypingElsewhere =
-          !!active &&
-          active !== document.body &&
-          active !== input &&
-          (active.tagName === 'INPUT' ||
-            active.tagName === 'TEXTAREA' ||
-            active.isContentEditable);
-
-        if (isTypingElsewhere) return;
-
-        input.focus();
-      };
-
-      if (!isTabSelectorExpanded) {
-        requestAnimationFrame(focusSearch);
-        setTimeout(focusSearch, 150);
-        setTimeout(focusSearch, 700);
-      }
 
       // Clear React state to prevent field contamination
       if (activeTab === 'items') {
@@ -2094,7 +1755,6 @@ const ItemMasterNew = memo(() => {
       patientSearchColumns,
       doctorSearchColumns,
       entitySearchColumns,
-      isTabSelectorExpanded,
       isAddItemModalOpen,
       isAddCustomerModalOpen,
       isEditCustomerModalOpen,
@@ -2543,6 +2203,7 @@ const ItemMasterNew = memo(() => {
                 autoCollapseDelay={150}
                 layoutId="item-master-tabs"
                 animationPreset="smooth"
+                swapVerticalItemsOnSelect
               />
             )}
           </div>

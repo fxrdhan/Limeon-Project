@@ -18,7 +18,7 @@ import {
 } from '@/components/table';
 import { useConfirmDialog } from '@/components/dialog-box';
 import { Card } from '@/components/card';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { TbEdit, TbEye, TbFileUpload, TbPlus, TbTrash } from 'react-icons/tb';
 import {
@@ -27,11 +27,9 @@ import {
   useQueryClient,
   keepPreviousData,
 } from '@tanstack/react-query';
-import { useFieldFocus } from '@/hooks/forms/fieldFocus';
 import { getSearchState } from '@/utils/search';
 import { purchasesService } from '@/services/api/purchases.service';
 import { QueryKeys } from '@/constants/queryKeys';
-import { isPageFocusBlocked } from '@/store/pageFocusBlockStore';
 
 interface Purchase {
   id: string;
@@ -59,8 +57,6 @@ const PurchaseList = () => {
   const searchInputRef = useRef<HTMLInputElement>(
     null
   ) as React.RefObject<HTMLInputElement>;
-  const location = useLocation();
-
   const { data, isLoading, isFetching } = useQuery({
     queryKey: QueryKeys.purchases.paginated(
       currentPage,
@@ -80,17 +76,6 @@ const PurchaseList = () => {
     }, 250);
     return () => clearTimeout(timer);
   }, [search]);
-
-  useFieldFocus({
-    searchInputRef,
-    isModalOpen: showAddPurchasePortal || showUploadPortal,
-    isLoading,
-    isFetching,
-    debouncedSearch,
-    currentPage,
-    itemsPerPage,
-    locationKey: location.key,
-  });
 
   const fetchPurchases = async (
     page: number,
@@ -435,11 +420,6 @@ const PurchaseList = () => {
             void queryClient.invalidateQueries({
               queryKey: QueryKeys.purchases.all,
             });
-            setTimeout(() => {
-              if (searchInputRef.current && !isPageFocusBlocked()) {
-                searchInputRef.current.focus();
-              }
-            }, 100);
           }, 100);
         }}
         isClosing={isAddPurchaseClosing}

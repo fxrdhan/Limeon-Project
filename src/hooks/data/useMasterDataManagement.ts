@@ -4,7 +4,6 @@ import { fuzzyMatch } from '@/utils/search';
 import { filterAndRank } from './searchCore';
 import { useAlert } from '@/components/alert/hooks';
 import { StorageService } from '@/services/api/storage.service';
-import { isPageFocusBlocked } from '@/store/pageFocusBlockStore';
 import type { PostgrestError } from '@supabase/supabase-js';
 import type {
   Supplier,
@@ -74,12 +73,7 @@ export const useMasterDataManagement = (
   const { openConfirmDialog } = useConfirmDialog();
   const alert = useAlert();
 
-  const {
-    enabled = true,
-    isCustomModalOpen,
-    searchInputRef,
-    handleSearchChange,
-  } = options || {};
+  const { enabled = true } = options || {};
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -90,9 +84,6 @@ export const useMasterDataManagement = (
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [identitiesPerPage, setIdentitiesPerPage] = useState(25);
-
-  const actualIsModalOpen =
-    isCustomModalOpen ?? (isAddModalOpen || isEditModalOpen);
 
   // Debounce search input with special handling for hashtag
   useEffect(() => {
@@ -137,50 +128,6 @@ export const useMasterDataManagement = (
     }
     return () => clearTimeout(timer);
   }, [editingIdentity, isEditModalOpen]);
-
-  // Global keyboard handler for auto-focus search
-  useEffect(() => {
-    if (!searchInputRef || !handleSearchChange) return;
-
-    const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      try {
-        const target = e.target as HTMLElement;
-        const isInputFocused =
-          target.tagName === 'INPUT' ||
-          target.tagName === 'TEXTAREA' ||
-          target.isContentEditable;
-        const isModalOpen = actualIsModalOpen;
-        const isFocusBlocked = isPageFocusBlocked();
-        const isTypeable =
-          /^[a-zA-Z0-9\s!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~#]$/.test(e.key);
-
-        if (
-          !isInputFocused &&
-          !isModalOpen &&
-          !isFocusBlocked &&
-          isTypeable &&
-          !e.ctrlKey &&
-          !e.altKey &&
-          !e.metaKey &&
-          searchInputRef.current
-        ) {
-          e.preventDefault();
-          searchInputRef.current.focus();
-
-          // Create a synthetic change event
-          const syntheticEvent = {
-            target: { value: e.key },
-          } as React.ChangeEvent<HTMLInputElement>;
-          handleSearchChange(syntheticEvent);
-        }
-      } catch (error) {
-        console.error('Error in global keydown handler:', error);
-      }
-    };
-
-    document.addEventListener('keydown', handleGlobalKeyDown);
-    return () => document.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [searchInputRef, handleSearchChange, actualIsModalOpen]);
 
   // Get the appropriate hooks for this table - realtime always enabled
   const hooks = getHooksForTable(tableName);
