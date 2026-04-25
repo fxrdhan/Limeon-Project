@@ -1,7 +1,7 @@
-import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
-import type { ChatMessage } from '../data/chatSidebarGateway';
-import type { ChatSidebarPanelTargetUser } from '../types';
-import { mapConversationMessagesForDisplay } from './message-display';
+import type { Dispatch, MutableRefObject, SetStateAction } from "react";
+import type { ChatMessage } from "../data/chatSidebarGateway";
+import type { ChatSidebarPanelTargetUser } from "../types";
+import { mapConversationMessagesForDisplay } from "./message-display";
 
 interface ConversationParticipant {
   id: string;
@@ -9,12 +9,10 @@ interface ConversationParticipant {
 }
 
 const compareConversationMessageOrder = (
-  leftMessage: Pick<ChatMessage, 'created_at' | 'id'>,
-  rightMessage: Pick<ChatMessage, 'created_at' | 'id'>
+  leftMessage: Pick<ChatMessage, "created_at" | "id">,
+  rightMessage: Pick<ChatMessage, "created_at" | "id">,
 ) => {
-  const createdAtOrder = leftMessage.created_at.localeCompare(
-    rightMessage.created_at
-  );
+  const createdAtOrder = leftMessage.created_at.localeCompare(rightMessage.created_at);
   if (createdAtOrder !== 0) {
     return createdAtOrder;
   }
@@ -26,11 +24,11 @@ export const mapPersistedMessageForDisplay = (
   message: ChatMessage,
   user: ConversationParticipant,
   targetUser: ChatSidebarPanelTargetUser,
-  stableKey: string
+  stableKey: string,
 ): ChatMessage => ({
   ...message,
-  sender_name: user.name || 'You',
-  receiver_name: targetUser.name || 'Unknown',
+  sender_name: user.name || "You",
+  receiver_name: targetUser.name || "Unknown",
   stableKey,
 });
 
@@ -38,12 +36,12 @@ export const mapConversationMessageForDisplay = (
   message: ChatMessage,
   user: ConversationParticipant,
   targetUser: ChatSidebarPanelTargetUser,
-  stableKey?: string
+  stableKey?: string,
 ) => ({
   ...mapConversationMessagesForDisplay([message], {
     currentUserId: user.id,
-    currentUserName: user.name || 'You',
-    targetUserName: targetUser.name || 'Unknown',
+    currentUserName: user.name || "You",
+    targetUserName: targetUser.name || "Unknown",
   })[0],
   stableKey: stableKey || message.stableKey,
 });
@@ -51,24 +49,23 @@ export const mapConversationMessageForDisplay = (
 export const mergeConversationSnapshotWithPending = (
   previousMessages: ChatMessage[],
   mappedMessages: ChatMessage[],
-  currentChannelId?: string | null
+  currentChannelId?: string | null,
 ) => {
   const stableKeysByMessageId = new Map(
-    previousMessages.map(messageItem => [messageItem.id, messageItem.stableKey])
+    previousMessages.map((messageItem) => [messageItem.id, messageItem.stableKey]),
   );
-  const mappedMessagesWithStableKeys = mappedMessages.map(messageItem => ({
+  const mappedMessagesWithStableKeys = mappedMessages.map((messageItem) => ({
     ...messageItem,
-    stableKey:
-      stableKeysByMessageId.get(messageItem.id) || messageItem.stableKey,
+    stableKey: stableKeysByMessageId.get(messageItem.id) || messageItem.stableKey,
   }));
   const mappedMessageIds = new Set(
-    mappedMessagesWithStableKeys.map(messageItem => messageItem.id)
+    mappedMessagesWithStableKeys.map((messageItem) => messageItem.id),
   );
   const pendingMessages = previousMessages.filter(
-    messageItem =>
-      messageItem.id.startsWith('temp_') &&
+    (messageItem) =>
+      messageItem.id.startsWith("temp_") &&
       (!currentChannelId || messageItem.channel_id === currentChannelId) &&
-      !mappedMessageIds.has(messageItem.id)
+      !mappedMessageIds.has(messageItem.id),
   );
 
   return [...mappedMessagesWithStableKeys, ...pendingMessages];
@@ -89,21 +86,20 @@ export const mergeLatestConversationPageWithExisting = ({
   preserveOlderPersistedMessages: boolean;
 }) => {
   const stableKeysByMessageId = new Map(
-    previousMessages.map(messageItem => [messageItem.id, messageItem.stableKey])
+    previousMessages.map((messageItem) => [messageItem.id, messageItem.stableKey]),
   );
-  const latestMessagesWithStableKeys = latestMessages.map(messageItem => ({
+  const latestMessagesWithStableKeys = latestMessages.map((messageItem) => ({
     ...messageItem,
-    stableKey:
-      stableKeysByMessageId.get(messageItem.id) || messageItem.stableKey,
+    stableKey: stableKeysByMessageId.get(messageItem.id) || messageItem.stableKey,
   }));
   const latestMessageIds = new Set(
-    latestMessagesWithStableKeys.map(messageItem => messageItem.id)
+    latestMessagesWithStableKeys.map((messageItem) => messageItem.id),
   );
   const pendingMessages = previousMessages.filter(
-    messageItem =>
-      messageItem.id.startsWith('temp_') &&
+    (messageItem) =>
+      messageItem.id.startsWith("temp_") &&
       (!currentChannelId || messageItem.channel_id === currentChannelId) &&
-      !latestMessageIds.has(messageItem.id)
+      !latestMessageIds.has(messageItem.id),
   );
 
   if (latestMessagesWithStableKeys.length === 0) {
@@ -112,8 +108,8 @@ export const mergeLatestConversationPageWithExisting = ({
 
   const oldestLatestMessage = latestMessagesWithStableKeys[0];
   const olderPersistedMessages = preserveOlderPersistedMessages
-    ? previousMessages.filter(messageItem => {
-        if (messageItem.id.startsWith('temp_')) {
+    ? previousMessages.filter((messageItem) => {
+        if (messageItem.id.startsWith("temp_")) {
           return false;
         }
 
@@ -125,9 +121,7 @@ export const mergeLatestConversationPageWithExisting = ({
           return false;
         }
 
-        return (
-          compareConversationMessageOrder(messageItem, oldestLatestMessage) < 0
-        );
+        return compareConversationMessageOrder(messageItem, oldestLatestMessage) < 0;
       })
     : [];
 
@@ -143,27 +137,26 @@ export const mergeLatestConversationPageWithExisting = ({
 export const mergeConversationContextWithExisting = (
   previousMessages: ChatMessage[],
   mappedContextMessages: ChatMessage[],
-  currentChannelId?: string | null
+  currentChannelId?: string | null,
 ) => {
   const stableKeysByMessageId = new Map(
-    previousMessages.map(messageItem => [messageItem.id, messageItem.stableKey])
+    previousMessages.map((messageItem) => [messageItem.id, messageItem.stableKey]),
   );
   const pendingMessages = previousMessages.filter(
-    messageItem =>
-      messageItem.id.startsWith('temp_') &&
-      (!currentChannelId || messageItem.channel_id === currentChannelId)
+    (messageItem) =>
+      messageItem.id.startsWith("temp_") &&
+      (!currentChannelId || messageItem.channel_id === currentChannelId),
   );
   const persistedMessagesById = new Map(
     previousMessages
-      .filter(messageItem => !messageItem.id.startsWith('temp_'))
-      .map(messageItem => [messageItem.id, messageItem])
+      .filter((messageItem) => !messageItem.id.startsWith("temp_"))
+      .map((messageItem) => [messageItem.id, messageItem]),
   );
 
-  mappedContextMessages.forEach(messageItem => {
+  mappedContextMessages.forEach((messageItem) => {
     persistedMessagesById.set(messageItem.id, {
       ...messageItem,
-      stableKey:
-        stableKeysByMessageId.get(messageItem.id) || messageItem.stableKey,
+      stableKey: stableKeysByMessageId.get(messageItem.id) || messageItem.stableKey,
     });
   });
 
@@ -188,16 +181,12 @@ export const reconcileConversationMessages = ({
 }) => {
   const mappedMessages = mapConversationMessagesForDisplay(latestMessages, {
     currentUserId: user.id,
-    currentUserName: user.name || 'You',
-    targetUserName: targetUser.name || 'Unknown',
+    currentUserName: user.name || "You",
+    targetUserName: targetUser.name || "Unknown",
   });
 
-  setMessages(previousMessages =>
-    mergeConversationSnapshotWithPending(
-      previousMessages,
-      mappedMessages,
-      currentChannelId
-    )
+  setMessages((previousMessages) =>
+    mergeConversationSnapshotWithPending(previousMessages, mappedMessages, currentChannelId),
   );
 
   return mappedMessages;
@@ -222,45 +211,39 @@ export const applyConversationSnapshot = ({
 }) => {
   const mappedMessages = mapConversationMessagesForDisplay(snapshotMessages, {
     currentUserId: user.id,
-    currentUserName: user.name || 'You',
-    targetUserName: targetUser.name || 'Unknown',
+    currentUserName: user.name || "You",
+    targetUserName: targetUser.name || "Unknown",
   });
 
   if (initialMessageAnimationKeysRef) {
     const initialMessageAnimationKeys = new Set(
-      mappedMessages.map(messageItem => messageItem.stableKey || messageItem.id)
+      mappedMessages.map((messageItem) => messageItem.stableKey || messageItem.id),
     );
     initialMessageAnimationKeysRef.current = initialMessageAnimationKeys;
     if (initialOpenJumpAnimationKeysRef) {
-      initialOpenJumpAnimationKeysRef.current = new Set(
-        initialMessageAnimationKeys
-      );
+      initialOpenJumpAnimationKeysRef.current = new Set();
     }
   }
 
-  setMessages(previousMessages => {
+  setMessages((previousMessages) => {
     if (previousMessages.length === 0) {
       return mergeConversationSnapshotWithPending(
         previousMessages,
         mappedMessages,
-        currentChannelId
+        currentChannelId,
       );
     }
 
-    return mergeConversationSnapshotWithPending(
-      previousMessages,
-      mappedMessages,
-      currentChannelId
-    );
+    return mergeConversationSnapshotWithPending(previousMessages, mappedMessages, currentChannelId);
   });
 
   return mappedMessages;
 };
 
 export const isConversationMessageForPair = (
-  message: Pick<ChatMessage, 'sender_id' | 'receiver_id'>,
+  message: Pick<ChatMessage, "sender_id" | "receiver_id">,
   userId: string,
-  targetUserId: string
+  targetUserId: string,
 ) => {
   const isIncomingConversationMessage =
     message.sender_id === targetUserId && message.receiver_id === userId;
@@ -280,7 +263,7 @@ export const reconcileInsertedConversationMessage = ({
   currentChannelId: string | null;
 }) => {
   const existingPersistedMessage = previousMessages.some(
-    messageItem => messageItem.id === insertedMessage.id
+    (messageItem) => messageItem.id === insertedMessage.id,
   );
   if (existingPersistedMessage) {
     return previousMessages;
@@ -288,13 +271,9 @@ export const reconcileInsertedConversationMessage = ({
 
   let matchingTempIndex = -1;
 
-  for (
-    let messageIndex = previousMessages.length - 1;
-    messageIndex >= 0;
-    messageIndex -= 1
-  ) {
+  for (let messageIndex = previousMessages.length - 1; messageIndex >= 0; messageIndex -= 1) {
     const previousMessage = previousMessages[messageIndex];
-    if (!previousMessage.id.startsWith('temp_')) continue;
+    if (!previousMessage.id.startsWith("temp_")) continue;
     if (previousMessage.channel_id !== currentChannelId) continue;
     if (previousMessage.sender_id !== insertedMessage.sender_id) continue;
     if (previousMessage.receiver_id !== insertedMessage.receiver_id) continue;
@@ -305,14 +284,13 @@ export const reconcileInsertedConversationMessage = ({
       insertedMessage.file_storage_path &&
       previousMessage.file_storage_path === insertedMessage.file_storage_path;
     const matchesAttachmentCaption =
-      previousMessage.message_relation_kind === 'attachment_caption' &&
-      insertedMessage.message_relation_kind === 'attachment_caption' &&
+      previousMessage.message_relation_kind === "attachment_caption" &&
+      insertedMessage.message_relation_kind === "attachment_caption" &&
       previousMessage.message.trim() === insertedMessage.message.trim();
     const matchesTextContent =
-      previousMessage.message_type === 'text' &&
+      previousMessage.message_type === "text" &&
       previousMessage.message.trim() === insertedMessage.message.trim() &&
-      (previousMessage.reply_to_id ?? null) ===
-        (insertedMessage.reply_to_id ?? null);
+      (previousMessage.reply_to_id ?? null) === (insertedMessage.reply_to_id ?? null);
 
     if (matchesStoragePath || matchesAttachmentCaption || matchesTextContent) {
       matchingTempIndex = messageIndex;
@@ -330,6 +308,6 @@ export const reconcileInsertedConversationMessage = ({
           ...insertedMessage,
           stableKey: messageItem.stableKey || insertedMessage.stableKey,
         }
-      : messageItem
+      : messageItem,
   );
 };
