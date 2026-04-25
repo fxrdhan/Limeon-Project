@@ -15,7 +15,7 @@ Direktori ini sekarang dibatasi untuk script yang masih menjadi bagian dari work
 - `add-admin-user.ts`, `update-user-password.ts`
   Utility admin yang masih diekspos lewat `package.json`.
 - `backfill-chat-image-previews.ts`, `backfill-profile-photo-thumbnails.ts`
-  Script maintenance Supabase yang masih punya entrypoint resmi.
+  Script maintenance Supabase yang masih punya entrypoint resmi. Untuk regenerate thumbnail profile photo setelah perubahan ukuran/quality, jalankan `bun run backfill:profile-photo-thumbnails --force` setelah dry-run.
 - `export.ts`, `loc-stats.ts`
   Utility repo yang masih diekspos lewat `package.json`.
 
