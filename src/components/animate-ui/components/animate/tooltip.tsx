@@ -88,6 +88,20 @@ const defaultTooltipTransition = {
   damping: 35,
 } as const;
 
+const tooltipAppearTransition = {
+  type: "spring",
+  stiffness: 520,
+  damping: 24,
+  mass: 0.75,
+} as const;
+
+const tooltipExitTransition = {
+  type: "spring",
+  stiffness: 520,
+  damping: 30,
+  mass: 0.65,
+} as const;
+
 const defaultTooltipGeometry: TooltipGeometry = {
   bubbleX: 0,
   bubbleY: 0,
@@ -113,9 +127,26 @@ const TooltipContext = React.createContext<TooltipValue | null>(null);
 
 const TOOLTIP_ARROW_SIZE = 12;
 const TOOLTIP_ARROW_INSET = TOOLTIP_ARROW_SIZE * 0.65;
+const TOOLTIP_HIDDEN_SCALE = 0.45;
+const TOOLTIP_ARROW_HIDDEN_SCALE = 0.2;
 
-const getTooltipArrowClassName = () =>
-  "pointer-events-none fixed left-0 top-0 z-50 size-3 rotate-45 rounded-[2px] bg-slate-950";
+const getTooltipArrowClassName = () => "pointer-events-none fixed left-0 top-0 z-50 size-3";
+
+const getTooltipTransformOrigin = (side: TooltipSide) => {
+  if (side === "top") {
+    return "bottom center";
+  }
+
+  if (side === "bottom") {
+    return "top center";
+  }
+
+  if (side === "left") {
+    return "center right";
+  }
+
+  return "center left";
+};
 
 const getAlignedAxisPosition = (
   start: number,
@@ -205,44 +236,75 @@ const TooltipProvider = ({
 }: TooltipProviderProps) => {
   const [activeTooltip, setActiveTooltip] = React.useState<TooltipShowRequest | null>(null);
   const [isVisible, setIsVisible] = React.useState(false);
+  const [isPlacementReady, setIsPlacementReady] = React.useState(false);
   const bubbleControls = useAnimationControls();
   const arrowControls = useAnimationControls();
   const tooltipRef = React.useRef<HTMLDivElement | null>(null);
   const tooltipSizerRef = React.useRef<HTMLDivElement | null>(null);
   const visibleRef = React.useRef(false);
+  const placementReadyRef = React.useRef(false);
   const geometryRef = React.useRef<TooltipGeometry>(defaultTooltipGeometry);
+  const exitGenerationRef = React.useRef(0);
+  const animationFrameRef = React.useRef<number | null>(null);
 
-  const showTooltip = React.useCallback((request: TooltipShowRequest) => {
-    setActiveTooltip(request);
+  const cancelPendingAnimationFrame = React.useCallback(() => {
+    if (animationFrameRef.current === null) {
+      return;
+    }
+
+    window.cancelAnimationFrame(animationFrameRef.current);
+    animationFrameRef.current = null;
   }, []);
+
+  const showTooltip = React.useCallback(
+    (request: TooltipShowRequest) => {
+      cancelPendingAnimationFrame();
+      exitGenerationRef.current += 1;
+      if (!visibleRef.current) {
+        placementReadyRef.current = false;
+        setIsPlacementReady(false);
+      }
+      setActiveTooltip(request);
+    },
+    [cancelPendingAnimationFrame],
+  );
 
   const hideTooltip = React.useCallback(
     (id: string) => {
+      cancelPendingAnimationFrame();
       setActiveTooltip((currentTooltip) => {
         if (currentTooltip?.id === id) {
+          const exitGeneration = ++exitGenerationRef.current;
           const geometry = geometryRef.current;
           visibleRef.current = false;
           setIsVisible(false);
-          void bubbleControls.start({
+          const bubbleAnimation = bubbleControls.start({
             x: geometry.hiddenBubbleX,
             y: geometry.hiddenBubbleY,
             opacity: 0,
-            scale: 0.96,
-            transition,
+            scale: TOOLTIP_HIDDEN_SCALE,
+            transition: tooltipExitTransition,
           });
-          void arrowControls.start({
+          const arrowAnimation = arrowControls.start({
             x: geometry.hiddenArrowX,
             y: geometry.hiddenArrowY,
             opacity: 0,
-            scale: 0.96,
-            transition,
+            scale: TOOLTIP_ARROW_HIDDEN_SCALE,
+            transition: tooltipExitTransition,
+          });
+
+          void Promise.all([bubbleAnimation, arrowAnimation]).then(() => {
+            if (exitGenerationRef.current === exitGeneration && !visibleRef.current) {
+              placementReadyRef.current = false;
+              setIsPlacementReady(false);
+            }
           });
         }
 
         return currentTooltip;
       });
     },
-    [arrowControls, bubbleControls, transition],
+    [arrowControls, bubbleControls, cancelPendingAnimationFrame],
   );
 
   const getTooltipSize = React.useCallback((): TooltipSize | null => {
@@ -294,6 +356,7 @@ const TooltipProvider = ({
 
     const nextGeometry = getTooltipGeometry(activeTooltip, size);
     geometryRef.current = nextGeometry;
+    const shouldUseAppearTransition = !visibleRef.current;
 
     if (!visibleRef.current) {
       bubbleControls.set({
@@ -302,35 +365,64 @@ const TooltipProvider = ({
         width: nextGeometry.width,
         height: nextGeometry.height,
         opacity: 0,
-        scale: 0.96,
+        scale: TOOLTIP_HIDDEN_SCALE,
       });
       arrowControls.set({
         x: nextGeometry.hiddenArrowX,
         y: nextGeometry.hiddenArrowY,
         opacity: 0,
-        scale: 0.96,
+        scale: TOOLTIP_ARROW_HIDDEN_SCALE,
       });
     }
 
+    placementReadyRef.current = true;
+    setIsPlacementReady(true);
     visibleRef.current = true;
     setIsVisible(true);
-    void bubbleControls.start({
-      x: nextGeometry.bubbleX,
-      y: nextGeometry.bubbleY,
-      width: nextGeometry.width,
-      height: nextGeometry.height,
-      opacity: 1,
-      scale: 1,
-      transition,
-    });
-    void arrowControls.start({
-      x: nextGeometry.arrowX,
-      y: nextGeometry.arrowY,
-      opacity: 1,
-      scale: 1,
-      transition,
-    });
-  }, [activeTooltip, arrowControls, bubbleControls, getTooltipSize, transition]);
+
+    const startAnimation = () => {
+      void bubbleControls.start({
+        x: nextGeometry.bubbleX,
+        y: nextGeometry.bubbleY,
+        width: nextGeometry.width,
+        height: nextGeometry.height,
+        opacity: 1,
+        scale: 1,
+        transition: shouldUseAppearTransition ? tooltipAppearTransition : transition,
+      });
+      void arrowControls.start({
+        x: nextGeometry.arrowX,
+        y: nextGeometry.arrowY,
+        opacity: 1,
+        scale: 1,
+        transition: shouldUseAppearTransition ? tooltipAppearTransition : transition,
+      });
+    };
+
+    if (shouldUseAppearTransition) {
+      animationFrameRef.current = window.requestAnimationFrame(() => {
+        animationFrameRef.current = null;
+        startAnimation();
+      });
+      return;
+    }
+
+    startAnimation();
+  }, [
+    activeTooltip,
+    arrowControls,
+    bubbleControls,
+    cancelPendingAnimationFrame,
+    getTooltipSize,
+    transition,
+  ]);
+
+  React.useEffect(
+    () => () => {
+      cancelPendingAnimationFrame();
+    },
+    [cancelPendingAnimationFrame],
+  );
 
   React.useEffect(() => {
     if (!tooltipSizerRef.current) {
@@ -362,6 +454,7 @@ const TooltipProvider = ({
   }, [activeTooltip, isVisible, updatePosition]);
 
   const content = activeTooltip?.content;
+  const shouldShowTooltip = Boolean(content && placementReadyRef.current && isPlacementReady);
 
   return (
     <TooltipProviderContext.Provider
@@ -387,7 +480,8 @@ const TooltipProvider = ({
         )}
         style={{
           ...content?.style,
-          visibility: content ? "visible" : "hidden",
+          visibility: shouldShowTooltip ? "visible" : "hidden",
+          transformOrigin: getTooltipTransformOrigin(activeTooltip?.side ?? "top"),
         }}
         initial={false}
         animate={bubbleControls}
@@ -399,9 +493,11 @@ const TooltipProvider = ({
         initial={false}
         animate={arrowControls}
         style={{
-          visibility: content ? "visible" : "hidden",
+          visibility: shouldShowTooltip ? "visible" : "hidden",
         }}
-      />
+      >
+        <span className="block size-3 rotate-45 rounded-[2px] bg-slate-950" />
+      </motion.span>
     </TooltipProviderContext.Provider>
   );
 };
