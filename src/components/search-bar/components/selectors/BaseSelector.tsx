@@ -4,6 +4,11 @@ import { TbSearch, TbSparkles } from "react-icons/tb";
 import fuzzysort from "fuzzysort";
 import { BaseSelectorProps } from "../../types";
 import { SEARCH_CONSTANTS } from "../../constants";
+import {
+  getKeyboardPinnedHighlightFrame,
+  getKeyboardScrollTarget,
+  type KeyboardPinnedHighlightFrame,
+} from "@/components/shared/keyboard-pinned-highlight";
 
 // Helper to highlight matched characters
 /* c8 ignore next */
@@ -53,6 +58,7 @@ function BaseSelector<T>({
   const releaseHeldBackgroundTimeoutRef = useRef<number | null>(null);
   const keyboardBackgroundIndexRef = useRef<number | null>(null);
   const lastPointerPositionRef = useRef<{ x: number; y: number } | null>(null);
+  const skipNextBackgroundScrollRef = useRef(false);
   const hoverResumePointerPositionRef = useRef<{
     x: number;
     y: number;
@@ -62,12 +68,8 @@ function BaseSelector<T>({
   const [internalSearchTerm, setInternalSearchTerm] = useState("");
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [isHoverDisabled, setIsHoverDisabled] = useState(false);
-  const [heldBackgroundStyle, setHeldBackgroundStyle] = useState<{
-    top: number;
-    left: number;
-    width: number;
-    height: number;
-  } | null>(null);
+  const [heldBackgroundStyle, setHeldBackgroundStyle] =
+    useState<KeyboardPinnedHighlightFrame | null>(null);
   const [pendingKeyboardScroll, setPendingKeyboardScroll] = useState<{
     sourceIndex: number;
     targetIndex: number;
@@ -85,6 +87,7 @@ function BaseSelector<T>({
     setHoveredIndex(null);
     setIsHoverDisabled(false);
     keyboardBackgroundIndexRef.current = null;
+    skipNextBackgroundScrollRef.current = false;
     hoverResumePointerPositionRef.current = null;
     setPendingKeyboardScroll(null);
     if (releaseHeldBackgroundTimeoutRef.current !== null) {
@@ -103,6 +106,7 @@ function BaseSelector<T>({
         window.clearTimeout(releaseHeldBackgroundTimeoutRef.current);
       }
       keyboardBackgroundIndexRef.current = null;
+      skipNextBackgroundScrollRef.current = false;
       hoverResumePointerPositionRef.current = null;
     };
   }, []);
@@ -257,23 +261,14 @@ function BaseSelector<T>({
 
       if (!container || !targetElement) return null;
 
-      const itemTop = targetElement.offsetTop;
-      const itemBottom = itemTop + targetElement.offsetHeight;
-      const containerScrollTop = container.scrollTop;
-      const containerHeight = container.clientHeight;
-      const visibilityInset = 4;
-
-      if (itemTop < containerScrollTop + visibilityInset) {
-        return Math.max(0, itemTop - visibilityInset);
-      }
-
-      if (itemBottom > containerScrollTop + containerHeight - visibilityInset) {
-        return index === filteredItems.length - 1
-          ? container.scrollHeight - containerHeight
-          : itemBottom - containerHeight + visibilityInset;
-      }
-
-      return null;
+      return (
+        getKeyboardScrollTarget({
+          container,
+          itemCount: filteredItems.length,
+          targetElement,
+          targetIndex: index,
+        })?.scrollTop ?? null
+      );
     },
     [filteredItems.length],
   );
@@ -311,6 +306,7 @@ function BaseSelector<T>({
           e.preventDefault();
           if (filteredItems.length > 0) {
             setIsHoverDisabled(true);
+            skipNextBackgroundScrollRef.current = false;
             hoverResumePointerPositionRef.current = lastPointerPositionRef.current;
             const baseIndex = keyboardBackgroundIndexRef.current ?? backgroundIndex;
             const nextIndex = baseIndex + 1 >= filteredItems.length ? 0 : baseIndex + 1;
@@ -339,6 +335,7 @@ function BaseSelector<T>({
           e.preventDefault();
           if (filteredItems.length > 0) {
             setIsHoverDisabled(true);
+            skipNextBackgroundScrollRef.current = false;
             hoverResumePointerPositionRef.current = lastPointerPositionRef.current;
             const baseIndex = keyboardBackgroundIndexRef.current ?? backgroundIndex;
             const nextIndex = baseIndex === 0 ? filteredItems.length - 1 : baseIndex - 1;
@@ -384,6 +381,7 @@ function BaseSelector<T>({
           setHoveredIndex(null);
           setIsHoverDisabled(false);
           keyboardBackgroundIndexRef.current = null;
+          skipNextBackgroundScrollRef.current = false;
           hoverResumePointerPositionRef.current = null;
           setPendingKeyboardScroll(null);
           setHeldBackgroundStyle(null);
@@ -402,6 +400,7 @@ function BaseSelector<T>({
             setHoveredIndex(null);
             setIsHoverDisabled(false);
             keyboardBackgroundIndexRef.current = null;
+            skipNextBackgroundScrollRef.current = false;
             hoverResumePointerPositionRef.current = null;
             setPendingKeyboardScroll(null);
             setHeldBackgroundStyle(null);
@@ -418,7 +417,6 @@ function BaseSelector<T>({
     isOpen,
     filteredItems,
     backgroundIndex,
-    selectedIndex,
     getRequiredScrollTop,
     onSelect,
     onClose,
@@ -435,26 +433,14 @@ function BaseSelector<T>({
 
     if (!container || !targetElement || !sourceElement || !modalElement) return;
 
-    const itemTop = targetElement.offsetTop;
-    const itemBottom = itemTop + targetElement.offsetHeight;
-    const containerScrollTop = container.scrollTop;
-    const containerHeight = container.clientHeight;
-    const visibilityInset = 4;
-    let scrollTop: number | null = null;
-    let scrollDirection: "up" | "down" | null = null;
+    const scrollTarget = getKeyboardScrollTarget({
+      container,
+      itemCount: filteredItems.length,
+      targetElement,
+      targetIndex: pendingKeyboardScroll.targetIndex,
+    });
 
-    if (itemTop < containerScrollTop + visibilityInset) {
-      scrollTop = Math.max(0, itemTop - visibilityInset);
-      scrollDirection = "up";
-    } else if (itemBottom > containerScrollTop + containerHeight - visibilityInset) {
-      scrollTop =
-        pendingKeyboardScroll.targetIndex === filteredItems.length - 1
-          ? container.scrollHeight - containerHeight
-          : itemBottom - containerHeight + visibilityInset;
-      scrollDirection = "down";
-    }
-
-    if (scrollTop === null || scrollDirection === null) {
+    if (scrollTarget === null) {
       setPendingKeyboardScroll(null);
       keyboardBackgroundIndexRef.current = null;
       setHeldBackgroundStyle(null);
@@ -465,38 +451,16 @@ function BaseSelector<T>({
       window.clearTimeout(releaseHeldBackgroundTimeoutRef.current);
     }
 
-    const sourceTop = sourceElement.offsetTop;
-    const sourceBottom = sourceTop + sourceElement.offsetHeight;
-    const sourceIsVisible =
-      sourceBottom > containerScrollTop + visibilityInset &&
-      sourceTop < containerScrollTop + containerHeight - visibilityInset;
-    const sourceIsPinnedToEdge =
-      sourceIsVisible &&
-      (scrollDirection === "up"
-        ? sourceTop <= containerScrollTop + visibilityInset
-        : sourceBottom >= containerScrollTop + containerHeight - visibilityInset);
-    const frameElement = sourceIsPinnedToEdge ? sourceElement : targetElement;
-    const frameRect = frameElement.getBoundingClientRect();
-    const containerRect = container.getBoundingClientRect();
-    const modalRect = modalElement.getBoundingClientRect();
-    const edgeFrameTop =
-      scrollDirection === "up"
-        ? containerRect.top + visibilityInset - modalRect.top
-        : containerRect.bottom - visibilityInset - targetElement.offsetHeight - modalRect.top;
-    const sourceFrameTop = frameRect.top - modalRect.top;
-    const frameTop = sourceIsPinnedToEdge
-      ? scrollDirection === "up"
-        ? Math.max(sourceFrameTop, edgeFrameTop)
-        : Math.min(sourceFrameTop, edgeFrameTop)
-      : edgeFrameTop;
-
-    setHeldBackgroundStyle({
-      top: frameTop,
-      left: frameRect.left - modalRect.left,
-      width: frameRect.width,
-      height: frameRect.height,
-    });
-    container.scrollTo({ top: scrollTop, behavior: "smooth" });
+    setHeldBackgroundStyle(
+      getKeyboardPinnedHighlightFrame({
+        container,
+        frameRootElement: modalElement,
+        scrollDirection: scrollTarget.direction,
+        sourceElement,
+        targetElement,
+      }),
+    );
+    container.scrollTo({ top: scrollTarget.scrollTop, behavior: "smooth" });
     releaseHeldBackgroundTimeoutRef.current = window.setTimeout(() => {
       keyboardBackgroundIndexRef.current = null;
       setPendingKeyboardScroll(null);
@@ -514,46 +478,27 @@ function BaseSelector<T>({
     )
       return;
 
+    if (skipNextBackgroundScrollRef.current) {
+      skipNextBackgroundScrollRef.current = false;
+      return;
+    }
+
     const scrollActiveBackgroundItemIntoView = () => {
       const container = listContainerRef.current;
       const selectedElement = itemRefs.current[backgroundIndex];
 
       if (!container || !selectedElement) return;
 
-      const isLastItem = backgroundIndex === filteredItems.length - 1;
-      const containerRect = container.getBoundingClientRect();
-      const itemRect = selectedElement.getBoundingClientRect();
+      const scrollTarget = getKeyboardScrollTarget({
+        container,
+        itemCount: filteredItems.length,
+        targetElement: selectedElement,
+        targetIndex: backgroundIndex,
+      });
 
-      const itemTop = itemRect.top - containerRect.top + container.scrollTop;
-      const itemBottom = itemTop + itemRect.height;
-      const containerScrollTop = container.scrollTop;
-      const containerHeight = container.clientHeight;
-      const visibilityInset = 4;
-
-      // Check if item is above visible area
-      /* c8 ignore start */
-      if (itemTop < containerScrollTop + visibilityInset) {
-        container.scrollTo({
-          top: Math.max(0, itemTop - visibilityInset),
-          behavior: "smooth",
-        });
+      if (scrollTarget) {
+        container.scrollTo({ top: scrollTarget.scrollTop, behavior: "smooth" });
       }
-      // Check if item is below visible area
-      else if (itemBottom > containerScrollTop + containerHeight - visibilityInset) {
-        // If it's the last item, scroll to absolute bottom
-        if (isLastItem) {
-          container.scrollTo({
-            top: container.scrollHeight - containerHeight,
-            behavior: "smooth",
-          });
-        } else {
-          container.scrollTo({
-            top: itemBottom - containerHeight + visibilityInset,
-            behavior: "smooth",
-          });
-        }
-      }
-      /* c8 ignore end */
     };
 
     const frameIds: number[] = [];
@@ -758,6 +703,9 @@ function BaseSelector<T>({
                       }}
                       className="max-h-65 overflow-y-auto overflow-x-hidden py-1"
                       onMouseLeave={() => {
+                        if (hoveredIndex !== null) {
+                          skipNextBackgroundScrollRef.current = true;
+                        }
                         setHoveredIndex(null);
                         setIsHoverDisabled(false);
                         keyboardBackgroundIndexRef.current = null;
@@ -806,6 +754,7 @@ function BaseSelector<T>({
                                     y: event.clientY,
                                   };
                                   if (!isHoverDisabled) {
+                                    skipNextBackgroundScrollRef.current = false;
                                     setHoveredIndex(index);
                                   }
                                 }}
@@ -831,6 +780,7 @@ function BaseSelector<T>({
 
                                     setIsHoverDisabled(false);
                                     keyboardBackgroundIndexRef.current = null;
+                                    skipNextBackgroundScrollRef.current = false;
                                     hoverResumePointerPositionRef.current = null;
                                     setPendingKeyboardScroll(null);
                                     if (releaseHeldBackgroundTimeoutRef.current !== null) {

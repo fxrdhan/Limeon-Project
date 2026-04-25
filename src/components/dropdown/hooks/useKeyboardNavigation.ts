@@ -1,4 +1,5 @@
 import { RefObject, useState, useCallback, useEffect, useRef } from "react";
+import { getKeyboardScrollTarget } from "@/components/shared/keyboard-pinned-highlight";
 import { KEYBOARD_KEYS, DROPDOWN_CONSTANTS, SEARCH_STATES } from "../constants";
 
 interface UseKeyboardNavigationProps {
@@ -68,23 +69,14 @@ export const useKeyboardNavigation = ({
 
       if (!container || !optionElement) return null;
 
-      const itemTop = optionElement.offsetTop;
-      const itemBottom = itemTop + optionElement.offsetHeight;
-      const containerScrollTop = container.scrollTop;
-      const containerHeight = container.clientHeight;
-      const visibilityInset = 4;
-
-      if (itemTop < containerScrollTop + visibilityInset) {
-        return Math.max(0, itemTop - visibilityInset);
-      }
-
-      if (itemBottom > containerScrollTop + containerHeight - visibilityInset) {
-        return index === currentFilteredOptions.length - 1
-          ? container.scrollHeight - containerHeight
-          : itemBottom - containerHeight + visibilityInset;
-      }
-
-      return null;
+      return (
+        getKeyboardScrollTarget({
+          container,
+          itemCount: currentFilteredOptions.length,
+          targetElement: optionElement,
+          targetIndex: index,
+        })?.scrollTop ?? null
+      );
     },
     [currentFilteredOptions.length, optionsContainerRef],
   );

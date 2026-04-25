@@ -7,6 +7,13 @@ import EmptyState from "./menu/EmptyState";
 import { useDropdownContext } from "../hooks/useDropdownContext";
 import type { DropdownMenuProps } from "../types";
 import { DROPDOWN_CONSTANTS } from "../constants";
+import {
+  getKeyboardPinnedHighlightFrame,
+  getKeyboardScrollTarget,
+  hasKeyboardScrollTargetSettled,
+  isWrappedKeyboardScroll,
+  type KeyboardPinnedHighlightFrame,
+} from "@/components/shared/keyboard-pinned-highlight";
 
 const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
   ({ isFrozen = false, leaveTimeoutRef, onSearchKeyDown }, ref) => {
@@ -42,12 +49,8 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
       optionsContainerRef,
       scrollState,
     } = useDropdownContext();
-    const [heldHighlightFrame, setHeldHighlightFrame] = useState<{
-      top: number;
-      left: number;
-      width: number;
-      height: number;
-    } | null>(null);
+    const [heldHighlightFrame, setHeldHighlightFrame] =
+      useState<KeyboardPinnedHighlightFrame | null>(null);
     const releaseHeldHighlightFrameRef = useRef<number | null>(null);
 
     useLayoutEffect(() => {
@@ -68,26 +71,14 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
 
       if (!container || !menuElement || !targetElement) return;
 
-      const itemTop = targetElement.offsetTop;
-      const itemBottom = itemTop + targetElement.offsetHeight;
-      const containerScrollTop = container.scrollTop;
-      const containerHeight = container.clientHeight;
-      const visibilityInset = 4;
-      let scrollTop: number | null = null;
-      let scrollDirection: "up" | "down" | null = null;
+      const scrollTarget = getKeyboardScrollTarget({
+        container,
+        itemCount: filteredOptions.length,
+        targetElement,
+        targetIndex: pendingHighlightedIndex,
+      });
 
-      if (itemTop < containerScrollTop + visibilityInset) {
-        scrollTop = Math.max(0, itemTop - visibilityInset);
-        scrollDirection = "up";
-      } else if (itemBottom > containerScrollTop + containerHeight - visibilityInset) {
-        scrollTop =
-          pendingHighlightedIndex === filteredOptions.length - 1
-            ? container.scrollHeight - containerHeight
-            : itemBottom - containerHeight + visibilityInset;
-        scrollDirection = "down";
-      }
-
-      if (scrollTop !== null) {
+      if (scrollTarget !== null) {
         if (releaseHeldHighlightFrameRef.current !== null) {
           window.cancelAnimationFrame(releaseHeldHighlightFrameRef.current);
         }
@@ -108,18 +99,18 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
               return;
             }
 
-            const currentScrollTop = currentContainer.scrollTop;
-            const currentTargetTop = currentTargetElement.offsetTop;
-            const currentTargetBottom = currentTargetTop + currentTargetElement.offsetHeight;
-            const currentTargetIsVisible =
-              currentTargetTop >= currentScrollTop &&
-              currentTargetBottom <= currentScrollTop + currentContainer.clientHeight;
-            const hasReachedScrollTarget = Math.abs(currentContainer.scrollTop - scrollTop) <= 1;
             const hasHeldLongEnough =
               window.performance.now() - startedAt >=
               DROPDOWN_CONSTANTS.KEYBOARD_SCROLL_HIGHLIGHT_MAX_HOLD;
 
-            if ((currentTargetIsVisible && hasReachedScrollTarget) || hasHeldLongEnough) {
+            if (
+              hasKeyboardScrollTargetSettled({
+                container: currentContainer,
+                scrollTop: scrollTarget.scrollTop,
+                targetElement: currentTargetElement,
+              }) ||
+              hasHeldLongEnough
+            ) {
               setHeldHighlightFrame(null);
               releaseHeldHighlightFrameRef.current = null;
               return;
@@ -131,69 +122,40 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
           releaseHeldHighlightFrameRef.current = window.requestAnimationFrame(checkTarget);
         };
 
-        const lastOptionIndex = filteredOptions.length - 1;
-        const isWrappedLongScroll =
-          pendingHighlightSourceIndex !== null &&
-          lastOptionIndex > 0 &&
-          ((pendingHighlightSourceIndex === lastOptionIndex && pendingHighlightedIndex === 0) ||
-            (pendingHighlightSourceIndex === 0 && pendingHighlightedIndex === lastOptionIndex));
-
-        if (isWrappedLongScroll) {
-          const targetRect = targetElement.getBoundingClientRect();
-          const containerRect = container.getBoundingClientRect();
-          const menuRect = menuElement.getBoundingClientRect();
-          const edgeFrameTop =
-            scrollDirection === "up"
-              ? containerRect.top + visibilityInset - menuRect.top
-              : containerRect.bottom - visibilityInset - targetElement.offsetHeight - menuRect.top;
-
-          setHeldHighlightFrame({
-            top: edgeFrameTop,
-            left: targetRect.left - menuRect.left,
-            width: targetRect.width,
-            height: targetRect.height,
+        if (
+          isWrappedKeyboardScroll({
+            itemCount: filteredOptions.length,
+            sourceIndex: pendingHighlightSourceIndex,
+            targetIndex: pendingHighlightedIndex,
+          })
+        ) {
+          setHeldHighlightFrame(
+            getKeyboardPinnedHighlightFrame({
+              container,
+              forceTargetEdgeFrame: true,
+              frameRootElement: menuElement,
+              scrollDirection: scrollTarget.direction,
+              targetElement,
+            }),
+          );
+          container.scrollTo({
+            top: scrollTarget.scrollTop,
+            behavior: "smooth",
           });
-          container.scrollTo({ top: scrollTop, behavior: "smooth" });
           releaseHeldHighlightWhenTargetSettles();
           return;
         }
 
-        const sourceTop = sourceElement?.offsetTop ?? itemTop;
-        const sourceBottom =
-          sourceTop + (sourceElement?.offsetHeight ?? targetElement.offsetHeight);
-        const sourceIsVisible =
-          sourceElement !== null &&
-          sourceBottom > containerScrollTop + visibilityInset &&
-          sourceTop < containerScrollTop + containerHeight - visibilityInset;
-        const sourceIsPinnedToEdge =
-          sourceIsVisible &&
-          (scrollDirection === "up"
-            ? sourceTop <= containerScrollTop + visibilityInset
-            : sourceBottom >= containerScrollTop + containerHeight - visibilityInset);
-        const frameElement = sourceIsPinnedToEdge
-          ? (sourceElement ?? targetElement)
-          : targetElement;
-        const frameRect = frameElement.getBoundingClientRect();
-        const containerRect = container.getBoundingClientRect();
-        const menuRect = menuElement.getBoundingClientRect();
-        const edgeFrameTop =
-          scrollDirection === "up"
-            ? containerRect.top + visibilityInset - menuRect.top
-            : containerRect.bottom - visibilityInset - targetElement.offsetHeight - menuRect.top;
-        const sourceFrameTop = frameRect.top - menuRect.top;
-        const frameTop = sourceIsPinnedToEdge
-          ? scrollDirection === "up"
-            ? Math.max(sourceFrameTop, edgeFrameTop)
-            : Math.min(sourceFrameTop, edgeFrameTop)
-          : edgeFrameTop;
-
-        setHeldHighlightFrame({
-          top: frameTop,
-          left: frameRect.left - menuRect.left,
-          width: frameRect.width,
-          height: frameRect.height,
-        });
-        container.scrollTo({ top: scrollTop, behavior: "smooth" });
+        setHeldHighlightFrame(
+          getKeyboardPinnedHighlightFrame({
+            container,
+            frameRootElement: menuElement,
+            scrollDirection: scrollTarget.direction,
+            sourceElement,
+            targetElement,
+          }),
+        );
+        container.scrollTo({ top: scrollTarget.scrollTop, behavior: "smooth" });
         releaseHeldHighlightWhenTargetSettles();
       }
     }, [
