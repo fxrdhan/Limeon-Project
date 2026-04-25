@@ -11,6 +11,7 @@ export const DROPDOWN_CONSTANTS = {
   MAX_HEIGHT: 240, // 60 * 4 (tailwind max-h-60)
   SCROLL_THRESHOLD: 2,
   PAGE_SIZE: 5,
+  KEYBOARD_SCROLL_HIGHLIGHT_MAX_HOLD: 700,
   BUTTON_PADDING: 48,
   RADIO_EXTRA_PADDING: 24,
   // Z-index for dropdown portal (higher than calendar portal)
@@ -18,27 +19,27 @@ export const DROPDOWN_CONSTANTS = {
 } as const;
 
 export const KEYBOARD_KEYS = {
-  ARROW_DOWN: 'ArrowDown',
-  ARROW_UP: 'ArrowUp',
-  TAB: 'Tab',
-  PAGE_DOWN: 'PageDown',
-  PAGE_UP: 'PageUp',
-  ENTER: 'Enter',
-  ESCAPE: 'Escape',
+  ARROW_DOWN: "ArrowDown",
+  ARROW_UP: "ArrowUp",
+  TAB: "Tab",
+  PAGE_DOWN: "PageDown",
+  PAGE_UP: "PageUp",
+  ENTER: "Enter",
+  ESCAPE: "Escape",
 } as const;
 
 export const SEARCH_STATES = {
-  IDLE: 'idle',
-  TYPING: 'typing',
-  FOUND: 'found',
-  NOT_FOUND: 'not-found',
+  IDLE: "idle",
+  TYPING: "typing",
+  FOUND: "found",
+  NOT_FOUND: "not-found",
 } as const;
 
 export const VALIDATION_MESSAGES = {
-  REQUIRED: 'Pilihan harus diisi',
-  NO_OPTIONS: 'Tidak ada pilihan yang sesuai',
-  ADD_NEW_HINT: 'Tekan Enter untuk menambahkan data baru',
+  REQUIRED: "Pilihan harus diisi",
+  NO_OPTIONS: "Tidak ada pilihan yang sesuai",
+  ADD_NEW_HINT: "Tekan Enter untuk menambahkan data baru",
 } as const;
 
 export type SearchState = (typeof SEARCH_STATES)[keyof typeof SEARCH_STATES];
-export type DropDirection = 'up' | 'down';
+export type DropDirection = "up" | "down";

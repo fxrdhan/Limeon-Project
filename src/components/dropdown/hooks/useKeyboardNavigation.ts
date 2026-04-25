@@ -271,7 +271,7 @@ export const useKeyboardNavigation = ({
               setPendingHighlightedIndex(null);
               keyboardHighlightIndexRef.current = null;
               pendingHighlightTimeoutRef.current = null;
-            }, 260);
+            }, DROPDOWN_CONSTANTS.KEYBOARD_SCROLL_HIGHLIGHT_MAX_HOLD);
             return;
           }
 
