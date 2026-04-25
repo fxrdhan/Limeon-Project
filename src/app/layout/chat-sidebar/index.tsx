@@ -1,7 +1,8 @@
-import type { ChatTargetUser } from '@/types';
-import { Suspense, lazy, useCallback, useEffect, useState } from 'react';
+import type { ChatTargetUser } from "@/types";
+import { Suspense, lazy, useCallback, useEffect, useState } from "react";
 
-const ChatSidebarPanel = lazy(() => import('@/features/chat-sidebar'));
+const ChatSidebarPanel = lazy(() => import("@/features/chat-sidebar"));
+const ContactListPanel = lazy(() => import("@/features/chat-sidebar/components/ContactListPanel"));
 
 interface ChatSidebarProps {
   isOpen: boolean;
@@ -10,11 +11,11 @@ interface ChatSidebarProps {
 }
 
 const ChatSidebar = ({ isOpen, onClose, targetUser }: ChatSidebarProps) => {
-  const [persistedTargetUser, setPersistedTargetUser] = useState<
-    ChatTargetUser | undefined
-  >(targetUser);
+  const [persistedTargetUser, setPersistedTargetUser] = useState<ChatTargetUser | undefined>(
+    targetUser,
+  );
   const [sidebarWidth, setSidebarWidth] = useState(() => {
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       return 420;
     }
 
@@ -27,7 +28,13 @@ const ChatSidebar = ({ isOpen, onClose, targetUser }: ChatSidebarProps) => {
   }, [targetUser]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
+    if (isOpen && !targetUser) {
+      setPersistedTargetUser(undefined);
+    }
+  }, [isOpen, targetUser]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
       return;
     }
 
@@ -36,28 +43,24 @@ const ChatSidebar = ({ isOpen, onClose, targetUser }: ChatSidebarProps) => {
     };
 
     updateSidebarWidth();
-    window.addEventListener('resize', updateSidebarWidth);
+    window.addEventListener("resize", updateSidebarWidth);
 
     return () => {
-      window.removeEventListener('resize', updateSidebarWidth);
+      window.removeEventListener("resize", updateSidebarWidth);
     };
   }, []);
 
-  const activeTargetUser = targetUser ?? persistedTargetUser;
+  const activeTargetUser = isOpen ? targetUser : persistedTargetUser;
   const shouldRenderPanel = isOpen || Boolean(activeTargetUser);
   const handleTransitionEnd = useCallback(
     (event: React.TransitionEvent<HTMLElement>) => {
-      if (
-        event.target !== event.currentTarget ||
-        event.propertyName !== 'width' ||
-        isOpen
-      ) {
+      if (event.target !== event.currentTarget || event.propertyName !== "width" || isOpen) {
         return;
       }
 
       setPersistedTargetUser(undefined);
     },
-    [isOpen]
+    [isOpen],
   );
 
   return (
@@ -66,23 +69,25 @@ const ChatSidebar = ({ isOpen, onClose, targetUser }: ChatSidebarProps) => {
       style={{
         width: isOpen ? sidebarWidth : 0,
         opacity: isOpen ? 1 : 0,
-        maxWidth: '100vw',
+        maxWidth: "100vw",
       }}
       onTransitionEnd={handleTransitionEnd}
       className={`h-full overflow-hidden transition-[width,opacity] duration-200 ease-out ${
         isOpen
-          ? 'border-l border-slate-200 bg-slate-100'
-          : 'pointer-events-none border-l border-transparent bg-transparent'
+          ? "border-l border-slate-200 bg-slate-100"
+          : "pointer-events-none border-l border-transparent bg-transparent"
       }`}
     >
       {shouldRenderPanel ? (
-        <Suspense fallback={null}>
-          <ChatSidebarPanel
-            isOpen={isOpen}
-            onClose={onClose}
-            targetUser={activeTargetUser}
-          />
-        </Suspense>
+        activeTargetUser ? (
+          <Suspense fallback={null}>
+            <ChatSidebarPanel isOpen={isOpen} onClose={onClose} targetUser={activeTargetUser} />
+          </Suspense>
+        ) : (
+          <Suspense fallback={null}>
+            <ContactListPanel onClose={onClose} />
+          </Suspense>
+        )
       ) : null}
     </aside>
   );

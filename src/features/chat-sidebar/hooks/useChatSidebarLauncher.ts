@@ -1,31 +1,36 @@
-import { useCallback } from 'react';
-import { useAuthStore } from '@/store/authStore';
-import { useChatSidebarStore } from '@/store/chatSidebarStore';
-import type { ChatTargetUser } from '@/types';
-import { chatSidebarMessagesGateway } from '../data/chatSidebarGateway';
-import { CHAT_CONVERSATION_PAGE_SIZE } from '../constants';
-import { useChatDirectoryRoster } from './useChatDirectoryRoster';
-import { chatRuntimeCache } from '../utils/chatRuntimeCache';
-import { mapConversationMessagesForDisplay } from '../utils/message-display';
-import { computeDmChannelId } from '../utils/channel';
+import { useCallback } from "react";
+import { useAuthStore } from "@/store/authStore";
+import { useChatSidebarStore } from "@/store/chatSidebarStore";
+import type { ChatTargetUser } from "@/types";
+import { chatSidebarMessagesGateway } from "../data/chatSidebarGateway";
+import { CHAT_CONVERSATION_PAGE_SIZE } from "../constants";
+import { useChatDirectoryRoster } from "./useChatDirectoryRoster";
+import { chatRuntimeCache } from "../utils/chatRuntimeCache";
+import { mapConversationMessagesForDisplay } from "../utils/message-display";
+import { computeDmChannelId } from "../utils/channel";
 
 const pendingConversationPrefetches = new Map<string, Promise<void>>();
 
 export const useChatSidebarLauncher = (shouldLoadDirectory = false) => {
   const { user } = useAuthStore();
-  const openChat = useChatSidebarStore(state => state.openChat);
+  const openContactList = useChatSidebarStore((state) => state.openContactList);
+  const openChat = useChatSidebarStore((state) => state.openChat);
   const directoryRoster = useChatDirectoryRoster(shouldLoadDirectory);
+
+  const openContactListSidebar = useCallback(() => {
+    openContactList();
+  }, [openContactList]);
 
   const openChatForUser = useCallback(
     (targetUser: ChatTargetUser) => {
       openChat(targetUser);
     },
-    [openChat]
+    [openChat],
   );
 
   const prefetchConversationForUser = useCallback(
     async (targetUser: ChatTargetUser) => {
-      const currentUserId = user?.id?.trim() || '';
+      const currentUserId = user?.id?.trim() || "";
       const targetUserId = targetUser.id.trim();
       if (!currentUserId || !targetUserId || currentUserId === targetUserId) {
         return;
@@ -43,13 +48,12 @@ export const useChatSidebarLauncher = (shouldLoadDirectory = false) => {
       }
 
       const nextPrefetch = (async () => {
-        const { data, error } =
-          await chatSidebarMessagesGateway.fetchConversationMessages(
-            targetUserId,
-            {
-              limit: CHAT_CONVERSATION_PAGE_SIZE,
-            }
-          );
+        const { data, error } = await chatSidebarMessagesGateway.fetchConversationMessages(
+          targetUserId,
+          {
+            limit: CHAT_CONVERSATION_PAGE_SIZE,
+          },
+        );
 
         if (error || !data) {
           return;
@@ -59,10 +63,10 @@ export const useChatSidebarLauncher = (shouldLoadDirectory = false) => {
           channelId,
           mapConversationMessagesForDisplay(data.messages, {
             currentUserId,
-            currentUserName: user?.name || 'You',
-            targetUserName: targetUser.name || 'Unknown',
+            currentUserName: user?.name || "You",
+            targetUserName: targetUser.name || "Unknown",
           }),
-          data.hasMore
+          data.hasMore,
         );
       })();
 
@@ -76,11 +80,12 @@ export const useChatSidebarLauncher = (shouldLoadDirectory = false) => {
         }
       }
     },
-    [user?.id, user?.name]
+    [user?.id, user?.name],
   );
 
   return {
     ...directoryRoster,
+    openContactList: openContactListSidebar,
     openChatForUser,
     prefetchConversationForUser,
   };

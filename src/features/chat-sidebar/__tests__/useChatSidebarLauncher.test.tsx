@@ -1,7 +1,7 @@
-import { act, renderHook } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
-import { useChatSidebarLauncher } from '../hooks/useChatSidebarLauncher';
-import { useChatSidebarStore } from '../../../store/chatSidebarStore';
+import { act, renderHook } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import { useChatSidebarLauncher } from "../hooks/useChatSidebarLauncher";
+import { useChatSidebarStore } from "../../../store/chatSidebarStore";
 
 const {
   useAuthStoreMock,
@@ -27,21 +27,21 @@ const mockDirectoryRoster = {
   loadMoreDirectoryUsers: vi.fn(),
 };
 
-vi.mock('../hooks/useChatDirectoryRoster', () => ({
+vi.mock("../hooks/useChatDirectoryRoster", () => ({
   useChatDirectoryRoster: vi.fn(() => mockDirectoryRoster),
 }));
 
-vi.mock('@/store/authStore', () => ({
+vi.mock("@/store/authStore", () => ({
   useAuthStore: useAuthStoreMock,
 }));
 
-vi.mock('../data/chatSidebarGateway', () => ({
+vi.mock("../data/chatSidebarGateway", () => ({
   chatSidebarMessagesGateway: {
     fetchConversationMessages: fetchConversationMessagesMock,
   },
 }));
 
-vi.mock('../utils/chatRuntimeCache', () => ({
+vi.mock("../utils/chatRuntimeCache", () => ({
   chatRuntimeCache: {
     conversation: {
       getFreshEntry: getFreshEntryMock,
@@ -50,7 +50,7 @@ vi.mock('../utils/chatRuntimeCache', () => ({
   },
 }));
 
-describe('useChatSidebarLauncher', () => {
+describe("useChatSidebarLauncher", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useChatSidebarStore.setState({
@@ -60,9 +60,9 @@ describe('useChatSidebarLauncher', () => {
 
     useAuthStoreMock.mockReturnValue({
       user: {
-        id: 'user-a',
-        name: 'Admin',
-        email: 'admin@example.com',
+        id: "user-a",
+        name: "Admin",
+        email: "admin@example.com",
         profilephoto: null,
       },
     });
@@ -70,12 +70,12 @@ describe('useChatSidebarLauncher', () => {
     getFreshEntryMock.mockReturnValue(null);
   });
 
-  it('keeps the sidebar open when opening the same user twice', () => {
+  it("keeps the sidebar open when opening the same user twice", () => {
     const { result } = renderHook(() => useChatSidebarLauncher());
     const targetUser = {
-      id: 'user-b',
-      name: 'Gudang',
-      email: 'gudang@example.com',
+      id: "user-b",
+      name: "Gudang",
+      email: "gudang@example.com",
       profilephoto: null,
     };
 
@@ -98,16 +98,29 @@ describe('useChatSidebarLauncher', () => {
     });
   });
 
-  it('prefetches the target conversation into cache before the chat opens', async () => {
+  it("opens the contact list without selecting a conversation target", () => {
+    const { result } = renderHook(() => useChatSidebarLauncher());
+
+    act(() => {
+      result.current.openContactList();
+    });
+
+    expect(useChatSidebarStore.getState()).toMatchObject({
+      isOpen: true,
+      targetUser: undefined,
+    });
+  });
+
+  it("prefetches the target conversation into cache before the chat opens", async () => {
     fetchConversationMessagesMock.mockResolvedValue({
       data: {
         messages: [
           {
-            id: 'message-1',
-            sender_id: 'user-b',
-            receiver_id: 'user-a',
-            message: 'Halo',
-            created_at: '2026-03-26T00:00:00.000Z',
+            id: "message-1",
+            sender_id: "user-b",
+            receiver_id: "user-a",
+            message: "Halo",
+            created_at: "2026-03-26T00:00:00.000Z",
           },
         ],
         hasMore: true,
@@ -117,9 +130,9 @@ describe('useChatSidebarLauncher', () => {
 
     const { result } = renderHook(() => useChatSidebarLauncher());
     const targetUser = {
-      id: 'user-b',
-      name: 'Gudang',
-      email: 'gudang@example.com',
+      id: "user-b",
+      name: "Gudang",
+      email: "gudang@example.com",
       profilephoto: null,
     };
 
@@ -127,19 +140,19 @@ describe('useChatSidebarLauncher', () => {
       await result.current.prefetchConversationForUser(targetUser);
     });
 
-    expect(fetchConversationMessagesMock).toHaveBeenCalledWith('user-b', {
+    expect(fetchConversationMessagesMock).toHaveBeenCalledWith("user-b", {
       limit: 50,
     });
     expect(setConversationEntryMock).toHaveBeenCalledWith(
-      'dm_user-a_user-b',
+      "dm_user-a_user-b",
       [
         expect.objectContaining({
-          id: 'message-1',
-          sender_name: 'Gudang',
-          receiver_name: 'Admin',
+          id: "message-1",
+          sender_name: "Gudang",
+          receiver_name: "Admin",
         }),
       ],
-      true
+      true,
     );
   });
 });

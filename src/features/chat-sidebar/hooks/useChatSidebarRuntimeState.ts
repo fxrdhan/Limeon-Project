@@ -1,18 +1,16 @@
-import { useCallback } from 'react';
-import type { UserDetails } from '@/types/database';
-import { getInitials, getInitialsColor } from '@/utils/avatar';
-import type { ChatSidebarPanelProps } from '../types';
-import {
-  getAttachmentFileKind,
-  getAttachmentFileName,
-} from '../utils/attachment';
-import { useChatBulkDelete } from './useChatBulkDelete';
-import { useChatCaptionData } from './useChatCaptionData';
-import { useChatConversationMutations } from './useChatConversationMutations';
-import { useChatInteractionModes } from './useChatInteractionModes';
-import { useChatSession } from './useChatSession';
-import { useChatSidebarRefs } from './useChatSidebarRefs';
-import { useChatSidebarUiState } from './useChatSidebarUiState';
+import { useCallback } from "react";
+import { useChatSidebarStore } from "@/store/chatSidebarStore";
+import type { UserDetails } from "@/types/database";
+import { getInitials, getInitialsColor } from "@/utils/avatar";
+import type { ChatSidebarPanelProps } from "../types";
+import { getAttachmentFileKind, getAttachmentFileName } from "../utils/attachment";
+import { useChatBulkDelete } from "./useChatBulkDelete";
+import { useChatCaptionData } from "./useChatCaptionData";
+import { useChatConversationMutations } from "./useChatConversationMutations";
+import { useChatInteractionModes } from "./useChatInteractionModes";
+import { useChatSession } from "./useChatSession";
+import { useChatSidebarRefs } from "./useChatSidebarRefs";
+import { useChatSidebarUiState } from "./useChatSidebarUiState";
 
 interface UseChatSidebarRuntimeStateProps extends ChatSidebarPanelProps {
   user: UserDetails | null;
@@ -30,6 +28,7 @@ export const useChatSidebarRuntimeState = ({
   refs,
   displayTargetPhotoUrl,
 }: UseChatSidebarRuntimeStateProps) => {
+  const openContactList = useChatSidebarStore((state) => state.openContactList);
   const session = useChatSession({
     isOpen,
     user,
@@ -88,12 +87,9 @@ export const useChatSidebarRuntimeState = ({
     setEditingMessageId: ui.composer.setEditingMessageId,
     setReplyingMessageId: ui.composer.setReplyingMessageId,
     pendingComposerAttachments: ui.composer.pendingComposerAttachments,
-    clearPendingComposerAttachments:
-      ui.composer.clearPendingComposerAttachments,
-    restorePendingComposerAttachments:
-      ui.composer.restorePendingComposerAttachments,
-    isComposerAttachmentLoading:
-      ui.composer.isLoadingAttachmentComposerAttachments,
+    clearPendingComposerAttachments: ui.composer.clearPendingComposerAttachments,
+    restorePendingComposerAttachments: ui.composer.restorePendingComposerAttachments,
+    isComposerAttachmentLoading: ui.composer.isLoadingAttachmentComposerAttachments,
     closeMessageMenu: refs.closeMessageMenu,
     focusMessageComposer: ui.focusMessageComposer,
     scheduleScrollMessagesToBottom: refs.scheduleScrollMessagesToBottom,
@@ -111,6 +107,9 @@ export const useChatSidebarRuntimeState = ({
   const handleClose = useCallback(() => {
     onClose();
   }, [onClose]);
+  const handleOpenContactList = useCallback(() => {
+    openContactList();
+  }, [openContactList]);
 
   return {
     user,
@@ -131,11 +130,10 @@ export const useChatSidebarRuntimeState = ({
       focusMessageComposer: ui.focusMessageComposer,
       handleDeleteSelectedMessages,
       handleClose,
+      handleOpenContactList,
       toggleMessageMenu: ui.toggleMessageMenu,
     },
   };
 };
 
-export type ChatSidebarRuntimeState = ReturnType<
-  typeof useChatSidebarRuntimeState
->;
+export type ChatSidebarRuntimeState = ReturnType<typeof useChatSidebarRuntimeState>;

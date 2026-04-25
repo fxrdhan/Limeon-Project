@@ -1,18 +1,24 @@
-import { create } from 'zustand';
-import type { ChatTargetUser } from '@/types';
+import { create } from "zustand";
+import type { ChatTargetUser } from "@/types";
 
 interface ChatSidebarState {
   isOpen: boolean;
   targetUser?: ChatTargetUser;
+  openContactList: () => void;
   openChat: (targetUser: ChatTargetUser) => void;
   closeChat: () => void;
   toggleChatForUser: (targetUser: ChatTargetUser) => void;
 }
 
-export const useChatSidebarStore = create<ChatSidebarState>(set => ({
+export const useChatSidebarStore = create<ChatSidebarState>((set) => ({
   isOpen: false,
   targetUser: undefined,
-  openChat: targetUser =>
+  openContactList: () =>
+    set(() => ({
+      isOpen: true,
+      targetUser: undefined,
+    })),
+  openChat: (targetUser) =>
     set(() => {
       return {
         isOpen: true,
@@ -26,8 +32,8 @@ export const useChatSidebarStore = create<ChatSidebarState>(set => ({
         targetUser: undefined,
       };
     }),
-  toggleChatForUser: targetUser =>
-    set(previousState => {
+  toggleChatForUser: (targetUser) =>
+    set((previousState) => {
       const isSameUser = previousState.targetUser?.id === targetUser.id;
 
       if (previousState.isOpen && isSameUser) {
