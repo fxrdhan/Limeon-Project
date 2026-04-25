@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence, useIsPresent } from "motion/react";
-import { TbMessageDots } from "react-icons/tb";
+import { TbLayoutSidebarLeftExpand, TbMessageDots } from "react-icons/tb";
 import { useAuthStore } from "@/store/authStore";
 import { useChatSidebarLauncher } from "@/features/chat-sidebar/hooks/useChatSidebarLauncher";
 import { getInitials, getInitialsColor } from "@/utils/avatar";
@@ -39,7 +39,6 @@ const OnlineUsersControl = () => {
   const { user } = useAuthStore();
   const [showPortal, setShowPortal] = useState(false);
   const {
-    displayOnlineUsers,
     onlineUserIds,
     portalOrderedUsers,
     isDirectoryLoading,
@@ -128,9 +127,7 @@ const OnlineUsersControl = () => {
           onlineUserIds={onlineUserIds}
         />
 
-        <div className="flex items-center text-sm text-slate-600">
-          <span className="font-medium">{displayOnlineUsers} Online</span>
-        </div>
+        <TbLayoutSidebarLeftExpand className="size-5 text-slate-600" aria-hidden="true" />
       </button>
 
       <AnimatePresence>
