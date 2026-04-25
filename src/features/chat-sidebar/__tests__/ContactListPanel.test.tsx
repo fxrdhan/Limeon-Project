@@ -30,6 +30,16 @@ const currentUser = {
   profilephoto_thumb: null,
 };
 
+const onlineContact = {
+  id: "user-b",
+  name: "Operator",
+  email: "operator@example.com",
+  profilephoto: null,
+  profilephoto_thumb: null,
+  last_message: "latest update",
+  last_message_created_at: "2026-03-26T10:05:00.000Z",
+};
+
 describe("ContactListPanel", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -61,5 +71,25 @@ describe("ContactListPanel", () => {
 
     expect(prefetchConversationForUserMock).toHaveBeenCalledWith(currentUser);
     expect(openChatForUserMock).toHaveBeenCalledWith(currentUser);
+  });
+
+  it("shows the latest message preview for online contacts", () => {
+    useChatSidebarLauncherMock.mockReturnValue({
+      onlineUserIds: new Set<string>(["user-b"]),
+      portalOrderedUsers: [onlineContact],
+      isDirectoryLoading: false,
+      directoryError: null,
+      hasMoreDirectoryUsers: false,
+      retryLoadDirectory: vi.fn(),
+      loadMoreDirectoryUsers: vi.fn(),
+      openChatForUser: openChatForUserMock,
+      prefetchConversationForUser: prefetchConversationForUserMock,
+    });
+
+    render(<ContactListPanel onClose={vi.fn()} />);
+
+    expect(screen.getByText("latest update")).toBeDefined();
+    expect(screen.queryByText("Now")).toBeNull();
+    expect(screen.queryByText("Available now")).toBeNull();
   });
 });

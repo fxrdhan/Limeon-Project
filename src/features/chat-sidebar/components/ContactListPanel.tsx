@@ -9,6 +9,47 @@ interface ContactListPanelProps {
   onClose: () => void;
 }
 
+const formatContactMessageTime = (value: string | null | undefined) => {
+  if (!value) {
+    return "";
+  }
+
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) {
+    return "";
+  }
+
+  const now = new Date();
+  const elapsedMs = now.getTime() - date.getTime();
+  const oneDayMs = 24 * 60 * 60 * 1000;
+
+  if (elapsedMs >= 0 && elapsedMs < oneDayMs) {
+    return date.toLocaleTimeString([], {
+      hour12: false,
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfMessageDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const dayDiff = Math.floor((startOfToday.getTime() - startOfMessageDate.getTime()) / oneDayMs);
+
+  if (dayDiff === 1) {
+    return "Kemarin";
+  }
+
+  if (dayDiff > 1 && dayDiff < 7) {
+    return date.toLocaleDateString("id-ID", { weekday: "long" });
+  }
+
+  return date.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+};
+
 const ContactListPanel = ({ onClose }: ContactListPanelProps) => {
   const { user } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState("");
@@ -56,7 +97,7 @@ const ContactListPanel = ({ onClose }: ContactListPanelProps) => {
           </button>
         </div>
 
-        <div className="mt-3 flex h-10 items-center gap-2 rounded-full bg-slate-100 px-3 text-slate-500">
+        <div className="mt-3 flex h-10 items-center gap-2 rounded-full border border-slate-200 bg-transparent px-3 text-slate-500 transition-[border-color,box-shadow] focus-within:border-slate-300 focus-within:ring-4 focus-within:ring-slate-100">
           <TbSearch className="size-4 shrink-0" aria-hidden="true" />
           <input
             value={searchQuery}
@@ -94,78 +135,76 @@ const ContactListPanel = ({ onClose }: ContactListPanelProps) => {
         {filteredContacts.map((portalUser) => {
           const isOnline = onlineUserIds.has(portalUser.id);
           const isCurrentUser = portalUser.id === user?.id;
-          const previewText = isCurrentUser
-            ? portalUser.email
-            : isOnline
-              ? "Available now"
-              : portalUser.email;
           const displayName = isCurrentUser ? `${portalUser.name} (You)` : portalUser.name;
-          const metaText = !isCurrentUser && isOnline ? "Now" : "";
+          const previewText = portalUser.last_message?.trim() || portalUser.email;
+          const messageTime = formatContactMessageTime(portalUser.last_message_created_at);
 
           return (
-            <button
-              key={portalUser.id}
-              type="button"
-              className={`group flex w-full items-center gap-3 px-4 py-3 text-left transition-colors ${
-                isCurrentUser ? "cursor-pointer bg-slate-50" : "cursor-pointer hover:bg-slate-50"
-              }`}
-              onMouseEnter={() => {
-                void prefetchConversationForUser(portalUser);
-              }}
-              onFocus={() => {
-                void prefetchConversationForUser(portalUser);
-              }}
-              onClick={() => openChatForUser(portalUser)}
-            >
-              <motion.div
-                initial={{ opacity: 0, scale: 0.92 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.92 }}
-                transition={{ duration: 0.18, ease: "easeOut" }}
-                className="relative size-12 shrink-0 overflow-hidden rounded-full bg-slate-100"
+            <div key={portalUser.id} className="px-3">
+              <button
+                type="button"
+                className={`group flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition-colors ${
+                  isCurrentUser
+                    ? "cursor-pointer bg-slate-100"
+                    : "cursor-pointer hover:bg-slate-100"
+                }`}
+                onMouseEnter={() => {
+                  void prefetchConversationForUser(portalUser);
+                }}
+                onFocus={() => {
+                  void prefetchConversationForUser(portalUser);
+                }}
+                onClick={() => openChatForUser(portalUser)}
               >
-                {portalUser.profilephoto_thumb || portalUser.profilephoto ? (
-                  <img
-                    src={portalUser.profilephoto_thumb || portalUser.profilephoto || ""}
-                    alt={portalUser.name}
-                    className={`h-full w-full object-cover ${isOnline ? "" : "grayscale"}`}
-                    draggable={false}
-                  />
-                ) : (
-                  <div
-                    className={`flex h-full w-full items-center justify-center text-base font-medium text-white ${getInitialsColor(portalUser.id)}`}
-                  >
-                    {getInitials(portalUser.name)}
-                  </div>
-                )}
-                {isOnline ? (
-                  <span className="absolute right-0 bottom-0 size-3 rounded-full border-2 border-white bg-emerald-500" />
-                ) : null}
-              </motion.div>
-
-              <div className="min-w-0 flex-1 border-b border-slate-100 py-0.5 group-last:border-b-0">
-                <div className="flex items-start justify-between gap-3">
-                  <p className="min-w-0 truncate text-[15px] font-medium text-slate-950">
-                    {displayName}
-                  </p>
-                  {metaText ? (
-                    <span
-                      className={`shrink-0 text-xs ${
-                        isOnline && !isCurrentUser ? "text-emerald-600" : "text-slate-500"
-                      }`}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.92 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.92 }}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
+                  className="relative size-12 shrink-0 overflow-hidden rounded-full bg-slate-100"
+                >
+                  {portalUser.profilephoto_thumb || portalUser.profilephoto ? (
+                    <img
+                      src={portalUser.profilephoto_thumb || portalUser.profilephoto || ""}
+                      alt={portalUser.name}
+                      className={`h-full w-full object-cover ${isOnline ? "" : "grayscale"}`}
+                      draggable={false}
+                    />
+                  ) : (
+                    <div
+                      className={`flex h-full w-full items-center justify-center text-base font-medium text-white ${getInitialsColor(portalUser.id)}`}
                     >
-                      {metaText}
-                    </span>
-                  ) : null}
+                      {getInitials(portalUser.name)}
+                    </div>
+                  )}
+                </motion.div>
+
+                <div className="min-w-0 flex-1 py-0.5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <p className="min-w-0 truncate text-[15px] font-medium text-slate-950">
+                        {displayName}
+                      </p>
+                      {isOnline ? (
+                        <span
+                          className="size-2 shrink-0 rounded-full bg-emerald-500"
+                          aria-label="Online"
+                        />
+                      ) : null}
+                    </div>
+                    {messageTime ? (
+                      <span className="shrink-0 text-xs text-slate-500">{messageTime}</span>
+                    ) : null}
+                  </div>
+                  <div className="mt-0.5 flex items-center justify-between gap-3">
+                    <p className="min-w-0 truncate text-sm text-slate-500">{previewText}</p>
+                    {!isOnline && !isCurrentUser ? (
+                      <TbBellOff className="size-4 shrink-0 text-slate-400" aria-hidden="true" />
+                    ) : null}
+                  </div>
                 </div>
-                <div className="mt-0.5 flex items-center justify-between gap-3">
-                  <p className="min-w-0 truncate text-sm text-slate-500">{previewText}</p>
-                  {!isOnline && !isCurrentUser ? (
-                    <TbBellOff className="size-4 shrink-0 text-slate-400" aria-hidden="true" />
-                  ) : null}
-                </div>
-              </div>
-            </button>
+              </button>
+            </div>
           );
         })}
 
