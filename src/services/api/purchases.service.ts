@@ -1,18 +1,18 @@
-import { BaseService, ServiceResponse } from "./base.service";
-import { supabase } from "@/lib/supabase";
-import type { PurchaseData, PurchaseItem } from "@/types/purchase";
-import type { PostgrestError } from "@supabase/supabase-js";
+import { BaseService, ServiceResponse } from './base.service';
+import { supabase } from '@/lib/supabase';
+import type { PurchaseData, PurchaseItem } from '@/types/purchase';
+import type { PostgrestError } from '@supabase/supabase-js';
 import {
   fetchRecordWithItems,
   getRecordsByDateRange,
   isUniqueByColumn,
   replaceLinkedItems,
-} from "./transaction.helpers";
+} from './transaction.helpers';
 import {
   applyStockUpdates,
   buildStockUpdates,
   updateRecordWithLinkedItems,
-} from "./transaction.base";
+} from './transaction.base';
 
 interface DBPurchase {
   id: string;
@@ -64,18 +64,20 @@ export interface PurchaseListItem {
 
 export class PurchasesService extends BaseService<DBPurchase> {
   constructor() {
-    super("purchases");
+    super('purchases');
   }
 
   async getPaginatedPurchases(params: {
     page: number;
     limit: number;
     searchTerm?: string;
-  }): Promise<ServiceResponse<{ purchases: PurchaseListItem[]; totalItems: number }>> {
+  }): Promise<
+    ServiceResponse<{ purchases: PurchaseListItem[]; totalItems: number }>
+  > {
     try {
       const { page, limit, searchTerm } = params;
 
-      let query = supabase.from("purchases").select(`
+      let query = supabase.from('purchases').select(`
           id,
           invoice_number,
           date,
@@ -86,11 +88,13 @@ export class PurchasesService extends BaseService<DBPurchase> {
           supplier:suppliers(name)
         `);
 
-      let countQuery = supabase.from("purchases").select("id", { count: "exact" });
+      let countQuery = supabase
+        .from('purchases')
+        .select('id', { count: 'exact' });
 
       if (searchTerm) {
-        query = query.ilike("invoice_number", `%${searchTerm}%`);
-        countQuery = countQuery.ilike("invoice_number", `%${searchTerm}%`);
+        query = query.ilike('invoice_number', `%${searchTerm}%`);
+        countQuery = countQuery.ilike('invoice_number', `%${searchTerm}%`);
       }
 
       const { count, error: countError } = await countQuery;
@@ -101,16 +105,20 @@ export class PurchasesService extends BaseService<DBPurchase> {
       const from = (page - 1) * limit;
       const to = from + limit - 1;
 
-      const { data, error } = await query.order("date", { ascending: false }).range(from, to);
+      const { data, error } = await query
+        .order('date', { ascending: false })
+        .range(from, to);
 
       if (error) {
         return { data: null, error };
       }
 
       const purchases =
-        data?.map((item) => ({
+        data?.map(item => ({
           ...item,
-          supplier: Array.isArray(item.supplier) ? item.supplier[0] : item.supplier,
+          supplier: Array.isArray(item.supplier)
+            ? item.supplier[0]
+            : item.supplier,
         })) || [];
 
       return { data: { purchases, totalItems: count || 0 }, error: null };
@@ -120,7 +128,9 @@ export class PurchasesService extends BaseService<DBPurchase> {
   }
 
   // Get all purchases with supplier data
-  async getAllWithSuppliers(options: Parameters<BaseService<DBPurchase>["getAll"]>[0] = {}) {
+  async getAllWithSuppliers(
+    options: Parameters<BaseService<DBPurchase>['getAll']>[0] = {}
+  ) {
     const defaultSelect = `
       *,
       suppliers (
@@ -140,10 +150,12 @@ export class PurchasesService extends BaseService<DBPurchase> {
   }
 
   // Get purchase with full details
-  async getPurchaseWithDetails(id: string): Promise<ServiceResponse<PurchaseData>> {
+  async getPurchaseWithDetails(
+    id: string
+  ): Promise<ServiceResponse<PurchaseData>> {
     try {
       const { data: purchase, error } = await supabase
-        .from("purchases")
+        .from('purchases')
         .select(
           `
           *,
@@ -155,9 +167,9 @@ export class PurchasesService extends BaseService<DBPurchase> {
             phone,
             email
           )
-        `,
+        `
         )
-        .eq("id", id)
+        .eq('id', id)
         .single();
 
       if (error || !purchase) {
@@ -168,7 +180,7 @@ export class PurchasesService extends BaseService<DBPurchase> {
       const transformedPurchase: PurchaseData = {
         ...purchase,
         supplier: {
-          name: purchase.suppliers?.name || "",
+          name: purchase.suppliers?.name || '',
           address: purchase.suppliers?.address || null,
           contact_person: purchase.suppliers?.contact_person || null,
         },
@@ -181,10 +193,12 @@ export class PurchasesService extends BaseService<DBPurchase> {
   }
 
   // Get purchase items
-  async getPurchaseItems(purchaseId: string): Promise<ServiceResponse<PurchaseItem[]>> {
+  async getPurchaseItems(
+    purchaseId: string
+  ): Promise<ServiceResponse<PurchaseItem[]>> {
     try {
       const { data, error } = await supabase
-        .from("purchase_items")
+        .from('purchase_items')
         .select(
           `
           *,
@@ -194,22 +208,22 @@ export class PurchasesService extends BaseService<DBPurchase> {
             code,
             manufacturer
           )
-        `,
+        `
         )
-        .eq("purchase_id", purchaseId)
-        .order("created_at", { ascending: true });
+        .eq('purchase_id', purchaseId)
+        .order('created_at', { ascending: true });
 
       if (error || !data) {
         return { data: null, error };
       }
 
       // Transform to PurchaseItem
-      const transformedItems: PurchaseItem[] = data.map((item) => ({
+      const transformedItems: PurchaseItem[] = data.map(item => ({
         ...item,
-        item_name: item.items?.name || "",
+        item_name: item.items?.name || '',
         item: {
-          name: item.items?.name || "",
-          code: item.items?.code || "",
+          name: item.items?.name || '',
+          code: item.items?.code || '',
         },
         inventory_unit_id: item.inventory_unit_id ?? item.unit_id ?? null,
         unit_id: item.unit_id ?? null,
@@ -224,11 +238,13 @@ export class PurchasesService extends BaseService<DBPurchase> {
 
   // Create purchase with items
   async createPurchaseWithItems(
-    purchaseData: Omit<DBPurchase, "id" | "created_at" | "updated_at">,
-    items: Omit<DBPurchaseItem, "id" | "purchase_id" | "created_at">[],
-  ): Promise<ServiceResponse<{ purchase: DBPurchase; items: DBPurchaseItem[] }>> {
+    purchaseData: Omit<DBPurchase, 'id' | 'created_at' | 'updated_at'>,
+    items: Omit<DBPurchaseItem, 'id' | 'purchase_id' | 'created_at'>[]
+  ): Promise<
+    ServiceResponse<{ purchase: DBPurchase; items: DBPurchaseItem[] }>
+  > {
     try {
-      const purchaseItems = items.map((item) => ({
+      const purchaseItems = items.map(item => ({
         item_id: item.item_id,
         quantity: item.quantity,
         price: item.price,
@@ -242,32 +258,35 @@ export class PurchasesService extends BaseService<DBPurchase> {
         expiry_date: item.expiry_date,
       }));
 
-      const { data: purchaseId, error: purchaseError } = await supabase.rpc("process_purchase_v2", {
-        p_supplier_id: purchaseData.supplier_id || null,
-        p_invoice_number: purchaseData.invoice_number,
-        p_date: purchaseData.date,
-        p_total: purchaseData.total,
-        p_payment_status: purchaseData.payment_status,
-        p_payment_method: purchaseData.payment_method,
-        p_notes: purchaseData.notes || null,
-        p_due_date: purchaseData.due_date || null,
-        p_vat_amount: purchaseData.vat_amount,
-        p_vat_percentage: purchaseData.vat_percentage,
-        p_is_vat_included: purchaseData.is_vat_included,
-        p_customer_name: purchaseData.customer_name || null,
-        p_customer_address: purchaseData.customer_address || null,
-        p_items: purchaseItems,
-      });
+      const { data: purchaseId, error: purchaseError } = await supabase.rpc(
+        'process_purchase_v2',
+        {
+          p_supplier_id: purchaseData.supplier_id || null,
+          p_invoice_number: purchaseData.invoice_number,
+          p_date: purchaseData.date,
+          p_total: purchaseData.total,
+          p_payment_status: purchaseData.payment_status,
+          p_payment_method: purchaseData.payment_method,
+          p_notes: purchaseData.notes || null,
+          p_due_date: purchaseData.due_date || null,
+          p_vat_amount: purchaseData.vat_amount,
+          p_vat_percentage: purchaseData.vat_percentage,
+          p_is_vat_included: purchaseData.is_vat_included,
+          p_customer_name: purchaseData.customer_name || null,
+          p_customer_address: purchaseData.customer_address || null,
+          p_items: purchaseItems,
+        }
+      );
 
       if (purchaseError || !purchaseId) {
         return { data: null, error: purchaseError };
       }
 
       const result = await fetchRecordWithItems<DBPurchase, DBPurchaseItem>({
-        parentTable: "purchases",
+        parentTable: 'purchases',
         parentId: purchaseId,
-        itemsTable: "purchase_items",
-        itemsForeignKey: "purchase_id",
+        itemsTable: 'purchase_items',
+        itemsForeignKey: 'purchase_id',
       });
 
       if (result.error || !result.data) {
@@ -289,22 +308,24 @@ export class PurchasesService extends BaseService<DBPurchase> {
   // Update purchase with items
   async updatePurchaseWithItems(
     id: string,
-    purchaseData: Partial<Omit<DBPurchase, "id" | "created_at">>,
-    items?: Omit<DBPurchaseItem, "id" | "purchase_id" | "created_at">[],
-  ): Promise<ServiceResponse<{ purchase: DBPurchase; items?: DBPurchaseItem[] }>> {
+    purchaseData: Partial<Omit<DBPurchase, 'id' | 'created_at'>>,
+    items?: Omit<DBPurchaseItem, 'id' | 'purchase_id' | 'created_at'>[]
+  ): Promise<
+    ServiceResponse<{ purchase: DBPurchase; items?: DBPurchaseItem[] }>
+  > {
     const result = await updateRecordWithLinkedItems<
       DBPurchase,
       PurchaseItem,
-      Omit<DBPurchaseItem, "id" | "purchase_id" | "created_at">,
-      Omit<DBPurchaseItem, "id" | "purchase_id" | "created_at">
+      Omit<DBPurchaseItem, 'id' | 'purchase_id' | 'created_at'>,
+      Omit<DBPurchaseItem, 'id' | 'purchase_id' | 'created_at'>
     >({
       updateRecord: () => this.update(id, purchaseData),
       nextItems: items,
       fetchExistingItems: () => this.getPurchaseItems(id),
-      replaceItems: (nextItems) =>
+      replaceItems: nextItems =>
         replaceLinkedItems({
-          tableName: "purchase_items",
-          foreignKey: "purchase_id",
+          tableName: 'purchase_items',
+          foreignKey: 'purchase_id',
           parentId: id,
           items: nextItems,
         }),
@@ -326,11 +347,16 @@ export class PurchasesService extends BaseService<DBPurchase> {
   }
 
   // Delete purchase and restore stocks
-  async deletePurchaseWithStockRestore(id: string): Promise<ServiceResponse<null>> {
+  async deletePurchaseWithStockRestore(
+    id: string
+  ): Promise<ServiceResponse<null>> {
     try {
-      const { error } = await supabase.rpc("delete_purchase_with_stock_restore", {
-        p_purchase_id: id,
-      });
+      const { error } = await supabase.rpc(
+        'delete_purchase_with_stock_restore',
+        {
+          p_purchase_id: id,
+        }
+      );
 
       return { data: null, error };
     } catch (error) {
@@ -342,7 +368,7 @@ export class PurchasesService extends BaseService<DBPurchase> {
   async getPurchasesBySupplier(supplierId: string) {
     return this.getAllWithSuppliers({
       filters: { supplier_id: supplierId },
-      orderBy: { column: "date", ascending: false },
+      orderBy: { column: 'date', ascending: false },
     });
   }
 
@@ -350,14 +376,14 @@ export class PurchasesService extends BaseService<DBPurchase> {
   async getPurchasesByPaymentStatus(status: string) {
     return this.getAllWithSuppliers({
       filters: { payment_status: status },
-      orderBy: { column: "date", ascending: false },
+      orderBy: { column: 'date', ascending: false },
     });
   }
 
   // Get purchases by date range
   async getPurchasesByDateRange(startDate: string, endDate: string) {
     return getRecordsByDateRange<PurchaseData>({
-      tableName: "purchases",
+      tableName: 'purchases',
       select: `
           *,
           suppliers (
@@ -373,8 +399,16 @@ export class PurchasesService extends BaseService<DBPurchase> {
   }
 
   // Check if invoice number exists
-  async isInvoiceNumberUnique(invoiceNumber: string, excludeId?: string): Promise<boolean> {
-    return isUniqueByColumn("purchases", "invoice_number", invoiceNumber, excludeId);
+  async isInvoiceNumberUnique(
+    invoiceNumber: string,
+    excludeId?: string
+  ): Promise<boolean> {
+    return isUniqueByColumn(
+      'purchases',
+      'invoice_number',
+      invoiceNumber,
+      excludeId
+    );
   }
 
   private async updateItemStocks(updates: { id: string; increment: number }[]) {
@@ -383,16 +417,16 @@ export class PurchasesService extends BaseService<DBPurchase> {
 
   private async recalculateStockDifferences(
     oldItems: PurchaseItem[],
-    newItems: Omit<DBPurchaseItem, "id" | "purchase_id" | "created_at">[],
+    newItems: Omit<DBPurchaseItem, 'id' | 'purchase_id' | 'created_at'>[]
   ) {
     const updates = buildStockUpdates({
       oldItems,
       newItems,
-      getOldDelta: (item) => ({
+      getOldDelta: item => ({
         itemId: item.item_id,
         delta: -item.quantity * (item.unit_conversion_rate ?? 1),
       }),
-      getNewDelta: (item) => ({
+      getNewDelta: item => ({
         itemId: item.item_id,
         delta: item.quantity * (item.unit_conversion_rate ?? 1),
       }),

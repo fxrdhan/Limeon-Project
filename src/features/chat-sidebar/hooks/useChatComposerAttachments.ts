@@ -1,12 +1,12 @@
-import type { Dispatch, SetStateAction, RefObject } from "react";
-import { useCallback, useEffect, useMemo } from "react";
-import type { PendingComposerAttachment } from "../types";
-import { useComposerAttachmentLinkPrompt } from "./useComposerAttachmentLinkPrompt";
-import { useComposerAttachmentPickers } from "./useComposerAttachmentPickers";
-import { useComposerAttachmentPreviewState } from "./useComposerAttachmentPreviewState";
-import { useComposerAttachMenu } from "./useComposerAttachMenu";
-import { useComposerLoadingAttachments } from "./useComposerLoadingAttachments";
-import { useComposerPendingAttachments } from "./useComposerPendingAttachments";
+import type { Dispatch, SetStateAction, RefObject } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
+import type { PendingComposerAttachment } from '../types';
+import { useComposerAttachmentLinkPrompt } from './useComposerAttachmentLinkPrompt';
+import { useComposerAttachmentPickers } from './useComposerAttachmentPickers';
+import { useComposerAttachmentPreviewState } from './useComposerAttachmentPreviewState';
+import { useComposerAttachMenu } from './useComposerAttachMenu';
+import { useComposerLoadingAttachments } from './useComposerLoadingAttachments';
+import { useComposerPendingAttachments } from './useComposerPendingAttachments';
 
 interface UseChatComposerAttachmentsProps {
   currentChannelId?: string | null;
@@ -34,7 +34,8 @@ export const useChatComposerAttachments = ({
     pendingImagePreviewUrlsRef,
     removePendingComposerAttachment: removePendingComposerAttachmentFromQueue,
     clearPendingComposerAttachments: clearPendingComposerAttachmentsFromQueue,
-    restorePendingComposerAttachments: restorePendingComposerAttachmentsFromQueue,
+    restorePendingComposerAttachments:
+      restorePendingComposerAttachmentsFromQueue,
     queueComposerImage,
     queueComposerFile,
     compressPendingComposerImage,
@@ -144,25 +145,25 @@ export const useChatComposerAttachments = ({
     }
 
     const pendingAttachmentIds = new Set(
-      pendingComposerAttachments.map((attachment) => attachment.id),
+      pendingComposerAttachments.map(attachment => attachment.id)
     );
     const loadingByReplacedAttachmentId = new Map(
       loadingComposerAttachments
         .filter(
-          (attachment) =>
+          attachment =>
             attachment.replaceAttachmentId &&
-            pendingAttachmentIds.has(attachment.replaceAttachmentId),
+            pendingAttachmentIds.has(attachment.replaceAttachmentId)
         )
-        .map((attachment) => [attachment.replaceAttachmentId!, attachment]),
+        .map(attachment => [attachment.replaceAttachmentId!, attachment])
     );
 
-    const previewItems = pendingComposerAttachments.map((attachment) => {
+    const previewItems = pendingComposerAttachments.map(attachment => {
       return loadingByReplacedAttachmentId.get(attachment.id) ?? attachment;
     });
     const danglingLoadingAttachments = loadingComposerAttachments.filter(
-      (attachment) =>
+      attachment =>
         !attachment.replaceAttachmentId ||
-        !pendingAttachmentIds.has(attachment.replaceAttachmentId),
+        !pendingAttachmentIds.has(attachment.replaceAttachmentId)
     );
 
     return [...previewItems, ...danglingLoadingAttachments];
@@ -201,20 +202,26 @@ export const useChatComposerAttachments = ({
       previewComposerImageAttachment?.id,
       removePendingComposerAttachmentFromQueue,
       resetComposerImagePreviewState,
-    ],
+    ]
   );
 
   const clearPendingComposerAttachments = useCallback(() => {
     resetScopedComposerAttachmentState();
     clearPendingComposerAttachmentsFromQueue();
-  }, [clearPendingComposerAttachmentsFromQueue, resetScopedComposerAttachmentState]);
+  }, [
+    clearPendingComposerAttachmentsFromQueue,
+    resetScopedComposerAttachmentState,
+  ]);
 
   const restorePendingComposerAttachments = useCallback(
     (attachments: PendingComposerAttachment[]) => {
       resetScopedComposerAttachmentState();
       restorePendingComposerAttachmentsFromQueue(attachments);
     },
-    [resetScopedComposerAttachmentState, restorePendingComposerAttachmentsFromQueue],
+    [
+      resetScopedComposerAttachmentState,
+      restorePendingComposerAttachmentsFromQueue,
+    ]
   );
 
   return {

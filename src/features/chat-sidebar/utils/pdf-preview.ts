@@ -1,4 +1,4 @@
-type PdfJsModule = typeof import("pdfjs-dist/legacy/build/pdf.mjs");
+type PdfJsModule = typeof import('pdfjs-dist/legacy/build/pdf.mjs');
 
 type RenderedPdfPreviewCanvas = {
   canvas: HTMLCanvasElement;
@@ -11,8 +11,8 @@ const MAX_CLIENT_PDF_PREVIEW_BYTES = 10 * 1024 * 1024;
 const loadPdfJsModule = async () => {
   if (!pdfJsModulePromise) {
     pdfJsModulePromise = Promise.all([
-      import("pdfjs-dist/legacy/build/pdf.mjs"),
-      import("pdfjs-dist/legacy/build/pdf.worker.mjs?url"),
+      import('pdfjs-dist/legacy/build/pdf.mjs'),
+      import('pdfjs-dist/legacy/build/pdf.worker.mjs?url'),
     ]).then(([pdfjsLib, pdfWorkerModule]) => {
       pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerModule.default;
       return pdfjsLib;
@@ -24,7 +24,7 @@ const loadPdfJsModule = async () => {
 
 const renderPdfPreviewCanvas = async (
   file: Blob,
-  targetWidth: number,
+  targetWidth: number
 ): Promise<RenderedPdfPreviewCanvas | null> => {
   if (file.size > MAX_CLIENT_PDF_PREVIEW_BYTES) {
     return null;
@@ -48,8 +48,8 @@ const renderPdfPreviewCanvas = async (
     const baseViewport = firstPage.getViewport({ scale: 1 });
     const scale = targetWidth / Math.max(baseViewport.width, 1);
     const viewport = firstPage.getViewport({ scale });
-    const canvas = document.createElement("canvas");
-    const context = canvas.getContext("2d");
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
 
     if (!context) {
       return null;
@@ -62,7 +62,7 @@ const renderPdfPreviewCanvas = async (
       canvas,
       canvasContext: context,
       viewport,
-      background: "rgb(255, 255, 255)",
+      background: 'rgb(255, 255, 255)',
     }).promise;
 
     return {
@@ -75,12 +75,15 @@ const renderPdfPreviewCanvas = async (
   }
 };
 
-export const renderPdfPreviewDataUrl = async (file: Blob, targetWidth: number) => {
+export const renderPdfPreviewDataUrl = async (
+  file: Blob,
+  targetWidth: number
+) => {
   const renderedPreview = await renderPdfPreviewCanvas(file, targetWidth);
   if (!renderedPreview) return null;
 
   return {
-    coverDataUrl: renderedPreview.canvas.toDataURL("image/png"),
+    coverDataUrl: renderedPreview.canvas.toDataURL('image/png'),
     pageCount: renderedPreview.pageCount,
   };
 };
@@ -89,10 +92,10 @@ export const renderPdfPreviewBlob = async (file: Blob, targetWidth: number) => {
   const renderedPreview = await renderPdfPreviewCanvas(file, targetWidth);
   if (!renderedPreview) return null;
 
-  const coverBlob = await new Promise<Blob | null>((resolve) => {
-    renderedPreview.canvas.toBlob((blob) => {
+  const coverBlob = await new Promise<Blob | null>(resolve => {
+    renderedPreview.canvas.toBlob(blob => {
       resolve(blob);
-    }, "image/png");
+    }, 'image/png');
   });
   if (!coverBlob) return null;
 

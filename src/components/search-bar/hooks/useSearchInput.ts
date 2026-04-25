@@ -1,6 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
-import { EnhancedSearchState } from "../types";
-import { buildColumnValue, buildFilterValue, getOperatorSearchTerm } from "../utils/searchUtils";
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { EnhancedSearchState } from '../types';
+import {
+  buildColumnValue,
+  buildFilterValue,
+  getOperatorSearchTerm,
+} from '../utils/searchUtils';
 
 interface UseSearchInputProps {
   value: string;
@@ -21,7 +25,12 @@ interface UseSearchInputProps {
  * - Value: condition-{index}-value or condition-{index}-value-{from|to}
  */
 
-export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSearchInputProps) => {
+export const useSearchInput = ({
+  value,
+  searchMode,
+  onChange,
+  inputRef,
+}: UseSearchInputProps) => {
   // ============ Dynamic Ref Map ============
   // Map<badgeId, HTMLDivElement | null>
   const badgeRefsMap = useRef<Map<string, HTMLDivElement | null>>(new Map());
@@ -36,13 +45,16 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
   /**
    * Set ref for a badge by ID (used as callback ref)
    */
-  const setBadgeRef = useCallback((badgeId: string, element: HTMLDivElement | null) => {
-    if (element) {
-      badgeRefsMap.current.set(badgeId, element);
-    } else {
-      badgeRefsMap.current.delete(badgeId);
-    }
-  }, []);
+  const setBadgeRef = useCallback(
+    (badgeId: string, element: HTMLDivElement | null) => {
+      if (element) {
+        badgeRefsMap.current.set(badgeId, element);
+      } else {
+        badgeRefsMap.current.delete(badgeId);
+      }
+    },
+    []
+  );
 
   // ============ Ref Map Helpers ============
   /**
@@ -52,7 +64,7 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
     (conditionIndex: number): HTMLDivElement | null => {
       return getBadgeRef(`condition-${conditionIndex}-column`);
     },
-    [getBadgeRef],
+    [getBadgeRef]
   );
 
   /**
@@ -62,7 +74,7 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
     (conditionIndex: number): HTMLDivElement | null => {
       return getBadgeRef(`condition-${conditionIndex}-operator`);
     },
-    [getBadgeRef],
+    [getBadgeRef]
   );
 
   /**
@@ -72,7 +84,7 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
     (joinIndex: number): HTMLDivElement | null => {
       return getBadgeRef(`join-${joinIndex}`);
     },
-    [getBadgeRef],
+    [getBadgeRef]
   );
 
   // ============ Container Ref ============
@@ -81,7 +93,9 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
 
   // ============ Generalized Lazy Ref System ============
   // Cache for lazy refs to ensure stability across renders
-  const lazyRefsCache = useRef<Map<string, React.RefObject<HTMLDivElement | null>>>(new Map());
+  const lazyRefsCache = useRef<
+    Map<string, React.RefObject<HTMLDivElement | null>>
+  >(new Map());
 
   /**
    * Creates a "lazy ref" that looks up the element from the badge map on access.
@@ -104,7 +118,7 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
       lazyRefsCache.current.set(cacheKey, lazyRef);
       return lazyRef;
     },
-    [getColumnRef],
+    [getColumnRef]
   );
 
   const getLazyOperatorRef = useCallback(
@@ -123,7 +137,7 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
       lazyRefsCache.current.set(cacheKey, lazyRef);
       return lazyRef;
     },
-    [getOperatorRef],
+    [getOperatorRef]
   );
 
   const getLazyJoinRef = useCallback(
@@ -142,7 +156,7 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
       lazyRefsCache.current.set(cacheKey, lazyRef);
       return lazyRef;
     },
-    [getJoinRef],
+    [getJoinRef]
   );
 
   const getLazyBadgeRef = useCallback(
@@ -161,13 +175,17 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
       lazyRefsCache.current.set(cacheKey, lazyRef);
       return lazyRef;
     },
-    [getBadgeRef],
+    [getBadgeRef]
   );
 
-  const operatorSearchTerm = useMemo(() => getOperatorSearchTerm(value), [value]);
+  const operatorSearchTerm = useMemo(
+    () => getOperatorSearchTerm(value),
+    [value]
+  );
 
   // Compute stable boolean for second condition operator to avoid dependency array size changes
-  const hasSecondConditionOperator = !!searchMode.partialConditions?.[1]?.operator;
+  const hasSecondConditionOperator =
+    !!searchMode.partialConditions?.[1]?.operator;
 
   const showTargetedIndicator = useMemo(
     () =>
@@ -183,20 +201,20 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
       searchMode.showJoinOperatorSelector,
       searchMode.selectedColumn,
       searchMode.showColumnSelector,
-    ],
+    ]
   );
 
   const displayValue = useMemo(() => {
     // PRIORITY 0: When any modal selector is open, hide "#" from input
     // BaseSelector now handles its own internal search, so we don't need to show "#" trigger
     if (searchMode.showColumnSelector) {
-      return ""; // Column selector open - hide "#"
+      return ''; // Column selector open - hide "#"
     }
     if (searchMode.showOperatorSelector) {
-      return ""; // Operator selector open - hide "#"
+      return ''; // Operator selector open - hide "#"
     }
     if (searchMode.showJoinOperatorSelector) {
-      return ""; // Join operator selector open - hide "#"
+      return ''; // Join operator selector open - hide "#"
     }
 
     // PRIORITY 0.5: Building condition N (index >= 2) value - show the value being typed
@@ -214,12 +232,15 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
       const nthCondition = searchMode.partialConditions?.[activeIdx];
 
       // [FIX] For Between operator waiting for valueTo, return empty to allow typing valueTo
-      if (nthCondition?.operator === "inRange" && nthCondition?.waitingForValueTo) {
-        return ""; // Empty input, user types valueTo fresh
+      if (
+        nthCondition?.operator === 'inRange' &&
+        nthCondition?.waitingForValueTo
+      ) {
+        return ''; // Empty input, user types valueTo fresh
       }
 
       // [FIX] For Between operator typing valueTo, show only valueTo being typed
-      if (nthCondition?.valueTo && nthCondition?.operator === "inRange") {
+      if (nthCondition?.valueTo && nthCondition?.operator === 'inRange') {
         return nthCondition.valueTo;
       }
 
@@ -227,12 +248,12 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
         return nthCondition.value;
       }
       // No value yet - return empty to allow typing
-      return "";
+      return '';
     }
 
     // PRIORITY 1: Multi-condition verbose mode - all values shown in badges, input empty
     if (searchMode.filterSearch?.filterGroup && searchMode.isFilterMode) {
-      return "";
+      return '';
     }
 
     if (
@@ -241,7 +262,7 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
       searchMode.filterSearch.conditions.length > 1 &&
       searchMode.isFilterMode
     ) {
-      return ""; // All values displayed in badges, input empty
+      return ''; // All values displayed in badges, input empty
     }
 
     // PRIORITY 2: Confirmed single-condition - value shown as gray badge, input empty
@@ -250,7 +271,7 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
       searchMode.filterSearch?.isConfirmed &&
       !searchMode.filterSearch?.isMultiCondition
     ) {
-      return ""; // Value displayed in gray badge, input empty
+      return ''; // Value displayed in gray badge, input empty
     }
 
     // PRIORITY 3: Incomplete multi-condition (building condition N where N >= 1)
@@ -267,7 +288,7 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
 
       // Special case: Between operator waiting for valueTo - badge shows [value][to], input empty
       if (activeCondition?.waitingForValueTo && activeCondition?.value) {
-        return ""; // Value already shown in badge, input empty for typing second value
+        return ''; // Value already shown in badge, input empty for typing second value
       }
 
       // Special case: Between operator with valueTo being typed - show only valueTo
@@ -281,22 +302,22 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
         return activeCondition.value;
       }
       // No value yet - return empty to allow typing
-      return "";
+      return '';
     }
 
     // PRIORITY 4: Single-condition filter mode - show value for editing (NOT confirmed)
     if (searchMode.isFilterMode && searchMode.filterSearch) {
       // For inRange (Between) operator waiting for second value - show empty input
       if (
-        searchMode.filterSearch.operator === "inRange" &&
+        searchMode.filterSearch.operator === 'inRange' &&
         searchMode.filterSearch.waitingForValueTo
       ) {
-        return ""; // Empty input, user types second value fresh
+        return ''; // Empty input, user types second value fresh
       }
       // For inRange (Between) operator with valueTo being typed - show only valueTo
       // The first value is already shown in badge, user is typing second value
       if (
-        searchMode.filterSearch.operator === "inRange" &&
+        searchMode.filterSearch.operator === 'inRange' &&
         searchMode.filterSearch.valueTo &&
         !searchMode.filterSearch.isConfirmed
       ) {
@@ -304,18 +325,18 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
       }
       // For confirmed inRange, show both values (for editing)
       if (
-        searchMode.filterSearch.operator === "inRange" &&
+        searchMode.filterSearch.operator === 'inRange' &&
         searchMode.filterSearch.valueTo &&
         searchMode.filterSearch.isConfirmed
       ) {
-        return ""; // Confirmed - values shown in badges, input empty
+        return ''; // Confirmed - values shown in badges, input empty
       }
       return searchMode.filterSearch.value;
     }
 
     // PRIORITY 5: Column selected, waiting for input
     if (searchMode.selectedColumn && !searchMode.showColumnSelector) {
-      return "";
+      return '';
     }
 
     // DEFAULT: Show raw value
@@ -355,7 +376,7 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
     if (filter?.value) count++;
 
     // 4. "Between" (inRange) specific badges
-    if (filter?.operator === "inRange") {
+    if (filter?.operator === 'inRange') {
       // Separator badge ("to")
       if (filter.valueTo || filter.waitingForValueTo) count++;
       // Second value badge
@@ -374,10 +395,13 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
       // Second condition operator
       count++;
       // Second condition value(s)
-      const secondCond = filter?.conditions?.[1] || searchMode.partialConditions?.[1];
+      const secondCond =
+        filter?.conditions?.[1] || searchMode.partialConditions?.[1];
       if (secondCond?.value) count++;
-      if (secondCond?.operator === "inRange") {
-        const waitingForValueTo = (secondCond as { waitingForValueTo?: boolean }).waitingForValueTo;
+      if (secondCond?.operator === 'inRange') {
+        const waitingForValueTo = (
+          secondCond as { waitingForValueTo?: boolean }
+        ).waitingForValueTo;
         if (secondCond.valueTo || waitingForValueTo) count++;
         if (secondCond.valueTo) count++;
       }
@@ -397,7 +421,7 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
     if (!showTargetedIndicator || !inputRef?.current) {
       // Reset to default padding when no badge
       if (inputRef?.current) {
-        inputRef.current.style.removeProperty("--badge-width");
+        inputRef.current.style.removeProperty('--badge-width');
       }
       lastMeasuredWidthRef.current = 0;
       lastBadgeCountRef.current = 0;
@@ -410,7 +434,9 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
         searchMode.showJoinOperatorSelector ||
         (searchMode.showOperatorSelector && hasSecondConditionOperator) ||
         // Show container for incomplete multi-condition (waiting for second value)
-        (!searchMode.isFilterMode && searchMode.partialJoin && !!searchMode.filterSearch) ||
+        (!searchMode.isFilterMode &&
+          searchMode.partialJoin &&
+          !!searchMode.filterSearch) ||
         // Show container for confirmed multi-condition
         searchMode.filterSearch?.isMultiCondition) &&
       !!searchMode.filterSearch;
@@ -442,7 +468,7 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
       // Only update if width has changed significantly (>2px difference)
       if (Math.abs(badgeWidth - lastMeasuredWidthRef.current) > 2) {
         lastMeasuredWidthRef.current = badgeWidth;
-        inputElement.style.setProperty("--badge-width", `${badgeWidth + 16}px`);
+        inputElement.style.setProperty('--badge-width', `${badgeWidth + 16}px`);
       }
     };
 
@@ -510,17 +536,19 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
       if (searchMode.isFilterMode && searchMode.filterSearch) {
         // Calculate early: Are we building condition 3+ (index >= 2)?
         const isBuildingConditionN =
-          searchMode.activeConditionIndex !== undefined && searchMode.activeConditionIndex >= 2;
+          searchMode.activeConditionIndex !== undefined &&
+          searchMode.activeConditionIndex >= 2;
         const hasPartialConditionsBeyondConfirmed =
           searchMode.partialConditions &&
-          searchMode.partialConditions.length > (searchMode.filterSearch.conditions?.length ?? 0);
+          searchMode.partialConditions.length >
+            (searchMode.filterSearch.conditions?.length ?? 0);
 
         // SPECIAL CASE: Confirmed filter + user types # or SPACE for join selector
         // Remove ## marker first, then append # to open join selector
         // Works for both single-condition AND multi-condition (N-condition support)
         // BUT: Skip when building condition 3+ (user is typing a value, not triggering join)
-        const isHashTrigger = inputValue.trim() === "#";
-        const isSpaceTrigger = inputValue === " ";
+        const isHashTrigger = inputValue.trim() === '#';
+        const isSpaceTrigger = inputValue === ' ';
 
         if (
           searchMode.filterSearch.isConfirmed &&
@@ -530,8 +558,8 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
         ) {
           // For multi-condition: rebuild full pattern, then append #
           // For single-condition: just remove ## and append #
-          const cleanValue = value.replace(/##\s*$/, "").trim();
-          const newValue = cleanValue + " #";
+          const cleanValue = value.replace(/##\s*$/, '').trim();
+          const newValue = cleanValue + ' #';
           onChange({
             target: { value: newValue },
           } as React.ChangeEvent<HTMLInputElement>);
@@ -548,20 +576,21 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
           searchMode.filterSearch.isMultiCondition &&
           searchMode.filterSearch.conditions &&
           searchMode.filterSearch.conditions.length >= 2 &&
-          inputValue.trim() !== "" &&
-          inputValue.trim() !== "#" &&
+          inputValue.trim() !== '' &&
+          inputValue.trim() !== '#' &&
           !isBuildingConditionN && // Not building condition 2+
           !hasPartialConditionsBeyondConfirmed // No partial conditions beyond confirmed
         ) {
           // N-CONDITION SUPPORT: Build pattern with ALL conditions, replacing LAST condition's value
           const conditions = searchMode.filterSearch.conditions;
           const joins = searchMode.filterSearch.joins || [
-            searchMode.filterSearch.joinOperator || "AND",
+            searchMode.filterSearch.joinOperator || 'AND',
           ];
-          const firstColumn = conditions[0].column?.field || searchMode.filterSearch.field;
+          const firstColumn =
+            conditions[0].column?.field || searchMode.filterSearch.field;
 
           // Build pattern for all conditions
-          let newValue = "";
+          let newValue = '';
 
           for (let i = 0; i < conditions.length; i++) {
             const cond = conditions[i];
@@ -569,14 +598,14 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
             const isMultiCol = condColumn !== firstColumn;
 
             // Handle Between operator valueTo
-            const valueToStr = cond.valueTo ? ` #to ${cond.valueTo}` : "";
+            const valueToStr = cond.valueTo ? ` #to ${cond.valueTo}` : '';
 
             if (i === 0) {
               // First condition: #col #op value [#to valueTo]
               newValue = `#${condColumn} #${cond.operator} ${cond.value}${valueToStr}`;
             } else {
               // Subsequent conditions: #join [#col] #op value [#to valueTo]
-              const joinOp = joins[i - 1] || "AND";
+              const joinOp = joins[i - 1] || 'AND';
 
               if (i === conditions.length - 1) {
                 // LAST condition: use inputValue instead of stored value
@@ -605,9 +634,10 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
         // SPECIAL CASE: Between operator waiting for second value OR typing second value
         // Append typed value to the #to marker pattern
         if (
-          searchMode.filterSearch.operator === "inRange" &&
+          searchMode.filterSearch.operator === 'inRange' &&
           (searchMode.filterSearch.waitingForValueTo ||
-            (searchMode.filterSearch.valueTo && !searchMode.filterSearch.isConfirmed))
+            (searchMode.filterSearch.valueTo &&
+              !searchMode.filterSearch.isConfirmed))
         ) {
           // Pattern: #col #inRange 500 #to → #col #inRange 500 #to 700
           const columnName = searchMode.filterSearch.field;
@@ -627,7 +657,7 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
           const nthCondition = searchMode.partialConditions?.[activeIdx];
 
           if (
-            nthCondition?.operator === "inRange" &&
+            nthCondition?.operator === 'inRange' &&
             (nthCondition?.waitingForValueTo || nthCondition?.valueTo)
           ) {
             // Pattern: ...#hargaPokok #inRange 500 #to → ...#hargaPokok #inRange 500 #to 700
@@ -651,10 +681,14 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
         if (isBuildingConditionN || hasPartialConditionsBeyondConfirmed) {
           // Pattern structure: ...#join #col #op [value]
           // Find the last "#col #op" and append inputValue after it
-          const lastConditionMatch = value.match(/^(.*#(?![()])[^\s#]+\s+#(?![()])[^\s#]+)\s*.*$/);
+          const lastConditionMatch = value.match(
+            /^(.*#(?![()])[^\s#]+\s+#(?![()])[^\s#]+)\s*.*$/
+          );
           if (lastConditionMatch) {
             const basePattern = lastConditionMatch[1];
-            const newValue = inputValue ? `${basePattern} ${inputValue}` : basePattern;
+            const newValue = inputValue
+              ? `${basePattern} ${inputValue}`
+              : basePattern;
             onChange({
               target: { value: newValue },
             } as React.ChangeEvent<HTMLInputElement>);
@@ -671,7 +705,10 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
         onChange({
           target: { value: newValue },
         } as React.ChangeEvent<HTMLInputElement>);
-      } else if (searchMode.showJoinOperatorSelector && searchMode.filterSearch) {
+      } else if (
+        searchMode.showJoinOperatorSelector &&
+        searchMode.filterSearch
+      ) {
         // User is typing while join selector is open
         // Treat like filter mode - rebuild the value
         const newValue = buildFilterValue(searchMode.filterSearch, inputValue);
@@ -688,7 +725,7 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
         // Pattern: #col1 #op val #and #searchTerm
         const filter = searchMode.filterSearch;
         const join = searchMode.partialJoin.toLowerCase();
-        const firstValTo = filter.valueTo ? ` ${filter.valueTo}` : "";
+        const firstValTo = filter.valueTo ? ` ${filter.valueTo}` : '';
         const newValue = `#${filter.field} #${filter.operator} ${filter.value}${firstValTo} #${join} #${inputValue}`;
         onChange({
           target: { value: newValue },
@@ -704,19 +741,26 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
         // Build pattern: #field #op1 val1 #join #op2 val2 (same-column)
         // Or: #field #op1 val1 #join #col2 #op2 val2 (multi-column)
         const currentValue = value;
-        const normalizedCurrentValue = currentValue.replace(/#\(|#\)/g, " ").replace(/\s+/g, " ");
+        const normalizedCurrentValue = currentValue
+          .replace(/#\(|#\)/g, ' ')
+          .replace(/\s+/g, ' ');
 
         // MULTI-COLUMN: Check for pattern #col1 #op1 val1 #join #col2 #op2
-        const multiColMatch = normalizedCurrentValue.match(/#(and|or)\s+#([^\s#]+)\s+#([^\s]+)/i);
+        const multiColMatch = normalizedCurrentValue.match(
+          /#(and|or)\s+#([^\s#]+)\s+#([^\s]+)/i
+        );
 
         // SAME-COLUMN: Check for pattern #col1 #op1 val1 #join #op2 [value]
         // NOTE: Removed $ anchor to also match when user is typing value (e.g., "#and #contains m")
-        const sameColMatch = normalizedCurrentValue.match(/#(and|or)\s+#([^\s]+)/i);
+        const sameColMatch = normalizedCurrentValue.match(
+          /#(and|or)\s+#([^\s]+)/i
+        );
 
         // Extract groups based on match type
         // multiColMatch: [full, join, col2, op2]
         // sameColMatch: [full, join, op2]
-        const isMultiColumn = searchMode.partialConditions?.[1]?.column && multiColMatch;
+        const isMultiColumn =
+          searchMode.partialConditions?.[1]?.column && multiColMatch;
 
         let op2: string | undefined;
 
@@ -751,7 +795,7 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
         // SPECIAL CASE: If input becomes empty, preserve second operator in partial multi-condition state
         // This handles when user deletes the second value completely
         // Step 5 of E9: Preserve 5 badges, then Step 6 backspace will trigger operator selector
-        if (inputValue === "") {
+        if (inputValue === '') {
           const basePattern = getBasePatternFromToken(`#${operatorName}`);
           if (!basePattern) {
             onChange(e);
@@ -773,11 +817,13 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
         if (
           activeCondN?.waitingForValueTo &&
           activeCondN?.value &&
-          activeCondN?.operator === "inRange"
+          activeCondN?.operator === 'inRange'
         ) {
-          const basePattern = getBasePatternFromToken("#to");
+          const basePattern = getBasePatternFromToken('#to');
           if (basePattern) {
-            const newValue = inputValue ? `${basePattern} ${inputValue}` : basePattern;
+            const newValue = inputValue
+              ? `${basePattern} ${inputValue}`
+              : basePattern;
             onChange({
               target: { value: newValue },
             } as React.ChangeEvent<HTMLInputElement>);
@@ -795,10 +841,12 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
         }
 
         // SPECIAL CASE: Between operator typing valueTo - preserve first value and #to marker
-        if (activeCondN?.valueTo && activeCondN?.operator === "inRange") {
-          const basePattern = getBasePatternFromToken("#to");
+        if (activeCondN?.valueTo && activeCondN?.operator === 'inRange') {
+          const basePattern = getBasePatternFromToken('#to');
           if (basePattern) {
-            const newValue = inputValue ? `${basePattern} ${inputValue}` : basePattern;
+            const newValue = inputValue
+              ? `${basePattern} ${inputValue}`
+              : basePattern;
             onChange({
               target: { value: newValue },
             } as React.ChangeEvent<HTMLInputElement>);
@@ -822,17 +870,21 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
         }
 
         // inputValue now contains the full accumulated second value thanks to displayValue fix
-        const newValue = inputValue ? `${basePattern} ${inputValue}` : basePattern;
+        const newValue = inputValue
+          ? `${basePattern} ${inputValue}`
+          : basePattern;
 
         onChange({
           target: { value: newValue },
         } as React.ChangeEvent<HTMLInputElement>);
       } else if (searchMode.showOperatorSelector && searchMode.selectedColumn) {
         const columnName = searchMode.selectedColumn.field;
-        const cleanInputValue = inputValue.startsWith("#") ? inputValue.substring(1) : inputValue;
+        const cleanInputValue = inputValue.startsWith('#')
+          ? inputValue.substring(1)
+          : inputValue;
 
-        if (cleanInputValue === "") {
-          const newValue = buildColumnValue(columnName, "plain");
+        if (cleanInputValue === '') {
+          const newValue = buildColumnValue(columnName, 'plain');
           onChange({
             target: { value: newValue },
           } as React.ChangeEvent<HTMLInputElement>);
@@ -849,23 +901,23 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
       ) {
         const columnName = searchMode.selectedColumn.field;
 
-        if (inputValue === " ") {
-          const newValue = buildColumnValue(columnName, "space");
+        if (inputValue === ' ') {
+          const newValue = buildColumnValue(columnName, 'space');
           onChange({
             target: { value: newValue },
           } as React.ChangeEvent<HTMLInputElement>);
-        } else if (inputValue === ":") {
-          const newValue = buildColumnValue(columnName, "colon");
+        } else if (inputValue === ':') {
+          const newValue = buildColumnValue(columnName, 'colon');
           onChange({
             target: { value: newValue },
           } as React.ChangeEvent<HTMLInputElement>);
-        } else if (inputValue.trim() !== "") {
+        } else if (inputValue.trim() !== '') {
           const newValue = `#${columnName}:${inputValue}`;
           onChange({
             target: { value: newValue },
           } as React.ChangeEvent<HTMLInputElement>);
         } else {
-          const newValue = buildColumnValue(columnName, "plain");
+          const newValue = buildColumnValue(columnName, 'plain');
           onChange({
             target: { value: newValue },
           } as React.ChangeEvent<HTMLInputElement>);
@@ -873,16 +925,16 @@ export const useSearchInput = ({ value, searchMode, onChange, inputRef }: UseSea
       } else {
         // SPECIAL CASE: First SPACE on empty input triggers column selector (like #)
         // This makes it easier to enter filter mode without typing #
-        if (inputValue === " " && value.trim() === "") {
+        if (inputValue === ' ' && value.trim() === '') {
           onChange({
-            target: { value: "#" },
+            target: { value: '#' },
           } as React.ChangeEvent<HTMLInputElement>);
           return;
         }
         onChange(e);
       }
     },
-    [searchMode, onChange, value],
+    [searchMode, onChange, value]
   );
 
   return {

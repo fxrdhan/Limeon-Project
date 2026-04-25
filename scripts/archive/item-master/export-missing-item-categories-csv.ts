@@ -1,7 +1,7 @@
 /// <reference types="node" />
 
-import { readFileSync, writeFileSync } from "node:fs";
-import path from "node:path";
+import { readFileSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
 
 type SeedItem = {
   code: string;
@@ -31,12 +31,14 @@ type GroupRow = {
   notes: string;
 };
 
-const DEFAULT_INPUT = path.resolve("/home/fxrdhan/Downloads/item-master-seed.json");
+const DEFAULT_INPUT = path.resolve(
+  '/home/fxrdhan/Downloads/item-master-seed.json'
+);
 const DEFAULT_GROUP_OUTPUT = path.resolve(
-  "/home/fxrdhan/Downloads/item-master-missing-categories-groups.csv",
+  '/home/fxrdhan/Downloads/item-master-missing-categories-groups.csv'
 );
 const DEFAULT_ITEM_OUTPUT = path.resolve(
-  "/home/fxrdhan/Downloads/item-master-missing-categories-items.csv",
+  '/home/fxrdhan/Downloads/item-master-missing-categories-items.csv'
 );
 
 const parseArgs = () => {
@@ -51,32 +53,46 @@ const parseArgs = () => {
 
 const normalizeWhitespace = (value: string): string =>
   value
-    .replace(/\u00a0/g, " ")
-    .replace(/\s+/g, " ")
+    .replace(/\u00a0/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
 
 const escapeCsvValue = (value: string | number | null | undefined): string => {
-  const rawStringValue = value === null || value === undefined ? "" : String(value);
-  const stringValue = /^[=+\-@]/.test(rawStringValue) ? `'${rawStringValue}` : rawStringValue;
+  const rawStringValue =
+    value === null || value === undefined ? '' : String(value);
+  const stringValue = /^[=+\-@]/.test(rawStringValue)
+    ? `'${rawStringValue}`
+    : rawStringValue;
 
-  if (stringValue.includes(",") || stringValue.includes('"') || stringValue.includes("\n")) {
+  if (
+    stringValue.includes(',') ||
+    stringValue.includes('"') ||
+    stringValue.includes('\n')
+  ) {
     return `"${stringValue.replace(/"/g, '""')}"`;
   }
 
   return stringValue;
 };
 
-const toCsv = (headers: string[], rows: Array<Record<string, string | number>>) =>
+const toCsv = (
+  headers: string[],
+  rows: Array<Record<string, string | number>>
+) =>
   [
-    headers.join(","),
-    ...rows.map((row) => headers.map((header) => escapeCsvValue(row[header])).join(",")),
-  ].join("\n");
+    headers.join(','),
+    ...rows.map(row =>
+      headers.map(header => escapeCsvValue(row[header])).join(',')
+    ),
+  ].join('\n');
 
 const main = () => {
   const { inputPath, groupOutputPath, itemOutputPath } = parseArgs();
-  const seed = JSON.parse(readFileSync(inputPath, "utf8")) as SeedFile;
+  const seed = JSON.parse(readFileSync(inputPath, 'utf8')) as SeedFile;
   const missingItems = seed.items.filter(
-    (item) => !item.fk_lookup?.category_code || item.fk_lookup.category_code === "PDF_IMPORT",
+    item =>
+      !item.fk_lookup?.category_code ||
+      item.fk_lookup.category_code === 'PDF_IMPORT'
   );
 
   const grouped = new Map<
@@ -92,9 +108,13 @@ const main = () => {
 
   for (const item of missingItems) {
     const normalizedKegunaan =
-      normalizeWhitespace(item.fk_lookup?.normalized_kegunaan_obat ?? "") || "(none)";
-    const rawKegunaan = normalizeWhitespace(item.fk_lookup?.source_kegunaan_obat ?? "") || "(none)";
-    const typeCode = normalizeWhitespace(item.fk_lookup?.type_code ?? "") || "-";
+      normalizeWhitespace(item.fk_lookup?.normalized_kegunaan_obat ?? '') ||
+      '(none)';
+    const rawKegunaan =
+      normalizeWhitespace(item.fk_lookup?.source_kegunaan_obat ?? '') ||
+      '(none)';
+    const typeCode =
+      normalizeWhitespace(item.fk_lookup?.type_code ?? '') || '-';
     const current = grouped.get(normalizedKegunaan) ?? {
       item_count: 0,
       raw_kegunaan_values: new Set<string>(),
@@ -123,60 +143,61 @@ const main = () => {
     .map(([normalized_kegunaan_obat, group]) => ({
       normalized_kegunaan_obat,
       item_count: group.item_count,
-      raw_kegunaan_values: [...group.raw_kegunaan_values].sort().join(" | "),
-      type_codes: [...group.type_codes].sort().join(" | "),
-      sample_codes: group.sample_codes.join(" | "),
-      sample_names: group.sample_names.join(" | "),
-      final_category_code: "",
-      notes: "",
+      raw_kegunaan_values: [...group.raw_kegunaan_values].sort().join(' | '),
+      type_codes: [...group.type_codes].sort().join(' | '),
+      sample_codes: group.sample_codes.join(' | '),
+      sample_names: group.sample_names.join(' | '),
+      final_category_code: '',
+      notes: '',
     }));
 
   const itemRows = missingItems
-    .map((item) => ({
+    .map(item => ({
       code: item.code,
       name: item.name,
-      source_name: item.fk_lookup?.source_name ?? "",
-      type_code: item.fk_lookup?.type_code ?? "",
-      source_golongan_obat: item.fk_lookup?.source_golongan_obat ?? "",
-      source_kegunaan_obat: item.fk_lookup?.source_kegunaan_obat ?? "",
-      normalized_kegunaan_obat: item.fk_lookup?.normalized_kegunaan_obat ?? "",
-      current_category_code: item.fk_lookup?.category_code ?? "",
-      final_category_code: "",
-      notes: "",
+      source_name: item.fk_lookup?.source_name ?? '',
+      type_code: item.fk_lookup?.type_code ?? '',
+      source_golongan_obat: item.fk_lookup?.source_golongan_obat ?? '',
+      source_kegunaan_obat: item.fk_lookup?.source_kegunaan_obat ?? '',
+      normalized_kegunaan_obat: item.fk_lookup?.normalized_kegunaan_obat ?? '',
+      current_category_code: item.fk_lookup?.category_code ?? '',
+      final_category_code: '',
+      notes: '',
     }))
     .sort(
       (left, right) =>
-        left.normalized_kegunaan_obat.localeCompare(right.normalized_kegunaan_obat) ||
-        left.code.localeCompare(right.code),
+        left.normalized_kegunaan_obat.localeCompare(
+          right.normalized_kegunaan_obat
+        ) || left.code.localeCompare(right.code)
     );
 
   const groupCsv = toCsv(
     [
-      "normalized_kegunaan_obat",
-      "item_count",
-      "raw_kegunaan_values",
-      "type_codes",
-      "sample_codes",
-      "sample_names",
-      "final_category_code",
-      "notes",
+      'normalized_kegunaan_obat',
+      'item_count',
+      'raw_kegunaan_values',
+      'type_codes',
+      'sample_codes',
+      'sample_names',
+      'final_category_code',
+      'notes',
     ],
-    groupRows,
+    groupRows
   );
   const itemCsv = toCsv(
     [
-      "code",
-      "name",
-      "source_name",
-      "type_code",
-      "source_golongan_obat",
-      "source_kegunaan_obat",
-      "normalized_kegunaan_obat",
-      "current_category_code",
-      "final_category_code",
-      "notes",
+      'code',
+      'name',
+      'source_name',
+      'type_code',
+      'source_golongan_obat',
+      'source_kegunaan_obat',
+      'normalized_kegunaan_obat',
+      'current_category_code',
+      'final_category_code',
+      'notes',
     ],
-    itemRows,
+    itemRows
   );
 
   writeFileSync(groupOutputPath, `${groupCsv}\n`);

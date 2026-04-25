@@ -2,7 +2,7 @@ export interface SearchColumn {
   field: string;
   headerName: string;
   searchable: boolean;
-  type?: "text" | "number" | "date" | "currency";
+  type?: 'text' | 'number' | 'date' | 'currency';
   description?: string;
   isMultiFilter?: boolean; // Indicates if column uses AG Grid multi-filter
 }
@@ -24,12 +24,12 @@ export interface FilterCondition {
 }
 
 export interface FilterConditionNode extends FilterCondition {
-  kind: "condition";
+  kind: 'condition';
 }
 
 export interface FilterGroup {
-  kind: "group";
-  join: "AND" | "OR";
+  kind: 'group';
+  join: 'AND' | 'OR';
   nodes: FilterExpression[];
   isClosed?: boolean;
   isExplicit?: boolean;
@@ -44,7 +44,7 @@ export interface FilterSearch extends TargetedSearch {
   isConfirmed?: boolean; // True if value was confirmed with ## (Enter key)
   // Multi-condition support
   conditions?: FilterCondition[]; // Array of conditions for AND/OR
-  joinOperator?: "AND" | "OR"; // Join operator between conditions
+  joinOperator?: 'AND' | 'OR'; // Join operator between conditions
   isMultiCondition?: boolean; // Flag to indicate multi-condition filter
   isMultiColumn?: boolean; // Flag to indicate multi-column filter (conditions on different columns)
   filterGroup?: FilterGroup; // Nested group representation for advanced filter
@@ -59,7 +59,7 @@ export interface EnhancedSearchState {
   filterSearch?: FilterSearch;
   selectedColumn?: SearchColumn;
   isSecondOperator?: boolean; // True when selecting second operator in multi-condition
-  partialJoin?: "AND" | "OR"; // Join operator selected, building second condition
+  partialJoin?: 'AND' | 'OR'; // Join operator selected, building second condition
   secondOperator?: string; // Second operator value for multi-condition
 }
 
@@ -82,7 +82,7 @@ export interface EnhancedSearchBarProps {
   placeholder?: string;
   className?: string;
   inputRef?: React.RefObject<HTMLInputElement | null>;
-  searchState?: "idle" | "typing" | "found" | "error" | "not-found";
+  searchState?: 'idle' | 'typing' | 'found' | 'error' | 'not-found';
   resultsCount?: number;
   columns: SearchColumn[];
   onGlobalSearch?: (search: string) => void;

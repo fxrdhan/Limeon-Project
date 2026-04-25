@@ -1,14 +1,14 @@
-import type { ComposerPendingFileKind } from "../types";
-import { chatSidebarAssetsGateway } from "../data/chatSidebarAssetsGateway";
-import { chatSidebarShareGateway } from "../data/chatSidebarGateway";
-import type { TransformOptions } from "@supabase/storage-js";
+import type { ComposerPendingFileKind } from '../types';
+import { chatSidebarAssetsGateway } from '../data/chatSidebarAssetsGateway';
+import { chatSidebarShareGateway } from '../data/chatSidebarGateway';
+import type { TransformOptions } from '@supabase/storage-js';
 import {
   buildPdfPreviewStoragePath,
   extractChatStoragePath,
   resolveChatMessageStoragePaths,
   resolveFileExtension,
-} from "../../../../shared/chatStoragePaths";
-import { chatRuntimeCache } from "./chatRuntimeCache";
+} from '../../../../shared/chatStoragePaths';
+import { chatRuntimeCache } from './chatRuntimeCache';
 
 export {
   buildPdfPreviewStoragePath,
@@ -18,11 +18,15 @@ export {
 };
 
 export const formatFileSize = (sizeBytes?: number | null) => {
-  if (typeof sizeBytes !== "number" || !Number.isFinite(sizeBytes) || sizeBytes < 0) {
+  if (
+    typeof sizeBytes !== 'number' ||
+    !Number.isFinite(sizeBytes) ||
+    sizeBytes < 0
+  ) {
     return null;
   }
 
-  const units = ["B", "KB", "MB", "GB", "TB"] as const;
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'] as const;
   let value = sizeBytes;
   let unitIndex = 0;
 
@@ -37,17 +41,18 @@ export const formatFileSize = (sizeBytes?: number | null) => {
 
 export const formatFileFallbackLabel = (
   fileExtension: string,
-  fileKind: ComposerPendingFileKind,
+  fileKind: ComposerPendingFileKind
 ) => {
   if (fileExtension) return fileExtension.toUpperCase();
-  return fileKind === "audio" ? "AUDIO" : "FILE";
+  return fileKind === 'audio' ? 'AUDIO' : 'FILE';
 };
 
 export const openInNewTab = (url: string) => {
-  window.open(url, "_blank", "noopener,noreferrer");
+  window.open(url, '_blank', 'noopener,noreferrer');
 };
 
-export const isDirectChatAssetUrl = (url: string) => /^(https?:\/\/|blob:|data:|\/)/i.test(url);
+export const isDirectChatAssetUrl = (url: string) =>
+  /^(https?:\/\/|blob:|data:|\/)/i.test(url);
 
 export const SIGNED_CHAT_ASSET_URL_TTL_MS = 55 * 60 * 1000;
 export interface ResolvedChatAssetUrlEntry {
@@ -57,7 +62,7 @@ export interface ResolvedChatAssetUrlEntry {
 
 export const getFreshResolvedChatAssetUrl = (
   entry?: ResolvedChatAssetUrlEntry | null,
-  now = Date.now(),
+  now = Date.now()
 ) => {
   if (!entry) {
     return null;
@@ -75,7 +80,7 @@ const CHAT_SHARED_LINK_SLUG_PATTERN = /^[23456789abcdefghjkmnpqrstuvwxyz]{10}$/;
 
 const buildSignedChatAssetCacheKey = (
   storagePath: string,
-  transform?: ChatAssetTransformOptions,
+  transform?: ChatAssetTransformOptions
 ) => {
   if (!transform || Object.keys(transform).length === 0) {
     return storagePath;
@@ -83,17 +88,21 @@ const buildSignedChatAssetCacheKey = (
 
   return [
     storagePath,
-    transform.width ?? "",
-    transform.height ?? "",
-    transform.resize ?? "",
-    transform.quality ?? "",
-    transform.format ?? "",
-  ].join("::");
+    transform.width ?? '',
+    transform.height ?? '',
+    transform.resize ?? '',
+    transform.quality ?? '',
+    transform.format ?? '',
+  ].join('::');
 };
 
-const buildCopyableChatAssetRequest = (url: string, storagePathHint?: string | null) => {
+const buildCopyableChatAssetRequest = (
+  url: string,
+  storagePathHint?: string | null
+) => {
   const normalizedUrl = url.trim();
-  const storagePath = storagePathHint?.trim() || extractChatStoragePath(normalizedUrl);
+  const storagePath =
+    storagePathHint?.trim() || extractChatStoragePath(normalizedUrl);
   if (!storagePath) {
     return null;
   }
@@ -107,30 +116,38 @@ const buildCopyableChatAssetRequest = (url: string, storagePathHint?: string | n
 
 const buildCopyableChatSharedLinkUrl = (sharedLinkSlug?: string | null) => {
   const normalizedSharedLinkSlug = sharedLinkSlug?.trim().toLowerCase();
-  if (!normalizedSharedLinkSlug || !CHAT_SHARED_LINK_SLUG_PATTERN.test(normalizedSharedLinkSlug)) {
+  if (
+    !normalizedSharedLinkSlug ||
+    !CHAT_SHARED_LINK_SLUG_PATTERN.test(normalizedSharedLinkSlug)
+  ) {
     return null;
   }
 
   return chatSidebarShareGateway.buildShortUrl(normalizedSharedLinkSlug);
 };
 
-const pendingCopyableChatAssetRequests = new Map<string, Promise<string | null>>();
+const pendingCopyableChatAssetRequests = new Map<
+  string,
+  Promise<string | null>
+>();
 
 const ensureCopyableChatSharedLink = async (
   url: string,
   storagePathHint?: string | null,
   options?: {
     messageId?: string | null;
-  },
+  }
 ) => {
   const request = buildCopyableChatAssetRequest(url, storagePathHint);
   if (!request) {
     return null;
   }
 
-  const normalizedMessageId = options?.messageId?.trim() || "";
+  const normalizedMessageId = options?.messageId?.trim() || '';
 
-  const pendingRequest = pendingCopyableChatAssetRequests.get(request.requestKey);
+  const pendingRequest = pendingCopyableChatAssetRequests.get(
+    request.requestKey
+  );
   if (pendingRequest) {
     return await pendingRequest;
   }
@@ -143,7 +160,7 @@ const ensureCopyableChatSharedLink = async (
           }
         : {
             storagePath: request.storagePath,
-          },
+          }
     );
 
     const shortUrl = sharedLinkResult.data?.shortUrl?.trim() || null;
@@ -159,7 +176,9 @@ const ensureCopyableChatSharedLink = async (
   try {
     return await nextRequest;
   } finally {
-    const activeRequest = pendingCopyableChatAssetRequests.get(request.requestKey);
+    const activeRequest = pendingCopyableChatAssetRequests.get(
+      request.requestKey
+    );
     if (activeRequest === nextRequest) {
       pendingCopyableChatAssetRequests.delete(request.requestKey);
     }
@@ -169,7 +188,7 @@ const ensureCopyableChatSharedLink = async (
 export const fetchChatFileBlobWithFallback = async (
   url: string,
   storagePathHint?: string | null,
-  forcedMimeType?: string | null,
+  forcedMimeType?: string | null
 ): Promise<Blob | null> => {
   const normalizedForcedMimeType = forcedMimeType?.toLowerCase();
   const storagePath =
@@ -184,19 +203,22 @@ export const fetchChatFileBlobWithFallback = async (
         const responseBlob = await response.blob();
         const responseMimeType = responseBlob.type.toLowerCase();
         const isHtmlFallback =
-          responseMimeType.startsWith("text/html") ||
-          responseMimeType.startsWith("application/xhtml+xml");
+          responseMimeType.startsWith('text/html') ||
+          responseMimeType.startsWith('application/xhtml+xml');
         const isForcedMimeTypeMismatch =
           normalizedForcedMimeType &&
           responseMimeType &&
           normalizedForcedMimeType !== responseMimeType &&
-          ((normalizedForcedMimeType.startsWith("image/") &&
-            !responseMimeType.startsWith("image/")) ||
-            (normalizedForcedMimeType === "application/pdf" &&
-              responseMimeType !== "application/pdf"));
+          ((normalizedForcedMimeType.startsWith('image/') &&
+            !responseMimeType.startsWith('image/')) ||
+            (normalizedForcedMimeType === 'application/pdf' &&
+              responseMimeType !== 'application/pdf'));
 
         if (!isHtmlFallback && !isForcedMimeTypeMismatch) {
-          if (!normalizedForcedMimeType || responseMimeType === normalizedForcedMimeType) {
+          if (
+            !normalizedForcedMimeType ||
+            responseMimeType === normalizedForcedMimeType
+          ) {
             return responseBlob;
           }
 
@@ -213,7 +235,10 @@ export const fetchChatFileBlobWithFallback = async (
   try {
     const data = await chatSidebarAssetsGateway.downloadAsset(storagePath);
 
-    if (!normalizedForcedMimeType || data.type.toLowerCase() === normalizedForcedMimeType) {
+    if (
+      !normalizedForcedMimeType ||
+      data.type.toLowerCase() === normalizedForcedMimeType
+    ) {
       return data;
     }
 
@@ -223,14 +248,16 @@ export const fetchChatFileBlobWithFallback = async (
   }
 };
 
-export const fetchPdfBlobWithFallback = (url: string, storagePathHint?: string | null) =>
-  fetchChatFileBlobWithFallback(url, storagePathHint, "application/pdf");
+export const fetchPdfBlobWithFallback = (
+  url: string,
+  storagePathHint?: string | null
+) => fetchChatFileBlobWithFallback(url, storagePathHint, 'application/pdf');
 
 export const resolveChatAssetUrlWithExpiry = async (
   url: string,
   storagePathHint?: string | null,
   expiresInSeconds = 3600,
-  transform?: ChatAssetTransformOptions,
+  transform?: ChatAssetTransformOptions
 ): Promise<ResolvedChatAssetUrlEntry | null> => {
   if (isDirectChatAssetUrl(url)) {
     return {
@@ -244,9 +271,13 @@ export const resolveChatAssetUrlWithExpiry = async (
     return null;
   }
 
-  const signedAssetCacheKey = buildSignedChatAssetCacheKey(storagePath, transform);
+  const signedAssetCacheKey = buildSignedChatAssetCacheKey(
+    storagePath,
+    transform
+  );
   chatRuntimeCache.signedAssets.pruneExpired();
-  const cachedSignedUrl = chatRuntimeCache.signedAssets.getEntry(signedAssetCacheKey);
+  const cachedSignedUrl =
+    chatRuntimeCache.signedAssets.getEntry(signedAssetCacheKey);
   if (cachedSignedUrl) {
     return {
       url: cachedSignedUrl.signedUrl,
@@ -258,11 +289,15 @@ export const resolveChatAssetUrlWithExpiry = async (
     const signedUrl = await chatSidebarAssetsGateway.createSignedAssetUrl(
       storagePath,
       expiresInSeconds,
-      transform,
+      transform
     );
 
     const expiresAt = Date.now() + SIGNED_CHAT_ASSET_URL_TTL_MS;
-    chatRuntimeCache.signedAssets.setEntry(signedAssetCacheKey, signedUrl, expiresAt);
+    chatRuntimeCache.signedAssets.setEntry(
+      signedAssetCacheKey,
+      signedUrl,
+      expiresAt
+    );
 
     return {
       url: signedUrl,
@@ -276,7 +311,7 @@ export const resolveChatAssetUrlWithExpiry = async (
 export const getCachedResolvedChatAssetUrl = (
   url: string,
   storagePathHint?: string | null,
-  transform?: ChatAssetTransformOptions,
+  transform?: ChatAssetTransformOptions
 ) => {
   if (isDirectChatAssetUrl(url)) {
     return url;
@@ -290,9 +325,13 @@ export const getCachedResolvedChatAssetUrl = (
     return null;
   }
 
-  const signedAssetCacheKey = buildSignedChatAssetCacheKey(storagePath, transform);
+  const signedAssetCacheKey = buildSignedChatAssetCacheKey(
+    storagePath,
+    transform
+  );
   chatRuntimeCache.signedAssets.pruneExpired();
-  const cachedSignedUrl = chatRuntimeCache.signedAssets.getEntry(signedAssetCacheKey);
+  const cachedSignedUrl =
+    chatRuntimeCache.signedAssets.getEntry(signedAssetCacheKey);
 
   return cachedSignedUrl?.signedUrl ?? null;
 };
@@ -301,13 +340,13 @@ export const resolveChatAssetUrl = async (
   url: string,
   storagePathHint?: string | null,
   expiresInSeconds = 3600,
-  transform?: ChatAssetTransformOptions,
+  transform?: ChatAssetTransformOptions
 ) => {
   const resolvedAsset = await resolveChatAssetUrlWithExpiry(
     url,
     storagePathHint,
     expiresInSeconds,
-    transform,
+    transform
   );
 
   return resolvedAsset?.url ?? null;
@@ -320,11 +359,13 @@ export const resolveCopyableChatAssetUrl = async (
     messageId?: string | null;
     sharedLinkSlug?: string | null;
     allowAssetUrlFallback?: boolean;
-  },
+  }
 ) => {
   const normalizedUrl = url.trim();
   const allowAssetUrlFallback = options?.allowAssetUrlFallback !== false;
-  const shortUrlFromPayload = buildCopyableChatSharedLinkUrl(options?.sharedLinkSlug);
+  const shortUrlFromPayload = buildCopyableChatSharedLinkUrl(
+    options?.sharedLinkSlug
+  );
   if (shortUrlFromPayload) {
     return shortUrlFromPayload;
   }
@@ -333,10 +374,16 @@ export const resolveCopyableChatAssetUrl = async (
   const storagePath = request?.storagePath ?? null;
 
   if (!storagePath) {
-    return allowAssetUrlFallback && isDirectChatAssetUrl(normalizedUrl) ? normalizedUrl : null;
+    return allowAssetUrlFallback && isDirectChatAssetUrl(normalizedUrl)
+      ? normalizedUrl
+      : null;
   }
 
-  const shortUrl = await ensureCopyableChatSharedLink(normalizedUrl, storagePathHint, options);
+  const shortUrl = await ensureCopyableChatSharedLink(
+    normalizedUrl,
+    storagePathHint,
+    options
+  );
   if (shortUrl) {
     return shortUrl;
   }
@@ -349,39 +396,50 @@ export const resolveCopyableChatAssetUrl = async (
     ? await resolveChatAssetUrl(normalizedUrl || storagePath, storagePath)
     : null;
 
-  return resolvedAssetUrl ?? (isDirectChatAssetUrl(normalizedUrl) ? normalizedUrl : null);
+  return (
+    resolvedAssetUrl ??
+    (isDirectChatAssetUrl(normalizedUrl) ? normalizedUrl : null)
+  );
 };
 
 export const openChatFileInNewTab = async (
   url: string,
   storagePathHint?: string | null,
-  forcedMimeType?: string | null,
+  forcedMimeType?: string | null
 ) => {
-  const fileBlob = await fetchChatFileBlobWithFallback(url, storagePathHint, forcedMimeType);
+  const fileBlob = await fetchChatFileBlobWithFallback(
+    url,
+    storagePathHint,
+    forcedMimeType
+  );
 
   if (fileBlob) {
     const normalizedMimeType = (forcedMimeType || fileBlob.type).toLowerCase();
-    const fileExtension = resolveFileExtension(storagePathHint ?? null, url, normalizedMimeType);
+    const fileExtension = resolveFileExtension(
+      storagePathHint ?? null,
+      url,
+      normalizedMimeType
+    );
     const isSafeInlineType =
-      normalizedMimeType === "application/pdf" ||
-      (normalizedMimeType.startsWith("image/") &&
-        normalizedMimeType !== "image/svg+xml" &&
-        fileExtension !== "svg");
+      normalizedMimeType === 'application/pdf' ||
+      (normalizedMimeType.startsWith('image/') &&
+        normalizedMimeType !== 'image/svg+xml' &&
+        fileExtension !== 'svg');
     const objectUrl = URL.createObjectURL(fileBlob);
 
     if (isSafeInlineType) {
-      window.open(objectUrl, "_blank", "noopener,noreferrer");
+      window.open(objectUrl, '_blank', 'noopener,noreferrer');
       window.setTimeout(() => {
         URL.revokeObjectURL(objectUrl);
       }, 30_000);
       return true;
     }
 
-    const downloadLink = document.createElement("a");
+    const downloadLink = document.createElement('a');
     downloadLink.href = objectUrl;
     downloadLink.download =
-      storagePathHint?.split("/").pop() || url.split("/").pop() || "attachment";
-    downloadLink.rel = "noopener noreferrer";
+      storagePathHint?.split('/').pop() || url.split('/').pop() || 'attachment';
+    downloadLink.rel = 'noopener noreferrer';
     document.body.appendChild(downloadLink);
     downloadLink.click();
     downloadLink.remove();
@@ -399,10 +457,23 @@ export const openChatFileInNewTab = async (
   return true;
 };
 
-const IMAGE_FILE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp", "gif", "bmp", "heic", "heif"]);
+const IMAGE_FILE_EXTENSIONS = new Set([
+  'jpg',
+  'jpeg',
+  'png',
+  'webp',
+  'gif',
+  'bmp',
+  'heic',
+  'heif',
+]);
 
-export const isImageFileExtensionOrMime = (extension: string, mimeType?: string | null) =>
-  IMAGE_FILE_EXTENSIONS.has(extension) || mimeType?.toLowerCase().startsWith("image/") === true;
+export const isImageFileExtensionOrMime = (
+  extension: string,
+  mimeType?: string | null
+) =>
+  IMAGE_FILE_EXTENSIONS.has(extension) ||
+  mimeType?.toLowerCase().startsWith('image/') === true;
 
 export const resetSignedChatAssetUrlCache = () => {
   chatRuntimeCache.signedAssets.reset();

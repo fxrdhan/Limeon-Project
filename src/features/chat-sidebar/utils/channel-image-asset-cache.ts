@@ -1,29 +1,29 @@
-import type { ChatMessage } from "../data/chatSidebarGateway";
+import type { ChatMessage } from '../data/chatSidebarGateway';
 import {
   CHAT_RUNTIME_INDEXED_DB_NAMES,
   closeRuntimeIndexedDb,
   deleteRuntimeIndexedDb,
   openRuntimeIndexedDb,
-} from "./runtime-persistence";
+} from './runtime-persistence';
 import {
   fetchChatFileBlobWithFallback,
   isDirectChatAssetUrl,
   isImageFileExtensionOrMime,
   resolveFileExtension,
-} from "./message-file";
-import { createImagePreviewBlob } from "./image-message-preview";
+} from './message-file';
+import { createImagePreviewBlob } from './image-message-preview';
 
-export type ChannelImageAssetVariant = "thumbnail" | "full";
+export type ChannelImageAssetVariant = 'thumbnail' | 'full';
 
 type CacheableImageMessage = Pick<
   ChatMessage,
-  | "id"
-  | "message"
-  | "message_type"
-  | "file_name"
-  | "file_mime_type"
-  | "file_preview_url"
-  | "file_storage_path"
+  | 'id'
+  | 'message'
+  | 'message_type'
+  | 'file_name'
+  | 'file_mime_type'
+  | 'file_preview_url'
+  | 'file_storage_path'
 >;
 
 interface PersistedChannelImageAssetRecord {
@@ -46,11 +46,12 @@ interface RuntimeChannelImageAssetRecord {
   variant: ChannelImageAssetVariant;
 }
 
-const CHANNEL_IMAGE_ASSET_DB_NAME = CHAT_RUNTIME_INDEXED_DB_NAMES.channelImageAssets;
+const CHANNEL_IMAGE_ASSET_DB_NAME =
+  CHAT_RUNTIME_INDEXED_DB_NAMES.channelImageAssets;
 const CHANNEL_IMAGE_ASSET_DB_VERSION = 1;
-const CHANNEL_IMAGE_ASSET_STORE_NAME = "channel-image-assets";
-const CHANNEL_IMAGE_ASSET_CHANNEL_INDEX = "channelId";
-const CHANNEL_IMAGE_ASSET_CHANNEL_VARIANT_INDEX = "channelVariant";
+const CHANNEL_IMAGE_ASSET_STORE_NAME = 'channel-image-assets';
+const CHANNEL_IMAGE_ASSET_CHANNEL_INDEX = 'channelId';
+const CHANNEL_IMAGE_ASSET_CHANNEL_VARIANT_INDEX = 'channelVariant';
 const CHANNEL_IMAGE_ASSET_FULL_BUDGET_BYTES = 250 * 1024 * 1024;
 const CHANNEL_IMAGE_ASSET_SCOPE_RETENTION_LIMIT = 3;
 
@@ -58,15 +59,20 @@ let activeChannelImageAssetScopeId: string | null = null;
 let retainedChannelImageAssetScopeIds: string[] = [];
 let channelImageAssetDbPromise: Promise<IDBDatabase | null> | null = null;
 
-const runtimeChannelImageAssets = new Map<string, RuntimeChannelImageAssetRecord>();
+const runtimeChannelImageAssets = new Map<
+  string,
+  RuntimeChannelImageAssetRecord
+>();
 const pendingChannelImageAssetLoads = new Map<string, Promise<string | null>>();
 
 const canUseIndexedDb = () =>
-  typeof window !== "undefined" && typeof window.indexedDB !== "undefined";
+  typeof window !== 'undefined' && typeof window.indexedDB !== 'undefined';
 
-const normalizeChannelId = (channelId?: string | null) => channelId?.trim() || null;
+const normalizeChannelId = (channelId?: string | null) =>
+  channelId?.trim() || null;
 
-const normalizeMessageId = (messageId?: string | null) => messageId?.trim() || null;
+const normalizeMessageId = (messageId?: string | null) =>
+  messageId?.trim() || null;
 
 export const buildRetainedChannelImageAssetScopeIds = ({
   activeChannelId,
@@ -79,7 +85,7 @@ export const buildRetainedChannelImageAssetScopeIds = ({
 }) => {
   const normalizedActiveChannelId = normalizeChannelId(activeChannelId);
   const normalizedPreviousChannelIds = previousRetainedChannelIds
-    .map((channelId) => normalizeChannelId(channelId))
+    .map(channelId => normalizeChannelId(channelId))
     .filter((channelId): channelId is string => Boolean(channelId));
 
   if (!normalizedActiveChannelId) {
@@ -90,7 +96,7 @@ export const buildRetainedChannelImageAssetScopeIds = ({
     ...new Set([
       normalizedActiveChannelId,
       ...normalizedPreviousChannelIds.filter(
-        (channelId) => channelId !== normalizedActiveChannelId,
+        channelId => channelId !== normalizedActiveChannelId
       ),
     ]),
   ].slice(0, retentionLimit);
@@ -99,12 +105,12 @@ export const buildRetainedChannelImageAssetScopeIds = ({
 const buildChannelImageAssetKey = (
   channelId: string,
   messageId: string,
-  variant: ChannelImageAssetVariant,
+  variant: ChannelImageAssetVariant
 ) => `${channelId}::${messageId}::${variant}`;
 
 const revokeRuntimeChannelImageAssetEntry = (
   assetKey: string,
-  store = runtimeChannelImageAssets,
+  store = runtimeChannelImageAssets
 ) => {
   const runtimeEntry = store.get(assetKey);
   if (!runtimeEntry) {
@@ -127,19 +133,27 @@ const getChannelImageAssetDb = async (): Promise<IDBDatabase | null> => {
       onOpenError: () => {
         channelImageAssetDbPromise = null;
       },
-      onUpgrade: (database) => {
-        if (database.objectStoreNames.contains(CHANNEL_IMAGE_ASSET_STORE_NAME)) {
+      onUpgrade: database => {
+        if (
+          database.objectStoreNames.contains(CHANNEL_IMAGE_ASSET_STORE_NAME)
+        ) {
           database.deleteObjectStore(CHANNEL_IMAGE_ASSET_STORE_NAME);
         }
 
-        const store = database.createObjectStore(CHANNEL_IMAGE_ASSET_STORE_NAME, {
-          keyPath: "key",
-        });
+        const store = database.createObjectStore(
+          CHANNEL_IMAGE_ASSET_STORE_NAME,
+          {
+            keyPath: 'key',
+          }
+        );
 
-        store.createIndex(CHANNEL_IMAGE_ASSET_CHANNEL_INDEX, CHANNEL_IMAGE_ASSET_CHANNEL_INDEX);
+        store.createIndex(
+          CHANNEL_IMAGE_ASSET_CHANNEL_INDEX,
+          CHANNEL_IMAGE_ASSET_CHANNEL_INDEX
+        );
         store.createIndex(CHANNEL_IMAGE_ASSET_CHANNEL_VARIANT_INDEX, [
           CHANNEL_IMAGE_ASSET_CHANNEL_INDEX,
-          "variant",
+          'variant',
         ]);
       },
     });
@@ -149,20 +163,25 @@ const getChannelImageAssetDb = async (): Promise<IDBDatabase | null> => {
 };
 
 const readPersistedChannelImageAssetRecord = async (
-  assetKey: string,
+  assetKey: string
 ): Promise<PersistedChannelImageAssetRecord | null> => {
   const database = await getChannelImageAssetDb();
   if (!database) {
     return null;
   }
 
-  return new Promise((resolve) => {
-    const transaction = database.transaction(CHANNEL_IMAGE_ASSET_STORE_NAME, "readonly");
+  return new Promise(resolve => {
+    const transaction = database.transaction(
+      CHANNEL_IMAGE_ASSET_STORE_NAME,
+      'readonly'
+    );
     const store = transaction.objectStore(CHANNEL_IMAGE_ASSET_STORE_NAME);
     const request = store.get(assetKey);
 
     request.onsuccess = () => {
-      resolve((request.result as PersistedChannelImageAssetRecord | undefined) ?? null);
+      resolve(
+        (request.result as PersistedChannelImageAssetRecord | undefined) ?? null
+      );
     };
     request.onerror = () => {
       resolve(null);
@@ -172,15 +191,18 @@ const readPersistedChannelImageAssetRecord = async (
 
 const listPersistedChannelImageAssetRecords = async (
   channelId: string,
-  variant?: ChannelImageAssetVariant,
+  variant?: ChannelImageAssetVariant
 ): Promise<PersistedChannelImageAssetRecord[]> => {
   const database = await getChannelImageAssetDb();
   if (!database) {
     return [];
   }
 
-  return new Promise((resolve) => {
-    const transaction = database.transaction(CHANNEL_IMAGE_ASSET_STORE_NAME, "readonly");
+  return new Promise(resolve => {
+    const transaction = database.transaction(
+      CHANNEL_IMAGE_ASSET_STORE_NAME,
+      'readonly'
+    );
     const store = transaction.objectStore(CHANNEL_IMAGE_ASSET_STORE_NAME);
     const source = variant
       ? store.index(CHANNEL_IMAGE_ASSET_CHANNEL_VARIANT_INDEX)
@@ -196,14 +218,19 @@ const listPersistedChannelImageAssetRecords = async (
   });
 };
 
-const touchPersistedChannelImageAssetRecord = async (record: PersistedChannelImageAssetRecord) => {
+const touchPersistedChannelImageAssetRecord = async (
+  record: PersistedChannelImageAssetRecord
+) => {
   const database = await getChannelImageAssetDb();
   if (!database) {
     return;
   }
 
-  await new Promise<void>((resolve) => {
-    const transaction = database.transaction(CHANNEL_IMAGE_ASSET_STORE_NAME, "readwrite");
+  await new Promise<void>(resolve => {
+    const transaction = database.transaction(
+      CHANNEL_IMAGE_ASSET_STORE_NAME,
+      'readwrite'
+    );
     const store = transaction.objectStore(CHANNEL_IMAGE_ASSET_STORE_NAME);
     store.put({
       ...record,
@@ -215,14 +242,19 @@ const touchPersistedChannelImageAssetRecord = async (record: PersistedChannelIma
   });
 };
 
-const writePersistedChannelImageAssetRecord = async (record: PersistedChannelImageAssetRecord) => {
+const writePersistedChannelImageAssetRecord = async (
+  record: PersistedChannelImageAssetRecord
+) => {
   const database = await getChannelImageAssetDb();
   if (!database) {
     return;
   }
 
-  await new Promise<void>((resolve) => {
-    const transaction = database.transaction(CHANNEL_IMAGE_ASSET_STORE_NAME, "readwrite");
+  await new Promise<void>(resolve => {
+    const transaction = database.transaction(
+      CHANNEL_IMAGE_ASSET_STORE_NAME,
+      'readwrite'
+    );
     const store = transaction.objectStore(CHANNEL_IMAGE_ASSET_STORE_NAME);
     store.put(record);
     transaction.oncomplete = () => resolve();
@@ -233,7 +265,7 @@ const writePersistedChannelImageAssetRecord = async (record: PersistedChannelIma
 
 const deletePersistedChannelImageAssetKeys = async (assetKeys: string[]) => {
   const normalizedAssetKeys = [...new Set(assetKeys)]
-    .map((assetKey) => assetKey.trim())
+    .map(assetKey => assetKey.trim())
     .filter(Boolean);
   if (normalizedAssetKeys.length === 0) {
     return;
@@ -244,11 +276,14 @@ const deletePersistedChannelImageAssetKeys = async (assetKeys: string[]) => {
     return;
   }
 
-  await new Promise<void>((resolve) => {
-    const transaction = database.transaction(CHANNEL_IMAGE_ASSET_STORE_NAME, "readwrite");
+  await new Promise<void>(resolve => {
+    const transaction = database.transaction(
+      CHANNEL_IMAGE_ASSET_STORE_NAME,
+      'readwrite'
+    );
     const store = transaction.objectStore(CHANNEL_IMAGE_ASSET_STORE_NAME);
 
-    normalizedAssetKeys.forEach((assetKey) => {
+    normalizedAssetKeys.forEach(assetKey => {
       store.delete(assetKey);
     });
 
@@ -260,7 +295,7 @@ const deletePersistedChannelImageAssetKeys = async (assetKeys: string[]) => {
 
 const hydrateRuntimeChannelImageAssetUrl = (
   record: PersistedChannelImageAssetRecord,
-  store = runtimeChannelImageAssets,
+  store = runtimeChannelImageAssets
 ) => {
   const existingRuntimeEntry = store.get(record.key);
   if (existingRuntimeEntry) {
@@ -298,7 +333,7 @@ const createPersistedChannelImageAssetRecord = ({
     messageId,
     variant,
     blob,
-    mimeType: blob.type || "application/octet-stream",
+    mimeType: blob.type || 'application/octet-stream',
     byteSize: blob.size,
     updatedAt: now,
     lastAccessedAt: now,
@@ -307,24 +342,30 @@ const createPersistedChannelImageAssetRecord = ({
 
 const prunePersistedFullChannelImageAssets = async (
   channelId: string,
-  protectedAssetKey?: string | null,
+  protectedAssetKey?: string | null
 ) => {
-  const persistedFullRecords = await listPersistedChannelImageAssetRecords(channelId, "full");
+  const persistedFullRecords = await listPersistedChannelImageAssetRecords(
+    channelId,
+    'full'
+  );
   if (persistedFullRecords.length === 0) {
     return;
   }
 
   let totalBytes = persistedFullRecords.reduce(
     (totalSize, record) => totalSize + record.byteSize,
-    0,
+    0
   );
   if (totalBytes <= CHANNEL_IMAGE_ASSET_FULL_BUDGET_BYTES) {
     return;
   }
 
   const deletableRecords = persistedFullRecords
-    .filter((record) => record.key !== protectedAssetKey)
-    .sort((leftRecord, rightRecord) => leftRecord.lastAccessedAt - rightRecord.lastAccessedAt);
+    .filter(record => record.key !== protectedAssetKey)
+    .sort(
+      (leftRecord, rightRecord) =>
+        leftRecord.lastAccessedAt - rightRecord.lastAccessedAt
+    );
 
   const assetKeysToDelete: string[] = [];
 
@@ -338,7 +379,7 @@ const prunePersistedFullChannelImageAssets = async (
   }
 
   await deletePersistedChannelImageAssetKeys(assetKeysToDelete);
-  assetKeysToDelete.forEach((assetKey) => {
+  assetKeysToDelete.forEach(assetKey => {
     revokeRuntimeChannelImageAssetEntry(assetKey);
   });
 };
@@ -347,7 +388,7 @@ const persistChannelImageAssetBlob = async (
   channelId: string,
   messageId: string,
   variant: ChannelImageAssetVariant,
-  blob: Blob,
+  blob: Blob
 ) => {
   const normalizedChannelId = normalizeChannelId(channelId);
   const normalizedMessageId = normalizeMessageId(messageId);
@@ -364,7 +405,7 @@ const persistChannelImageAssetBlob = async (
 
   revokeRuntimeChannelImageAssetEntry(record.key);
   await writePersistedChannelImageAssetRecord(record);
-  if (variant === "full") {
+  if (variant === 'full') {
     await prunePersistedFullChannelImageAssets(normalizedChannelId, record.key);
   }
 
@@ -375,7 +416,7 @@ const cacheRuntimeChannelImageAssetBlob = (
   channelId: string,
   messageId: string,
   variant: ChannelImageAssetVariant,
-  blob: Blob,
+  blob: Blob
 ) => {
   const record = createPersistedChannelImageAssetRecord({
     channelId,
@@ -388,15 +429,23 @@ const cacheRuntimeChannelImageAssetBlob = (
   return hydrateRuntimeChannelImageAssetUrl(record);
 };
 
-const resolveFullChannelImageAssetBlob = async (message: CacheableImageMessage) =>
-  fetchChatFileBlobWithFallback(message.message, message.file_storage_path, message.file_mime_type);
+const resolveFullChannelImageAssetBlob = async (
+  message: CacheableImageMessage
+) =>
+  fetchChatFileBlobWithFallback(
+    message.message,
+    message.file_storage_path,
+    message.file_mime_type
+  );
 
-const resolveThumbnailChannelImageAssetBlob = async (message: CacheableImageMessage) => {
+const resolveThumbnailChannelImageAssetBlob = async (
+  message: CacheableImageMessage
+) => {
   const persistedPreviewPath = message.file_preview_url?.trim() || null;
   if (persistedPreviewPath) {
     const previewBlob = await fetchChatFileBlobWithFallback(
       persistedPreviewPath,
-      persistedPreviewPath,
+      persistedPreviewPath
     );
     if (previewBlob) {
       return previewBlob;
@@ -414,21 +463,25 @@ const resolveThumbnailChannelImageAssetBlob = async (message: CacheableImageMess
 export const isCacheableChannelImageMessage = (
   message: Pick<
     ChatMessage,
-    "message_type" | "message" | "file_name" | "file_mime_type" | "file_preview_url"
-  >,
+    | 'message_type'
+    | 'message'
+    | 'file_name'
+    | 'file_mime_type'
+    | 'file_preview_url'
+  >
 ) => {
-  if (message.message_type === "image") {
+  if (message.message_type === 'image') {
     return true;
   }
 
-  if (message.message_type !== "file") {
+  if (message.message_type !== 'file') {
     return false;
   }
 
   const fileExtension = resolveFileExtension(
     message.file_name ?? null,
     message.message,
-    message.file_mime_type,
+    message.file_mime_type
   );
 
   return isImageFileExtensionOrMime(fileExtension, message.file_mime_type);
@@ -437,7 +490,7 @@ export const isCacheableChannelImageMessage = (
 export const getRuntimeChannelImageAssetUrl = (
   channelId: string,
   messageId: string,
-  variant: ChannelImageAssetVariant,
+  variant: ChannelImageAssetVariant
 ) => {
   const normalizedChannelId = normalizeChannelId(channelId);
   const normalizedMessageId = normalizeMessageId(messageId);
@@ -445,13 +498,17 @@ export const getRuntimeChannelImageAssetUrl = (
     return null;
   }
 
-  const assetKey = buildChannelImageAssetKey(normalizedChannelId, normalizedMessageId, variant);
+  const assetKey = buildChannelImageAssetKey(
+    normalizedChannelId,
+    normalizedMessageId,
+    variant
+  );
   const runtimeEntry = runtimeChannelImageAssets.get(assetKey) ?? null;
   if (!runtimeEntry) {
     return null;
   }
 
-  void readPersistedChannelImageAssetRecord(assetKey).then((record) => {
+  void readPersistedChannelImageAssetRecord(assetKey).then(record => {
     if (!record) {
       return;
     }
@@ -465,7 +522,7 @@ export const getRuntimeChannelImageAssetUrl = (
 export const loadCachedChannelImageAssetUrl = async (
   channelId: string,
   messageId: string,
-  variant: ChannelImageAssetVariant,
+  variant: ChannelImageAssetVariant
 ) => {
   const normalizedChannelId = normalizeChannelId(channelId);
   const normalizedMessageId = normalizeMessageId(messageId);
@@ -476,18 +533,18 @@ export const loadCachedChannelImageAssetUrl = async (
   const existingRuntimeUrl = getRuntimeChannelImageAssetUrl(
     normalizedChannelId,
     normalizedMessageId,
-    variant,
+    variant
   );
   if (existingRuntimeUrl) {
     return existingRuntimeUrl;
   }
 
-  if (variant === "full") {
+  if (variant === 'full') {
     return null;
   }
 
   const record = await readPersistedChannelImageAssetRecord(
-    buildChannelImageAssetKey(normalizedChannelId, normalizedMessageId, variant),
+    buildChannelImageAssetKey(normalizedChannelId, normalizedMessageId, variant)
   );
   if (!record) {
     return null;
@@ -500,7 +557,7 @@ export const loadCachedChannelImageAssetUrl = async (
 export const ensureChannelImageAssetUrl = async (
   channelId: string,
   message: CacheableImageMessage,
-  variant: ChannelImageAssetVariant,
+  variant: ChannelImageAssetVariant
 ) => {
   const normalizedChannelId = normalizeChannelId(channelId);
   const normalizedMessageId = normalizeMessageId(message.id);
@@ -511,13 +568,17 @@ export const ensureChannelImageAssetUrl = async (
   const existingRuntimeUrl = getRuntimeChannelImageAssetUrl(
     normalizedChannelId,
     normalizedMessageId,
-    variant,
+    variant
   );
   if (existingRuntimeUrl) {
     return existingRuntimeUrl;
   }
 
-  const assetKey = buildChannelImageAssetKey(normalizedChannelId, normalizedMessageId, variant);
+  const assetKey = buildChannelImageAssetKey(
+    normalizedChannelId,
+    normalizedMessageId,
+    variant
+  );
   const pendingAssetLoad = pendingChannelImageAssetLoads.get(assetKey);
   if (pendingAssetLoad) {
     return await pendingAssetLoad;
@@ -527,38 +588,43 @@ export const ensureChannelImageAssetUrl = async (
     const persistedUrl = await loadCachedChannelImageAssetUrl(
       normalizedChannelId,
       normalizedMessageId,
-      variant,
+      variant
     );
     if (persistedUrl) {
       return persistedUrl;
     }
 
     const resolvedBlob =
-      variant === "thumbnail"
+      variant === 'thumbnail'
         ? await resolveThumbnailChannelImageAssetBlob(message)
         : await resolveFullChannelImageAssetBlob(message);
 
     if (!resolvedBlob) {
       const fallbackMessageUrl = message.message.trim();
-      return isDirectChatAssetUrl(fallbackMessageUrl) ? fallbackMessageUrl : null;
+      return isDirectChatAssetUrl(fallbackMessageUrl)
+        ? fallbackMessageUrl
+        : null;
     }
 
-    if (activeChannelImageAssetScopeId && activeChannelImageAssetScopeId !== normalizedChannelId) {
+    if (
+      activeChannelImageAssetScopeId &&
+      activeChannelImageAssetScopeId !== normalizedChannelId
+    ) {
       return null;
     }
 
-    return variant === "full"
+    return variant === 'full'
       ? cacheRuntimeChannelImageAssetBlob(
           normalizedChannelId,
           normalizedMessageId,
           variant,
-          resolvedBlob,
+          resolvedBlob
         )
       : await persistChannelImageAssetBlob(
           normalizedChannelId,
           normalizedMessageId,
           variant,
-          resolvedBlob,
+          resolvedBlob
         );
   })();
 
@@ -577,7 +643,7 @@ export const ensureChannelImageAssetUrl = async (
 export const seedChannelImageAssetsFromFile = async (
   channelId: string,
   messageId: string,
-  file: File,
+  file: File
 ) => {
   const normalizedChannelId = normalizeChannelId(channelId);
   const normalizedMessageId = normalizeMessageId(messageId);
@@ -591,16 +657,16 @@ export const seedChannelImageAssetsFromFile = async (
   const fullUrl = cacheRuntimeChannelImageAssetBlob(
     normalizedChannelId,
     normalizedMessageId,
-    "full",
-    file,
+    'full',
+    file
   );
   const thumbnailBlob = await createImagePreviewBlob(file);
   const thumbnailUrl = thumbnailBlob
     ? await persistChannelImageAssetBlob(
         normalizedChannelId,
         normalizedMessageId,
-        "thumbnail",
-        thumbnailBlob,
+        'thumbnail',
+        thumbnailBlob
       )
     : fullUrl;
 
@@ -612,7 +678,7 @@ export const seedChannelImageAssetsFromFile = async (
 
 export const deleteChannelImageAssetsByMessageIds = async (
   channelId: string,
-  messageIds: Array<string | null | undefined>,
+  messageIds: Array<string | null | undefined>
 ) => {
   const normalizedChannelId = normalizeChannelId(channelId);
   if (!normalizedChannelId) {
@@ -620,30 +686,33 @@ export const deleteChannelImageAssetsByMessageIds = async (
   }
 
   const normalizedMessageIds = [...new Set(messageIds)]
-    .map((messageId) => messageId?.trim() || "")
+    .map(messageId => messageId?.trim() || '')
     .filter(Boolean);
   if (normalizedMessageIds.length === 0) {
     return;
   }
 
-  const assetKeys = normalizedMessageIds.flatMap((messageId) => [
-    buildChannelImageAssetKey(normalizedChannelId, messageId, "thumbnail"),
-    buildChannelImageAssetKey(normalizedChannelId, messageId, "full"),
+  const assetKeys = normalizedMessageIds.flatMap(messageId => [
+    buildChannelImageAssetKey(normalizedChannelId, messageId, 'thumbnail'),
+    buildChannelImageAssetKey(normalizedChannelId, messageId, 'full'),
   ]);
 
   await deletePersistedChannelImageAssetKeys(assetKeys);
-  assetKeys.forEach((assetKey) => {
+  assetKeys.forEach(assetKey => {
     revokeRuntimeChannelImageAssetEntry(assetKey);
   });
 };
 
 export const purgeChannelImageAssetsExcept = async (
-  retainedChannelIds?: string | Array<string | null | undefined> | null,
+  retainedChannelIds?: string | Array<string | null | undefined> | null
 ) => {
   const normalizedRetainedChannelIds = new Set(
-    (Array.isArray(retainedChannelIds) ? retainedChannelIds : [retainedChannelIds])
-      .map((channelId) => normalizeChannelId(channelId))
-      .filter((channelId): channelId is string => Boolean(channelId)),
+    (Array.isArray(retainedChannelIds)
+      ? retainedChannelIds
+      : [retainedChannelIds]
+    )
+      .map(channelId => normalizeChannelId(channelId))
+      .filter((channelId): channelId is string => Boolean(channelId))
   );
 
   for (const [assetKey, runtimeEntry] of runtimeChannelImageAssets) {
@@ -659,19 +728,24 @@ export const purgeChannelImageAssetsExcept = async (
     return;
   }
 
-  await new Promise<void>((resolve) => {
-    const transaction = database.transaction(CHANNEL_IMAGE_ASSET_STORE_NAME, "readwrite");
+  await new Promise<void>(resolve => {
+    const transaction = database.transaction(
+      CHANNEL_IMAGE_ASSET_STORE_NAME,
+      'readwrite'
+    );
     const store = transaction.objectStore(CHANNEL_IMAGE_ASSET_STORE_NAME);
     const request = store.getAll();
 
     request.onsuccess = () => {
-      ((request.result || []) as PersistedChannelImageAssetRecord[]).forEach((record) => {
-        if (normalizedRetainedChannelIds.has(record.channelId)) {
-          return;
-        }
+      ((request.result || []) as PersistedChannelImageAssetRecord[]).forEach(
+        record => {
+          if (normalizedRetainedChannelIds.has(record.channelId)) {
+            return;
+          }
 
-        store.delete(record.key);
-      });
+          store.delete(record.key);
+        }
+      );
     };
 
     transaction.oncomplete = () => resolve();
@@ -680,7 +754,9 @@ export const purgeChannelImageAssetsExcept = async (
   });
 };
 
-export const activateChannelImageAssetScope = async (channelId?: string | null) => {
+export const activateChannelImageAssetScope = async (
+  channelId?: string | null
+) => {
   const normalizedChannelId = normalizeChannelId(channelId);
   activeChannelImageAssetScopeId = normalizedChannelId;
   if (!normalizedChannelId) {

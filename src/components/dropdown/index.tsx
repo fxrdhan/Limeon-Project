@@ -1,22 +1,29 @@
-import React, { useRef, useCallback, RefObject, useEffect, useState, useId } from "react";
-import type { DropdownProps, CheckboxDropdownProps } from "@/types";
-import ValidationOverlay from "@/components/validation-overlay";
-import DropdownButton from "./components/DropdownButton";
-import DropdownMenu from "./components/DropdownMenu";
-import HoverDetailPortal from "./components/HoverDetailPortal";
-import { DropdownProvider } from "./providers/DropdownContext";
-import { useDropdownState } from "./hooks/useDropdownState";
-import { useDropdownSearch } from "./hooks/useDropdownSearch";
-import { useDropdownValidation } from "./hooks/useDropdownValidation";
-import { useDropdownPosition } from "./hooks/useDropdownPosition";
-import { useKeyboardNavigation } from "./hooks/useKeyboardNavigation";
+import React, {
+  useRef,
+  useCallback,
+  RefObject,
+  useEffect,
+  useState,
+  useId,
+} from 'react';
+import type { DropdownProps, CheckboxDropdownProps } from '@/types';
+import ValidationOverlay from '@/components/validation-overlay';
+import DropdownButton from './components/DropdownButton';
+import DropdownMenu from './components/DropdownMenu';
+import HoverDetailPortal from './components/HoverDetailPortal';
+import { DropdownProvider } from './providers/DropdownContext';
+import { useDropdownState } from './hooks/useDropdownState';
+import { useDropdownSearch } from './hooks/useDropdownSearch';
+import { useDropdownValidation } from './hooks/useDropdownValidation';
+import { useDropdownPosition } from './hooks/useDropdownPosition';
+import { useKeyboardNavigation } from './hooks/useKeyboardNavigation';
 // useDropdownHover merged into useDropdownEffects
 // useScrollState merged into useScrollManagement
-import { useTextExpansion } from "./hooks/useTextExpansion";
-import { useFocusManagement } from "./hooks/useFocusManagement";
-import { useScrollManagement } from "./hooks/useScrollManagement";
-import { useDropdownEffects } from "./hooks/useDropdownEffects";
-import { useHoverDetail } from "./hooks/useHoverDetail";
+import { useTextExpansion } from './hooks/useTextExpansion';
+import { useFocusManagement } from './hooks/useFocusManagement';
+import { useScrollManagement } from './hooks/useScrollManagement';
+import { useDropdownEffects } from './hooks/useDropdownEffects';
+import { useHoverDetail } from './hooks/useHoverDetail';
 
 let pinnedDropdownId: string | null = null;
 let activeManagedDropdownId: string | null = null;
@@ -27,10 +34,10 @@ function Dropdown(props: DropdownProps): React.JSX.Element;
 function Dropdown(props: CheckboxDropdownProps): React.JSX.Element;
 function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
   const {
-    mode = "input",
+    mode = 'input',
     options,
     value,
-    placeholder = "-- Pilih --",
+    placeholder = '-- Pilih --',
     onAddNew,
     persistOpen = false,
     onPersistOpenClear,
@@ -47,31 +54,35 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     name, // Used for form field identification and validation
     hoverToOpen = false,
     // Portal width control
-    portalWidth = "auto",
+    portalWidth = 'auto',
     // Position control
-    position = "auto",
+    position = 'auto',
     // Alignment control
-    align = "right",
+    align = 'right',
     // Hover detail props
     enableHoverDetail = false,
     hoverDetailDelay = 800,
     onFetchHoverDetail,
   } = allProps;
 
-  const withCheckbox = "withCheckbox" in allProps && allProps.withCheckbox;
-  const withRadio = "withRadio" in allProps ? allProps.withRadio : false;
+  const withCheckbox = 'withCheckbox' in allProps && allProps.withCheckbox;
+  const withRadio = 'withRadio' in allProps ? allProps.withRadio : false;
   const instanceId = useId();
 
   // Type guard for checkbox mode - memoized to prevent useCallback dependency changes
   const isCheckboxMode = useCallback(
-    (props: DropdownProps | CheckboxDropdownProps): props is CheckboxDropdownProps => {
-      return "withCheckbox" in props && props.withCheckbox === true;
+    (
+      props: DropdownProps | CheckboxDropdownProps
+    ): props is CheckboxDropdownProps => {
+      return 'withCheckbox' in props && props.withCheckbox === true;
     },
-    [],
+    []
   );
 
   // For single selection (radio) mode
-  const selectedOption = !withCheckbox ? options.find((option) => option?.id === value) : null;
+  const selectedOption = !withCheckbox
+    ? options.find(option => option?.id === value)
+    : null;
 
   // Refs
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -87,8 +98,9 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
 
   // Hooks
   const shouldKeepDropdownOpen = useCallback(
-    () => persistOpen || pinnedOpenRef.current || pinnedDropdownId === instanceId,
-    [instanceId, persistOpen],
+    () =>
+      persistOpen || pinnedOpenRef.current || pinnedDropdownId === instanceId,
+    [instanceId, persistOpen]
   );
   const shouldSkipOpenFocus = useCallback(() => {
     const shouldSkip = suppressFocusOnNextOpenRef.current;
@@ -131,7 +143,10 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
   }, [actualCloseDropdown, onPersistOpenClear, releasePinnedOpen]);
 
   const closeOtherActiveDropdown = useCallback(() => {
-    if (activeManagedDropdownId !== null && activeManagedDropdownId !== instanceId) {
+    if (
+      activeManagedDropdownId !== null &&
+      activeManagedDropdownId !== instanceId
+    ) {
       activeManagedDropdownCloseCallback?.();
     }
   }, [instanceId]);
@@ -157,11 +172,16 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
       onPersistOpenClear,
       releasePinnedOpen,
       toggleDropdown,
-    ],
+    ]
   );
 
-  const { searchTerm, searchState, filteredOptions, handleSearchChange, resetSearch } =
-    useDropdownSearch(options, searchList);
+  const {
+    searchTerm,
+    searchState,
+    filteredOptions,
+    handleSearchChange,
+    resetSearch,
+  } = useDropdownSearch(options, searchList);
 
   const {
     hasError,
@@ -178,37 +198,47 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     validate,
     required,
     value:
-      typeof value === "string" ? value : Array.isArray(value) && value.length > 0 ? value[0] : "",
+      typeof value === 'string'
+        ? value
+        : Array.isArray(value) && value.length > 0
+          ? value[0]
+          : '',
     showValidationOnBlur,
     validationAutoHide,
     validationAutoHideDelay,
   });
 
-  const { clearPendingFocus, manageFocusOnOpen, handleFocusOut } = useFocusManagement({
-    isOpen: effectiveIsOpen,
-    searchList,
-    touched,
-    setTouched,
-    actualCloseDropdown: closeDropdownAndReleasePin,
-    shouldKeepOpen: shouldKeepDropdownOpen,
-    shouldSkipOpenFocus,
-    dropdownRef,
-    dropdownMenuRef,
-    searchInputRef,
-    optionsContainerRef,
-    mode,
-  });
-
-  const { dropDirection, portalStyle, isPositionReady, calculateDropdownPosition, resetPosition } =
-    useDropdownPosition(
-      effectiveIsOpen,
-      buttonRef,
+  const { clearPendingFocus, manageFocusOnOpen, handleFocusOut } =
+    useFocusManagement({
+      isOpen: effectiveIsOpen,
+      searchList,
+      touched,
+      setTouched,
+      actualCloseDropdown: closeDropdownAndReleasePin,
+      shouldKeepOpen: shouldKeepDropdownOpen,
+      shouldSkipOpenFocus,
+      dropdownRef,
       dropdownMenuRef,
-      portalWidth,
-      position,
-      align,
-      filteredOptions,
-    );
+      searchInputRef,
+      optionsContainerRef,
+      mode,
+    });
+
+  const {
+    dropDirection,
+    portalStyle,
+    isPositionReady,
+    calculateDropdownPosition,
+    resetPosition,
+  } = useDropdownPosition(
+    effectiveIsOpen,
+    buttonRef,
+    dropdownMenuRef,
+    portalWidth,
+    position,
+    align,
+    filteredOptions
+  );
 
   const handleAddNewPreservingDropdown = useCallback(
     (term: string) => {
@@ -221,7 +251,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
       pinDropdownOpen();
       onAddNew(term);
     },
-    [clearPendingFocus, onAddNew, pinDropdownOpen],
+    [clearPendingFocus, onAddNew, pinDropdownOpen]
   );
 
   useEffect(() => {
@@ -249,7 +279,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     }
 
     if (!wasFrozen && isMenuFrozen) {
-      frozenValueRef.current = typeof value === "string" ? value : null;
+      frozenValueRef.current = typeof value === 'string' ? value : null;
       return;
     }
 
@@ -274,7 +304,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
         // Multiple selection for checkbox mode
         const currentValues = allProps.value;
         const newValues = currentValues.includes(optionId)
-          ? currentValues.filter((id) => id !== optionId)
+          ? currentValues.filter(id => id !== optionId)
           : [...currentValues, optionId];
         allProps.onChange(newValues);
         if (newValues.length > 0) {
@@ -285,7 +315,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
         // Single selection for radio/default mode
         const singleProps = allProps as DropdownProps;
         singleProps.onChange(optionId);
-        if (optionId && optionId.trim() !== "") {
+        if (optionId && optionId.trim() !== '') {
           handleCloseValidation();
         }
         closeDropdownAndReleasePin();
@@ -300,7 +330,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
       handleCloseValidation,
       resetSearch,
       isCheckboxMode,
-    ],
+    ]
   );
 
   const {
@@ -313,7 +343,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     handleDropdownKeyDown,
   } = useKeyboardNavigation({
     isOpen: effectiveIsOpen,
-    value: typeof value === "string" ? value : undefined,
+    value: typeof value === 'string' ? value : undefined,
     currentFilteredOptions: filteredOptions,
     setExpandedId,
     searchState,
@@ -322,7 +352,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     onAddNew: handleAddNewPreservingDropdown,
     onCloseDropdown: closeDropdownAndReleasePin,
     onCloseValidation: handleCloseValidation,
-    autoHighlightOnOpen: mode !== "text",
+    autoHighlightOnOpen: mode !== 'text',
     optionsContainerRef: optionsContainerRef as RefObject<HTMLDivElement>,
   });
 
@@ -352,7 +382,13 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
 
     suppressFocusOnNextOpenRef.current = true;
     openDropdownExclusively();
-  }, [isMenuFrozen, isClosing, isOpen, openDropdownExclusively, shouldKeepDropdownOpen]);
+  }, [
+    isMenuFrozen,
+    isClosing,
+    isOpen,
+    openDropdownExclusively,
+    shouldKeepDropdownOpen,
+  ]);
 
   useEffect(() => {
     if (!effectiveIsOpen) return;
@@ -365,31 +401,43 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
       if (!(target instanceof Node)) return;
 
       const isInsideDropdown =
-        dropdownRef.current?.contains(target) || dropdownMenuRef.current?.contains(target);
+        dropdownRef.current?.contains(target) ||
+        dropdownMenuRef.current?.contains(target);
       const isInsideModal =
-        target instanceof Element && Boolean(target.closest('[role="dialog"][aria-modal="true"]'));
+        target instanceof Element &&
+        Boolean(target.closest('[role="dialog"][aria-modal="true"]'));
 
       if (!isInsideDropdown && !isInsideModal) {
         closeDropdownAndReleasePin();
       }
     };
 
-    document.addEventListener("pointerdown", handlePointerDownOutside, true);
+    document.addEventListener('pointerdown', handlePointerDownOutside, true);
 
     return () => {
-      document.removeEventListener("pointerdown", handlePointerDownOutside, true);
+      document.removeEventListener(
+        'pointerdown',
+        handlePointerDownOutside,
+        true
+      );
     };
-  }, [closeDropdownAndReleasePin, effectiveIsOpen, isMenuFrozen, shouldKeepDropdownOpen]);
+  }, [
+    closeDropdownAndReleasePin,
+    effectiveIsOpen,
+    isMenuFrozen,
+    shouldKeepDropdownOpen,
+  ]);
 
   useEffect(() => {
     if (!effectiveIsOpen || !shouldKeepDropdownOpen()) return;
-    if (!selectedOption || searchTerm.trim() === "") return;
+    if (!selectedOption || searchTerm.trim() === '') return;
 
     const isSelectedOptionVisible = filteredOptions.some(
-      (option) => option.id === selectedOption.id,
+      option => option.id === selectedOption.id
     );
     const persistedValue = frozenValueRef.current;
-    const hasSelectionChangedWhilePersisted = persistedValue !== null && persistedValue !== value;
+    const hasSelectionChangedWhilePersisted =
+      persistedValue !== null && persistedValue !== value;
 
     if (!isSelectedOptionVisible && hasSelectionChangedWhilePersisted) {
       frozenValueRef.current = null;
@@ -430,7 +478,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     isOpen: effectiveIsOpen,
     applyOpenStyles,
     filteredOptions,
-    value: typeof value === "string" ? value : undefined,
+    value: typeof value === 'string' ? value : undefined,
     setApplyOpenStyles,
     setExpandedId,
     calculateDropdownPosition,
@@ -476,7 +524,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
       }
       handleSearchChange(e);
     },
-    [enableHoverDetail, handleSearchChange, hideHoverDetail],
+    [enableHoverDetail, handleSearchChange, hideHoverDetail]
   );
 
   const handleButtonBlur = useCallback(() => {
@@ -505,12 +553,20 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
   const handleSearchBarKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (
-        ["ArrowDown", "ArrowUp", "Tab", "PageDown", "PageUp", "Enter", "Escape"].includes(e.key)
+        [
+          'ArrowDown',
+          'ArrowUp',
+          'Tab',
+          'PageDown',
+          'PageUp',
+          'Enter',
+          'Escape',
+        ].includes(e.key)
       ) {
         handleDropdownKeyDown(e as never);
       }
     },
-    [handleDropdownKeyDown],
+    [handleDropdownKeyDown]
   );
 
   const contextValue = {
@@ -571,7 +627,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
   return (
     <DropdownProvider value={contextValue}>
       <div
-        className={`relative inline-flex w-full ${isKeyboardNavigation ? "cursor-none" : ""}`}
+        className={`relative inline-flex w-full ${isKeyboardNavigation ? 'cursor-none' : ''}`}
         ref={dropdownRef}
         onMouseEnter={() => {
           handleTriggerAreaEnter();

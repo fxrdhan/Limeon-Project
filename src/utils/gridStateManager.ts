@@ -1,26 +1,26 @@
-import type { GridApi, GridState } from "ag-grid-community";
-import toast from "react-hot-toast";
+import type { GridApi, GridState } from 'ag-grid-community';
+import toast from 'react-hot-toast';
 
 // Manual grid state management utilities
-const GRID_STATE_PREFIX = "grid_state_";
-const GRID_PAGINATION_ENABLED_PREFIX = "grid_pagination_enabled_";
+const GRID_STATE_PREFIX = 'grid_state_';
+const GRID_PAGINATION_ENABLED_PREFIX = 'grid_pagination_enabled_';
 
 const getSessionStorage = (): Storage => {
   return sessionStorage;
 };
 
 export type TableType =
-  | "items"
-  | "categories"
-  | "types"
-  | "packages"
-  | "dosages"
-  | "manufacturers"
-  | "units"
-  | "suppliers"
-  | "customers"
-  | "patients"
-  | "doctors";
+  | 'items'
+  | 'categories'
+  | 'types'
+  | 'packages'
+  | 'dosages'
+  | 'manufacturers'
+  | 'units'
+  | 'suppliers'
+  | 'customers'
+  | 'patients'
+  | 'doctors';
 
 // Get storage key for specific table
 const getStorageKey = (tableType: TableType): string => {
@@ -63,25 +63,33 @@ const stripTransientGridState = (state: GridState): GridState => ({
 });
 
 const getPaginationEnabled = (gridApi: GridApi): boolean => {
-  return gridApi.getGridOption("pagination") !== false;
+  return gridApi.getGridOption('pagination') !== false;
 };
 
-export const savePaginationEnabledState = (gridApi: GridApi, tableType: TableType): boolean => {
+export const savePaginationEnabledState = (
+  gridApi: GridApi,
+  tableType: TableType
+): boolean => {
   try {
     if (!gridApi || gridApi.isDestroyed()) {
       return false;
     }
 
     const storageKey = getPaginationEnabledStorageKey(tableType);
-    getSessionStorage().setItem(storageKey, JSON.stringify(getPaginationEnabled(gridApi)));
+    getSessionStorage().setItem(
+      storageKey,
+      JSON.stringify(getPaginationEnabled(gridApi))
+    );
     return true;
   } catch (error) {
-    console.error("Failed to save pagination enabled state:", error);
+    console.error('Failed to save pagination enabled state:', error);
     return false;
   }
 };
 
-export const loadSavedPaginationEnabledState = (tableType: TableType): boolean | undefined => {
+export const loadSavedPaginationEnabledState = (
+  tableType: TableType
+): boolean | undefined => {
   try {
     const raw = readPaginationEnabledRaw(tableType);
     if (!raw) {
@@ -89,17 +97,20 @@ export const loadSavedPaginationEnabledState = (tableType: TableType): boolean |
     }
 
     const parsed = JSON.parse(raw);
-    return typeof parsed === "boolean" ? parsed : undefined;
+    return typeof parsed === 'boolean' ? parsed : undefined;
   } catch {
     return undefined;
   }
 };
 
 // Save current grid state to sessionStorage (including pagination state)
-export const saveGridState = (gridApi: GridApi, tableType: TableType): boolean => {
+export const saveGridState = (
+  gridApi: GridApi,
+  tableType: TableType
+): boolean => {
   try {
     if (!gridApi || gridApi.isDestroyed()) {
-      toast.error("Grid tidak tersedia untuk disimpan");
+      toast.error('Grid tidak tersedia untuk disimpan');
       return false;
     }
 
@@ -117,14 +128,17 @@ export const saveGridState = (gridApi: GridApi, tableType: TableType): boolean =
     return true;
     /* c8 ignore next */
   } catch (error) {
-    console.error("Failed to save grid state:", error);
-    toast.error("Gagal menyimpan state grid");
+    console.error('Failed to save grid state:', error);
+    toast.error('Gagal menyimpan state grid');
     return false;
   }
 };
 
 // Auto-save grid state silently (no toast notifications for live save)
-export const autoSaveGridState = (gridApi: GridApi, tableType: TableType): boolean => {
+export const autoSaveGridState = (
+  gridApi: GridApi,
+  tableType: TableType
+): boolean => {
   try {
     if (!gridApi || gridApi.isDestroyed()) {
       return false;
@@ -140,16 +154,19 @@ export const autoSaveGridState = (gridApi: GridApi, tableType: TableType): boole
     return true;
     /* c8 ignore next */
   } catch (error) {
-    console.error("Failed to auto-save grid state:", error);
+    console.error('Failed to auto-save grid state:', error);
     return false;
   }
 };
 
 // Restore grid state from sessionStorage (including pagination state)
-export const restoreGridState = (gridApi: GridApi, tableType: TableType): boolean => {
+export const restoreGridState = (
+  gridApi: GridApi,
+  tableType: TableType
+): boolean => {
   try {
     if (!gridApi || gridApi.isDestroyed()) {
-      toast.error("Grid tidak tersedia untuk direstore");
+      toast.error('Grid tidak tersedia untuk direstore');
       return false;
     }
 
@@ -162,7 +179,11 @@ export const restoreGridState = (gridApi: GridApi, tableType: TableType): boolea
     }
 
     // Validate that savedState is valid JSON before parsing
-    if (savedState.trim() === "" || savedState === "undefined" || savedState === "null") {
+    if (
+      savedState.trim() === '' ||
+      savedState === 'undefined' ||
+      savedState === 'null'
+    ) {
       console.warn(`Invalid saved state for ${tableType}, clearing...`);
       try {
         getSessionStorage().removeItem(storageKey);
@@ -177,14 +198,19 @@ export const restoreGridState = (gridApi: GridApi, tableType: TableType): boolea
       parsedState = JSON.parse(savedState);
     } catch (parseError) {
       console.warn(`Failed to parse saved state for ${tableType}:`, parseError);
-      console.warn(`Corrupted state data:`, savedState.substring(0, 100) + "...");
+      console.warn(
+        `Corrupted state data:`,
+        savedState.substring(0, 100) + '...'
+      );
       // Clear corrupted data
       try {
         getSessionStorage().removeItem(storageKey);
       } catch {
         // ignore
       }
-      toast.error(`Layout tersimpan untuk ${tableType} rusak, menggunakan default`);
+      toast.error(
+        `Layout tersimpan untuk ${tableType} rusak, menggunakan default`
+      );
       return false;
     }
 
@@ -197,15 +223,19 @@ export const restoreGridState = (gridApi: GridApi, tableType: TableType): boolea
     gridApi.setState(parsedState);
 
     if (savedPaginationEnabled !== undefined) {
-      gridApi.setGridOption("pagination", savedPaginationEnabled);
+      gridApi.setGridOption('pagination', savedPaginationEnabled);
 
       if (savedPaginationEnabled && parsedState.pagination?.pageSize) {
-        gridApi.setGridOption("paginationPageSize", parsedState.pagination.pageSize);
+        gridApi.setGridOption(
+          'paginationPageSize',
+          parsedState.pagination.pageSize
+        );
       }
     }
 
     // Only autosize if no column widths were restored (prevent flickering)
-    const hasColumnWidths = (parsedState.columnSizing?.columnSizingModel?.length ?? 0) > 0;
+    const hasColumnWidths =
+      (parsedState.columnSizing?.columnSizingModel?.length ?? 0) > 0;
     if (!hasColumnWidths) {
       // Use requestAnimationFrame to ensure grid is ready for autosizing
       requestAnimationFrame(() => {
@@ -219,8 +249,8 @@ export const restoreGridState = (gridApi: GridApi, tableType: TableType): boolea
 
     return true;
   } catch (error) {
-    console.error("Failed to restore grid state:", error);
-    toast.error("Gagal restore layout grid");
+    console.error('Failed to restore grid state:', error);
+    toast.error('Gagal restore layout grid');
     return false;
   }
 };
@@ -229,7 +259,8 @@ export const restoreGridState = (gridApi: GridApi, tableType: TableType): boolea
 export const clearGridState = (tableType: TableType): boolean => {
   try {
     const storageKey = getStorageKey(tableType);
-    const paginationEnabledStorageKey = getPaginationEnabledStorageKey(tableType);
+    const paginationEnabledStorageKey =
+      getPaginationEnabledStorageKey(tableType);
     try {
       getSessionStorage().removeItem(storageKey);
       getSessionStorage().removeItem(paginationEnabledStorageKey);
@@ -241,8 +272,8 @@ export const clearGridState = (tableType: TableType): boolean => {
     return true;
     /* c8 ignore start */
   } catch (error) {
-    console.error("Failed to clear grid state:", error);
-    toast.error("Gagal menghapus state grid");
+    console.error('Failed to clear grid state:', error);
+    toast.error('Gagal menghapus state grid');
     return false;
   }
   /* c8 ignore stop */
@@ -259,7 +290,9 @@ export const hasSavedState = (tableType: TableType): boolean => {
 };
 
 // Load saved state for auto-restore on grid initialization
-export const loadSavedStateForInit = (tableType: TableType): GridState | undefined => {
+export const loadSavedStateForInit = (
+  tableType: TableType
+): GridState | undefined => {
   try {
     const storageKey = getStorageKey(tableType);
     const savedState = readGridStateRaw(tableType);
@@ -269,7 +302,11 @@ export const loadSavedStateForInit = (tableType: TableType): GridState | undefin
     }
 
     // Validate that savedState is valid JSON before parsing
-    if (savedState.trim() === "" || savedState === "undefined" || savedState === "null") {
+    if (
+      savedState.trim() === '' ||
+      savedState === 'undefined' ||
+      savedState === 'null'
+    ) {
       console.warn(`Invalid saved state for ${tableType}, clearing...`);
       try {
         getSessionStorage().removeItem(storageKey);
@@ -283,7 +320,10 @@ export const loadSavedStateForInit = (tableType: TableType): GridState | undefin
     try {
       parsedState = JSON.parse(savedState);
     } catch (parseError) {
-      console.warn(`Failed to parse saved state for auto-restore (${tableType}):`, parseError);
+      console.warn(
+        `Failed to parse saved state for auto-restore (${tableType}):`,
+        parseError
+      );
       // Clear corrupted data
       try {
         getSessionStorage().removeItem(storageKey);
@@ -297,7 +337,10 @@ export const loadSavedStateForInit = (tableType: TableType): GridState | undefin
     return stripTransientGridState(parsedState);
     /* c8 ignore start */
   } catch (error) {
-    console.error(`Failed to load saved state for auto-restore (${tableType}):`, error);
+    console.error(
+      `Failed to load saved state for auto-restore (${tableType}):`,
+      error
+    );
     return undefined;
   }
   /* c8 ignore stop */
@@ -311,9 +354,9 @@ export const getSavedStateInfo = (tableType: TableType): GridState | null => {
 
     if (
       !savedState ||
-      savedState.trim() === "" ||
-      savedState === "undefined" ||
-      savedState === "null"
+      savedState.trim() === '' ||
+      savedState === 'undefined' ||
+      savedState === 'null'
     ) {
       return null;
     }
@@ -321,7 +364,10 @@ export const getSavedStateInfo = (tableType: TableType): GridState | null => {
     try {
       return JSON.parse(savedState);
     } catch (parseError) {
-      console.warn(`Failed to parse saved state info for ${tableType}:`, parseError);
+      console.warn(
+        `Failed to parse saved state info for ${tableType}:`,
+        parseError
+      );
       // Clear corrupted data
       try {
         getSessionStorage().removeItem(storageKey);
@@ -340,22 +386,23 @@ export const getSavedStateInfo = (tableType: TableType): GridState | null => {
 export const clearAllGridStates = (): boolean => {
   try {
     const allTableTypes: TableType[] = [
-      "items",
-      "categories",
-      "types",
-      "packages",
-      "dosages",
-      "manufacturers",
-      "units",
-      "suppliers",
-      "customers",
-      "patients",
-      "doctors",
+      'items',
+      'categories',
+      'types',
+      'packages',
+      'dosages',
+      'manufacturers',
+      'units',
+      'suppliers',
+      'customers',
+      'patients',
+      'doctors',
     ];
 
-    allTableTypes.forEach((tableType) => {
+    allTableTypes.forEach(tableType => {
       const storageKey = getStorageKey(tableType);
-      const paginationEnabledStorageKey = getPaginationEnabledStorageKey(tableType);
+      const paginationEnabledStorageKey =
+        getPaginationEnabledStorageKey(tableType);
       try {
         getSessionStorage().removeItem(storageKey);
         getSessionStorage().removeItem(paginationEnabledStorageKey);
@@ -368,8 +415,8 @@ export const clearAllGridStates = (): boolean => {
     return true;
     /* c8 ignore start */
   } catch (error) {
-    console.error("Failed to clear all grid states:", error);
-    toast.error("Gagal menghapus semua state grid");
+    console.error('Failed to clear all grid states:', error);
+    toast.error('Gagal menghapus semua state grid');
     return false;
   }
   /* c8 ignore stop */

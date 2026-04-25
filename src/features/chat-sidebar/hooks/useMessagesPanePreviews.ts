@@ -1,13 +1,13 @@
-import { useCallback } from "react";
-import toast from "react-hot-toast";
-import { useDocumentPreviewPortal } from "./useDocumentPreviewPortal";
-import { useMessagesPaneImagePreviews } from "./useMessagesPaneImagePreviews";
-import { CHAT_SIDEBAR_TOASTER_ID } from "../constants";
+import { useCallback } from 'react';
+import toast from 'react-hot-toast';
+import { useDocumentPreviewPortal } from './useDocumentPreviewPortal';
+import { useMessagesPaneImagePreviews } from './useMessagesPaneImagePreviews';
+import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
 import {
   resolveDocumentPreviewResource,
   shouldPreferExternalPdfPreview,
   type PreviewableDocumentMessage,
-} from "../utils/message-preview-assets";
+} from '../utils/message-preview-assets';
 
 export const useMessagesPanePreviews = ({
   currentChannelId,
@@ -34,29 +34,40 @@ export const useMessagesPanePreviews = ({
   });
 
   const openImageInPortal = useCallback(
-    async (...args: Parameters<typeof openImageInPortalBase>): Promise<void> => {
+    async (
+      ...args: Parameters<typeof openImageInPortalBase>
+    ): Promise<void> => {
       closeMessageMenu();
       await openImageInPortalBase(...args);
     },
-    [closeMessageMenu, openImageInPortalBase],
+    [closeMessageMenu, openImageInPortalBase]
   );
 
   const openImageGroupInPortal = useCallback(
-    async (...args: Parameters<typeof openImageGroupInPortalBase>): Promise<void> => {
+    async (
+      ...args: Parameters<typeof openImageGroupInPortalBase>
+    ): Promise<void> => {
       closeMessageMenu();
       await openImageGroupInPortalBase(...args);
     },
-    [closeMessageMenu, openImageGroupInPortalBase],
+    [closeMessageMenu, openImageGroupInPortalBase]
   );
 
   const openDocumentInPortal = useCallback(
-    async (message: PreviewableDocumentMessage, previewName: string, forcePdfMime = false) => {
+    async (
+      message: PreviewableDocumentMessage,
+      previewName: string,
+      forcePdfMime = false
+    ) => {
       closeMessageMenu();
       clearImagePreviewStateImmediately();
       clearImageGroupPreviewStateImmediately();
 
-      const shouldOpenExternally = forcePdfMime && shouldPreferExternalPdfPreview();
-      const externalPreviewWindow = shouldOpenExternally ? window.open("", "_blank") : null;
+      const shouldOpenExternally =
+        forcePdfMime && shouldPreferExternalPdfPreview();
+      const externalPreviewWindow = shouldOpenExternally
+        ? window.open('', '_blank')
+        : null;
 
       if (externalPreviewWindow) {
         try {
@@ -74,7 +85,7 @@ export const useMessagesPanePreviews = ({
           });
 
           if (!resolvedPreviewResource.previewUrl) {
-            throw new Error("Document preview is unavailable");
+            throw new Error('Document preview is unavailable');
           }
 
           const previewUrl = resolvedPreviewResource.previewUrl;
@@ -90,13 +101,14 @@ export const useMessagesPanePreviews = ({
         await openDocumentPreview({
           previewName,
           resolvePreviewUrl: async () => {
-            const resolvedPreviewResource = await resolveDocumentPreviewResource({
-              forcePdfMime,
-              message,
-            });
+            const resolvedPreviewResource =
+              await resolveDocumentPreviewResource({
+                forcePdfMime,
+                message,
+              });
 
             if (!resolvedPreviewResource.previewUrl) {
-              throw new Error("Document preview is unavailable");
+              throw new Error('Document preview is unavailable');
             }
 
             return {
@@ -107,7 +119,7 @@ export const useMessagesPanePreviews = ({
         });
       } catch {
         externalPreviewWindow?.close();
-        toast.error("Preview dokumen tidak tersedia", {
+        toast.error('Preview dokumen tidak tersedia', {
           toasterId: CHAT_SIDEBAR_TOASTER_ID,
         });
       }
@@ -117,7 +129,7 @@ export const useMessagesPanePreviews = ({
       clearImageGroupPreviewStateImmediately,
       clearImagePreviewStateImmediately,
       openDocumentPreview,
-    ],
+    ]
   );
 
   return {

@@ -1,12 +1,12 @@
-import React, { useEffect, useRef } from "react";
-import type { FieldConfig, Supplier as SupplierType } from "@/types";
-import type { useConfirmDialog } from "@/components/dialog-box";
-import type { useSupplierMutations } from "@/hooks/queries";
+import React, { useEffect, useRef } from 'react';
+import type { FieldConfig, Supplier as SupplierType } from '@/types';
+import type { useConfirmDialog } from '@/components/dialog-box';
+import type { useSupplierMutations } from '@/hooks/queries';
 
-import IdentityDataModal from "@/components/IdentityDataModal";
-import { StorageService } from "@/services/api/storage.service";
+import IdentityDataModal from '@/components/IdentityDataModal';
+import { StorageService } from '@/services/api/storage.service';
 
-const SUPPLIER_IMAGE_BUCKET = "profiles";
+const SUPPLIER_IMAGE_BUCKET = 'profiles';
 
 interface SupplierModalsProps {
   isActive: boolean;
@@ -16,7 +16,7 @@ interface SupplierModalsProps {
   isEditSupplierModalOpen: boolean;
   editingSupplier: SupplierType | null;
   supplierMutations: ReturnType<typeof useSupplierMutations>;
-  openConfirmDialog: ReturnType<typeof useConfirmDialog>["openConfirmDialog"];
+  openConfirmDialog: ReturnType<typeof useConfirmDialog>['openConfirmDialog'];
   closeAddSupplierModal: () => void;
   closeEditSupplierModal: () => void;
 }
@@ -33,37 +33,44 @@ const SupplierModals: React.FC<SupplierModalsProps> = ({
   closeAddSupplierModal,
   closeEditSupplierModal,
 }) => {
-  const latestImageUrlRef = useRef<string | null>(editingSupplier?.image_url ?? null);
+  const latestImageUrlRef = useRef<string | null>(
+    editingSupplier?.image_url ?? null
+  );
 
   useEffect(() => {
     latestImageUrlRef.current = editingSupplier?.image_url ?? null;
   }, [editingSupplier?.id, editingSupplier?.image_url]);
 
   const toNormalizedText = (input: unknown): string => {
-    if (input === null || input === undefined) return "";
+    if (input === null || input === undefined) return '';
     if (
-      typeof input === "string" ||
-      typeof input === "number" ||
-      typeof input === "boolean" ||
-      typeof input === "bigint"
+      typeof input === 'string' ||
+      typeof input === 'number' ||
+      typeof input === 'boolean' ||
+      typeof input === 'bigint'
     ) {
       return String(input).trim();
     }
     if (input instanceof Date) {
       return input.toISOString().trim();
     }
-    return "";
+    return '';
   };
 
   const normalizeSupplierFieldValue = (key: string, value: unknown) => {
-    if (key === "name") {
+    if (key === 'name') {
       const normalizedName = toNormalizedText(value);
-      return normalizedName === "" ? null : normalizedName;
+      return normalizedName === '' ? null : normalizedName;
     }
 
-    if (key === "address" || key === "phone" || key === "email" || key === "contact_person") {
+    if (
+      key === 'address' ||
+      key === 'phone' ||
+      key === 'email' ||
+      key === 'contact_person'
+    ) {
       const normalizedValue = toNormalizedText(value);
-      return normalizedValue === "" ? null : normalizedValue;
+      return normalizedValue === '' ? null : normalizedValue;
     }
 
     return value;
@@ -77,41 +84,46 @@ const SupplierModals: React.FC<SupplierModalsProps> = ({
         fields={supplierFields}
         isOpen={isActive && isAddSupplierModalOpen}
         onClose={closeAddSupplierModal}
-        onSave={async (data) => {
+        onSave={async data => {
           const result = await supplierMutations.createSupplier.mutateAsync({
-            name: String(data.name || ""),
-            address: String(data.address || "") || null,
-            phone: String(data.phone || "") || null,
-            email: String(data.email || "") || null,
-            contact_person: String(data.contact_person || "") || null,
-            image_url: String(data.image_url || "") || null,
+            name: String(data.name || ''),
+            address: String(data.address || '') || null,
+            phone: String(data.phone || '') || null,
+            email: String(data.email || '') || null,
+            contact_person: String(data.contact_person || '') || null,
+            image_url: String(data.image_url || '') || null,
           });
           closeAddSupplierModal();
           return result;
         }}
         mode="add"
-        initialNameFromSearch={supplierSearch.startsWith("#") ? "" : supplierSearch}
+        initialNameFromSearch={
+          supplierSearch.startsWith('#') ? '' : supplierSearch
+        }
         useInlineFieldActions={false}
       />
 
       <IdentityDataModal
         title="Edit Supplier"
         data={
-          (editingSupplier as unknown as Record<string, string | number | boolean | null>) || {}
+          (editingSupplier as unknown as Record<
+            string,
+            string | number | boolean | null
+          >) || {}
         }
         fields={supplierFields}
         isOpen={isActive && isEditSupplierModalOpen}
         onClose={closeEditSupplierModal}
-        onSave={async (data) => {
+        onSave={async data => {
           if (!editingSupplier?.id) return;
           const result = await supplierMutations.updateSupplier.mutateAsync({
             id: editingSupplier.id,
             data: {
-              name: String(data.name || ""),
-              address: String(data.address || "") || null,
-              phone: String(data.phone || "") || null,
-              email: String(data.email || "") || null,
-              contact_person: String(data.contact_person || "") || null,
+              name: String(data.name || ''),
+              address: String(data.address || '') || null,
+              phone: String(data.phone || '') || null,
+              email: String(data.email || '') || null,
+              contact_person: String(data.contact_person || '') || null,
             },
           });
           closeEditSupplierModal();
@@ -121,7 +133,7 @@ const SupplierModals: React.FC<SupplierModalsProps> = ({
           if (!editingSupplier?.id) return;
 
           const normalizedValue = normalizeSupplierFieldValue(key, value);
-          if (key === "name" && normalizedValue === null) {
+          if (key === 'name' && normalizedValue === null) {
             return;
           }
 
@@ -137,12 +149,14 @@ const SupplierModals: React.FC<SupplierModalsProps> = ({
           editingSupplier
             ? () => {
                 openConfirmDialog({
-                  title: "Konfirmasi Hapus",
+                  title: 'Konfirmasi Hapus',
                   message: `Apakah Anda yakin ingin menghapus supplier "${editingSupplier.name}"?`,
-                  variant: "danger",
-                  confirmText: "Ya, Hapus",
+                  variant: 'danger',
+                  confirmText: 'Ya, Hapus',
                   onConfirm: async () => {
-                    await supplierMutations.deleteSupplier.mutateAsync(editingSupplier.id);
+                    await supplierMutations.deleteSupplier.mutateAsync(
+                      editingSupplier.id
+                    );
                     closeEditSupplierModal();
                   },
                 });
@@ -154,24 +168,31 @@ const SupplierModals: React.FC<SupplierModalsProps> = ({
         onImageSave={async ({ entityId, file }) => {
           if (!entityId) return;
 
-          const extension = file.name.split(".").pop()?.toLowerCase().trim() || "jpg";
+          const extension =
+            file.name.split('.').pop()?.toLowerCase().trim() || 'jpg';
           const nextImagePath = `suppliers/${entityId}/image.${extension}`;
           const { publicUrl } = await StorageService.uploadFile(
             SUPPLIER_IMAGE_BUCKET,
             file,
-            nextImagePath,
+            nextImagePath
           );
 
           const oldImagePath =
             latestImageUrlRef.current &&
-            StorageService.extractPathFromUrl(latestImageUrlRef.current, SUPPLIER_IMAGE_BUCKET);
+            StorageService.extractPathFromUrl(
+              latestImageUrlRef.current,
+              SUPPLIER_IMAGE_BUCKET
+            );
           const expectedImagePathPrefix = `suppliers/${entityId}/`;
           if (
             oldImagePath &&
             oldImagePath !== nextImagePath &&
             oldImagePath.startsWith(expectedImagePathPrefix)
           ) {
-            await StorageService.deleteEntityImage(SUPPLIER_IMAGE_BUCKET, oldImagePath);
+            await StorageService.deleteEntityImage(
+              SUPPLIER_IMAGE_BUCKET,
+              oldImagePath
+            );
           }
 
           await supplierMutations.updateSupplier.mutateAsync({
@@ -183,15 +204,21 @@ const SupplierModals: React.FC<SupplierModalsProps> = ({
           latestImageUrlRef.current = publicUrl;
           return publicUrl;
         }}
-        onImageDelete={async (entityId) => {
+        onImageDelete={async entityId => {
           if (!entityId) return;
 
           const currentImageUrl = latestImageUrlRef.current;
           const oldImagePath = currentImageUrl
-            ? StorageService.extractPathFromUrl(currentImageUrl, SUPPLIER_IMAGE_BUCKET)
+            ? StorageService.extractPathFromUrl(
+                currentImageUrl,
+                SUPPLIER_IMAGE_BUCKET
+              )
             : null;
           if (oldImagePath) {
-            await StorageService.deleteEntityImage(SUPPLIER_IMAGE_BUCKET, oldImagePath);
+            await StorageService.deleteEntityImage(
+              SUPPLIER_IMAGE_BUCKET,
+              oldImagePath
+            );
           }
 
           await supplierMutations.updateSupplier.mutateAsync({

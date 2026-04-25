@@ -1,19 +1,37 @@
-import type { FilterSearch, FilterCondition, FilterGroup, SearchColumn } from "@/types/search";
-import type { AdvancedFilterModel } from "ag-grid-community";
+import type {
+  FilterSearch,
+  FilterCondition,
+  FilterGroup,
+  SearchColumn,
+} from '@/types/search';
+import type { AdvancedFilterModel } from 'ag-grid-community';
 
 /**
  * Map of column fields to their filter types
  * This determines how the Advanced Filter will handle each column
  */
-const NUMERIC_COLUMNS = ["stock", "base_price", "sell_price", "price", "quantity", "amount"];
-const DATE_COLUMNS = ["created_at", "updated_at", "date", "birth_date", "expiry_date"];
+const NUMERIC_COLUMNS = [
+  'stock',
+  'base_price',
+  'sell_price',
+  'price',
+  'quantity',
+  'amount',
+];
+const DATE_COLUMNS = [
+  'created_at',
+  'updated_at',
+  'date',
+  'birth_date',
+  'expiry_date',
+];
 
 const parseNumericFilterValue = (value: string | undefined): number => {
-  const normalizedValue = String(value ?? "")
-    .replace(/^(Rp\.?\s*|\$\s*|€\s*|¥\s*|£\s*|IDR\s*|USD\s*|EUR\s*)/i, "")
-    .replace(/\s/g, "")
-    .replace(/\./g, "")
-    .replace(",", ".");
+  const normalizedValue = String(value ?? '')
+    .replace(/^(Rp\.?\s*|\$\s*|€\s*|¥\s*|£\s*|IDR\s*|USD\s*|EUR\s*)/i, '')
+    .replace(/\s/g, '')
+    .replace(/\./g, '')
+    .replace(',', '.');
   const parsedValue = Number(normalizedValue);
   return Number.isFinite(parsedValue) ? parsedValue : 0;
 };
@@ -21,18 +39,21 @@ const parseNumericFilterValue = (value: string | undefined): number => {
 /**
  * Determine the filter type for a column based on its field name or column definition
  */
-function getFilterType(field: string, column?: SearchColumn): "text" | "number" | "date" {
+function getFilterType(
+  field: string,
+  column?: SearchColumn
+): 'text' | 'number' | 'date' {
   // Check column type first if available
   if (column?.type) {
-    if (column.type === "number" || column.type === "currency") return "number";
-    if (column.type === "date") return "date";
-    return "text";
+    if (column.type === 'number' || column.type === 'currency') return 'number';
+    if (column.type === 'date') return 'date';
+    return 'text';
   }
 
   // Fall back to field name matching
-  if (NUMERIC_COLUMNS.some((col) => field.includes(col))) return "number";
-  if (DATE_COLUMNS.some((col) => field.includes(col))) return "date";
-  return "text";
+  if (NUMERIC_COLUMNS.some(col => field.includes(col))) return 'number';
+  if (DATE_COLUMNS.some(col => field.includes(col))) return 'date';
+  return 'text';
 }
 
 /**
@@ -41,31 +62,33 @@ function getFilterType(field: string, column?: SearchColumn): "text" | "number" 
 function buildColumnCondition(
   condition: FilterCondition,
   defaultField: string,
-  defaultColumn?: SearchColumn,
+  defaultColumn?: SearchColumn
 ): AdvancedFilterModel {
   const field = condition.field || defaultField;
   const filterType = getFilterType(field, condition.column || defaultColumn);
 
   // Handle inRange (Between) operator specially
-  if (condition.operator === "inRange" && condition.valueTo) {
+  if (condition.operator === 'inRange' && condition.valueTo) {
     // For number/date range, use greaterThanOrEqual AND lessThanOrEqual
     return {
-      filterType: "join",
-      type: "AND",
+      filterType: 'join',
+      type: 'AND',
       conditions: [
         {
           filterType,
           colId: field,
-          type: "greaterThanOrEqual",
+          type: 'greaterThanOrEqual',
           filter:
-            filterType === "number" ? parseNumericFilterValue(condition.value) : condition.value,
+            filterType === 'number'
+              ? parseNumericFilterValue(condition.value)
+              : condition.value,
         },
         {
           filterType,
           colId: field,
-          type: "lessThanOrEqual",
+          type: 'lessThanOrEqual',
           filter:
-            filterType === "number"
+            filterType === 'number'
               ? parseNumericFilterValue(condition.valueTo)
               : condition.valueTo,
         },
@@ -78,7 +101,10 @@ function buildColumnCondition(
     filterType,
     colId: field,
     type: condition.operator,
-    filter: filterType === "number" ? parseNumericFilterValue(condition.value) : condition.value,
+    filter:
+      filterType === 'number'
+        ? parseNumericFilterValue(condition.value)
+        : condition.value,
   } as AdvancedFilterModel;
 
   return baseCondition;
@@ -87,10 +113,10 @@ function buildColumnCondition(
 function buildGroupCondition(
   group: FilterGroup,
   defaultField: string,
-  defaultColumn?: SearchColumn,
+  defaultColumn?: SearchColumn
 ): AdvancedFilterModel {
-  const conditions = group.nodes.map((node) => {
-    if (node.kind === "group") {
+  const conditions = group.nodes.map(node => {
+    if (node.kind === 'group') {
       return buildGroupCondition(node, defaultField, defaultColumn);
     }
     return buildColumnCondition(node, defaultField, defaultColumn);
@@ -101,7 +127,7 @@ function buildGroupCondition(
   }
 
   return {
-    filterType: "join",
+    filterType: 'join',
     type: group.join,
     conditions,
   } as AdvancedFilterModel;
@@ -114,12 +140,16 @@ function buildGroupCondition(
  * Key benefit: Advanced Filter supports OR operations across different columns.
  */
 export function buildAdvancedFilterModel(
-  filterSearch: FilterSearch | null,
+  filterSearch: FilterSearch | null
 ): AdvancedFilterModel | null {
   if (!filterSearch) return null;
 
   if (filterSearch.filterGroup) {
-    return buildGroupCondition(filterSearch.filterGroup, filterSearch.field, filterSearch.column);
+    return buildGroupCondition(
+      filterSearch.filterGroup,
+      filterSearch.field,
+      filterSearch.column
+    );
   }
 
   // Multi-condition filter (AND/OR between conditions)
@@ -128,11 +158,11 @@ export function buildAdvancedFilterModel(
     filterSearch.conditions &&
     filterSearch.conditions.length > 0
   ) {
-    const joinType = filterSearch.joinOperator || "AND";
+    const joinType = filterSearch.joinOperator || 'AND';
 
     // Build conditions array
-    const conditions = filterSearch.conditions.map((cond) =>
-      buildColumnCondition(cond, filterSearch.field, filterSearch.column),
+    const conditions = filterSearch.conditions.map(cond =>
+      buildColumnCondition(cond, filterSearch.field, filterSearch.column)
     );
 
     // If only one condition after processing, return it directly
@@ -142,7 +172,7 @@ export function buildAdvancedFilterModel(
 
     // Return join model
     return {
-      filterType: "join",
+      filterType: 'join',
       type: joinType,
       conditions,
     } as AdvancedFilterModel;
@@ -157,7 +187,11 @@ export function buildAdvancedFilterModel(
     column: filterSearch.column,
   };
 
-  return buildColumnCondition(singleCondition, filterSearch.field, filterSearch.column);
+  return buildColumnCondition(
+    singleCondition,
+    filterSearch.field,
+    filterSearch.column
+  );
 }
 
 /**

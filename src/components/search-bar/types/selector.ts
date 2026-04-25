@@ -1,5 +1,5 @@
-import React from "react";
-import { SearchColumn } from "./search";
+import React from 'react';
+import { SearchColumn } from './search';
 
 export interface FilterOperator {
   value: string;
@@ -20,8 +20,10 @@ export interface BaseSelectorConfig<T> {
   getItemActiveColor?: (item: T) => string;
   getItemSecondaryText?: (item: T) => string;
   getItemDescription?: (item: T) => string;
-  getSearchFields: (item: T) => Array<{ key: string; value: string; boost?: number }>;
-  theme?: "purple" | "blue" | "orange";
+  getSearchFields: (
+    item: T
+  ) => Array<{ key: string; value: string; boost?: number }>;
+  theme?: 'purple' | 'blue' | 'orange';
 }
 
 export interface BaseSelectorProps<T> {
