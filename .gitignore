@@ -54,6 +54,7 @@ GEMINI.md
 .opencode.json
 opencode.json
 .codex/config.toml
+.codex/config.toml.bak
 
 # Playwright MCP snapshots (auto-generated logs)
 .playwright-mcp/

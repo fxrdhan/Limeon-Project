@@ -1,11 +1,11 @@
 // supabase/functions/extract-invoice/index.ts
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireAuthenticatedUser } from "../_shared/edgeAuth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -20,20 +20,11 @@ function parseNumericValue(value) {
     if (cleaned.indexOf(",") === -1 && cleaned.indexOf(".") !== -1) {
       const parts = cleaned.split(".");
       if (parts.length > 2 && parts[parts.length - 1].length === 2) {
-        return (
-          parseFloat(
-            parts.slice(0, -1).join("") + "." + parts[parts.length - 1]
-          ) || 0
-        );
+        return parseFloat(parts.slice(0, -1).join("") + "." + parts[parts.length - 1]) || 0;
       }
     }
-    const lastSep =
-      cleaned.lastIndexOf(".") > cleaned.lastIndexOf(",") ? "." : ",";
-    cleaned = cleaned
-      .split(lastSep)
-      .join("DEC")
-      .replace(/[.,]/g, "")
-      .replace("DEC", ".");
+    const lastSep = cleaned.lastIndexOf(".") > cleaned.lastIndexOf(",") ? "." : ",";
+    cleaned = cleaned.split(lastSep).join("DEC").replace(/[.,]/g, "").replace("DEC", ".");
   } else {
     cleaned = cleaned.replace(",", ".");
   }
@@ -81,13 +72,9 @@ function parseAndTransformResponse(rawText) {
           total_price: parseNumericValue(p.total_price),
         })) || [],
       payment_summary: {
-        total_price: parseNumericValue(
-          rawJsonData.payment_summary?.total_price
-        ),
+        total_price: parseNumericValue(rawJsonData.payment_summary?.total_price),
         vat: parseNumericValue(rawJsonData.payment_summary?.vat),
-        invoice_total: parseNumericValue(
-          rawJsonData.payment_summary?.total_invoice
-        ),
+        invoice_total: parseNumericValue(rawJsonData.payment_summary?.total_invoice),
       },
       additional_information: {
         checked_by: rawJsonData.additional_information?.checked_by,
@@ -112,9 +99,7 @@ async function reportMetric(metric, supabase) {
       error_message: metric.errorMessage,
     };
 
-    const { error } = await supabase
-      .from("api_metrics")
-      .insert([metricWithCorrectSchema]);
+    const { error } = await supabase.from("api_metrics").insert([metricWithCorrectSchema]);
     if (error) {
       console.warn("Failed to report metric:", error.message);
     }
@@ -215,9 +200,7 @@ async function getGeminiResponse(imageBase64, mimeType, prompt) {
     ],
   };
 
-  console.log(
-    `Calling Gemini API with ${imageBase64.length} chars base64 data`
-  );
+  console.log(`Calling Gemini API with ${imageBase64.length} chars base64 data`);
 
   const response = await fetch(API_URL, {
     method: "POST",
@@ -252,7 +235,7 @@ async function getGeminiResponse(imageBase64, mimeType, prompt) {
         "Kunci API Gemini dinonaktifkan karena terdeteksi bocor. Gunakan API key baru dan update secret GEMINI_API_KEY di Supabase.",
         response.status,
         "GEMINI_API_KEY_REPORTED_LEAKED",
-        parsedError ?? errorText
+        parsedError ?? errorText,
       );
     }
 
@@ -260,18 +243,14 @@ async function getGeminiResponse(imageBase64, mimeType, prompt) {
       `Gemini API error ${response.status}: ${upstreamMessage}`,
       response.status,
       parsedError?.error?.status || parsedError?.error?.code,
-      parsedError ?? errorText
+      parsedError ?? errorText,
     );
   }
 
   const responseData = await response.json();
   console.log("Gemini API response received");
 
-  if (
-    responseData.candidates &&
-    responseData.candidates[0] &&
-    responseData.candidates[0].content
-  ) {
+  if (responseData.candidates && responseData.candidates[0] && responseData.candidates[0].content) {
     const parts = responseData.candidates[0].content.parts;
     if (parts && parts[0] && parts[0].text) {
       return parts[0].text;
@@ -293,8 +272,12 @@ serve(async (req) => {
   try {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
+    const authResult = await requireAuthenticatedUser(req, supabase, corsHeaders);
+    if (authResult.response) {
+      return authResult.response;
+    }
 
     if (req.method === "POST") {
       const startTime = Date.now();
@@ -316,7 +299,7 @@ serve(async (req) => {
               ...corsHeaders,
               "Content-Type": "application/json",
             },
-          }
+          },
         );
       }
 
@@ -341,12 +324,12 @@ serve(async (req) => {
                 ...corsHeaders,
                 "Content-Type": "application/json",
               },
-            }
+            },
           );
         }
 
         console.log(
-          `File received: ${imageFile.name}, size: ${imageFile.size}, type: ${imageFile.type}`
+          `File received: ${imageFile.name}, size: ${imageFile.size}, type: ${imageFile.type}`,
         );
       } catch (formDataError) {
         console.error("FormData parsing error:", formDataError);
@@ -358,7 +341,7 @@ serve(async (req) => {
             status: "error",
             errorMessage: `FormData parsing failed: ${formDataError.message}`,
           },
-          supabase
+          supabase,
         );
         return new Response(
           JSON.stringify({
@@ -372,7 +355,7 @@ serve(async (req) => {
               ...corsHeaders,
               "Content-Type": "application/json",
             },
-          }
+          },
         );
       }
 
@@ -388,7 +371,7 @@ serve(async (req) => {
             fileSize: imageFile.size,
             errorMessage: validation.error,
           },
-          supabase
+          supabase,
         );
         return new Response(
           JSON.stringify({
@@ -409,7 +392,7 @@ serve(async (req) => {
               ...corsHeaders,
               "Content-Type": "application/json",
             },
-          }
+          },
         );
       }
 
@@ -436,7 +419,7 @@ serve(async (req) => {
             fileName: imageIdentifier,
             errorMessage: `Base64 conversion failed: ${conversionError.message}`,
           },
-          supabase
+          supabase,
         );
         return new Response(
           JSON.stringify({
@@ -449,7 +432,7 @@ serve(async (req) => {
               ...corsHeaders,
               "Content-Type": "application/json",
             },
-          }
+          },
         );
       }
 
@@ -473,7 +456,7 @@ serve(async (req) => {
             fileName: imageIdentifier,
             errorMessage: uploadError.message,
           },
-          supabase
+          supabase,
         );
         return new Response(
           JSON.stringify({
@@ -487,7 +470,7 @@ serve(async (req) => {
               ...corsHeaders,
               "Content-Type": "application/json",
             },
-          }
+          },
         );
       }
 
@@ -542,11 +525,7 @@ Aturan ekstraksi:
 
       try {
         console.log("Calling Gemini API...");
-        const rawGeminiText = await getGeminiResponse(
-          base64String,
-          imageFile.type,
-          prompt
-        );
+        const rawGeminiText = await getGeminiResponse(base64String, imageFile.type, prompt);
         console.log("Gemini API response received");
 
         console.log("Parsing Gemini response...");
@@ -564,12 +543,10 @@ Aturan ekstraksi:
             fileName: imageIdentifier,
             responseSize,
           },
-          supabase
+          supabase,
         );
 
-        console.log(
-          `Request completed successfully in ${Date.now() - startTime}ms`
-        );
+        console.log(`Request completed successfully in ${Date.now() - startTime}ms`);
         return new Response(
           JSON.stringify({
             ...transformedData,
@@ -585,14 +562,13 @@ Aturan ekstraksi:
               ...corsHeaders,
               "Content-Type": "application/json",
             },
-          }
+          },
         );
       } catch (error) {
         console.error("Processing error:", error);
         const errorMessage = error instanceof Error ? error.message : String(error);
         const isLeakedKeyError =
-          error instanceof GeminiApiError &&
-          error.code === "GEMINI_API_KEY_REPORTED_LEAKED";
+          error instanceof GeminiApiError && error.code === "GEMINI_API_KEY_REPORTED_LEAKED";
 
         await reportMetric(
           {
@@ -604,15 +580,14 @@ Aturan ekstraksi:
             fileName: imageIdentifier,
             errorMessage,
           },
-          supabase
+          supabase,
         );
 
         if (isLeakedKeyError) {
           return new Response(
             JSON.stringify({
               error: "Konfigurasi Gemini API bermasalah",
-              details:
-                "Hubungi administrator untuk memperbarui konfigurasi layanan.",
+              details: "Hubungi administrator untuk memperbarui konfigurasi layanan.",
               code: "GEMINI_API_KEY_REPORTED_LEAKED",
               tip: "Buat API key baru dan update secret GEMINI_API_KEY di Supabase, lalu deploy ulang Edge Function.",
             }),
@@ -622,15 +597,14 @@ Aturan ekstraksi:
                 ...corsHeaders,
                 "Content-Type": "application/json",
               },
-            }
+            },
           );
         }
 
         return new Response(
           JSON.stringify({
             error: "Terjadi kesalahan saat memproses gambar",
-            details:
-              "Layanan tidak dapat memproses permintaan ini saat ini.",
+            details: "Layanan tidak dapat memproses permintaan ini saat ini.",
             tip: "Coba lagi dengan gambar yang lebih kecil atau format yang berbeda",
           }),
           {
@@ -639,7 +613,7 @@ Aturan ekstraksi:
               ...corsHeaders,
               "Content-Type": "application/json",
             },
-          }
+          },
         );
       }
     }
@@ -656,15 +630,14 @@ Aturan ekstraksi:
           ...corsHeaders,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
   } catch (error) {
     console.error("Unexpected error:", error);
     return new Response(
       JSON.stringify({
         error: "Internal server error",
-        details:
-          "Terjadi kesalahan internal. Silakan coba lagi beberapa saat lagi.",
+        details: "Terjadi kesalahan internal. Silakan coba lagi beberapa saat lagi.",
       }),
       {
         status: 500,
@@ -672,7 +645,7 @@ Aturan ekstraksi:
           ...corsHeaders,
           "Content-Type": "application/json",
         },
-      }
+      },
     );
   }
 });
