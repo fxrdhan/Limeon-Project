@@ -1,6 +1,8 @@
 import { motion } from "motion/react";
 import { useMemo, useState } from "react";
 import { TbBellOff, TbLayoutSidebarRightCollapse, TbSearch } from "react-icons/tb";
+import { AnimatedMenuHighlight } from "@/components/shared/animated-menu-highlight";
+import { useAnimatedMenuHighlight } from "@/components/shared/use-animated-menu-highlight";
 import { useAuthStore } from "@/store/authStore";
 import { getInitials, getInitialsColor } from "@/utils/avatar";
 import { useChatSidebarLauncher } from "../hooks/useChatSidebarLauncher";
@@ -53,6 +55,7 @@ const formatContactMessageTime = (value: string | null | undefined) => {
 const ContactListPanel = ({ onClose }: ContactListPanelProps) => {
   const { user } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState("");
+  const [hoveredContactId, setHoveredContactId] = useState<string | null>(null);
   const {
     onlineUserIds,
     portalOrderedUsers,
@@ -75,7 +78,15 @@ const ContactListPanel = ({ onClose }: ContactListPanelProps) => {
       return searchableText.includes(normalizedSearchQuery);
     });
   }, [normalizedSearchQuery, portalOrderedUsers]);
-
+  const fallbackActiveContactId =
+    user?.id && filteredContacts.some((portalUser) => portalUser.id === user.id) ? user.id : null;
+  const highlightedContactId = hoveredContactId ?? fallbackActiveContactId;
+  const highlightedContactIndex = highlightedContactId
+    ? filteredContacts.findIndex((portalUser) => portalUser.id === highlightedContactId)
+    : -1;
+  const { highlightFrame, setItemRef } = useAnimatedMenuHighlight<HTMLButtonElement>(
+    highlightedContactIndex === -1 ? null : highlightedContactIndex,
+  );
   return (
     <motion.div
       initial={false}
@@ -108,15 +119,25 @@ const ContactListPanel = ({ onClose }: ContactListPanelProps) => {
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto bg-white py-2">
+      <div
+        className="relative min-h-0 flex-1 overflow-y-auto bg-white py-2"
+        onMouseLeave={() => {
+          setHoveredContactId(null);
+        }}
+      >
+        <AnimatedMenuHighlight
+          className="left-3 right-3 rounded-2xl bg-slate-100"
+          frame={highlightFrame}
+        />
+
         {isDirectoryLoading && portalOrderedUsers.length === 0 ? (
-          <div className="mx-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-500">
+          <div className="relative z-10 mx-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-500">
             Memuat daftar pengguna...
           </div>
         ) : null}
 
         {directoryError ? (
-          <div className="mx-3 flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+          <div className="relative z-10 mx-3 flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
             <span>{directoryError}</span>
             <button
               type="button"
@@ -129,10 +150,12 @@ const ContactListPanel = ({ onClose }: ContactListPanelProps) => {
         ) : null}
 
         {filteredContacts.length === 0 && !isDirectoryLoading ? (
-          <div className="px-4 py-8 text-center text-sm text-slate-500">Tidak ada kontak</div>
+          <div className="relative z-10 px-4 py-8 text-center text-sm text-slate-500">
+            Tidak ada kontak
+          </div>
         ) : null}
 
-        {filteredContacts.map((portalUser) => {
+        {filteredContacts.map((portalUser, contactIndex) => {
           const isOnline = onlineUserIds.has(portalUser.id);
           const isCurrentUser = portalUser.id === user?.id;
           const displayName = isCurrentUser ? `${portalUser.name} (You)` : portalUser.name;
@@ -142,17 +165,21 @@ const ContactListPanel = ({ onClose }: ContactListPanelProps) => {
           return (
             <div key={portalUser.id} className="px-3">
               <button
+                ref={(element) => {
+                  setItemRef(contactIndex, element);
+                }}
                 type="button"
-                className={`group flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition-colors ${
-                  isCurrentUser
-                    ? "cursor-pointer bg-slate-100"
-                    : "cursor-pointer hover:bg-slate-100"
-                }`}
+                className="group relative z-10 flex w-full cursor-pointer items-center gap-3 rounded-2xl bg-transparent px-3 py-3 text-left"
                 onMouseEnter={() => {
+                  setHoveredContactId(portalUser.id);
                   void prefetchConversationForUser(portalUser);
                 }}
                 onFocus={() => {
+                  setHoveredContactId(portalUser.id);
                   void prefetchConversationForUser(portalUser);
+                }}
+                onBlur={() => {
+                  setHoveredContactId(null);
                 }}
                 onClick={() => openChatForUser(portalUser)}
               >
@@ -213,7 +240,7 @@ const ContactListPanel = ({ onClose }: ContactListPanelProps) => {
             type="button"
             onClick={loadMoreDirectoryUsers}
             disabled={isDirectoryLoading}
-            className="mx-4 mt-2 w-[calc(100%-2rem)] rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 disabled:cursor-default disabled:opacity-60"
+            className="relative z-10 mx-4 mt-2 w-[calc(100%-2rem)] rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 disabled:cursor-default disabled:opacity-60"
           >
             {isDirectoryLoading ? "Memuat pengguna..." : "Muat lebih banyak"}
           </button>
