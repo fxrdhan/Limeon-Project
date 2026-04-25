@@ -99,7 +99,8 @@ const ContactListPanel = ({ onClose }: ContactListPanelProps) => {
             : isOnline
               ? "Available now"
               : portalUser.email;
-          const metaText = isCurrentUser ? "You" : isOnline ? "Now" : "";
+          const displayName = isCurrentUser ? `${portalUser.name} (You)` : portalUser.name;
+          const metaText = !isCurrentUser && isOnline ? "Now" : "";
 
           return (
             <button
@@ -145,7 +146,7 @@ const ContactListPanel = ({ onClose }: ContactListPanelProps) => {
               <div className="min-w-0 flex-1 border-b border-slate-100 py-0.5 group-last:border-b-0">
                 <div className="flex items-start justify-between gap-3">
                   <p className="min-w-0 truncate text-[15px] font-medium text-slate-950">
-                    {portalUser.name}
+                    {displayName}
                   </p>
                   {metaText ? (
                     <span
