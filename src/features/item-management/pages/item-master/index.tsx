@@ -204,6 +204,45 @@ const getLastTabFromSession = (): MasterDataType => {
   return "items";
 };
 
+const saveSearchPatternToSession = (tab: MasterDataType, pattern: string): void => {
+  const sessionKey = getItemMasterSearchSessionKey(tab);
+  try {
+    if (pattern.trim() === "") {
+      sessionStorage.removeItem(sessionKey);
+      return;
+    }
+
+    sessionStorage.setItem(sessionKey, pattern);
+  } catch {
+    // ignore
+  }
+};
+
+const hasFilterValue = (value: string | undefined): boolean => {
+  return value !== undefined && value.trim() !== "";
+};
+
+const shouldApplyRestoredFilter = (
+  filterSearch: FilterSearch | null,
+): filterSearch is FilterSearch => {
+  if (!filterSearch?.isConfirmed) return false;
+
+  if (filterSearch.filterGroup) return true;
+
+  if (filterSearch.isMultiCondition && filterSearch.conditions) {
+    return filterSearch.conditions.every(
+      (condition) =>
+        hasFilterValue(condition.value) &&
+        (condition.operator !== "inRange" || hasFilterValue(condition.valueTo)),
+    );
+  }
+
+  return (
+    hasFilterValue(filterSearch.value) &&
+    (filterSearch.operator !== "inRange" || hasFilterValue(filterSearch.valueTo))
+  );
+};
+
 const ItemMasterNew = memo(() => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -1784,6 +1823,21 @@ const ItemMasterNew = memo(() => {
   // Navigation logic extracted for reuse
   const performNavigation = useCallback(
     (targetTab: MasterDataType) => {
+      const currentSearchPattern =
+        activeTab === "items"
+          ? itemSearch
+          : activeTab === "suppliers"
+            ? supplierSearch
+            : activeTab === "customers"
+              ? customerSearch
+              : activeTab === "patients"
+                ? patientSearch
+                : activeTab === "doctors"
+                  ? doctorSearch
+                  : entitySearch;
+
+      saveSearchPatternToSession(activeTab, currentSearchPattern);
+
       void navigate(
         targetTab === "suppliers"
           ? "/master-data/suppliers"
@@ -1892,6 +1946,12 @@ const ItemMasterNew = memo(() => {
     [
       navigate,
       activeTab,
+      itemSearch,
+      supplierSearch,
+      customerSearch,
+      patientSearch,
+      doctorSearch,
+      entitySearch,
       isTabSelectorExpanded,
       isAddItemModalOpen,
       isAddCustomerModalOpen,
@@ -2094,7 +2154,7 @@ const ItemMasterNew = memo(() => {
 
     let savedPattern = "";
     try {
-      savedPattern = sessionStorage.getItem(sessionKey)?.trim() ?? "";
+      savedPattern = sessionStorage.getItem(sessionKey) ?? "";
     } catch {
       // ignore
     }
@@ -2105,7 +2165,7 @@ const ItemMasterNew = memo(() => {
       return;
     }
 
-    if (!savedPattern) {
+    if (savedPattern.trim() === "") {
       unifiedGridApi.setAdvancedFilterModel(null);
       return;
     }
@@ -2113,7 +2173,9 @@ const ItemMasterNew = memo(() => {
     const parsedSearch = parseSearchValue(savedPattern, activeSearchColumns);
     const filterSearch = parsedSearch.isFilterMode ? (parsedSearch.filterSearch ?? null) : null;
 
-    unifiedGridApi.setAdvancedFilterModel(buildAdvancedFilterModel(filterSearch));
+    unifiedGridApi.setAdvancedFilterModel(
+      shouldApplyRestoredFilter(filterSearch) ? buildAdvancedFilterModel(filterSearch) : null,
+    );
   }, [
     activeSearchColumns,
     activeTab,
