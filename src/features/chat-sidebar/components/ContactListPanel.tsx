@@ -1,4 +1,4 @@
-import { motion } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { useMemo, useState } from 'react';
 import {
   TbBellOff,
@@ -65,6 +65,18 @@ const formatContactMessageTime = (value: string | null | undefined) => {
     year: 'numeric',
   });
 };
+
+const contactListLayoutTransition = {
+  type: 'spring',
+  stiffness: 420,
+  damping: 34,
+  mass: 0.72,
+} as const;
+
+const contactListPresenceTransition = {
+  duration: 0.18,
+  ease: 'easeOut',
+} as const;
 
 const ContactListPanel = ({ onClose }: ContactListPanelProps) => {
   const { user } = useAuthStore();
@@ -174,108 +186,128 @@ const ContactListPanel = ({ onClose }: ContactListPanelProps) => {
           </div>
         ) : null}
 
-        {filteredContacts.map((portalUser, contactIndex) => {
-          const isOnline = onlineUserIds.has(portalUser.id);
-          const isCurrentUser = portalUser.id === user?.id;
-          const displayName = isCurrentUser
-            ? `${portalUser.name} (You)`
-            : portalUser.name;
-          const previewText =
-            portalUser.last_message?.trim() || portalUser.email;
-          const messageTime = formatContactMessageTime(
-            portalUser.last_message_created_at
-          );
+        <AnimatePresence initial={false} mode="popLayout">
+          {filteredContacts.map((portalUser, contactIndex) => {
+            const isOnline = onlineUserIds.has(portalUser.id);
+            const isCurrentUser = portalUser.id === user?.id;
+            const displayName = isCurrentUser
+              ? `${portalUser.name} (You)`
+              : portalUser.name;
+            const previewText =
+              portalUser.last_message?.trim() || portalUser.email;
+            const messageTime = formatContactMessageTime(
+              portalUser.last_message_created_at
+            );
 
-          return (
-            <div key={portalUser.id} className="px-3">
-              <button
-                ref={element => {
-                  setItemRef(contactIndex, element);
+            return (
+              <motion.div
+                key={portalUser.id}
+                layout
+                initial={{ opacity: 0, scale: 0.94, y: 8 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.86, y: 8 }}
+                transition={{
+                  layout: contactListLayoutTransition,
+                  opacity: contactListPresenceTransition,
+                  scale: contactListPresenceTransition,
+                  y: contactListPresenceTransition,
                 }}
-                type="button"
-                className="group relative z-10 flex w-full cursor-pointer items-center gap-3 rounded-2xl bg-transparent px-3 py-3 text-left"
-                onMouseEnter={() => {
-                  setHoveredContactId(portalUser.id);
-                  void prefetchConversationForUser(portalUser);
-                }}
-                onMouseLeave={() => {
-                  setHoveredContactId(currentContactId =>
-                    currentContactId === portalUser.id ? null : currentContactId
-                  );
-                }}
-                onFocus={() => {
-                  setHoveredContactId(portalUser.id);
-                  void prefetchConversationForUser(portalUser);
-                }}
-                onBlur={() => {
-                  setHoveredContactId(currentContactId =>
-                    currentContactId === portalUser.id ? null : currentContactId
-                  );
-                }}
-                onClick={() => openChatForUser(portalUser)}
+                className="px-3"
               >
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.92 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.92 }}
-                  transition={{ duration: 0.18, ease: 'easeOut' }}
-                  className="relative size-12 shrink-0 overflow-hidden rounded-full bg-slate-100"
+                <button
+                  ref={element => {
+                    setItemRef(contactIndex, element);
+                  }}
+                  type="button"
+                  className="group relative z-10 flex w-full cursor-pointer items-center gap-3 rounded-2xl bg-transparent px-3 py-3 text-left"
+                  onMouseEnter={() => {
+                    setHoveredContactId(portalUser.id);
+                    void prefetchConversationForUser(portalUser);
+                  }}
+                  onMouseLeave={() => {
+                    setHoveredContactId(currentContactId =>
+                      currentContactId === portalUser.id
+                        ? null
+                        : currentContactId
+                    );
+                  }}
+                  onFocus={() => {
+                    setHoveredContactId(portalUser.id);
+                    void prefetchConversationForUser(portalUser);
+                  }}
+                  onBlur={() => {
+                    setHoveredContactId(currentContactId =>
+                      currentContactId === portalUser.id
+                        ? null
+                        : currentContactId
+                    );
+                  }}
+                  onClick={() => openChatForUser(portalUser)}
                 >
-                  {portalUser.profilephoto_thumb || portalUser.profilephoto ? (
-                    <img
-                      src={
-                        portalUser.profilephoto_thumb ||
-                        portalUser.profilephoto ||
-                        ''
-                      }
-                      alt={portalUser.name}
-                      className={`h-full w-full object-cover ${isOnline ? '' : 'grayscale'}`}
-                      draggable={false}
-                    />
-                  ) : (
-                    <div
-                      className={`flex h-full w-full items-center justify-center text-base font-medium text-white ${getInitialsColor(portalUser.id)}`}
-                    >
-                      {getInitials(portalUser.name)}
-                    </div>
-                  )}
-                </motion.div>
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.92 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.92 }}
+                    transition={{ duration: 0.18, ease: 'easeOut' }}
+                    className="relative size-12 shrink-0 overflow-hidden rounded-full bg-slate-100"
+                  >
+                    {portalUser.profilephoto_thumb ||
+                    portalUser.profilephoto ? (
+                      <img
+                        src={
+                          portalUser.profilephoto_thumb ||
+                          portalUser.profilephoto ||
+                          ''
+                        }
+                        alt={portalUser.name}
+                        className={`h-full w-full object-cover ${isOnline ? '' : 'grayscale'}`}
+                        draggable={false}
+                      />
+                    ) : (
+                      <div
+                        className={`flex h-full w-full items-center justify-center text-base font-medium text-white ${getInitialsColor(portalUser.id)}`}
+                      >
+                        {getInitials(portalUser.name)}
+                      </div>
+                    )}
+                  </motion.div>
 
-                <div className="min-w-0 flex-1 py-0.5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex min-w-0 items-center gap-2.5">
-                      <p className="min-w-0 truncate text-[15px] font-medium text-slate-950">
-                        {displayName}
+                  <div className="min-w-0 flex-1 py-0.5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-2.5">
+                        <p className="min-w-0 truncate text-[15px] font-medium text-slate-950">
+                          {displayName}
+                        </p>
+                        {isOnline ? (
+                          <span
+                            className="size-2 shrink-0 rounded-full bg-emerald-500"
+                            aria-label="Online"
+                          />
+                        ) : null}
+                      </div>
+                      {messageTime ? (
+                        <span className="shrink-0 text-xs text-slate-500">
+                          {messageTime}
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="mt-0.5 flex items-center justify-between gap-3">
+                      <p className="min-w-0 truncate text-sm text-slate-500">
+                        {previewText}
                       </p>
-                      {isOnline ? (
-                        <span
-                          className="size-2 shrink-0 rounded-full bg-emerald-500"
-                          aria-label="Online"
+                      {!isOnline && !isCurrentUser ? (
+                        <TbBellOff
+                          className="size-4 shrink-0 text-slate-400"
+                          aria-hidden="true"
                         />
                       ) : null}
                     </div>
-                    {messageTime ? (
-                      <span className="shrink-0 text-xs text-slate-500">
-                        {messageTime}
-                      </span>
-                    ) : null}
                   </div>
-                  <div className="mt-0.5 flex items-center justify-between gap-3">
-                    <p className="min-w-0 truncate text-sm text-slate-500">
-                      {previewText}
-                    </p>
-                    {!isOnline && !isCurrentUser ? (
-                      <TbBellOff
-                        className="size-4 shrink-0 text-slate-400"
-                        aria-hidden="true"
-                      />
-                    ) : null}
-                  </div>
-                </div>
-              </button>
-            </div>
-          );
-        })}
+                </button>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
 
         {hasMoreDirectoryUsers && !directoryError && !normalizedSearchQuery ? (
           <button
