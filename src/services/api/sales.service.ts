@@ -1,17 +1,17 @@
-import { BaseService, ServiceResponse } from './base.service';
-import { supabase } from '@/lib/supabase';
-import type { PostgrestError } from '@supabase/supabase-js';
+import { BaseService, ServiceResponse } from "./base.service";
+import { supabase } from "@/lib/supabase";
+import type { PostgrestError } from "@supabase/supabase-js";
 import {
   fetchRecordWithItems,
   getRecordsByDateRange,
   isUniqueByColumn,
   replaceLinkedItems,
-} from './transaction.helpers';
+} from "./transaction.helpers";
 import {
   applyStockUpdates,
   buildStockUpdates,
   updateRecordWithLinkedItems,
-} from './transaction.base';
+} from "./transaction.base";
 
 interface DBSale {
   id: string;
@@ -92,12 +92,12 @@ interface SaleItemWithDetails {
 
 export class SalesService extends BaseService<DBSale> {
   constructor() {
-    super('sales');
+    super("sales");
   }
 
   // Get all sales with related data
   async getAllWithDetails(
-    options: Parameters<BaseService<DBSale>['getAll']>[0] = {}
+    options: Parameters<BaseService<DBSale>["getAll"]>[0] = {},
   ): Promise<ServiceResponse<SaleWithDetails[]>> {
     try {
       const defaultSelect = `
@@ -132,15 +132,11 @@ export class SalesService extends BaseService<DBSale> {
         const saleData = sale as Record<string, unknown>;
         return {
           ...saleData,
-          patient: saleData.patients as
-            | { id: string; name: string; phone?: string }
-            | undefined,
+          patient: saleData.patients as { id: string; name: string; phone?: string } | undefined,
           doctor: saleData.doctors as
             | { id: string; name: string; specialization?: string }
             | undefined,
-          created_by_user: saleData.users as
-            | { id: string; name: string }
-            | undefined,
+          created_by_user: saleData.users as { id: string; name: string } | undefined,
         };
       }) as SaleWithDetails[];
 
@@ -155,12 +151,10 @@ export class SalesService extends BaseService<DBSale> {
   }
 
   // Get sale with full details
-  async getSaleWithDetails(
-    id: string
-  ): Promise<ServiceResponse<SaleWithDetails>> {
+  async getSaleWithDetails(id: string): Promise<ServiceResponse<SaleWithDetails>> {
     try {
       const { data: sale, error } = await supabase
-        .from('sales')
+        .from("sales")
         .select(
           `
           *,
@@ -178,9 +172,9 @@ export class SalesService extends BaseService<DBSale> {
             id,
             name
           )
-        `
+        `,
         )
-        .eq('id', id)
+        .eq("id", id)
         .single();
 
       if (error || !sale) {
@@ -202,12 +196,10 @@ export class SalesService extends BaseService<DBSale> {
   }
 
   // Get sale items
-  async getSaleItems(
-    saleId: string
-  ): Promise<ServiceResponse<SaleItemWithDetails[]>> {
+  async getSaleItems(saleId: string): Promise<ServiceResponse<SaleItemWithDetails[]>> {
     try {
       const { data, error } = await supabase
-        .from('sale_items')
+        .from("sale_items")
         .select(
           `
           *,
@@ -217,23 +209,23 @@ export class SalesService extends BaseService<DBSale> {
             code,
             manufacturer
           )
-        `
+        `,
         )
-        .eq('sale_id', saleId)
-        .order('created_at', { ascending: true });
+        .eq("sale_id", saleId)
+        .order("created_at", { ascending: true });
 
       if (error || !data) {
         return { data: null, error };
       }
 
       // Transform data
-      const transformedItems: SaleItemWithDetails[] = data.map(item => ({
+      const transformedItems: SaleItemWithDetails[] = data.map((item) => ({
         ...item,
         item: {
-          id: item.items?.id || '',
-          name: item.items?.name || '',
-          code: item.items?.code || '',
-          manufacturer: item.items?.manufacturer || '',
+          id: item.items?.id || "",
+          name: item.items?.name || "",
+          code: item.items?.code || "",
+          manufacturer: item.items?.manufacturer || "",
         },
       }));
 
@@ -245,11 +237,11 @@ export class SalesService extends BaseService<DBSale> {
 
   // Create sale with items
   async createSaleWithItems(
-    saleData: Omit<DBSale, 'id' | 'created_at' | 'updated_at'>,
-    items: Omit<DBSaleItem, 'id' | 'sale_id' | 'created_at' | 'updated_at'>[]
+    saleData: Omit<DBSale, "id" | "created_at" | "updated_at">,
+    items: Omit<DBSaleItem, "id" | "sale_id" | "created_at" | "updated_at">[],
   ): Promise<ServiceResponse<{ sale: DBSale; items: DBSaleItem[] }>> {
     try {
-      const saleItems = items.map(item => ({
+      const saleItems = items.map((item) => ({
         item_id: item.item_id,
         quantity: item.quantity,
         price: item.price,
@@ -257,33 +249,29 @@ export class SalesService extends BaseService<DBSale> {
         unit_name: item.unit_name,
         inventory_unit_id: item.inventory_unit_id ?? null,
         unit_id: item.unit_id ?? null,
-        unit_conversion_rate: item.unit_conversion_rate ?? 1,
       }));
 
-      const { data: saleId, error: saleError } = await supabase.rpc(
-        'process_sale_v1',
-        {
-          p_patient_id: saleData.patient_id || null,
-          p_doctor_id: saleData.doctor_id || null,
-          p_customer_id: saleData.customer_id || null,
-          p_invoice_number: saleData.invoice_number || null,
-          p_date: saleData.date,
-          p_total: saleData.total,
-          p_payment_method: saleData.payment_method,
-          p_created_by: saleData.created_by || null,
-          p_items: saleItems,
-        }
-      );
+      const { data: saleId, error: saleError } = await supabase.rpc("process_sale_v1", {
+        p_patient_id: saleData.patient_id || null,
+        p_doctor_id: saleData.doctor_id || null,
+        p_customer_id: saleData.customer_id || null,
+        p_invoice_number: saleData.invoice_number || null,
+        p_date: saleData.date,
+        p_total: saleData.total,
+        p_payment_method: saleData.payment_method,
+        p_created_by: saleData.created_by || null,
+        p_items: saleItems,
+      });
 
       if (saleError || !saleId) {
         return { data: null, error: saleError };
       }
 
       const result = await fetchRecordWithItems<DBSale, DBSaleItem>({
-        parentTable: 'sales',
+        parentTable: "sales",
         parentId: saleId,
-        itemsTable: 'sale_items',
-        itemsForeignKey: 'sale_id',
+        itemsTable: "sale_items",
+        itemsForeignKey: "sale_id",
       });
 
       if (result.error || !result.data) {
@@ -305,22 +293,22 @@ export class SalesService extends BaseService<DBSale> {
   // Update sale with items
   async updateSaleWithItems(
     id: string,
-    saleData: Partial<Omit<DBSale, 'id' | 'created_at'>>,
-    items?: Omit<DBSaleItem, 'id' | 'sale_id' | 'created_at' | 'updated_at'>[]
+    saleData: Partial<Omit<DBSale, "id" | "created_at">>,
+    items?: Omit<DBSaleItem, "id" | "sale_id" | "created_at" | "updated_at">[],
   ): Promise<ServiceResponse<{ sale: DBSale; items?: DBSaleItem[] }>> {
     const result = await updateRecordWithLinkedItems<
       DBSale,
       SaleItemWithDetails,
-      Omit<DBSaleItem, 'id' | 'sale_id' | 'created_at' | 'updated_at'>,
-      Omit<DBSaleItem, 'id' | 'sale_id' | 'created_at' | 'updated_at'>
+      Omit<DBSaleItem, "id" | "sale_id" | "created_at" | "updated_at">,
+      Omit<DBSaleItem, "id" | "sale_id" | "created_at" | "updated_at">
     >({
       updateRecord: () => this.update(id, saleData),
       nextItems: items,
       fetchExistingItems: () => this.getSaleItems(id),
-      replaceItems: nextItems =>
+      replaceItems: (nextItems) =>
         replaceLinkedItems({
-          tableName: 'sale_items',
-          foreignKey: 'sale_id',
+          tableName: "sale_items",
+          foreignKey: "sale_id",
           parentId: id,
           items: nextItems,
         }),
@@ -344,7 +332,7 @@ export class SalesService extends BaseService<DBSale> {
   // Delete sale and restore stocks
   async deleteSaleWithStockRestore(id: string): Promise<ServiceResponse<null>> {
     try {
-      const { error } = await supabase.rpc('delete_sale_with_stock_restore', {
+      const { error } = await supabase.rpc("delete_sale_with_stock_restore", {
         p_sale_id: id,
       });
 
@@ -358,7 +346,7 @@ export class SalesService extends BaseService<DBSale> {
   async getSalesByPatient(patientId: string) {
     return this.getAllWithDetails({
       filters: { patient_id: patientId },
-      orderBy: { column: 'date', ascending: false },
+      orderBy: { column: "date", ascending: false },
     });
   }
 
@@ -366,14 +354,14 @@ export class SalesService extends BaseService<DBSale> {
   async getSalesByDoctor(doctorId: string) {
     return this.getAllWithDetails({
       filters: { doctor_id: doctorId },
-      orderBy: { column: 'date', ascending: false },
+      orderBy: { column: "date", ascending: false },
     });
   }
 
   // Get sales by date range
   async getSalesByDateRange(startDate: string, endDate: string) {
     return getRecordsByDateRange<SaleWithDetails>({
-      tableName: 'sales',
+      tableName: "sales",
       select: `
           *,
           patients (
@@ -396,17 +384,17 @@ export class SalesService extends BaseService<DBSale> {
   async getSalesByPaymentMethod(paymentMethod: string) {
     return this.getAllWithDetails({
       filters: { payment_method: paymentMethod },
-      orderBy: { column: 'date', ascending: false },
+      orderBy: { column: "date", ascending: false },
     });
   }
 
   // Get sales analytics
   async getSalesAnalytics(startDate?: string, endDate?: string) {
     try {
-      let query = supabase.from('sales').select('date, total, payment_method');
+      let query = supabase.from("sales").select("date, total, payment_method");
 
       if (startDate && endDate) {
-        query = query.gte('date', startDate).lte('date', endDate);
+        query = query.gte("date", startDate).lte("date", endDate);
       }
 
       const { data, error } = await query;
@@ -416,20 +404,16 @@ export class SalesService extends BaseService<DBSale> {
       }
 
       // Calculate analytics
-      const totalRevenue = data.reduce(
-        (sum, sale) => sum + Number(sale.total),
-        0
-      );
+      const totalRevenue = data.reduce((sum, sale) => sum + Number(sale.total), 0);
       const totalSales = data.length;
       const averageSale = totalSales > 0 ? totalRevenue / totalSales : 0;
 
       const paymentMethods = data.reduce(
         (acc, sale) => {
-          acc[sale.payment_method] =
-            (acc[sale.payment_method] || 0) + Number(sale.total);
+          acc[sale.payment_method] = (acc[sale.payment_method] || 0) + Number(sale.total);
           return acc;
         },
-        {} as Record<string, number>
+        {} as Record<string, number>,
       );
 
       return {
@@ -447,54 +431,46 @@ export class SalesService extends BaseService<DBSale> {
   }
 
   // Check if invoice number exists
-  async isInvoiceNumberUnique(
-    invoiceNumber: string,
-    excludeId?: string
-  ): Promise<boolean> {
-    return isUniqueByColumn(
-      'sales',
-      'invoice_number',
-      invoiceNumber,
-      excludeId
-    );
+  async isInvoiceNumberUnique(invoiceNumber: string, excludeId?: string): Promise<boolean> {
+    return isUniqueByColumn("sales", "invoice_number", invoiceNumber, excludeId);
   }
 
   private async updateItemStocks(
-    updates: { id: string; increment?: number; decrement?: number }[]
+    updates: { id: string; increment?: number; decrement?: number }[],
   ) {
     const normalizedUpdates = updates
-      .map(update => ({
+      .map((update) => ({
         id: update.id,
         increment: (update.increment || 0) - (update.decrement || 0),
       }))
-      .filter(update => update.increment !== 0);
+      .filter((update) => update.increment !== 0);
 
     await applyStockUpdates(normalizedUpdates);
   }
 
   private async recalculateStockDifferences(
     oldItems: SaleItemWithDetails[],
-    newItems: Omit<DBSaleItem, 'id' | 'sale_id' | 'created_at' | 'updated_at'>[]
+    newItems: Omit<DBSaleItem, "id" | "sale_id" | "created_at" | "updated_at">[],
   ) {
     const updates = buildStockUpdates({
       oldItems,
       newItems,
-      getOldDelta: item => ({
+      getOldDelta: (item) => ({
         itemId: item.item_id,
         delta: item.quantity * (item.unit_conversion_rate ?? 1),
       }),
-      getNewDelta: item => ({
+      getNewDelta: (item) => ({
         itemId: item.item_id,
         delta: -item.quantity * (item.unit_conversion_rate ?? 1),
       }),
     });
 
     await this.updateItemStocks(
-      updates.map(update =>
+      updates.map((update) =>
         update.increment > 0
           ? { id: update.id, increment: update.increment }
-          : { id: update.id, decrement: Math.abs(update.increment) }
-      )
+          : { id: update.id, decrement: Math.abs(update.increment) },
+      ),
     );
   }
 }

@@ -1,17 +1,11 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-import { createPortal } from 'react-dom';
-import toast from 'react-hot-toast';
-import Cropper from 'cropperjs';
-import { TbPhotoUp } from 'react-icons/tb';
-import { formatItemDisplayName } from '@/lib/item-display';
-import { parseDisplayNameToMeasurement } from '@/lib/item-measurement-parser';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import toast from "react-hot-toast";
+import Cropper from "cropperjs";
+import { TbPhotoUp } from "react-icons/tb";
+import { formatItemDisplayName } from "@/lib/item-display";
+import { parseDisplayNameToMeasurement } from "@/lib/item-measurement-parser";
 import {
   cacheImageBlob,
   getCachedImageBlobUrl,
@@ -20,8 +14,8 @@ import {
   removeCachedImageSet,
   releaseCachedImageBlobs,
   setCachedImageSet,
-} from '@/utils/imageCache';
-import { StorageService } from '@/services/api/storage.service';
+} from "@/utils/imageCache";
+import { StorageService } from "@/services/api/storage.service";
 import {
   useItemForm,
   useItemModal,
@@ -29,33 +23,33 @@ import {
   useItemRealtime,
   useItemUI,
   useItemHistory,
-} from '../../shared/contexts/useItemFormContext';
-import { useItemPriceCalculations } from '../../application/hooks/utils/useItemPriceCalculator';
-import { useConversionLogic } from '../../application/hooks/utils/useConversionLogic';
-import { useCustomerLevels } from '../../application/hooks/data';
-import { useInlineEditor } from '@/hooks/forms/useInlineEditor';
-import { itemDataService } from '../../infrastructure/itemData.service';
-import { itemStorageService } from '../../infrastructure/itemStorage.service';
+} from "../../shared/contexts/useItemFormContext";
+import { useItemPriceCalculations } from "../../application/hooks/utils/useItemPriceCalculator";
+import { useConversionLogic } from "../../application/hooks/utils/useConversionLogic";
+import { useCustomerLevels } from "../../application/hooks/data";
+import { useInlineEditor } from "@/hooks/forms/useInlineEditor";
+import { itemDataService } from "../../infrastructure/itemData.service";
+import { itemStorageService } from "../../infrastructure/itemStorage.service";
 import {
   createInventoryUnitFromDosage,
   getInventoryUnitMetaLabel,
   mergeInventoryUnitsWithDosagePreference,
-} from '@/lib/item-units';
-import {
-  toPricingFields,
-  toPricingPatch,
-} from '../../shared/utils/pricingFieldAdapter';
+} from "@/lib/item-units";
+import { toPricingFields, toPricingPatch } from "../../shared/utils/pricingFieldAdapter";
 
 // Child components
-import { ItemFormHeader } from '../molecules';
-import ItemBasicInfoForm from '../organisms/ItemBasicInfoForm';
-import ItemAdditionalInfoForm from '../organisms/ItemAdditionalInfoForm';
-import ItemSettingsForm from '../organisms/ItemSettingsForm';
-import ItemPricingForm from '../organisms/ItemPricingForm';
-import ItemPackageConversionManager from '../organisms/ItemPackageConversionForm';
-import ImageUploader from '@/components/image-manager';
-import Button from '@/components/button';
-import ImageExpandPreview from '@/components/shared/image-expand-preview';
+import { ItemFormHeader } from "../molecules";
+import ItemBasicInfoForm from "../organisms/ItemBasicInfoForm";
+import ItemAdditionalInfoForm from "../organisms/ItemAdditionalInfoForm";
+import ItemSettingsForm from "../organisms/ItemSettingsForm";
+import ItemPricingForm from "../organisms/ItemPricingForm";
+import ItemPackageConversionManager from "../organisms/ItemPackageConversionForm";
+import ImageUploader from "@/components/image-manager";
+import Button from "@/components/button";
+import ImageExpandPreview from "@/components/shared/image-expand-preview";
+
+const MAX_ITEM_IMAGE_SOURCE_BYTES = 20 * 1024 * 1024;
+const ALLOWED_ITEM_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 interface CollapsibleSectionProps {
   isExpanded: boolean;
@@ -80,24 +74,18 @@ interface BasicInfoRequiredProps {
 
 export const areImageSlotsEqual = (
   left: Array<{ url: string; path: string }>,
-  right: Array<{ url: string; path: string }>
+  right: Array<{ url: string; path: string }>,
 ) =>
   left.length === right.length &&
-  left.every(
-    (slot, index) =>
-      slot.url === right[index]?.url && slot.path === right[index]?.path
-  );
+  left.every((slot, index) => slot.url === right[index]?.url && slot.path === right[index]?.path);
 
-export const updateItemFields = async (
-  itemId: string,
-  updates: Record<string, unknown>
-) => {
+export const updateItemFields = async (itemId: string, updates: Record<string, unknown>) => {
   const { error } = await itemDataService.updateItemFields(itemId, updates);
   if (error) throw error;
 };
 
 export const appendCacheBust = (url: string, token: string | number) =>
-  url.includes('?') ? `${url}&t=${token}` : `${url}?t=${token}`;
+  url.includes("?") ? `${url}&t=${token}` : `${url}?t=${token}`;
 
 const enrichInventoryUnitsWithDosageDetails = <
   T extends {
@@ -113,12 +101,12 @@ const enrichInventoryUnitsWithDosageDetails = <
     code?: string;
     description?: string;
     updated_at?: string | null;
-  }>
+  }>,
 ) =>
-  inventoryUnits.map(unit => {
+  inventoryUnits.map((unit) => {
     if (!unit.source_dosage_id) return unit;
 
-    const dosage = dosages.find(item => item.id === unit.source_dosage_id);
+    const dosage = dosages.find((item) => item.id === unit.source_dosage_id);
     if (!dosage) return unit;
 
     return {
@@ -130,13 +118,13 @@ const enrichInventoryUnitsWithDosageDetails = <
   });
 
 const ITEM_IMAGE_CROPPER_TEMPLATE =
-  '<cropper-canvas background>' +
+  "<cropper-canvas background>" +
   '<cropper-image rotatable scalable skewable translatable initial-center-size="contain"></cropper-image>' +
-  '<cropper-shade hidden></cropper-shade>' +
+  "<cropper-shade hidden></cropper-shade>" +
   '<cropper-handle action="move" plain></cropper-handle>' +
   '<cropper-selection initial-coverage="0.5" movable resizable>' +
   '<cropper-grid role="grid" bordered covered></cropper-grid>' +
-  '<cropper-crosshair centered></cropper-crosshair>' +
+  "<cropper-crosshair centered></cropper-crosshair>" +
   '<cropper-handle action="move" theme-color="rgba(255, 255, 255, 0.35)"></cropper-handle>' +
   '<cropper-handle action="n-resize"></cropper-handle>' +
   '<cropper-handle action="e-resize"></cropper-handle>' +
@@ -146,8 +134,8 @@ const ITEM_IMAGE_CROPPER_TEMPLATE =
   '<cropper-handle action="nw-resize"></cropper-handle>' +
   '<cropper-handle action="se-resize"></cropper-handle>' +
   '<cropper-handle action="sw-resize"></cropper-handle>' +
-  '</cropper-selection>' +
-  '</cropper-canvas>';
+  "</cropper-selection>" +
+  "</cropper-canvas>";
 
 // Header Section
 
@@ -156,13 +144,8 @@ const FormHeader: React.FC<{
   onClose: () => void;
   itemId?: string;
 }> = ({ onReset, onClose, itemId }) => {
-  const {
-    isEditMode,
-    formattedUpdateAt,
-    isClosing,
-    handleVersionSelect,
-    viewingVersionNumber,
-  } = useItemUI();
+  const { isEditMode, formattedUpdateAt, isClosing, handleVersionSelect, viewingVersionNumber } =
+    useItemUI();
   const historyState = useItemHistory();
 
   // Get current version number (latest version)
@@ -229,35 +212,35 @@ const BasicInfoRequiredSection: React.FC<BasicInfoRequiredProps> = () => {
     isAddManufacturerModalOpen;
 
   // Transform database types to DropdownOption format
-  const transformedCategories = categories.map(cat => ({
+  const transformedCategories = categories.map((cat) => ({
     id: cat.id,
     name: cat.name,
     code: cat.code,
     description: cat.description,
     updated_at: cat.updated_at,
   }));
-  const transformedTypes = types.map(type => ({
+  const transformedTypes = types.map((type) => ({
     id: type.id,
     name: type.name,
     code: type.code,
     description: type.description,
     updated_at: type.updated_at,
   }));
-  const transformedPackages = packages.map(pkg => ({
+  const transformedPackages = packages.map((pkg) => ({
     id: pkg.id,
     name: pkg.name,
     code: pkg.code,
     description: pkg.description,
     updated_at: pkg.updated_at,
   }));
-  const transformedDosages = dosages.map(dosage => ({
+  const transformedDosages = dosages.map((dosage) => ({
     id: dosage.id,
     name: dosage.name,
     code: dosage.code,
     description: dosage.description,
     updated_at: dosage.updated_at,
   }));
-  const transformedManufacturers = manufacturers.map(manufacturer => ({
+  const transformedManufacturers = manufacturers.map((manufacturer) => ({
     id: manufacturer.id,
     name: manufacturer.name,
     code: manufacturer.code,
@@ -266,41 +249,35 @@ const BasicInfoRequiredSection: React.FC<BasicInfoRequiredProps> = () => {
   }));
 
   const displayName = formatItemDisplayName({
-    name: formData.name || '',
+    name: formData.name || "",
     measurement_value: formData.quantity || null,
-    measurement_unit: units.find(unit => unit.id === formData.unit_id) || null,
-    measurement_denominator_value:
-      formData.measurement_denominator_value ?? null,
+    measurement_unit: units.find((unit) => unit.id === formData.unit_id) || null,
+    measurement_denominator_value: formData.measurement_denominator_value ?? null,
     measurement_denominator_unit:
-      units.find(
-        unit => unit.id === formData.measurement_denominator_unit_id
-      ) || null,
+      units.find((unit) => unit.id === formData.measurement_denominator_unit_id) || null,
   });
 
   const handleFieldChange = (field: string, value: boolean | string) => {
-    if (field === 'is_medicine' && value === false) {
+    if (field === "is_medicine" && value === false) {
       updateFormData({
         is_medicine: value as boolean,
         has_expiry_date: false,
       });
-    } else if (field === 'is_medicine') {
+    } else if (field === "is_medicine") {
       updateFormData({ is_medicine: value as boolean });
-    } else if (field === 'code') {
+    } else if (field === "code") {
       updateFormData({ code: value as string });
     }
   };
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    if (e.target.name === 'name') {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    if (e.target.name === "name") {
       const parsed = parseDisplayNameToMeasurement(e.target.value, units);
       updateFormData({
         name: parsed.name,
         quantity: parsed.measurementValue ?? 0,
         unit_id: parsed.measurementUnitId,
-        measurement_denominator_value:
-          parsed.measurementDenominatorValue ?? null,
+        measurement_denominator_value: parsed.measurementDenominatorValue ?? null,
         measurement_denominator_unit_id: parsed.measurementDenominatorUnitId,
       });
       return;
@@ -310,26 +287,26 @@ const BasicInfoRequiredSection: React.FC<BasicInfoRequiredProps> = () => {
   };
 
   const handleDropdownChange = (field: string, value: string) => {
-    if (field === 'category_id') {
+    if (field === "category_id") {
       updateFormData({ category_id: value });
-    } else if (field === 'type_id') {
+    } else if (field === "type_id") {
       updateFormData({ type_id: value });
-    } else if (field === 'package_id') {
+    } else if (field === "package_id") {
       updateFormData({
         package_id: value,
         base_inventory_unit_id: formData.base_inventory_unit_id || value,
       });
-      const selectedPackage = packages.find(pkg => pkg.id === value);
+      const selectedPackage = packages.find((pkg) => pkg.id === value);
       if (selectedPackage) {
         packageConversionHook.setBaseUnit(selectedPackage.name);
         if (!formData.base_inventory_unit_id) {
           packageConversionHook.setBaseInventoryUnitId(selectedPackage.id);
-          packageConversionHook.setBaseUnitKind('packaging');
+          packageConversionHook.setBaseUnitKind("packaging");
         }
       }
-    } else if (field === 'dosage_id') {
+    } else if (field === "dosage_id") {
       updateFormData({ dosage_id: value });
-    } else if (field === 'manufacturer_id') {
+    } else if (field === "manufacturer_id") {
       updateFormData({ manufacturer_id: value });
     }
   };
@@ -339,15 +316,15 @@ const BasicInfoRequiredSection: React.FC<BasicInfoRequiredProps> = () => {
       key={resetKey} // Force re-mount on reset to clear validation
       isEditMode={isEditMode}
       formData={{
-        code: formData.code || '',
+        code: formData.code || "",
         display_name: displayName,
-        name: formData.name || '',
-        manufacturer_id: formData.manufacturer_id || '',
+        name: formData.name || "",
+        manufacturer_id: formData.manufacturer_id || "",
         is_medicine: formData.is_medicine || false,
-        category_id: formData.category_id || '',
-        type_id: formData.type_id || '',
-        package_id: formData.package_id || '',
-        dosage_id: formData.dosage_id || '',
+        category_id: formData.category_id || "",
+        type_id: formData.type_id || "",
+        package_id: formData.package_id || "",
+        dosage_id: formData.dosage_id || "",
       }}
       categories={transformedCategories}
       types={transformedTypes}
@@ -356,9 +333,9 @@ const BasicInfoRequiredSection: React.FC<BasicInfoRequiredProps> = () => {
       manufacturers={transformedManufacturers}
       loading={loading}
       disabled={isViewingOldVersion}
-      onDisplayNameChange={value => {
+      onDisplayNameChange={(value) => {
         const syntheticEvent = {
-          target: { name: 'name', value },
+          target: { name: "name", value },
         } as React.ChangeEvent<HTMLInputElement>;
         handleInputChange(syntheticEvent);
       }}
@@ -367,24 +344,24 @@ const BasicInfoRequiredSection: React.FC<BasicInfoRequiredProps> = () => {
       persistedDropdownName={persistedDropdownName || null}
       freezePersistedDropdown={isAnyChildEntityModalOpen}
       onPersistedDropdownClear={() => setPersistedDropdownName?.(null)}
-      onAddNewCategory={searchTerm => {
-        setPersistedDropdownName?.('category_id');
+      onAddNewCategory={(searchTerm) => {
+        setPersistedDropdownName?.("category_id");
         handleAddNewCategory(searchTerm);
       }}
-      onAddNewType={searchTerm => {
-        setPersistedDropdownName?.('type_id');
+      onAddNewType={(searchTerm) => {
+        setPersistedDropdownName?.("type_id");
         handleAddNewType(searchTerm);
       }}
-      onAddNewUnit={searchTerm => {
-        setPersistedDropdownName?.('package_id');
+      onAddNewUnit={(searchTerm) => {
+        setPersistedDropdownName?.("package_id");
         handleAddNewUnit(searchTerm);
       }}
-      onAddNewDosage={searchTerm => {
-        setPersistedDropdownName?.('dosage_id');
+      onAddNewDosage={(searchTerm) => {
+        setPersistedDropdownName?.("dosage_id");
         handleAddNewDosage(searchTerm);
       }}
-      onAddNewManufacturer={searchTerm => {
-        setPersistedDropdownName?.('manufacturer_id');
+      onAddNewManufacturer={(searchTerm) => {
+        setPersistedDropdownName?.("manufacturer_id");
         handleAddNewManufacturer(searchTerm);
       }}
     />
@@ -405,25 +382,25 @@ const SettingsSection: React.FC<CollapsibleSectionProps> = ({
 
   const minStockEditor = useInlineEditor({
     initialValue: (formData.min_stock || 0).toString(),
-    onSave: value => {
+    onSave: (value) => {
       const parsedValue = parseInt(value.toString()) || 0;
       updateFormData({ min_stock: parsedValue });
     },
   });
 
   const handleFieldChange = (field: string, value: boolean | string) => {
-    if (field === 'is_medicine' && value === false) {
+    if (field === "is_medicine" && value === false) {
       updateFormData({
         is_medicine: value as boolean,
         has_expiry_date: false,
       });
-    } else if (field === 'is_medicine') {
+    } else if (field === "is_medicine") {
       updateFormData({ is_medicine: value as boolean });
-    } else if (field === 'is_active') {
+    } else if (field === "is_active") {
       updateFormData({ is_active: value as boolean });
-    } else if (field === 'has_expiry_date') {
+    } else if (field === "has_expiry_date") {
       updateFormData({ has_expiry_date: value as boolean });
-    } else if (field === 'min_stock') {
+    } else if (field === "min_stock") {
       updateFormData({ min_stock: parseInt(value as string) || 0 });
     }
   };
@@ -464,10 +441,8 @@ const PricingSection: React.FC<PricingSectionProps> = ({
   stackStyle,
   onLevelPricingToggle,
 }) => {
-  const { formData, updateFormData, handleChange, dosages, packages } =
-    useItemForm();
-  const { packageConversionHook, displayBasePrice, displaySellPrice } =
-    useItemPrice();
+  const { formData, updateFormData, handleChange, dosages, packages } = useItemForm();
+  const { packageConversionHook, displayBasePrice, displaySellPrice } = useItemPrice();
 
   const {
     levels,
@@ -498,27 +473,27 @@ const PricingSection: React.FC<PricingSectionProps> = ({
         sell_price: formData.sell_price,
         is_level_pricing_active: formData.is_level_pricing_active,
       }),
-    [formData.base_price, formData.sell_price, formData.is_level_pricing_active]
+    [formData.base_price, formData.sell_price, formData.is_level_pricing_active],
   );
 
   const selectedDosage = useMemo(
     () =>
       formData.dosage_id
-        ? dosages.find(dosage => dosage.id === formData.dosage_id) || null
+        ? dosages.find((dosage) => dosage.id === formData.dosage_id) || null
         : null,
-    [dosages, formData.dosage_id]
+    [dosages, formData.dosage_id],
   );
 
   const dosageBackedUnit = useMemo(
     () => createInventoryUnitFromDosage(selectedDosage),
-    [selectedDosage]
+    [selectedDosage],
   );
 
   useEffect(() => {
     if (!selectedDosage?.id || !selectedDosage.name) return;
     if (
       packageConversionHook.availableUnits.some(
-        unit => unit.source_dosage_id === selectedDosage.id
+        (unit) => unit.source_dosage_id === selectedDosage.id,
       )
     ) {
       return;
@@ -528,7 +503,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({
 
     void itemDataService
       .ensureInventoryUnitFromDosage(selectedDosage.id, selectedDosage.name)
-      .then(result => {
+      .then((result) => {
         if (cancelled || !result.data) return;
         void packageConversionHook.refreshAvailableUnits();
       });
@@ -536,11 +511,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [
-    packageConversionHook,
-    packageConversionHook.availableUnits,
-    selectedDosage,
-  ]);
+  }, [packageConversionHook, packageConversionHook.availableUnits, selectedDosage]);
 
   const baseUnitOptions = useMemo(() => {
     const mergedUnits = enrichInventoryUnitsWithDosageDetails(
@@ -549,26 +520,23 @@ const PricingSection: React.FC<PricingSectionProps> = ({
           ...packageConversionHook.availableUnits,
           ...packages
             .filter(
-              pkg =>
-                !packageConversionHook.availableUnits.some(
-                  unit => unit.id === pkg.id
-                )
+              (pkg) => !packageConversionHook.availableUnits.some((unit) => unit.id === pkg.id),
             )
-            .map(pkg => ({
+            .map((pkg) => ({
               id: pkg.id,
               name: pkg.name,
               code: pkg.code,
               description: pkg.description ?? null,
-              kind: 'packaging' as const,
+              kind: "packaging" as const,
               source_package_id: pkg.id,
             })),
         ],
-        dosageBackedUnit
+        dosageBackedUnit,
       ),
-      dosages
+      dosages,
     );
 
-    const options = mergedUnits.map(unit => ({
+    const options = mergedUnits.map((unit) => ({
       id: unit.id,
       name: unit.name,
       code: unit.code,
@@ -578,12 +546,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({
     }));
 
     return options.sort((left, right) => left.name.localeCompare(right.name));
-  }, [
-    dosageBackedUnit,
-    dosages,
-    packageConversionHook.availableUnits,
-    packages,
-  ]);
+  }, [dosageBackedUnit, dosages, packageConversionHook.availableUnits, packages]);
 
   const { calculateProfitPercentage: calcMargin } = useItemPriceCalculations({
     basePrice: pricingFields.basePrice,
@@ -592,7 +555,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({
 
   const marginEditor = useInlineEditor({
     initialValue: (calcMargin || 0).toString(),
-    onSave: value => {
+    onSave: (value) => {
       const basePrice = pricingFields.basePrice;
       const marginPercentage = parseFloat(value.toString()) || 0;
       const newSellPrice = basePrice + (basePrice * marginPercentage) / 100;
@@ -602,9 +565,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({
 
   const handleSellPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Extract numeric value from currency format (e.g., "Rp 123" -> "123")
-    const cleanValue = e.target.value
-      .replace(/^Rp\s*/, '')
-      .replace(/[^0-9]/g, '');
+    const cleanValue = e.target.value.replace(/^Rp\s*/, "").replace(/[^0-9]/g, "");
     const value = parseFloat(cleanValue) || 0;
     updateFormData(toPricingPatch({ sellPrice: value }));
     marginEditor.setValue((calcMargin || 0).toString());
@@ -616,18 +577,15 @@ const PricingSection: React.FC<PricingSectionProps> = ({
 
   const customerLevelDiscounts = useMemo(
     () =>
-      Array.isArray(formData.customer_level_discounts)
-        ? formData.customer_level_discounts
-        : [],
-    [formData.customer_level_discounts]
+      Array.isArray(formData.customer_level_discounts) ? formData.customer_level_discounts : [],
+    [formData.customer_level_discounts],
   );
 
   const discountByLevel = useMemo(() => {
     const mapped: Record<string, number> = {};
-    customerLevelDiscounts.forEach(discount => {
+    customerLevelDiscounts.forEach((discount) => {
       if (!discount.customer_level_id) return;
-      mapped[discount.customer_level_id] =
-        Number(discount.discount_percentage) || 0;
+      mapped[discount.customer_level_id] = Number(discount.discount_percentage) || 0;
     });
     return mapped;
   }, [customerLevelDiscounts]);
@@ -635,18 +593,16 @@ const PricingSection: React.FC<PricingSectionProps> = ({
   const handleDiscountChange = useCallback(
     (levelId: string, value: string) => {
       const trimmedValue = value.trim();
-      const parsedValue = trimmedValue
-        ? Number(trimmedValue.replace(',', '.'))
-        : 0;
+      const parsedValue = trimmedValue ? Number(trimmedValue.replace(",", ".")) : 0;
       const normalizedValue = Number.isNaN(parsedValue)
         ? 0
         : Math.min(Math.max(parsedValue, 0), 100);
 
       const nextDiscounts = customerLevelDiscounts.filter(
-        discount => discount.customer_level_id !== levelId
+        (discount) => discount.customer_level_id !== levelId,
       );
 
-      if (trimmedValue !== '') {
+      if (trimmedValue !== "") {
         nextDiscounts.push({
           customer_level_id: levelId,
           discount_percentage: normalizedValue,
@@ -655,7 +611,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({
 
       updateFormData({ customer_level_discounts: nextDiscounts });
     },
-    [customerLevelDiscounts, updateFormData]
+    [customerLevelDiscounts, updateFormData],
   );
 
   return (
@@ -668,7 +624,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({
       }}
       displayBasePrice={displayBasePrice}
       displaySellPrice={displaySellPrice}
-      baseUnitId={formData.base_inventory_unit_id || ''}
+      baseUnitId={formData.base_inventory_unit_id || ""}
       baseUnit={packageConversionHook.baseUnit}
       baseUnitOptions={baseUnitOptions}
       marginEditing={{
@@ -700,28 +656,25 @@ const PricingSection: React.FC<PricingSectionProps> = ({
       stackClassName={stackClassName}
       stackStyle={stackStyle}
       disabled={isViewingOldVersion}
-      onBaseUnitChange={value => {
+      onBaseUnitChange={(value) => {
         const selectedUnit = mergeInventoryUnitsWithDosagePreference(
           [
             ...packageConversionHook.availableUnits,
             ...packages
               .filter(
-                pkg =>
-                  !packageConversionHook.availableUnits.some(
-                    unit => unit.id === pkg.id
-                  )
+                (pkg) => !packageConversionHook.availableUnits.some((unit) => unit.id === pkg.id),
               )
-              .map(pkg => ({
+              .map((pkg) => ({
                 id: pkg.id,
                 name: pkg.name,
                 code: pkg.code,
                 description: pkg.description ?? null,
-                kind: 'packaging' as const,
+                kind: "packaging" as const,
                 source_package_id: pkg.id,
               })),
           ],
-          dosageBackedUnit
-        ).find(unit => unit.id === value);
+          dosageBackedUnit,
+        ).find((unit) => unit.id === value);
         if (!selectedUnit) return;
 
         updateFormData({ base_inventory_unit_id: value });
@@ -737,7 +690,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({
       onMarginInputChange={marginEditor.handleChange}
       onMarginKeyDown={marginEditor.handleKeyDown}
       isLevelPricingActive={pricingFields.isLevelPricingActive}
-      onLevelPricingActiveChange={active => {
+      onLevelPricingActiveChange={(active) => {
         updateFormData(toPricingPatch({ isLevelPricingActive: active }));
       }}
     />
@@ -758,7 +711,7 @@ const PackageConversionSection: React.FC<CollapsibleSectionProps> = ({
   const realtime = useItemRealtime();
   const smartFormSync = realtime?.smartFormSync;
   const selectedDosage = formData.dosage_id
-    ? dosages.find(dosage => dosage.id === formData.dosage_id) || null
+    ? dosages.find((dosage) => dosage.id === formData.dosage_id) || null
     : null;
   const dosageBackedUnit = createInventoryUnitFromDosage(selectedDosage);
   const availableInventoryUnits = useMemo(() => {
@@ -768,30 +721,22 @@ const PackageConversionSection: React.FC<CollapsibleSectionProps> = ({
           ...packageConversionHook.availableUnits,
           ...packages
             .filter(
-              pkg =>
-                !packageConversionHook.availableUnits.some(
-                  unit => unit.id === pkg.id
-                )
+              (pkg) => !packageConversionHook.availableUnits.some((unit) => unit.id === pkg.id),
             )
-            .map(pkg => ({
+            .map((pkg) => ({
               id: pkg.id,
               name: pkg.name,
               code: pkg.code,
               description: pkg.description ?? null,
-              kind: 'packaging' as const,
+              kind: "packaging" as const,
               source_package_id: pkg.id,
             })),
         ],
-        dosageBackedUnit
+        dosageBackedUnit,
       ),
-      dosages
+      dosages,
     );
-  }, [
-    dosageBackedUnit,
-    dosages,
-    packageConversionHook.availableUnits,
-    packages,
-  ]);
+  }, [dosageBackedUnit, dosages, packageConversionHook.availableUnits, packages]);
 
   const packageConversionLogic = useConversionLogic({
     conversions: packageConversionHook.conversions,
@@ -811,11 +756,11 @@ const PackageConversionSection: React.FC<CollapsibleSectionProps> = ({
   };
 
   const handleConversionInteractionStart = useCallback(() => {
-    smartFormSync?.registerActiveField('package_conversions');
+    smartFormSync?.registerActiveField("package_conversions");
   }, [smartFormSync]);
 
   const handleConversionInteractionEnd = useCallback(() => {
-    smartFormSync?.unregisterActiveField('package_conversions');
+    smartFormSync?.unregisterActiveField("package_conversions");
   }, [smartFormSync]);
 
   const { removePackageConversion, setConversions } = packageConversionHook;
@@ -824,20 +769,18 @@ const PackageConversionSection: React.FC<CollapsibleSectionProps> = ({
     (id: string) => {
       removePackageConversion(id);
     },
-    [removePackageConversion]
+    [removePackageConversion],
   );
 
   const handleUpdateSellPrice = useCallback(
     (id: string, sellPrice: number) => {
-      setConversions(prevConversions => {
-        return prevConversions.map(conversion =>
-          conversion.id === id
-            ? { ...conversion, sell_price: sellPrice }
-            : conversion
+      setConversions((prevConversions) => {
+        return prevConversions.map((conversion) =>
+          conversion.id === id ? { ...conversion, sell_price: sellPrice } : conversion,
         );
       });
     },
-    [setConversions]
+    [setConversions],
   );
 
   return (
@@ -874,36 +817,34 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
   const { resetKey, isViewingOldVersion, isEditMode } = useItemUI();
   const cacheKey = itemId ? `item-images:${itemId}` : null;
   const isDraftMode = !itemId && !isEditMode;
-  const bucketName = 'item_images';
+  const bucketName = "item_images";
   const resolveSlotPath = useCallback(
     (url: string, slotIndex: number) => {
-      if (!url || !itemId) return '';
-      const cleanUrl = url.split('?')[0];
+      if (!url || !itemId) return "";
+      const cleanUrl = url.split("?")[0];
       const extracted = StorageService.extractPathFromUrl(cleanUrl, bucketName);
       return extracted || `items/${itemId}/slot-${slotIndex}`;
     },
-    [bucketName, itemId]
+    [bucketName, itemId],
   );
   const buildSlotsFromUrlsWithItem = useCallback(
     (urls: string[]) =>
       Array.from({ length: 4 }, (_, index) => {
-        const url = urls[index] || '';
+        const url = urls[index] || "";
         return {
           url,
-          path: url ? resolveSlotPath(url, index) : '',
+          path: url ? resolveSlotPath(url, index) : "",
         };
       }),
-    [resolveSlotPath]
+    [resolveSlotPath],
   );
   const [imageSlots, setImageSlots] = useState(
-    Array.from({ length: 4 }, () => ({ url: '', path: '' }))
+    Array.from({ length: 4 }, () => ({ url: "", path: "" })),
   );
   const [isLoadingImages, setIsLoadingImages] = useState(false);
   const [previewSlotIndex, setPreviewSlotIndex] = useState<number | null>(null);
   const [isPreviewVisible, setIsPreviewVisible] = useState(false);
-  const [displayUrls, setDisplayUrls] = useState<
-    Array<{ source: string; display: string }>
-  >([]);
+  const [displayUrls, setDisplayUrls] = useState<Array<{ source: string; display: string }>>([]);
   const [cropState, setCropState] = useState<{
     slotIndex: number;
     file: File;
@@ -920,7 +861,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
   const retainedDisplaySourcesRef = useRef<string[]>([]);
   const imageTabIndexMap = useMemo(() => {
     const slots = [0, 1, 2, 3];
-    const firstEmptyIndex = imageSlots.findIndex(slot => !slot.url);
+    const firstEmptyIndex = imageSlots.findIndex((slot) => !slot.url);
     const startIndex = firstEmptyIndex === -1 ? 0 : firstEmptyIndex;
     const ordered = slots.slice(startIndex);
     const map = ordered.reduce<Record<number, number>>((acc, index, order) => {
@@ -939,13 +880,12 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
   const cropperExitDurationMs = 180;
   const formImageUrls = useMemo(
     () => (Array.isArray(formData.image_urls) ? formData.image_urls : []),
-    [formData.image_urls]
+    [formData.image_urls],
   );
   const areImageUrlsEqual = useCallback(
     (left: string[], right: string[]) =>
-      left.length === right.length &&
-      left.every((value, index) => value === right[index]),
-    []
+      left.length === right.length && left.every((value, index) => value === right[index]),
+    [],
   );
 
   const openCropper = useCallback((slotIndex: number, file: File) => {
@@ -954,18 +894,12 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
       cropperCloseTimerRef.current = null;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setCropState({ slotIndex, file, previewUrl: reader.result });
-      } else {
-        toast.error('Gagal memuat gambar untuk crop.');
-      }
-    };
-    reader.onerror = () => {
-      toast.error('Gagal memuat gambar untuk crop.');
-    };
-    reader.readAsDataURL(file);
+    if (file.size > MAX_ITEM_IMAGE_SOURCE_BYTES || !ALLOWED_ITEM_IMAGE_TYPES.has(file.type)) {
+      toast.error("Gunakan gambar JPG, PNG, atau WebP maksimal 20 MB.");
+      return;
+    }
+
+    setCropState({ slotIndex, file, previewUrl: URL.createObjectURL(file) });
   }, []);
 
   const closeCropper = useCallback(() => {
@@ -974,7 +908,12 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
       window.clearTimeout(cropperCloseTimerRef.current);
     }
     cropperCloseTimerRef.current = window.setTimeout(() => {
-      setCropState(null);
+      setCropState((previousCropState) => {
+        if (previousCropState?.previewUrl.startsWith("blob:")) {
+          URL.revokeObjectURL(previousCropState.previewUrl);
+        }
+        return null;
+      });
       cropperCloseTimerRef.current = null;
     }, cropperExitDurationMs);
   }, [cropperExitDurationMs]);
@@ -1022,14 +961,14 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
       });
       const selection = cropperInstance.getCropperSelection();
       const cropperImage = cropperInstance.getCropperImage();
-      void cropperImage?.$ready(image => {
+      void cropperImage?.$ready((image) => {
         const cropperCanvas = cropperInstance.getCropperCanvas();
         if (!cropperCanvas || !cropperImage) return;
 
         const canvasRect = cropperCanvas.getBoundingClientRect();
         const scale = Math.min(
           canvasRect.width / image.naturalWidth,
-          canvasRect.height / image.naturalHeight
+          canvasRect.height / image.naturalHeight,
         );
         const renderedWidth = image.naturalWidth * scale;
         const renderedHeight = image.naturalHeight * scale;
@@ -1052,7 +991,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
         const keepSelectionWithinImage = (
           event: Event & {
             detail?: { height: number; width: number; x: number; y: number };
-          }
+          },
         ) => {
           const cropperCanvas = cropperInstance.getCropperCanvas();
           const cropperImage = cropperInstance.getCropperImage();
@@ -1071,10 +1010,8 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
           const isWithinImageBounds =
             detail.x >= selectionBounds.x &&
             detail.y >= selectionBounds.y &&
-            detail.x + detail.width <=
-              selectionBounds.x + selectionBounds.width &&
-            detail.y + detail.height <=
-              selectionBounds.y + selectionBounds.height;
+            detail.x + detail.width <= selectionBounds.x + selectionBounds.width &&
+            detail.y + detail.height <= selectionBounds.y + selectionBounds.height;
 
           if (!isWithinImageBounds) {
             event.preventDefault();
@@ -1084,26 +1021,20 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
         selection.initialAspectRatio = 1;
         selection.aspectRatio = 1;
         selection.initialCoverage = 0.92;
-        selection.addEventListener(
-          'change',
-          keepSelectionWithinImage as EventListener
-        );
+        selection.addEventListener("change", keepSelectionWithinImage as EventListener);
 
-        const keepImageCoveringSelection = (
-          event: Event & { detail?: { matrix?: number[] } }
-        ) => {
+        const keepImageCoveringSelection = (event: Event & { detail?: { matrix?: number[] } }) => {
           const cropperCanvas = cropperInstance.getCropperCanvas();
           const nextMatrix = event.detail?.matrix;
 
           if (!cropperCanvas || !cropperImage || !nextMatrix) return;
 
           const cropperImageClone = cropperImage.cloneNode() as HTMLElement;
-          cropperImageClone.style.transform = `matrix(${nextMatrix.join(', ')})`;
-          cropperImageClone.style.opacity = '0';
+          cropperImageClone.style.transform = `matrix(${nextMatrix.join(", ")})`;
+          cropperImageClone.style.opacity = "0";
           cropperCanvas.appendChild(cropperImageClone);
 
-          const transformedImageRect =
-            cropperImageClone.getBoundingClientRect();
+          const transformedImageRect = cropperImageClone.getBoundingClientRect();
           cropperCanvas.removeChild(cropperImageClone);
 
           const canvasRect = cropperCanvas.getBoundingClientRect();
@@ -1123,31 +1054,23 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
           const doesImageCoverSelection =
             imageBounds.x <= selectionBounds.x &&
             imageBounds.y <= selectionBounds.y &&
-            imageBounds.x + imageBounds.width >=
-              selectionBounds.x + selectionBounds.width &&
-            imageBounds.y + imageBounds.height >=
-              selectionBounds.y + selectionBounds.height;
+            imageBounds.x + imageBounds.width >= selectionBounds.x + selectionBounds.width &&
+            imageBounds.y + imageBounds.height >= selectionBounds.y + selectionBounds.height;
 
           if (!doesImageCoverSelection) {
             event.preventDefault();
           }
         };
 
-        cropperImage?.addEventListener(
-          'transform',
-          keepImageCoveringSelection as EventListener
-        );
+        cropperImage?.addEventListener("transform", keepImageCoveringSelection as EventListener);
 
         cropperRef.current = cropperInstance;
 
         return () => {
-          selection.removeEventListener(
-            'change',
-            keepSelectionWithinImage as EventListener
-          );
+          selection.removeEventListener("change", keepSelectionWithinImage as EventListener);
           cropperImage?.removeEventListener(
-            'transform',
-            keepImageCoveringSelection as EventListener
+            "transform",
+            keepImageCoveringSelection as EventListener,
           );
         };
       }
@@ -1185,7 +1108,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
   const updateImageCache = useCallback(
     (slots: Array<{ url: string }>) => {
       if (!cacheKey) return;
-      const urls = slots.map(slot => slot.url);
+      const urls = slots.map((slot) => slot.url);
       const hasImage = urls.some(Boolean);
       if (hasImage) {
         setCachedImageSet(cacheKey, urls);
@@ -1194,7 +1117,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
       }
       preloadImages(urls.filter(Boolean));
     },
-    [cacheKey]
+    [cacheKey],
   );
 
   const revokeLocalPreview = useCallback((slotIndex: number) => {
@@ -1204,42 +1127,37 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
     delete localPreviewUrlsRef.current[slotIndex];
   }, []);
 
-  const setLocalPreviewForSlot = useCallback(
-    (slotIndex: number, file: File) => {
-      const objectUrl = URL.createObjectURL(file);
-      const existing = localPreviewUrlsRef.current[slotIndex];
-      if (existing) {
-        URL.revokeObjectURL(existing);
-      }
-      localPreviewUrlsRef.current[slotIndex] = objectUrl;
-      return objectUrl;
-    },
-    []
-  );
+  const setLocalPreviewForSlot = useCallback((slotIndex: number, file: File) => {
+    const objectUrl = URL.createObjectURL(file);
+    const existing = localPreviewUrlsRef.current[slotIndex];
+    if (existing) {
+      URL.revokeObjectURL(existing);
+    }
+    localPreviewUrlsRef.current[slotIndex] = objectUrl;
+    return objectUrl;
+  }, []);
 
   useEffect(() => {
     let isActive = true;
     let didCommit = false;
     const previousSources = retainedDisplaySourcesRef.current;
     const nextSources = imageSlots
-      .map(slot => slot.url)
-      .filter(source => source && source.startsWith('http'));
+      .map((slot) => slot.url)
+      .filter((source) => source && source.startsWith("http"));
     const nextSourceSet = new Set(nextSources);
-    const releaseSources = previousSources.filter(
-      source => !nextSourceSet.has(source)
-    );
+    const releaseSources = previousSources.filter((source) => !nextSourceSet.has(source));
 
     const resolveDisplayUrls = async () => {
       const results = await Promise.all(
-        imageSlots.map(async slot => {
-          const source = slot.url || '';
-          if (!source) return { source: '', display: '' };
-          if (!source.startsWith('http')) return { source, display: source };
+        imageSlots.map(async (slot) => {
+          const source = slot.url || "";
+          if (!source) return { source: "", display: "" };
+          if (!source.startsWith("http")) return { source, display: source };
           const cachedBlobUrl = await getCachedImageBlobUrl(source);
           if (cachedBlobUrl) return { source, display: cachedBlobUrl };
           const blobUrl = await cacheImageBlob(source);
           return { source, display: blobUrl || source };
-        })
+        }),
       );
 
       if (!isActive) {
@@ -1272,7 +1190,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
 
   useEffect(() => {
     return () => {
-      Object.values(localPreviewUrlsRef.current).forEach(url => {
+      Object.values(localPreviewUrlsRef.current).forEach((url) => {
         URL.revokeObjectURL(url);
       });
       localPreviewUrlsRef.current = {};
@@ -1280,7 +1198,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
   }, []);
 
   const buildImageUrlsPayload = useCallback((slots: Array<{ url: string }>) => {
-    const urls = slots.map(slot => slot.url || '');
+    const urls = slots.map((slot) => slot.url || "");
     return urls.some(Boolean) ? urls : [];
   }, []);
 
@@ -1290,7 +1208,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
       if (areImageUrlsEqual(formImageUrls, nextImageUrls)) return;
       updateFormData({ image_urls: nextImageUrls });
     },
-    [areImageUrlsEqual, buildImageUrlsPayload, formImageUrls, updateFormData]
+    [areImageUrlsEqual, buildImageUrlsPayload, formImageUrls, updateFormData],
   );
 
   useEffect(() => {
@@ -1309,16 +1227,16 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
 
   const handleBrokenImage = useCallback(
     (slotIndex: number) => {
-      setImageSlots(prevSlots => {
+      setImageSlots((prevSlots) => {
         const nextSlots = prevSlots.map((slot, index) =>
-          index === slotIndex ? { path: '', url: '' } : slot
+          index === slotIndex ? { path: "", url: "" } : slot,
         );
         updateImageCache(nextSlots);
         syncPendingImageUrls(nextSlots);
         return nextSlots;
       });
     },
-    [syncPendingImageUrls, updateImageCache]
+    [syncPendingImageUrls, updateImageCache],
   );
 
   useEffect(() => {
@@ -1340,40 +1258,32 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
 
     const loadItemImages = async () => {
       setIsLoadingImages(true);
-      const { data, error } = await itemStorageService.listItemImages(
-        bucketName,
-        itemId
-      );
+      const { data, error } = await itemStorageService.listItemImages(bucketName, itemId);
 
       if (!isMounted) return;
 
       if (error) {
-        toast.error('Gagal memuat gambar item.');
-        setImageSlots(Array.from({ length: 4 }, () => ({ url: '', path: '' })));
+        toast.error("Gagal memuat gambar item.");
+        setImageSlots(Array.from({ length: 4 }, () => ({ url: "", path: "" })));
         setIsLoadingImages(false);
         return;
       }
 
       const nextSlots = Array.from({ length: 4 }, () => ({
-        url: '',
-        path: '',
+        url: "",
+        path: "",
       }));
 
-      data?.forEach(file => {
+      data?.forEach((file) => {
         const match = file.name.match(/^slot-(\d)$/);
         if (!match) return;
         const slotIndex = Number(match[1]);
         if (Number.isNaN(slotIndex) || slotIndex < 0 || slotIndex > 3) return;
         const path = `items/${itemId}/${file.name}`;
-        const versionToken = file.updated_at
-          ? new Date(file.updated_at).getTime()
-          : Date.now();
+        const versionToken = file.updated_at ? new Date(file.updated_at).getTime() : Date.now();
         nextSlots[slotIndex] = {
           path,
-          url: appendCacheBust(
-            StorageService.getPublicUrl(bucketName, path),
-            versionToken
-          ),
+          url: appendCacheBust(StorageService.getPublicUrl(bucketName, path), versionToken),
         };
       });
 
@@ -1387,62 +1297,44 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
     return () => {
       isMounted = false;
     };
-  }, [
-    bucketName,
-    buildSlotsFromUrls,
-    cacheKey,
-    formImageUrls,
-    itemId,
-    loading,
-    updateImageCache,
-  ]);
+  }, [bucketName, buildSlotsFromUrls, cacheKey, formImageUrls, itemId, loading, updateImageCache]);
 
   useEffect(() => {
     if (!itemId) return;
 
     const nextSlots = buildSlotsFromUrls(formImageUrls);
-    setImageSlots(prevSlots =>
-      areImageSlotsEqual(prevSlots, nextSlots) ? prevSlots : nextSlots
+    setImageSlots((prevSlots) =>
+      areImageSlotsEqual(prevSlots, nextSlots) ? prevSlots : nextSlots,
     );
     updateImageCache(nextSlots);
     setIsLoadingImages(false);
   }, [buildSlotsFromUrls, formImageUrls, itemId, updateImageCache]);
 
-  const handleOptionalChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleOptionalChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     handleChange(e);
   };
 
   const getImageDimensions = useCallback((file: File) => {
     return new Promise<{ width: number; height: number }>((resolve, reject) => {
       const fallbackToImage = () => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const image = new Image();
-          image.onload = () => {
-            resolve({ width: image.width, height: image.height });
-          };
-          image.onerror = () => {
-            reject(new Error('Gagal memuat gambar.'));
-          };
-          if (typeof reader.result === 'string') {
-            image.src = reader.result;
-          } else {
-            reject(new Error('Gagal memuat gambar.'));
-          }
+        const objectUrl = URL.createObjectURL(file);
+        const image = new Image();
+        image.onload = () => {
+          URL.revokeObjectURL(objectUrl);
+          resolve({ width: image.width, height: image.height });
         };
-        reader.onerror = () => {
-          reject(new Error('Gagal memuat gambar.'));
+        image.onerror = () => {
+          URL.revokeObjectURL(objectUrl);
+          reject(new Error("Gagal memuat gambar."));
         };
-        reader.readAsDataURL(file);
+        image.src = objectUrl;
       };
 
-      if (typeof createImageBitmap === 'function') {
+      if (typeof createImageBitmap === "function") {
         createImageBitmap(file)
-          .then(bitmap => {
+          .then((bitmap) => {
             resolve({ width: bitmap.width, height: bitmap.height });
-            if (typeof bitmap.close === 'function') {
+            if (typeof bitmap.close === "function") {
               bitmap.close();
             }
           })
@@ -1456,6 +1348,11 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
 
   const handleImageUpload = useCallback(
     async (slotIndex: number, file: File) => {
+      if (file.size > MAX_ITEM_IMAGE_SOURCE_BYTES || !ALLOWED_ITEM_IMAGE_TYPES.has(file.type)) {
+        toast.error("Gunakan gambar JPG, PNG, atau WebP maksimal 20 MB.");
+        return;
+      }
+
       try {
         const { width, height } = await getImageDimensions(file);
         if (width !== height) {
@@ -1463,14 +1360,14 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
           return;
         }
       } catch {
-        toast.error('Gagal membaca ukuran gambar.');
+        toast.error("Gagal membaca ukuran gambar.");
         return;
       }
 
       const previewUrl = setLocalPreviewForSlot(slotIndex, file);
-      setImageSlots(prevSlots => {
+      setImageSlots((prevSlots) => {
         const nextSlots = prevSlots.map((slot, index) =>
-          index === slotIndex ? { path: '', url: previewUrl } : slot
+          index === slotIndex ? { path: "", url: previewUrl } : slot,
         );
         updateImageCache(nextSlots);
         syncPendingImageUrls(nextSlots);
@@ -1483,7 +1380,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
       setLocalPreviewForSlot,
       syncPendingImageUrls,
       updateImageCache,
-    ]
+    ],
   );
 
   const handleCropConfirm = useCallback(async () => {
@@ -1493,22 +1390,22 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
     try {
       const selection = cropperRef.current.getCropperSelection();
       if (!selection) {
-        throw new Error('Gagal memproses gambar.');
+        throw new Error("Gagal memproses gambar.");
       }
       const canvas = await selection.$toCanvas({
         width: 1024,
         height: 1024,
       });
 
-      const mimeType = cropState.file.type || 'image/jpeg';
+      const mimeType = cropState.file.type || "image/jpeg";
       const blob = await new Promise<Blob>((resolve, reject) => {
         canvas.toBlob(
           (result: Blob | null) => {
             if (result) resolve(result);
-            else reject(new Error('Gagal memproses gambar.'));
+            else reject(new Error("Gagal memproses gambar."));
           },
           mimeType,
-          0.9
+          0.9,
         );
       });
 
@@ -1520,26 +1417,20 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
       const targetSlot = cropState.slotIndex;
       closeCropper();
       const previewUrl = setLocalPreviewForSlot(targetSlot, croppedFile);
-      setImageSlots(prevSlots => {
+      setImageSlots((prevSlots) => {
         const nextSlots = prevSlots.map((slot, index) =>
-          index === targetSlot ? { path: '', url: previewUrl } : slot
+          index === targetSlot ? { path: "", url: previewUrl } : slot,
         );
         updateImageCache(nextSlots);
         syncPendingImageUrls(nextSlots);
         return nextSlots;
       });
     } catch {
-      toast.error('Gagal memproses gambar.');
+      toast.error("Gagal memproses gambar.");
     } finally {
       setIsCropping(false);
     }
-  }, [
-    closeCropper,
-    cropState,
-    setLocalPreviewForSlot,
-    syncPendingImageUrls,
-    updateImageCache,
-  ]);
+  }, [closeCropper, cropState, setLocalPreviewForSlot, syncPendingImageUrls, updateImageCache]);
 
   const handleImageDelete = useCallback(
     async (slotIndex: number) => {
@@ -1549,9 +1440,12 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
         if (targetSlot.url) {
           await removeCachedImageBlob(targetSlot.url);
         }
-        setImageSlots(prevSlots => {
+        if (targetSlot.path && !targetSlot.url.startsWith("blob:")) {
+          await StorageService.deleteFile(bucketName, targetSlot.path);
+        }
+        setImageSlots((prevSlots) => {
           const nextSlots = prevSlots.map((slot, index) =>
-            index === slotIndex ? { path: '', url: '' } : slot
+            index === slotIndex ? { path: "", url: "" } : slot,
           );
           updateImageCache(nextSlots);
           syncPendingImageUrls(nextSlots);
@@ -1559,18 +1453,16 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
         });
       } catch (deleteError) {
         console.error(deleteError);
-        toast.error('Gagal menghapus gambar.');
+        toast.error("Gagal menghapus gambar.");
       }
     },
-    [imageSlots, revokeLocalPreview, syncPendingImageUrls, updateImageCache]
+    [bucketName, imageSlots, revokeLocalPreview, syncPendingImageUrls, updateImageCache],
   );
 
   const getDisplayUrlForSlot = useCallback(
     (slot: { url: string }, index: number) =>
-      displayUrls[index]?.source === slot.url
-        ? displayUrls[index]?.display || slot.url
-        : slot.url,
-    [displayUrls]
+      displayUrls[index]?.source === slot.url ? displayUrls[index]?.display || slot.url : slot.url,
+    [displayUrls],
   );
 
   const previewImageUrl =
@@ -1614,7 +1506,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
         window.clearTimeout(previewCloseTimerRef.current);
       }
     },
-    []
+    [],
   );
 
   return (
@@ -1626,15 +1518,13 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
             id={`item-image-${index}`}
             shape="rounded"
             hasImage={Boolean(slot.url)}
-            disabled={
-              isViewingOldVersion || (isLoadingImages && Boolean(slot.url))
-            }
+            disabled={isViewingOldVersion || (isLoadingImages && Boolean(slot.url))}
             interaction="direct"
             isPopupSuppressed={Boolean(previewSlotIndex !== null || cropState)}
-            onImageUpload={file => handleImageUpload(index, file)}
+            onImageUpload={(file) => handleImageUpload(index, file)}
             onImageDelete={() => handleImageDelete(index)}
             className="w-full"
-            validTypes={['image/png', 'image/jpeg', 'image/jpg', 'image/webp']}
+            validTypes={["image/png", "image/jpeg", "image/jpg", "image/webp"]}
             loadingIcon={null}
             tabIndex={imageTabIndexMap[index]}
           >
@@ -1644,7 +1534,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
                 alt={`Item ${index + 1}`}
                 className="aspect-square w-full rounded-xl border border-slate-200 object-cover cursor-zoom-in transition duration-200 group-hover:brightness-95 group-focus-visible:brightness-95"
                 onError={() => handleBrokenImage(index)}
-                onClick={event => {
+                onClick={(event) => {
                   event.stopPropagation();
                   openPreview(index);
                 }}
@@ -1677,7 +1567,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
             onPopupClose={closePreview}
             className="max-h-[92vh] max-w-[92vw]"
             popupTrigger="click"
-            onImageUpload={async file => {
+            onImageUpload={async (file) => {
               const slotIndex = previewSlotIndex;
               closePreview();
               await handleImageUpload(slotIndex, file);
@@ -1687,7 +1577,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
               closePreview();
               await handleImageDelete(slotIndex);
             }}
-            validTypes={['image/png', 'image/jpeg', 'image/jpg', 'image/webp']}
+            validTypes={["image/png", "image/jpeg", "image/jpg", "image/webp"]}
           >
             <img
               src={previewImageUrl}
@@ -1702,13 +1592,13 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
           <div
             className={`fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm transition-all duration-200 ${
               isCropperVisible
-                ? 'bg-black/70 opacity-100'
-                : 'bg-black/70 opacity-0 pointer-events-none'
+                ? "bg-black/70 opacity-100"
+                : "bg-black/70 opacity-0 pointer-events-none"
             }`}
           >
             <div
               className={`w-[min(72vw,calc(90vh-11rem))] min-w-[20rem] max-w-[calc(100vw-3rem)] flex flex-col rounded-2xl border border-slate-200 bg-white shadow-xl transition-opacity duration-200 ${
-                isCropperVisible ? 'opacity-100' : 'opacity-0'
+                isCropperVisible ? "opacity-100" : "opacity-0"
               }`}
             >
               <div className="px-6 pt-6 pb-5 text-base font-semibold text-slate-800">
@@ -1738,24 +1628,19 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
                 >
                   Batal
                 </Button>
-                <Button
-                  type="button"
-                  size="md"
-                  onClick={handleCropConfirm}
-                  isLoading={isCropping}
-                >
+                <Button type="button" size="md" onClick={handleCropConfirm} isLoading={isCropping}>
                   Simpan
                 </Button>
               </div>
             </div>
           </div>,
-          document.body
+          document.body,
         )}
       <ItemAdditionalInfoForm
         key={resetKey} // Force re-mount on reset to clear validation
         formData={{
-          barcode: formData.barcode || '',
-          description: formData.description || '',
+          barcode: formData.barcode || "",
+          description: formData.description || "",
         }}
         isExpanded={isExpanded}
         onExpand={onExpand}

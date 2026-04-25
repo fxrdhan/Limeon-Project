@@ -1,14 +1,14 @@
-import React from 'react';
-import type { GridApi } from 'ag-grid-community';
-import { TbPlus } from 'react-icons/tb';
+import React from "react";
+import type { GridApi } from "ag-grid-community";
+import { TbPlus } from "react-icons/tb";
 
-import Button from '@/components/button';
-import { ExportDropdown } from '@/components/export';
-import PageTitle from '@/components/page-title';
-import { AGGridPagination } from '@/components/pagination';
-import EnhancedSearchBar from '@/components/search-bar/EnhancedSearchBar';
-import type { EnhancedSearchBarProps } from '@/components/search-bar/types';
-import DataGrid, { type DataGridProps } from '@/components/ag-grid/DataGrid';
+import Button from "@/components/button";
+import { ExportDropdown } from "@/components/export";
+import PageTitle from "@/components/page-title";
+import { AGGridPagination } from "@/components/pagination";
+import EnhancedSearchBar from "@/components/search-bar/EnhancedSearchBar";
+import type { EnhancedSearchBarProps } from "@/components/search-bar/types";
+import DataGrid, { type DataGridProps } from "@/components/ag-grid/DataGrid";
 
 interface MasterDataListPaginationProps {
   gridApi: GridApi | null;
@@ -52,18 +52,29 @@ const MasterDataListPage: React.FC<MasterDataListPageProps> = ({
   gridHeight,
   gridProps,
   pagination,
-  searchPlaceholder = 'Cari di semua kolom atau ketik # untuk pencarian kolom spesifik...',
+  searchPlaceholder = "Cari di semua kolom atau ketik # untuk pencarian kolom spesifik...",
   children,
 }) => {
   const entityLabel = entityName.toLowerCase();
+  const escapeOverlayText = (value: string) =>
+    value.replace(/[&<>"']/g, (char) => {
+      const replacements: Record<string, string> = {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      };
+      return replacements[char] ?? char;
+    });
   const overlayNoRowsTemplate = searchValue
-    ? `<span style="padding: 10px; color: #888;">Tidak ada ${entityLabel} dengan nama "${searchValue}"</span>`
+    ? `<span style="padding: 10px; color: #888;">Tidak ada ${escapeOverlayText(entityLabel)} dengan nama "${escapeOverlayText(searchValue)}"</span>`
     : `<span style="padding: 10px; color: #888;">Tidak ada data ${entityLabel} yang ditemukan</span>`;
   const gridStyle = {
-    width: '100%',
-    marginTop: '1rem',
-    marginBottom: '1rem',
-    transition: 'height 0.3s ease-in-out',
+    width: "100%",
+    marginTop: "1rem",
+    marginBottom: "1rem",
+    transition: "height 0.3s ease-in-out",
     ...gridProps.style,
     height: `${gridHeight}px`,
   };
@@ -73,8 +84,8 @@ const MasterDataListPage: React.FC<MasterDataListPageProps> = ({
       <div
         className={
           isFetching
-            ? 'opacity-75 transition-opacity duration-300 flex-1 flex flex-col p-6'
-            : 'flex-1 flex flex-col p-6'
+            ? "opacity-75 transition-opacity duration-300 flex-1 flex flex-col p-6"
+            : "flex-1 flex flex-col p-6"
         }
       >
         <div className="mb-6">
@@ -89,10 +100,7 @@ const MasterDataListPage: React.FC<MasterDataListPageProps> = ({
             className="grow"
           />
           <div className="ml-4 mb-2">
-            <ExportDropdown
-              gridApi={pagination.gridApi}
-              filename={exportFilename}
-            />
+            <ExportDropdown gridApi={pagination.gridApi} filename={exportFilename} />
           </div>
           <Button
             variant="primary"
@@ -106,19 +114,14 @@ const MasterDataListPage: React.FC<MasterDataListPageProps> = ({
         </div>
         {isError && (
           <div className="text-center p-6 text-red-500">
-            Error:{' '}
-            {queryError instanceof Error
-              ? queryError.message
-              : 'Gagal memuat data'}
+            Error: {queryError instanceof Error ? queryError.message : "Gagal memuat data"}
           </div>
         )}
         {!isError && (
           <>
             <DataGrid
               {...gridProps}
-              overlayNoRowsTemplate={
-                gridProps.overlayNoRowsTemplate ?? overlayNoRowsTemplate
-              }
+              overlayNoRowsTemplate={gridProps.overlayNoRowsTemplate ?? overlayNoRowsTemplate}
               style={gridStyle}
             />
 

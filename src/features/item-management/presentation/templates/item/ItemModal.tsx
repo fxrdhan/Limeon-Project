@@ -1,41 +1,27 @@
-import { useItemModalRealtime } from '@/hooks/realtime/useItemModalRealtime';
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-import { logger } from '@/utils/logger';
-import { useAddItemPageHandlers } from '../../../application/hooks/form/useItemPageHandlers';
-import { useItemFormValidation } from '../../../application/hooks/form/useItemValidation';
-import { useEntityHistory } from '../../../application/hooks/instances/useEntityHistory';
-import { ItemManagementProvider } from '../../../shared/contexts/ItemFormContext';
+import { useItemModalRealtime } from "@/hooks/realtime/useItemModalRealtime";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { logger } from "@/utils/logger";
+import { useAddItemPageHandlers } from "../../../application/hooks/form/useItemPageHandlers";
+import { useItemFormValidation } from "../../../application/hooks/form/useItemValidation";
+import { useEntityHistory } from "../../../application/hooks/instances/useEntityHistory";
+import { ItemManagementProvider } from "../../../shared/contexts/ItemFormContext";
 import {
   useItemActions,
   useItemForm,
   useItemPrice,
   useItemUI,
-} from '../../../shared/contexts/useItemFormContext';
-import type {
-  ItemManagementContextValue,
-  ItemModalProps,
-} from '../../../shared/types';
-import type { DBPackageConversion, ItemInventoryUnit } from '@/types/database';
+} from "../../../shared/contexts/useItemFormContext";
+import type { ItemManagementContextValue, ItemModalProps } from "../../../shared/types";
+import type { DBPackageConversion, ItemInventoryUnit } from "@/types/database";
 
-type AccordionSection = 'additional' | 'settings' | 'pricing' | 'conversion';
+type AccordionSection = "additional" | "settings" | "pricing" | "conversion";
 
-const SECTION_ORDER: AccordionSection[] = [
-  'additional',
-  'settings',
-  'pricing',
-  'conversion',
-];
+const SECTION_ORDER: AccordionSection[] = ["additional", "settings", "pricing", "conversion"];
 
 // Template and Organisms
-import { ItemFormSections } from '../ItemFormSections';
-import ItemModalTemplate from '../ItemModalTemplate';
-import ItemModalContainer from '../containers/ItemModalContainer';
+import { ItemFormSections } from "../ItemFormSections";
+import ItemModalTemplate from "../ItemModalTemplate";
+import ItemModalContainer from "../containers/ItemModalContainer";
 
 const ItemModal: React.FC<ItemModalProps> = ({
   isOpen,
@@ -126,9 +112,7 @@ const ItemModal: React.FC<ItemModalProps> = ({
   } = handlers;
 
   // Version viewing state
-  const [viewingVersionNumber, setViewingVersionNumber] = useState<
-    number | null
-  >(null);
+  const [viewingVersionNumber, setViewingVersionNumber] = useState<number | null>(null);
   const [resetKey, setResetKey] = useState(0);
 
   // Form validation
@@ -149,7 +133,7 @@ const ItemModal: React.FC<ItemModalProps> = ({
     history,
     isLoading: isHistoryLoading,
     error: historyError,
-  } = useEntityHistory('items', itemId || '');
+  } = useEntityHistory("items", itemId || "");
 
   // Memoized callbacks for realtime to prevent unnecessary reconnections
   const handleItemUpdated = useCallback(() => {
@@ -162,8 +146,8 @@ const ItemModal: React.FC<ItemModalProps> = ({
 
   const handleSmartUpdate = useCallback(
     (updates: Record<string, unknown>) => {
-      logger.debug('Applying realtime updates in ItemModal', {
-        component: 'ItemModal',
+      logger.debug("Applying realtime updates in ItemModal", {
+        component: "ItemModal",
         itemId,
         fields: Object.keys(updates),
       });
@@ -172,34 +156,32 @@ const ItemModal: React.FC<ItemModalProps> = ({
       if (package_conversions !== undefined) {
         let parsedConversions: DBPackageConversion[] = [];
         try {
-          if (typeof package_conversions === 'string') {
-            parsedConversions = JSON.parse(package_conversions);
+          if (typeof package_conversions === "string") {
+            const parsedValue = JSON.parse(package_conversions);
+            parsedConversions = Array.isArray(parsedValue) ? parsedValue : [];
           } else if (Array.isArray(package_conversions)) {
             parsedConversions = package_conversions as DBPackageConversion[];
           }
         } catch (error) {
-          console.error('Failed to parse realtime package conversions', error);
+          console.error("Failed to parse realtime package conversions", error);
         }
 
-        const mappedConversions = parsedConversions.map(conversion => {
+        const mappedConversions = parsedConversions.map((conversion) => {
           const unitDetail =
             packageConversionHook.availableUnits.find(
-              unit => unit.id === conversion.to_unit_id
+              (unit) => unit.id === conversion.to_unit_id,
             ) ||
-            packageConversionHook.availableUnits.find(
-              unit => unit.name === conversion.unit_name
-            );
+            packageConversionHook.availableUnits.find((unit) => unit.name === conversion.unit_name);
 
           const fallbackUnit: ItemInventoryUnit = unitDetail
             ? unitDetail
             : {
-                id: conversion.to_unit_id || '',
-                name: conversion.unit_name || 'Unknown Unit',
-                kind: 'custom',
+                id: conversion.to_unit_id || "",
+                name: conversion.unit_name || "Unknown Unit",
+                kind: "custom",
               };
 
-          const fallbackId =
-            conversion.to_unit_id || fallbackUnit.id || conversion.unit_name;
+          const fallbackId = conversion.to_unit_id || fallbackUnit.id || conversion.unit_name;
           const rate = Number(conversion.conversion_rate) || 0;
           const baseFromDb = Number(conversion.base_price) || 0;
           const sellFromDb = Number(conversion.sell_price) || 0;
@@ -217,9 +199,7 @@ const ItemModal: React.FC<ItemModalProps> = ({
             id:
               conversion.id ||
               fallbackId ||
-              `${Date.now().toString()}-${Math.random()
-                .toString(36)
-                .slice(2, 9)}`,
+              `${Date.now().toString()}-${Math.random().toString(36).slice(2, 9)}`,
             unit_name: conversion.unit_name || fallbackUnit.name,
             to_unit_id: fallbackUnit.id,
             inventory_unit_id: fallbackUnit.id,
@@ -231,13 +211,9 @@ const ItemModal: React.FC<ItemModalProps> = ({
             base_price_override: null,
             sell_price_override: null,
             base_price:
-              baseFromDb === 0 && packageConversionHook.basePrice > 0
-                ? computedBase
-                : baseFromDb,
+              baseFromDb === 0 && packageConversionHook.basePrice > 0 ? computedBase : baseFromDb,
             sell_price:
-              sellFromDb === 0 && packageConversionHook.sellPrice > 0
-                ? computedSell
-                : sellFromDb,
+              sellFromDb === 0 && packageConversionHook.sellPrice > 0 ? computedSell : sellFromDb,
           };
         });
 
@@ -249,9 +225,7 @@ const ItemModal: React.FC<ItemModalProps> = ({
       if (Object.keys(restUpdates).length > 0) {
         // Apply updates that don't conflict with user input
         updateFormData(restUpdates);
-        setInitialFormData(prev =>
-          prev ? ({ ...prev, ...restUpdates } as typeof prev) : prev
-        );
+        setInitialFormData((prev) => (prev ? ({ ...prev, ...restUpdates } as typeof prev) : prev));
       }
     },
     [
@@ -260,23 +234,22 @@ const ItemModal: React.FC<ItemModalProps> = ({
       setInitialFormData,
       setInitialPackageConversions,
       updateFormData,
-    ]
+    ],
   );
 
   // Realtime for current item data with smart form sync
-  const { smartFormSync, isConnected: isRealtimeConnected } =
-    useItemModalRealtime({
-      itemId: itemId,
-      enabled: isOpen && isEditMode, // Only enable in edit mode
-      onItemUpdated: handleItemUpdated,
-      onItemDeleted: handleItemDeleted,
-      onSmartUpdate: handleSmartUpdate,
-    });
+  const { smartFormSync, isConnected: isRealtimeConnected } = useItemModalRealtime({
+    itemId: itemId,
+    enabled: isOpen && isEditMode, // Only enable in edit mode
+    onItemUpdated: handleItemUpdated,
+    onItemDeleted: handleItemDeleted,
+    onSmartUpdate: handleSmartUpdate,
+  });
 
   useEffect(() => {
     if (!isOpen || !isEditMode || !itemId) return;
-    logger.info('Item edit modal opened', {
-      component: 'ItemModal',
+    logger.info("Item edit modal opened", {
+      component: "ItemModal",
       itemId,
     });
   }, [isOpen, isEditMode, itemId]);
@@ -288,7 +261,7 @@ const ItemModal: React.FC<ItemModalProps> = ({
   // UI event handlers
   const handleReset = useCallback(() => {
     resetForm();
-    setResetKey(prev => prev + 1); // Force re-mount of form sections to clear validation
+    setResetKey((prev) => prev + 1); // Force re-mount of form sections to clear validation
     nameInputRef.current?.focus();
   }, [resetForm]);
 
@@ -312,7 +285,7 @@ const ItemModal: React.FC<ItemModalProps> = ({
       // Update form data with version data (but don't mark as dirty)
       updateFormData(entityData);
     },
-    [updateFormData]
+    [updateFormData],
   );
 
   // Clear version viewing (back to current)
@@ -337,7 +310,7 @@ const ItemModal: React.FC<ItemModalProps> = ({
         !isClosing &&
         event.ctrlKey &&
         event.shiftKey &&
-        event.key === 'R'
+        event.key === "R"
       ) {
         event.preventDefault();
         handleReset();
@@ -345,9 +318,9 @@ const ItemModal: React.FC<ItemModalProps> = ({
     };
 
     if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown);
+      document.addEventListener("keydown", handleKeyDown);
       return () => {
-        document.removeEventListener('keydown', handleKeyDown);
+        document.removeEventListener("keydown", handleKeyDown);
       };
     }
   }, [isOpen, isEditMode, isClosing, handleReset]);
@@ -369,11 +342,9 @@ const ItemModal: React.FC<ItemModalProps> = ({
         }
 
         // Fallback: focus first input inside the modal.
-        const dialog = document.querySelector(
-          '[role="dialog"][aria-modal="true"]'
-        );
+        const dialog = document.querySelector('[role="dialog"][aria-modal="true"]');
         const nameInput = dialog?.querySelector<HTMLInputElement>(
-          'input[name="name"]:not([disabled])'
+          'input[name="name"]:not([disabled])',
         );
         if (nameInput) {
           nameInput.focus();
@@ -381,7 +352,7 @@ const ItemModal: React.FC<ItemModalProps> = ({
         }
 
         const firstField = dialog?.querySelector<HTMLElement>(
-          'input:not([disabled]), textarea:not([disabled]), select:not([disabled])'
+          "input:not([disabled]), textarea:not([disabled]), select:not([disabled])",
         );
         firstField?.focus();
       }, 0);
@@ -415,8 +386,7 @@ const ItemModal: React.FC<ItemModalProps> = ({
       resetKey,
       viewingVersionNumber,
       isViewingOldVersion:
-        viewingVersionNumber !== null &&
-        viewingVersionNumber !== currentVersionNumber,
+        viewingVersionNumber !== null && viewingVersionNumber !== currentVersionNumber,
     },
     modal: {
       isAddEditModalOpen,
@@ -424,7 +394,7 @@ const ItemModal: React.FC<ItemModalProps> = ({
       isAddUnitModalOpen,
       isAddDosageModalOpen,
       isAddManufacturerModalOpen,
-      currentSearchTermForModal: currentSearchTermForModal || '',
+      currentSearchTermForModal: currentSearchTermForModal || "",
       persistedDropdownName,
     },
     price: {
@@ -461,8 +431,7 @@ const ItemModal: React.FC<ItemModalProps> = ({
       handleClose,
       handleReset: !isEditMode ? handleReset : undefined,
       setIsClosing,
-      handleVersionSelect:
-        isEditMode && itemId ? handleVersionSelect : undefined,
+      handleVersionSelect: isEditMode && itemId ? handleVersionSelect : undefined,
       handleClearVersionView,
     },
     modalActions: {
@@ -473,14 +442,10 @@ const ItemModal: React.FC<ItemModalProps> = ({
       setIsAddManufacturerModalOpen,
       setPersistedDropdownName,
       closeModalAndClearSearch: (
-        setter:
-          | ((open: boolean) => void)
-          | React.Dispatch<React.SetStateAction<boolean>>
+        setter: ((open: boolean) => void) | React.Dispatch<React.SetStateAction<boolean>>,
       ) => {
-        if (typeof setter === 'function') {
-          closeModalAndClearSearch(
-            setter as React.Dispatch<React.SetStateAction<boolean>>
-          );
+        if (typeof setter === "function") {
+          closeModalAndClearSearch(setter as React.Dispatch<React.SetStateAction<boolean>>);
         }
       },
       handleAddNewCategory,
@@ -503,7 +468,7 @@ const ItemModal: React.FC<ItemModalProps> = ({
   return (
     <ItemManagementProvider value={contextValue}>
       <ItemManagementContent
-        key={isOpen ? `open-${itemId ?? 'new'}` : 'closed'}
+        key={isOpen ? `open-${itemId ?? "new"}` : "closed"}
         itemId={itemId}
         initialItemData={initialItemData}
       />
@@ -514,7 +479,7 @@ const ItemModal: React.FC<ItemModalProps> = ({
 // Clean content component - only uses context
 const ItemManagementContent: React.FC<{
   itemId?: string;
-  initialItemData?: ItemModalProps['initialItemData'];
+  initialItemData?: ItemModalProps["initialItemData"];
 }> = ({ itemId, initialItemData }) => {
   const ui = useItemUI();
   const form = useItemForm();
@@ -525,30 +490,27 @@ const ItemManagementContent: React.FC<{
     Boolean(form.formData.code?.trim()) ||
     Boolean(form.formData.name?.trim()) ||
     Boolean(form.formData.updated_at);
-  const hasEditData =
-    isEditSession && (hasFormData || Boolean(initialItemData));
+  const hasEditData = isEditSession && (hasFormData || Boolean(initialItemData));
 
   const [openSection, setOpenSection] = useState<AccordionSection | null>(() =>
-    isEditSession ? null : 'additional'
+    isEditSession ? null : "additional",
   );
   const [hasUserToggled, setHasUserToggled] = useState(false);
   const [isStackHovering, setIsStackHovering] = useState(false);
   const [isStackTransitioning, setIsStackTransitioning] = useState(false);
   const [isLevelPricingMode, setIsLevelPricingMode] = useState(false);
-  const [lastOpenSection, setLastOpenSection] =
-    useState<AccordionSection | null>(isEditSession ? null : 'additional');
+  const [lastOpenSection, setLastOpenSection] = useState<AccordionSection | null>(
+    isEditSession ? null : "additional",
+  );
   const hoverTimerRef = useRef<number | null>(null);
   const ignoreStackTapRef = useRef(false);
   const ignoreStackTapTimerRef = useRef<number | null>(null);
-  const updateOpenSection = useCallback(
-    (nextSection: AccordionSection | null) => {
-      setOpenSection(nextSection);
-      if (nextSection) {
-        setLastOpenSection(nextSection);
-      }
-    },
-    []
-  );
+  const updateOpenSection = useCallback((nextSection: AccordionSection | null) => {
+    setOpenSection(nextSection);
+    if (nextSection) {
+      setLastOpenSection(nextSection);
+    }
+  }, []);
 
   const toggleSection = useCallback(
     (section: AccordionSection) => {
@@ -572,7 +534,7 @@ const ItemManagementContent: React.FC<{
 
       updateOpenSection(section);
     },
-    [openSection, updateOpenSection]
+    [openSection, updateOpenSection],
   );
 
   const handleLevelPricingToggle = useCallback(
@@ -585,51 +547,45 @@ const ItemManagementContent: React.FC<{
       }
       setIsStackHovering(false);
       setIsStackTransitioning(false);
-      updateOpenSection('pricing');
+      updateOpenSection("pricing");
     },
-    [updateOpenSection]
+    [updateOpenSection],
   );
   const autoOpenSection = useMemo<AccordionSection | null>(() => {
     if (!hasEditData || form.loading) return null;
 
     const dataSource = (hasFormData ? form.formData : initialItemData) ?? null;
-    const barcode = (dataSource?.barcode || '') as string;
+    const barcode = (dataSource?.barcode || "") as string;
     const description =
-      dataSource && 'description' in dataSource
-        ? ((dataSource.description as string) ?? '')
-        : '';
+      dataSource && "description" in dataSource ? ((dataSource.description as string) ?? "") : "";
     const basePrice = dataSource?.base_price ?? 0;
     const sellPrice = dataSource?.sell_price ?? 0;
     const fallbackConversions = Array.isArray(
-      (initialItemData as { package_conversions?: unknown[] } | undefined)
-        ?.package_conversions
+      (initialItemData as { package_conversions?: unknown[] } | undefined)?.package_conversions,
     )
-      ? (initialItemData as { package_conversions: unknown[] })
-          .package_conversions.length
+      ? (initialItemData as { package_conversions: unknown[] }).package_conversions.length
       : 0;
-    const conversionCount =
-      price.packageConversionHook.conversions.length || fallbackConversions;
+    const conversionCount = price.packageConversionHook.conversions.length || fallbackConversions;
 
-    const hasAdditionalInfo =
-      Boolean(barcode?.trim()) || Boolean(description?.trim());
+    const hasAdditionalInfo = Boolean(barcode?.trim()) || Boolean(description?.trim());
     const hasConversion = conversionCount > 0;
     const hasSettings =
       dataSource &&
-      'is_active' in dataSource &&
+      "is_active" in dataSource &&
       (dataSource.is_active === false ||
         dataSource.has_expiry_date === true ||
         (dataSource.min_stock ?? 10) !== 10);
     const hasPricing = (basePrice ?? 0) > 0 || (sellPrice ?? 0) > 0;
 
     return hasAdditionalInfo
-      ? 'additional'
+      ? "additional"
       : hasConversion
-        ? 'conversion'
+        ? "conversion"
         : hasSettings
-          ? 'settings'
+          ? "settings"
           : hasPricing
-            ? 'pricing'
-            : 'additional';
+            ? "pricing"
+            : "additional";
   }, [
     hasEditData,
     hasFormData,
@@ -640,13 +596,7 @@ const ItemManagementContent: React.FC<{
   ]);
 
   useEffect(() => {
-    if (
-      !isEditSession ||
-      hasUserToggled ||
-      !ui.isOpen ||
-      isStackHovering ||
-      isStackTransitioning
-    ) {
+    if (!isEditSession || hasUserToggled || !ui.isOpen || isStackHovering || isStackTransitioning) {
       return;
     }
     if (openSection || !autoOpenSection) return;
@@ -672,44 +622,41 @@ const ItemManagementContent: React.FC<{
       ? lastOpenSection
       : activeSection;
 
-  const activeIndex = effectiveSection
-    ? SECTION_ORDER.indexOf(effectiveSection)
-    : -1;
+  const activeIndex = effectiveSection ? SECTION_ORDER.indexOf(effectiveSection) : -1;
   const stackAboveEnabled = activeIndex >= 2;
-  const stackBelowEnabled =
-    activeIndex !== -1 && SECTION_ORDER.length - 1 - activeIndex >= 2;
+  const stackBelowEnabled = activeIndex !== -1 && SECTION_ORDER.length - 1 - activeIndex >= 2;
 
   const getStackClasses = (section: AccordionSection) => {
     const index = SECTION_ORDER.indexOf(section);
-    if (index === -1) return '';
+    if (index === -1) return "";
 
     if (isStackHovering) {
       // Unstacked mode should look like a normal list, with tighter spacing.
-      return index === 0 ? '' : 'mt-3';
+      return index === 0 ? "" : "mt-3";
     }
 
-    if (index === 0 && activeIndex === -1) return '';
+    if (index === 0 && activeIndex === -1) return "";
 
     if (activeIndex === -1) {
-      return index === 0 ? '' : 'mt-3';
+      return index === 0 ? "" : "mt-3";
     }
 
     if (index === activeIndex) {
-      return index === 0 ? 'relative' : 'relative mt-4';
+      return index === 0 ? "relative" : "relative mt-4";
     }
 
     if (index < activeIndex) {
       if (!stackAboveEnabled) {
-        return index === 0 ? '' : 'relative mt-4';
+        return index === 0 ? "" : "relative mt-4";
       }
-      return index === 0 ? 'relative' : 'relative -mt-6';
+      return index === 0 ? "relative" : "relative -mt-6";
     }
 
     if (stackBelowEnabled) {
-      return index === activeIndex + 1 ? 'relative mt-4' : 'relative -mt-6';
+      return index === activeIndex + 1 ? "relative mt-4" : "relative -mt-6";
     }
 
-    return 'relative mt-4';
+    return "relative mt-4";
   };
 
   const getStackWrapperStyle = (section: AccordionSection) => {
@@ -750,44 +697,35 @@ const ItemManagementContent: React.FC<{
   };
 
   const getStackEffect = (section: AccordionSection) => ({
-    className:
-      'origin-top transition-[transform,opacity,filter] duration-300 ease-out',
+    className: "origin-top transition-[transform,opacity,filter] duration-300 ease-out",
     style: getStackStyle(section),
   });
 
-  const getStackSectionFromTarget = useCallback(
-    (target: HTMLElement | null) => {
-      if (!target) return null;
-      const hoveredSectionEl = target.closest<HTMLElement>(
-        '[data-stack-section]'
-      );
-      const hoveredSectionRaw = hoveredSectionEl?.dataset.stackSection;
-      return hoveredSectionRaw === 'additional' ||
-        hoveredSectionRaw === 'settings' ||
-        hoveredSectionRaw === 'pricing' ||
-        hoveredSectionRaw === 'conversion'
-        ? (hoveredSectionRaw as AccordionSection)
-        : null;
-    },
-    []
-  );
+  const getStackSectionFromTarget = useCallback((target: HTMLElement | null) => {
+    if (!target) return null;
+    const hoveredSectionEl = target.closest<HTMLElement>("[data-stack-section]");
+    const hoveredSectionRaw = hoveredSectionEl?.dataset.stackSection;
+    return hoveredSectionRaw === "additional" ||
+      hoveredSectionRaw === "settings" ||
+      hoveredSectionRaw === "pricing" ||
+      hoveredSectionRaw === "conversion"
+      ? (hoveredSectionRaw as AccordionSection)
+      : null;
+  }, []);
 
   const shouldTriggerStackExpand = useCallback(
     (hoveredSection: AccordionSection) => {
       if (hoveredSection === activeSection) return false;
 
       const hoveredIndex = SECTION_ORDER.indexOf(hoveredSection);
-      const activeSectionIndex = activeSection
-        ? SECTION_ORDER.indexOf(activeSection)
-        : -1;
+      const activeSectionIndex = activeSection ? SECTION_ORDER.indexOf(activeSection) : -1;
       if (hoveredIndex === -1 || activeSectionIndex === -1) {
         return false;
       }
 
       const shouldStackAbove = activeSectionIndex >= 2;
       const shouldStackBelow =
-        activeSectionIndex !== -1 &&
-        SECTION_ORDER.length - 1 - activeSectionIndex >= 2;
+        activeSectionIndex !== -1 && SECTION_ORDER.length - 1 - activeSectionIndex >= 2;
 
       if (hoveredIndex > activeSectionIndex && !shouldStackBelow) {
         return false;
@@ -795,22 +733,16 @@ const ItemManagementContent: React.FC<{
       if (hoveredIndex < activeSectionIndex && !shouldStackAbove) {
         return false;
       }
-      if (
-        hoveredIndex < activeSectionIndex &&
-        activeSectionIndex - hoveredIndex === 1
-      ) {
+      if (hoveredIndex < activeSectionIndex && activeSectionIndex - hoveredIndex === 1) {
         return false;
       }
-      if (
-        hoveredIndex > activeSectionIndex &&
-        hoveredIndex - activeSectionIndex === 1
-      ) {
+      if (hoveredIndex > activeSectionIndex && hoveredIndex - activeSectionIndex === 1) {
         return false;
       }
 
       return true;
     },
-    [activeSection]
+    [activeSection],
   );
 
   const startStackCollapse = useCallback(() => {
@@ -841,7 +773,7 @@ const ItemManagementContent: React.FC<{
     const restoreSection: AccordionSection | null =
       openSection ??
       lastOpenSection ??
-      (hasUserToggled ? null : isEditSession ? autoOpenSection : 'additional');
+      (hasUserToggled ? null : isEditSession ? autoOpenSection : "additional");
 
     if (restoreSection !== null) {
       requestAnimationFrame(() => {
@@ -862,9 +794,7 @@ const ItemManagementContent: React.FC<{
       const target = event.target as HTMLElement | null;
       if (!target) return;
 
-      const isOverIgnore = Boolean(
-        target.closest('[data-stack-ignore="true"]')
-      );
+      const isOverIgnore = Boolean(target.closest('[data-stack-ignore="true"]'));
       const hoveredSection = getStackSectionFromTarget(target);
 
       // Ignore regions (e.g. image uploader grid) should not participate in the
@@ -876,11 +806,7 @@ const ItemManagementContent: React.FC<{
         return;
       }
 
-      if (
-        isStackHovering &&
-        hoveredSection &&
-        hoveredSection === lastOpenSection
-      ) {
+      if (isStackHovering && hoveredSection && hoveredSection === lastOpenSection) {
         restoreStack();
         return;
       }
@@ -912,7 +838,7 @@ const ItemManagementContent: React.FC<{
       restoreStack,
       shouldTriggerStackExpand,
       startStackCollapse,
-    ]
+    ],
   );
 
   const handleStackMouseLeave = useCallback(() => {
@@ -922,26 +848,18 @@ const ItemManagementContent: React.FC<{
   const focusSectionFirstField = useCallback((section: AccordionSection) => {
     let attempts = 0;
     const tryFocus = () => {
-      const modal = document.querySelector(
-        '[role="dialog"][aria-modal="true"]'
-      );
+      const modal = document.querySelector('[role="dialog"][aria-modal="true"]');
       if (!modal) return;
-      const sectionEl = modal.querySelector(
-        `[data-stack-section="${section}"]`
-      );
-      const container = sectionEl?.querySelector<HTMLElement>(
-        '[data-section-content]'
-      );
+      const sectionEl = modal.querySelector(`[data-stack-section="${section}"]`);
+      const container = sectionEl?.querySelector<HTMLElement>("[data-section-content]");
       const preferredInput =
-        section === 'pricing'
-          ? container?.querySelector<HTMLInputElement>(
-              'input[name="base_price"]'
-            )
+        section === "pricing"
+          ? container?.querySelector<HTMLInputElement>('input[name="base_price"]')
           : null;
       const firstFocusable =
         preferredInput ||
         container?.querySelector<HTMLElement>(
-          'input, select, textarea, button, [tabindex]:not([tabindex="-1"])'
+          'input, select, textarea, button, [tabindex]:not([tabindex="-1"])',
         );
       if (firstFocusable) {
         firstFocusable.focus();
@@ -957,7 +875,7 @@ const ItemManagementContent: React.FC<{
 
   const handleStackPointerDownCapture = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
-      if (event.pointerType === 'mouse') return;
+      if (event.pointerType === "mouse") return;
       const target = event.target as HTMLElement | null;
       if (!target) return;
       if (target.closest('[data-stack-ignore="true"]')) return;
@@ -985,22 +903,19 @@ const ItemManagementContent: React.FC<{
       isStackTransitioning,
       shouldTriggerStackExpand,
       startStackCollapse,
-    ]
+    ],
   );
 
-  const handleStackClickCapture = useCallback(
-    (event: React.MouseEvent<HTMLDivElement>) => {
-      if (!ignoreStackTapRef.current) return;
-      ignoreStackTapRef.current = false;
-      if (ignoreStackTapTimerRef.current) {
-        window.clearTimeout(ignoreStackTapTimerRef.current);
-        ignoreStackTapTimerRef.current = null;
-      }
-      event.preventDefault();
-      event.stopPropagation();
-    },
-    []
-  );
+  const handleStackClickCapture = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    if (!ignoreStackTapRef.current) return;
+    ignoreStackTapRef.current = false;
+    if (ignoreStackTapTimerRef.current) {
+      window.clearTimeout(ignoreStackTapTimerRef.current);
+      ignoreStackTapTimerRef.current = null;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+  }, []);
 
   useEffect(
     () => () => {
@@ -1013,7 +928,7 @@ const ItemManagementContent: React.FC<{
         ignoreStackTapTimerRef.current = null;
       }
     },
-    []
+    [],
   );
 
   // Single form mode rendering
@@ -1041,79 +956,69 @@ const ItemManagementContent: React.FC<{
             itemId={itemId}
           />
         ),
-        basicInfoRequired: (
-          <ItemFormSections.BasicInfoRequired itemId={itemId} />
-        ),
+        basicInfoRequired: <ItemFormSections.BasicInfoRequired itemId={itemId} />,
         basicInfoOptional: !isLevelPricingMode ? (
           <div
-            className={`${getStackClasses('additional')} transition-[margin] duration-200 ease-out`}
-            style={getStackWrapperStyle('additional')}
+            className={`${getStackClasses("additional")} transition-[margin] duration-200 ease-out`}
+            style={getStackWrapperStyle("additional")}
             data-stack-section="additional"
           >
             <ItemFormSections.BasicInfoOptional
-              isExpanded={activeSection === 'additional'}
-              onExpand={() => toggleSection('additional')}
+              isExpanded={activeSection === "additional"}
+              onExpand={() => toggleSection("additional")}
               itemId={itemId}
-              stackClassName={getStackEffect('additional').className}
-              stackStyle={getStackEffect('additional').style}
+              stackClassName={getStackEffect("additional").className}
+              stackStyle={getStackEffect("additional").style}
             />
           </div>
         ) : null,
         settingsForm: !isLevelPricingMode ? (
           <div
-            className={`${getStackClasses('settings')} transition-[margin] duration-200 ease-out`}
-            style={getStackWrapperStyle('settings')}
+            className={`${getStackClasses("settings")} transition-[margin] duration-200 ease-out`}
+            style={getStackWrapperStyle("settings")}
             data-stack-section="settings"
           >
             <ItemFormSections.Settings
-              isExpanded={activeSection === 'settings'}
-              onExpand={() => toggleSection('settings')}
+              isExpanded={activeSection === "settings"}
+              onExpand={() => toggleSection("settings")}
               itemId={itemId}
               onRequestNextSection={() => {
-                toggleSection('pricing');
-                requestAnimationFrame(() => focusSectionFirstField('pricing'));
+                toggleSection("pricing");
+                requestAnimationFrame(() => focusSectionFirstField("pricing"));
               }}
-              stackClassName={getStackEffect('settings').className}
-              stackStyle={getStackEffect('settings').style}
+              stackClassName={getStackEffect("settings").className}
+              stackStyle={getStackEffect("settings").style}
             />
           </div>
         ) : null,
         pricingForm: (
           <div
-            className={`${isLevelPricingMode ? '' : getStackClasses('pricing')} transition-[margin] duration-200 ease-out`}
-            style={
-              isLevelPricingMode ? undefined : getStackWrapperStyle('pricing')
-            }
+            className={`${isLevelPricingMode ? "" : getStackClasses("pricing")} transition-[margin] duration-200 ease-out`}
+            style={isLevelPricingMode ? undefined : getStackWrapperStyle("pricing")}
             data-stack-section="pricing"
           >
             <ItemFormSections.Pricing
-              isExpanded={activeSection === 'pricing'}
-              onExpand={() => toggleSection('pricing')}
+              isExpanded={activeSection === "pricing"}
+              onExpand={() => toggleSection("pricing")}
               itemId={itemId}
               onLevelPricingToggle={handleLevelPricingToggle}
-              stackClassName={
-                isLevelPricingMode
-                  ? undefined
-                  : getStackEffect('pricing').className
-              }
-              stackStyle={
-                isLevelPricingMode ? undefined : getStackEffect('pricing').style
-              }
+              stackClassName={isLevelPricingMode ? undefined : getStackEffect("pricing").className}
+              stackStyle={isLevelPricingMode ? undefined : getStackEffect("pricing").style}
             />
           </div>
         ),
         packageConversionManager: !isLevelPricingMode ? (
           <div
-            className={`${getStackClasses('conversion')} transition-[margin] duration-200 ease-out`}
-            style={getStackWrapperStyle('conversion')}
+            className={`${getStackClasses("conversion")} transition-[margin] duration-200 ease-out`}
+            style={getStackWrapperStyle("conversion")}
             data-stack-section="conversion"
           >
             <ItemFormSections.PackageConversion
-              isExpanded={activeSection === 'conversion'}
-              onExpand={() => toggleSection('conversion')}
+              isExpanded={activeSection === "conversion"}
+              onExpand={() => toggleSection("conversion")}
               itemId={itemId}
-              stackClassName={getStackEffect('conversion').className}
-              stackStyle={getStackEffect('conversion').style}
+              stackClassName={getStackEffect("conversion").className}
+              stackStyle={getStackEffect("conversion").style}
             />
           </div>
         ) : null,
@@ -1126,7 +1031,7 @@ const ItemManagementContent: React.FC<{
         isDeleting: actions.deleteItemMutation?.isPending || false,
         isEditMode: ui.isEditMode,
         isDisabled: actions.finalDisabledState,
-        updateText: 'Simpan',
+        updateText: "Simpan",
       }}
     />
   );
