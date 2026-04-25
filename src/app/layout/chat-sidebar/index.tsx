@@ -24,16 +24,16 @@ const panelVariants: Variants = {
     filter: "brightness(0.78)",
     opacity: 1,
     transition: {
-      duration: 0.28,
-      ease: [0.22, 1, 0.36, 1] as const,
+      duration: 0.5,
+      ease: "easeInOut",
     },
     zIndex: direction < 0 ? 30 : 10,
   }),
 };
 
 const panelTransition = {
-  duration: 0.42,
-  ease: [0.22, 1, 0.36, 1] as const,
+  duration: 0.5,
+  ease: "easeInOut",
 } as const;
 
 interface ChatSidebarProps {
@@ -106,7 +106,7 @@ const ChatSidebar = ({ isOpen, onClose, targetUser }: ChatSidebarProps) => {
         maxWidth: "100vw",
       }}
       onTransitionEnd={handleTransitionEnd}
-      className={`h-full overflow-hidden transition-[width,opacity] duration-200 ease-out ${
+      className={`h-full overflow-hidden transition-[width,opacity] duration-500 ease-in-out ${
         isOpen
           ? "border-l border-slate-200 bg-slate-100"
           : "pointer-events-none border-l border-transparent bg-transparent"
