@@ -1,5 +1,5 @@
 import { Suspense, lazy, useCallback, useEffect, useState } from "react";
-import { TbLayoutSidebarLeftExpand } from "react-icons/tb";
+import { TbLayoutSidebarLeftCollapse } from "react-icons/tb";
 import type { NavbarProps } from "@/types";
 import { useAuthStore } from "@/store/authStore";
 import DateTimeDisplay from "./live-datetime";
@@ -21,7 +21,7 @@ const OnlineUsersFallback = ({ onInteract }: { onInteract: () => void }) => (
       <span className="h-8 w-8 rounded-full border border-white bg-slate-300" />
       <span className="h-8 w-8 rounded-full border border-white bg-slate-100" />
     </div>
-    <TbLayoutSidebarLeftExpand className="size-5 text-slate-600" aria-hidden="true" />
+    <TbLayoutSidebarLeftCollapse className="size-5 text-slate-600" aria-hidden="true" />
   </button>
 );
 

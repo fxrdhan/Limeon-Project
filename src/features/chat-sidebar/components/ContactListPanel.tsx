@@ -1,6 +1,6 @@
 import { motion } from "motion/react";
 import { useMemo, useState } from "react";
-import { TbBellOff, TbLayoutSidebarLeftCollapse, TbSearch } from "react-icons/tb";
+import { TbBellOff, TbLayoutSidebarRightCollapse, TbSearch } from "react-icons/tb";
 import { useAuthStore } from "@/store/authStore";
 import { getInitials, getInitialsColor } from "@/utils/avatar";
 import { useChatSidebarLauncher } from "../hooks/useChatSidebarLauncher";
@@ -52,7 +52,7 @@ const ContactListPanel = ({ onClose }: ContactListPanelProps) => {
             className="flex size-9 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
             onClick={onClose}
           >
-            <TbLayoutSidebarLeftCollapse className="size-5" aria-hidden="true" />
+            <TbLayoutSidebarRightCollapse className="size-5" aria-hidden="true" />
           </button>
         </div>
 
