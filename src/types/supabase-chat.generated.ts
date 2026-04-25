@@ -1,5 +1,5 @@
-// Generated from the Supabase chat schema on 2026-04-24.
-// Chat schema migration baseline: 20260424120000.
+// Generated from the Supabase chat schema on 2026-04-26.
+// Chat schema migration baseline: 20260426024500.
 // Refresh this file from Supabase whenever the chat contract changes.
 
 export interface ChatDatabase {
