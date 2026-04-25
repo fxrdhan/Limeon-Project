@@ -95,7 +95,7 @@ const ContactListPanel = ({ onClose }: ContactListPanelProps) => {
       transition={{ duration: 0.2, ease: "easeOut" }}
       className="flex h-full w-full flex-col bg-white"
     >
-      <div className="shrink-0 border-b border-slate-200 bg-white px-4 pt-4 pb-3">
+      <div className="shrink-0 border-b border-slate-200 bg-white px-4 pt-4 pb-4">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-xl font-semibold text-slate-950">Chats</h2>
           <button
@@ -120,13 +120,13 @@ const ContactListPanel = ({ onClose }: ContactListPanelProps) => {
       </div>
 
       <div
-        className="relative min-h-0 flex-1 overflow-y-auto bg-white py-2"
+        className="relative min-h-0 flex-1 overflow-y-auto bg-white pt-3 pb-2"
         onMouseLeave={() => {
           setHoveredContactId(null);
         }}
       >
         <AnimatedMenuHighlight
-          className="left-3 right-3 rounded-2xl bg-slate-100"
+          className="left-3 right-3 !rounded-2xl bg-slate-100"
           frame={highlightFrame}
         />
 
