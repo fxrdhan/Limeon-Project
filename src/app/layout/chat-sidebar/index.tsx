@@ -3,8 +3,11 @@ import { AnimatePresence, motion } from "motion/react";
 import type { Variants } from "motion/react";
 import { Suspense, lazy, useCallback, useEffect, useState } from "react";
 
-const ChatSidebarPanel = lazy(() => import("@/features/chat-sidebar"));
-const ContactListPanel = lazy(() => import("@/features/chat-sidebar/components/ContactListPanel"));
+const loadChatSidebarPanel = () => import("@/features/chat-sidebar");
+const loadContactListPanel = () => import("@/features/chat-sidebar/components/ContactListPanel");
+
+const ChatSidebarPanel = lazy(loadChatSidebarPanel);
+const ContactListPanel = lazy(loadContactListPanel);
 
 const panelVariants: Variants = {
   enter: (direction: number) => ({
@@ -53,6 +56,11 @@ const ChatSidebar = ({ isOpen, onClose, targetUser }: ChatSidebarProps) => {
 
     return window.innerWidth < 768 ? window.innerWidth : 420;
   });
+
+  useEffect(() => {
+    void loadChatSidebarPanel();
+    void loadContactListPanel();
+  }, []);
 
   useEffect(() => {
     if (!targetUser) return;
