@@ -1,34 +1,35 @@
-import type { ChatTargetUser } from "@/types";
-import { AnimatePresence, motion } from "motion/react";
-import type { Variants } from "motion/react";
-import { Suspense, lazy, useCallback, useEffect, useState } from "react";
+import type { ChatTargetUser } from '@/types';
+import { AnimatePresence, motion } from 'motion/react';
+import type { Variants } from 'motion/react';
+import { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 
-const loadChatSidebarPanel = () => import("@/features/chat-sidebar");
-const loadContactListPanel = () => import("@/features/chat-sidebar/components/ContactListPanel");
+const loadChatSidebarPanel = () => import('@/features/chat-sidebar');
+const loadContactListPanel = () =>
+  import('@/features/chat-sidebar/components/ContactListPanel');
 
 const ChatSidebarPanel = lazy(loadChatSidebarPanel);
 const ContactListPanel = lazy(loadContactListPanel);
 
 const panelVariants: Variants = {
   enter: (direction: number) => ({
-    x: direction < 0 ? "0%" : "100%",
-    filter: "brightness(1)",
+    x: direction < 0 ? '0%' : '100%',
+    filter: 'brightness(1)',
     opacity: 1,
     zIndex: direction < 0 ? 10 : 20,
   }),
   center: {
-    x: "0%",
-    filter: "brightness(1)",
+    x: '0%',
+    filter: 'brightness(1)',
     opacity: 1,
     zIndex: 20,
   },
   exit: (direction: number) => ({
-    x: direction < 0 ? "100%" : "0%",
-    filter: "brightness(0.78)",
+    x: direction < 0 ? '100%' : '0%',
+    filter: 'brightness(0.78)',
     opacity: 1,
     transition: {
       duration: 0.5,
-      ease: "easeInOut",
+      ease: 'easeInOut',
     },
     zIndex: direction < 0 ? 30 : 10,
   }),
@@ -36,7 +37,7 @@ const panelVariants: Variants = {
 
 const panelTransition = {
   duration: 0.5,
-  ease: "easeInOut",
+  ease: 'easeInOut',
 } as const;
 
 interface ChatSidebarProps {
@@ -46,11 +47,11 @@ interface ChatSidebarProps {
 }
 
 const ChatSidebar = ({ isOpen, onClose, targetUser }: ChatSidebarProps) => {
-  const [persistedTargetUser, setPersistedTargetUser] = useState<ChatTargetUser | undefined>(
-    targetUser,
-  );
+  const [persistedTargetUser, setPersistedTargetUser] = useState<
+    ChatTargetUser | undefined
+  >(targetUser);
   const [sidebarWidth, setSidebarWidth] = useState(() => {
-    if (typeof window === "undefined") {
+    if (typeof window === 'undefined') {
       return 420;
     }
 
@@ -74,7 +75,7 @@ const ChatSidebar = ({ isOpen, onClose, targetUser }: ChatSidebarProps) => {
   }, [isOpen, targetUser]);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
+    if (typeof window === 'undefined') {
       return;
     }
 
@@ -83,26 +84,32 @@ const ChatSidebar = ({ isOpen, onClose, targetUser }: ChatSidebarProps) => {
     };
 
     updateSidebarWidth();
-    window.addEventListener("resize", updateSidebarWidth);
+    window.addEventListener('resize', updateSidebarWidth);
 
     return () => {
-      window.removeEventListener("resize", updateSidebarWidth);
+      window.removeEventListener('resize', updateSidebarWidth);
     };
   }, []);
 
   const activeTargetUser = isOpen ? targetUser : persistedTargetUser;
   const shouldRenderPanel = isOpen || Boolean(activeTargetUser);
   const panelDirection = activeTargetUser ? 1 : -1;
-  const panelKey = activeTargetUser ? `chat:${activeTargetUser.id}` : "contacts";
+  const panelKey = activeTargetUser
+    ? `chat:${activeTargetUser.id}`
+    : 'contacts';
   const handleTransitionEnd = useCallback(
     (event: React.TransitionEvent<HTMLElement>) => {
-      if (event.target !== event.currentTarget || event.propertyName !== "width" || isOpen) {
+      if (
+        event.target !== event.currentTarget ||
+        event.propertyName !== 'width' ||
+        isOpen
+      ) {
         return;
       }
 
       setPersistedTargetUser(undefined);
     },
-    [isOpen],
+    [isOpen]
   );
 
   return (
@@ -111,13 +118,13 @@ const ChatSidebar = ({ isOpen, onClose, targetUser }: ChatSidebarProps) => {
       style={{
         width: isOpen ? sidebarWidth : 0,
         opacity: isOpen ? 1 : 0,
-        maxWidth: "100vw",
+        maxWidth: '100vw',
       }}
       onTransitionEnd={handleTransitionEnd}
       className={`h-full overflow-hidden transition-[width,opacity] duration-500 ease-in-out ${
         isOpen
-          ? "border-l border-slate-200 bg-slate-100"
-          : "pointer-events-none border-l border-transparent bg-transparent"
+          ? 'border-l border-slate-200 bg-slate-100'
+          : 'pointer-events-none border-l border-transparent bg-transparent'
       }`}
     >
       {shouldRenderPanel ? (

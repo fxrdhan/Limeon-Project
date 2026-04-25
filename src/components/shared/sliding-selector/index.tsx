@@ -1,7 +1,7 @@
-import classNames from "classnames";
-import { LayoutGroup, motion } from "motion/react";
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { TbChevronDown } from "react-icons/tb";
+import classNames from 'classnames';
+import { LayoutGroup, motion } from 'motion/react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { TbChevronDown } from 'react-icons/tb';
 
 export interface SlidingSelectorOption<T = unknown> {
   key: string;
@@ -17,20 +17,20 @@ export interface SlidingSelectorProps<T = unknown> {
   onSelectionChange: (key: string, value: T, event?: React.MouseEvent) => void;
 
   // Styling options
-  variant?: "tabs" | "selector";
-  size?: "sm" | "md" | "lg";
-  shape?: "rounded" | "pill";
+  variant?: 'tabs' | 'selector';
+  size?: 'sm' | 'md' | 'lg';
+  shape?: 'rounded' | 'pill';
 
   // Expand/collapse functionality
   collapsible?: boolean;
   defaultExpanded?: boolean;
   autoCollapseDelay?: number;
   expandOnHover?: boolean;
-  expandDirection?: "horizontal" | "vertical";
+  expandDirection?: 'horizontal' | 'vertical';
 
   // Animation options
   layoutId?: string;
-  animationPreset?: "smooth" | "snappy" | "fluid";
+  animationPreset?: 'smooth' | 'snappy' | 'fluid';
 
   // Additional props
   className?: string;
@@ -57,64 +57,64 @@ const ANIMATION_PRESETS = {
 
 const DIRECT_HOVER_TRANSITION = {
   duration: 0.22,
-  ease: "easeOut",
+  ease: 'easeOut',
 } as const;
 
 const DIRECT_DROPDOWN_TRANSITION = {
   duration: 0.32,
-  ease: "easeOut",
+  ease: 'easeOut',
 } as const;
 
 const CHEVRON_ROTATE_TRANSITION = {
   duration: 0.28,
-  ease: "easeInOut",
+  ease: 'easeInOut',
 } as const;
 
 const CHEVRON_EXIT_TRANSITION = {
   duration: 0.18,
   delay: 0.28,
-  ease: "easeOut",
+  ease: 'easeOut',
 } as const;
 
 const ACTIVE_FILL_DELAYED_TRANSITION = {
   duration: 0.26,
   delay: 0.28,
-  ease: "easeOut",
+  ease: 'easeOut',
 } as const;
 
 const ACTIVE_FILL_COLLAPSE_TRANSITION = {
   duration: 0.32,
-  ease: "easeInOut",
+  ease: 'easeInOut',
 } as const;
 
 const SIZE_CLASSES = {
   sm: {
-    container: "p-0.5",
-    button: "px-2 py-1 text-sm",
-    text: "text-sm",
+    container: 'p-0.5',
+    button: 'px-2 py-1 text-sm',
+    text: 'text-sm',
   },
   md: {
-    container: "p-1",
-    button: "px-3 py-1.5",
-    text: "text-base",
+    container: 'p-1',
+    button: 'px-3 py-1.5',
+    text: 'text-base',
   },
   lg: {
-    container: "p-1.5",
-    button: "px-6 py-3 text-lg",
-    text: "text-lg",
+    container: 'p-1.5',
+    button: 'px-6 py-3 text-lg',
+    text: 'text-lg',
   },
 };
 
 const SHAPE_CLASSES = {
   rounded: {
-    container: "rounded-xl",
-    button: "rounded-xl",
-    background: "rounded-xl",
+    container: 'rounded-xl',
+    button: 'rounded-xl',
+    background: 'rounded-xl',
   },
   pill: {
-    container: "rounded-full",
-    button: "rounded-full",
-    background: "rounded-full",
+    container: 'rounded-full',
+    button: 'rounded-full',
+    background: 'rounded-full',
   },
 };
 
@@ -122,16 +122,16 @@ export const SlidingSelector = <T,>({
   options,
   activeKey,
   onSelectionChange,
-  variant = "selector",
-  size = "md",
-  shape = "rounded",
+  variant = 'selector',
+  size = 'md',
+  shape = 'rounded',
   collapsible = false,
   defaultExpanded = true,
   autoCollapseDelay = 300,
   expandOnHover = false,
-  expandDirection = "horizontal",
+  expandDirection = 'horizontal',
   layoutId,
-  animationPreset = "smooth",
+  animationPreset = 'smooth',
   className,
   disabled = false,
   onExpandedChange,
@@ -140,18 +140,18 @@ export const SlidingSelector = <T,>({
   const [isMouseOver, setIsMouseOver] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const [isVerticalActiveFillVisible, setIsVerticalActiveFillVisible] = useState(
-    defaultExpanded && expandDirection === "vertical",
-  );
+  const [isVerticalActiveFillVisible, setIsVerticalActiveFillVisible] =
+    useState(defaultExpanded && expandDirection === 'vertical');
   const mouseLeaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
-  const activeOption = options.find((option) => option.key === activeKey);
+  const activeOption = options.find(option => option.key === activeKey);
   const animation = ANIMATION_PRESETS[animationPreset];
   const sizeClasses = SIZE_CLASSES[size];
   const shapeClasses = SHAPE_CLASSES[shape];
-  const isVerticalExpanded = isExpanded && expandDirection === "vertical";
-  const showVerticalActiveFill = expandDirection === "vertical" && isVerticalActiveFillVisible;
+  const isVerticalExpanded = isExpanded && expandDirection === 'vertical';
+  const showVerticalActiveFill =
+    expandDirection === 'vertical' && isVerticalActiveFillVisible;
 
   // Notify parent whenever expanded state changes
   useEffect(() => {
@@ -159,7 +159,7 @@ export const SlidingSelector = <T,>({
   }, [isExpanded, onExpandedChange]);
 
   useEffect(() => {
-    if (expandDirection !== "vertical") {
+    if (expandDirection !== 'vertical') {
       setIsVerticalActiveFillVisible(false);
       return;
     }
@@ -181,7 +181,9 @@ export const SlidingSelector = <T,>({
     if (!collapsible || !expandOnHover) return;
 
     // Check if any button has focus (keyboard navigation)
-    const hasFocus = buttonRefs.current.some((btn) => btn && document.activeElement === btn);
+    const hasFocus = buttonRefs.current.some(
+      btn => btn && document.activeElement === btn
+    );
 
     if (!isMouseOver && isExpanded && !hasFocus) {
       mouseLeaveTimeoutRef.current = setTimeout(() => {
@@ -204,14 +206,21 @@ export const SlidingSelector = <T,>({
         clearTimeout(mouseLeaveTimeoutRef.current);
       }
     };
-  }, [isMouseOver, isExpanded, collapsible, expandOnHover, autoCollapseDelay, focusedIndex]);
+  }, [
+    isMouseOver,
+    isExpanded,
+    collapsible,
+    expandOnHover,
+    autoCollapseDelay,
+    focusedIndex,
+  ]);
 
   // Auto-focus active button when expanded via hover to enable keyboard navigation immediately
   useEffect(() => {
     if (isExpanded && isMouseOver && expandOnHover && collapsible) {
       // Very small delay to ensure buttons are rendered
       const timer = setTimeout(() => {
-        const activeIndex = options.findIndex((opt) => opt.key === activeKey);
+        const activeIndex = options.findIndex(opt => opt.key === activeKey);
         if (activeIndex >= 0 && buttonRefs.current[activeIndex]) {
           buttonRefs.current[activeIndex]?.focus();
           setFocusedIndex(activeIndex);
@@ -232,7 +241,7 @@ export const SlidingSelector = <T,>({
       setIsMouseOver(false);
       setHoveredIndex(null);
       // Blur all buttons when mouse leaves to allow auto-collapse
-      buttonRefs.current.forEach((btn) => {
+      buttonRefs.current.forEach(btn => {
         if (btn && document.activeElement === btn) {
           btn.blur();
         }
@@ -243,7 +252,7 @@ export const SlidingSelector = <T,>({
 
   const toggleExpanded = useCallback(() => {
     if (collapsible) {
-      setIsExpanded((prev) => !prev);
+      setIsExpanded(prev => !prev);
     }
   }, [collapsible]);
 
@@ -254,7 +263,7 @@ export const SlidingSelector = <T,>({
 
     // Only force focus when expanded via explicit toggle (not hover focus effect)
     if (!expandOnHover) {
-      const activeIndex = options.findIndex((opt) => opt.key === activeKey);
+      const activeIndex = options.findIndex(opt => opt.key === activeKey);
       if (activeIndex >= 0) {
         const timer = setTimeout(() => {
           buttonRefs.current[activeIndex]?.focus();
@@ -276,24 +285,28 @@ export const SlidingSelector = <T,>({
         return;
       }
 
-      const enabledOptions = options.filter((opt) => !opt.disabled);
+      const enabledOptions = options.filter(opt => !opt.disabled);
       const currentIndex =
-        focusedIndex >= 0 ? focusedIndex : enabledOptions.findIndex((opt) => opt.key === activeKey);
+        focusedIndex >= 0
+          ? focusedIndex
+          : enabledOptions.findIndex(opt => opt.key === activeKey);
 
       switch (event.key) {
-        case "Tab":
+        case 'Tab':
           // Prevent default tab behavior to control focus ourselves
           event.preventDefault();
           if (event.shiftKey) {
             // Shift+Tab: Move to previous and change page
-            const prevIndex = currentIndex > 0 ? currentIndex - 1 : enabledOptions.length - 1;
+            const prevIndex =
+              currentIndex > 0 ? currentIndex - 1 : enabledOptions.length - 1;
             const prevOption = enabledOptions[prevIndex];
             setFocusedIndex(prevIndex);
             buttonRefs.current[prevIndex]?.focus();
             onSelectionChange(prevOption.key, prevOption.value);
           } else {
             // Tab: Move to next and change page
-            const nextIndex = currentIndex < enabledOptions.length - 1 ? currentIndex + 1 : 0;
+            const nextIndex =
+              currentIndex < enabledOptions.length - 1 ? currentIndex + 1 : 0;
             const nextOption = enabledOptions[nextIndex];
             setFocusedIndex(nextIndex);
             buttonRefs.current[nextIndex]?.focus();
@@ -301,7 +314,7 @@ export const SlidingSelector = <T,>({
           }
           break;
 
-        case "Escape":
+        case 'Escape':
           event.preventDefault();
           if (collapsible) {
             setIsExpanded(false);
@@ -310,7 +323,15 @@ export const SlidingSelector = <T,>({
           break;
       }
     },
-    [disabled, isExpanded, options, focusedIndex, activeKey, collapsible, onSelectionChange],
+    [
+      disabled,
+      isExpanded,
+      options,
+      focusedIndex,
+      activeKey,
+      collapsible,
+      onSelectionChange,
+    ]
   );
 
   const handleOptionClick = useCallback(
@@ -326,10 +347,13 @@ export const SlidingSelector = <T,>({
       // Note: Hybrid protection (immediate + debounce) handled centrally in parent's handleTabChange
       onSelectionChange(option.key, option.value, event);
     },
-    [disabled, onSelectionChange],
+    [disabled, onSelectionChange]
   );
 
-  const getDisplayLabel = (option: SlidingSelectorOption<T>, isActive: boolean) => {
+  const getDisplayLabel = (
+    option: SlidingSelectorOption<T>,
+    isActive: boolean
+  ) => {
     if (isActive && option.activeLabel) {
       return option.activeLabel;
     }
@@ -339,15 +363,16 @@ export const SlidingSelector = <T,>({
   const renderOption = (
     option: SlidingSelectorOption<T>,
     index: number,
-    isVerticalItem = false,
+    isVerticalItem = false
   ) => {
     const isActive = option.key === activeKey;
-    const isHovered = hoveredIndex === index && !isActive && !disabled && !option.disabled;
+    const isHovered =
+      hoveredIndex === index && !isActive && !disabled && !option.disabled;
 
     return (
       <button
         key={option.key}
-        ref={(el) => {
+        ref={el => {
           buttonRefs.current[index] = el;
         }}
         role="tab"
@@ -355,33 +380,39 @@ export const SlidingSelector = <T,>({
         aria-controls={`${layoutId || variant}-panel-${option.key}`}
         tabIndex={isActive ? 0 : -1}
         className={classNames(
-          "group focus:outline-hidden select-none relative cursor-pointer z-10 transition-colors duration-300 ease-in-out",
+          'group focus:outline-hidden select-none relative cursor-pointer z-10 transition-colors duration-300 ease-in-out',
           {
-            "flex w-full items-center justify-start text-left": isVerticalItem,
+            'flex w-full items-center justify-start text-left': isVerticalItem,
           },
           sizeClasses.button,
           shapeClasses.button,
           {
-            "opacity-50 cursor-not-allowed": option.disabled,
-          },
+            'opacity-50 cursor-not-allowed': option.disabled,
+          }
         )}
         onMouseEnter={() => setHoveredIndex(index)}
-        onClick={(event) => handleOptionClick(option, event)}
+        onClick={event => handleOptionClick(option, event)}
         disabled={disabled || option.disabled}
       >
         {isHovered && (
           <motion.div
             layoutId={`${layoutId || variant}-selector-hover-bg`}
-            className={classNames("absolute inset-0 bg-primary-light", shapeClasses.background)}
+            className={classNames(
+              'absolute inset-0 bg-primary-light',
+              shapeClasses.background
+            )}
             transition={DIRECT_HOVER_TRANSITION}
           />
         )}
         {isActive && (
           <motion.div
             layoutId={`${layoutId || variant}-selector-bg`}
-            className={classNames("absolute inset-0 bg-primary shadow-xs", shapeClasses.background)}
+            className={classNames(
+              'absolute inset-0 bg-primary shadow-xs',
+              shapeClasses.background
+            )}
             transition={{
-              type: "spring",
+              type: 'spring',
               ...animation.background,
             }}
           />
@@ -389,13 +420,13 @@ export const SlidingSelector = <T,>({
         <motion.span
           layout
           className={classNames(
-            "relative z-10 select-none font-medium whitespace-nowrap transition-colors duration-300 ease-in-out",
+            'relative z-10 select-none font-medium whitespace-nowrap transition-colors duration-300 ease-in-out',
             sizeClasses.text,
             {
-              "text-white": isActive,
-              "text-secondary delay-100": isHovered,
-              "text-slate-700 delay-0": !isActive && !isHovered,
-            },
+              'text-white': isActive,
+              'text-secondary delay-100': isHovered,
+              'text-slate-700 delay-0': !isActive && !isHovered,
+            }
           )}
         >
           {getDisplayLabel(option, isActive)}
@@ -414,11 +445,13 @@ export const SlidingSelector = <T,>({
             scaleX: isVerticalExpanded ? 1 : 0.72,
           }}
           className={classNames(
-            "absolute inset-0 origin-left bg-primary shadow-xs",
-            shapeClasses.background,
+            'absolute inset-0 origin-left bg-primary shadow-xs',
+            shapeClasses.background
           )}
           transition={
-            isVerticalExpanded ? ACTIVE_FILL_DELAYED_TRANSITION : ACTIVE_FILL_COLLAPSE_TRANSITION
+            isVerticalExpanded
+              ? ACTIVE_FILL_DELAYED_TRANSITION
+              : ACTIVE_FILL_COLLAPSE_TRANSITION
           }
         />
       )}
@@ -428,26 +461,35 @@ export const SlidingSelector = <T,>({
         aria-controls={`${layoutId || variant}-panel-${activeKey}`}
         tabIndex={0}
         className={classNames(
-          "group focus:outline-hidden select-none relative cursor-pointer z-10",
+          'group focus:outline-hidden select-none relative cursor-pointer z-10',
           sizeClasses.button,
-          shapeClasses.button,
+          shapeClasses.button
         )}
-        onClick={(event) => activeOption && handleOptionClick(activeOption, event)}
+        onClick={event =>
+          activeOption && handleOptionClick(activeOption, event)
+        }
         disabled={disabled}
       >
         <motion.div
-          layoutId={showVerticalActiveFill ? undefined : `${layoutId || variant}-selector-bg`}
-          className={classNames("absolute inset-0 bg-primary shadow-xs", shapeClasses.background)}
+          layoutId={
+            showVerticalActiveFill
+              ? undefined
+              : `${layoutId || variant}-selector-bg`
+          }
+          className={classNames(
+            'absolute inset-0 bg-primary shadow-xs',
+            shapeClasses.background
+          )}
           transition={{
-            type: "spring",
+            type: 'spring',
             ...animation.background,
           }}
         />
         <motion.span
           layout
           className={classNames(
-            "relative z-10 select-none font-medium text-white whitespace-nowrap",
-            sizeClasses.text,
+            'relative z-10 select-none font-medium text-white whitespace-nowrap',
+            sizeClasses.text
           )}
         >
           {activeOption && getDisplayLabel(activeOption, true)}
@@ -456,14 +498,14 @@ export const SlidingSelector = <T,>({
       {collapsible && (
         <button
           onClick={toggleExpanded}
-          aria-label={isExpanded ? "Collapse tabs" : "Expand tabs"}
+          aria-label={isExpanded ? 'Collapse tabs' : 'Expand tabs'}
           aria-expanded={isExpanded}
           className={classNames(
-            "ml-1 p-2 transition-colors duration-300 ease-in-out group relative z-10",
+            'ml-1 p-2 transition-colors duration-300 ease-in-out group relative z-10',
             shapeClasses.button,
             {
-              "hover:bg-primary-light": !showVerticalActiveFill,
-            },
+              'hover:bg-primary-light': !showVerticalActiveFill,
+            }
           )}
         >
           <motion.div
@@ -474,10 +516,17 @@ export const SlidingSelector = <T,>({
             }}
             transition={{
               rotate: CHEVRON_ROTATE_TRANSITION,
-              opacity: isVerticalExpanded ? CHEVRON_EXIT_TRANSITION : DIRECT_HOVER_TRANSITION,
-              x: isVerticalExpanded ? CHEVRON_EXIT_TRANSITION : DIRECT_HOVER_TRANSITION,
+              opacity: isVerticalExpanded
+                ? CHEVRON_EXIT_TRANSITION
+                : DIRECT_HOVER_TRANSITION,
+              x: isVerticalExpanded
+                ? CHEVRON_EXIT_TRANSITION
+                : DIRECT_HOVER_TRANSITION,
             }}
-            className={classNames("w-4 h-4", "text-slate-600 group-hover:text-secondary")}
+            className={classNames(
+              'w-4 h-4',
+              'text-slate-600 group-hover:text-secondary'
+            )}
           >
             <TbChevronDown className="w-full h-full" />
           </motion.div>
@@ -488,29 +537,38 @@ export const SlidingSelector = <T,>({
 
   const renderCollapsedPlaceholder = () => (
     <div className="flex items-center">
-      <div className={classNames("relative select-none", sizeClasses.button, shapeClasses.button)}>
+      <div
+        className={classNames(
+          'relative select-none',
+          sizeClasses.button,
+          shapeClasses.button
+        )}
+      >
         <span
           className={classNames(
-            "relative z-10 select-none font-medium whitespace-nowrap",
-            sizeClasses.text,
+            'relative z-10 select-none font-medium whitespace-nowrap',
+            sizeClasses.text
           )}
         >
           {activeOption && getDisplayLabel(activeOption, true)}
         </span>
       </div>
-      <div className={classNames("ml-1 p-2", shapeClasses.button)}>
+      <div className={classNames('ml-1 p-2', shapeClasses.button)}>
         <div className="w-4 h-4" />
       </div>
     </div>
   );
 
-  if (collapsible && expandDirection === "vertical") {
+  if (collapsible && expandDirection === 'vertical') {
     return (
       <LayoutGroup id={layoutId || `sliding-selector-${variant}`}>
         <div
           role="tablist"
           aria-label="Navigation tabs"
-          className={classNames("relative z-50 inline-block select-none", className)}
+          className={classNames(
+            'relative z-50 inline-block select-none',
+            className
+          )}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
           onKeyDown={handleKeyDown}
@@ -518,9 +576,9 @@ export const SlidingSelector = <T,>({
           <div
             aria-hidden="true"
             className={classNames(
-              "invisible inline-flex items-center bg-zinc-100 shadow-md text-slate-700 overflow-hidden w-fit",
+              'invisible inline-flex items-center bg-zinc-100 shadow-md text-slate-700 overflow-hidden w-fit',
               sizeClasses.container,
-              shapeClasses.container,
+              shapeClasses.container
             )}
           >
             {renderCollapsedPlaceholder()}
@@ -528,12 +586,12 @@ export const SlidingSelector = <T,>({
 
           <motion.div
             className={classNames(
-              "absolute left-0 top-0 inline-flex max-w-[calc(100vw-3rem)] origin-top flex-col bg-zinc-100 shadow-md text-slate-700 overflow-hidden w-fit",
+              'absolute left-0 top-0 inline-flex max-w-[calc(100vw-3rem)] origin-top flex-col bg-zinc-100 shadow-md text-slate-700 overflow-hidden w-fit',
               sizeClasses.container,
-              shapeClasses.container,
+              shapeClasses.container
             )}
             transition={{
-              type: "spring",
+              type: 'spring',
               ...animation.container,
             }}
           >
@@ -544,20 +602,22 @@ export const SlidingSelector = <T,>({
             <motion.div
               aria-hidden={!isExpanded}
               animate={{
-                height: isExpanded ? "auto" : 0,
+                height: isExpanded ? 'auto' : 0,
                 opacity: isExpanded ? 1 : 0,
               }}
               className={classNames(
-                "inline-flex max-h-[calc(100vh-10rem)] flex-col items-stretch overflow-y-auto overscroll-contain",
+                'inline-flex max-h-[calc(100vh-10rem)] flex-col items-stretch overflow-y-auto overscroll-contain',
                 {
-                  "pointer-events-none": !isExpanded,
-                },
+                  'pointer-events-none': !isExpanded,
+                }
               )}
               initial={false}
               transition={DIRECT_DROPDOWN_TRANSITION}
             >
               {options.map((option, index) =>
-                option.key === activeKey ? null : renderOption(option, index, true),
+                option.key === activeKey
+                  ? null
+                  : renderOption(option, index, true)
               )}
             </motion.div>
           </motion.div>
@@ -573,17 +633,17 @@ export const SlidingSelector = <T,>({
         role="tablist"
         aria-label="Navigation tabs"
         className={classNames(
-          "bg-zinc-100 shadow-md text-slate-700 overflow-hidden select-none relative w-fit",
+          'bg-zinc-100 shadow-md text-slate-700 overflow-hidden select-none relative w-fit',
           isVerticalExpanded
-            ? "inline-flex max-h-[calc(100vh-7rem)] max-w-[calc(100vw-3rem)] flex-col items-stretch overflow-y-auto overscroll-contain"
-            : "inline-flex items-center",
+            ? 'inline-flex max-h-[calc(100vh-7rem)] max-w-[calc(100vw-3rem)] flex-col items-stretch overflow-y-auto overscroll-contain'
+            : 'inline-flex items-center',
           sizeClasses.container,
           shapeClasses.container,
-          className,
+          className
         )}
         transition={{
           layout: {
-            type: "spring",
+            type: 'spring',
             ...animation.container,
           },
         }}
@@ -593,7 +653,9 @@ export const SlidingSelector = <T,>({
       >
         {!collapsible || isExpanded
           ? // Expanded view - show all options
-            options.map((option, index) => renderOption(option, index, isVerticalExpanded))
+            options.map((option, index) =>
+              renderOption(option, index, isVerticalExpanded)
+            )
           : // Collapsed view - show only active option with expand button
             renderCollapsedContent()}
       </motion.div>

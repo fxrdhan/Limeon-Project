@@ -1,13 +1,18 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { TbCheckbox, TbSearch } from "react-icons/tb";
-import type { ChatSidebarRuntimeState } from "../hooks/useChatSidebarRuntimeState";
-import ConversationHeaderContent from "./header/ConversationHeaderContent";
-import SearchHeaderContent from "./header/SearchHeaderContent";
-import SelectionHeaderContent from "./header/SelectionHeaderContent";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { TbCheckbox, TbSearch } from 'react-icons/tb';
+import type { ChatSidebarRuntimeState } from '../hooks/useChatSidebarRuntimeState';
+import ConversationHeaderContent from './header/ConversationHeaderContent';
+import SearchHeaderContent from './header/SearchHeaderContent';
+import SelectionHeaderContent from './header/SelectionHeaderContent';
 
 type ChatHeaderRuntime = Pick<
   ChatSidebarRuntimeState,
-  "user" | "targetUser" | "displayTargetPhotoUrl" | "session" | "interaction" | "actions"
+  | 'user'
+  | 'targetUser'
+  | 'displayTargetPhotoUrl'
+  | 'session'
+  | 'interaction'
+  | 'actions'
 >;
 
 interface ChatHeaderProps {
@@ -24,7 +29,7 @@ const ChatHeader = ({ runtime }: ChatHeaderProps) => {
   }, []);
 
   const toggleOptionsMenu = useCallback(() => {
-    setIsOptionsMenuOpen((previousOpen) => !previousOpen);
+    setIsOptionsMenuOpen(previousOpen => !previousOpen);
   }, []);
 
   useEffect(() => {
@@ -47,23 +52,23 @@ const ChatHeader = ({ runtime }: ChatHeaderProps) => {
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
+      if (event.key === 'Escape') {
         closeOptionsMenu();
       }
     };
 
-    document.addEventListener("mousedown", handleMouseDown);
-    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      document.removeEventListener("mousedown", handleMouseDown);
-      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('keydown', handleKeyDown);
     };
   }, [closeOptionsMenu, isOptionsMenuOpen]);
 
   const optionsActions = [
     {
-      label: "Pilih pesan",
+      label: 'Pilih pesan',
       icon: <TbCheckbox className="h-4 w-4" />,
       onClick: () => {
         closeOptionsMenu();
@@ -71,7 +76,7 @@ const ChatHeader = ({ runtime }: ChatHeaderProps) => {
       },
     },
     {
-      label: "Cari",
+      label: 'Cari',
       icon: <TbSearch className="h-4 w-4" />,
       onClick: () => {
         closeOptionsMenu();
@@ -81,24 +86,39 @@ const ChatHeader = ({ runtime }: ChatHeaderProps) => {
   ];
 
   const searchResultCount = runtime.interaction.searchMatchedMessageIds.length;
-  const activeSearchResultIndex = Math.max(runtime.interaction.activeSearchResultIndex, 0);
+  const activeSearchResultIndex = Math.max(
+    runtime.interaction.activeSearchResultIndex,
+    0
+  );
   const searchResultPositionLabel =
     searchResultCount === 0
-      ? "0/0"
+      ? '0/0'
       : `${activeSearchResultIndex + 1}/${searchResultCount}${
-          runtime.interaction.hasMoreSearchResults ? "+" : ""
+          runtime.interaction.hasMoreSearchResults ? '+' : ''
         }`;
 
   return (
     <div className="px-3 pt-4 pb-2.5">
       {runtime.interaction.isSelectionMode ? (
         <SelectionHeaderContent
-          selectedMessageCount={runtime.interaction.selectedVisibleMessages.length}
-          canDeleteSelectedMessages={runtime.interaction.canDeleteSelectedMessages}
-          onCopySelectedMessages={runtime.interaction.handleCopySelectedMessages}
-          onDeleteSelectedMessages={runtime.actions.handleDeleteSelectedMessages}
-          onClearSelectedMessages={runtime.interaction.handleClearSelectedMessages}
-          onExitSelectionMode={runtime.interaction.handleExitMessageSelectionMode}
+          selectedMessageCount={
+            runtime.interaction.selectedVisibleMessages.length
+          }
+          canDeleteSelectedMessages={
+            runtime.interaction.canDeleteSelectedMessages
+          }
+          onCopySelectedMessages={
+            runtime.interaction.handleCopySelectedMessages
+          }
+          onDeleteSelectedMessages={
+            runtime.actions.handleDeleteSelectedMessages
+          }
+          onClearSelectedMessages={
+            runtime.interaction.handleClearSelectedMessages
+          }
+          onExitSelectionMode={
+            runtime.interaction.handleExitMessageSelectionMode
+          }
           onClose={runtime.actions.handleClose}
         />
       ) : runtime.interaction.isMessageSearchMode ? (
@@ -110,7 +130,9 @@ const ChatHeader = ({ runtime }: ChatHeaderProps) => {
           canNavigateSearchUp={runtime.interaction.canNavigateSearchUp}
           canNavigateSearchDown={runtime.interaction.canNavigateSearchDown}
           searchInputRef={runtime.interaction.searchInputRef}
-          onSearchQueryChange={runtime.interaction.handleMessageSearchQueryChange}
+          onSearchQueryChange={
+            runtime.interaction.handleMessageSearchQueryChange
+          }
           onNavigateSearchUp={runtime.interaction.handleNavigateSearchUp}
           onNavigateSearchDown={runtime.interaction.handleNavigateSearchDown}
           onFocusSearchInput={runtime.interaction.handleFocusSearchInput}

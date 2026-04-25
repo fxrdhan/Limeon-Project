@@ -1,12 +1,13 @@
-import { AnimatePresence, motion } from "motion/react";
-import { TbLayoutSidebarLeftCollapse } from "react-icons/tb";
-import { useChatSidebarLauncher } from "@/features/chat-sidebar/hooks/useChatSidebarLauncher";
-import { useChatSidebarStore } from "@/store/chatSidebarStore";
-import UserPresenceAvatar from "@/components/shared/user-presence-avatar";
+import { AnimatePresence, motion } from 'motion/react';
+import { TbLayoutSidebarLeftCollapse } from 'react-icons/tb';
+import { useChatSidebarLauncher } from '@/features/chat-sidebar/hooks/useChatSidebarLauncher';
+import { useChatSidebarStore } from '@/store/chatSidebarStore';
+import UserPresenceAvatar from '@/components/shared/user-presence-avatar';
 
 const OnlineUsersControl = () => {
-  const isChatSidebarOpen = useChatSidebarStore((state) => state.isOpen);
-  const { onlineUserIds, portalOrderedUsers, openContactList } = useChatSidebarLauncher(true);
+  const isChatSidebarOpen = useChatSidebarStore(state => state.isOpen);
+  const { onlineUserIds, portalOrderedUsers, openContactList } =
+    useChatSidebarLauncher(true);
 
   return (
     <button
@@ -29,10 +30,13 @@ const OnlineUsersControl = () => {
             initial={{ opacity: 0, scale: 0.8, width: 0 }}
             animate={{ opacity: 1, scale: 1, width: 20 }}
             exit={{ opacity: 0, scale: 0.8, width: 0 }}
-            transition={{ duration: 0.18, ease: "easeOut" }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
             className="flex h-5 shrink-0 items-center justify-center overflow-hidden text-slate-600"
           >
-            <TbLayoutSidebarLeftCollapse className="size-5" aria-hidden="true" />
+            <TbLayoutSidebarLeftCollapse
+              className="size-5"
+              aria-hidden="true"
+            />
           </motion.span>
         ) : null}
       </AnimatePresence>

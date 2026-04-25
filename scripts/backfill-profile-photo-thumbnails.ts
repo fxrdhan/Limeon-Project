@@ -1,12 +1,12 @@
-import { createCanvas, loadImage } from "@napi-rs/canvas";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { config } from "dotenv";
+import { createCanvas, loadImage } from '@napi-rs/canvas';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { config } from 'dotenv';
 import {
   PROFILE_PHOTO_BUCKET,
   PROFILE_PHOTO_THUMBNAIL_OUTPUT_QUALITY,
   PROFILE_PHOTO_THUMBNAIL_SIZE,
   buildProfilePhotoThumbnailStoragePath,
-} from "../shared/profilePhotoPaths";
+} from '../shared/profilePhotoPaths';
 
 config();
 
@@ -27,7 +27,7 @@ interface ScriptOptions {
 
 const readFlagValue = (name: string) => {
   const args = process.argv.slice(2);
-  const inlineArg = args.find((argument) => argument.startsWith(`${name}=`));
+  const inlineArg = args.find(argument => argument.startsWith(`${name}=`));
   if (inlineArg) {
     return inlineArg.slice(name.length + 1);
   }
@@ -41,25 +41,28 @@ const readFlagValue = (name: string) => {
 };
 
 const parseOptions = (): ScriptOptions => {
-  const limitValue = readFlagValue("--limit");
+  const limitValue = readFlagValue('--limit');
   const parsedLimit =
-    limitValue && Number.isFinite(Number(limitValue)) ? Math.max(0, Number(limitValue)) : null;
+    limitValue && Number.isFinite(Number(limitValue))
+      ? Math.max(0, Number(limitValue))
+      : null;
 
   return {
-    dryRun: process.argv.includes("--dry-run"),
-    force: process.argv.includes("--force"),
+    dryRun: process.argv.includes('--dry-run'),
+    force: process.argv.includes('--force'),
     limit: parsedLimit,
   };
 };
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseServiceKey =
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||
+  process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseServiceKey) {
-  console.error("Error: Missing Supabase URL or Service Role Key");
+  console.error('Error: Missing Supabase URL or Service Role Key');
   console.error(
-    "Please set VITE_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or VITE_SUPABASE_SERVICE_ROLE_KEY) in your .env file",
+    'Please set VITE_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or VITE_SUPABASE_SERVICE_ROLE_KEY) in your .env file'
   );
   process.exit(1);
 }
@@ -99,10 +102,19 @@ const renderProfilePhotoThumbnail = async (file: Blob) => {
   const sourceWidth = Math.max(image.width || 1, 1);
   const sourceHeight = Math.max(image.height || 1, 1);
   const sourceCropSize = Math.max(1, Math.min(sourceWidth, sourceHeight));
-  const sourceCropX = Math.max(0, Math.floor((sourceWidth - sourceCropSize) / 2));
-  const sourceCropY = Math.max(0, Math.floor((sourceHeight - sourceCropSize) / 2));
-  const canvas = createCanvas(PROFILE_PHOTO_THUMBNAIL_SIZE, PROFILE_PHOTO_THUMBNAIL_SIZE);
-  const context = canvas.getContext("2d");
+  const sourceCropX = Math.max(
+    0,
+    Math.floor((sourceWidth - sourceCropSize) / 2)
+  );
+  const sourceCropY = Math.max(
+    0,
+    Math.floor((sourceHeight - sourceCropSize) / 2)
+  );
+  const canvas = createCanvas(
+    PROFILE_PHOTO_THUMBNAIL_SIZE,
+    PROFILE_PHOTO_THUMBNAIL_SIZE
+  );
+  const context = canvas.getContext('2d');
 
   context.drawImage(
     image,
@@ -113,36 +125,48 @@ const renderProfilePhotoThumbnail = async (file: Blob) => {
     0,
     0,
     PROFILE_PHOTO_THUMBNAIL_SIZE,
-    PROFILE_PHOTO_THUMBNAIL_SIZE,
+    PROFILE_PHOTO_THUMBNAIL_SIZE
   );
 
-  let thumbnailMimeType = "image/webp";
+  let thumbnailMimeType = 'image/webp';
   let thumbnailBuffer: Buffer;
 
   try {
-    thumbnailBuffer = canvas.toBuffer("image/webp", PROFILE_PHOTO_THUMBNAIL_OUTPUT_QUALITY);
+    thumbnailBuffer = canvas.toBuffer(
+      'image/webp',
+      PROFILE_PHOTO_THUMBNAIL_OUTPUT_QUALITY
+    );
   } catch {
-    thumbnailMimeType = "image/jpeg";
-    thumbnailBuffer = canvas.toBuffer("image/jpeg", PROFILE_PHOTO_THUMBNAIL_OUTPUT_QUALITY);
+    thumbnailMimeType = 'image/jpeg';
+    thumbnailBuffer = canvas.toBuffer(
+      'image/jpeg',
+      PROFILE_PHOTO_THUMBNAIL_OUTPUT_QUALITY
+    );
   }
 
   return {
-    file: new File([new Uint8Array(thumbnailBuffer)], "profile-thumbnail", {
+    file: new File([new Uint8Array(thumbnailBuffer)], 'profile-thumbnail', {
       type: thumbnailMimeType,
     }),
     mimeType: thumbnailMimeType,
   };
 };
 
-const loadPendingUsers = async ({ force, limit }: { force: boolean; limit: number | null }) => {
+const loadPendingUsers = async ({
+  force,
+  limit,
+}: {
+  force: boolean;
+  limit: number | null;
+}) => {
   const users: UserProfilePhotoRow[] = [];
 
   for (let offset = 0; ; offset += DEFAULT_PAGE_SIZE) {
     const { data, error } = await supabase
-      .from("users")
-      .select("id, profilephoto, profilephoto_path, profilephoto_thumb")
-      .not("profilephoto", "is", null)
-      .order("id", { ascending: true })
+      .from('users')
+      .select('id, profilephoto, profilephoto_path, profilephoto_thumb')
+      .not('profilephoto', 'is', null)
+      .order('id', { ascending: true })
       .range(offset, offset + DEFAULT_PAGE_SIZE - 1);
 
     if (error) {
@@ -154,7 +178,7 @@ const loadPendingUsers = async ({ force, limit }: { force: boolean; limit: numbe
       break;
     }
 
-    page.forEach((row) => {
+    page.forEach(row => {
       if (force || isMissingThumbnail(row.profilephoto_thumb)) {
         users.push(row);
       }
@@ -165,7 +189,7 @@ const loadPendingUsers = async ({ force, limit }: { force: boolean; limit: numbe
     }
   }
 
-  if (typeof limit === "number") {
+  if (typeof limit === 'number') {
     return users.slice(0, limit);
   }
 
@@ -175,21 +199,25 @@ const loadPendingUsers = async ({ force, limit }: { force: boolean; limit: numbe
 const backfillUserThumbnail = async (row: UserProfilePhotoRow) => {
   const originalPath = extractProfilePhotoPath(row);
   if (!originalPath) {
-    throw new Error("Missing original profile photo path");
+    throw new Error('Missing original profile photo path');
   }
-  const oldThumbnailPath = extractStoragePathFromPublicUrl(row.profilephoto_thumb);
+  const oldThumbnailPath = extractStoragePathFromPublicUrl(
+    row.profilephoto_thumb
+  );
 
   const { data: originalFile, error: downloadError } = await supabase.storage
     .from(PROFILE_PHOTO_BUCKET)
     .download(originalPath);
   if (downloadError || !originalFile) {
-    throw downloadError ?? new Error("Failed to download original profile photo");
+    throw (
+      downloadError ?? new Error('Failed to download original profile photo')
+    );
   }
 
   const thumbnailArtifact = await renderProfilePhotoThumbnail(originalFile);
   const thumbnailPath = buildProfilePhotoThumbnailStoragePath(
     originalPath,
-    thumbnailArtifact.mimeType,
+    thumbnailArtifact.mimeType
   );
 
   const { error: uploadError } = await supabase.storage
@@ -207,13 +235,13 @@ const backfillUserThumbnail = async (row: UserProfilePhotoRow) => {
   } = supabase.storage.from(PROFILE_PHOTO_BUCKET).getPublicUrl(thumbnailPath);
 
   const { error: updateError } = await supabase
-    .from("users")
+    .from('users')
     .update({
       profilephoto_path: originalPath,
       profilephoto_thumb: thumbnailUrl,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", row.id);
+    .eq('id', row.id);
   if (updateError) {
     throw updateError;
   }
@@ -225,7 +253,7 @@ const backfillUserThumbnail = async (row: UserProfilePhotoRow) => {
 
     if (removeOldThumbnailError) {
       console.warn(
-        `[warn] ${row.id}: unable to remove old thumbnail ${oldThumbnailPath}: ${removeOldThumbnailError.message}`,
+        `[warn] ${row.id}: unable to remove old thumbnail ${oldThumbnailPath}: ${removeOldThumbnailError.message}`
       );
     }
   }
@@ -242,14 +270,14 @@ const main = async () => {
   const targetUsers = await loadPendingUsers(options);
 
   if (targetUsers.length === 0) {
-    console.info("No user profile photos require thumbnail backfill.");
+    console.info('No user profile photos require thumbnail backfill.');
     return;
   }
 
   console.info(
     `Found ${targetUsers.length} user profile photo(s) to process${
-      options.dryRun ? " (dry-run)" : ""
-    }.`,
+      options.dryRun ? ' (dry-run)' : ''
+    }.`
   );
 
   let processedCount = 0;
@@ -274,24 +302,26 @@ const main = async () => {
     try {
       const result = await backfillUserThumbnail(row);
       processedCount += 1;
-      console.info(`[ok] ${row.id}: ${result.originalPath} -> ${result.thumbnailPath}`);
+      console.info(
+        `[ok] ${row.id}: ${result.originalPath} -> ${result.thumbnailPath}`
+      );
     } catch (error) {
       skippedCount += 1;
       console.error(
-        `[error] ${row.id}: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `[error] ${row.id}: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
 
   console.info(
-    `Profile photo thumbnail backfill finished. processed=${processedCount} skipped=${skippedCount}`,
+    `Profile photo thumbnail backfill finished. processed=${processedCount} skipped=${skippedCount}`
   );
 };
 
-void main().catch((error) => {
+void main().catch(error => {
   console.error(
-    "Profile photo thumbnail backfill failed:",
-    error instanceof Error ? error.message : error,
+    'Profile photo thumbnail backfill failed:',
+    error instanceof Error ? error.message : error
   );
   process.exit(1);
 });

@@ -1,4 +1,4 @@
-export const PROFILE_PHOTO_BUCKET = "profiles";
+export const PROFILE_PHOTO_BUCKET = 'profiles';
 export const PROFILE_PHOTO_THUMBNAIL_SIZE = 256;
 export const PROFILE_PHOTO_THUMBNAIL_OUTPUT_QUALITY = 0.9;
 
@@ -9,39 +9,40 @@ const buildFallbackRandomSegment = () =>
   Math.random()
     .toString(36)
     .slice(2, 2 + FALLBACK_RANDOM_SEGMENT_LENGTH)
-    .padEnd(FALLBACK_RANDOM_SEGMENT_LENGTH, "0");
+    .padEnd(FALLBACK_RANDOM_SEGMENT_LENGTH, '0');
 
 const createProfilePhotoUploadId = () => {
   const rawId =
-    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
       ? crypto.randomUUID()
       : `${Date.now()}-${buildFallbackRandomSegment()}`;
 
-  return rawId.replace(/[^a-zA-Z0-9_-]/g, "_");
+  return rawId.replace(/[^a-zA-Z0-9_-]/g, '_');
 };
 
 const sanitizePathExtension = (
   fileName?: string | null,
   mimeType?: string | null,
-  fallbackExtension = "jpg",
+  fallbackExtension = 'jpg'
 ) => {
-  const extensionFromName = fileName?.split(".").pop()?.toLowerCase();
-  const extensionFromType = mimeType?.split("/")[1]?.toLowerCase();
-  const rawExtension = extensionFromName || extensionFromType || fallbackExtension;
+  const extensionFromName = fileName?.split('.').pop()?.toLowerCase();
+  const extensionFromType = mimeType?.split('/')[1]?.toLowerCase();
+  const rawExtension =
+    extensionFromName || extensionFromType || fallbackExtension;
 
-  return rawExtension.replace(/[^a-z0-9]/g, "") || fallbackExtension;
+  return rawExtension.replace(/[^a-z0-9]/g, '') || fallbackExtension;
 };
 
-const getImageExtensionFromMimeType = (mimeType = "image/webp") => {
-  if (mimeType === "image/webp") {
-    return "webp";
+const getImageExtensionFromMimeType = (mimeType = 'image/webp') => {
+  if (mimeType === 'image/webp') {
+    return 'webp';
   }
 
-  if (mimeType === "image/png") {
-    return "png";
+  if (mimeType === 'image/png') {
+    return 'png';
   }
 
-  return "jpg";
+  return 'jpg';
 };
 
 export const buildProfilePhotoStoragePath = ({
@@ -53,19 +54,22 @@ export const buildProfilePhotoStoragePath = ({
   fileName?: string | null;
   mimeType?: string | null;
 }) => {
-  const extension = sanitizePathExtension(fileName, mimeType, "jpg");
+  const extension = sanitizePathExtension(fileName, mimeType, 'jpg');
 
   return `${userId}/image_${createProfilePhotoUploadId()}.${extension}`;
 };
 
 export const buildProfilePhotoThumbnailStoragePath = (
   filePath: string,
-  mimeType = "image/webp",
+  mimeType = 'image/webp'
 ) => {
   const extension = getImageExtensionFromMimeType(mimeType);
 
   if (/\.[^./]+$/.test(filePath)) {
-    return filePath.replace(/\.[^./]+$/, `${PROFILE_PHOTO_THUMBNAIL_SUFFIX}.${extension}`);
+    return filePath.replace(
+      /\.[^./]+$/,
+      `${PROFILE_PHOTO_THUMBNAIL_SUFFIX}.${extension}`
+    );
   }
 
   return `${filePath}${PROFILE_PHOTO_THUMBNAIL_SUFFIX}.${extension}`;

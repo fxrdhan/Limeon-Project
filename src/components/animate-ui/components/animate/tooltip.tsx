@@ -1,16 +1,16 @@
-import * as React from "react";
-import { motion, useAnimationControls } from "motion/react";
-import type { Transition } from "motion/react";
-import { cn } from "@/lib/utils";
+import * as React from 'react';
+import { motion, useAnimationControls } from 'motion/react';
+import type { Transition } from 'motion/react';
+import { cn } from '@/lib/utils';
 
-type TooltipSide = "top" | "right" | "bottom" | "left";
-type TooltipAlign = "start" | "center" | "end";
+type TooltipSide = 'top' | 'right' | 'bottom' | 'left';
+type TooltipAlign = 'start' | 'center' | 'end';
 
 interface TooltipContentConfig {
   children: React.ReactNode;
   className?: string;
-  layout?: React.ComponentProps<typeof motion.div>["layout"];
-  style?: React.ComponentProps<typeof motion.div>["style"];
+  layout?: React.ComponentProps<typeof motion.div>['layout'];
+  style?: React.ComponentProps<typeof motion.div>['style'];
 }
 
 interface TooltipShowRequest {
@@ -59,8 +59,8 @@ interface TooltipTriggerProps {
 interface TooltipContentProps {
   children: React.ReactNode;
   className?: string;
-  layout?: React.ComponentProps<typeof motion.div>["layout"];
-  style?: React.ComponentProps<typeof motion.div>["style"];
+  layout?: React.ComponentProps<typeof motion.div>['layout'];
+  style?: React.ComponentProps<typeof motion.div>['style'];
   asChild?: boolean;
 }
 
@@ -80,29 +80,29 @@ interface TooltipGeometry {
 }
 
 const defaultTooltipTransition = {
-  type: "spring",
+  type: 'spring',
   stiffness: 300,
   damping: 35,
 } as const;
 
 const tooltipAppearTransition = {
-  type: "spring",
+  type: 'spring',
   stiffness: 520,
   damping: 24,
   mass: 0.75,
 } as const;
 
 const tooltipExitTransition = {
-  type: "spring",
+  type: 'spring',
   stiffness: 520,
   damping: 30,
   mass: 0.65,
 } as const;
 
 const tooltipRepositionTransition = {
-  type: "tween",
+  type: 'tween',
   duration: 0.22,
-  ease: "easeOut",
+  ease: 'easeOut',
 } as const;
 
 const defaultTooltipGeometry: TooltipGeometry = {
@@ -130,7 +130,10 @@ const TOOLTIP_ARROW_INSET = TOOLTIP_ARROW_SIZE * 0.65;
 const TOOLTIP_HIDDEN_SCALE = 0.45;
 const TOOLTIP_GEOMETRY_EPSILON = 0.5;
 
-const hasTooltipGeometryChanged = (current: TooltipGeometry, next: TooltipGeometry) =>
+const hasTooltipGeometryChanged = (
+  current: TooltipGeometry,
+  next: TooltipGeometry
+) =>
   Math.abs(current.bubbleX - next.bubbleX) > TOOLTIP_GEOMETRY_EPSILON ||
   Math.abs(current.bubbleY - next.bubbleY) > TOOLTIP_GEOMETRY_EPSILON ||
   Math.abs(current.width - next.width) > TOOLTIP_GEOMETRY_EPSILON ||
@@ -139,7 +142,10 @@ const hasTooltipGeometryChanged = (current: TooltipGeometry, next: TooltipGeomet
 
 const getClampedArrowOffset = (rawOffset: number, axisSize: number) => {
   const minOffset = 8;
-  const maxOffset = Math.max(minOffset, axisSize - TOOLTIP_ARROW_SIZE - minOffset);
+  const maxOffset = Math.max(
+    minOffset,
+    axisSize - TOOLTIP_ARROW_SIZE - minOffset
+  );
 
   return Math.min(Math.max(rawOffset, minOffset), maxOffset);
 };
@@ -147,15 +153,15 @@ const getClampedArrowOffset = (rawOffset: number, axisSize: number) => {
 const getTooltipTransformOrigin = (side: TooltipSide, arrowOffset: number) => {
   const arrowCenter = arrowOffset + TOOLTIP_ARROW_SIZE / 2;
 
-  if (side === "top") {
+  if (side === 'top') {
     return `${arrowCenter}px bottom`;
   }
 
-  if (side === "bottom") {
+  if (side === 'bottom') {
     return `${arrowCenter}px top`;
   }
 
-  if (side === "left") {
+  if (side === 'left') {
     return `right ${arrowCenter}px`;
   }
 
@@ -165,19 +171,19 @@ const getTooltipTransformOrigin = (side: TooltipSide, arrowOffset: number) => {
 const getTooltipArrowStyle = (side: TooltipSide): React.CSSProperties => {
   const inset = -(TOOLTIP_ARROW_SIZE - TOOLTIP_ARROW_INSET);
 
-  if (side === "top") {
+  if (side === 'top') {
     return {
       bottom: inset,
     };
   }
 
-  if (side === "bottom") {
+  if (side === 'bottom') {
     return {
       top: inset,
     };
   }
 
-  if (side === "left") {
+  if (side === 'left') {
     return {
       right: inset,
     };
@@ -188,8 +194,11 @@ const getTooltipArrowStyle = (side: TooltipSide): React.CSSProperties => {
   };
 };
 
-const getTooltipArrowMotionTarget = (side: TooltipSide, arrowOffset: number) => {
-  if (side === "top" || side === "bottom") {
+const getTooltipArrowMotionTarget = (
+  side: TooltipSide,
+  arrowOffset: number
+) => {
+  if (side === 'top' || side === 'bottom') {
     return { left: arrowOffset };
   }
 
@@ -201,13 +210,13 @@ const getAlignedAxisPosition = (
   end: number,
   size: number,
   align: TooltipAlign,
-  alignOffset: number,
+  alignOffset: number
 ) => {
-  if (align === "start") {
+  if (align === 'start') {
     return start + alignOffset;
   }
 
-  if (align === "end") {
+  if (align === 'end') {
     return end - size - alignOffset;
   }
 
@@ -221,21 +230,30 @@ const getTooltipGeometry = (
     sideOffset,
     align,
     alignOffset,
-  }: Omit<TooltipShowRequest, "id" | "content">,
-  size: TooltipSize,
+  }: Omit<TooltipShowRequest, 'id' | 'content'>,
+  size: TooltipSize
 ): TooltipGeometry => {
   const rect = triggerElement.getBoundingClientRect();
   const mainAxisOffset = 4;
   const triggerCenterX = rect.left + rect.width / 2;
   const triggerCenterY = rect.top + rect.height / 2;
 
-  if (side === "top" || side === "bottom") {
-    const bubbleX = getAlignedAxisPosition(rect.left, rect.right, size.width, align, alignOffset);
-    const bubbleY = side === "top" ? rect.top - size.height - sideOffset : rect.bottom + sideOffset;
-    const hiddenOffsetY = side === "top" ? mainAxisOffset : -mainAxisOffset;
+  if (side === 'top' || side === 'bottom') {
+    const bubbleX = getAlignedAxisPosition(
+      rect.left,
+      rect.right,
+      size.width,
+      align,
+      alignOffset
+    );
+    const bubbleY =
+      side === 'top'
+        ? rect.top - size.height - sideOffset
+        : rect.bottom + sideOffset;
+    const hiddenOffsetY = side === 'top' ? mainAxisOffset : -mainAxisOffset;
     const arrowOffset = getClampedArrowOffset(
       triggerCenterX - bubbleX - TOOLTIP_ARROW_SIZE / 2,
-      size.width,
+      size.width
     );
 
     return {
@@ -249,12 +267,21 @@ const getTooltipGeometry = (
     };
   }
 
-  const bubbleY = getAlignedAxisPosition(rect.top, rect.bottom, size.height, align, alignOffset);
-  const bubbleX = side === "left" ? rect.left - size.width - sideOffset : rect.right + sideOffset;
-  const hiddenOffsetX = side === "left" ? mainAxisOffset : -mainAxisOffset;
+  const bubbleY = getAlignedAxisPosition(
+    rect.top,
+    rect.bottom,
+    size.height,
+    align,
+    alignOffset
+  );
+  const bubbleX =
+    side === 'left'
+      ? rect.left - size.width - sideOffset
+      : rect.right + sideOffset;
+  const hiddenOffsetX = side === 'left' ? mainAxisOffset : -mainAxisOffset;
   const arrowOffset = getClampedArrowOffset(
     triggerCenterY - bubbleY - TOOLTIP_ARROW_SIZE / 2,
-    size.height,
+    size.height
   );
 
   return {
@@ -274,7 +301,8 @@ const TooltipProvider = ({
   closeDelay = 300,
   transition = defaultTooltipTransition,
 }: TooltipProviderProps) => {
-  const [activeTooltip, setActiveTooltip] = React.useState<TooltipShowRequest | null>(null);
+  const [activeTooltip, setActiveTooltip] =
+    React.useState<TooltipShowRequest | null>(null);
   const [isVisible, setIsVisible] = React.useState(false);
   const [isPlacementReady, setIsPlacementReady] = React.useState(false);
   const [arrowOffset, setArrowOffset] = React.useState(0);
@@ -307,13 +335,13 @@ const TooltipProvider = ({
       }
       setActiveTooltip(request);
     },
-    [cancelPendingAnimationFrame],
+    [cancelPendingAnimationFrame]
   );
 
   const hideTooltip = React.useCallback(
     (id: string) => {
       cancelPendingAnimationFrame();
-      setActiveTooltip((currentTooltip) => {
+      setActiveTooltip(currentTooltip => {
         if (currentTooltip?.id === id) {
           const exitGeneration = ++exitGenerationRef.current;
           const geometry = geometryRef.current;
@@ -328,7 +356,10 @@ const TooltipProvider = ({
           });
 
           void bubbleAnimation.then(() => {
-            if (exitGenerationRef.current === exitGeneration && !visibleRef.current) {
+            if (
+              exitGenerationRef.current === exitGeneration &&
+              !visibleRef.current
+            ) {
               placementReadyRef.current = false;
               setIsPlacementReady(false);
             }
@@ -338,7 +369,7 @@ const TooltipProvider = ({
         return currentTooltip;
       });
     },
-    [bubbleControls, cancelPendingAnimationFrame],
+    [bubbleControls, cancelPendingAnimationFrame]
   );
 
   const getTooltipSize = React.useCallback((): TooltipSize | null => {
@@ -360,7 +391,10 @@ const TooltipProvider = ({
     }
 
     const nextGeometry = getTooltipGeometry(activeTooltip, size);
-    if (visibleRef.current && !hasTooltipGeometryChanged(geometryRef.current, nextGeometry)) {
+    if (
+      visibleRef.current &&
+      !hasTooltipGeometryChanged(geometryRef.current, nextGeometry)
+    ) {
       return;
     }
 
@@ -380,7 +414,10 @@ const TooltipProvider = ({
         transition: tooltipRepositionTransition,
       });
       void arrowControls.start({
-        ...getTooltipArrowMotionTarget(activeTooltip.side, nextGeometry.arrowOffset),
+        ...getTooltipArrowMotionTarget(
+          activeTooltip.side,
+          nextGeometry.arrowOffset
+        ),
         transition: tooltipRepositionTransition,
       });
     }
@@ -393,7 +430,10 @@ const TooltipProvider = ({
     }
 
     const nextGeometry = getTooltipGeometry(activeTooltip, size);
-    const shouldReposition = hasTooltipGeometryChanged(geometryRef.current, nextGeometry);
+    const shouldReposition = hasTooltipGeometryChanged(
+      geometryRef.current,
+      nextGeometry
+    );
     geometryRef.current = nextGeometry;
     setArrowOffset(nextGeometry.arrowOffset);
     const shouldUseAppearTransition = !visibleRef.current;
@@ -407,7 +447,12 @@ const TooltipProvider = ({
         opacity: 0,
         scale: TOOLTIP_HIDDEN_SCALE,
       });
-      arrowControls.set(getTooltipArrowMotionTarget(activeTooltip.side, nextGeometry.arrowOffset));
+      arrowControls.set(
+        getTooltipArrowMotionTarget(
+          activeTooltip.side,
+          nextGeometry.arrowOffset
+        )
+      );
     }
 
     const revealTooltip = () => {
@@ -430,7 +475,10 @@ const TooltipProvider = ({
           : tooltipRepositionTransition,
       });
       void arrowControls.start({
-        ...getTooltipArrowMotionTarget(activeTooltip.side, nextGeometry.arrowOffset),
+        ...getTooltipArrowMotionTarget(
+          activeTooltip.side,
+          nextGeometry.arrowOffset
+        ),
         transition: shouldUseAppearTransition
           ? tooltipAppearTransition
           : tooltipRepositionTransition,
@@ -457,13 +505,19 @@ const TooltipProvider = ({
 
     revealTooltip();
     startAnimation();
-  }, [activeTooltip, arrowControls, bubbleControls, cancelPendingAnimationFrame, getTooltipSize]);
+  }, [
+    activeTooltip,
+    arrowControls,
+    bubbleControls,
+    cancelPendingAnimationFrame,
+    getTooltipSize,
+  ]);
 
   React.useEffect(
     () => () => {
       cancelPendingAnimationFrame();
     },
-    [cancelPendingAnimationFrame],
+    [cancelPendingAnimationFrame]
   );
 
   React.useEffect(() => {
@@ -486,17 +540,19 @@ const TooltipProvider = ({
       return;
     }
 
-    window.addEventListener("resize", updatePosition);
-    window.addEventListener("scroll", updatePosition, true);
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
 
     return () => {
-      window.removeEventListener("resize", updatePosition);
-      window.removeEventListener("scroll", updatePosition, true);
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
     };
   }, [activeTooltip, isVisible, updatePosition]);
 
   const content = activeTooltip?.content;
-  const shouldShowTooltip = Boolean(content && placementReadyRef.current && isPlacementReady);
+  const shouldShowTooltip = Boolean(
+    content && placementReadyRef.current && isPlacementReady
+  );
 
   return (
     <TooltipProviderContext.Provider
@@ -507,8 +563,8 @@ const TooltipProvider = ({
         ref={tooltipSizerRef}
         aria-hidden
         className={cn(
-          "pointer-events-none fixed left-0 top-0 -z-10 whitespace-nowrap rounded-md bg-slate-950 px-2 py-1 text-xs font-medium text-white opacity-0",
-          content?.className,
+          'pointer-events-none fixed left-0 top-0 -z-10 whitespace-nowrap rounded-md bg-slate-950 px-2 py-1 text-xs font-medium text-white opacity-0',
+          content?.className
         )}
         style={content?.style}
       >
@@ -517,20 +573,23 @@ const TooltipProvider = ({
       <motion.div
         ref={tooltipRef}
         className={cn(
-          "pointer-events-none fixed left-0 top-0 z-50 overflow-visible whitespace-nowrap rounded-md bg-slate-950 px-2 py-1 text-xs font-medium text-white shadow-md",
-          content?.className,
+          'pointer-events-none fixed left-0 top-0 z-50 overflow-visible whitespace-nowrap rounded-md bg-slate-950 px-2 py-1 text-xs font-medium text-white shadow-md',
+          content?.className
         )}
         style={{
           ...content?.style,
-          visibility: shouldShowTooltip ? "visible" : "hidden",
-          transformOrigin: getTooltipTransformOrigin(activeTooltip?.side ?? "top", arrowOffset),
+          visibility: shouldShowTooltip ? 'visible' : 'hidden',
+          transformOrigin: getTooltipTransformOrigin(
+            activeTooltip?.side ?? 'top',
+            arrowOffset
+          ),
         }}
         initial={false}
         animate={bubbleControls}
       >
         <motion.span
           className="pointer-events-none absolute z-0 block size-3 rotate-45 rounded-[2px] bg-inherit"
-          style={getTooltipArrowStyle(activeTooltip?.side ?? "top")}
+          style={getTooltipArrowStyle(activeTooltip?.side ?? 'top')}
           initial={false}
           animate={arrowControls}
         />
@@ -543,17 +602,18 @@ const TooltipProvider = ({
 const Tooltip = ({
   children,
   className,
-  side = "top",
+  side = 'top',
   sideOffset = 10,
-  align = "center",
+  align = 'center',
   alignOffset = 0,
 }: TooltipProps) => {
   const id = React.useId();
   const triggerRef = React.useRef<HTMLSpanElement | null>(null);
   const contentRef = React.useRef<TooltipContentConfig | null>(null);
   const timeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { openDelay, closeDelay, showTooltip, hideTooltip } =
-    React.useContext(TooltipProviderContext);
+  const { openDelay, closeDelay, showTooltip, hideTooltip } = React.useContext(
+    TooltipProviderContext
+  );
 
   const clearTooltipTimeout = React.useCallback(() => {
     if (timeoutRef.current) {
@@ -618,7 +678,7 @@ const Tooltip = ({
     <TooltipContext.Provider value={{ setContent }}>
       <span
         ref={triggerRef}
-        className={cn("relative inline-flex", className)}
+        className={cn('relative inline-flex', className)}
         onMouseEnter={scheduleOpen}
         onMouseLeave={scheduleClose}
         onFocus={scheduleOpen}
@@ -636,7 +696,7 @@ const TooltipContent = ({
   children,
   className,
   asChild: _asChild,
-  layout = "preserve-aspect",
+  layout = 'preserve-aspect',
   style,
 }: TooltipContentProps) => {
   const tooltip = React.useContext(TooltipContext);

@@ -1,12 +1,12 @@
 import PopupMenuContent, {
   type PopupMenuAction,
-} from "@/components/image-manager/PopupMenuContent";
-import PopupMenuPopover from "@/components/shared/popup-menu-popover";
-import type { RefObject } from "react";
-import { TbDotsVertical, TbLayoutSidebarRightCollapse } from "react-icons/tb";
-import type { UserPresence } from "../../data/chatSidebarGateway";
-import type { ChatSidebarPanelTargetUser } from "../../types";
-import { formatLastSeen } from "./presence";
+} from '@/components/image-manager/PopupMenuContent';
+import PopupMenuPopover from '@/components/shared/popup-menu-popover';
+import type { RefObject } from 'react';
+import { TbDotsVertical, TbLayoutSidebarRightCollapse } from 'react-icons/tb';
+import type { UserPresence } from '../../data/chatSidebarGateway';
+import type { ChatSidebarPanelTargetUser } from '../../types';
+import { formatLastSeen } from './presence';
 
 interface ConversationHeaderContentProps {
   targetUser?: ChatSidebarPanelTargetUser;
@@ -25,10 +25,11 @@ interface ConversationHeaderContentProps {
   getInitialsColor: (userId: string) => string;
 }
 
-const floatingBlockClass = "rounded-full border border-slate-200/95 bg-white/95";
+const floatingBlockClass =
+  'rounded-full border border-slate-200/95 bg-white/95';
 const floatingIconButtonClass = `${floatingBlockClass} inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center text-black transition-colors hover:bg-slate-50 hover:text-black disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-white`;
 const chatPopoverIconClassName =
-  "[&>svg]:!text-black hover:[&>svg]:!text-black data-[preselected=true]:[&>svg]:!text-black";
+  '[&>svg]:!text-black hover:[&>svg]:!text-black data-[preselected=true]:[&>svg]:!text-black';
 
 const ConversationHeaderContent = ({
   targetUser,
@@ -47,8 +48,8 @@ const ConversationHeaderContent = ({
   getInitialsColor,
 }: ConversationHeaderContentProps) => {
   const targetDisplayName = targetUser
-    ? `${targetUser.name}${isSelfConversation ? " (You)" : ""}`
-    : "Chat";
+    ? `${targetUser.name}${isSelfConversation ? ' (You)' : ''}`
+    : 'Chat';
 
   return (
     <div className="flex w-full items-center gap-2.5">
@@ -59,27 +60,31 @@ const ConversationHeaderContent = ({
           {displayTargetPhotoUrl ? (
             <img
               src={displayTargetPhotoUrl}
-              alt={targetUser?.name || "User"}
+              alt={targetUser?.name || 'User'}
               className="w-full h-full object-cover"
               draggable={false}
             />
           ) : (
             <div
-              className={`w-full h-full flex items-center justify-center text-white font-medium text-xs ${getInitialsColor(targetUser?.id || "target_user")}`}
+              className={`w-full h-full flex items-center justify-center text-white font-medium text-xs ${getInitialsColor(targetUser?.id || 'target_user')}`}
             >
-              {getInitials(targetUser?.name || "User")}
+              {getInitials(targetUser?.name || 'User')}
             </div>
           )}
         </div>
         <div className="min-w-0 flex flex-col gap-1">
-          <h3 className="font-medium text-slate-900 truncate leading-tight">{targetDisplayName}</h3>
+          <h3 className="font-medium text-slate-900 truncate leading-tight">
+            {targetDisplayName}
+          </h3>
           {isTargetOnline ? (
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 rounded-full bg-green-500" />
               <span className="text-xs text-green-600 font-medium">Online</span>
             </div>
           ) : targetUserPresenceError ? (
-            <span className="text-xs text-amber-600">{targetUserPresenceError}</span>
+            <span className="text-xs text-amber-600">
+              {targetUserPresenceError}
+            </span>
           ) : targetUserPresence?.last_seen ? (
             <span className="text-xs text-slate-400">
               Terakhir aktif {formatLastSeen(targetUserPresence.last_seen)}
@@ -109,7 +114,7 @@ const ConversationHeaderContent = ({
             <div
               ref={optionsMenuRef}
               className="[&_button]:!text-black [&_button:hover]:!text-black [&_button[data-preselected='true']]:!text-black [&_svg]:!text-black"
-              onClick={(event) => event.stopPropagation()}
+              onClick={event => event.stopPropagation()}
               role="presentation"
             >
               <PopupMenuContent

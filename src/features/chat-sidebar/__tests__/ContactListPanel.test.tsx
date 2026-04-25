@@ -1,6 +1,6 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
-import ContactListPanel from "../components/ContactListPanel";
+import { fireEvent, render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
+import ContactListPanel from '../components/ContactListPanel';
 
 const {
   openChatForUserMock,
@@ -14,38 +14,38 @@ const {
   useChatSidebarLauncherMock: vi.fn(),
 }));
 
-vi.mock("@/store/authStore", () => ({
+vi.mock('@/store/authStore', () => ({
   useAuthStore: useAuthStoreMock,
 }));
 
-vi.mock("../hooks/useChatSidebarLauncher", () => ({
+vi.mock('../hooks/useChatSidebarLauncher', () => ({
   useChatSidebarLauncher: useChatSidebarLauncherMock,
 }));
 
 const currentUser = {
-  id: "user-a",
-  name: "Admin",
-  email: "admin@example.com",
+  id: 'user-a',
+  name: 'Admin',
+  email: 'admin@example.com',
   profilephoto: null,
   profilephoto_thumb: null,
 };
 
 const onlineContact = {
-  id: "user-b",
-  name: "Operator",
-  email: "operator@example.com",
+  id: 'user-b',
+  name: 'Operator',
+  email: 'operator@example.com',
   profilephoto: null,
   profilephoto_thumb: null,
-  last_message: "latest update",
-  last_message_created_at: "2026-03-26T10:05:00.000Z",
+  last_message: 'latest update',
+  last_message_created_at: '2026-03-26T10:05:00.000Z',
 };
 
-describe("ContactListPanel", () => {
+describe('ContactListPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useAuthStoreMock.mockReturnValue({ user: currentUser });
     useChatSidebarLauncherMock.mockReturnValue({
-      onlineUserIds: new Set<string>(["user-a"]),
+      onlineUserIds: new Set<string>(['user-a']),
       portalOrderedUsers: [currentUser],
       isDirectoryLoading: false,
       directoryError: null,
@@ -57,10 +57,10 @@ describe("ContactListPanel", () => {
     });
   });
 
-  it("allows opening the current user as a self chat contact", () => {
+  it('allows opening the current user as a self chat contact', () => {
     render(<ContactListPanel onClose={vi.fn()} />);
 
-    const currentUserContact = screen.getByRole("button", {
+    const currentUserContact = screen.getByRole('button', {
       name: /admin/i,
     }) as HTMLButtonElement;
 
@@ -73,9 +73,9 @@ describe("ContactListPanel", () => {
     expect(openChatForUserMock).toHaveBeenCalledWith(currentUser);
   });
 
-  it("shows the latest message preview for online contacts", () => {
+  it('shows the latest message preview for online contacts', () => {
     useChatSidebarLauncherMock.mockReturnValue({
-      onlineUserIds: new Set<string>(["user-b"]),
+      onlineUserIds: new Set<string>(['user-b']),
       portalOrderedUsers: [onlineContact],
       isDirectoryLoading: false,
       directoryError: null,
@@ -88,8 +88,8 @@ describe("ContactListPanel", () => {
 
     render(<ContactListPanel onClose={vi.fn()} />);
 
-    expect(screen.getByText("latest update")).toBeDefined();
-    expect(screen.queryByText("Now")).toBeNull();
-    expect(screen.queryByText("Available now")).toBeNull();
+    expect(screen.getByText('latest update')).toBeDefined();
+    expect(screen.queryByText('Now')).toBeNull();
+    expect(screen.queryByText('Available now')).toBeNull();
   });
 });
