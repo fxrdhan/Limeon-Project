@@ -1,6 +1,7 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
+import { useChatSidebarStore } from '../../../store/chatSidebarStore';
 import ChatSidebarPanel from '../index';
 
 const { mockComposerState } = vi.hoisted(() => ({
@@ -255,6 +256,10 @@ describe('ChatSidebarPanel integration', () => {
     vi.clearAllMocks();
     mockComposerState.loadingComposerAttachments = [];
     mockComposerState.isLoadingAttachmentComposerAttachments = false;
+    useChatSidebarStore.setState({
+      isOpen: false,
+      targetUser: undefined,
+    });
   });
 
   it('disables send while a remote attachment is still converting', () => {
@@ -288,24 +293,32 @@ describe('ChatSidebarPanel integration', () => {
     ).toBe(true);
   });
 
-  it('closes through the real header action', () => {
+  it('returns to the contact list through the real header action', () => {
     const onClose = vi.fn();
+    const targetUser = {
+      id: 'user-b',
+      name: 'Gudang',
+      email: 'gudang@example.com',
+      profilephoto: null,
+    };
+
+    useChatSidebarStore.setState({
+      isOpen: true,
+      targetUser,
+    });
 
     render(
-      <ChatSidebarPanel
-        isOpen
-        onClose={onClose}
-        targetUser={{
-          id: 'user-b',
-          name: 'Gudang',
-          email: 'gudang@example.com',
-          profilephoto: null,
-        }}
-      />
+      <ChatSidebarPanel isOpen onClose={onClose} targetUser={targetUser} />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Tutup sidebar chat' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Kembali ke daftar kontak' })
+    );
 
-    expect(onClose).toHaveBeenCalledOnce();
+    expect(onClose).not.toHaveBeenCalled();
+    expect(useChatSidebarStore.getState()).toMatchObject({
+      isOpen: true,
+      targetUser: undefined,
+    });
   });
 });

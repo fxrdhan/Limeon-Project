@@ -87,6 +87,8 @@ const buildDirectoryUser = (
   email: 'gudang@example.com',
   profilephoto: null,
   profilephoto_thumb: null,
+  last_message: null,
+  last_message_created_at: null,
   ...overrides,
 });
 
