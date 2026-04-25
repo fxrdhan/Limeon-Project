@@ -93,11 +93,7 @@ const ContactListPanel = ({ onClose }: ContactListPanelProps) => {
       return searchableText.includes(normalizedSearchQuery);
     });
   }, [normalizedSearchQuery, portalOrderedUsers]);
-  const fallbackActiveContactId =
-    user?.id && filteredContacts.some(portalUser => portalUser.id === user.id)
-      ? user.id
-      : null;
-  const highlightedContactId = hoveredContactId ?? fallbackActiveContactId;
+  const highlightedContactId = hoveredContactId;
   const highlightedContactIndex = highlightedContactId
     ? filteredContacts.findIndex(
         portalUser => portalUser.id === highlightedContactId
@@ -202,12 +198,19 @@ const ContactListPanel = ({ onClose }: ContactListPanelProps) => {
                   setHoveredContactId(portalUser.id);
                   void prefetchConversationForUser(portalUser);
                 }}
+                onMouseLeave={() => {
+                  setHoveredContactId(currentContactId =>
+                    currentContactId === portalUser.id ? null : currentContactId
+                  );
+                }}
                 onFocus={() => {
                   setHoveredContactId(portalUser.id);
                   void prefetchConversationForUser(portalUser);
                 }}
                 onBlur={() => {
-                  setHoveredContactId(null);
+                  setHoveredContactId(currentContactId =>
+                    currentContactId === portalUser.id ? null : currentContactId
+                  );
                 }}
                 onClick={() => openChatForUser(portalUser)}
               >

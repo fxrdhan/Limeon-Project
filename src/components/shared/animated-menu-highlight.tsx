@@ -8,6 +8,11 @@ const menuHighlightTransition = {
   mass: 0.7,
 } as const;
 
+const menuHighlightVisibilityTransition = {
+  duration: 0.14,
+  ease: 'easeOut',
+} as const;
+
 interface AnimatedMenuHighlightProps {
   className: string;
   frame: HighlightFrame;
@@ -23,9 +28,15 @@ export const AnimatedMenuHighlight = ({
     initial={false}
     animate={{
       opacity: frame.isVisible ? 1 : 0,
+      scale: frame.isVisible ? 1 : 0.98,
       y: frame.top,
       height: frame.height,
     }}
-    transition={frame.shouldAnimate ? menuHighlightTransition : { duration: 0 }}
+    transition={{
+      opacity: menuHighlightVisibilityTransition,
+      scale: menuHighlightVisibilityTransition,
+      y: frame.shouldAnimate ? menuHighlightTransition : { duration: 0 },
+      height: frame.shouldAnimate ? menuHighlightTransition : { duration: 0 },
+    }}
   />
 );

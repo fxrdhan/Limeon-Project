@@ -313,6 +313,7 @@ const TooltipProvider = ({
   const visibleRef = React.useRef(false);
   const placementReadyRef = React.useRef(false);
   const geometryRef = React.useRef<TooltipGeometry>(defaultTooltipGeometry);
+  const geometryTooltipIdRef = React.useRef<string | null>(null);
   const exitGenerationRef = React.useRef(0);
   const animationFrameRef = React.useRef<number | null>(null);
 
@@ -331,6 +332,7 @@ const TooltipProvider = ({
       exitGenerationRef.current += 1;
       if (!visibleRef.current) {
         placementReadyRef.current = false;
+        geometryTooltipIdRef.current = null;
         setIsPlacementReady(false);
       }
       setActiveTooltip(request);
@@ -344,9 +346,20 @@ const TooltipProvider = ({
       setActiveTooltip(currentTooltip => {
         if (currentTooltip?.id === id) {
           const exitGeneration = ++exitGenerationRef.current;
-          const geometry = geometryRef.current;
           visibleRef.current = false;
           setIsVisible(false);
+
+          if (
+            !placementReadyRef.current ||
+            geometryTooltipIdRef.current !== id
+          ) {
+            placementReadyRef.current = false;
+            geometryTooltipIdRef.current = null;
+            setIsPlacementReady(false);
+            return null;
+          }
+
+          const geometry = geometryRef.current;
           const bubbleAnimation = bubbleControls.start({
             x: geometry.hiddenBubbleX,
             y: geometry.hiddenBubbleY,
@@ -361,7 +374,11 @@ const TooltipProvider = ({
               !visibleRef.current
             ) {
               placementReadyRef.current = false;
+              geometryTooltipIdRef.current = null;
               setIsPlacementReady(false);
+              setActiveTooltip(current =>
+                current?.id === id ? null : current
+              );
             }
           });
         }
@@ -399,6 +416,7 @@ const TooltipProvider = ({
     }
 
     geometryRef.current = nextGeometry;
+    geometryTooltipIdRef.current = activeTooltip.id;
     setArrowOffset(nextGeometry.arrowOffset);
 
     if (visibleRef.current) {
@@ -435,6 +453,7 @@ const TooltipProvider = ({
       nextGeometry
     );
     geometryRef.current = nextGeometry;
+    geometryTooltipIdRef.current = activeTooltip.id;
     setArrowOffset(nextGeometry.arrowOffset);
     const shouldUseAppearTransition = !visibleRef.current;
 
