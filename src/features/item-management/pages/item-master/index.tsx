@@ -63,7 +63,7 @@ import type {
   Patient as PatientType,
   Supplier as SupplierType,
 } from "@/types";
-import type { FilterSearch } from "@/types/search";
+import type { FilterSearch, SearchColumn } from "@/types/search";
 import { isPageFocusBlocked } from "@/store/pageFocusBlockStore";
 
 import { fuzzyMatch } from "@/utils/search";
@@ -241,6 +241,24 @@ const shouldApplyRestoredFilter = (
     hasFilterValue(filterSearch.value) &&
     (filterSearch.operator !== "inRange" || hasFilterValue(filterSearch.valueTo))
   );
+};
+
+const normalizePendingOperatorPattern = (pattern: string, columns: SearchColumn[]): string => {
+  if (pattern.trim() === "") return pattern;
+
+  const parsedSearch = parseSearchValue(pattern, columns);
+  if (
+    parsedSearch.selectedColumn &&
+    !parsedSearch.isFilterMode &&
+    !parsedSearch.showColumnSelector &&
+    !parsedSearch.showOperatorSelector &&
+    pattern.trimStart().startsWith("#") &&
+    !pattern.includes(":")
+  ) {
+    return `#${parsedSearch.selectedColumn.field} #`;
+  }
+
+  return pattern;
 };
 
 const ItemMasterNew = memo(() => {
@@ -1836,7 +1854,23 @@ const ItemMasterNew = memo(() => {
                   ? doctorSearch
                   : entitySearch;
 
-      saveSearchPatternToSession(activeTab, currentSearchPattern);
+      const currentSearchColumns =
+        activeTab === "items"
+          ? orderedSearchColumns
+          : activeTab === "suppliers"
+            ? supplierSearchColumns
+            : activeTab === "customers"
+              ? customerSearchColumns
+              : activeTab === "patients"
+                ? patientSearchColumns
+                : activeTab === "doctors"
+                  ? doctorSearchColumns
+                  : entitySearchColumns;
+
+      saveSearchPatternToSession(
+        activeTab,
+        normalizePendingOperatorPattern(currentSearchPattern, currentSearchColumns),
+      );
 
       void navigate(
         targetTab === "suppliers"
@@ -1952,6 +1986,12 @@ const ItemMasterNew = memo(() => {
       patientSearch,
       doctorSearch,
       entitySearch,
+      orderedSearchColumns,
+      supplierSearchColumns,
+      customerSearchColumns,
+      patientSearchColumns,
+      doctorSearchColumns,
+      entitySearchColumns,
       isTabSelectorExpanded,
       isAddItemModalOpen,
       isAddCustomerModalOpen,
@@ -2159,18 +2199,23 @@ const ItemMasterNew = memo(() => {
       // ignore
     }
 
-    setSearch(savedPattern);
+    const restoredPattern = normalizePendingOperatorPattern(savedPattern, activeSearchColumns);
+    if (restoredPattern !== savedPattern) {
+      saveSearchPatternToSession(activeTab, restoredPattern);
+    }
+
+    setSearch(restoredPattern);
 
     if (!unifiedGridApi || unifiedGridApi.isDestroyed()) {
       return;
     }
 
-    if (savedPattern.trim() === "") {
+    if (restoredPattern.trim() === "") {
       unifiedGridApi.setAdvancedFilterModel(null);
       return;
     }
 
-    const parsedSearch = parseSearchValue(savedPattern, activeSearchColumns);
+    const parsedSearch = parseSearchValue(restoredPattern, activeSearchColumns);
     const filterSearch = parsedSearch.isFilterMode ? (parsedSearch.filterSearch ?? null) : null;
 
     unifiedGridApi.setAdvancedFilterModel(
