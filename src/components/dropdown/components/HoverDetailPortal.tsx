@@ -1,30 +1,37 @@
-import React, { useLayoutEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "motion/react";
-import Badge from "@/components/badge";
-import { POPUP_HOVER_BG_CLASS, POPUP_SURFACE_CLASS } from "@/components/shared/popup-styles";
-import type { HoverDetailData } from "@/types";
+import React, { useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { motion, AnimatePresence } from 'motion/react';
+import Badge from '@/components/badge';
+import {
+  POPUP_HOVER_BG_CLASS,
+  POPUP_SURFACE_CLASS,
+} from '@/components/shared/popup-styles';
+import type { HoverDetailData } from '@/types';
 
 interface HoverDetailPortalProps {
   isVisible: boolean;
   position: {
     top: number;
     left: number;
-    direction: "right" | "left";
+    direction: 'right' | 'left';
     anchorCenterY: number;
   };
   data: HoverDetailData | null;
 }
 
-const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({ isVisible, position, data }) => {
+const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
+  isVisible,
+  position,
+  data,
+}) => {
   const metaBadgeVariant =
-    data?.metaTone === "success"
-      ? "success"
-      : data?.metaTone === "warning"
-        ? "warning"
-        : data?.metaTone === "info"
-          ? "info"
-          : "default";
+    data?.metaTone === 'success'
+      ? 'success'
+      : data?.metaTone === 'warning'
+        ? 'warning'
+        : data?.metaTone === 'info'
+          ? 'info'
+          : 'default';
 
   // Derive state directly from props - no effect needed!
   const showContent = isVisible && !!data;
@@ -33,30 +40,42 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({ isVisible, positi
   const viewportPadding = 12;
   const arrowSize = 12;
   const arrowPadding = 12;
-  const viewportWidth = typeof window === "undefined" ? 1024 : window.innerWidth;
-  const viewportHeight = typeof window === "undefined" ? 768 : window.innerHeight;
-  const maxTop = Math.max(viewportPadding, viewportHeight - popupSize.height - viewportPadding);
+  const viewportWidth =
+    typeof window === 'undefined' ? 1024 : window.innerWidth;
+  const viewportHeight =
+    typeof window === 'undefined' ? 768 : window.innerHeight;
+  const maxTop = Math.max(
+    viewportPadding,
+    viewportHeight - popupSize.height - viewportPadding
+  );
   const resolvedTop = Math.min(Math.max(position.top, viewportPadding), maxTop);
   const arrowCenterY = Math.min(
-    Math.max(position.anchorCenterY - resolvedTop, arrowPadding + arrowSize / 2),
-    Math.max(arrowPadding + arrowSize / 2, popupSize.height - arrowPadding - arrowSize / 2),
+    Math.max(
+      position.anchorCenterY - resolvedTop,
+      arrowPadding + arrowSize / 2
+    ),
+    Math.max(
+      arrowPadding + arrowSize / 2,
+      popupSize.height - arrowPadding - arrowSize / 2
+    )
   );
   const clampedLeft =
-    typeof window === "undefined"
+    typeof window === 'undefined'
       ? position.left
       : Math.min(
           Math.max(position.left, viewportPadding),
-          viewportWidth - popupSize.width - viewportPadding,
+          viewportWidth - popupSize.width - viewportPadding
         );
 
   useLayoutEffect(() => {
     if (!showContent || !popupRef.current) return;
 
     const popupRect = popupRef.current.getBoundingClientRect();
-    setPopupSize((prev) =>
-      Math.abs(prev.width - popupRect.width) < 1 && Math.abs(prev.height - popupRect.height) < 1
+    setPopupSize(prev =>
+      Math.abs(prev.width - popupRect.width) < 1 &&
+      Math.abs(prev.height - popupRect.height) < 1
         ? prev
-        : { width: popupRect.width, height: popupRect.height },
+        : { width: popupRect.width, height: popupRect.height }
     );
   }, [data, showContent]);
 
@@ -70,7 +89,7 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({ isVisible, positi
           exit={{ opacity: 0, scale: 0.95 }}
           transition={{
             duration: 0.15,
-            ease: "easeOut",
+            ease: 'easeOut',
           }}
           className="fixed z-[9999] pointer-events-none"
           style={{
@@ -86,7 +105,7 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({ isVisible, positi
             transition={{
               layout: {
                 duration: 0.18,
-                ease: "easeOut",
+                ease: 'easeOut',
               },
             }}
           >
@@ -96,7 +115,7 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({ isVisible, positi
               animate={showContent ? { opacity: 1 } : { opacity: 0 }}
               transition={{
                 duration: 0.12,
-                ease: "easeOut",
+                ease: 'easeOut',
               }}
               className="pointer-events-auto max-h-[calc(100vh-24px)] overflow-y-auto"
             >
@@ -108,7 +127,9 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({ isVisible, positi
                       {data.code}
                     </Badge>
                   )}
-                  <h3 className="font-semibold text-slate-900 break-words">{data.name}</h3>
+                  <h3 className="font-semibold text-slate-900 break-words">
+                    {data.name}
+                  </h3>
                 </div>
                 {data.metaLabel ? (
                   <Badge
@@ -137,7 +158,7 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({ isVisible, positi
                     <div className="flex justify-between">
                       <span>Updated:</span>
                       <span className="ml-2">
-                        {new Date(data.updated_at).toLocaleDateString("id-ID")}
+                        {new Date(data.updated_at).toLocaleDateString('id-ID')}
                       </span>
                     </div>
                   </div>
@@ -148,19 +169,21 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({ isVisible, positi
             {/* Dynamic arrow based on position - always visible */}
             <div
               className={`absolute pointer-events-none h-3 w-3 border border-slate-300 bg-white transition-colors duration-150 group-hover:bg-slate-100 ${
-                position.direction === "right" ? "border-r-0 border-t-0" : "border-l-0 border-b-0"
+                position.direction === 'right'
+                  ? 'border-r-0 border-t-0'
+                  : 'border-l-0 border-b-0'
               }`}
               style={
-                position.direction === "right"
+                position.direction === 'right'
                   ? {
-                      left: "-6px",
+                      left: '-6px',
                       top: `${arrowCenterY}px`,
-                      transform: "translateY(-50%) rotate(45deg)",
+                      transform: 'translateY(-50%) rotate(45deg)',
                     }
                   : {
-                      right: "-6px",
+                      right: '-6px',
                       top: `${arrowCenterY}px`,
-                      transform: "translateY(-50%) rotate(45deg)",
+                      transform: 'translateY(-50%) rotate(45deg)',
                     }
               }
             />
@@ -168,7 +191,7 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({ isVisible, positi
         </motion.div>
       )}
     </AnimatePresence>,
-    document.body,
+    document.body
   );
 };
 

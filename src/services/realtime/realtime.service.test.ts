@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
-import type { RealtimeChannel } from "@supabase/supabase-js";
-import { realtimeService } from "./realtime.service";
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
+import type { RealtimeChannel } from '@supabase/supabase-js';
+import { realtimeService } from './realtime.service';
 
 const { mockRealtimeClient, mockSupabase } = vi.hoisted(() => {
   const mockRealtimeClient = {
@@ -18,11 +18,11 @@ const { mockRealtimeClient, mockSupabase } = vi.hoisted(() => {
   return { mockRealtimeClient, mockSupabase };
 });
 
-vi.mock("@/lib/supabase", () => ({
+vi.mock('@/lib/supabase', () => ({
   supabase: mockSupabase,
 }));
 
-describe("realtimeService", () => {
+describe('realtimeService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRealtimeClient.channels = [];
@@ -33,9 +33,9 @@ describe("realtimeService", () => {
     ).__pharmaSysRemoveChannelPatch;
   });
 
-  it("detaches only the removed channel instance before waiting for the leave acknowledgement", async () => {
-    let acknowledgeLeave: (status: "ok") => void = () => {};
-    const leaveAcknowledgement = new Promise<"ok">((resolve) => {
+  it('detaches only the removed channel instance before waiting for the leave acknowledgement', async () => {
+    let acknowledgeLeave: (status: 'ok') => void = () => {};
+    const leaveAcknowledgement = new Promise<'ok'>(resolve => {
       acknowledgeLeave = resolve;
     });
     const staleChannelUnsubscribe = vi.fn(() => leaveAcknowledgement);
@@ -43,12 +43,12 @@ describe("realtimeService", () => {
     const replacementChannelUnsubscribe = vi.fn();
     const replacementChannelTeardown = vi.fn();
     const staleChannel = {
-      topic: "realtime:chat_channel-a",
+      topic: 'realtime:chat_channel-a',
       unsubscribe: staleChannelUnsubscribe,
       teardown: staleChannelTeardown,
     } as unknown as RealtimeChannel;
     const replacementChannel = {
-      topic: "realtime:chat_channel-a",
+      topic: 'realtime:chat_channel-a',
       unsubscribe: replacementChannelUnsubscribe,
       teardown: replacementChannelTeardown,
     } as unknown as RealtimeChannel;
@@ -62,8 +62,8 @@ describe("realtimeService", () => {
     expect(replacementChannelUnsubscribe).not.toHaveBeenCalled();
     expect(replacementChannelTeardown).not.toHaveBeenCalled();
 
-    acknowledgeLeave("ok");
-    await expect(removal).resolves.toBe("ok");
+    acknowledgeLeave('ok');
+    await expect(removal).resolves.toBe('ok');
 
     expect(staleChannelTeardown).toHaveBeenCalledTimes(1);
     expect(mockRealtimeClient.disconnect).not.toHaveBeenCalled();

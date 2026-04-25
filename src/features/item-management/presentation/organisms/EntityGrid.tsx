@@ -9,31 +9,37 @@ import type {
   IRowNode,
   RowClickedEvent,
   RowGroupOpenedEvent,
-} from "ag-grid-community";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+} from 'ag-grid-community';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 // Components
-import DataGrid from "@/components/ag-grid/DataGrid";
-import { getPinAndFilterMenuItems } from "@/components/ag-grid/columns";
-import type { AgGridReact } from "ag-grid-react";
-import StandardPagination from "../atoms/StandardPagination";
+import DataGrid from '@/components/ag-grid/DataGrid';
+import { getPinAndFilterMenuItems } from '@/components/ag-grid/columns';
+import type { AgGridReact } from 'ag-grid-react';
+import StandardPagination from '../atoms/StandardPagination';
 
 // Hooks
-import { useColumnDisplayMode } from "@/features/item-management/application/hooks/ui";
-import { useItemsDisplayTransform } from "@/features/item-management/application/hooks/ui/useItemsDisplayTransform";
-import { useDynamicGridHeight } from "@/hooks/ag-grid/useDynamicGridHeight";
+import { useColumnDisplayMode } from '@/features/item-management/application/hooks/ui';
+import { useItemsDisplayTransform } from '@/features/item-management/application/hooks/ui/useItemsDisplayTransform';
+import { useDynamicGridHeight } from '@/hooks/ag-grid/useDynamicGridHeight';
 // Simple grid state utilities
-import * as gridStateManager from "@/utils/gridStateManager";
-import type { TableType } from "@/utils/gridStateManager";
+import * as gridStateManager from '@/utils/gridStateManager';
+import type { TableType } from '@/utils/gridStateManager';
 import {
   getItemMasterSearchSessionKey,
   isMasterDataTab,
   type MasterDataType,
-} from "@/features/item-management/shared/types";
+} from '@/features/item-management/shared/types';
 
 // Types
-import type { Customer, Doctor, Item, Patient, Supplier } from "@/types/database";
-import { EntityData } from "../../application/hooks/collections/useEntityManager";
+import type {
+  Customer,
+  Doctor,
+  Item,
+  Patient,
+  Supplier,
+} from '@/types/database';
+import { EntityData } from '../../application/hooks/collections/useEntityManager';
 
 // Extended entity types with code property for display mode
 type EntityWithCode = {
@@ -47,7 +53,7 @@ type EntityWithCode = {
 interface ItemWithExtendedEntities
   extends
     Record<string, unknown>,
-    Omit<Item, "category" | "type" | "package" | "dosage" | "manufacturer"> {
+    Omit<Item, 'category' | 'type' | 'package' | 'dosage' | 'manufacturer'> {
   category?: EntityWithCode;
   type?: EntityWithCode;
   package?: EntityWithCode; // Kemasan (yang ditampilkan di grid)
@@ -92,19 +98,39 @@ interface EntityGridProps {
 
   // Handlers
   onRowClick: (
-    data: ItemWithExtendedEntities | EntityData | Supplier | Customer | Patient | Doctor,
+    data:
+      | ItemWithExtendedEntities
+      | EntityData
+      | Supplier
+      | Customer
+      | Patient
+      | Doctor
   ) => void;
   onGridReady: (
     params: GridReadyEvent<
-      ItemWithExtendedEntities | EntityData | Supplier | Customer | Patient | Doctor
-    >,
+      | ItemWithExtendedEntities
+      | EntityData
+      | Supplier
+      | Customer
+      | Patient
+      | Doctor
+    >
   ) => void;
   isExternalFilterPresent: () => boolean;
   doesExternalFilterPass: (
-    node: IRowNode<ItemWithExtendedEntities | EntityData | Supplier | Customer | Patient | Doctor>,
+    node: IRowNode<
+      | ItemWithExtendedEntities
+      | EntityData
+      | Supplier
+      | Customer
+      | Patient
+      | Doctor
+    >
   ) => boolean;
   onGridApiReady?: (api: GridApi | null) => void; // Add grid API callback
-  onFilterChanged?: (filterModel: import("ag-grid-community").FilterModel) => void; // Filter sync callback
+  onFilterChanged?: (
+    filterModel: import('ag-grid-community').FilterModel
+  ) => void; // Filter sync callback
 
   // Pagination (for items)
   itemsPerPage?: number;
@@ -148,7 +174,9 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
     }
 
     try {
-      const savedPattern = sessionStorage.getItem(getItemMasterSearchSessionKey(tableType));
+      const savedPattern = sessionStorage.getItem(
+        getItemMasterSearchSessionKey(tableType)
+      );
       return !!savedPattern?.trim();
     } catch {
       return false;
@@ -157,7 +185,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
 
   const sanitizeSavedGridState = useCallback(
     (tableType: TableType, state: unknown): GridState | undefined => {
-      if (!state || typeof state !== "object") {
+      if (!state || typeof state !== 'object') {
         return undefined;
       }
 
@@ -165,7 +193,10 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
       if (hasPersistedSearchPattern(tableType)) {
         const gridState = state as GridState;
         const savedPageSize = gridState.pagination?.pageSize;
-        if (savedPageSize === undefined || allowedPageSizes.has(savedPageSize)) {
+        if (
+          savedPageSize === undefined ||
+          allowedPageSizes.has(savedPageSize)
+        ) {
           return gridState;
         }
 
@@ -178,7 +209,10 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
         };
 
         try {
-          sessionStorage.setItem(`grid_state_${tableType}`, JSON.stringify(normalizedState));
+          sessionStorage.setItem(
+            `grid_state_${tableType}`,
+            JSON.stringify(normalizedState)
+          );
         } catch {
           // ignore
         }
@@ -190,7 +224,9 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
       const advancedFilterModel = gridState.filter?.advancedFilterModel;
       const savedPageSize = gridState.pagination?.pageSize;
       const normalizedPageSize =
-        savedPageSize === undefined || allowedPageSizes.has(savedPageSize) ? savedPageSize : 25;
+        savedPageSize === undefined || allowedPageSizes.has(savedPageSize)
+          ? savedPageSize
+          : 25;
 
       if (advancedFilterModel == null && normalizedPageSize === savedPageSize) {
         return gridState;
@@ -212,27 +248,30 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
       };
 
       try {
-        sessionStorage.setItem(`grid_state_${tableType}`, JSON.stringify(sanitizedState));
+        sessionStorage.setItem(
+          `grid_state_${tableType}`,
+          JSON.stringify(sanitizedState)
+        );
       } catch {
         // ignore
       }
 
       return sanitizedState;
     },
-    [hasPersistedSearchPattern],
+    [hasPersistedSearchPattern]
   );
 
   const readSavedGridState = useCallback(
     (tableType: TableType) => {
       let stateFromHelper: unknown = undefined;
-      if ("loadSavedStateForInit" in gridStateManager) {
+      if ('loadSavedStateForInit' in gridStateManager) {
         stateFromHelper = (
           gridStateManager as {
             loadSavedStateForInit: (table: TableType) => unknown;
           }
         ).loadSavedStateForInit(tableType);
       }
-      if (!stateFromHelper && "getSavedStateInfo" in gridStateManager) {
+      if (!stateFromHelper && 'getSavedStateInfo' in gridStateManager) {
         stateFromHelper = (
           gridStateManager as {
             getSavedStateInfo: (table: TableType) => unknown;
@@ -256,33 +295,43 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
         return undefined;
       }
     },
-    [sanitizeSavedGridState],
+    [sanitizeSavedGridState]
   );
 
-  const readSavedPaginationEnabledState = useCallback((tableType: TableType) => {
-    if ("loadSavedPaginationEnabledState" in gridStateManager) {
-      return (
-        gridStateManager as {
-          loadSavedPaginationEnabledState: (table: TableType) => boolean | undefined;
-        }
-      ).loadSavedPaginationEnabledState(tableType);
-    }
+  const readSavedPaginationEnabledState = useCallback(
+    (tableType: TableType) => {
+      if ('loadSavedPaginationEnabledState' in gridStateManager) {
+        return (
+          gridStateManager as {
+            loadSavedPaginationEnabledState: (
+              table: TableType
+            ) => boolean | undefined;
+          }
+        ).loadSavedPaginationEnabledState(tableType);
+      }
 
-    return undefined;
-  }, []);
+      return undefined;
+    },
+    []
+  );
 
   const hasSavedGridState = useCallback(
     (tableType: TableType) => {
-      if (typeof gridStateManager.hasSavedState === "function") {
+      if (typeof gridStateManager.hasSavedState === 'function') {
         return gridStateManager.hasSavedState(tableType);
       }
       return Boolean(readSavedGridState(tableType));
     },
-    [readSavedGridState],
+    [readSavedGridState]
   );
 
   const applySavedPaginationState = useCallback(
-    (api: GridApi, tableType: TableType, savedState?: GridState, fallbackPageSize = 25) => {
+    (
+      api: GridApi,
+      tableType: TableType,
+      savedState?: GridState,
+      fallbackPageSize = 25
+    ) => {
       if (!api || api.isDestroyed()) {
         return;
       }
@@ -290,16 +339,16 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
       const savedPaginationEnabled = readSavedPaginationEnabledState(tableType);
       const paginationEnabled = savedPaginationEnabled ?? true;
 
-      api.setGridOption("pagination", paginationEnabled);
+      api.setGridOption('pagination', paginationEnabled);
 
       if (paginationEnabled) {
         api.setGridOption(
-          "paginationPageSize",
-          savedState?.pagination?.pageSize ?? fallbackPageSize,
+          'paginationPageSize',
+          savedState?.pagination?.pageSize ?? fallbackPageSize
         );
       }
     },
-    [readSavedPaginationEnabledState],
+    [readSavedPaginationEnabledState]
   );
 
   const syncPaginationUiState = useCallback((api: GridApi) => {
@@ -307,11 +356,11 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
       return;
     }
 
-    const isPaginationEnabled = api.getGridOption("pagination");
+    const isPaginationEnabled = api.getGridOption('pagination');
     const nextPageSize = isPaginationEnabled ? api.paginationGetPageSize() : -1;
 
-    setCurrentPageSize((currentPageSize) =>
-      currentPageSize === nextPageSize ? currentPageSize : nextPageSize,
+    setCurrentPageSize(currentPageSize =>
+      currentPageSize === nextPageSize ? currentPageSize : nextPageSize
     );
   }, []);
 
@@ -334,7 +383,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
     }
 
     const tableType = activeTab as TableType;
-    if ("autoSaveGridState" in gridStateManager) {
+    if ('autoSaveGridState' in gridStateManager) {
       (
         gridStateManager as {
           autoSaveGridState: (api: GridApi, table: TableType) => boolean;
@@ -364,7 +413,12 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
       isApplyingTabStateRef.current = true;
       requestAnimationFrame(() => {
         if (gridApi && !gridApi.isDestroyed()) {
-          applySavedPaginationState(gridApi, tableType, initialGridState, itemsPerPage);
+          applySavedPaginationState(
+            gridApi,
+            tableType,
+            initialGridState,
+            itemsPerPage
+          );
           syncPaginationUiState(gridApi);
         }
         isApplyingTabStateRef.current = false;
@@ -387,7 +441,12 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
         requestAnimationFrame(() => {
           if (gridApi && !gridApi.isDestroyed()) {
             gridApi.setState(savedState);
-            applySavedPaginationState(gridApi, tableType, savedState, itemsPerPage);
+            applySavedPaginationState(
+              gridApi,
+              tableType,
+              savedState,
+              itemsPerPage
+            );
             syncPaginationUiState(gridApi);
             gridApi.clearFocusedCell();
             gridApi.clearCellSelection();
@@ -398,7 +457,12 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
         // No saved state, autosize columns for first-time users
         requestAnimationFrame(() => {
           if (gridApi && !gridApi.isDestroyed()) {
-            applySavedPaginationState(gridApi, tableType, undefined, itemsPerPage);
+            applySavedPaginationState(
+              gridApi,
+              tableType,
+              undefined,
+              itemsPerPage
+            );
             syncPaginationUiState(gridApi);
             gridApi.autoSizeAllColumns();
             gridApi.clearFocusedCell();
@@ -431,19 +495,25 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
   // Use a generic parameter to strongly type the transform and avoid unsafe casts.
   const itemsForDisplay = useItemsDisplayTransform<ItemWithExtendedEntities>(
     itemsData as ItemWithExtendedEntities[] | undefined,
-    columnDisplayModes,
+    columnDisplayModes
   );
 
   // Determine current data and column definitions based on active tab
   const { rowData, columnDefs } = useMemo(() => {
-    let data: (ItemWithExtendedEntities | EntityData | Supplier | Customer | Patient | Doctor)[] =
-      [];
+    let data: (
+      | ItemWithExtendedEntities
+      | EntityData
+      | Supplier
+      | Customer
+      | Patient
+      | Doctor
+    )[] = [];
     let columns: (ColDef | ColGroupDef)[] = [];
 
-    if (activeTab === "items") {
+    if (activeTab === 'items') {
       data = itemsForDisplay || [];
       columns = itemColumnDefs;
-    } else if (activeTab === "suppliers") {
+    } else if (activeTab === 'suppliers') {
       data = suppliersData;
       columns = supplierColumnDefs;
     } else {
@@ -491,15 +561,20 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
         }, 100);
       }
     },
-    [toggleDisplayMode, gridApi],
+    [toggleDisplayMode, gridApi]
   );
 
   // Handle row clicks
   const handleRowClicked = useCallback(
     (
       event: RowClickedEvent<
-        ItemWithExtendedEntities | EntityData | Supplier | Customer | Patient | Doctor
-      >,
+        | ItemWithExtendedEntities
+        | EntityData
+        | Supplier
+        | Customer
+        | Patient
+        | Doctor
+      >
     ) => {
       // Check if this is a group row - group rows don't have meaningful data for editing
       if (event.node.group) {
@@ -511,20 +586,30 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
         onRowClick(event.data);
       }
     },
-    [onRowClick],
+    [onRowClick]
   );
 
   // Handle grid ready - simple!
   const handleGridReady = useCallback(
     (
       params: GridReadyEvent<
-        ItemWithExtendedEntities | EntityData | Supplier | Customer | Patient | Doctor
-      >,
+        | ItemWithExtendedEntities
+        | EntityData
+        | Supplier
+        | Customer
+        | Patient
+        | Doctor
+      >
     ) => {
       const tableType = activeTab as TableType;
       const savedState = readSavedGridState(tableType);
 
-      applySavedPaginationState(params.api, tableType, savedState, itemsPerPage);
+      applySavedPaginationState(
+        params.api,
+        tableType,
+        savedState,
+        itemsPerPage
+      );
       syncPaginationUiState(params.api);
       setGridApi(params.api);
 
@@ -543,7 +628,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
       onGridReady,
       readSavedGridState,
       syncPaginationUiState,
-    ],
+    ]
   );
 
   // Handle first data rendered - simple autosize for new grids
@@ -559,7 +644,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
       }
       /* c8 ignore end */
     },
-    [activeTab, hasSavedGridState],
+    [activeTab, hasSavedGridState]
   );
 
   // Track row data updates (for future use if needed)
@@ -573,15 +658,22 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
       /* c8 ignore next */
       setCurrentPageSize(newPageSize);
 
-      if (gridApi && !gridApi.isDestroyed() && "savePaginationEnabledState" in gridStateManager) {
+      if (
+        gridApi &&
+        !gridApi.isDestroyed() &&
+        'savePaginationEnabledState' in gridStateManager
+      ) {
         (
           gridStateManager as {
-            savePaginationEnabledState: (api: GridApi, table: TableType) => boolean;
+            savePaginationEnabledState: (
+              api: GridApi,
+              table: TableType
+            ) => boolean;
           }
         ).savePaginationEnabledState(gridApi, activeTab as TableType);
       }
     },
-    [activeTab, gridApi],
+    [activeTab, gridApi]
   );
 
   useEffect(() => {
@@ -594,11 +686,11 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
     };
 
     syncCurrentPageSize();
-    gridApi.addEventListener("paginationChanged", syncCurrentPageSize);
+    gridApi.addEventListener('paginationChanged', syncCurrentPageSize);
 
     return () => {
       if (!gridApi.isDestroyed()) {
-        gridApi.removeEventListener("paginationChanged", syncCurrentPageSize);
+        gridApi.removeEventListener('paginationChanged', syncCurrentPageSize);
       }
     };
   }, [gridApi, syncPaginationUiState]);
@@ -615,12 +707,17 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
   const handleRowGroupOpened = useCallback(
     (
       event: RowGroupOpenedEvent<
-        ItemWithExtendedEntities | EntityData | Supplier | Customer | Patient | Doctor
-      >,
+        | ItemWithExtendedEntities
+        | EntityData
+        | Supplier
+        | Customer
+        | Patient
+        | Doctor
+      >
     ) => {
       // Only for items tab when row grouping is enabled
       /* c8 ignore next 3 */
-      if (activeTab !== "items" || !isRowGroupingEnabled) {
+      if (activeTab !== 'items' || !isRowGroupingEnabled) {
         return;
       }
 
@@ -630,7 +727,9 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
         // Check if rowIndex is valid
         if (rowNodeIndex !== null && rowNodeIndex !== undefined) {
           // Factor in child nodes so we can scroll to correct position
-          const childCount = event.node.childrenAfterSort ? event.node.childrenAfterSort.length : 0;
+          const childCount = event.node.childrenAfterSort
+            ? event.node.childrenAfterSort.length
+            : 0;
           const newIndex = rowNodeIndex + childCount;
 
           // Ensure the expanded group and its children are visible
@@ -638,13 +737,13 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
         }
       }
     },
-    [activeTab, isRowGroupingEnabled, gridApi],
+    [activeTab, isRowGroupingEnabled, gridApi]
   );
 
   // Custom menu items for ALL tabs (items + 6 entities)
   // @ts-expect-error - Complex union types causing issues with AG-Grid's GetMainMenuItems interface
   const getMainMenuItems: GetMainMenuItems = useCallback(
-    (params) => {
+    params => {
       if (!params.column) {
         return getPinAndFilterMenuItems(params);
       }
@@ -653,30 +752,35 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
       const colDef = params.column.getColDef();
 
       // Base menu items for all columns
-      const baseMenuItems = ["sortAscending", "sortDescending", "separator", "pinSubMenu"];
+      const baseMenuItems = [
+        'sortAscending',
+        'sortDescending',
+        'separator',
+        'pinSubMenu',
+      ];
 
       // Conditionally add Group By only for columns that support it
       const menuWithGroupBy = colDef.enableRowGroup
-        ? [...baseMenuItems, "separator", "rowGroup"]
+        ? [...baseMenuItems, 'separator', 'rowGroup']
         : baseMenuItems;
 
       // Always add autoSizeAll at the end
-      const finalMenuItems = [...menuWithGroupBy, "separator", "autoSizeAll"];
+      const finalMenuItems = [...menuWithGroupBy, 'separator', 'autoSizeAll'];
 
       // Items tab: Add toggle menu for reference columns
-      if (activeTab === "items" && isReferenceColumn(colId)) {
+      if (activeTab === 'items' && isReferenceColumn(colId)) {
         const currentMode = columnDisplayModes[colId];
-        const nextMode = currentMode === "name" ? "code" : "nama";
+        const nextMode = currentMode === 'name' ? 'code' : 'nama';
 
         return [
           ...finalMenuItems,
-          "separator",
+          'separator',
           {
             name: `Tampilkan ${nextMode}`,
             action: () => {
               toggleColumnDisplayMode(colId);
             },
-            icon: currentMode === "name" ? "#" : "T",
+            icon: currentMode === 'name' ? '#' : 'T',
           },
         ];
       }
@@ -685,27 +789,27 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
       /* c8 ignore next */
       return finalMenuItems;
     },
-    [activeTab, isReferenceColumn, columnDisplayModes, toggleColumnDisplayMode],
+    [activeTab, isReferenceColumn, columnDisplayModes, toggleColumnDisplayMode]
   );
 
   // Auto group column definition for row grouping with enhanced multi-grouping support
   const autoGroupColumnDef = useMemo(() => {
-    if (!isRowGroupingEnabled || activeTab !== "items") {
+    if (!isRowGroupingEnabled || activeTab !== 'items') {
       return undefined;
     }
 
     return {
       // No headerName - let AG Grid use the column name being grouped
-      headerName: "Grup",
+      headerName: 'Grup',
       // Remove hardcoded minWidth to allow optimal autosize for group columns
-      cellRenderer: "agGroupCellRenderer",
+      cellRenderer: 'agGroupCellRenderer',
       cellRendererParams: {
         suppressCount: false, // Show count in parentheses - AG Grid handles this automatically
         suppressDoubleClickExpand: false,
       },
       sortable: true,
       resizable: true,
-      pinned: "left" as const,
+      pinned: 'left' as const,
       lockPinned: true,
     };
   }, [isRowGroupingEnabled, activeTab]);
@@ -713,7 +817,9 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
   // Sidebar configuration that considers saved state
   const sideBarConfig = useMemo(() => {
     const tableType = activeTab as TableType;
-    const savedState = hasSavedGridState(tableType) ? readSavedGridState(tableType) : null;
+    const savedState = hasSavedGridState(tableType)
+      ? readSavedGridState(tableType)
+      : null;
 
     // Parse saved state to determine if sidebar should be open by default
     let defaultToolPanel = undefined;
@@ -725,7 +831,8 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
             openToolPanelId?: string;
           }
         | undefined;
-      const openToolPanel = sideBarState?.openToolPanel || sideBarState?.openToolPanelId;
+      const openToolPanel =
+        sideBarState?.openToolPanel || sideBarState?.openToolPanelId;
 
       // Check if sidebar was visible and had an open tool panel
       if (sideBarState?.visible && openToolPanel) {
@@ -736,11 +843,11 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
     return {
       toolPanels: [
         {
-          id: "columns",
-          labelDefault: "Columns",
-          labelKey: "columns",
-          iconKey: "columns",
-          toolPanel: "agColumnsToolPanel",
+          id: 'columns',
+          labelDefault: 'Columns',
+          labelKey: 'columns',
+          iconKey: 'columns',
+          toolPanel: 'agColumnsToolPanel',
           toolPanelParams: {
             suppressRowGroups: true, // Remove Row Groups section
             suppressValues: true, // Remove Values (aggregate) section
@@ -755,16 +862,20 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
 
   // No data overlay template
   const overlayNoRowsTemplate = useMemo(() => {
-    if (activeTab === "items") {
+    if (activeTab === 'items') {
       // Items tab: Handle badge mode (targeted search)
-      const isBadgeMode = search.startsWith("#") && (search.includes(":") || search.includes(" #"));
+      const isBadgeMode =
+        search.startsWith('#') &&
+        (search.includes(':') || search.includes(' #'));
 
       if (search && !isBadgeMode) {
         return `<span style="padding: 10px; color: #888;">Tidak ada item dengan nama "${search}"</span>`;
       }
       return '<span style="padding: 10px; color: #888;">Tidak ada data item yang ditemukan</span>';
-    } else if (activeTab === "suppliers") {
-      const isBadgeMode = search.startsWith("#") && (search.includes(":") || search.includes(" #"));
+    } else if (activeTab === 'suppliers') {
+      const isBadgeMode =
+        search.startsWith('#') &&
+        (search.includes(':') || search.includes(' #'));
 
       /* c8 ignore next */
       if (search && !isBadgeMode) {
@@ -773,20 +884,22 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
       return '<span style="padding: 10px; color: #888;">Tidak ada data supplier yang ditemukan</span>';
     } else {
       // Entity overlay
-      const isBadgeMode = search.startsWith("#") && (search.includes(":") || search.includes(" #"));
+      const isBadgeMode =
+        search.startsWith('#') &&
+        (search.includes(':') || search.includes(' #'));
 
       if (search && !isBadgeMode) {
-        return `<span style="padding: 10px; color: #888;">${entityConfig?.searchNoDataMessage || "Tidak ada data yang cocok dengan pencarian"} "${search}"</span>`;
+        return `<span style="padding: 10px; color: #888;">${entityConfig?.searchNoDataMessage || 'Tidak ada data yang cocok dengan pencarian'} "${search}"</span>`;
       }
       /* c8 ignore next */
-      return `<span style="padding: 10px; color: #888;">${entityConfig?.noDataMessage || "Tidak ada data"}</span>`;
+      return `<span style="padding: 10px; color: #888;">${entityConfig?.noDataMessage || 'Tidak ada data'}</span>`;
     }
   }, [activeTab, search, entityConfig]);
 
   if (isError) {
     return (
       <div className="p-6 text-center text-red-500">
-        Error: {error instanceof Error ? error.message : "Gagal memuat data"}
+        Error: {error instanceof Error ? error.message : 'Gagal memuat data'}
       </div>
     );
   }
@@ -812,7 +925,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
           getMainMenuItems={getMainMenuItems}
           enableFilterHandlers={true}
           rowSelection={{
-            mode: "multiRow",
+            mode: 'multiRow',
             checkboxes: false,
             headerCheckbox: false,
           }}
@@ -823,11 +936,11 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
           rowNumbers={true}
           domLayout="normal"
           style={{
-            width: "100%",
-            marginTop: "1rem",
-            marginBottom: "1rem",
+            width: '100%',
+            marginTop: '1rem',
+            marginBottom: '1rem',
             height: `${gridHeight}px`,
-            transition: "height 0.3s ease-in-out",
+            transition: 'height 0.3s ease-in-out',
           }}
           // AG Grid Built-in Pagination
           pagination={true}
@@ -835,13 +948,15 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
           suppressPaginationPanel={true}
           // Row Grouping configuration (only for items tab)
           rowGroupPanelShow={
-            activeTab === "items" && isRowGroupingEnabled && showGroupPanel ? "always" : "never"
+            activeTab === 'items' && isRowGroupingEnabled && showGroupPanel
+              ? 'always'
+              : 'never'
           }
           // Enable multi-grouping and enhanced grouping features
           suppressAggFuncInHeader={false}
           suppressDragLeaveHidesColumns={true}
           groupDefaultExpanded={
-            activeTab === "items" && isRowGroupingEnabled
+            activeTab === 'items' && isRowGroupingEnabled
               ? defaultExpanded // Use default - auto-restore will handle saved state
               : undefined
           }

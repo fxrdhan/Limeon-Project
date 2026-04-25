@@ -1,20 +1,26 @@
-import type { PopupMenuAction } from "@/components/image-manager/PopupMenuContent";
-import PopupMenuContent from "@/components/image-manager/PopupMenuContent";
-import PopupMenuPopover from "@/components/shared/popup-menu-popover";
-import { createPortal } from "react-dom";
-import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
+import type { PopupMenuAction } from '@/components/image-manager/PopupMenuContent';
+import PopupMenuContent from '@/components/image-manager/PopupMenuContent';
+import PopupMenuPopover from '@/components/shared/popup-menu-popover';
+import { createPortal } from 'react-dom';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from 'react';
 
 const CHAT_POPOVER_ICON_CLASS_NAME =
-  "[&>svg]:!text-black hover:[&>svg]:!text-black data-[preselected=true]:[&>svg]:!text-black";
-const IMAGE_ACTIONS_MENU_CLASS_NAME = "fixed z-[120] origin-top-right";
-const PDF_COMPRESSION_MENU_CLASS_NAME = "fixed z-[121] origin-top-right";
+  '[&>svg]:!text-black hover:[&>svg]:!text-black data-[preselected=true]:[&>svg]:!text-black';
+const IMAGE_ACTIONS_MENU_CLASS_NAME = 'fixed z-[120] origin-top-right';
+const PDF_COMPRESSION_MENU_CLASS_NAME = 'fixed z-[121] origin-top-right';
 const MENU_FADE_TRANSITION = {
   duration: 0.12,
-  ease: "easeOut",
+  ease: 'easeOut',
 } as const;
 const MENU_OPEN_TRANSITION = {
   duration: 0.12,
-  ease: "easeOut",
+  ease: 'easeOut',
 } as const;
 const MENU_REPOSITION_TRANSITION = {
   duration: 0.18,
@@ -33,14 +39,15 @@ type MenuPosition = {
 const HIDDEN_MENU_STYLE = {
   top: -10_000,
   left: -10_000,
-  visibility: "hidden" as const,
-  pointerEvents: "none" as const,
+  visibility: 'hidden' as const,
+  pointerEvents: 'none' as const,
 };
 
 const useVerticalMenuReposition = (position: MenuPosition | null) => {
   const previousTopRef = useRef<number | null>(null);
   const [offsetY, setOffsetY] = useState(0);
-  const [isRepositionAnimationEnabled, setIsRepositionAnimationEnabled] = useState(false);
+  const [isRepositionAnimationEnabled, setIsRepositionAnimationEnabled] =
+    useState(false);
 
   useLayoutEffect(() => {
     if (!position) {
@@ -94,7 +101,8 @@ const resolveMenuStyle = (position: MenuPosition | null, offsetY: number) => {
   return {
     top: position.top,
     left: position.left,
-    willChange: offsetY !== 0 ? ("transform, opacity" as const) : ("opacity" as const),
+    willChange:
+      offsetY !== 0 ? ('transform, opacity' as const) : ('opacity' as const),
   };
 };
 
@@ -119,26 +127,39 @@ export const ComposerAttachmentActionMenus = ({
   imageActionsMenuRef,
   pdfCompressionMenuRef,
 }: ComposerAttachmentActionMenusProps) => {
-  const [cachedImageActions, setCachedImageActions] = useState<PopupMenuAction[]>(imageActions);
+  const [cachedImageActions, setCachedImageActions] =
+    useState<PopupMenuAction[]>(imageActions);
   const [cachedImageActionsMenuPosition, setCachedImageActionsMenuPosition] =
     useState<MenuPosition | null>(imageActionsMenuPosition);
   const [settledImageActionsMenuPosition, setSettledImageActionsMenuPosition] =
     useState<MenuPosition | null>(imageActionsMenuPosition);
-  const [hasImageActionsMenuBeenVisible, setHasImageActionsMenuBeenVisible] = useState(false);
-  const [cachedPdfCompressionLevelActions, setCachedPdfCompressionLevelActions] = useState<
-    PopupMenuAction[]
-  >(pdfCompressionLevelActions);
-  const [cachedPdfCompressionMenuPosition, setCachedPdfCompressionMenuPosition] =
-    useState<MenuPosition | null>(pdfCompressionMenuPosition);
-  const [settledPdfCompressionMenuPosition, setSettledPdfCompressionMenuPosition] =
-    useState<MenuPosition | null>(pdfCompressionMenuPosition);
-  const [hasPdfCompressionMenuBeenVisible, setHasPdfCompressionMenuBeenVisible] = useState(false);
+  const [hasImageActionsMenuBeenVisible, setHasImageActionsMenuBeenVisible] =
+    useState(false);
+  const [
+    cachedPdfCompressionLevelActions,
+    setCachedPdfCompressionLevelActions,
+  ] = useState<PopupMenuAction[]>(pdfCompressionLevelActions);
+  const [
+    cachedPdfCompressionMenuPosition,
+    setCachedPdfCompressionMenuPosition,
+  ] = useState<MenuPosition | null>(pdfCompressionMenuPosition);
+  const [
+    settledPdfCompressionMenuPosition,
+    setSettledPdfCompressionMenuPosition,
+  ] = useState<MenuPosition | null>(pdfCompressionMenuPosition);
+  const [
+    hasPdfCompressionMenuBeenVisible,
+    setHasPdfCompressionMenuBeenVisible,
+  ] = useState(false);
   const imageMenuCleanupTimeoutRef = useRef<number | null>(null);
   const pdfMenuCleanupTimeoutRef = useRef<number | null>(null);
   const isImageActionsMenuOpen = Boolean(openImageActionsAttachmentId);
   const isPdfCompressionMenuOpen =
-    Boolean(pdfCompressionMenuPosition) && pdfCompressionLevelActions.length > 0;
-  const resolvedImageActions = isImageActionsMenuOpen ? imageActions : cachedImageActions;
+    Boolean(pdfCompressionMenuPosition) &&
+    pdfCompressionLevelActions.length > 0;
+  const resolvedImageActions = isImageActionsMenuOpen
+    ? imageActions
+    : cachedImageActions;
   const resolvedImageActionsMenuPosition = isImageActionsMenuOpen
     ? imageActionsMenuPosition
     : cachedImageActionsMenuPosition;
@@ -148,7 +169,8 @@ export const ComposerAttachmentActionMenus = ({
   const resolvedPdfCompressionMenuPosition = isPdfCompressionMenuOpen
     ? pdfCompressionMenuPosition
     : cachedPdfCompressionMenuPosition;
-  const shouldRenderImageActionsMenu = isImageActionsMenuOpen || resolvedImageActions.length > 0;
+  const shouldRenderImageActionsMenu =
+    isImageActionsMenuOpen || resolvedImageActions.length > 0;
   const shouldRenderPdfCompressionMenu =
     isPdfCompressionMenuOpen || resolvedPdfCompressionLevelActions.length > 0;
   const displayedImageActionsMenuPosition = isMenuRepositionPaused
@@ -161,10 +183,18 @@ export const ComposerAttachmentActionMenus = ({
       ? settledPdfCompressionMenuPosition
       : null
     : resolvedPdfCompressionMenuPosition;
-  const imageActionsMenuMotion = useVerticalMenuReposition(displayedImageActionsMenuPosition);
-  const pdfCompressionMenuMotion = useVerticalMenuReposition(displayedPdfCompressionMenuPosition);
-  const imageActionsMenuOffsetY = isMenuRepositionPaused ? 0 : imageActionsMenuMotion.offsetY;
-  const pdfCompressionMenuOffsetY = isMenuRepositionPaused ? 0 : pdfCompressionMenuMotion.offsetY;
+  const imageActionsMenuMotion = useVerticalMenuReposition(
+    displayedImageActionsMenuPosition
+  );
+  const pdfCompressionMenuMotion = useVerticalMenuReposition(
+    displayedPdfCompressionMenuPosition
+  );
+  const imageActionsMenuOffsetY = isMenuRepositionPaused
+    ? 0
+    : imageActionsMenuMotion.offsetY;
+  const pdfCompressionMenuOffsetY = isMenuRepositionPaused
+    ? 0
+    : pdfCompressionMenuMotion.offsetY;
 
   useEffect(() => {
     if (!isImageActionsMenuOpen) {
@@ -208,7 +238,7 @@ export const ComposerAttachmentActionMenus = ({
       return;
     }
 
-    setSettledImageActionsMenuPosition((previousPosition) => {
+    setSettledImageActionsMenuPosition(previousPosition => {
       if (
         previousPosition?.top === resolvedImageActionsMenuPosition.top &&
         previousPosition?.left === resolvedImageActionsMenuPosition.left
@@ -235,7 +265,11 @@ export const ComposerAttachmentActionMenus = ({
     if (pdfCompressionMenuPosition) {
       setCachedPdfCompressionMenuPosition(pdfCompressionMenuPosition);
     }
-  }, [isPdfCompressionMenuOpen, pdfCompressionLevelActions, pdfCompressionMenuPosition]);
+  }, [
+    isPdfCompressionMenuOpen,
+    pdfCompressionLevelActions,
+    pdfCompressionMenuPosition,
+  ]);
 
   useEffect(() => {
     if (isPdfCompressionMenuOpen) {
@@ -263,7 +297,7 @@ export const ComposerAttachmentActionMenus = ({
       return;
     }
 
-    setSettledPdfCompressionMenuPosition((previousPosition) => {
+    setSettledPdfCompressionMenuPosition(previousPosition => {
       if (
         previousPosition?.top === resolvedPdfCompressionMenuPosition.top &&
         previousPosition?.left === resolvedPdfCompressionMenuPosition.left
@@ -288,7 +322,7 @@ export const ComposerAttachmentActionMenus = ({
   }, []);
 
   if (
-    typeof document === "undefined" ||
+    typeof document === 'undefined' ||
     (!shouldRenderImageActionsMenu && !shouldRenderPdfCompressionMenu)
   ) {
     return null;
@@ -296,7 +330,7 @@ export const ComposerAttachmentActionMenus = ({
 
   const imageActionsMenuStyle = resolveMenuStyle(
     displayedImageActionsMenuPosition,
-    imageActionsMenuOffsetY,
+    imageActionsMenuOffsetY
   );
 
   return (
@@ -346,7 +380,7 @@ export const ComposerAttachmentActionMenus = ({
             >
               <div
                 ref={imageActionsMenuRef}
-                onClick={(event) => event.stopPropagation()}
+                onClick={event => event.stopPropagation()}
                 role="presentation"
               >
                 <PopupMenuContent
@@ -359,7 +393,7 @@ export const ComposerAttachmentActionMenus = ({
                 />
               </div>
             </PopupMenuPopover>,
-            document.body,
+            document.body
           )
         : null}
 
@@ -370,7 +404,7 @@ export const ComposerAttachmentActionMenus = ({
               className={PDF_COMPRESSION_MENU_CLASS_NAME}
               style={resolveMenuStyle(
                 displayedPdfCompressionMenuPosition,
-                pdfCompressionMenuOffsetY,
+                pdfCompressionMenuOffsetY
               )}
               initial={{
                 opacity: 0,
@@ -411,7 +445,7 @@ export const ComposerAttachmentActionMenus = ({
             >
               <div
                 ref={pdfCompressionMenuRef}
-                onClick={(event) => event.stopPropagation()}
+                onClick={event => event.stopPropagation()}
                 role="presentation"
               >
                 <PopupMenuContent
@@ -424,7 +458,7 @@ export const ComposerAttachmentActionMenus = ({
                 />
               </div>
             </PopupMenuPopover>,
-            document.body,
+            document.body
           )
         : null}
     </>

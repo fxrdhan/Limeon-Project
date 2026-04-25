@@ -1,13 +1,13 @@
-import { resolveRemoteNetworkEnv } from "./network-exposure";
+import { resolveRemoteNetworkEnv } from './network-exposure';
 
 declare const Bun: any;
 
-const remoteNetworkEnv = await resolveRemoteNetworkEnv("production");
+const remoteNetworkEnv = await resolveRemoteNetworkEnv('production');
 
-const previewProcess = Bun.spawn(["vp", "preview"], {
-  stdin: "inherit",
-  stdout: "inherit",
-  stderr: "inherit",
+const previewProcess = Bun.spawn(['vp', 'preview'], {
+  stdin: 'inherit',
+  stdout: 'inherit',
+  stderr: 'inherit',
   env: {
     ...process.env,
     ...remoteNetworkEnv,

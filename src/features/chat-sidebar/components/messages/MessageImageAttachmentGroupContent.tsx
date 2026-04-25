@@ -1,11 +1,18 @@
-import { createPortal } from "react-dom";
-import { useRef, type RefObject } from "react";
-import type { ChatMessage } from "../../data/chatSidebarGateway";
-import type { MenuPlacement, MenuSideAnchor, MenuVerticalAnchor } from "../../types";
-import { getChatImagePreviewName } from "../../utils/message-preview-assets";
-import { renderHighlightedText } from "../../utils/message-search";
-import { MessageActionPopover } from "./MessageActionPopover";
-import { buildMessageMenuActions, getMessageMenuClasses } from "./messageItemUtils";
+import { createPortal } from 'react-dom';
+import { useRef, type RefObject } from 'react';
+import type { ChatMessage } from '../../data/chatSidebarGateway';
+import type {
+  MenuPlacement,
+  MenuSideAnchor,
+  MenuVerticalAnchor,
+} from '../../types';
+import { getChatImagePreviewName } from '../../utils/message-preview-assets';
+import { renderHighlightedText } from '../../utils/message-search';
+import { MessageActionPopover } from './MessageActionPopover';
+import {
+  buildMessageMenuActions,
+  getMessageMenuClasses,
+} from './messageItemUtils';
 
 interface ImagePreviewIntrinsicDimensions {
   width: number;
@@ -30,26 +37,36 @@ interface MessageImageAttachmentGroupContentProps {
   toggleMessageMenu: (
     anchor: HTMLElement,
     messageId: string,
-    preferredSide: "left" | "right",
+    preferredSide: 'left' | 'right'
   ) => void;
   getImageMessageUrl: (
     message: Pick<
       ChatMessage,
-      "id" | "message" | "message_type" | "file_name" | "file_mime_type" | "file_preview_url"
-    >,
+      | 'id'
+      | 'message'
+      | 'message_type'
+      | 'file_name'
+      | 'file_mime_type'
+      | 'file_preview_url'
+    >
   ) => string | null;
   openImageGroupInPortal: (
     messages: Array<
       Pick<
         ChatMessage,
-        "id" | "message" | "file_storage_path" | "file_mime_type" | "file_name" | "file_preview_url"
+        | 'id'
+        | 'message'
+        | 'file_storage_path'
+        | 'file_mime_type'
+        | 'file_name'
+        | 'file_preview_url'
       > & {
         previewUrl?: string | null;
       }
     >,
     initialMessageId?: string | null,
     initialPreviewUrl?: string | null,
-    initialPreviewIntrinsicDimensions?: ImagePreviewIntrinsicDimensions | null,
+    initialPreviewIntrinsicDimensions?: ImagePreviewIntrinsicDimensions | null
   ) => Promise<void>;
   handleCopyMessage: (targetMessage: ChatMessage) => Promise<void>;
   handleDownloadMessage: (targetMessage: ChatMessage) => Promise<void>;
@@ -89,7 +106,7 @@ export const MessageImageAttachmentGroupContent = ({
   handleDeleteMessage,
   handleReplyMessage,
 }: MessageImageAttachmentGroupContentProps) => {
-  const groupPreviewMessages = messages.map((message) => ({
+  const groupPreviewMessages = messages.map(message => ({
     id: message.id,
     message: message.message,
     file_storage_path: message.file_storage_path,
@@ -101,12 +118,17 @@ export const MessageImageAttachmentGroupContent = ({
   const representativeMessage = messages[messages.length - 1] ?? null;
   const initialPreviewMessage = groupPreviewMessages[0] ?? null;
   const isCurrentUserGroup = messages[0]?.sender_id === userId;
-  const { sidePlacementClass } = getMessageMenuClasses(menuPlacement, menuSideAnchor);
-  const previewDimensionsByMessageIdRef = useRef<Map<string, ImagePreviewIntrinsicDimensions>>(
-    new Map(),
+  const { sidePlacementClass } = getMessageMenuClasses(
+    menuPlacement,
+    menuSideAnchor
   );
+  const previewDimensionsByMessageIdRef = useRef<
+    Map<string, ImagePreviewIntrinsicDimensions>
+  >(new Map());
   const maxVisibleTiles =
-    messages.length === 3 ? THREE_IMAGE_GROUP_VISIBLE_TILES : MAX_VISIBLE_IMAGE_GROUP_TILES;
+    messages.length === 3
+      ? THREE_IMAGE_GROUP_VISIBLE_TILES
+      : MAX_VISIBLE_IMAGE_GROUP_TILES;
   const visibleMessages = messages.slice(0, maxVisibleTiles);
   const hiddenImageCount = messages.length - visibleMessages.length;
   const openGroupedMenuMessageId =
@@ -114,17 +136,22 @@ export const MessageImageAttachmentGroupContent = ({
       ? representativeMessage.id
       : null;
   const isGroupedMenuTransitionSource =
-    representativeMessage !== null && menuTransitionSourceId === representativeMessage.id;
-  const isGroupMenuVisible = Boolean(openGroupedMenuMessageId) || isGroupedMenuTransitionSource;
+    representativeMessage !== null &&
+    menuTransitionSourceId === representativeMessage.id;
+  const isGroupMenuVisible =
+    Boolean(openGroupedMenuMessageId) || isGroupedMenuTransitionSource;
 
   const imageTiles = visibleMessages.map((message, index) => ({
     message,
     resolvedMessageUrl: getImageMessageUrl(message),
     previewName: getChatImagePreviewName(message, index),
-    isOverflowTile: hiddenImageCount > 0 && index === visibleMessages.length - 1,
+    isOverflowTile:
+      hiddenImageCount > 0 && index === visibleMessages.length - 1,
   }));
-  const imageGridAspectRatio = visibleMessages.length === 2 ? "2 / 1" : "1 / 1";
-  const pendingUploadCount = messages.filter((message) => message.id.startsWith("temp_")).length;
+  const imageGridAspectRatio = visibleMessages.length === 2 ? '2 / 1' : '1 / 1';
+  const pendingUploadCount = messages.filter(message =>
+    message.id.startsWith('temp_')
+  ).length;
   const uploadOverlayLabel =
     pendingUploadCount <= 0
       ? null
@@ -137,12 +164,12 @@ export const MessageImageAttachmentGroupContent = ({
         isFileMessage: false,
         isImageFileMessage: false,
         isPdfFileMessage: false,
-        fileKind: "document",
+        fileKind: 'document',
         fileName:
           getChatImagePreviewName(
             representativeMessage,
-            messages.length > 0 ? messages.length - 1 : 0,
-          ) || "Gambar",
+            messages.length > 0 ? messages.length - 1 : 0
+          ) || 'Gambar',
         includeReplyAction: false,
         openImageInPortal: async () => {
           await openImageGroupInPortal(
@@ -150,8 +177,10 @@ export const MessageImageAttachmentGroupContent = ({
             initialPreviewMessage?.id || representativeMessage.id,
             initialPreviewMessage?.previewUrl || null,
             (initialPreviewMessage
-              ? previewDimensionsByMessageIdRef.current.get(initialPreviewMessage.id)
-              : null) || null,
+              ? previewDimensionsByMessageIdRef.current.get(
+                  initialPreviewMessage.id
+                )
+              : null) || null
           );
         },
         openDocumentInPortal: async () => {},
@@ -161,43 +190,48 @@ export const MessageImageAttachmentGroupContent = ({
         handleDownloadMessage,
         handleOpenForwardMessagePicker,
         handleDeleteMessage,
-      }).map((action) =>
-        action.label === "Unduh"
+      }).map(action =>
+        action.label === 'Unduh'
           ? {
               ...action,
               onClick: () => {
                 void handleDownloadImageGroup(messages);
               },
             }
-          : action.label === "Hapus"
+          : action.label === 'Hapus'
             ? {
                 ...action,
                 onClick: () => {
                   void handleDeleteMessages(messages);
                 },
               }
-            : action,
+            : action
       )
     : [];
 
-  const captionText = captionMessage?.message?.trim() ?? "";
-  const highlightedCaption = renderHighlightedText(captionText, "", {
+  const captionText = captionMessage?.message?.trim() ?? '';
+  const highlightedCaption = renderHighlightedText(captionText, '', {
     linkify: true,
   });
 
   return (
     <div className="relative">
-      <div data-chat-image-group-grid className="relative overflow-hidden rounded-lg">
+      <div
+        data-chat-image-group-grid
+        className="relative overflow-hidden rounded-lg"
+      >
         <button
           type="button"
           aria-label="Aksi grup gambar"
           title="Aksi grup gambar"
-          aria-haspopup={isSelectionMode ? undefined : "menu"}
+          aria-haspopup={isSelectionMode ? undefined : 'menu'}
           aria-expanded={
-            isSelectionMode ? undefined : openGroupedMenuMessageId === representativeMessage?.id
+            isSelectionMode
+              ? undefined
+              : openGroupedMenuMessageId === representativeMessage?.id
           }
           disabled={isSelectionMode || !representativeMessage}
-          onClick={(event) => {
+          onClick={event => {
             if (isSelectionMode || !representativeMessage) {
               return;
             }
@@ -208,60 +242,81 @@ export const MessageImageAttachmentGroupContent = ({
             toggleMessageMenu(
               anchorElement,
               representativeMessage.id,
-              isCurrentUserGroup ? "left" : "right",
+              isCurrentUserGroup ? 'left' : 'right'
             );
           }}
           className={`grid w-full gap-[2px] bg-transparent text-left ${
-            isSelectionMode ? "cursor-inherit" : "cursor-pointer"
+            isSelectionMode ? 'cursor-inherit' : 'cursor-pointer'
           }`}
           style={{
             aspectRatio: imageGridAspectRatio,
-            gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
           }}
         >
-          {imageTiles.map(({ message, resolvedMessageUrl, previewName, isOverflowTile }) => (
-            <div key={message.id} data-chat-image-group-tile-id={message.id} className="relative">
-              <div className="relative block aspect-square w-full overflow-hidden bg-slate-100 text-left">
-                {resolvedMessageUrl ? (
-                  <img
-                    src={resolvedMessageUrl}
-                    alt={`Preview ${previewName}`}
-                    className="h-full w-full object-cover"
-                    loading="lazy"
-                    draggable={false}
-                    ref={(imageElement) => {
-                      if (!imageElement?.naturalWidth || !imageElement.naturalHeight) {
-                        return;
-                      }
+          {imageTiles.map(
+            ({ message, resolvedMessageUrl, previewName, isOverflowTile }) => (
+              <div
+                key={message.id}
+                data-chat-image-group-tile-id={message.id}
+                className="relative"
+              >
+                <div className="relative block aspect-square w-full overflow-hidden bg-slate-100 text-left">
+                  {resolvedMessageUrl ? (
+                    <img
+                      src={resolvedMessageUrl}
+                      alt={`Preview ${previewName}`}
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                      draggable={false}
+                      ref={imageElement => {
+                        if (
+                          !imageElement?.naturalWidth ||
+                          !imageElement.naturalHeight
+                        ) {
+                          return;
+                        }
 
-                      previewDimensionsByMessageIdRef.current.set(message.id, {
-                        width: imageElement.naturalWidth,
-                        height: imageElement.naturalHeight,
-                      });
-                    }}
-                    onLoad={(event) => {
-                      const imageElement = event.currentTarget;
-                      if (!imageElement.naturalWidth || !imageElement.naturalHeight) {
-                        return;
-                      }
+                        previewDimensionsByMessageIdRef.current.set(
+                          message.id,
+                          {
+                            width: imageElement.naturalWidth,
+                            height: imageElement.naturalHeight,
+                          }
+                        );
+                      }}
+                      onLoad={event => {
+                        const imageElement = event.currentTarget;
+                        if (
+                          !imageElement.naturalWidth ||
+                          !imageElement.naturalHeight
+                        ) {
+                          return;
+                        }
 
-                      previewDimensionsByMessageIdRef.current.set(message.id, {
-                        width: imageElement.naturalWidth,
-                        height: imageElement.naturalHeight,
-                      });
-                    }}
-                  />
-                ) : (
-                  <div className="h-full w-full bg-slate-100" aria-hidden="true" />
-                )}
-                {isOverflowTile ? (
-                  <div className="absolute inset-0 flex items-center justify-center bg-slate-950/52 text-[1.75rem] font-semibold text-white">
-                    +{hiddenImageCount}
-                  </div>
-                ) : null}
+                        previewDimensionsByMessageIdRef.current.set(
+                          message.id,
+                          {
+                            width: imageElement.naturalWidth,
+                            height: imageElement.naturalHeight,
+                          }
+                        );
+                      }}
+                    />
+                  ) : (
+                    <div
+                      className="h-full w-full bg-slate-100"
+                      aria-hidden="true"
+                    />
+                  )}
+                  {isOverflowTile ? (
+                    <div className="absolute inset-0 flex items-center justify-center bg-slate-950/52 text-[1.75rem] font-semibold text-white">
+                      +{hiddenImageCount}
+                    </div>
+                  ) : null}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          )}
         </button>
         {uploadOverlayLabel ? (
           <div className="pointer-events-none absolute inset-0 flex items-end justify-start bg-slate-950/24 p-2">
@@ -280,7 +335,7 @@ export const MessageImageAttachmentGroupContent = ({
         ? createPortal(
             <MessageActionPopover
               isOpen={isGroupMenuVisible}
-              menuId={openGroupedMenuMessageId ?? "grouped-image-menu"}
+              menuId={openGroupedMenuMessageId ?? 'grouped-image-menu'}
               shouldAnimateMenuOpen={shouldAnimateMenuOpen}
               menuPlacement={menuPlacement}
               menuOffsetX={menuOffsetX}
@@ -288,18 +343,18 @@ export const MessageImageAttachmentGroupContent = ({
               menuVerticalAnchor={menuVerticalAnchor}
               actions={groupMenuActions}
             />,
-            menuPortalContainer,
+            menuPortalContainer
           )
         : null}
 
       {captionText ? (
         <p
           className={`mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed ${
-            isHighlightedBubble ? "text-white" : "text-slate-800"
+            isHighlightedBubble ? 'text-white' : 'text-slate-800'
           }`}
           style={{
-            overflowWrap: "anywhere",
-            wordBreak: "break-word",
+            overflowWrap: 'anywhere',
+            wordBreak: 'break-word',
           }}
         >
           {highlightedCaption}

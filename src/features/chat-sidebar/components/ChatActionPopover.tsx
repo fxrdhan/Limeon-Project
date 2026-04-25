@@ -1,17 +1,17 @@
 import PopupMenuContent, {
   type PopupMenuAction,
-} from "@/components/image-manager/PopupMenuContent";
-import PopupMenuPopover from "@/components/shared/popup-menu-popover";
-import { forwardRef, type CSSProperties, type MouseEventHandler } from "react";
-import type { MotionProps } from "motion/react";
+} from '@/components/image-manager/PopupMenuContent';
+import PopupMenuPopover from '@/components/shared/popup-menu-popover';
+import { forwardRef, type CSSProperties, type MouseEventHandler } from 'react';
+import type { MotionProps } from 'motion/react';
 
-const CHAT_ACTION_POPOVER_LAYOUT_ID = "chat-action-menu-popover";
+const CHAT_ACTION_POPOVER_LAYOUT_ID = 'chat-action-menu-popover';
 const CHAT_POPOVER_ICON_CLASS_NAME =
-  "[&>svg]:!text-black hover:[&>svg]:!text-black data-[preselected=true]:[&>svg]:!text-black";
+  '[&>svg]:!text-black hover:[&>svg]:!text-black data-[preselected=true]:[&>svg]:!text-black';
 
 interface ChatActionPopoverProps extends Pick<
   MotionProps,
-  "initial" | "animate" | "exit" | "transition" | "layout" | "layoutId"
+  'initial' | 'animate' | 'exit' | 'transition' | 'layout' | 'layoutId'
 > {
   isOpen: boolean;
   actions: PopupMenuAction[];
@@ -31,7 +31,10 @@ interface ChatActionPopoverProps extends Pick<
   onClick?: MouseEventHandler<HTMLDivElement>;
 }
 
-export const ChatActionPopover = forwardRef<HTMLDivElement, ChatActionPopoverProps>(
+export const ChatActionPopover = forwardRef<
+  HTMLDivElement,
+  ChatActionPopoverProps
+>(
   (
     {
       isOpen,
@@ -57,7 +60,7 @@ export const ChatActionPopover = forwardRef<HTMLDivElement, ChatActionPopoverPro
       layout,
       layoutId = CHAT_ACTION_POPOVER_LAYOUT_ID,
     },
-    ref,
+    ref
   ) => (
     <PopupMenuPopover
       isOpen={isOpen}
@@ -73,7 +76,7 @@ export const ChatActionPopover = forwardRef<HTMLDivElement, ChatActionPopoverPro
       transition={transition}
       className={className}
       style={style}
-      onClick={(event) => {
+      onClick={event => {
         event.stopPropagation();
         onClick?.(event);
       }}
@@ -91,7 +94,7 @@ export const ChatActionPopover = forwardRef<HTMLDivElement, ChatActionPopoverPro
         />
       </div>
     </PopupMenuPopover>
-  ),
+  )
 );
 
-ChatActionPopover.displayName = "ChatActionPopover";
+ChatActionPopover.displayName = 'ChatActionPopover';

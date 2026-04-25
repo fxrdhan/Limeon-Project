@@ -1,5 +1,8 @@
-import { supabase } from "@/lib/supabase";
-import type { RealtimeChannel, RealtimeChannelOptions } from "@supabase/supabase-js";
+import { supabase } from '@/lib/supabase';
+import type {
+  RealtimeChannel,
+  RealtimeChannelOptions,
+} from '@supabase/supabase-js';
 
 const getRealtimeTopic = (name: string) => `realtime:${name}`;
 
@@ -15,7 +18,7 @@ const getRealtimeClient = (): InternalRealtimeClient => {
   if (!realtimeClient.__pharmaSysRemoveChannelPatch) {
     realtimeClient._remove = (channel: RealtimeChannel) => {
       realtimeClient.channels = realtimeClient.channels.filter(
-        (currentChannel) => currentChannel !== channel,
+        currentChannel => currentChannel !== channel
       );
     };
     realtimeClient.__pharmaSysRemoveChannelPatch = true;
@@ -25,10 +28,16 @@ const getRealtimeClient = (): InternalRealtimeClient => {
 };
 
 export const realtimeService = {
-  createChannel(name: string, options?: RealtimeChannelOptions): RealtimeChannel {
+  createChannel(
+    name: string,
+    options?: RealtimeChannelOptions
+  ): RealtimeChannel {
     return supabase.channel(name, options);
   },
-  async replaceChannel(name: string, options?: RealtimeChannelOptions): Promise<RealtimeChannel> {
+  async replaceChannel(
+    name: string,
+    options?: RealtimeChannelOptions
+  ): Promise<RealtimeChannel> {
     await this.removeChannelsByName(name);
     return this.createChannel(name, options);
   },
@@ -39,12 +48,12 @@ export const realtimeService = {
     // StrictMode, the replacement channel can be created immediately after
     // cleanup starts, and Supabase reuses registered topics synchronously.
     realtimeClient._remove(channel);
-    let status: "ok" | "timed out" | "error" = "ok";
+    let status: 'ok' | 'timed out' | 'error' = 'ok';
 
     try {
       status = await channel.unsubscribe();
     } catch {
-      status = "error";
+      status = 'error';
     } finally {
       channel.teardown();
     }
@@ -58,7 +67,7 @@ export const realtimeService = {
   async removeChannelsByName(name: string) {
     const channels = supabase
       .getChannels()
-      .filter((channel) => channel.topic === getRealtimeTopic(name));
+      .filter(channel => channel.topic === getRealtimeTopic(name));
 
     for (const channel of channels) {
       await this.removeChannel(channel);

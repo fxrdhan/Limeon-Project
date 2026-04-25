@@ -1,16 +1,16 @@
-import { AnimatePresence, motion } from "motion/react";
-import { useState, type ReactNode, type RefObject } from "react";
-import { createPortal } from "react-dom";
-import { TbArrowUpRight, TbCopy, TbLink, TbPaperclip } from "react-icons/tb";
-import { AnimatedMenuHighlight } from "@/components/shared/animated-menu-highlight";
-import { useAnimatedMenuHighlight } from "@/components/shared/use-animated-menu-highlight";
-import PopupMenuPopover from "@/components/shared/popup-menu-popover";
+import { AnimatePresence, motion } from 'motion/react';
+import { useState, type ReactNode, type RefObject } from 'react';
+import { createPortal } from 'react-dom';
+import { TbArrowUpRight, TbCopy, TbLink, TbPaperclip } from 'react-icons/tb';
+import { AnimatedMenuHighlight } from '@/components/shared/animated-menu-highlight';
+import { useAnimatedMenuHighlight } from '@/components/shared/use-animated-menu-highlight';
+import PopupMenuPopover from '@/components/shared/popup-menu-popover';
 
 const ATTACHMENT_LINK_PROMPT_MIN_WIDTH = 156;
 const ATTACHMENT_PROMPT_BUTTON_CLASS_NAME =
-  "relative z-10 flex w-full cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-left text-sm font-medium text-black transition-colors";
+  'relative z-10 flex w-full cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-left text-sm font-medium text-black transition-colors';
 const ATTACHMENT_PROMPT_SECTION_LABEL_CLASS_NAME =
-  "px-2.5 pb-1 pt-1.5 text-[11px] font-medium tracking-[0.03em] text-slate-500";
+  'px-2.5 pb-1 pt-1.5 text-[11px] font-medium tracking-[0.03em] text-slate-500';
 
 interface ComposerLinkPromptPopoverProps {
   isOpen: boolean;
@@ -38,7 +38,7 @@ type LinkPromptAction = {
 
 interface LinkPromptContentProps extends Omit<
   ComposerLinkPromptPopoverProps,
-  "isOpen" | "position"
+  'isOpen' | 'position'
 > {}
 
 const LinkPromptContent = ({
@@ -53,24 +53,28 @@ const LinkPromptContent = ({
   onUseAsAttachment,
   onUseAsUrl,
 }: LinkPromptContentProps) => {
-  const [hoveredActionIndex, setHoveredActionIndex] = useState<number | null>(null);
+  const [hoveredActionIndex, setHoveredActionIndex] = useState<number | null>(
+    null
+  );
   const { highlightFrame, setItemRef } =
     useAnimatedMenuHighlight<HTMLButtonElement>(hoveredActionIndex);
   const primaryActions: LinkPromptAction[] = [
     {
-      label: "Buka",
-      icon: <TbArrowUpRight className="h-4 w-4 text-black" aria-hidden="true" />,
+      label: 'Buka',
+      icon: (
+        <TbArrowUpRight className="h-4 w-4 text-black" aria-hidden="true" />
+      ),
       onClick: onOpenLink,
     },
     {
-      label: "Salin",
+      label: 'Salin',
       icon: <TbCopy className="h-4 w-4 text-black" aria-hidden="true" />,
       onClick: onCopyLink,
     },
     ...(isShortenable
       ? [
           {
-            label: "Shorten link",
+            label: 'Shorten link',
             icon: <TbLink className="h-4 w-4 text-black" aria-hidden="true" />,
             onClick: onShortenLink,
           },
@@ -79,21 +83,24 @@ const LinkPromptContent = ({
   ];
   const pasteActions: LinkPromptAction[] = [
     {
-      label: "URL",
+      label: 'URL',
       icon: <TbLink className="h-4 w-4 text-black" aria-hidden="true" />,
       onClick: onUseAsUrl,
     },
     {
-      label: "Attachment",
+      label: 'Attachment',
       icon: <TbPaperclip className="h-4 w-4 text-black" aria-hidden="true" />,
       onClick: onUseAsAttachment,
     },
   ];
 
-  const renderActionButton = (action: LinkPromptAction, actionIndex: number) => (
+  const renderActionButton = (
+    action: LinkPromptAction,
+    actionIndex: number
+  ) => (
     <button
       key={action.label}
-      ref={(element) => setItemRef(actionIndex, element)}
+      ref={element => setItemRef(actionIndex, element)}
       type="button"
       onClick={action.onClick}
       onMouseEnter={() => {
@@ -111,7 +118,7 @@ const LinkPromptContent = ({
       ref={promptRef}
       className="relative rounded-xl border border-slate-200 bg-white px-0.5 py-0.5 shadow-[0_-10px_15px_-3px_rgba(15,23,42,0.10),0_-4px_6px_-4px_rgba(15,23,42,0.10)]"
       style={{ minWidth: ATTACHMENT_LINK_PROMPT_MIN_WIDTH }}
-      onClick={(event) => event.stopPropagation()}
+      onClick={event => event.stopPropagation()}
       onMouseEnter={onMouseEnter}
       onMouseLeave={() => {
         setHoveredActionIndex(null);
@@ -120,23 +127,30 @@ const LinkPromptContent = ({
       role="dialog"
       aria-label="Aksi link composer"
     >
-      <AnimatedMenuHighlight frame={highlightFrame} className="left-0.5 right-0.5 bg-slate-100" />
+      <AnimatedMenuHighlight
+        frame={highlightFrame}
+        className="left-0.5 right-0.5 bg-slate-100"
+      />
       <div className={ATTACHMENT_PROMPT_SECTION_LABEL_CLASS_NAME}>Aksi</div>
-      {primaryActions.map((action, actionIndex) => renderActionButton(action, actionIndex))}
+      {primaryActions.map((action, actionIndex) =>
+        renderActionButton(action, actionIndex)
+      )}
       <AnimatePresence initial={false}>
         {isAttachmentCandidate ? (
           <motion.div
             key="attachment-paste-actions"
             initial={{ height: 0, opacity: 0, y: -4 }}
-            animate={{ height: "auto", opacity: 1, y: 0 }}
+            animate={{ height: 'auto', opacity: 1, y: 0 }}
             exit={{ height: 0, opacity: 0, y: -4 }}
-            transition={{ duration: 0.18, ease: "easeOut" }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
             className="overflow-hidden"
           >
             <div className="mx-1 my-0.5 h-px bg-slate-200" />
-            <div className={ATTACHMENT_PROMPT_SECTION_LABEL_CLASS_NAME}>Tempel sebagai</div>
+            <div className={ATTACHMENT_PROMPT_SECTION_LABEL_CLASS_NAME}>
+              Tempel sebagai
+            </div>
             {pasteActions.map((action, actionIndex) =>
-              renderActionButton(action, primaryActions.length + actionIndex),
+              renderActionButton(action, primaryActions.length + actionIndex)
             )}
           </motion.div>
         ) : null}
@@ -159,7 +173,7 @@ export const ComposerLinkPromptPopover = ({
   onUseAsAttachment,
   onUseAsUrl,
 }: ComposerLinkPromptPopoverProps) => {
-  if (typeof document === "undefined" || !isOpen || !position) {
+  if (typeof document === 'undefined' || !isOpen || !position) {
     return null;
   }
 
@@ -169,7 +183,7 @@ export const ComposerLinkPromptPopover = ({
       style={{
         top: position.top,
         left: position.left,
-        transform: "translate(-50%, calc(-100% - 10px))",
+        transform: 'translate(-50%, calc(-100% - 10px))',
       }}
     >
       <PopupMenuPopover isOpen className="origin-bottom">
@@ -187,6 +201,6 @@ export const ComposerLinkPromptPopover = ({
         />
       </PopupMenuPopover>
     </div>,
-    document.body,
+    document.body
   );
 };

@@ -1,6 +1,6 @@
-import { useNavigate } from "react-router-dom";
-import Badge from "@/components/badge";
-import { TbArrowLeft, TbClock, TbTool } from "react-icons/tb";
+import { useNavigate } from 'react-router-dom';
+import Badge from '@/components/badge';
+import { TbArrowLeft, TbClock, TbTool } from 'react-icons/tb';
 
 interface ComingSoonProps {
   title: string;
@@ -15,9 +15,9 @@ const ComingSoon = ({
   title,
   description,
   showBackButton = true,
-  backButtonText = "Kembali",
-  statusText = "Dalam Pengembangan",
-  statusDescription = "Fitur ini akan segera tersedia dalam pembaruan mendatang",
+  backButtonText = 'Kembali',
+  statusText = 'Dalam Pengembangan',
+  statusDescription = 'Fitur ini akan segera tersedia dalam pembaruan mendatang',
 }: ComingSoonProps) => {
   const navigate = useNavigate();
 
@@ -44,13 +44,17 @@ const ComingSoon = ({
           <p className="text-slate-500 text-lg">Sedang dalam pengembangan</p>
         </div>
 
-        {description && <p className="text-slate-600 leading-relaxed">{description}</p>}
+        {description && (
+          <p className="text-slate-600 leading-relaxed">{description}</p>
+        )}
 
         <div className="flex justify-center">
           <Badge
             variant="info"
             size="md"
-            icon={<div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>}
+            icon={
+              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+            }
           >
             {statusText}
           </Badge>

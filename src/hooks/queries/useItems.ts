@@ -1,7 +1,7 @@
-import { QueryKeys, getInvalidationKeys } from "@/constants/queryKeys";
-import { itemsService } from "@/services/api/items.service";
-import type { DBItem, DBPackageConversion } from "@/types/database";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { QueryKeys, getInvalidationKeys } from '@/constants/queryKeys';
+import { itemsService } from '@/services/api/items.service';
+import type { DBItem, DBPackageConversion } from '@/types/database';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 // Item Query Hooks
 export const useItems = (options?: {
@@ -19,7 +19,7 @@ export const useItems = (options?: {
     queryFn: async () => {
       const result = await itemsService.getAll({
         filters: options?.filters,
-        orderBy: options?.orderBy || { column: "name", ascending: true },
+        orderBy: options?.orderBy || { column: 'name', ascending: true },
         select: options?.select,
       });
       if (result.error) throw result.error;
@@ -59,14 +59,14 @@ export const useSearchItems = (
   options?: {
     enabled?: boolean;
     filters?: Record<string, unknown>;
-  },
+  }
 ) => {
   return useQuery({
     queryKey: QueryKeys.items.search(query, options?.filters),
     queryFn: async () => {
       const result = await itemsService.searchItems(query, {
         filters: options?.filters,
-        orderBy: { column: "name", ascending: true },
+        orderBy: { column: 'name', ascending: true },
       });
       if (result.error) throw result.error;
       return result.data;
@@ -78,7 +78,10 @@ export const useSearchItems = (
   });
 };
 
-export const useItemsByCategory = (categoryId: string, options?: { enabled?: boolean }) => {
+export const useItemsByCategory = (
+  categoryId: string,
+  options?: { enabled?: boolean }
+) => {
   return useQuery({
     queryKey: QueryKeys.items.byCategory(categoryId),
     queryFn: async () => {
@@ -92,7 +95,10 @@ export const useItemsByCategory = (categoryId: string, options?: { enabled?: boo
   });
 };
 
-export const useItemsByType = (typeId: string, options?: { enabled?: boolean }) => {
+export const useItemsByType = (
+  typeId: string,
+  options?: { enabled?: boolean }
+) => {
   return useQuery({
     queryKey: QueryKeys.items.byType(typeId),
     queryFn: async () => {
@@ -106,7 +112,10 @@ export const useItemsByType = (typeId: string, options?: { enabled?: boolean }) 
   });
 };
 
-export const useLowStockItems = (threshold: number = 10, options?: { enabled?: boolean }) => {
+export const useLowStockItems = (
+  threshold: number = 10,
+  options?: { enabled?: boolean }
+) => {
   return useQuery({
     queryKey: QueryKeys.items.lowStock(threshold),
     queryFn: async () => {
@@ -129,10 +138,13 @@ export const useItemMutations = () => {
       itemData,
       packageConversions,
     }: {
-      itemData: Omit<DBItem, "id" | "created_at" | "updated_at">;
+      itemData: Omit<DBItem, 'id' | 'created_at' | 'updated_at'>;
       packageConversions?: DBPackageConversion[];
     }) => {
-      const result = await itemsService.createItemWithConversions(itemData, packageConversions);
+      const result = await itemsService.createItemWithConversions(
+        itemData,
+        packageConversions
+      );
       if (result.error) {
         console.error(`Failed to create item:`, result.error);
         throw result.error;
@@ -142,7 +154,7 @@ export const useItemMutations = () => {
     onSuccess: () => {
       // Local cache update
       const keysToInvalidate = getInvalidationKeys.items.all();
-      keysToInvalidate.forEach((keySet) => {
+      keysToInvalidate.forEach(keySet => {
         void queryClient.invalidateQueries({ queryKey: keySet });
         void queryClient.refetchQueries({ queryKey: keySet });
       });
@@ -156,17 +168,21 @@ export const useItemMutations = () => {
       packageConversions,
     }: {
       id: string;
-      itemData: Partial<Omit<DBItem, "id" | "created_at">>;
+      itemData: Partial<Omit<DBItem, 'id' | 'created_at'>>;
       packageConversions?: DBPackageConversion[];
     }) => {
-      const result = await itemsService.updateItemWithConversions(id, itemData, packageConversions);
+      const result = await itemsService.updateItemWithConversions(
+        id,
+        itemData,
+        packageConversions
+      );
       if (result.error) throw result.error;
       return result.data;
     },
     onSuccess: (_data, variables) => {
       // Local cache update
       const keysToInvalidate = getInvalidationKeys.items.all();
-      keysToInvalidate.forEach((keySet) => {
+      keysToInvalidate.forEach(keySet => {
         void queryClient.invalidateQueries({ queryKey: keySet });
         void queryClient.refetchQueries({ queryKey: keySet });
       });
@@ -185,7 +201,7 @@ export const useItemMutations = () => {
     onSuccess: () => {
       // Local cache update
       const keysToInvalidate = getInvalidationKeys.items.all();
-      keysToInvalidate.forEach((keySet) => {
+      keysToInvalidate.forEach(keySet => {
         void queryClient.invalidateQueries({ queryKey: keySet });
         void queryClient.refetchQueries({ queryKey: keySet });
       });
@@ -234,7 +250,7 @@ export const useItemMutations = () => {
 export const useCheckCodeUniqueness = (
   code: string,
   excludeId?: string,
-  options?: { enabled?: boolean },
+  options?: { enabled?: boolean }
 ) => {
   return useQuery({
     queryKey: QueryKeys.items.checkCode(code, excludeId),
@@ -246,7 +262,7 @@ export const useCheckCodeUniqueness = (
 export const useCheckBarcodeUniqueness = (
   barcode: string,
   excludeId?: string,
-  options?: { enabled?: boolean },
+  options?: { enabled?: boolean }
 ) => {
   return useQuery({
     queryKey: QueryKeys.items.checkBarcode(barcode, excludeId),

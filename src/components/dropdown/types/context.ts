@@ -1,6 +1,6 @@
-import { RefObject } from "react";
-import { DropDirection } from "../constants";
-import type { DropdownOption } from "@/types";
+import { RefObject } from 'react';
+import { DropDirection } from '../constants';
+import type { DropdownOption } from '@/types';
 
 export interface DropdownContextType {
   // State
@@ -60,7 +60,7 @@ export interface DropdownContextType {
     optionId: string,
     element: HTMLElement,
     optionData?: Partial<DropdownOption>,
-    options?: { immediate?: boolean },
+    options?: { immediate?: boolean }
   ) => Promise<void>;
   onHoverDetailHide?: () => void;
 }

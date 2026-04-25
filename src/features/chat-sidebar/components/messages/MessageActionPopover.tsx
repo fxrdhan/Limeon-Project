@@ -1,11 +1,11 @@
 import PopupMenuContent, {
   type PopupMenuAction,
-} from "@/components/image-manager/PopupMenuContent";
-import PopupMenuPopover from "@/components/shared/popup-menu-popover";
-import type { MenuPlacement, MenuVerticalAnchor } from "../../types";
+} from '@/components/image-manager/PopupMenuContent';
+import PopupMenuPopover from '@/components/shared/popup-menu-popover';
+import type { MenuPlacement, MenuVerticalAnchor } from '../../types';
 
 const CHAT_POPOVER_ICON_CLASS_NAME =
-  "[&>svg]:!text-black hover:[&>svg]:!text-black data-[preselected=true]:[&>svg]:!text-black";
+  '[&>svg]:!text-black hover:[&>svg]:!text-black data-[preselected=true]:[&>svg]:!text-black';
 
 interface MessageActionPopoverProps {
   isOpen: boolean;
@@ -29,15 +29,15 @@ export const MessageActionPopover = ({
   actions,
 }: MessageActionPopoverProps) => {
   const resolvedPlacementClass =
-    menuPlacement === "left" || menuPlacement === "right"
+    menuPlacement === 'left' || menuPlacement === 'right'
       ? sidePlacementClass
-      : menuPlacement === "down"
-        ? menuVerticalAnchor === "right"
-          ? "bottom-full mb-2 right-0 origin-bottom-right"
-          : "bottom-full mb-2 left-0 origin-bottom-left"
-        : menuVerticalAnchor === "right"
-          ? "top-full mt-2 right-0 origin-top-right"
-          : "top-full mt-2 left-0 origin-top-left";
+      : menuPlacement === 'down'
+        ? menuVerticalAnchor === 'right'
+          ? 'bottom-full mb-2 right-0 origin-bottom-right'
+          : 'bottom-full mb-2 left-0 origin-bottom-left'
+        : menuVerticalAnchor === 'right'
+          ? 'top-full mt-2 right-0 origin-top-right'
+          : 'top-full mt-2 left-0 origin-top-left';
 
   return (
     <PopupMenuPopover
@@ -50,8 +50,10 @@ export const MessageActionPopover = ({
       initial={{
         opacity: 0,
         scale: 0.96,
-        x: menuOffsetX + (menuPlacement === "left" ? -6 : menuPlacement === "right" ? 6 : 0),
-        y: menuPlacement === "down" ? 6 : menuPlacement === "up" ? -6 : 0,
+        x:
+          menuOffsetX +
+          (menuPlacement === 'left' ? -6 : menuPlacement === 'right' ? 6 : 0),
+        y: menuPlacement === 'down' ? 6 : menuPlacement === 'up' ? -6 : 0,
       }}
       animate={{
         opacity: 1,
@@ -67,15 +69,15 @@ export const MessageActionPopover = ({
       }}
       transition={{
         duration: 0.12,
-        ease: "easeOut",
+        ease: 'easeOut',
         layout: {
-          type: "spring",
+          type: 'spring',
           stiffness: 420,
           damping: 34,
         },
       }}
       className={`pointer-events-auto absolute z-40 touch-pan-y text-slate-900 ${resolvedPlacementClass}`}
-      onClick={(event) => event.stopPropagation()}
+      onClick={event => event.stopPropagation()}
     >
       <div className="relative z-20">
         <PopupMenuContent

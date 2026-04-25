@@ -1,19 +1,19 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { TbCirclePlus, TbPencil, TbTrash, TbX } from "react-icons/tb";
-import { BADGE_COLORS, BadgeConfig } from "../types/badge";
-import { validateFilterValue } from "../utils/validationUtils";
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { TbCirclePlus, TbPencil, TbTrash, TbX } from 'react-icons/tb';
+import { BADGE_COLORS, BadgeConfig } from '../types/badge';
+import { validateFilterValue } from '../utils/validationUtils';
 
 // Format currency value for display (e.g., "500" -> "Rp 500")
 const formatCurrencyDisplay = (value: string): string => {
   // Extract numeric value, handling existing currency symbols and formatting
   const cleanValue = value
-    .replace(/^(Rp\.?\s*|\$\s*|€\s*|¥\s*|£\s*|IDR\s*|USD\s*|EUR\s*)/i, "")
-    .replace(/[.,]/g, "") // Remove thousand separators
+    .replace(/^(Rp\.?\s*|\$\s*|€\s*|¥\s*|£\s*|IDR\s*|USD\s*|EUR\s*)/i, '')
+    .replace(/[.,]/g, '') // Remove thousand separators
     .trim();
 
   // If value contains space (e.g. "500 600"), don't format it
   // This prevents formatting partial/multiple values as a single currency
-  if (cleanValue.includes(" ")) {
+  if (cleanValue.includes(' ')) {
     return value;
   }
 
@@ -24,7 +24,7 @@ const formatCurrencyDisplay = (value: string): string => {
   }
 
   // Format with thousand separators (Indonesian style: 1.000.000)
-  const formatted = numericValue.toLocaleString("id-ID");
+  const formatted = numericValue.toLocaleString('id-ID');
   return `Rp ${formatted}`;
 };
 
@@ -45,18 +45,19 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const isEditing = config.isEditing || false;
-  const editingValue = config.editingValue || "";
+  const editingValue = config.editingValue || '';
   const onValueChange = config.onValueChange;
   const onEditComplete = config.onEditComplete;
   const isSelected = config.isSelected || false;
   const columnType = config.columnType;
   const onHoverChange = config.onHoverChange;
-  const hasActionMenu = !!config.canEdit || !!config.canClear || !!config.canInsert;
+  const hasActionMenu =
+    !!config.canEdit || !!config.canClear || !!config.canInsert;
 
   // Format display label for currency columns (only for value badges)
   const displayLabel = useMemo(() => {
-    const isValueBadge = config.type === "value" || config.type === "valueTo";
-    if (isValueBadge && columnType === "currency" && config.label) {
+    const isValueBadge = config.type === 'value' || config.type === 'valueTo';
+    if (isValueBadge && columnType === 'currency' && config.label) {
       return formatCurrencyDisplay(config.label);
     }
     return config.label;
@@ -81,7 +82,10 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
       setIsMenuOpen(false);
       inputRef.current.focus();
       // Position cursor at end
-      inputRef.current.setSelectionRange(editingValue.length, editingValue.length);
+      inputRef.current.setSelectionRange(
+        editingValue.length,
+        editingValue.length
+      );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditing]); // Only trigger on edit mode change, not value length change
@@ -95,8 +99,8 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
       }
     };
 
-    document.addEventListener("mousedown", handlePointerDown);
-    return () => document.removeEventListener("mousedown", handlePointerDown);
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => document.removeEventListener('mousedown', handlePointerDown);
   }, [isMenuOpen]);
 
   // Auto-enter edit mode if badge value is invalid (for value badges only)
@@ -104,7 +108,8 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
   const hasAutoTriggered = useRef(false);
   useEffect(() => {
     // Only for value badges (type 'value' or 'valueTo')
-    const isValueBadgeType = config.type === "value" || config.type === "valueTo";
+    const isValueBadgeType =
+      config.type === 'value' || config.type === 'valueTo';
     if (isValueBadgeType && !isEditing && !hasAutoTriggered.current) {
       const isInvalid = !validateValue(config.label);
       if (isInvalid) {
@@ -138,30 +143,30 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
   // Handle keyboard events for inline editing
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     // Handle Ctrl+D (delete badge during edit)
-    if (e.ctrlKey && e.key.toLowerCase() === "d") {
+    if (e.ctrlKey && e.key.toLowerCase() === 'd') {
       e.preventDefault();
       e.stopPropagation();
       // Set flag to prevent blur handler
       isClearing.current = true;
       // Clear value which effectively deletes the badge
-      onEditComplete?.("");
+      onEditComplete?.('');
       return;
     }
 
     // Handle Ctrl+E (left) and Ctrl+Shift+E (right) to navigate between badges
-    if (e.ctrlKey && e.key.toLowerCase() === "e") {
+    if (e.ctrlKey && e.key.toLowerCase() === 'e') {
       e.preventDefault();
       e.stopPropagation();
       // Set flag to prevent blur handler
       isClearing.current = true;
       // Call navigate handler with direction: Shift = right, no Shift = left
-      const direction = e.shiftKey ? "right" : "left";
+      const direction = e.shiftKey ? 'right' : 'left';
       config.onNavigateEdit?.(direction);
       return;
     }
 
     // Handle Ctrl+I to exit edit mode and focus main input
-    if (e.ctrlKey && e.key.toLowerCase() === "i") {
+    if (e.ctrlKey && e.key.toLowerCase() === 'i') {
       e.preventDefault();
       e.stopPropagation();
       // Set flag to prevent blur handler
@@ -171,7 +176,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
       return;
     }
 
-    if (e.key === "Enter") {
+    if (e.key === 'Enter') {
       e.preventDefault();
       e.stopPropagation();
       // Validate value (empty check + type-specific validation)
@@ -181,18 +186,18 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
       }
       // Pass current value directly to avoid race condition
       onEditComplete?.(editingValue);
-    } else if (e.key === "Escape") {
+    } else if (e.key === 'Escape') {
       e.preventDefault();
       e.stopPropagation();
       // Pass current value directly to avoid race condition
       onEditComplete?.(editingValue);
-    } else if (e.key === "Delete") {
+    } else if (e.key === 'Delete') {
       // Delete key while editing - clear the badge
       e.preventDefault();
       e.stopPropagation();
       // Set flag to prevent blur handler from re-applying old value
       isClearing.current = true;
-      onEditComplete?.("");
+      onEditComplete?.('');
     }
     // Backspace on empty input: do nothing (don't delete badge)
     // User can use DELETE key to explicitly delete the badge
@@ -232,8 +237,9 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
   };
 
   // Check if badge value is invalid (for value badges only, when not editing)
-  const isValueBadge = config.type === "value" || config.type === "valueTo";
-  const hasInvalidValue = isValueBadge && !isEditing && !validateValue(config.label);
+  const isValueBadge = config.type === 'value' || config.type === 'valueTo';
+  const hasInvalidValue =
+    isValueBadge && !isEditing && !validateValue(config.label);
   const lastInvalidLabelRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -249,22 +255,29 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
   }, [hasInvalidValue, config.label, config.onInvalidValue, config]);
 
   // Glow effect - red for invalid/shaking, otherwise badge type color
-  const errorGlow = "shadow-[0_0_12px_rgba(244,63,94,0.5),0_0_24px_rgba(244,63,94,0.3)]";
+  const errorGlow =
+    'shadow-[0_0_12px_rgba(244,63,94,0.5),0_0_24px_rgba(244,63,94,0.3)]';
   const selectedClass =
-    isShaking || hasInvalidValue ? errorGlow : isSelected || isEditing ? colors.glow : "";
+    isShaking || hasInvalidValue
+      ? errorGlow
+      : isSelected || isEditing
+        ? colors.glow
+        : '';
 
   // Shake animation styles
   const shakeStyle: React.CSSProperties = isShaking
     ? {
-        animation: "badge-shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97)",
+        animation: 'badge-shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97)',
       }
     : {};
 
   // Error state styles - persistent for invalid values, temporary during shake
-  const errorClass = isShaking || hasInvalidValue ? "!bg-rose-200 !text-rose-800" : "";
+  const errorClass =
+    isShaking || hasInvalidValue ? '!bg-rose-200 !text-rose-800' : '';
   const wantsEditButton = isEditing || isSelected || isMenuOpen;
   const wantsDeleteButton = !isEditing && (isSelected || isMenuOpen);
-  const wantsInsertButton = !isEditing && !!config.canInsert && (isSelected || isMenuOpen);
+  const wantsInsertButton =
+    !isEditing && !!config.canInsert && (isSelected || isMenuOpen);
   const [editIconVisible, setEditIconVisible] = useState(wantsEditButton);
   const [deleteIconVisible, setDeleteIconVisible] = useState(wantsDeleteButton);
   const [insertIconVisible, setInsertIconVisible] = useState(wantsInsertButton);
@@ -317,8 +330,9 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
   const showEditButtonSpace = wantsEditButton || editIconVisible;
   const showDeleteButtonSpace = wantsDeleteButton || deleteIconVisible;
   const showInsertButtonSpace = wantsInsertButton || insertIconVisible;
-  const wantsAnyButtons = wantsEditButton || wantsDeleteButton || wantsInsertButton;
-  const badgeTransform = wantsAnyButtons ? "scaleX(1.02)" : "scaleX(1)";
+  const wantsAnyButtons =
+    wantsEditButton || wantsDeleteButton || wantsInsertButton;
+  const badgeTransform = wantsAnyButtons ? 'scaleX(1.02)' : 'scaleX(1)';
   const hasMenuAction = hasActionMenu && !isEditing;
 
   return (
@@ -332,17 +346,17 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
       {...(hasMenuAction
         ? {
             onClick: () => {
-              setIsMenuOpen((prev) => !prev);
+              setIsMenuOpen(prev => !prev);
               onHoverChange?.(true);
             },
             onKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => {
-              if (event.key === "Enter" || event.key === " ") {
+              if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
-                setIsMenuOpen((prev) => !prev);
+                setIsMenuOpen(prev => !prev);
                 onHoverChange?.(true);
               }
             },
-            role: "button" as const,
+            role: 'button' as const,
             tabIndex: 0,
           }
         : {})}
@@ -361,25 +375,27 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
               style={{ width: `${Math.max(editingValue.length * 8, 20)}px` }}
             />
           ) : (
-            <span className={hasActionMenu ? "cursor-pointer" : ""}>{displayLabel}</span>
+            <span className={hasActionMenu ? 'cursor-pointer' : ''}>
+              {displayLabel}
+            </span>
           )}
         </div>
         <div
           className="flex items-center pr-1 transition-transform ease-out"
           style={{
             transform: badgeTransform,
-            transformOrigin: "center",
+            transformOrigin: 'center',
           }}
         >
           {/* Edit/Cancel button - same position, swaps icon based on mode */}
           {config.canEdit && config.onEdit && (
             <div
               className={`flex-shrink-0 overflow-hidden transition-opacity duration-150 ease-out ml-1 ${
-                showEditButtonSpace ? "w-6 opacity-100" : "w-0 opacity-0"
+                showEditButtonSpace ? 'w-6 opacity-100' : 'w-0 opacity-0'
               }`}
             >
               <button
-                onClick={(e) => {
+                onClick={e => {
                   e.stopPropagation();
                   if (isEditing) {
                     onEditComplete?.(editingValue);
@@ -388,7 +404,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
                   setIsMenuOpen(false);
                   config.onEdit?.();
                 }}
-                onMouseDown={(e) => {
+                onMouseDown={e => {
                   e.stopPropagation();
                   // Set flag to prevent blur validation when clicking X to cancel edit
                   if (isEditing) {
@@ -397,8 +413,8 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
                 }}
                 className={`rounded-md p-1 cursor-pointer ${colors.hoverBg} flex-shrink-0 transition-[opacity,transform] duration-150 ease-out ${
                   editIconVisible
-                    ? "opacity-100 translate-x-0"
-                    : "pointer-events-none opacity-0 -translate-x-1"
+                    ? 'opacity-100 translate-x-0'
+                    : 'pointer-events-none opacity-0 -translate-x-1'
                 }`}
                 type="button"
               >
@@ -414,11 +430,11 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
           {!isEditing && config.canClear && (
             <div
               className={`flex-shrink-0 overflow-hidden transition-opacity duration-150 ease-out ${
-                showDeleteButtonSpace ? "w-6 opacity-100" : "w-0 opacity-0"
+                showDeleteButtonSpace ? 'w-6 opacity-100' : 'w-0 opacity-0'
               }`}
             >
               <button
-                onClick={(e) => {
+                onClick={e => {
                   e.stopPropagation();
                   // Blur the button to release focus before clearing
                   // This allows the parent handler to focus the input
@@ -426,11 +442,11 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
                   setIsMenuOpen(false);
                   config.onClear?.();
                 }}
-                onMouseDown={(e) => e.stopPropagation()}
+                onMouseDown={e => e.stopPropagation()}
                 className={`rounded-md p-1 cursor-pointer ${colors.hoverBg} flex-shrink-0 transition-[opacity,transform] duration-150 ease-out ${
                   deleteIconVisible
-                    ? "opacity-100 translate-x-0"
-                    : "pointer-events-none opacity-0 -translate-x-1"
+                    ? 'opacity-100 translate-x-0'
+                    : 'pointer-events-none opacity-0 -translate-x-1'
                 }`}
                 type="button"
               >
@@ -443,21 +459,21 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
           {!isEditing && config.canInsert && config.onInsert && (
             <div
               className={`flex-shrink-0 overflow-hidden transition-opacity duration-150 ease-out ${
-                showInsertButtonSpace ? "w-6 opacity-100" : "w-0 opacity-0"
+                showInsertButtonSpace ? 'w-6 opacity-100' : 'w-0 opacity-0'
               }`}
             >
               <button
-                onClick={(e) => {
+                onClick={e => {
                   e.stopPropagation();
                   e.currentTarget.blur();
                   setIsMenuOpen(false);
                   config.onInsert?.();
                 }}
-                onMouseDown={(e) => e.stopPropagation()}
+                onMouseDown={e => e.stopPropagation()}
                 className={`rounded-md p-1 cursor-pointer ${colors.hoverBg} flex-shrink-0 transition-[opacity,transform] duration-150 ease-out ${
                   insertIconVisible
-                    ? "opacity-100 translate-x-0"
-                    : "pointer-events-none opacity-0 -translate-x-1"
+                    ? 'opacity-100 translate-x-0'
+                    : 'pointer-events-none opacity-0 -translate-x-1'
                 }`}
                 type="button"
                 title="Tambah kondisi"

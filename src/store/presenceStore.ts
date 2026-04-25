@@ -1,12 +1,12 @@
-import { create } from "zustand";
-import type { PresenceState, OnlineUser } from "@/types";
+import { create } from 'zustand';
+import type { PresenceState, OnlineUser } from '@/types';
 
 export const usePresenceStore = create<PresenceState>((set, get) => ({
   hasRosterChannel: false,
   onlineUsers: 0,
   onlineUsersList: [],
   presenceSyncHealth: {
-    status: "idle",
+    status: 'idle',
     errorMessage: null,
     lastSyncedAt: null,
   },
@@ -30,7 +30,7 @@ export const usePresenceStore = create<PresenceState>((set, get) => ({
   setOnlineUsersList: (users: OnlineUser[]) => {
     set({ onlineUsersList: users });
   },
-  setPresenceSyncHealth: (health) => {
+  setPresenceSyncHealth: health => {
     const currentHealth = get().presenceSyncHealth;
 
     if (

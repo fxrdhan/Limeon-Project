@@ -1,7 +1,7 @@
-import { type FC } from "react";
-import OptionRow from "./options/OptionRow";
-import { useDropdownContext } from "../hooks/useDropdownContext";
-import type { OptionItemProps } from "../types";
+import { type FC } from 'react';
+import OptionRow from './options/OptionRow';
+import { useDropdownContext } from '../hooks/useDropdownContext';
+import type { OptionItemProps } from '../types';
 
 const OptionItem: FC<OptionItemProps> = ({
   option,

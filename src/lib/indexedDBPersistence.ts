@@ -2,7 +2,7 @@
  * IndexedDB Persistence for PharmaSys
  */
 
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient } from '@tanstack/react-query';
 
 interface PersistedQuery {
   queryKey: unknown[];
@@ -12,9 +12,9 @@ interface PersistedQuery {
 }
 
 class PharmacyIndexedDB {
-  private dbName = "pharmasys-cache";
+  private dbName = 'pharmasys-cache';
   private version = 2; // Increment version to force upgrade
-  private storeName = "queries";
+  private storeName = 'queries';
   private db: IDBDatabase | null = null;
   private recreationAttempts = 0;
   private maxRecreationAttempts = 2;
@@ -34,7 +34,7 @@ class PharmacyIndexedDB {
         if (!this.db.objectStoreNames.contains(this.storeName)) {
           if (this.recreationAttempts < this.maxRecreationAttempts) {
             console.warn(
-              `Object store '${this.storeName}' not found, attempting to recreate database (attempt ${this.recreationAttempts + 1})...`,
+              `Object store '${this.storeName}' not found, attempting to recreate database (attempt ${this.recreationAttempts + 1})...`
             );
             this.db.close();
             this.db = null;
@@ -43,12 +43,12 @@ class PharmacyIndexedDB {
             return;
           } else {
             console.error(
-              `Object store '${this.storeName}' not found after ${this.maxRecreationAttempts} recreation attempts`,
+              `Object store '${this.storeName}' not found after ${this.maxRecreationAttempts} recreation attempts`
             );
             reject(
               new Error(
-                `Failed to create object store after ${this.maxRecreationAttempts} attempts`,
-              ),
+                `Failed to create object store after ${this.maxRecreationAttempts} attempts`
+              )
             );
             return;
           }
@@ -59,7 +59,7 @@ class PharmacyIndexedDB {
         resolve();
       };
 
-      request.onupgradeneeded = (event) => {
+      request.onupgradeneeded = event => {
         const db = (event.target as IDBOpenDBRequest).result;
 
         // Delete existing store if it exists (clean slate)
@@ -69,9 +69,9 @@ class PharmacyIndexedDB {
 
         // Create queries store
         const store = db.createObjectStore(this.storeName, {
-          keyPath: "key",
+          keyPath: 'key',
         });
-        store.createIndex("timestamp", "timestamp");
+        store.createIndex('timestamp', 'timestamp');
       };
     });
   }
@@ -96,7 +96,7 @@ class PharmacyIndexedDB {
     queryKey: unknown[],
     data: unknown,
     dataUpdatedAt: number,
-    staleTime: number,
+    staleTime: number
   ): Promise<void> {
     try {
       if (!this.db) await this.init();
@@ -104,11 +104,13 @@ class PharmacyIndexedDB {
 
       // Double-check that the object store exists
       if (!this.db.objectStoreNames.contains(this.storeName)) {
-        console.warn(`Object store '${this.storeName}' not available for saveQuery`);
+        console.warn(
+          `Object store '${this.storeName}' not available for saveQuery`
+        );
         return;
       }
 
-      const transaction = this.db.transaction([this.storeName], "readwrite");
+      const transaction = this.db.transaction([this.storeName], 'readwrite');
       const store = transaction.objectStore(this.storeName);
 
       const queryData: PersistedQuery & { key: string; timestamp: number } = {
@@ -122,7 +124,7 @@ class PharmacyIndexedDB {
 
       store.put(queryData);
     } catch (error) {
-      console.warn("Failed to save query to IndexedDB:", error);
+      console.warn('Failed to save query to IndexedDB:', error);
     }
   }
 
@@ -132,14 +134,16 @@ class PharmacyIndexedDB {
       if (!this.db) return null;
 
       if (!this.db.objectStoreNames.contains(this.storeName)) {
-        console.warn(`Object store '${this.storeName}' not available for getQuery`);
+        console.warn(
+          `Object store '${this.storeName}' not available for getQuery`
+        );
         return null;
       }
 
-      const transaction = this.db.transaction([this.storeName], "readonly");
+      const transaction = this.db.transaction([this.storeName], 'readonly');
       const store = transaction.objectStore(this.storeName);
 
-      return new Promise((resolve) => {
+      return new Promise(resolve => {
         const request = store.get(JSON.stringify(queryKey));
         request.onsuccess = () => {
           const result = request.result;
@@ -163,7 +167,7 @@ class PharmacyIndexedDB {
         request.onerror = () => resolve(null);
       });
     } catch (error) {
-      console.warn("Failed to access IndexedDB for getQuery:", error);
+      console.warn('Failed to access IndexedDB for getQuery:', error);
       return null;
     }
   }
@@ -174,16 +178,18 @@ class PharmacyIndexedDB {
       if (!this.db) return;
 
       if (!this.db.objectStoreNames.contains(this.storeName)) {
-        console.warn(`Object store '${this.storeName}' not available for removeQuery`);
+        console.warn(
+          `Object store '${this.storeName}' not available for removeQuery`
+        );
         return;
       }
 
-      const transaction = this.db.transaction([this.storeName], "readwrite");
+      const transaction = this.db.transaction([this.storeName], 'readwrite');
       const store = transaction.objectStore(this.storeName);
 
       store.delete(JSON.stringify(queryKey));
     } catch (error) {
-      console.warn("Failed to remove query from IndexedDB:", error);
+      console.warn('Failed to remove query from IndexedDB:', error);
     }
   }
 
@@ -193,16 +199,18 @@ class PharmacyIndexedDB {
       if (!this.db) return;
 
       if (!this.db.objectStoreNames.contains(this.storeName)) {
-        console.warn(`Object store '${this.storeName}' not available for clear`);
+        console.warn(
+          `Object store '${this.storeName}' not available for clear`
+        );
         return;
       }
 
-      const transaction = this.db.transaction([this.storeName], "readwrite");
+      const transaction = this.db.transaction([this.storeName], 'readwrite');
       const store = transaction.objectStore(this.storeName);
 
       store.clear();
     } catch (error) {
-      console.warn("Failed to clear IndexedDB:", error);
+      console.warn('Failed to clear IndexedDB:', error);
     }
   }
 
@@ -212,19 +220,23 @@ class PharmacyIndexedDB {
       if (!this.db) return;
 
       if (!this.db.objectStoreNames.contains(this.storeName)) {
-        console.warn(`Object store '${this.storeName}' not available for cleanup`);
+        console.warn(
+          `Object store '${this.storeName}' not available for cleanup`
+        );
         return;
       }
 
-      const transaction = this.db.transaction([this.storeName], "readwrite");
+      const transaction = this.db.transaction([this.storeName], 'readwrite');
       const store = transaction.objectStore(this.storeName);
-      const timestampIndex = store.index("timestamp");
+      const timestampIndex = store.index('timestamp');
 
       // Remove entries older than 7 days
       const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-      const oldEntriesRequest = timestampIndex.openCursor(IDBKeyRange.upperBound(sevenDaysAgo));
+      const oldEntriesRequest = timestampIndex.openCursor(
+        IDBKeyRange.upperBound(sevenDaysAgo)
+      );
 
-      oldEntriesRequest.onsuccess = (event) => {
+      oldEntriesRequest.onsuccess = event => {
         const cursor = (event.target as IDBRequest).result;
         if (cursor) {
           cursor.delete();
@@ -232,7 +244,7 @@ class PharmacyIndexedDB {
         }
       };
     } catch (error) {
-      console.warn("Failed to cleanup IndexedDB:", error);
+      console.warn('Failed to cleanup IndexedDB:', error);
     }
   }
 
@@ -243,7 +255,7 @@ class PharmacyIndexedDB {
         this.db = null;
       }
 
-      await new Promise<void>((resolve) => {
+      await new Promise<void>(resolve => {
         const deleteRequest = indexedDB.deleteDatabase(this.dbName);
         deleteRequest.onsuccess = () => resolve();
         deleteRequest.onerror = () => resolve();
@@ -252,24 +264,26 @@ class PharmacyIndexedDB {
 
       this.recreationAttempts = 0;
     } catch (error) {
-      console.warn("Failed to delete IndexedDB database:", error);
+      console.warn('Failed to delete IndexedDB database:', error);
     }
   }
 
   async getStats(): Promise<{ count: number; size: string }> {
     try {
       if (!this.db) await this.init();
-      if (!this.db) return { count: 0, size: "0 B" };
+      if (!this.db) return { count: 0, size: '0 B' };
 
       if (!this.db.objectStoreNames.contains(this.storeName)) {
-        console.warn(`Object store '${this.storeName}' not available for getStats`);
-        return { count: 0, size: "0 B" };
+        console.warn(
+          `Object store '${this.storeName}' not available for getStats`
+        );
+        return { count: 0, size: '0 B' };
       }
 
-      const transaction = this.db.transaction([this.storeName], "readonly");
+      const transaction = this.db.transaction([this.storeName], 'readonly');
       const store = transaction.objectStore(this.storeName);
 
-      return new Promise((resolve) => {
+      return new Promise(resolve => {
         const request = store.getAll();
         request.onsuccess = () => {
           const results = request.result || [];
@@ -279,20 +293,20 @@ class PharmacyIndexedDB {
             size: this.formatBytes(size),
           });
         };
-        request.onerror = () => resolve({ count: 0, size: "0 B" });
+        request.onerror = () => resolve({ count: 0, size: '0 B' });
       });
     } catch (error) {
-      console.warn("Failed to get IndexedDB stats:", error);
-      return { count: 0, size: "0 B" };
+      console.warn('Failed to get IndexedDB stats:', error);
+      return { count: 0, size: '0 B' };
     }
   }
 
   private formatBytes(bytes: number): string {
-    if (bytes === 0) return "0 B";
+    if (bytes === 0) return '0 B';
     const k = 1024;
-    const sizes = ["B", "KB", "MB", "GB"];
+    const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
 }
 
@@ -310,7 +324,7 @@ export const setupIndexedDBPersistence = async (queryClient: QueryClient) => {
     // Cleanup old entries on startup
     await pharmacyDB.cleanup();
   } catch (error) {
-    console.warn("Failed to initialize IndexedDB persistence:", error);
+    console.warn('Failed to initialize IndexedDB persistence:', error);
     return null; // Return null to indicate setup failed
   }
 
@@ -318,10 +332,10 @@ export const setupIndexedDBPersistence = async (queryClient: QueryClient) => {
   const queryCache = queryClient.getQueryCache();
 
   // Save to IndexedDB when queries are successful
-  queryCache.subscribe((event) => {
-    if (event?.type === "added" || event?.type === "updated") {
+  queryCache.subscribe(event => {
+    if (event?.type === 'added' || event?.type === 'updated') {
       const query = event.query;
-      if (query.state.status === "success" && query.state.data) {
+      if (query.state.status === 'success' && query.state.data) {
         // Only persist stable master data queries
         const queryKey = query.queryKey;
         const firstKey = queryKey[0] as string;
@@ -331,7 +345,7 @@ export const setupIndexedDBPersistence = async (queryClient: QueryClient) => {
             [...queryKey], // Convert readonly array to mutable
             query.state.data,
             query.state.dataUpdatedAt,
-            (query.options as { staleTime?: number }).staleTime || 300000, // Default 5 minutes
+            (query.options as { staleTime?: number }).staleTime || 300000 // Default 5 minutes
           );
         }
       }
@@ -349,9 +363,9 @@ export const setupIndexedDBPersistence = async (queryClient: QueryClient) => {
  */
 function shouldPersistQuery(queryKey: string): boolean {
   return [
-    "masterData", // All master data (categories, types, packages, dosages, manufacturers)
-    "items", // Items list
-    "item_units", // Item units (units tab)
+    'masterData', // All master data (categories, types, packages, dosages, manufacturers)
+    'items', // Items list
+    'item_units', // Item units (units tab)
   ].includes(queryKey);
 }
 
@@ -360,7 +374,7 @@ function shouldPersistQuery(queryKey: string): boolean {
  */
 async function loadPersistedQueries(queryClient: QueryClient): Promise<void> {
   // Import QueryKeys for correct key structure
-  const { QueryKeys } = await import("@/constants/queryKeys");
+  const { QueryKeys } = await import('@/constants/queryKeys');
 
   // Load critical queries with CORRECT query keys
   const criticalQueries = [
@@ -379,7 +393,7 @@ async function loadPersistedQueries(queryClient: QueryClient): Promise<void> {
   ];
 
   await Promise.all(
-    criticalQueries.map(async (queryKey) => {
+    criticalQueries.map(async queryKey => {
       try {
         const persistedData = await pharmacyDB.getQuery([...queryKey]); // Convert readonly to mutable
 
@@ -390,7 +404,7 @@ async function loadPersistedQueries(queryClient: QueryClient): Promise<void> {
       } catch {
         // Silent fail for preloading
       }
-    }),
+    })
   );
 
   // Also load existing queries in cache
@@ -398,7 +412,7 @@ async function loadPersistedQueries(queryClient: QueryClient): Promise<void> {
   const allQueries = queryCache.getAll();
 
   await Promise.all(
-    allQueries.map(async (query) => {
+    allQueries.map(async query => {
       try {
         const persistedData = await pharmacyDB.getQuery([...query.queryKey]);
 
@@ -407,9 +421,9 @@ async function loadPersistedQueries(queryClient: QueryClient): Promise<void> {
           queryClient.setQueryData([...query.queryKey], persistedData.data);
         }
       } catch (error) {
-        console.warn("Failed to load persisted query:", error);
+        console.warn('Failed to load persisted query:', error);
       }
-    }),
+    })
   );
 }
 

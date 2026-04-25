@@ -1,8 +1,15 @@
-import { act, renderHook } from "@testing-library/react";
-import { createRef } from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
-import type { VisibleBounds } from "../utils/chatViewportMenu";
-import { useChatViewportMenu } from "../hooks/useChatViewportMenu";
+import { act, renderHook } from '@testing-library/react';
+import { createRef } from 'react';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vite-plus/test';
+import type { VisibleBounds } from '../utils/chatViewportMenu';
+import { useChatViewportMenu } from '../hooks/useChatViewportMenu';
 
 const createRect = ({
   top,
@@ -27,7 +34,7 @@ const createRect = ({
     toJSON: () => ({}),
   }) as DOMRect;
 
-describe("useChatViewportMenu", () => {
+describe('useChatViewportMenu', () => {
   beforeEach(() => {
     const requestAnimationFrameMock = ((callback: FrameRequestCallback) => {
       callback(0);
@@ -35,20 +42,20 @@ describe("useChatViewportMenu", () => {
     }) as typeof requestAnimationFrame;
     const cancelAnimationFrameMock = vi.fn() as typeof cancelAnimationFrame;
 
-    vi.stubGlobal("requestAnimationFrame", requestAnimationFrameMock);
-    vi.stubGlobal("cancelAnimationFrame", cancelAnimationFrameMock);
+    vi.stubGlobal('requestAnimationFrame', requestAnimationFrameMock);
+    vi.stubGlobal('cancelAnimationFrame', cancelAnimationFrameMock);
     window.requestAnimationFrame = requestAnimationFrameMock;
     window.cancelAnimationFrame = cancelAnimationFrameMock;
   });
 
   afterEach(() => {
-    document.body.innerHTML = "";
+    document.body.innerHTML = '';
   });
 
-  it("switches to the below-bubble placement when it has less vertical overflow than the above-bubble placement", () => {
-    const messagesContainer = document.createElement("div");
-    const anchor = document.createElement("div");
-    const menuElement = document.createElement("div");
+  it('switches to the below-bubble placement when it has less vertical overflow than the above-bubble placement', () => {
+    const messagesContainer = document.createElement('div');
+    const anchor = document.createElement('div');
+    const menuElement = document.createElement('div');
     const messagesContainerRef = createRef<HTMLDivElement>();
     const visibleBounds: VisibleBounds = {
       containerRect: createRect({ top: 0, bottom: 400 }),
@@ -59,7 +66,7 @@ describe("useChatViewportMenu", () => {
     messagesContainer.append(anchor);
     messagesContainerRef.current = messagesContainer;
     messagesContainer.getBoundingClientRect = () => visibleBounds.containerRect;
-    Object.defineProperty(messagesContainer, "scrollTop", {
+    Object.defineProperty(messagesContainer, 'scrollTop', {
       configurable: true,
       value: 0,
       writable: true,
@@ -72,11 +79,11 @@ describe("useChatViewportMenu", () => {
         left: 120,
         right: 200,
       });
-    Object.defineProperty(menuElement, "offsetWidth", {
+    Object.defineProperty(menuElement, 'offsetWidth', {
       configurable: true,
       value: 120,
     });
-    Object.defineProperty(menuElement, "offsetHeight", {
+    Object.defineProperty(menuElement, 'offsetHeight', {
       configurable: true,
       value: 220,
     });
@@ -85,17 +92,17 @@ describe("useChatViewportMenu", () => {
       useChatViewportMenu({
         getVisibleMessagesBounds: () => visibleBounds,
         messagesContainerRef,
-      }),
+      })
     );
 
     act(() => {
-      result.current.toggleMessageMenu(anchor, "message-1", "left");
+      result.current.toggleMessageMenu(anchor, 'message-1', 'left');
     });
 
-    expect(result.current.menuPlacement).toBe("down");
-    expect(result.current.menuVerticalAnchor).toBe("left");
+    expect(result.current.menuPlacement).toBe('down');
+    expect(result.current.menuVerticalAnchor).toBe('left');
 
-    menuElement.dataset.chatMenuId = "message-1";
+    menuElement.dataset.chatMenuId = 'message-1';
     menuElement.getBoundingClientRect = () =>
       createRect({
         top: -78,
@@ -106,17 +113,17 @@ describe("useChatViewportMenu", () => {
     messagesContainer.append(menuElement);
 
     act(() => {
-      messagesContainer.dispatchEvent(new Event("scroll"));
+      messagesContainer.dispatchEvent(new Event('scroll'));
     });
 
-    expect(result.current.menuPlacement).toBe("up");
-    expect(result.current.menuVerticalAnchor).toBe("left");
+    expect(result.current.menuPlacement).toBe('up');
+    expect(result.current.menuVerticalAnchor).toBe('left');
   });
 
-  it("keeps the below-bubble placement when it already has less vertical overflow, while still allowing right-edge alignment for horizontal clipping", () => {
-    const messagesContainer = document.createElement("div");
-    const anchor = document.createElement("div");
-    const menuElement = document.createElement("div");
+  it('keeps the below-bubble placement when it already has less vertical overflow, while still allowing right-edge alignment for horizontal clipping', () => {
+    const messagesContainer = document.createElement('div');
+    const anchor = document.createElement('div');
+    const menuElement = document.createElement('div');
     const messagesContainerRef = createRef<HTMLDivElement>();
     const visibleBounds: VisibleBounds = {
       containerRect: createRect({ top: 0, bottom: 400 }),
@@ -127,7 +134,7 @@ describe("useChatViewportMenu", () => {
     messagesContainer.append(anchor);
     messagesContainerRef.current = messagesContainer;
     messagesContainer.getBoundingClientRect = () => visibleBounds.containerRect;
-    Object.defineProperty(messagesContainer, "scrollTop", {
+    Object.defineProperty(messagesContainer, 'scrollTop', {
       configurable: true,
       value: 0,
       writable: true,
@@ -140,11 +147,11 @@ describe("useChatViewportMenu", () => {
         left: 220,
         right: 304,
       });
-    Object.defineProperty(menuElement, "offsetWidth", {
+    Object.defineProperty(menuElement, 'offsetWidth', {
       configurable: true,
       value: 120,
     });
-    Object.defineProperty(menuElement, "offsetHeight", {
+    Object.defineProperty(menuElement, 'offsetHeight', {
       configurable: true,
       value: 220,
     });
@@ -153,17 +160,17 @@ describe("useChatViewportMenu", () => {
       useChatViewportMenu({
         getVisibleMessagesBounds: () => visibleBounds,
         messagesContainerRef,
-      }),
+      })
     );
 
     act(() => {
-      result.current.toggleMessageMenu(anchor, "message-2", "right");
+      result.current.toggleMessageMenu(anchor, 'message-2', 'right');
     });
 
-    expect(result.current.menuPlacement).toBe("up");
-    expect(result.current.menuVerticalAnchor).toBe("left");
+    expect(result.current.menuPlacement).toBe('up');
+    expect(result.current.menuVerticalAnchor).toBe('left');
 
-    menuElement.dataset.chatMenuId = "message-2";
+    menuElement.dataset.chatMenuId = 'message-2';
     menuElement.getBoundingClientRect = () =>
       createRect({
         top: 148,
@@ -174,18 +181,18 @@ describe("useChatViewportMenu", () => {
     messagesContainer.append(menuElement);
 
     act(() => {
-      messagesContainer.dispatchEvent(new Event("scroll"));
+      messagesContainer.dispatchEvent(new Event('scroll'));
     });
 
-    expect(result.current.menuPlacement).toBe("up");
-    expect(result.current.menuVerticalAnchor).toBe("right");
+    expect(result.current.menuPlacement).toBe('up');
+    expect(result.current.menuVerticalAnchor).toBe('right');
   });
 
-  it("uses the target bubble geometry instead of a stale animated popup rect when switching menus quickly", () => {
-    const messagesContainer = document.createElement("div");
-    const firstAnchor = document.createElement("div");
-    const secondAnchor = document.createElement("div");
-    const secondMenuElement = document.createElement("div");
+  it('uses the target bubble geometry instead of a stale animated popup rect when switching menus quickly', () => {
+    const messagesContainer = document.createElement('div');
+    const firstAnchor = document.createElement('div');
+    const secondAnchor = document.createElement('div');
+    const secondMenuElement = document.createElement('div');
     const messagesContainerRef = createRef<HTMLDivElement>();
     const visibleBounds: VisibleBounds = {
       containerRect: createRect({ top: 0, bottom: 400 }),
@@ -196,7 +203,7 @@ describe("useChatViewportMenu", () => {
     messagesContainer.append(firstAnchor, secondAnchor);
     messagesContainerRef.current = messagesContainer;
     messagesContainer.getBoundingClientRect = () => visibleBounds.containerRect;
-    Object.defineProperty(messagesContainer, "scrollTop", {
+    Object.defineProperty(messagesContainer, 'scrollTop', {
       configurable: true,
       value: 0,
       writable: true,
@@ -217,15 +224,15 @@ describe("useChatViewportMenu", () => {
         right: 304,
       });
 
-    Object.defineProperty(secondMenuElement, "offsetWidth", {
+    Object.defineProperty(secondMenuElement, 'offsetWidth', {
       configurable: true,
       value: 120,
     });
-    Object.defineProperty(secondMenuElement, "offsetHeight", {
+    Object.defineProperty(secondMenuElement, 'offsetHeight', {
       configurable: true,
       value: 120,
     });
-    secondMenuElement.dataset.chatMenuId = "message-2";
+    secondMenuElement.dataset.chatMenuId = 'message-2';
     secondMenuElement.getBoundingClientRect = () =>
       createRect({
         top: 148,
@@ -239,18 +246,18 @@ describe("useChatViewportMenu", () => {
       useChatViewportMenu({
         getVisibleMessagesBounds: () => visibleBounds,
         messagesContainerRef,
-      }),
+      })
     );
 
     act(() => {
-      result.current.toggleMessageMenu(firstAnchor, "message-1", "right");
+      result.current.toggleMessageMenu(firstAnchor, 'message-1', 'right');
     });
 
     act(() => {
-      result.current.toggleMessageMenu(secondAnchor, "message-2", "right");
+      result.current.toggleMessageMenu(secondAnchor, 'message-2', 'right');
     });
 
-    expect(result.current.menuPlacement).toBe("up");
-    expect(result.current.menuVerticalAnchor).toBe("right");
+    expect(result.current.menuPlacement).toBe('up');
+    expect(result.current.menuVerticalAnchor).toBe('right');
   });
 });

@@ -1,4 +1,4 @@
-export type KeyboardScrollDirection = "up" | "down";
+export type KeyboardScrollDirection = 'up' | 'down';
 
 export type KeyboardScrollTarget = {
   scrollTop: number;
@@ -37,7 +37,7 @@ export const getKeyboardScrollTarget = ({
   if (itemTop < containerScrollTop + visibilityInset) {
     return {
       scrollTop: Math.max(0, itemTop - visibilityInset),
-      direction: "up",
+      direction: 'up',
     };
   }
 
@@ -49,7 +49,7 @@ export const getKeyboardScrollTarget = ({
 
     return {
       scrollTop: Math.max(0, scrollTop),
-      direction: "down",
+      direction: 'down',
     };
   }
 
@@ -91,9 +91,12 @@ export const getKeyboardPinnedHighlightFrame = ({
   const containerRect = container.getBoundingClientRect();
   const rootRect = frameRootElement.getBoundingClientRect();
   const edgeFrameTop =
-    scrollDirection === "up"
+    scrollDirection === 'up'
       ? containerRect.top + visibilityInset - rootRect.top
-      : containerRect.bottom - visibilityInset - targetElement.offsetHeight - rootRect.top;
+      : containerRect.bottom -
+        visibilityInset -
+        targetElement.offsetHeight -
+        rootRect.top;
 
   if (forceTargetEdgeFrame) {
     return {
@@ -105,10 +108,12 @@ export const getKeyboardPinnedHighlightFrame = ({
   }
 
   const sourceIsPinnedToEdge =
-    sourceElement !== null && sourceElement !== undefined && frameElement === sourceElement;
+    sourceElement !== null &&
+    sourceElement !== undefined &&
+    frameElement === sourceElement;
   const sourceFrameTop = frameRect.top - rootRect.top;
   const frameTop = sourceIsPinnedToEdge
-    ? scrollDirection === "up"
+    ? scrollDirection === 'up'
       ? Math.max(sourceFrameTop, edgeFrameTop)
       : Math.min(sourceFrameTop, edgeFrameTop)
     : edgeFrameTop;
@@ -145,7 +150,7 @@ const getPinnedFrameElement = ({
     sourceTop < containerScrollTop + containerHeight - visibilityInset;
   const sourceIsPinnedToEdge =
     sourceIsVisible &&
-    (scrollDirection === "up"
+    (scrollDirection === 'up'
       ? sourceTop <= containerScrollTop + visibilityInset
       : sourceBottom >= containerScrollTop + containerHeight - visibilityInset);
 

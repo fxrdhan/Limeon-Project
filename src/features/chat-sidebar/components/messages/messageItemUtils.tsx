@@ -18,44 +18,55 @@ import {
   TbCornerUpRightDouble,
   TbPencil,
   TbTrash,
-} from "react-icons/tb";
-import type { PopupMenuAction } from "@/components/image-manager/PopupMenuContent";
-import type { ComposerPendingFileKind, MenuPlacement, MenuSideAnchor } from "../../types";
-import { openChatFileInNewTab } from "../../utils/message-file";
-import type { ChatMessage } from "../../data/chatSidebarGateway";
+} from 'react-icons/tb';
+import type { PopupMenuAction } from '@/components/image-manager/PopupMenuContent';
+import type {
+  ComposerPendingFileKind,
+  MenuPlacement,
+  MenuSideAnchor,
+} from '../../types';
+import { openChatFileInNewTab } from '../../utils/message-file';
+import type { ChatMessage } from '../../data/chatSidebarGateway';
 
-export const getFileIcon = (fileExtension: string, isAudioFileMessage: boolean) => {
+export const getFileIcon = (
+  fileExtension: string,
+  isAudioFileMessage: boolean
+) => {
   if (isAudioFileMessage) {
     return <TbMusic className="h-8 w-8 shrink-0 text-slate-600" />;
   }
-  if (fileExtension === "jpg" || fileExtension === "jpeg") {
+  if (fileExtension === 'jpg' || fileExtension === 'jpeg') {
     return <TbFileTypeJpg className="h-8 w-8 shrink-0 text-slate-600" />;
   }
-  if (fileExtension === "png") {
+  if (fileExtension === 'png') {
     return <TbFileTypePng className="h-8 w-8 shrink-0 text-slate-600" />;
   }
-  if (fileExtension === "pdf") {
+  if (fileExtension === 'pdf') {
     return <TbFileTypePdf className="h-8 w-8 shrink-0 text-slate-600" />;
   }
-  if (fileExtension === "docx") {
+  if (fileExtension === 'docx') {
     return <TbFileTypeDocx className="h-8 w-8 shrink-0 text-slate-600" />;
   }
-  if (fileExtension === "doc") {
+  if (fileExtension === 'doc') {
     return <TbFileTypeDoc className="h-8 w-8 shrink-0 text-slate-600" />;
   }
-  if (fileExtension === "csv") {
+  if (fileExtension === 'csv') {
     return <TbFileTypeCsv className="h-8 w-8 shrink-0 text-slate-600" />;
   }
-  if (fileExtension === "ppt" || fileExtension === "pptx") {
+  if (fileExtension === 'ppt' || fileExtension === 'pptx') {
     return <TbFileTypePpt className="h-8 w-8 shrink-0 text-slate-600" />;
   }
-  if (fileExtension === "txt") {
+  if (fileExtension === 'txt') {
     return <TbFileTypeTxt className="h-8 w-8 shrink-0 text-slate-600" />;
   }
-  if (fileExtension === "xls" || fileExtension === "xlsx" || fileExtension === "x") {
+  if (
+    fileExtension === 'xls' ||
+    fileExtension === 'xlsx' ||
+    fileExtension === 'x'
+  ) {
     return <TbFileTypeXls className="h-8 w-8 shrink-0 text-slate-600" />;
   }
-  if (fileExtension === "zip") {
+  if (fileExtension === 'zip') {
     return <TbFileTypeZip className="h-8 w-8 shrink-0 text-slate-600" />;
   }
 
@@ -76,15 +87,19 @@ interface BuildMessageMenuActionsProps {
   openImageInPortal: (
     message: Pick<
       ChatMessage,
-      "id" | "message" | "file_storage_path" | "file_mime_type" | "file_preview_url"
+      | 'id'
+      | 'message'
+      | 'file_storage_path'
+      | 'file_mime_type'
+      | 'file_preview_url'
     >,
     previewName: string,
-    initialPreviewUrl?: string | null,
+    initialPreviewUrl?: string | null
   ) => Promise<void>;
   openDocumentInPortal: (
-    message: Pick<ChatMessage, "message" | "file_storage_path">,
+    message: Pick<ChatMessage, 'message' | 'file_storage_path'>,
     previewName: string,
-    forcePdfMime?: boolean,
+    forcePdfMime?: boolean
   ) => Promise<void>;
   handleEditMessage: (targetMessage: ChatMessage) => void;
   handleReplyMessage: (targetMessage: ChatMessage) => void;
@@ -115,32 +130,36 @@ export const buildMessageMenuActions = ({
   handleDeleteMessage,
 }: BuildMessageMenuActionsProps): PopupMenuAction[] => {
   const menuActions: PopupMenuAction[] = [];
-  const isPersistedMessage = !message.id.startsWith("temp_");
+  const isPersistedMessage = !message.id.startsWith('temp_');
 
   if (isImageMessage || isFileMessage) {
     menuActions.push({
-      label: "Lihat",
+      label: 'Lihat',
       icon: <TbEye className="h-4 w-4" />,
       onClick: () => {
         if (isImageMessage || isImageFileMessage) {
-          void openImageInPortal(message, fileName || "Gambar", previewUrl);
+          void openImageInPortal(message, fileName || 'Gambar', previewUrl);
           return;
         }
-        if (isFileMessage && fileKind === "document" && isPdfFileMessage) {
-          void openDocumentInPortal(message, fileName || "Dokumen", isPdfFileMessage);
+        if (isFileMessage && fileKind === 'document' && isPdfFileMessage) {
+          void openDocumentInPortal(
+            message,
+            fileName || 'Dokumen',
+            isPdfFileMessage
+          );
           return;
         }
         void openChatFileInNewTab(
           message.message,
           message.file_storage_path,
-          message.file_mime_type,
+          message.file_mime_type
         );
       },
     });
   }
 
   menuActions.push({
-    label: "Salin",
+    label: 'Salin',
     icon: <TbCopy className="h-4 w-4" />,
     onClick: () => {
       void handleCopyMessage(message);
@@ -149,7 +168,7 @@ export const buildMessageMenuActions = ({
 
   if (isImageMessage || isFileMessage) {
     menuActions.push({
-      label: "Unduh",
+      label: 'Unduh',
       icon: <TbDownload className="h-4 w-4" />,
       onClick: () => {
         void handleDownloadMessage(message);
@@ -157,9 +176,14 @@ export const buildMessageMenuActions = ({
     });
   }
 
-  if (isCurrentUser && !isImageMessage && !isFileMessage && isPersistedMessage) {
+  if (
+    isCurrentUser &&
+    !isImageMessage &&
+    !isFileMessage &&
+    isPersistedMessage
+  ) {
     menuActions.push({
-      label: "Edit",
+      label: 'Edit',
       icon: <TbPencil className="h-4 w-4" />,
       onClick: () => handleEditMessage(message),
     });
@@ -167,7 +191,7 @@ export const buildMessageMenuActions = ({
 
   if (includeReplyAction && isPersistedMessage) {
     menuActions.push({
-      label: "Balas",
+      label: 'Balas',
       icon: <TbCornerUpLeft className="h-4 w-4" />,
       onClick: () => handleReplyMessage(message),
     });
@@ -175,7 +199,7 @@ export const buildMessageMenuActions = ({
 
   if (isPersistedMessage) {
     menuActions.push({
-      label: "Teruskan",
+      label: 'Teruskan',
       icon: <TbCornerUpRightDouble className="h-4 w-4" />,
       onClick: () => handleOpenForwardMessagePicker(message),
     });
@@ -183,12 +207,12 @@ export const buildMessageMenuActions = ({
 
   if (isCurrentUser || isPersistedMessage) {
     menuActions.push({
-      label: "Hapus",
+      label: 'Hapus',
       icon: <TbTrash className="h-4 w-4" />,
       onClick: () => {
         void handleDeleteMessage(message);
       },
-      tone: "danger",
+      tone: 'danger',
     });
   }
 
@@ -197,34 +221,34 @@ export const buildMessageMenuActions = ({
 
 export const getMessageMenuClasses = (
   menuPlacement: MenuPlacement,
-  menuSideAnchor: MenuSideAnchor,
+  menuSideAnchor: MenuSideAnchor
 ) => {
   const sideMenuPositionClass =
-    menuSideAnchor === "bottom"
-      ? "bottom-0"
-      : menuSideAnchor === "top"
-        ? "top-0"
-        : "top-1/2 -translate-y-1/2";
+    menuSideAnchor === 'bottom'
+      ? 'bottom-0'
+      : menuSideAnchor === 'top'
+        ? 'top-0'
+        : 'top-1/2 -translate-y-1/2';
   const sidePlacementClass =
-    menuPlacement === "left"
+    menuPlacement === 'left'
       ? `right-full mr-2 ${sideMenuPositionClass} ${
-          menuSideAnchor === "bottom"
-            ? "origin-bottom-right"
-            : menuSideAnchor === "top"
-              ? "origin-top-right"
-              : "origin-right"
+          menuSideAnchor === 'bottom'
+            ? 'origin-bottom-right'
+            : menuSideAnchor === 'top'
+              ? 'origin-top-right'
+              : 'origin-right'
         }`
-      : menuPlacement === "right"
+      : menuPlacement === 'right'
         ? `left-full ml-2 ${sideMenuPositionClass} ${
-            menuSideAnchor === "bottom"
-              ? "origin-bottom-left"
-              : menuSideAnchor === "top"
-                ? "origin-top-left"
-                : "origin-left"
+            menuSideAnchor === 'bottom'
+              ? 'origin-bottom-left'
+              : menuSideAnchor === 'top'
+                ? 'origin-top-left'
+                : 'origin-left'
           }`
-        : menuPlacement === "down"
-          ? "bottom-full mb-2 left-0 origin-bottom-left"
-          : "top-full mt-2 left-0 origin-top-left";
+        : menuPlacement === 'down'
+          ? 'bottom-full mb-2 left-0 origin-bottom-left'
+          : 'top-full mt-2 left-0 origin-top-left';
 
   return {
     sidePlacementClass,

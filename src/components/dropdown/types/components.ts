@@ -1,5 +1,5 @@
-import { RefObject } from "react";
-import type { DropdownOption } from "@/types";
+import { RefObject } from 'react';
+import type { DropdownOption } from '@/types';
 
 export interface DropdownMenuProps {
   isFrozen?: boolean;

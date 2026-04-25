@@ -1,16 +1,16 @@
-import { describe, expect, it, vi } from "vite-plus/test";
-import type { ChatMessage } from "../../../services/api/chat.service";
-import { buildMessageMenuActions } from "../components/messages/messageItemUtils";
+import { describe, expect, it, vi } from 'vite-plus/test';
+import type { ChatMessage } from '../../../services/api/chat.service';
+import { buildMessageMenuActions } from '../components/messages/messageItemUtils';
 
 const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
-  id: overrides.id ?? "message-1",
-  sender_id: overrides.sender_id ?? "user-a",
-  receiver_id: overrides.receiver_id ?? "user-b",
-  channel_id: overrides.channel_id ?? "channel-1",
-  message: overrides.message ?? "hello",
-  message_type: overrides.message_type ?? "text",
-  created_at: overrides.created_at ?? "2026-03-06T09:30:00.000Z",
-  updated_at: overrides.updated_at ?? "2026-03-06T09:30:00.000Z",
+  id: overrides.id ?? 'message-1',
+  sender_id: overrides.sender_id ?? 'user-a',
+  receiver_id: overrides.receiver_id ?? 'user-b',
+  channel_id: overrides.channel_id ?? 'channel-1',
+  message: overrides.message ?? 'hello',
+  message_type: overrides.message_type ?? 'text',
+  created_at: overrides.created_at ?? '2026-03-06T09:30:00.000Z',
+  updated_at: overrides.updated_at ?? '2026-03-06T09:30:00.000Z',
   is_read: overrides.is_read ?? false,
   is_delivered: overrides.is_delivered ?? false,
   reply_to_id: overrides.reply_to_id ?? null,
@@ -28,19 +28,19 @@ const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
   stableKey: overrides.stableKey,
 });
 
-describe("messageItemUtils", () => {
-  it("does not expose edit for temp text messages that are still sending", () => {
+describe('messageItemUtils', () => {
+  it('does not expose edit for temp text messages that are still sending', () => {
     const actions = buildMessageMenuActions({
       message: buildMessage({
-        id: "temp_123",
-        message: "pesan sementara",
+        id: 'temp_123',
+        message: 'pesan sementara',
       }),
       isCurrentUser: true,
       isImageMessage: false,
       isFileMessage: false,
       isImageFileMessage: false,
       isPdfFileMessage: false,
-      fileKind: "document",
+      fileKind: 'document',
       fileName: null,
       openImageInPortal: vi.fn(),
       openDocumentInPortal: vi.fn().mockResolvedValue(undefined),
@@ -52,16 +52,16 @@ describe("messageItemUtils", () => {
       handleDeleteMessage: vi.fn().mockResolvedValue(true),
     });
 
-    expect(actions.map((action) => action.label)).toEqual(["Salin", "Hapus"]);
+    expect(actions.map(action => action.label)).toEqual(['Salin', 'Hapus']);
   });
 
-  it("copies image messages using the original asset payload", async () => {
+  it('copies image messages using the original asset payload', async () => {
     const handleCopyMessage = vi.fn().mockResolvedValue(undefined);
     const imageMessage = buildMessage({
-      message_type: "image",
-      message: "images/channel/image.png",
-      file_storage_path: "images/channel/image.png",
-      file_mime_type: "image/png",
+      message_type: 'image',
+      message: 'images/channel/image.png',
+      file_storage_path: 'images/channel/image.png',
+      file_mime_type: 'image/png',
     });
     const actions = buildMessageMenuActions({
       message: imageMessage,
@@ -70,7 +70,7 @@ describe("messageItemUtils", () => {
       isFileMessage: false,
       isImageFileMessage: false,
       isPdfFileMessage: false,
-      fileKind: "document",
+      fileKind: 'document',
       fileName: null,
       openImageInPortal: vi.fn(),
       openDocumentInPortal: vi.fn().mockResolvedValue(undefined),
@@ -82,19 +82,19 @@ describe("messageItemUtils", () => {
       handleDeleteMessage: vi.fn().mockResolvedValue(true),
     });
 
-    const copyAction = actions.find((action) => action.label === "Salin");
+    const copyAction = actions.find(action => action.label === 'Salin');
     await copyAction?.onClick();
 
     expect(handleCopyMessage).toHaveBeenCalledWith(imageMessage);
   });
 
-  it("opens image messages using the original asset payload", async () => {
+  it('opens image messages using the original asset payload', async () => {
     const openImageInPortal = vi.fn().mockResolvedValue(undefined);
     const imageMessage = buildMessage({
-      message_type: "image",
-      message: "images/channel/image.png",
-      file_storage_path: "images/channel/image.png",
-      file_mime_type: "image/png",
+      message_type: 'image',
+      message: 'images/channel/image.png',
+      file_storage_path: 'images/channel/image.png',
+      file_mime_type: 'image/png',
     });
     const actions = buildMessageMenuActions({
       message: imageMessage,
@@ -103,8 +103,8 @@ describe("messageItemUtils", () => {
       isFileMessage: false,
       isImageFileMessage: false,
       isPdfFileMessage: false,
-      fileKind: "document",
-      fileName: "Lampiran.png",
+      fileKind: 'document',
+      fileName: 'Lampiran.png',
       openImageInPortal,
       openDocumentInPortal: vi.fn().mockResolvedValue(undefined),
       handleEditMessage: vi.fn(),
@@ -115,18 +115,22 @@ describe("messageItemUtils", () => {
       handleDeleteMessage: vi.fn().mockResolvedValue(true),
     });
 
-    await actions.find((action) => action.label === "Lihat")?.onClick();
+    await actions.find(action => action.label === 'Lihat')?.onClick();
 
-    expect(openImageInPortal).toHaveBeenCalledWith(imageMessage, "Lampiran.png", undefined);
+    expect(openImageInPortal).toHaveBeenCalledWith(
+      imageMessage,
+      'Lampiran.png',
+      undefined
+    );
   });
 
-  it("shows download for image messages and downloads the original attachment", async () => {
+  it('shows download for image messages and downloads the original attachment', async () => {
     const handleDownloadMessage = vi.fn().mockResolvedValue(undefined);
     const imageMessage = buildMessage({
-      message_type: "image",
-      message: "images/channel/image.png",
-      file_storage_path: "images/channel/image.png",
-      file_mime_type: "image/png",
+      message_type: 'image',
+      message: 'images/channel/image.png',
+      file_storage_path: 'images/channel/image.png',
+      file_mime_type: 'image/png',
     });
     const actions = buildMessageMenuActions({
       message: imageMessage,
@@ -135,8 +139,8 @@ describe("messageItemUtils", () => {
       isFileMessage: false,
       isImageFileMessage: false,
       isPdfFileMessage: false,
-      fileKind: "document",
-      fileName: "Lampiran.png",
+      fileKind: 'document',
+      fileName: 'Lampiran.png',
       openImageInPortal: vi.fn(),
       openDocumentInPortal: vi.fn().mockResolvedValue(undefined),
       handleEditMessage: vi.fn(),
@@ -147,26 +151,26 @@ describe("messageItemUtils", () => {
       handleDeleteMessage: vi.fn().mockResolvedValue(true),
     });
 
-    expect(actions.map((action) => action.label)).toEqual([
-      "Lihat",
-      "Salin",
-      "Unduh",
-      "Balas",
-      "Teruskan",
-      "Hapus",
+    expect(actions.map(action => action.label)).toEqual([
+      'Lihat',
+      'Salin',
+      'Unduh',
+      'Balas',
+      'Teruskan',
+      'Hapus',
     ]);
 
-    await actions.find((action) => action.label === "Unduh")?.onClick();
+    await actions.find(action => action.label === 'Unduh')?.onClick();
 
     expect(handleDownloadMessage).toHaveBeenCalledWith(imageMessage);
   });
 
-  it("can omit reply for image bubble group menus", () => {
+  it('can omit reply for image bubble group menus', () => {
     const imageMessage = buildMessage({
-      message_type: "image",
-      message: "images/channel/image.png",
-      file_storage_path: "images/channel/image.png",
-      file_mime_type: "image/png",
+      message_type: 'image',
+      message: 'images/channel/image.png',
+      file_storage_path: 'images/channel/image.png',
+      file_mime_type: 'image/png',
     });
     const actions = buildMessageMenuActions({
       message: imageMessage,
@@ -175,7 +179,7 @@ describe("messageItemUtils", () => {
       isFileMessage: false,
       isImageFileMessage: false,
       isPdfFileMessage: false,
-      fileKind: "document",
+      fileKind: 'document',
       fileName: null,
       includeReplyAction: false,
       openImageInPortal: vi.fn(),
@@ -188,22 +192,22 @@ describe("messageItemUtils", () => {
       handleDeleteMessage: vi.fn().mockResolvedValue(true),
     });
 
-    expect(actions.map((action) => action.label)).toEqual([
-      "Lihat",
-      "Salin",
-      "Unduh",
-      "Teruskan",
-      "Hapus",
+    expect(actions.map(action => action.label)).toEqual([
+      'Lihat',
+      'Salin',
+      'Unduh',
+      'Teruskan',
+      'Hapus',
     ]);
   });
 
-  it("adds a forward action for persisted text messages", async () => {
+  it('adds a forward action for persisted text messages', async () => {
     const handleOpenForwardMessagePicker = vi.fn();
     const handleReplyMessage = vi.fn();
     const textMessage = buildMessage({
-      id: "message-99",
-      message: "teruskan ini",
-      message_type: "text",
+      id: 'message-99',
+      message: 'teruskan ini',
+      message_type: 'text',
     });
     const actions = buildMessageMenuActions({
       message: textMessage,
@@ -212,7 +216,7 @@ describe("messageItemUtils", () => {
       isFileMessage: false,
       isImageFileMessage: false,
       isPdfFileMessage: false,
-      fileKind: "document",
+      fileKind: 'document',
       fileName: null,
       openImageInPortal: vi.fn(),
       openDocumentInPortal: vi.fn().mockResolvedValue(undefined),
@@ -224,22 +228,27 @@ describe("messageItemUtils", () => {
       handleDeleteMessage: vi.fn().mockResolvedValue(true),
     });
 
-    expect(actions.map((action) => action.label)).toEqual(["Salin", "Balas", "Teruskan", "Hapus"]);
+    expect(actions.map(action => action.label)).toEqual([
+      'Salin',
+      'Balas',
+      'Teruskan',
+      'Hapus',
+    ]);
 
-    await actions.find((action) => action.label === "Balas")?.onClick();
-    await actions.find((action) => action.label === "Teruskan")?.onClick();
+    await actions.find(action => action.label === 'Balas')?.onClick();
+    await actions.find(action => action.label === 'Teruskan')?.onClick();
 
     expect(handleReplyMessage).toHaveBeenCalledWith(textMessage);
     expect(handleOpenForwardMessagePicker).toHaveBeenCalledWith(textMessage);
   });
 
-  it("orders edit after copy for persisted current-user text messages", () => {
+  it('orders edit after copy for persisted current-user text messages', () => {
     const handleEditMessage = vi.fn();
     const textMessage = buildMessage({
-      id: "message-100",
-      message: "edit ini",
-      message_type: "text",
-      sender_id: "user-a",
+      id: 'message-100',
+      message: 'edit ini',
+      message_type: 'text',
+      sender_id: 'user-a',
     });
     const actions = buildMessageMenuActions({
       message: textMessage,
@@ -248,7 +257,7 @@ describe("messageItemUtils", () => {
       isFileMessage: false,
       isImageFileMessage: false,
       isPdfFileMessage: false,
-      fileKind: "document",
+      fileKind: 'document',
       fileName: null,
       openImageInPortal: vi.fn(),
       openDocumentInPortal: vi.fn().mockResolvedValue(undefined),
@@ -260,12 +269,12 @@ describe("messageItemUtils", () => {
       handleDeleteMessage: vi.fn().mockResolvedValue(true),
     });
 
-    expect(actions.map((action) => action.label)).toEqual([
-      "Salin",
-      "Edit",
-      "Balas",
-      "Teruskan",
-      "Hapus",
+    expect(actions.map(action => action.label)).toEqual([
+      'Salin',
+      'Edit',
+      'Balas',
+      'Teruskan',
+      'Hapus',
     ]);
   });
 });

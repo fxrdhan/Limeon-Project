@@ -1,12 +1,12 @@
-import React, { useEffect, useMemo } from "react";
-import { useBadgeBuilder } from "../hooks/useBadgeBuilder";
-import { EnhancedSearchState } from "../types";
-import { BadgeConfig } from "../types/badge";
-import { tokenizeGroupPattern } from "../utils/groupPatternUtils";
-import Badge from "./Badge";
+import React, { useEffect, useMemo } from 'react';
+import { useBadgeBuilder } from '../hooks/useBadgeBuilder';
+import { EnhancedSearchState } from '../types';
+import { BadgeConfig } from '../types/badge';
+import { tokenizeGroupPattern } from '../utils/groupPatternUtils';
+import Badge from './Badge';
 
 // Scalable handler type for N-condition support
-type BadgeTarget = "column" | "operator" | "value" | "valueTo";
+type BadgeTarget = 'column' | 'operator' | 'value' | 'valueTo';
 
 interface SearchBadgeProps {
   value: string;
@@ -20,7 +20,7 @@ interface SearchBadgeProps {
   clearAll: () => void;
   editConditionPart: (conditionIndex: number, target: BadgeTarget) => void;
   editJoin: (joinIndex: number) => void;
-  editValueN: (conditionIndex: number, target: "value" | "valueTo") => void;
+  editValueN: (conditionIndex: number, target: 'value' | 'valueTo') => void;
   insertConditionAfter?: (conditionIndex: number) => void;
   onHoverChange?: (isHovered: boolean) => void;
   onInvalidValue?: () => void;
@@ -29,12 +29,12 @@ interface SearchBadgeProps {
   // Inline editing props
   editingBadge?: {
     conditionIndex: number; // 0 = first condition, 1 = second, etc.
-    field: "value" | "valueTo"; // Which field is being edited
+    field: 'value' | 'valueTo'; // Which field is being edited
     value: string;
   } | null;
   onInlineValueChange?: (value: string) => void;
   onInlineEditComplete?: (finalValue?: string) => void;
-  onNavigateEdit?: (direction: "left" | "right") => void; // Ctrl+E (left) or Ctrl+Shift+E (right)
+  onNavigateEdit?: (direction: 'left' | 'right') => void; // Ctrl+E (left) or Ctrl+Shift+E (right)
   onFocusInput?: () => void; // Ctrl+I to exit edit and focus main input
   // Keyboard navigation props
   selectedBadgeIndex?: number | null;
@@ -45,22 +45,29 @@ interface SearchBadgeProps {
   previewOperator?: { label: string; value: string } | null;
   // Scalable editing state (which condition's column/operator is being edited)
   editingConditionIndex?: number | null;
-  editingTarget?: "column" | "operator" | "join" | null;
+  editingTarget?: 'column' | 'operator' | 'join' | null;
   // Grouped inline editing props
   groupEditingBadge?: {
     path: number[];
-    field: "value" | "valueTo";
+    field: 'value' | 'valueTo';
     value: string;
   } | null;
   onGroupInlineValueChange?: (value: string) => void;
   onGroupInlineEditComplete?: (finalValue?: string) => void;
-  onGroupEditStart?: (path: number[], field: "value" | "valueTo", value: string) => void;
+  onGroupEditStart?: (
+    path: number[],
+    field: 'value' | 'valueTo',
+    value: string
+  ) => void;
   onGroupEditColumn?: (path: number[]) => void;
   onGroupEditOperator?: (path: number[]) => void;
   onGroupEditJoin?: (path: number[], joinIndex: number) => void;
   onGroupClearCondition?: (path: number[]) => void;
   onGroupClearGroup?: (path: number[]) => void;
-  onGroupTokenClear?: (tokenType: "groupOpen" | "groupClose", occurrenceIndex: number) => void;
+  onGroupTokenClear?: (
+    tokenType: 'groupOpen' | 'groupClose',
+    occurrenceIndex: number
+  ) => void;
 }
 
 const SearchBadge: React.FC<SearchBadgeProps> = ({
@@ -107,7 +114,8 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   // IMPORTANT: When join selector is open, always use fresh searchMode to ensure valueTo badges are visible
   // This prevents stale preservedSearchMode from hiding badges while join selector modal is displayed
   const modeToRender =
-    preservedSearchMode && (!searchMode.showJoinOperatorSelector || preserveBadgesOnJoinSelector)
+    preservedSearchMode &&
+    (!searchMode.showJoinOperatorSelector || preserveBadgesOnJoinSelector)
       ? preservedSearchMode
       : searchMode;
 
@@ -153,7 +161,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
           onClearCondition: onGroupClearCondition,
           onClearGroup: onGroupClearGroup,
         }
-      : undefined,
+      : undefined
   );
 
   // Apply preview values to badges for live preview during selector navigation
@@ -168,13 +176,13 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
       return rawBadges;
     }
 
-    return rawBadges.map((badge) => {
+    return rawBadges.map(badge => {
       // Preview column - apply to the correct column badge based on editingConditionIndex
       // Only apply when in edit mode (not when creating new condition[N] column)
       if (
         previewColumn &&
         isInEditMode &&
-        editingTarget === "column" &&
+        editingTarget === 'column' &&
         editingConditionIndex !== null
       ) {
         const expectedBadgeId = `condition-${editingConditionIndex}-column`;
@@ -188,7 +196,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
       if (
         previewOperator &&
         isInEditMode &&
-        editingTarget === "operator" &&
+        editingTarget === 'operator' &&
         editingConditionIndex !== null
       ) {
         const expectedBadgeId = `condition-${editingConditionIndex}-operator`;
@@ -213,7 +221,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
       return badges;
     }
 
-    if (!value.includes("#(") && !value.includes("#)")) {
+    if (!value.includes('#(') && !value.includes('#)')) {
       return badges;
     }
 
@@ -223,29 +231,34 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
     let openIndex = 0;
     let closeIndex = 0;
 
-    const createGroupBadge = (type: "groupOpen" | "groupClose", index: number): BadgeConfig => ({
+    const createGroupBadge = (
+      type: 'groupOpen' | 'groupClose',
+      index: number
+    ): BadgeConfig => ({
       id: `${type}-inline-${index}`,
       type,
-      label: type === "groupOpen" ? "(" : ")",
-      onClear: onGroupTokenClear ? () => onGroupTokenClear(type, index) : () => {},
+      label: type === 'groupOpen' ? '(' : ')',
+      onClear: onGroupTokenClear
+        ? () => onGroupTokenClear(type, index)
+        : () => {},
       canClear: !!onGroupTokenClear,
       canEdit: false,
     });
 
-    tokens.forEach((token) => {
-      if (token.type === "groupOpen") {
-        output.push(createGroupBadge("groupOpen", openIndex));
+    tokens.forEach(token => {
+      if (token.type === 'groupOpen') {
+        output.push(createGroupBadge('groupOpen', openIndex));
         openIndex += 1;
         return;
       }
 
-      if (token.type === "groupClose") {
-        output.push(createGroupBadge("groupClose", closeIndex));
+      if (token.type === 'groupClose') {
+        output.push(createGroupBadge('groupClose', closeIndex));
         closeIndex += 1;
         return;
       }
 
-      if (token.type === "confirm" || token.type === "marker") {
+      if (token.type === 'confirm' || token.type === 'marker') {
         return;
       }
 
@@ -293,7 +306,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
     // Column selector open - glow the column being edited
     if (
       searchMode.showColumnSelector &&
-      editingTarget === "column" &&
+      editingTarget === 'column' &&
       editingConditionIndex !== null
     ) {
       const expectedId = `condition-${editingConditionIndex}-column`;
@@ -303,7 +316,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
     // Operator selector open - glow the operator being edited
     if (
       searchMode.showOperatorSelector &&
-      editingTarget === "operator" &&
+      editingTarget === 'operator' &&
       editingConditionIndex !== null
     ) {
       const expectedId = `condition-${editingConditionIndex}-operator`;
@@ -311,7 +324,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
     }
 
     // Join operator selector open
-    if (searchMode.showJoinOperatorSelector && badgeId.startsWith("join-")) {
+    if (searchMode.showJoinOperatorSelector && badgeId.startsWith('join-')) {
       return true;
     }
 
@@ -321,7 +334,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   // Render as `contents` so the input stays in the same flex flow as badges.
   return (
     <div ref={badgesContainerRef} className="contents">
-      {finalBadges.map((badge) => {
+      {finalBadges.map(badge => {
         // Callback ref that updates the dynamic ref map for N-condition support
         const handleRef = (element: HTMLDivElement | null) => {
           setBadgeRef?.(badge.id, element);
@@ -329,7 +342,9 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
 
         // Add glow state based on selector being open
         const shouldGlow = getBadgeGlowState(badge.id);
-        const badgeWithGlow = shouldGlow ? { ...badge, isSelected: true } : badge;
+        const badgeWithGlow = shouldGlow
+          ? { ...badge, isSelected: true }
+          : badge;
         const badgeWithErrorHandler = onInvalidValue
           ? { ...badgeWithGlow, onInvalidValue }
           : badgeWithGlow;

@@ -1,9 +1,9 @@
-import { useState, type ChangeEvent, type RefObject } from "react";
-import { AnimatePresence, motion } from "motion/react";
-import { TbFileDescription, TbMusic, TbPhoto, TbPlus } from "react-icons/tb";
-import { AnimatedMenuHighlight } from "@/components/shared/animated-menu-highlight";
-import { useAnimatedMenuHighlight } from "@/components/shared/use-animated-menu-highlight";
-import { COMPOSER_SYNC_LAYOUT_TRANSITION } from "../../constants";
+import { useState, type ChangeEvent, type RefObject } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
+import { TbFileDescription, TbMusic, TbPhoto, TbPlus } from 'react-icons/tb';
+import { AnimatedMenuHighlight } from '@/components/shared/animated-menu-highlight';
+import { useAnimatedMenuHighlight } from '@/components/shared/use-animated-menu-highlight';
+import { COMPOSER_SYNC_LAYOUT_TRANSITION } from '../../constants';
 
 interface ComposerAttachmentMenuProps {
   isAttachModalOpen: boolean;
@@ -38,27 +38,29 @@ export const ComposerAttachmentMenu = ({
   onDocumentFileChange,
   onAudioFileChange,
 }: ComposerAttachmentMenuProps) => {
-  const [hoveredActionIndex, setHoveredActionIndex] = useState<number | null>(null);
+  const [hoveredActionIndex, setHoveredActionIndex] = useState<number | null>(
+    null
+  );
   const { highlightFrame, setItemRef } =
     useAnimatedMenuHighlight<HTMLButtonElement>(hoveredActionIndex);
   const attachmentActions = [
     {
-      label: "Gambar",
+      label: 'Gambar',
       icon: <TbPhoto className="h-4 w-4 text-black" />,
       onClick: () => onAttachImageClick(),
-      className: "px-1.5",
+      className: 'px-1.5',
     },
     {
-      label: "Dokumen",
+      label: 'Dokumen',
       icon: <TbFileDescription className="h-4 w-4 text-black" />,
       onClick: () => onAttachDocumentClick(),
-      className: "pl-1.5 pr-3",
+      className: 'pl-1.5 pr-3',
     },
     {
-      label: "Audio",
+      label: 'Audio',
       icon: <TbMusic className="h-4 w-4 text-black" />,
       onClick: onAttachAudioClick,
-      className: "px-1.5",
+      className: 'px-1.5',
     },
   ];
 
@@ -67,7 +69,9 @@ export const ComposerAttachmentMenu = ({
       layout="position"
       transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
       className={`relative justify-self-start shrink-0 ${
-        isMessageInputMultiline ? "col-start-1 row-start-2" : "col-start-1 row-start-1"
+        isMessageInputMultiline
+          ? 'col-start-1 row-start-2'
+          : 'col-start-1 row-start-1'
       }`}
     >
       <motion.button
@@ -81,7 +85,7 @@ export const ComposerAttachmentMenu = ({
       >
         <motion.span
           animate={{ rotate: isAttachModalOpen ? 45 : 0 }}
-          transition={{ duration: 0.16, ease: "easeOut" }}
+          transition={{ duration: 0.16, ease: 'easeOut' }}
           className="flex items-center justify-center"
         >
           <TbPlus size={20} className="text-black" />
@@ -98,7 +102,7 @@ export const ComposerAttachmentMenu = ({
               initial={{ opacity: 0, y: 8, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 6, scale: 0.95 }}
-              transition={{ duration: 0.15, ease: "easeOut" }}
+              transition={{ duration: 0.15, ease: 'easeOut' }}
               className="relative inline-flex w-max flex-col rounded-xl border border-slate-200 bg-white p-1 shadow-[0_-10px_15px_-3px_rgba(15,23,42,0.10),0_-4px_6px_-4px_rgba(15,23,42,0.10)]"
               onMouseLeave={() => {
                 setHoveredActionIndex(null);
@@ -111,7 +115,7 @@ export const ComposerAttachmentMenu = ({
               {attachmentActions.map((action, actionIndex) => (
                 <button
                   key={action.label}
-                  ref={(element) => setItemRef(actionIndex, element)}
+                  ref={element => setItemRef(actionIndex, element)}
                   type="button"
                   onClick={action.onClick}
                   onMouseEnter={() => {

@@ -1,15 +1,15 @@
 import PopupMenuContent, {
   type PopupMenuAction,
-} from "@/components/image-manager/PopupMenuContent";
-import PopupMenuPopover from "@/components/shared/popup-menu-popover";
-import { createPortal } from "react-dom";
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import toast from "react-hot-toast";
-import { TbArrowUpRight, TbCopy, TbFileTypePdf } from "react-icons/tb";
-import { CHAT_SIDEBAR_TOASTER_ID } from "../../constants";
-import type { ChatMessage } from "../../data/chatSidebarGateway";
-import { copyTextToClipboard } from "../../utils/clipboard";
-import type { MessageDeliveryStatus } from "./MessageBubbleMeta";
+} from '@/components/image-manager/PopupMenuContent';
+import PopupMenuPopover from '@/components/shared/popup-menu-popover';
+import { createPortal } from 'react-dom';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import toast from 'react-hot-toast';
+import { TbArrowUpRight, TbCopy, TbFileTypePdf } from 'react-icons/tb';
+import { CHAT_SIDEBAR_TOASTER_ID } from '../../constants';
+import type { ChatMessage } from '../../data/chatSidebarGateway';
+import { copyTextToClipboard } from '../../utils/clipboard';
+import type { MessageDeliveryStatus } from './MessageBubbleMeta';
 
 interface MessageBubbleContentProps {
   message: ChatMessage;
@@ -73,63 +73,68 @@ export const MessageBubbleContent = ({
   isHighlightedBubble,
   onToggleExpand,
 }: MessageBubbleContentProps) => {
-  const [linkContextMenu, setLinkContextMenu] = useState<LinkContextMenuState | null>(null);
+  const [linkContextMenu, setLinkContextMenu] =
+    useState<LinkContextMenuState | null>(null);
   const linkContextMenuRef = useRef<HTMLDivElement | null>(null);
   const isSquareImageAttachment = isImageMessage || isImageFileMessage;
-  const sendingProgressLabel = messageDeliveryStatus === "sending" ? "0%" : null;
+  const sendingProgressLabel =
+    messageDeliveryStatus === 'sending' ? '0%' : null;
 
   useEffect(() => {
     if (!linkContextMenu) return;
 
     const closeLinkContextMenu = (event?: Event) => {
-      if (event?.target instanceof Node && linkContextMenuRef.current?.contains(event.target)) {
+      if (
+        event?.target instanceof Node &&
+        linkContextMenuRef.current?.contains(event.target)
+      ) {
         return;
       }
 
       setLinkContextMenu(null);
     };
     const handleEscapeKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
+      if (event.key === 'Escape') {
         setLinkContextMenu(null);
       }
     };
 
-    window.addEventListener("pointerdown", closeLinkContextMenu);
-    window.addEventListener("resize", closeLinkContextMenu);
-    window.addEventListener("scroll", closeLinkContextMenu, true);
-    window.addEventListener("keydown", handleEscapeKey);
+    window.addEventListener('pointerdown', closeLinkContextMenu);
+    window.addEventListener('resize', closeLinkContextMenu);
+    window.addEventListener('scroll', closeLinkContextMenu, true);
+    window.addEventListener('keydown', handleEscapeKey);
 
     return () => {
-      window.removeEventListener("pointerdown", closeLinkContextMenu);
-      window.removeEventListener("resize", closeLinkContextMenu);
-      window.removeEventListener("scroll", closeLinkContextMenu, true);
-      window.removeEventListener("keydown", handleEscapeKey);
+      window.removeEventListener('pointerdown', closeLinkContextMenu);
+      window.removeEventListener('resize', closeLinkContextMenu);
+      window.removeEventListener('scroll', closeLinkContextMenu, true);
+      window.removeEventListener('keydown', handleEscapeKey);
     };
   }, [linkContextMenu]);
 
   const linkContextMenuActions: PopupMenuAction[] = linkContextMenu
     ? [
         {
-          label: "Buka",
+          label: 'Buka',
           icon: <TbArrowUpRight className="h-4 w-4" />,
           onClick: () => {
-            window.open(linkContextMenu.href, "_blank", "noopener,noreferrer");
+            window.open(linkContextMenu.href, '_blank', 'noopener,noreferrer');
             setLinkContextMenu(null);
           },
         },
         {
-          label: "Salin",
+          label: 'Salin',
           icon: <TbCopy className="h-4 w-4" />,
           onClick: () => {
             void copyTextToClipboard(linkContextMenu.text)
               .then(() => {
-                toast.success("Link berhasil disalin", {
+                toast.success('Link berhasil disalin', {
                   toasterId: CHAT_SIDEBAR_TOASTER_ID,
                 });
               })
-              .catch((error) => {
-                console.error("Error copying visible message link:", error);
-                toast.error("Gagal menyalin link", {
+              .catch(error => {
+                console.error('Error copying visible message link:', error);
+                toast.error('Gagal menyalin link', {
                   toasterId: CHAT_SIDEBAR_TOASTER_ID,
                 });
               })
@@ -147,7 +152,7 @@ export const MessageBubbleContent = ({
         {resolvedMessageUrl ? (
           <img
             src={resolvedMessageUrl}
-            alt={fileName ? `Preview ${fileName}` : "Preview lampiran chat"}
+            alt={fileName ? `Preview ${fileName}` : 'Preview lampiran chat'}
             className="h-full w-full object-cover"
             loading="lazy"
             draggable={false}
@@ -176,7 +181,7 @@ export const MessageBubbleContent = ({
         {resolvedPdfPreviewUrl ? (
           <img
             src={resolvedPdfPreviewUrl}
-            alt={`Preview ${fileName || "dokumen PDF"}`}
+            alt={`Preview ${fileName || 'dokumen PDF'}`}
             className="h-full w-full object-cover object-top"
             draggable={false}
           />
@@ -188,12 +193,14 @@ export const MessageBubbleContent = ({
       </div>
       <div
         className={`flex items-center gap-2 px-2 py-2 ${
-          isCurrentUser ? "bg-emerald-50" : "bg-slate-50"
+          isCurrentUser ? 'bg-emerald-50' : 'bg-slate-50'
         }`}
       >
         <TbFileTypePdf className="h-8 w-8 shrink-0 text-slate-600" />
         <div className="min-w-0 flex-1 overflow-hidden">
-          <p className="block w-full truncate text-sm font-medium text-slate-800">{fileName}</p>
+          <p className="block w-full truncate text-sm font-medium text-slate-800">
+            {fileName}
+          </p>
           <p className="text-xs text-slate-500">{pdfMetaLabel}</p>
         </div>
       </div>
@@ -202,7 +209,9 @@ export const MessageBubbleContent = ({
     <div className="flex w-full min-w-0 max-w-full items-center gap-2 rounded-lg bg-white/65 px-2 py-2 text-slate-800">
       {fileIcon}
       <div className="min-w-0 flex-1 overflow-hidden">
-        <p className="block w-full truncate text-sm font-medium text-slate-800">{fileName}</p>
+        <p className="block w-full truncate text-sm font-medium text-slate-800">
+          {fileName}
+        </p>
         <p className="text-xs text-slate-500">{fileSecondaryLabel}</p>
       </div>
     </div>
@@ -214,15 +223,15 @@ export const MessageBubbleContent = ({
         <>
           {hasTrailingEllipsis ? <span>... </span> : null}
           <span
-            className={`font-medium ${isHighlightedBubble ? "text-white/95" : "text-primary"}`}
+            className={`font-medium ${isHighlightedBubble ? 'text-white/95' : 'text-primary'}`}
             role="button"
             tabIndex={0}
-            onClick={(event) => {
+            onClick={event => {
               event.stopPropagation();
               onToggleExpand();
             }}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" || event.key === " ") {
+            onKeyDown={event => {
+              if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
                 event.stopPropagation();
                 onToggleExpand();
@@ -234,15 +243,15 @@ export const MessageBubbleContent = ({
         </>
       ) : isExpanded ? (
         <span
-          className={`block font-medium ${isHighlightedBubble ? "text-white/95" : "text-primary"}`}
+          className={`block font-medium ${isHighlightedBubble ? 'text-white/95' : 'text-primary'}`}
           role="button"
           tabIndex={0}
-          onClick={(event) => {
+          onClick={event => {
             event.stopPropagation();
             onToggleExpand();
           }}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" || event.key === " ") {
+          onKeyDown={event => {
+            if (event.key === 'Enter' || event.key === ' ') {
               event.preventDefault();
               event.stopPropagation();
               onToggleExpand();
@@ -259,19 +268,19 @@ export const MessageBubbleContent = ({
     <div
       className={
         isSelectionMode
-          ? "pointer-events-none"
+          ? 'pointer-events-none'
           : disableTextLinks
-            ? "[&_a]:pointer-events-none [&_a]:cursor-default"
+            ? '[&_a]:pointer-events-none [&_a]:cursor-default'
             : undefined
       }
-      onContextMenuCapture={(event) => {
+      onContextMenuCapture={event => {
         const anchorElement =
           event.target instanceof HTMLAnchorElement
             ? event.target
             : event.target instanceof Element
-              ? event.target.closest("a[href]")
+              ? event.target.closest('a[href]')
               : event.target instanceof Node
-                ? event.target.parentElement?.closest("a[href]") || null
+                ? event.target.parentElement?.closest('a[href]') || null
                 : null;
         if (!(anchorElement instanceof HTMLAnchorElement)) {
           return;
@@ -280,14 +289,17 @@ export const MessageBubbleContent = ({
         event.preventDefault();
         event.stopPropagation();
 
-        const maxLeft = window.innerWidth - LINK_CONTEXT_MENU_EDGE_MARGIN - LINK_CONTEXT_MENU_WIDTH;
+        const maxLeft =
+          window.innerWidth -
+          LINK_CONTEXT_MENU_EDGE_MARGIN -
+          LINK_CONTEXT_MENU_WIDTH;
         const clampedLeft = Math.max(
           LINK_CONTEXT_MENU_EDGE_MARGIN,
-          Math.min(event.clientX, maxLeft),
+          Math.min(event.clientX, maxLeft)
         );
         const clampedTop = Math.max(
           LINK_CONTEXT_MENU_EDGE_MARGIN,
-          Math.min(event.clientY, window.innerHeight - 96),
+          Math.min(event.clientY, window.innerHeight - 96)
         );
 
         setLinkContextMenu({
@@ -302,17 +314,17 @@ export const MessageBubbleContent = ({
       {hasAttachmentCaption ? (
         <p
           className={`mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed ${
-            isHighlightedBubble ? "text-white" : "text-slate-800"
+            isHighlightedBubble ? 'text-white' : 'text-slate-800'
           }`}
           style={{
-            overflowWrap: "anywhere",
-            wordBreak: "break-word",
+            overflowWrap: 'anywhere',
+            wordBreak: 'break-word',
           }}
         >
           {highlightedCaption}
         </p>
       ) : null}
-      {typeof document !== "undefined" && linkContextMenu
+      {typeof document !== 'undefined' && linkContextMenu
         ? createPortal(
             <PopupMenuPopover
               isOpen
@@ -324,7 +336,7 @@ export const MessageBubbleContent = ({
             >
               <div
                 ref={linkContextMenuRef}
-                onClick={(event) => event.stopPropagation()}
+                onClick={event => event.stopPropagation()}
                 role="presentation"
               >
                 <PopupMenuContent
@@ -334,7 +346,7 @@ export const MessageBubbleContent = ({
                 />
               </div>
             </PopupMenuPopover>,
-            document.body,
+            document.body
           )
         : null}
     </div>

@@ -1,28 +1,33 @@
-import React from "react";
-import { ItemInventoryUnit, PackageConversion } from "./database";
+import React from 'react';
+import { ItemInventoryUnit, PackageConversion } from './database';
 
 // Hook-related types
 export interface UsePackageConversionReturn {
   conversions: PackageConversion[];
   baseUnit: string;
   baseInventoryUnitId: string;
-  baseUnitKind: "packaging" | "retail_unit" | "custom";
+  baseUnitKind: 'packaging' | 'retail_unit' | 'custom';
   setBaseUnit: React.Dispatch<React.SetStateAction<string>>;
   setBaseInventoryUnitId: React.Dispatch<React.SetStateAction<string>>;
-  setBaseUnitKind: React.Dispatch<React.SetStateAction<"packaging" | "retail_unit" | "custom">>;
+  setBaseUnitKind: React.Dispatch<
+    React.SetStateAction<'packaging' | 'retail_unit' | 'custom'>
+  >;
   basePrice: number;
   setBasePrice: React.Dispatch<React.SetStateAction<number>>;
   sellPrice: number;
   setSellPrice: React.Dispatch<React.SetStateAction<number>>;
   addPackageConversion: (
-    packageConversion: Omit<PackageConversion, "id" | "base_price" | "sell_price"> & {
+    packageConversion: Omit<
+      PackageConversion,
+      'id' | 'base_price' | 'sell_price'
+    > & {
       inventory_unit_id?: string;
       parent_inventory_unit_id?: string | null;
       contains_quantity?: number;
       factor_to_base?: number;
       base_price?: number;
       sell_price?: number;
-    },
+    }
   ) => void;
   removePackageConversion: (id: string) => void;
   packageConversionFormData: {

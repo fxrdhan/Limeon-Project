@@ -1,19 +1,26 @@
-import { forwardRef, RefObject, useEffect, useLayoutEffect, useRef, useState } from "react";
-import MenuPortal from "./menu/MenuPortal";
-import MenuContent from "./menu/MenuContent";
-import SearchBar from "./SearchBar";
-import OptionItem from "./OptionItem";
-import EmptyState from "./menu/EmptyState";
-import { useDropdownContext } from "../hooks/useDropdownContext";
-import type { DropdownMenuProps } from "../types";
-import { DROPDOWN_CONSTANTS } from "../constants";
+import {
+  forwardRef,
+  RefObject,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
+import MenuPortal from './menu/MenuPortal';
+import MenuContent from './menu/MenuContent';
+import SearchBar from './SearchBar';
+import OptionItem from './OptionItem';
+import EmptyState from './menu/EmptyState';
+import { useDropdownContext } from '../hooks/useDropdownContext';
+import type { DropdownMenuProps } from '../types';
+import { DROPDOWN_CONSTANTS } from '../constants';
 import {
   getKeyboardPinnedHighlightFrame,
   getKeyboardScrollTarget,
   hasKeyboardScrollTargetSettled,
   isWrappedKeyboardScroll,
   type KeyboardPinnedHighlightFrame,
-} from "@/components/shared/keyboard-pinned-highlight";
+} from '@/components/shared/keyboard-pinned-highlight';
 
 const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
   ({ isFrozen = false, leaveTimeoutRef, onSearchKeyDown }, ref) => {
@@ -89,9 +96,9 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
           const checkTarget = () => {
             const currentContainer = optionsContainerRef.current;
             const currentTargetElement =
-              currentContainer?.querySelectorAll<HTMLElement>('[role="option"]')[
-                pendingHighlightedIndex
-              ];
+              currentContainer?.querySelectorAll<HTMLElement>(
+                '[role="option"]'
+              )[pendingHighlightedIndex];
 
             if (!currentContainer || !currentTargetElement) {
               setHeldHighlightFrame(null);
@@ -116,10 +123,12 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
               return;
             }
 
-            releaseHeldHighlightFrameRef.current = window.requestAnimationFrame(checkTarget);
+            releaseHeldHighlightFrameRef.current =
+              window.requestAnimationFrame(checkTarget);
           };
 
-          releaseHeldHighlightFrameRef.current = window.requestAnimationFrame(checkTarget);
+          releaseHeldHighlightFrameRef.current =
+            window.requestAnimationFrame(checkTarget);
         };
 
         if (
@@ -136,11 +145,11 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
               frameRootElement: menuElement,
               scrollDirection: scrollTarget.direction,
               targetElement,
-            }),
+            })
           );
           container.scrollTo({
             top: scrollTarget.scrollTop,
-            behavior: "smooth",
+            behavior: 'smooth',
           });
           releaseHeldHighlightWhenTargetSettles();
           return;
@@ -153,9 +162,9 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
             scrollDirection: scrollTarget.direction,
             sourceElement,
             targetElement,
-          }),
+          })
         );
-        container.scrollTo({ top: scrollTarget.scrollTop, behavior: "smooth" });
+        container.scrollTo({ top: scrollTarget.scrollTop, behavior: 'smooth' });
         releaseHeldHighlightWhenTargetSettles();
       }
     }, [
@@ -188,7 +197,12 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
     useEffect(() => {
       if (!onHoverDetailShow) return;
 
-      if (!isOpen || !applyOpenStyles || !isPositionReady || highlightedIndex < 0) {
+      if (
+        !isOpen ||
+        !applyOpenStyles ||
+        !isPositionReady ||
+        highlightedIndex < 0
+      ) {
         onHoverDetailHide?.();
         return;
       }
@@ -204,7 +218,9 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
         const container = optionsContainerRef.current;
         const highlightedOption = filteredOptions[highlightedIndex];
         const highlightedElement =
-          container?.querySelectorAll<HTMLElement>('[role="option"]')[highlightedIndex];
+          container?.querySelectorAll<HTMLElement>('[role="option"]')[
+            highlightedIndex
+          ];
 
         if (!container || !highlightedOption || !highlightedElement) {
           onHoverDetailHide?.();
@@ -234,7 +250,7 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
             metaTone: highlightedOption.metaTone,
             updated_at: highlightedOption.updated_at,
           },
-          { immediate: true },
+          { immediate: true }
         );
       });
 
@@ -303,12 +319,12 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
                     isSelected={Boolean(
                       withCheckbox && Array.isArray(value)
                         ? value.includes(option.id)
-                        : option.id === value,
+                        : option.id === value
                     )}
                     isHighlighted={highlightedIndex === index}
                     suppressHighlightBackground={Boolean(heldHighlightFrame)}
                     isExpanded={expandedId === option.id}
-                    onHighlight={(index) => {
+                    onHighlight={index => {
                       onSetIsKeyboardNavigation(false);
                       onSetHighlightedIndex(index);
                     }}
@@ -327,9 +343,9 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
         </div>
       </MenuPortal>
     );
-  },
+  }
 );
 
-DropdownMenu.displayName = "DropdownMenu";
+DropdownMenu.displayName = 'DropdownMenu';
 
 export default DropdownMenu;

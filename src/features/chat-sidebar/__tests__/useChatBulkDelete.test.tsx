@@ -1,18 +1,18 @@
-import { act, renderHook } from "@testing-library/react";
-import { useState } from "react";
-import { describe, expect, it, vi } from "vite-plus/test";
-import type { ChatMessage } from "../data/chatSidebarGateway";
-import { useChatBulkDelete } from "../hooks/useChatBulkDelete";
+import { act, renderHook } from '@testing-library/react';
+import { useState } from 'react';
+import { describe, expect, it, vi } from 'vite-plus/test';
+import type { ChatMessage } from '../data/chatSidebarGateway';
+import { useChatBulkDelete } from '../hooks/useChatBulkDelete';
 
 const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
-  id: overrides.id ?? "message-1",
-  sender_id: overrides.sender_id ?? "user-b",
-  receiver_id: overrides.receiver_id ?? "user-a",
-  channel_id: overrides.channel_id ?? "channel-1",
-  message: overrides.message ?? "pesan masuk",
-  message_type: overrides.message_type ?? "text",
-  created_at: overrides.created_at ?? "2026-03-06T09:30:00.000Z",
-  updated_at: overrides.updated_at ?? "2026-03-06T09:30:00.000Z",
+  id: overrides.id ?? 'message-1',
+  sender_id: overrides.sender_id ?? 'user-b',
+  receiver_id: overrides.receiver_id ?? 'user-a',
+  channel_id: overrides.channel_id ?? 'channel-1',
+  message: overrides.message ?? 'pesan masuk',
+  message_type: overrides.message_type ?? 'text',
+  created_at: overrides.created_at ?? '2026-03-06T09:30:00.000Z',
+  updated_at: overrides.updated_at ?? '2026-03-06T09:30:00.000Z',
   is_read: overrides.is_read ?? false,
   is_delivered: overrides.is_delivered ?? false,
   reply_to_id: overrides.reply_to_id ?? null,
@@ -31,23 +31,25 @@ const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
   stableKey: overrides.stableKey,
 });
 
-describe("useChatBulkDelete", () => {
-  it("passes selected incoming messages to the delete mutation", async () => {
+describe('useChatBulkDelete', () => {
+  it('passes selected incoming messages to the delete mutation', async () => {
     const incomingMessage = buildMessage({
-      id: "incoming-1",
-      sender_id: "user-b",
-      receiver_id: "user-a",
+      id: 'incoming-1',
+      sender_id: 'user-b',
+      receiver_id: 'user-a',
     });
     const deleteMessages = vi.fn().mockResolvedValue({
-      deletedTargetMessageIds: ["incoming-1"],
+      deletedTargetMessageIds: ['incoming-1'],
       failedTargetMessageIds: [],
       cleanupWarningTargetMessageIds: [],
     });
 
     const { result } = renderHook(() => {
-      const [selectedMessageIds, setSelectedMessageIds] = useState(() => new Set(["incoming-1"]));
+      const [selectedMessageIds, setSelectedMessageIds] = useState(
+        () => new Set(['incoming-1'])
+      );
       const handleBulkDelete = useChatBulkDelete({
-        user: { id: "user-a" },
+        user: { id: 'user-a' },
         selectedVisibleMessages: [incomingMessage],
         setSelectedMessageIds,
         deleteMessages,

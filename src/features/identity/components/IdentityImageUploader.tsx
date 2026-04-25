@@ -1,14 +1,14 @@
-import React from "react";
-import { useEffect, useMemo, useState } from "react";
-import { TbPhotoOff, TbPhotoUp } from "react-icons/tb";
-import ImageUploader from "@/components/image-manager";
-import { useIdentityModalContext } from "@/contexts/IdentityModalContext";
+import React from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { TbPhotoOff, TbPhotoUp } from 'react-icons/tb';
+import ImageUploader from '@/components/image-manager';
+import { useIdentityModalContext } from '@/contexts/IdentityModalContext';
 import {
   cacheImageBlob,
   getCachedImage,
   getCachedImageBlobUrl,
   setCachedImage,
-} from "@/utils/imageCache";
+} from '@/utils/imageCache';
 
 const IdentityImageUploader: React.FC = () => {
   const {
@@ -26,7 +26,8 @@ const IdentityImageUploader: React.FC = () => {
     handleImageDeleteInternal,
   } = useIdentityModalContext();
 
-  const aspectRatioClass = imageAspectRatio === "square" ? "aspect-square" : "aspect-video";
+  const aspectRatioClass =
+    imageAspectRatio === 'square' ? 'aspect-square' : 'aspect-video';
   const cacheKey = useMemo(() => {
     const entityId = localData?.id ? String(localData.id) : null;
     return entityId ? `identity:${entityId}` : null;
@@ -36,11 +37,13 @@ const IdentityImageUploader: React.FC = () => {
   const sourceImageUrl = pendingImageDelete
     ? null
     : currentImageUrl || cachedImageUrl || defaultImageUrl || null;
-  const hasImage = pendingImageDelete ? false : Boolean(currentImageUrl || cachedImageUrl);
+  const hasImage = pendingImageDelete
+    ? false
+    : Boolean(currentImageUrl || cachedImageUrl);
 
   useEffect(() => {
     if (!cacheKey || !currentImageUrl) return;
-    if (currentImageUrl.startsWith("http")) {
+    if (currentImageUrl.startsWith('http')) {
       setCachedImage(cacheKey, currentImageUrl);
     }
   }, [cacheKey, currentImageUrl]);
@@ -55,7 +58,7 @@ const IdentityImageUploader: React.FC = () => {
         return;
       }
 
-      if (!sourceImageUrl.startsWith("http")) {
+      if (!sourceImageUrl.startsWith('http')) {
         await Promise.resolve();
         if (isActive) setDisplayImageUrl(sourceImageUrl);
         return;
@@ -85,13 +88,13 @@ const IdentityImageUploader: React.FC = () => {
       return (
         <img
           src={displayImageUrl}
-          alt={String(localData?.name ?? "Detail")}
+          alt={String(localData?.name ?? 'Detail')}
           className={`w-full h-auto ${aspectRatioClass} object-cover rounded-xl border border-slate-200 transition duration-200 group-hover:brightness-95`}
         />
       );
     }
 
-    if (mode === "add") {
+    if (mode === 'add') {
       return (
         <div
           className={`w-full ${aspectRatioClass} flex items-center justify-center border border-dashed border-slate-200 rounded-xl bg-slate-50 transition duration-200 group-hover:bg-slate-100`}
@@ -108,7 +111,7 @@ const IdentityImageUploader: React.FC = () => {
       return (
         <img
           src={defaultImageUrl}
-          alt={String(localData?.name ?? "Detail")}
+          alt={String(localData?.name ?? 'Detail')}
           className={`w-full h-auto ${aspectRatioClass} object-cover rounded-xl border border-slate-200 transition duration-200 group-hover:brightness-95`}
         />
       );
@@ -118,7 +121,7 @@ const IdentityImageUploader: React.FC = () => {
       return (
         <img
           src={imagePlaceholder}
-          alt={String(localData?.name ?? "Detail")}
+          alt={String(localData?.name ?? 'Detail')}
           className={`w-full h-auto ${aspectRatioClass} object-cover rounded-xl border border-slate-200 transition duration-200 group-hover:brightness-95`}
         />
       );
@@ -151,7 +154,7 @@ const IdentityImageUploader: React.FC = () => {
           disabled={isUploadingImage}
           interaction="direct"
           loadingIcon={null}
-          validTypes={["image/png", "image/jpeg", "image/jpg", "image/webp"]}
+          validTypes={['image/png', 'image/jpeg', 'image/jpg', 'image/webp']}
         >
           {renderImageContent()}
         </ImageUploader>

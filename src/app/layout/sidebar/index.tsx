@@ -1,6 +1,13 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type JSX } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { AnimatePresence, motion } from "motion/react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type JSX,
+} from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { AnimatePresence, motion } from 'motion/react';
 import {
   TbBox,
   TbBuildingHospital,
@@ -13,10 +20,10 @@ import {
   TbSettings,
   TbShoppingBag,
   TbShoppingCart,
-} from "react-icons/tb";
+} from 'react-icons/tb';
 
-const ITEM_MASTER_PATH = "/master-data/item-master";
-const BRAND_NAME = "PharmaSys";
+const ITEM_MASTER_PATH = '/master-data/item-master';
+const BRAND_NAME = 'PharmaSys';
 const SUBMENU_ITEM_HEIGHT = 48;
 const EXPANDED_CONTENT_DELAY_MS = 90;
 const HOVER_HIGHLIGHT_CLEAR_DELAY_MS = 80;
@@ -24,8 +31,8 @@ const HOVER_HIGHLIGHT_CLEAR_DELAY_MS = 80;
 type SubmenuItem = { name: string; path: string };
 
 type SidebarHoverTarget =
-  | { type: "menu"; menuKey: string }
-  | { type: "submenu"; menuKey: string; index: number };
+  | { type: 'menu'; menuKey: string }
+  | { type: 'submenu'; menuKey: string; index: number };
 
 type SidebarHighlightFrame = {
   left: number;
@@ -54,7 +61,7 @@ interface SidebarProps {
   collapseSidebar: () => void;
 }
 
-const menuIconClassName = "h-[18px] w-[18px]";
+const menuIconClassName = 'h-[18px] w-[18px]';
 
 const HomeIcon = () => <TbHome className={menuIconClassName} />;
 
@@ -80,104 +87,104 @@ const UnlockIcon = () => <TbLockOpen className={menuIconClassName} />;
 
 const MENU_ITEMS: MenuItem[] = [
   {
-    key: "dashboard",
-    name: "Dashboard",
-    path: "/",
+    key: 'dashboard',
+    name: 'Dashboard',
+    path: '/',
     icon: <HomeIcon />,
   },
   {
-    key: "masterData",
-    name: "Master Data",
-    path: "/master-data",
+    key: 'masterData',
+    name: 'Master Data',
+    path: '/master-data',
     icon: <DatabaseIcon />,
     children: [
-      { name: "Item Master", path: ITEM_MASTER_PATH },
-      { name: "Supplier", path: "/master-data/suppliers" },
-      { name: "Pelanggan", path: "/master-data/customers" },
-      { name: "Pasien", path: "/master-data/patients" },
-      { name: "Dokter", path: "/master-data/doctors" },
+      { name: 'Item Master', path: ITEM_MASTER_PATH },
+      { name: 'Supplier', path: '/master-data/suppliers' },
+      { name: 'Pelanggan', path: '/master-data/customers' },
+      { name: 'Pasien', path: '/master-data/patients' },
+      { name: 'Dokter', path: '/master-data/doctors' },
     ],
   },
   {
-    key: "inventory",
-    name: "Persediaan",
-    path: "/inventory",
+    key: 'inventory',
+    name: 'Persediaan',
+    path: '/inventory',
     icon: <BoxIcon />,
     children: [
-      { name: "Stok Obat", path: "/inventory/stock" },
-      { name: "Stok Opname", path: "/inventory/stock-opname" },
-      { name: "Obat Kadaluarsa", path: "/inventory/expired" },
+      { name: 'Stok Obat', path: '/inventory/stock' },
+      { name: 'Stok Opname', path: '/inventory/stock-opname' },
+      { name: 'Obat Kadaluarsa', path: '/inventory/expired' },
     ],
   },
   {
-    key: "purchases",
-    name: "Pembelian",
-    path: "/purchases",
+    key: 'purchases',
+    name: 'Pembelian',
+    path: '/purchases',
     icon: <ShoppingCartIcon />,
     children: [
-      { name: "Daftar Pesanan Beli", path: "/purchases/orders" },
-      { name: "Daftar Pembelian", path: "/purchases" },
-      { name: "Riwayat Harga Beli", path: "/purchases/price-history" },
+      { name: 'Daftar Pesanan Beli', path: '/purchases/orders' },
+      { name: 'Daftar Pembelian', path: '/purchases' },
+      { name: 'Riwayat Harga Beli', path: '/purchases/price-history' },
     ],
   },
   {
-    key: "sales",
-    name: "Penjualan",
-    path: "/sales",
+    key: 'sales',
+    name: 'Penjualan',
+    path: '/sales',
     icon: <ShoppingBagIcon />,
     children: [
-      { name: "Daftar Penjualan", path: "/sales" },
-      { name: "Tambah Penjualan", path: "/sales/create" },
+      { name: 'Daftar Penjualan', path: '/sales' },
+      { name: 'Tambah Penjualan', path: '/sales/create' },
     ],
   },
   {
-    key: "clinic",
-    name: "Klinik",
-    path: "/clinic",
+    key: 'clinic',
+    name: 'Klinik',
+    path: '/clinic',
     icon: <HospitalIcon />,
     children: [
-      { name: "Daftar Pasien", path: "/clinic/patients" },
-      { name: "Antrian", path: "/clinic/queue" },
-      { name: "Rekam Medis", path: "/clinic/medical-records" },
+      { name: 'Daftar Pasien', path: '/clinic/patients' },
+      { name: 'Antrian', path: '/clinic/queue' },
+      { name: 'Rekam Medis', path: '/clinic/medical-records' },
     ],
   },
   {
-    key: "reports",
-    name: "Laporan",
-    path: "/reports",
+    key: 'reports',
+    name: 'Laporan',
+    path: '/reports',
     icon: <ChartBarIcon />,
     children: [
-      { name: "Penjualan", path: "/reports/sales" },
-      { name: "Pembelian", path: "/reports/purchases" },
-      { name: "Stok", path: "/reports/stock" },
+      { name: 'Penjualan', path: '/reports/sales' },
+      { name: 'Pembelian', path: '/reports/purchases' },
+      { name: 'Stok', path: '/reports/stock' },
     ],
   },
   {
-    key: "settings",
-    name: "Pengaturan",
-    path: "/settings",
+    key: 'settings',
+    name: 'Pengaturan',
+    path: '/settings',
     icon: <SettingsIcon />,
     children: [
-      { name: "Profil", path: "/settings/profile" },
-      { name: "Pengguna", path: "/settings/users" },
-      { name: "Aplikasi", path: "/settings/app" },
+      { name: 'Profil', path: '/settings/profile' },
+      { name: 'Pengguna', path: '/settings/users' },
+      { name: 'Aplikasi', path: '/settings/app' },
     ],
   },
 ];
 
 const MENU_GROUPS: MenuGroup[] = MENU_ITEMS.filter((item): item is MenuGroup =>
-  Boolean(item.children),
+  Boolean(item.children)
 );
 
 const menuButtonStyle = {
-  outline: "none",
-  border: "none",
-  borderLeft: "4px solid transparent",
+  outline: 'none',
+  border: 'none',
+  borderLeft: '4px solid transparent',
 } as const;
 
 const submenuLinkColors = {
-  active: "oklch(50.8% 0.118 165.612)",
-  inactive: "oklch(55.1% 0.027 264.364)",
+  active: 'oklch(50.8% 0.118 165.612)',
+  inactive: 'oklch(55.1% 0.027 264.364)',
 } as const;
 
 const submenuContainerVariants = {
@@ -233,14 +240,16 @@ const brandTitleCharacterVariants = {
 } as const;
 
 const sidebarBackgroundTransition = {
-  type: "spring",
+  type: 'spring',
   stiffness: 520,
   damping: 42,
   mass: 0.7,
 } as const;
 
 const getSidebarTargetId = (target: SidebarHoverTarget) =>
-  target.type === "menu" ? `menu:${target.menuKey}` : `submenu:${target.menuKey}:${target.index}`;
+  target.type === 'menu'
+    ? `menu:${target.menuKey}`
+    : `submenu:${target.menuKey}:${target.index}`;
 
 const getMenuButtonClassName = ({
   isActive,
@@ -250,26 +259,28 @@ const getMenuButtonClassName = ({
   isHighlighted: boolean;
 }) =>
   `relative flex h-10 w-full cursor-pointer items-center justify-between overflow-hidden rounded-xl py-6 pl-2 pr-4 text-left transition-all duration-150 group focus-visible:outline-hidden outline-hidden border-0 focus:outline-hidden active:outline-hidden ${
-    isActive || isHighlighted ? "font-medium text-primary" : "text-slate-600 hover:text-primary"
+    isActive || isHighlighted
+      ? 'font-medium text-primary'
+      : 'text-slate-600 hover:text-primary'
   }`;
 
 const isRouteActive = (pathname: string, path: string) => {
-  if (path === "/") return pathname === "/";
-  return pathname === path || pathname.startsWith(path + "/");
+  if (path === '/') return pathname === '/';
+  return pathname === path || pathname.startsWith(path + '/');
 };
 
 const hasActiveChildRoute = (pathname: string, children?: SubmenuItem[]) => {
   if (!children) return false;
 
-  const exactMatch = children.some((child) => pathname === child.path);
+  const exactMatch = children.some(child => pathname === child.path);
   if (exactMatch) return true;
 
-  return children.some((child) => {
+  return children.some(child => {
     if (child.path === ITEM_MASTER_PATH) {
       return pathname.startsWith(ITEM_MASTER_PATH);
     }
 
-    return pathname.startsWith(child.path + "/");
+    return pathname.startsWith(child.path + '/');
   });
 };
 
@@ -283,16 +294,17 @@ const buildOpenMenusState = ({
   pathname: string;
 }) => {
   return Object.fromEntries(
-    MENU_GROUPS.map((item) => {
+    MENU_GROUPS.map(item => {
       const isMenuActive =
-        isRouteActive(pathname, item.path) || hasActiveChildRoute(pathname, item.children);
+        isRouteActive(pathname, item.path) ||
+        hasActiveChildRoute(pathname, item.children);
 
       return [
         item.key,
         item.key === forceOpenMenuKey ||
           (Boolean(isMenuActive) && !manuallyClosedMenus.has(item.key)),
       ] as const;
-    }),
+    })
   ) as Record<string, boolean>;
 };
 
@@ -305,7 +317,7 @@ const isSubmenuItemActive = (pathname: string, childPath: string) => {
 };
 
 const getActiveSubmenuIndex = (pathname: string, children: SubmenuItem[]) =>
-  children.findIndex((child) => isSubmenuItemActive(pathname, child.path));
+  children.findIndex(child => isSubmenuItemActive(pathname, child.path));
 
 const SidebarMenuLabel = ({
   collapsed,
@@ -322,7 +334,7 @@ const SidebarMenuLabel = ({
     </div>
     <span
       className={`ml-3 truncate transition-all duration-300 ease-in-out ${
-        collapsed ? "max-w-0 opacity-0" : "max-w-full opacity-100"
+        collapsed ? 'max-w-0 opacity-0' : 'max-w-full opacity-100'
       }`}
     >
       {name}
@@ -331,7 +343,9 @@ const SidebarMenuLabel = ({
 );
 
 const LockToggleIcon = ({ isLocked }: { isLocked: boolean }) => (
-  <div className="transition-all duration-200">{isLocked ? <LockIcon /> : <UnlockIcon />}</div>
+  <div className="transition-all duration-200">
+    {isLocked ? <LockIcon /> : <UnlockIcon />}
+  </div>
 );
 
 const BrandTitle = () => (
@@ -342,12 +356,12 @@ const BrandTitle = () => (
     exit="hidden"
     variants={brandTitleVariants}
   >
-    {BRAND_NAME.split("").map((character, index) => (
+    {BRAND_NAME.split('').map((character, index) => (
       <motion.span
         key={`${character}-${index}`}
         className="inline-block"
         variants={brandTitleCharacterVariants}
-        transition={{ duration: 0.08, ease: "easeOut" }}
+        transition={{ duration: 0.08, ease: 'easeOut' }}
       >
         {character}
       </motion.span>
@@ -366,13 +380,15 @@ const Sidebar = ({
   const navigate = useNavigate();
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>(
     () =>
-      Object.fromEntries(MENU_GROUPS.map((item) => [item.key, false] as const)) as Record<
-        string,
-        boolean
-      >,
+      Object.fromEntries(
+        MENU_GROUPS.map(item => [item.key, false] as const)
+      ) as Record<string, boolean>
   );
-  const [manuallyClosedMenus, setManuallyClosedMenus] = useState<Set<string>>(() => new Set());
-  const [hoveredSidebarItem, setHoveredSidebarItem] = useState<SidebarHoverTarget | null>(null);
+  const [manuallyClosedMenus, setManuallyClosedMenus] = useState<Set<string>>(
+    () => new Set()
+  );
+  const [hoveredSidebarItem, setHoveredSidebarItem] =
+    useState<SidebarHoverTarget | null>(null);
   const [highlightFrame, setHighlightFrame] = useState<SidebarHighlightFrame>({
     left: 0,
     top: 0,
@@ -381,7 +397,8 @@ const Sidebar = ({
     isVisible: false,
     shouldAnimate: false,
   });
-  const [isExpandedContentReady, setIsExpandedContentReady] = useState(!collapsed);
+  const [isExpandedContentReady, setIsExpandedContentReady] =
+    useState(!collapsed);
   const navRef = useRef<HTMLElement | null>(null);
   const sidebarItemRefs = useRef(new Map<string, HTMLElement>());
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -406,7 +423,7 @@ const Sidebar = ({
 
       sidebarItemRefs.current.delete(targetId);
     },
-    [],
+    []
   );
 
   const clearHighlightClearTimeout = useCallback(() => {
@@ -421,7 +438,7 @@ const Sidebar = ({
       clearHighlightClearTimeout();
       setHoveredSidebarItem(target);
     },
-    [clearHighlightClearTimeout],
+    [clearHighlightClearTimeout]
   );
 
   const scheduleHoveredSidebarClear = useCallback(
@@ -429,7 +446,7 @@ const Sidebar = ({
       clearHighlightClearTimeout();
 
       highlightClearTimeoutRef.current = setTimeout(() => {
-        setHoveredSidebarItem((currentItem) => {
+        setHoveredSidebarItem(currentItem => {
           if (menuKey && currentItem?.menuKey !== menuKey) {
             return currentItem;
           }
@@ -439,7 +456,7 @@ const Sidebar = ({
         highlightClearTimeoutRef.current = null;
       }, HOVER_HIGHLIGHT_CLEAR_DELAY_MS);
     },
-    [clearHighlightClearTimeout],
+    [clearHighlightClearTimeout]
   );
 
   const toggleMenu = useCallback(
@@ -449,8 +466,8 @@ const Sidebar = ({
       }
 
       const isCurrentlyOpen = Boolean(openMenus[menuKey]);
-      setOpenMenus((prev) => ({ ...prev, [menuKey]: !isCurrentlyOpen }));
-      setManuallyClosedMenus((prevSet) => {
+      setOpenMenus(prev => ({ ...prev, [menuKey]: !isCurrentlyOpen }));
+      setManuallyClosedMenus(prevSet => {
         const next = new Set(prevSet);
         if (isCurrentlyOpen) {
           next.add(menuKey);
@@ -460,7 +477,7 @@ const Sidebar = ({
         return next;
       });
     },
-    [collapsed, openMenus],
+    [collapsed, openMenus]
   );
 
   const handleMenuMouseEnter = useCallback(
@@ -483,10 +500,10 @@ const Sidebar = ({
           forceOpenMenuKey: menuKey,
           manuallyClosedMenus: nextManuallyClosed,
           pathname,
-        }),
+        })
       );
     },
-    [collapsed, manuallyClosedMenus, pathname],
+    [collapsed, manuallyClosedMenus, pathname]
   );
 
   const handleMouseEnterSidebar = useCallback(() => {
@@ -528,7 +545,7 @@ const Sidebar = ({
           buildOpenMenusState({
             manuallyClosedMenus,
             pathname,
-          }),
+          })
         );
       }, 200);
     }
@@ -573,7 +590,7 @@ const Sidebar = ({
         clearTimeout(highlightClearTimeoutRef.current);
       }
     },
-    [],
+    []
   );
 
   useEffect(() => {
@@ -581,13 +598,14 @@ const Sidebar = ({
       setManuallyClosedMenus(new Set());
 
       if (!collapsed) {
-        setOpenMenus((prev) => {
+        setOpenMenus(prev => {
           const next = { ...prev };
           let hasChanges = false;
 
-          MENU_GROUPS.forEach((item) => {
+          MENU_GROUPS.forEach(item => {
             const shouldBeOpen =
-              isRouteActive(pathname, item.path) || hasActiveChildRoute(pathname, item.children);
+              isRouteActive(pathname, item.path) ||
+              hasActiveChildRoute(pathname, item.children);
 
             if (next[item.key] !== shouldBeOpen) {
               next[item.key] = shouldBeOpen;
@@ -609,8 +627,10 @@ const Sidebar = ({
     const navElement = navRef.current;
 
     if (!navElement || !highlightedSidebarItemId) {
-      setHighlightFrame((currentFrame) =>
-        currentFrame.isVisible ? { ...currentFrame, isVisible: false } : currentFrame,
+      setHighlightFrame(currentFrame =>
+        currentFrame.isVisible
+          ? { ...currentFrame, isVisible: false }
+          : currentFrame
       );
       return;
     }
@@ -618,8 +638,10 @@ const Sidebar = ({
     const targetElement = sidebarItemRefs.current.get(highlightedSidebarItemId);
 
     if (!targetElement) {
-      setHighlightFrame((currentFrame) =>
-        currentFrame.isVisible ? { ...currentFrame, isVisible: false } : currentFrame,
+      setHighlightFrame(currentFrame =>
+        currentFrame.isVisible
+          ? { ...currentFrame, isVisible: false }
+          : currentFrame
       );
       return;
     }
@@ -628,7 +650,7 @@ const Sidebar = ({
       const navRect = navElement.getBoundingClientRect();
       const targetRect = targetElement.getBoundingClientRect();
 
-      setHighlightFrame((currentFrame) => ({
+      setHighlightFrame(currentFrame => ({
         left: targetRect.left - navRect.left + navElement.scrollLeft,
         top: targetRect.top - navRect.top + navElement.scrollTop,
         width: targetRect.width,
@@ -641,16 +663,18 @@ const Sidebar = ({
     updateHighlightFrame();
     const animationFrameId = requestAnimationFrame(updateHighlightFrame);
     const resizeObserver =
-      typeof ResizeObserver === "undefined" ? null : new ResizeObserver(updateHighlightFrame);
+      typeof ResizeObserver === 'undefined'
+        ? null
+        : new ResizeObserver(updateHighlightFrame);
 
     resizeObserver?.observe(navElement);
     resizeObserver?.observe(targetElement);
-    window.addEventListener("resize", updateHighlightFrame);
+    window.addEventListener('resize', updateHighlightFrame);
 
     return () => {
       cancelAnimationFrame(animationFrameId);
       resizeObserver?.disconnect();
-      window.removeEventListener("resize", updateHighlightFrame);
+      window.removeEventListener('resize', updateHighlightFrame);
     };
   }, [highlightedSidebarItemId, openMenus, showExpandedContent]);
 
@@ -659,7 +683,7 @@ const Sidebar = ({
       onMouseEnter={handleMouseEnterSidebar}
       onMouseLeave={handleMouseLeaveSidebar}
       className={`sidebar relative z-10 h-screen overflow-x-hidden border-r border-slate-200 bg-white text-slate-800 transition-all duration-500 ease-in-out ${
-        collapsed ? "w-20" : "w-64"
+        collapsed ? 'w-20' : 'w-64'
       }`}
     >
       <div className="flex h-full flex-col">
@@ -678,8 +702,8 @@ const Sidebar = ({
               type="button"
               onClick={toggleLock}
               className="relative cursor-pointer text-slate-400 transition-colors duration-150 hover:text-slate-600 focus:outline-hidden"
-              title={isLocked ? "Buka Kunci Sidebar" : "Kunci Sidebar"}
-              aria-label={isLocked ? "Buka Kunci Sidebar" : "Kunci Sidebar"}
+              title={isLocked ? 'Buka Kunci Sidebar' : 'Kunci Sidebar'}
+              aria-label={isLocked ? 'Buka Kunci Sidebar' : 'Kunci Sidebar'}
             >
               <LockToggleIcon isLocked={isLocked} />
             </button>
@@ -693,7 +717,9 @@ const Sidebar = ({
           <motion.div
             aria-hidden="true"
             className={`pointer-events-none absolute left-0 top-0 z-0 bg-primary-light ${
-              highlightedSidebarItem?.type === "submenu" ? "rounded-r-xl" : "rounded-xl"
+              highlightedSidebarItem?.type === 'submenu'
+                ? 'rounded-r-xl'
+                : 'rounded-xl'
             }`}
             initial={false}
             animate={{
@@ -704,21 +730,31 @@ const Sidebar = ({
               height: highlightFrame.height,
             }}
             transition={
-              highlightFrame.shouldAnimate ? sidebarBackgroundTransition : { duration: 0 }
+              highlightFrame.shouldAnimate
+                ? sidebarBackgroundTransition
+                : { duration: 0 }
             }
           />
-          {MENU_ITEMS.map((item) => {
+          {MENU_ITEMS.map(item => {
             const menuKey = item.key;
             const isMenuActive =
-              isRouteActive(pathname, item.path) || hasActiveChildRoute(pathname, item.children);
+              isRouteActive(pathname, item.path) ||
+              hasActiveChildRoute(pathname, item.children);
 
             if (item.children) {
               const children = item.children;
-              const activeChildIndex = getActiveSubmenuIndex(pathname, children);
+              const activeChildIndex = getActiveSubmenuIndex(
+                pathname,
+                children
+              );
               const isHoveredMenu =
-                hoveredSidebarItem?.type === "menu" && hoveredSidebarItem.menuKey === item.key;
+                hoveredSidebarItem?.type === 'menu' &&
+                hoveredSidebarItem.menuKey === item.key;
               const isHighlightedMenu =
-                isHoveredMenu || (!hoveredSidebarItem && isMenuActive && activeChildIndex === -1);
+                isHoveredMenu ||
+                (!hoveredSidebarItem &&
+                  isMenuActive &&
+                  activeChildIndex === -1);
               const menuButtonClassName = getMenuButtonClassName({
                 isActive: isMenuActive,
                 isHighlighted: isHighlightedMenu,
@@ -733,17 +769,17 @@ const Sidebar = ({
                   }}
                 >
                   <button
-                    ref={(element) => {
-                      setSidebarItemRef({ type: "menu", menuKey }, element);
+                    ref={element => {
+                      setSidebarItemRef({ type: 'menu', menuKey }, element);
                     }}
                     type="button"
                     onClick={() => toggleMenu(menuKey)}
                     onMouseEnter={() => {
-                      setHoveredSidebarTarget({ type: "menu", menuKey });
+                      setHoveredSidebarTarget({ type: 'menu', menuKey });
                       handleMenuMouseEnter(menuKey);
                     }}
                     onFocus={() => {
-                      setHoveredSidebarTarget({ type: "menu", menuKey });
+                      setHoveredSidebarTarget({ type: 'menu', menuKey });
                     }}
                     aria-expanded={showExpandedContent && openMenus[menuKey]}
                     className={menuButtonClassName}
@@ -760,7 +796,7 @@ const Sidebar = ({
                         animate={{
                           rotate: openMenus[menuKey] ? 180 : 0,
                         }}
-                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
                         className="relative z-10"
                       >
                         <ChevronDownIcon />
@@ -776,12 +812,12 @@ const Sidebar = ({
                         animate="open"
                         exit="collapsed"
                         variants={{
-                          open: { opacity: 1, height: "auto" },
+                          open: { opacity: 1, height: 'auto' },
                           collapsed: { opacity: 0, height: 0 },
                         }}
                         transition={{
                           duration: 0.4,
-                          ease: "easeInOut",
+                          ease: 'easeInOut',
                         }}
                         onMouseEnter={() => {
                           clearHighlightClearTimeout();
@@ -821,7 +857,7 @@ const Sidebar = ({
                                   transition: { duration: 0.2 },
                                 }}
                                 transition={{
-                                  type: "spring",
+                                  type: 'spring',
                                   stiffness: 300,
                                   damping: 30,
                                   mass: 0.8,
@@ -831,24 +867,28 @@ const Sidebar = ({
                           </AnimatePresence>
 
                           {children.map((child, childIndex) => {
-                            const isActiveChild = isSubmenuItemActive(pathname, child.path);
+                            const isActiveChild = isSubmenuItemActive(
+                              pathname,
+                              child.path
+                            );
                             const isHoveredChild =
-                              hoveredSidebarItem?.type === "submenu" &&
+                              hoveredSidebarItem?.type === 'submenu' &&
                               hoveredSidebarItem.menuKey === item.key &&
                               hoveredSidebarItem.index === childIndex;
                             const isHighlightedChild =
-                              isHoveredChild || (!hoveredSidebarItem && isActiveChild);
+                              isHoveredChild ||
+                              (!hoveredSidebarItem && isActiveChild);
 
                             return (
                               <div
-                                ref={(element) => {
+                                ref={element => {
                                   setSidebarItemRef(
                                     {
-                                      type: "submenu",
+                                      type: 'submenu',
                                       menuKey: item.key,
                                       index: childIndex,
                                     },
-                                    element,
+                                    element
                                   );
                                 }}
                                 key={child.path}
@@ -856,14 +896,14 @@ const Sidebar = ({
                                 style={{ height: SUBMENU_ITEM_HEIGHT }}
                                 onMouseEnter={() => {
                                   setHoveredSidebarTarget({
-                                    type: "submenu",
+                                    type: 'submenu',
                                     menuKey: item.key,
                                     index: childIndex,
                                   });
                                 }}
                                 onFocus={() => {
                                   setHoveredSidebarTarget({
-                                    type: "submenu",
+                                    type: 'submenu',
                                     menuKey: item.key,
                                     index: childIndex,
                                   });
@@ -886,7 +926,7 @@ const Sidebar = ({
                                         opacity: 0,
                                       }}
                                       transition={{
-                                        type: "spring",
+                                        type: 'spring',
                                         stiffness: 400,
                                         damping: 25,
                                         delay: 0.1,
@@ -901,16 +941,20 @@ const Sidebar = ({
                                 >
                                   <Link
                                     to={child.path}
-                                    onClick={(event) => {
+                                    onClick={event => {
                                       if (
                                         child.path === ITEM_MASTER_PATH &&
-                                        pathname.startsWith(ITEM_MASTER_PATH + "/")
+                                        pathname.startsWith(
+                                          ITEM_MASTER_PATH + '/'
+                                        )
                                       ) {
                                         event.preventDefault();
                                       }
                                     }}
                                     className={`block overflow-hidden text-ellipsis whitespace-nowrap rounded-xl px-6 py-3 text-sm transition-all duration-200 focus-visible:outline-hidden outline-hidden focus:outline-hidden active:outline-hidden ${
-                                      isActiveChild || isHighlightedChild ? "font-medium" : ""
+                                      isActiveChild || isHighlightedChild
+                                        ? 'font-medium'
+                                        : ''
                                     }`}
                                     style={{
                                       color:
@@ -934,8 +978,10 @@ const Sidebar = ({
             }
 
             const isHoveredMenu =
-              hoveredSidebarItem?.type === "menu" && hoveredSidebarItem.menuKey === item.key;
-            const isHighlightedMenu = isHoveredMenu || (!hoveredSidebarItem && isMenuActive);
+              hoveredSidebarItem?.type === 'menu' &&
+              hoveredSidebarItem.menuKey === item.key;
+            const isHighlightedMenu =
+              isHoveredMenu || (!hoveredSidebarItem && isMenuActive);
             const menuButtonClassName = getMenuButtonClassName({
               isActive: isMenuActive,
               isHighlighted: isHighlightedMenu,
@@ -944,8 +990,8 @@ const Sidebar = ({
             return (
               <div key={item.key} className="relative z-10">
                 <button
-                  ref={(element) => {
-                    setSidebarItemRef({ type: "menu", menuKey }, element);
+                  ref={element => {
+                    setSidebarItemRef({ type: 'menu', menuKey }, element);
                   }}
                   type="button"
                   onClick={() => {
@@ -954,13 +1000,13 @@ const Sidebar = ({
                     }
                   }}
                   onMouseEnter={() => {
-                    setHoveredSidebarTarget({ type: "menu", menuKey });
+                    setHoveredSidebarTarget({ type: 'menu', menuKey });
                   }}
                   onMouseLeave={() => {
                     scheduleHoveredSidebarClear(menuKey);
                   }}
                   onFocus={() => {
-                    setHoveredSidebarTarget({ type: "menu", menuKey });
+                    setHoveredSidebarTarget({ type: 'menu', menuKey });
                   }}
                   className={menuButtonClassName}
                   style={menuButtonStyle}
@@ -980,9 +1026,9 @@ const Sidebar = ({
           <div className="h-4">
             <div
               style={{
-                display: "inline-flex",
-                alignItems: "center",
-                height: "100%",
+                display: 'inline-flex',
+                alignItems: 'center',
+                height: '100%',
               }}
             >
               <AnimatePresence initial={false}>
@@ -992,12 +1038,12 @@ const Sidebar = ({
                     initial={{ opacity: 0, width: 0, marginRight: 0 }}
                     animate={{
                       opacity: 1,
-                      width: "auto",
-                      marginRight: "0.25em",
+                      width: 'auto',
+                      marginRight: '0.25em',
                     }}
                     exit={{ opacity: 0, width: 0, marginRight: 0 }}
                     transition={{ duration: 0.3 }}
-                    style={{ whiteSpace: "nowrap", overflow: "hidden" }}
+                    style={{ whiteSpace: 'nowrap', overflow: 'hidden' }}
                   >
                     PharmaSys
                   </motion.div>

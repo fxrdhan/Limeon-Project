@@ -9,7 +9,7 @@ export interface OnlineUser {
 }
 
 export interface PresenceSyncHealth {
-  status: "degraded" | "healthy" | "idle";
+  status: 'degraded' | 'healthy' | 'idle';
   errorMessage: string | null;
   lastSyncedAt: string | null;
 }
