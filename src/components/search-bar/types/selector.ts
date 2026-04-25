@@ -1,5 +1,5 @@
-import React from 'react';
-import { SearchColumn } from './search';
+import React from "react";
+import { SearchColumn } from "./search";
 
 export interface FilterOperator {
   value: string;
@@ -20,10 +20,8 @@ export interface BaseSelectorConfig<T> {
   getItemActiveColor?: (item: T) => string;
   getItemSecondaryText?: (item: T) => string;
   getItemDescription?: (item: T) => string;
-  getSearchFields: (
-    item: T
-  ) => Array<{ key: string; value: string; boost?: number }>;
-  theme?: 'purple' | 'blue' | 'orange';
+  getSearchFields: (item: T) => Array<{ key: string; value: string; boost?: number }>;
+  theme?: "purple" | "blue" | "orange";
 }
 
 export interface BaseSelectorProps<T> {
@@ -31,7 +29,7 @@ export interface BaseSelectorProps<T> {
   isOpen: boolean;
   onSelect: (item: T) => void;
   onClose: () => void;
-  position: { top: number; left: number };
+  position: { top: number; left: number; isReady?: boolean };
   searchTerm?: string;
   config: BaseSelectorConfig<T>;
   defaultSelectedIndex?: number; // Pre-select item at this index when opening
@@ -46,7 +44,7 @@ export interface ColumnSelectorProps {
   isOpen: boolean;
   onSelect: (column: SearchColumn) => void;
   onClose: () => void;
-  position: { top: number; left: number };
+  position: { top: number; left: number; isReady?: boolean };
   searchTerm?: string;
   defaultSelectedIndex?: number; // Pre-select column at this index when opening
   onHighlightChange?: (column: SearchColumn | null) => void; // Called when highlighted column changes
@@ -57,7 +55,7 @@ export interface OperatorSelectorProps {
   isOpen: boolean;
   onSelect: (operator: FilterOperator) => void;
   onClose: () => void;
-  position: { top: number; left: number };
+  position: { top: number; left: number; isReady?: boolean };
   searchTerm?: string;
   defaultSelectedIndex?: number; // Pre-select operator at this index when opening
   onHighlightChange?: (operator: FilterOperator | null) => void; // Called when highlighted operator changes

@@ -1,8 +1,9 @@
-import { RefObject, useLayoutEffect, useRef, useState } from 'react';
+import { RefObject, useLayoutEffect, useRef, useState } from "react";
 
 export interface Position {
   top: number;
   left: number;
+  isReady: boolean;
 }
 
 interface UseSelectorPositionProps {
@@ -11,7 +12,7 @@ interface UseSelectorPositionProps {
   /** Optional anchor element to position relative to (e.g., badge). Falls back to containerRef. */
   anchorRef?: RefObject<HTMLElement | null>;
   /** Position relative to anchor: 'left', 'right', or 'center' */
-  anchorAlign?: 'left' | 'right' | 'center';
+  anchorAlign?: "left" | "right" | "center";
   /** Optional offset ratio (0-1) from anchor's left edge. Overrides anchorAlign when provided. */
   anchorOffsetRatio?: number;
 }
@@ -20,14 +21,23 @@ export const useSelectorPosition = ({
   isOpen,
   containerRef,
   anchorRef,
-  anchorAlign = 'left',
+  anchorAlign = "left",
   anchorOffsetRatio,
 }: UseSelectorPositionProps): Position => {
-  const [position, setPosition] = useState<Position>({ top: 0, left: 0 });
-  const positionRef = useRef<Position>({ top: 0, left: 0 });
+  const [position, setPosition] = useState<Position>({
+    top: 0,
+    left: 0,
+    isReady: false,
+  });
+  const positionRef = useRef<Position>({ top: 0, left: 0, isReady: false });
 
   useLayoutEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      const resetPosition = { top: 0, left: 0, isReady: false };
+      positionRef.current = resetPosition;
+      setPosition(resetPosition);
+      return;
+    }
 
     const readPosition = (): Position | null => {
       if (!containerRef.current) return null;
@@ -44,9 +54,9 @@ export const useSelectorPosition = ({
         if (anchorOffsetRatio !== undefined) {
           // Use offset ratio: 0 = left edge, 0.5 = center, 1 = right edge
           left = anchorRect.left + anchorRect.width * anchorOffsetRatio;
-        } else if (anchorAlign === 'right') {
+        } else if (anchorAlign === "right") {
           left = anchorRect.right;
-        } else if (anchorAlign === 'center') {
+        } else if (anchorAlign === "center") {
           left = anchorRect.left + anchorRect.width / 2;
         } else {
           left = anchorRect.left;
@@ -55,12 +65,14 @@ export const useSelectorPosition = ({
         return {
           top: containerRect.bottom,
           left,
+          isReady: true,
         };
       }
 
       return {
         top: containerRect.bottom,
         left: containerRect.left,
+        isReady: true,
       };
     };
 
@@ -80,20 +92,21 @@ export const useSelectorPosition = ({
       setPosition(nextPosition);
     };
 
-    // Initial position calculation
-    updatePosition();
+    // Defer the first measurement until the next frame so the selector opens
+    // from the settled SearchBar layout instead of a transient pre-badge layout.
+    const initialFrameId = requestAnimationFrame(updatePosition);
 
     const handleResize = () => updatePosition();
     const handleScroll = () => updatePosition();
 
-    window.addEventListener('resize', handleResize);
-    window.addEventListener('scroll', handleScroll, true);
-    document.addEventListener('scroll', handleScroll, true);
+    window.addEventListener("resize", handleResize);
+    window.addEventListener("scroll", handleScroll, true);
+    document.addEventListener("scroll", handleScroll, true);
 
     let resizeObserver: ResizeObserver | null = null;
 
     // Observe both container and anchor for size changes
-    if ('ResizeObserver' in window) {
+    if ("ResizeObserver" in window) {
       resizeObserver = new ResizeObserver(updatePosition);
       if (containerRef.current) {
         resizeObserver.observe(containerRef.current);
@@ -111,9 +124,10 @@ export const useSelectorPosition = ({
     trackingFrameId = requestAnimationFrame(trackPosition);
 
     return () => {
-      window.removeEventListener('resize', handleResize);
-      window.removeEventListener('scroll', handleScroll, true);
-      document.removeEventListener('scroll', handleScroll, true);
+      cancelAnimationFrame(initialFrameId);
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("scroll", handleScroll, true);
+      document.removeEventListener("scroll", handleScroll, true);
       if (resizeObserver) {
         resizeObserver.disconnect();
       }

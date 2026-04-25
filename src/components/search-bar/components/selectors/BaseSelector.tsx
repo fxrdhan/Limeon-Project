@@ -1,48 +1,34 @@
-import {
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  useMemo,
-  useCallback,
-} from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { TbSearch, TbSparkles } from 'react-icons/tb';
-import fuzzysort from 'fuzzysort';
-import { BaseSelectorProps } from '../../types';
-import { SEARCH_CONSTANTS } from '../../constants';
+import { useEffect, useLayoutEffect, useRef, useState, useMemo, useCallback } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { TbSearch, TbSparkles } from "react-icons/tb";
+import fuzzysort from "fuzzysort";
+import { BaseSelectorProps } from "../../types";
+import { SEARCH_CONSTANTS } from "../../constants";
 import {
   getKeyboardPinnedHighlightFrame,
   getKeyboardScrollTarget,
   type KeyboardPinnedHighlightFrame,
-} from '@/components/shared/keyboard-pinned-highlight';
+} from "@/components/shared/keyboard-pinned-highlight";
 
 // Helper to highlight matched characters
 /* c8 ignore next */
 const HighlightedText: React.FC<{
   text: string;
   indices: readonly number[] | null;
-  theme?: 'purple' | 'blue' | 'orange';
-}> = ({ text, indices, theme = 'purple' }) => {
+  theme?: "purple" | "blue" | "orange";
+}> = ({ text, indices, theme = "purple" }) => {
   if (!indices || indices.length === 0) {
     return <>{text}</>;
   }
 
   const themeColor =
-    theme === 'blue'
-      ? 'text-blue-600'
-      : theme === 'orange'
-        ? 'text-orange-600'
-        : 'text-purple-600';
+    theme === "blue" ? "text-blue-600" : theme === "orange" ? "text-orange-600" : "text-purple-600";
 
   const indexSet = new Set(indices);
   return (
     <>
-      {text.split('').map((char, i) => (
-        <span
-          key={i}
-          className={indexSet.has(i) ? `font-bold ${themeColor}` : ''}
-        >
+      {text.split("").map((char, i) => (
+        <span key={i} className={indexSet.has(i) ? `font-bold ${themeColor}` : ""}>
           {char}
         </span>
       ))}
@@ -56,7 +42,7 @@ function BaseSelector<T>({
   onSelect,
   onClose,
   position,
-  searchTerm: externalSearchTerm = '',
+  searchTerm: externalSearchTerm = "",
   config,
   defaultSelectedIndex,
   onHighlightChange,
@@ -79,7 +65,7 @@ function BaseSelector<T>({
   } | null>(null);
 
   // Internal search term - captured from keystrokes when modal is open
-  const [internalSearchTerm, setInternalSearchTerm] = useState('');
+  const [internalSearchTerm, setInternalSearchTerm] = useState("");
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [isHoverDisabled, setIsHoverDisabled] = useState(false);
   const [heldBackgroundStyle, setHeldBackgroundStyle] =
@@ -97,7 +83,7 @@ function BaseSelector<T>({
 
   useLayoutEffect(() => {
     if (!isOpen) return;
-    setInternalSearchTerm('');
+    setInternalSearchTerm("");
     setHoveredIndex(null);
     setIsHoverDisabled(false);
     keyboardBackgroundIndexRef.current = null;
@@ -133,14 +119,11 @@ function BaseSelector<T>({
   // Store fuzzy search results with indices for highlighting
   const searchResults = useMemo(() => {
     if (searchTerm && items.length > 0) {
-      const searchTargets = items.map(item => {
+      const searchTargets = items.map((item) => {
         const searchFields = config.getSearchFields(item);
         return {
           item,
-          ...searchFields.reduce(
-            (acc, field) => ({ ...acc, [field.key]: field.value }),
-            {}
-          ),
+          ...searchFields.reduce((acc, field) => ({ ...acc, [field.key]: field.value }), {}),
         };
       });
 
@@ -150,13 +133,13 @@ function BaseSelector<T>({
       >();
 
       // First pass: collect all matching items with scores
-      searchFieldsConfig.forEach(fieldConfig => {
+      searchFieldsConfig.forEach((fieldConfig) => {
         const results = fuzzysort.go(searchTerm, searchTargets, {
           key: fieldConfig.key,
           threshold: SEARCH_CONSTANTS.FUZZY_SEARCH_THRESHOLD,
         });
 
-        results.forEach(result => {
+        results.forEach((result) => {
           const itemKey = config.getItemKey(result.obj.item);
           const boost = fieldConfig.boost || 0;
           const currentBest = allResults.get(itemKey);
@@ -173,17 +156,17 @@ function BaseSelector<T>({
 
       // Second pass: get label-specific indices for highlighting
       // This ensures we highlight the correct characters in the label text
-      const labelTargets = Array.from(allResults.values()).map(r => ({
+      const labelTargets = Array.from(allResults.values()).map((r) => ({
         item: r.item,
         label: config.getItemLabel(r.item),
       }));
 
       const labelResults = fuzzysort.go(searchTerm, labelTargets, {
-        key: 'label',
+        key: "label",
         threshold: -Infinity, // Accept any match since item already qualified
       });
 
-      labelResults.forEach(result => {
+      labelResults.forEach((result) => {
         const itemKey = config.getItemKey(result.obj.item);
         const existing = allResults.get(itemKey);
         if (existing) {
@@ -196,7 +179,7 @@ function BaseSelector<T>({
 
       return Array.from(allResults.values()).sort((a, b) => b.score - a.score);
     } else {
-      return items.map(item => ({
+      return items.map((item) => ({
         item,
         score: 0,
         labelIndices: null as readonly number[] | null,
@@ -205,20 +188,17 @@ function BaseSelector<T>({
   }, [searchTerm, items, searchFieldsConfig, config]);
 
   // Derive filteredItems from searchResults
-  const filteredItems = useMemo(
-    () => searchResults.map(r => r.item),
-    [searchResults]
-  );
+  const filteredItems = useMemo(() => searchResults.map((r) => r.item), [searchResults]);
 
   // Get highlight indices for an item's label
   const getHighlightIndices = useCallback(
     (item: T): readonly number[] | null => {
       const result = searchResults.find(
-        r => config.getItemKey(r.item) === config.getItemKey(item)
+        (r) => config.getItemKey(r.item) === config.getItemKey(item),
       );
       return result?.labelIndices || null;
     },
-    [searchResults, config]
+    [searchResults, config],
   );
 
   // Use getDerivedStateFromProps pattern to manage selectedIndex resets
@@ -238,18 +218,12 @@ function BaseSelector<T>({
     let newIndex = indexState.selectedIndex;
 
     // Reset to defaultSelectedIndex (or 0) when opening
-    if (
-      isOpen &&
-      (!indexState.isOpen || activeContentKey !== indexState.contentKey)
-    ) {
+    if (isOpen && (!indexState.isOpen || activeContentKey !== indexState.contentKey)) {
       newIndex = defaultSelectedIndex ?? 0;
     }
     // Adjust if out of bounds
     /* c8 ignore start */
-    else if (
-      filteredItems.length > 0 &&
-      indexState.selectedIndex >= filteredItems.length
-    ) {
+    else if (filteredItems.length > 0 && indexState.selectedIndex >= filteredItems.length) {
       newIndex = Math.max(0, filteredItems.length - 1);
     } else if (filteredItems.length === 0) {
       newIndex = 0;
@@ -267,19 +241,18 @@ function BaseSelector<T>({
 
   const selectedIndex = indexState.selectedIndex;
   const setSelectedIndex = (value: number | ((prev: number) => number)) => {
-    setIndexState(prev => ({
+    setIndexState((prev) => ({
       ...prev,
-      selectedIndex:
-        typeof value === 'function' ? value(prev.selectedIndex) : value,
+      selectedIndex: typeof value === "function" ? value(prev.selectedIndex) : value,
     }));
   };
   const backgroundIndex = hoveredIndex ?? selectedIndex;
   const getBackgroundColorClass = () =>
-    config.theme === 'blue'
-      ? 'bg-blue-100'
-      : config.theme === 'orange'
-        ? 'bg-orange-100'
-        : 'bg-purple-100';
+    config.theme === "blue"
+      ? "bg-blue-100"
+      : config.theme === "orange"
+        ? "bg-orange-100"
+        : "bg-purple-100";
 
   const getRequiredScrollTop = useCallback(
     (index: number): number | null => {
@@ -297,7 +270,7 @@ function BaseSelector<T>({
         })?.scrollTop ?? null
       );
     },
-    [filteredItems.length]
+    [filteredItems.length],
   );
 
   // Reset internal search term when modal closes
@@ -318,7 +291,7 @@ function BaseSelector<T>({
       setTimeout(() => {
         setShowHeader(false);
         // Reset internal search term
-        setInternalSearchTerm('');
+        setInternalSearchTerm("");
       }, 100); // Reduced from 200ms to 100ms
     }
   }, [isOpen, showHeader, showContent]);
@@ -329,17 +302,14 @@ function BaseSelector<T>({
       if (e.defaultPrevented) return;
 
       switch (e.key) {
-        case 'ArrowDown':
+        case "ArrowDown":
           e.preventDefault();
           if (filteredItems.length > 0) {
             setIsHoverDisabled(true);
             skipNextBackgroundScrollRef.current = false;
-            hoverResumePointerPositionRef.current =
-              lastPointerPositionRef.current;
-            const baseIndex =
-              keyboardBackgroundIndexRef.current ?? backgroundIndex;
-            const nextIndex =
-              baseIndex + 1 >= filteredItems.length ? 0 : baseIndex + 1;
+            hoverResumePointerPositionRef.current = lastPointerPositionRef.current;
+            const baseIndex = keyboardBackgroundIndexRef.current ?? backgroundIndex;
+            const nextIndex = baseIndex + 1 >= filteredItems.length ? 0 : baseIndex + 1;
             keyboardBackgroundIndexRef.current = nextIndex;
             if (nextIndex === 0) {
               if (releaseHeldBackgroundTimeoutRef.current !== null) {
@@ -361,17 +331,14 @@ function BaseSelector<T>({
             setHoveredIndex(nextIndex);
           }
           break;
-        case 'ArrowUp':
+        case "ArrowUp":
           e.preventDefault();
           if (filteredItems.length > 0) {
             setIsHoverDisabled(true);
             skipNextBackgroundScrollRef.current = false;
-            hoverResumePointerPositionRef.current =
-              lastPointerPositionRef.current;
-            const baseIndex =
-              keyboardBackgroundIndexRef.current ?? backgroundIndex;
-            const nextIndex =
-              baseIndex === 0 ? filteredItems.length - 1 : baseIndex - 1;
+            hoverResumePointerPositionRef.current = lastPointerPositionRef.current;
+            const baseIndex = keyboardBackgroundIndexRef.current ?? backgroundIndex;
+            const nextIndex = baseIndex === 0 ? filteredItems.length - 1 : baseIndex - 1;
             keyboardBackgroundIndexRef.current = nextIndex;
             if (nextIndex === filteredItems.length - 1) {
               if (releaseHeldBackgroundTimeoutRef.current !== null) {
@@ -393,7 +360,7 @@ function BaseSelector<T>({
             setHoveredIndex(nextIndex);
           }
           break;
-        case 'Enter':
+        case "Enter":
           e.preventDefault();
           if (
             filteredItems.length > 0 &&
@@ -404,13 +371,13 @@ function BaseSelector<T>({
             onSelect(filteredItems[backgroundIndex]);
           }
           break;
-        case 'Escape':
+        case "Escape":
           e.preventDefault();
           onClose();
           break;
-        case 'Backspace':
+        case "Backspace":
           e.preventDefault();
-          setInternalSearchTerm(prev => prev.slice(0, -1));
+          setInternalSearchTerm((prev) => prev.slice(0, -1));
           setHoveredIndex(null);
           setIsHoverDisabled(false);
           keyboardBackgroundIndexRef.current = null;
@@ -426,10 +393,10 @@ function BaseSelector<T>({
           if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
             e.preventDefault();
             // Skip space if search term is empty (prevents accidental search when SPACE opens selector)
-            if (e.key === ' ' && internalSearchTerm === '') {
+            if (e.key === " " && internalSearchTerm === "") {
               return;
             }
-            setInternalSearchTerm(prev => prev + e.key);
+            setInternalSearchTerm((prev) => prev + e.key);
             setHoveredIndex(null);
             setIsHoverDisabled(false);
             keyboardBackgroundIndexRef.current = null;
@@ -444,8 +411,8 @@ function BaseSelector<T>({
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [
     isOpen,
     filteredItems,
@@ -461,8 +428,7 @@ function BaseSelector<T>({
 
     const container = listContainerRef.current;
     const targetElement = itemRefs.current[pendingKeyboardScroll.targetIndex];
-    const sourceElement =
-      itemRefs.current[pendingKeyboardScroll.sourceIndex] ?? targetElement;
+    const sourceElement = itemRefs.current[pendingKeyboardScroll.sourceIndex] ?? targetElement;
     const modalElement = modalRef.current;
 
     if (!container || !targetElement || !sourceElement || !modalElement) return;
@@ -492,9 +458,9 @@ function BaseSelector<T>({
         scrollDirection: scrollTarget.direction,
         sourceElement,
         targetElement,
-      })
+      }),
     );
-    container.scrollTo({ top: scrollTarget.scrollTop, behavior: 'smooth' });
+    container.scrollTo({ top: scrollTarget.scrollTop, behavior: "smooth" });
     releaseHeldBackgroundTimeoutRef.current = window.setTimeout(() => {
       keyboardBackgroundIndexRef.current = null;
       setPendingKeyboardScroll(null);
@@ -531,7 +497,7 @@ function BaseSelector<T>({
       });
 
       if (scrollTarget) {
-        container.scrollTo({ top: scrollTarget.scrollTop, behavior: 'smooth' });
+        container.scrollTo({ top: scrollTarget.scrollTop, behavior: "smooth" });
       }
     };
 
@@ -548,16 +514,9 @@ function BaseSelector<T>({
 
     scheduleScroll(2);
     return () => {
-      frameIds.forEach(frameId => cancelAnimationFrame(frameId));
+      frameIds.forEach((frameId) => cancelAnimationFrame(frameId));
     };
-  }, [
-    activeContentKey,
-    backgroundIndex,
-    isOpen,
-    filteredItems,
-    showContent,
-    heldBackgroundStyle,
-  ]);
+  }, [activeContentKey, backgroundIndex, isOpen, filteredItems, showContent, heldBackgroundStyle]);
 
   // Notify parent of highlighted item changes for live preview
   useEffect(() => {
@@ -593,11 +552,11 @@ function BaseSelector<T>({
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isOpen, onClose, outsideClickIgnoreRef]);
 
@@ -608,14 +567,14 @@ function BaseSelector<T>({
         <div className="flex items-center gap-2 text-xs text-slate-600">
           <TbSearch className="w-3 h-3" />
           <span>
-            Searching:{' '}
+            Searching:{" "}
             <span
               className={`font-medium ${
-                config.theme === 'blue'
-                  ? 'text-blue-600'
-                  : config.theme === 'orange'
-                    ? 'text-orange-600'
-                    : 'text-purple-600'
+                config.theme === "blue"
+                  ? "text-blue-600"
+                  : config.theme === "orange"
+                    ? "text-orange-600"
+                    : "text-purple-600"
               }`}
             >
               {internalSearchTerm}
@@ -638,7 +597,7 @@ function BaseSelector<T>({
     y: position.top + 5,
   };
   const modalPositionTransition = {
-    type: 'spring',
+    type: "spring",
     stiffness: 520,
     damping: 42,
     mass: 0.7,
@@ -646,7 +605,7 @@ function BaseSelector<T>({
 
   return (
     <AnimatePresence>
-      {isOpen && (
+      {isOpen && (position.isReady ?? true) && (
         <motion.div
           ref={modalRef}
           layout
@@ -675,7 +634,7 @@ function BaseSelector<T>({
             y: modalPositionTransition,
             layout: {
               duration: 0.18,
-              ease: 'easeOut',
+              ease: "easeOut",
             },
           }}
         >
@@ -686,7 +645,7 @@ function BaseSelector<T>({
               initial={false}
               animate={heldBackgroundStyle}
               transition={{
-                type: 'spring',
+                type: "spring",
                 stiffness: 400,
                 damping: 30,
                 mass: 0.8,
@@ -706,7 +665,7 @@ function BaseSelector<T>({
                 opacity: contentSlideDirection === 0 ? 1 : 0,
                 x: -contentSlideDistance,
               }}
-              transition={{ duration: 0.18, ease: 'easeOut' }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
             >
               <AnimatePresence>
                 {showHeader && (
@@ -716,7 +675,7 @@ function BaseSelector<T>({
                       initial={{ opacity: 0, y: -8 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -8 }}
-                      transition={{ duration: 0.15, ease: 'easeOut' }}
+                      transition={{ duration: 0.15, ease: "easeOut" }}
                     >
                       {headerContent}
                     </motion.div>
@@ -733,11 +692,11 @@ function BaseSelector<T>({
                     exit={{ opacity: 0 }}
                     transition={{
                       duration: 0.1,
-                      ease: 'easeOut',
+                      ease: "easeOut",
                     }}
                   >
                     <div
-                      ref={element => {
+                      ref={(element) => {
                         if (activeContentKey === activeContentKeyRef.current) {
                           listContainerRef.current = element;
                         }
@@ -753,9 +712,7 @@ function BaseSelector<T>({
                         hoverResumePointerPositionRef.current = null;
                         setPendingKeyboardScroll(null);
                         if (releaseHeldBackgroundTimeoutRef.current !== null) {
-                          window.clearTimeout(
-                            releaseHeldBackgroundTimeoutRef.current
-                          );
+                          window.clearTimeout(releaseHeldBackgroundTimeoutRef.current);
                           releaseHeldBackgroundTimeoutRef.current = null;
                         }
                         setHeldBackgroundStyle(null);
@@ -765,10 +722,7 @@ function BaseSelector<T>({
                         <div className="px-3 py-4 text-sm text-slate-500 text-center">
                           {internalSearchTerm
                             ? `No results for "${internalSearchTerm}"`
-                            : config.noResultsText.replace(
-                                '{searchTerm}',
-                                searchTerm
-                              )}
+                            : config.noResultsText.replace("{searchTerm}", searchTerm)}
                         </div>
                       ) : (
                         <div className="relative isolate">
@@ -778,26 +732,23 @@ function BaseSelector<T>({
                             const hasBackground = index === backgroundIndex;
                             const highlightIndices = getHighlightIndices(item);
                             const selectedTextClass =
-                              config.theme === 'blue'
-                                ? 'text-blue-700'
-                                : config.theme === 'orange'
-                                  ? 'text-orange-700'
-                                  : 'text-purple-700';
+                              config.theme === "blue"
+                                ? "text-blue-700"
+                                : config.theme === "orange"
+                                  ? "text-orange-700"
+                                  : "text-purple-700";
 
                             return (
                               <div
                                 key={config.getItemKey(item)}
-                                ref={el => {
-                                  if (
-                                    activeContentKey ===
-                                    activeContentKeyRef.current
-                                  ) {
+                                ref={(el) => {
+                                  if (activeContentKey === activeContentKeyRef.current) {
                                     itemRefs.current[index] = el;
                                   }
                                 }}
                                 className="px-3 py-2 cursor-pointer flex items-center gap-3 mx-1 rounded-lg relative transition-colors duration-150"
                                 onClick={() => onSelect(item)}
-                                onMouseEnter={event => {
+                                onMouseEnter={(event) => {
                                   lastPointerPositionRef.current = {
                                     x: event.clientX,
                                     y: event.clientY,
@@ -807,7 +758,7 @@ function BaseSelector<T>({
                                     setHoveredIndex(index);
                                   }
                                 }}
-                                onMouseMove={event => {
+                                onMouseMove={(event) => {
                                   const pointerPosition = {
                                     x: event.clientX,
                                     y: event.clientY,
@@ -818,17 +769,10 @@ function BaseSelector<T>({
                                       hoverResumePointerPositionRef.current;
                                     const hasMovedPointer =
                                       !resumePointerPosition ||
-                                      Math.abs(
-                                        pointerPosition.x -
-                                          resumePointerPosition.x
-                                      ) > 1 ||
-                                      Math.abs(
-                                        pointerPosition.y -
-                                          resumePointerPosition.y
-                                      ) > 1;
+                                      Math.abs(pointerPosition.x - resumePointerPosition.x) > 1 ||
+                                      Math.abs(pointerPosition.y - resumePointerPosition.y) > 1;
 
-                                    lastPointerPositionRef.current =
-                                      pointerPosition;
+                                    lastPointerPositionRef.current = pointerPosition;
 
                                     if (!hasMovedPointer) {
                                       return;
@@ -837,26 +781,18 @@ function BaseSelector<T>({
                                     setIsHoverDisabled(false);
                                     keyboardBackgroundIndexRef.current = null;
                                     skipNextBackgroundScrollRef.current = false;
-                                    hoverResumePointerPositionRef.current =
-                                      null;
+                                    hoverResumePointerPositionRef.current = null;
                                     setPendingKeyboardScroll(null);
-                                    if (
-                                      releaseHeldBackgroundTimeoutRef.current !==
-                                      null
-                                    ) {
-                                      window.clearTimeout(
-                                        releaseHeldBackgroundTimeoutRef.current
-                                      );
-                                      releaseHeldBackgroundTimeoutRef.current =
-                                        null;
+                                    if (releaseHeldBackgroundTimeoutRef.current !== null) {
+                                      window.clearTimeout(releaseHeldBackgroundTimeoutRef.current);
+                                      releaseHeldBackgroundTimeoutRef.current = null;
                                     }
                                     setHeldBackgroundStyle(null);
                                     setHoveredIndex(index);
                                     return;
                                   }
 
-                                  lastPointerPositionRef.current =
-                                    pointerPosition;
+                                  lastPointerPositionRef.current = pointerPosition;
                                 }}
                                 role="button"
                               >
@@ -865,7 +801,7 @@ function BaseSelector<T>({
                                     layoutId="base-selector-active-background"
                                     className={`absolute inset-0 z-0 rounded-lg pointer-events-none ${getBackgroundColorClass()}`}
                                     transition={{
-                                      type: 'spring',
+                                      type: "spring",
                                       stiffness: 400,
                                       damping: 30,
                                       mass: 0.8,
@@ -875,9 +811,8 @@ function BaseSelector<T>({
                                 <div
                                   className={`shrink-0 relative z-10 transition-colors duration-150 ${
                                     isSelected
-                                      ? config.getItemActiveColor?.(item) ||
-                                        'text-slate-900'
-                                      : 'text-slate-500'
+                                      ? config.getItemActiveColor?.(item) || "text-slate-900"
+                                      : "text-slate-500"
                                   }`}
                                 >
                                   {config.getItemIcon(item)}
@@ -886,9 +821,7 @@ function BaseSelector<T>({
                                   <div className="flex items-center gap-2">
                                     <span
                                       className={`text-sm font-medium transition-colors duration-150 ${
-                                        isSelected
-                                          ? selectedTextClass
-                                          : 'text-slate-700'
+                                        isSelected ? selectedTextClass : "text-slate-700"
                                       }`}
                                     >
                                       <HighlightedText
@@ -903,12 +836,11 @@ function BaseSelector<T>({
                                       </span>
                                     )}
                                   </div>
-                                  {config.getItemDescription &&
-                                    config.getItemDescription(item) && (
-                                      <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
-                                        {config.getItemDescription(item)}
-                                      </p>
-                                    )}
+                                  {config.getItemDescription && config.getItemDescription(item) && (
+                                    <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
+                                      {config.getItemDescription(item)}
+                                    </p>
+                                  )}
                                 </div>
                               </div>
                             );

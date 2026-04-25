@@ -1,5 +1,5 @@
-import { AnimatePresence, motion } from 'motion/react';
-import React from 'react';
+import { AnimatePresence, motion } from "motion/react";
+import React from "react";
 import {
   TbAlertCircle,
   TbChartCircles,
@@ -8,12 +8,12 @@ import {
   TbHash,
   TbSearch,
   TbZoomCancel,
-} from 'react-icons/tb';
-import { SearchState } from '../constants';
-import { EnhancedSearchState } from '../types';
+} from "react-icons/tb";
+import { SearchState } from "../constants";
+import { EnhancedSearchState } from "../types";
 
 interface SearchIconProps {
-  mode?: 'simple' | 'enhanced';
+  mode?: "simple" | "enhanced";
   searchMode?: EnhancedSearchState | null;
   searchState: SearchState;
   displayValue: string;
@@ -21,7 +21,7 @@ interface SearchIconProps {
 }
 
 const SearchIcon: React.FC<SearchIconProps> = ({
-  mode = 'enhanced',
+  mode = "enhanced",
   searchMode,
   searchState,
   displayValue,
@@ -37,81 +37,80 @@ const SearchIcon: React.FC<SearchIconProps> = ({
   // Consolidated active state determination
   // If it should show ANY icon other than the default Search icon, it is "Active"
   const currentIcon = (() => {
-    if (mode === 'simple') {
-      if (searchState === 'error') return 'search-error';
-      if (searchState === 'not-found') return 'search-not-found';
-      return 'search';
+    if (mode === "simple") {
+      if (searchState === "error") return "search-error";
+      if (searchState === "not-found") return "search-not-found";
+      return "search";
     }
 
-    if (showError) return 'filter-error';
-    if (resolvedSearchMode.showColumnSelector) return 'hash-purple';
-    if (resolvedSearchMode.showJoinOperatorSelector) return 'filters-join';
+    if (showError) return "filter-error";
+    if (resolvedSearchMode.showColumnSelector) return "hash-purple";
+    if (resolvedSearchMode.showJoinOperatorSelector) return "filters-join";
     if (
       resolvedSearchMode.isFilterMode &&
-      resolvedSearchMode.filterSearch?.operator === 'contains' &&
+      resolvedSearchMode.filterSearch?.operator === "contains" &&
       !resolvedSearchMode.filterSearch?.isExplicitOperator
     )
-      return 'hash-dynamic';
+      return "hash-dynamic";
     if (
       resolvedSearchMode.isFilterMode ||
       resolvedSearchMode.filterSearch?.isExplicitOperator ||
       resolvedSearchMode.filterSearch?.isMultiCondition ||
-      (resolvedSearchMode.showOperatorSelector &&
-        resolvedSearchMode.selectedColumn) ||
+      (resolvedSearchMode.showOperatorSelector && resolvedSearchMode.selectedColumn) ||
+      (!!resolvedSearchMode.selectedColumn && !resolvedSearchMode.showColumnSelector) ||
       resolvedSearchMode.partialJoin ||
       resolvedSearchMode.partialConditions?.[1]?.operator
     )
-      return 'filter';
-    return 'search';
+      return "filter";
+    return "search";
   })();
 
   // If we are NOT showing the default search icon, we are in Active Mode.
   // This guarantees that Funnel (Filter) and Hash icons always get the "Active" styling.
   // We also consider non-empty input (not starting with #) as active typing mode.
-  const isDefaultIcon = currentIcon === 'search';
+  const isDefaultIcon = currentIcon === "search";
   const isActiveMode =
-    mode === 'simple'
+    mode === "simple"
       ? !!displayValue
-      : !isDefaultIcon || (!!displayValue && !displayValue.startsWith('#'));
+      : !isDefaultIcon || (!!displayValue && !displayValue.startsWith("#"));
 
   const getSearchIconColor = () => {
-    if (currentIcon === 'search-error') return '#F59E0B';
-    if (currentIcon === 'search-not-found') return '#EF4444';
-    if (currentIcon === 'filter-error') return '#EF4444';
-    if (currentIcon === 'hash-purple') return '#A855F7'; // text-purple-500
-    if (currentIcon === 'hash-dynamic') return '#A855F7'; // text-purple-500
-    if (currentIcon === 'filters-join') return '#F97316'; // text-orange-500
-    if (currentIcon === 'filter' || resolvedSearchMode.isFilterMode)
-      return '#3B82F6'; // text-blue-500
+    if (currentIcon === "search-error") return "#F59E0B";
+    if (currentIcon === "search-not-found") return "#EF4444";
+    if (currentIcon === "filter-error") return "#EF4444";
+    if (currentIcon === "hash-purple") return "#A855F7"; // text-purple-500
+    if (currentIcon === "hash-dynamic") return "#A855F7"; // text-purple-500
+    if (currentIcon === "filters-join") return "#F97316"; // text-orange-500
+    if (currentIcon === "filter" || resolvedSearchMode.isFilterMode) return "#3B82F6"; // text-blue-500
 
     switch (searchState) {
-      case 'idle':
-        return '#9CA3AF'; // text-slate-400
-      case 'typing':
-        return '#1F2937'; // text-slate-800
-      case 'found':
-        return '#10B981'; // text-primary
-      case 'not-found':
-        return '#EF4444'; // text-red-500
+      case "idle":
+        return "#9CA3AF"; // text-slate-400
+      case "typing":
+        return "#1F2937"; // text-slate-800
+      case "found":
+        return "#10B981"; // text-primary
+      case "not-found":
+        return "#EF4444"; // text-red-500
       default:
-        return '#9CA3AF';
+        return "#9CA3AF";
     }
   };
 
   const renderIcon = () => {
     switch (currentIcon) {
-      case 'hash-purple':
-      case 'hash-dynamic':
+      case "hash-purple":
+      case "hash-dynamic":
         return <TbHash />;
-      case 'filters-join':
+      case "filters-join":
         return <TbChartCircles />;
-      case 'filter':
+      case "filter":
         return <TbFilter />;
-      case 'filter-error':
+      case "filter-error":
         return <TbFilterX />;
-      case 'search-error':
+      case "search-error":
         return <TbAlertCircle />;
-      case 'search-not-found':
+      case "search-not-found":
         return <TbZoomCancel />;
       default:
         return <TbSearch />;
@@ -122,10 +121,10 @@ const SearchIcon: React.FC<SearchIconProps> = ({
     <AnimatePresence mode="wait">
       <motion.div
         key={currentIcon}
-        initial={{ opacity: 0, scale: 0.985, filter: 'blur(2px)' }}
-        animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-        exit={{ opacity: 0, scale: 0.985, filter: 'blur(2px)' }}
-        transition={{ duration: 0.09, ease: 'easeOut' }}
+        initial={{ opacity: 0, scale: 0.985, filter: "blur(2px)" }}
+        animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+        exit={{ opacity: 0, scale: 0.985, filter: "blur(2px)" }}
+        transition={{ duration: 0.09, ease: "easeOut" }}
         className="flex items-center justify-center w-full h-full"
       >
         {renderIcon()}
@@ -145,12 +144,12 @@ const SearchIcon: React.FC<SearchIconProps> = ({
           color: getSearchIconColor(),
         }}
         transition={{
-          type: 'spring',
+          type: "spring",
           stiffness: 320,
           damping: 28,
           color: {
             duration: 0.12,
-            ease: 'easeOut',
+            ease: "easeOut",
           },
         }}
       >
@@ -171,12 +170,12 @@ const SearchIcon: React.FC<SearchIconProps> = ({
           marginRight: isActiveMode ? 12 : 0,
         }}
         transition={{
-          type: 'spring',
+          type: "spring",
           stiffness: 320,
           damping: 28,
           color: {
             duration: 0.12,
-            ease: 'easeOut',
+            ease: "easeOut",
           },
         }}
       >
