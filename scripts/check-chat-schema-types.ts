@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Client } from 'pg';
@@ -28,6 +28,7 @@ const generatedTypesPath = resolve(
 const liveDatabaseUrl =
   process.env.CHAT_SCHEMA_LIVE_DATABASE_URL?.trim() || null;
 const requireLiveCheck = process.argv.includes('--require-live');
+const shouldFixBaseline = process.argv.includes('--fix');
 
 const REQUIRED_LIVE_CHAT_RPC_NAMES = [
   'create_chat_message',
@@ -112,9 +113,13 @@ const getLatestChatContractMigration = () => {
   return latestMigration;
 };
 
-const generatedTypesSource = readFileSync(generatedTypesPath, 'utf8');
+let generatedTypesSource = readFileSync(generatedTypesPath, 'utf8');
+const generatedBaselinePattern =
+  /^\/\/ Chat schema migration baseline: (\d{14})\.$/m;
+const generatedDatePattern =
+  /^\/\/ Generated from the Supabase chat schema on \d{4}-\d{2}-\d{2}\.$/m;
 const generatedBaselineMatch = generatedTypesSource.match(
-  /^\/\/ Chat schema migration baseline: (\d{14})\.$/m
+  generatedBaselinePattern
 );
 
 if (!generatedBaselineMatch) {
@@ -125,24 +130,56 @@ if (!generatedBaselineMatch) {
 
 const latestContractMigration = getLatestChatContractMigration();
 const expectedBaseline = latestContractMigration.timestamp;
-const actualBaseline = generatedBaselineMatch[1];
+let actualBaseline = generatedBaselineMatch[1];
+
+const formatBaselineDate = (timestamp: string) =>
+  `${timestamp.slice(0, 4)}-${timestamp.slice(4, 6)}-${timestamp.slice(6, 8)}`;
+
+const refreshGeneratedBaseline = () => {
+  const nextSource = generatedTypesSource
+    .replace(
+      generatedDatePattern,
+      `// Generated from the Supabase chat schema on ${formatBaselineDate(expectedBaseline)}.`
+    )
+    .replace(
+      generatedBaselinePattern,
+      `// Chat schema migration baseline: ${expectedBaseline}.`
+    );
+
+  if (nextSource === generatedTypesSource) {
+    return;
+  }
+
+  writeFileSync(generatedTypesPath, nextSource);
+  generatedTypesSource = nextSource;
+  actualBaseline = expectedBaseline;
+  console.log(
+    `Updated chat schema baseline in ${generatedTypesPath} to ${expectedBaseline}.`
+  );
+};
 
 if (actualBaseline < expectedBaseline) {
-  throw new Error(
-    [
-      'Chat schema types predate the latest contract-affecting chat migration.',
-      `Latest contract migration: ${latestContractMigration.fileName}`,
-      `Expected baseline to be at least: ${expectedBaseline}`,
-      `Found baseline: ${actualBaseline}`,
-      `Refresh ${generatedTypesPath} from Supabase when a chat migration changes typed tables or RPC contracts.`,
-    ].join('\n')
-  );
+  if (shouldFixBaseline) {
+    refreshGeneratedBaseline();
+  } else {
+    throw new Error(
+      [
+        'Chat schema types predate the latest contract-affecting chat migration.',
+        `Latest contract migration: ${latestContractMigration.fileName}`,
+        `Expected baseline to be at least: ${expectedBaseline}`,
+        `Found baseline: ${actualBaseline}`,
+        `Run bun run check:chat-schema:fix after refreshing ${generatedTypesPath}.`,
+      ].join('\n')
+    );
+  }
 }
 
 for (const requiredSnippet of [
   'storage_path: string;',
   'storage_path?: string;',
   'list_chat_directory_users:',
+  'last_message: string | null;',
+  'last_message_created_at: string | null;',
 ]) {
   if (!generatedTypesSource.includes(requiredSnippet)) {
     throw new Error(

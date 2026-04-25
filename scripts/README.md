@@ -9,7 +9,7 @@ Direktori ini sekarang dibatasi untuk script yang masih menjadi bagian dari work
 - `check-coverage-100.ts`, `coverage/generate-non-runtime-files.ts`, `coverage/non-runtime-files.json`
   Dipakai oleh workflow coverage dan konfigurasi [vite.config.ts](/home/fxrdhan/Documents/PharmaSys/vite.config.ts).
 - `check-chat-schema-types.ts`
-  Dipakai oleh `bun run check:chat-schema` dan validasi kontrak chat.
+  Dipakai oleh `bun run check:chat-schema`, `bun run gen:chat-schema`, dan validasi kontrak chat. Hook pre-commit menjalankan mode fix otomatis saat ada migrasi SQL staged.
 - `seed-codex.ts`
   Dipakai oleh `bun run codex:seed` dan hook `prepare`.
 - `add-admin-user.ts`, `update-user-password.ts`

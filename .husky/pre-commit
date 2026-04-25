@@ -1,5 +1,12 @@
 echo "🔍 Running pre-commit checks with lint-staged..."
 
+staged_migrations="$(git diff --cached --name-only -- 'supabase/migrations/*.sql')"
+if [ -n "$staged_migrations" ]; then
+  echo "Refreshing chat schema baseline..."
+  bun run check:chat-schema:fix
+  git add src/types/supabase-chat.generated.ts
+fi
+
 bunx lint-staged
 
 echo "\n✅ All pre-commit checks passed!"
