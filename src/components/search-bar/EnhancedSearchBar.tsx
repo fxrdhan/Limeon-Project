@@ -834,14 +834,26 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     if (!isInsertFlowActive) return;
     const tail = insertTailRef.current;
     if (!tail) return;
+    let resetInsertFlowFrame: number | null = null;
+    const scheduleInsertFlowReset = () => {
+      resetInsertFlowFrame = requestAnimationFrame(() => {
+        resetInsertFlowFrame = null;
+        setIsInsertFlowActive(false);
+      });
+    };
+    const cleanupInsertFlowReset = () => {
+      if (resetInsertFlowFrame !== null) {
+        cancelAnimationFrame(resetInsertFlowFrame);
+      }
+    };
 
     // Cancellation: if user clears or leaves hashtag mode, drop the insert flow so
     // SearchState can resume normal grid sync.
     const trimmed = value.trim();
     if (!trimmed || !trimmed.startsWith("#")) {
       insertTailRef.current = null;
-      requestAnimationFrame(() => setIsInsertFlowActive(false));
-      return;
+      scheduleInsertFlowReset();
+      return cleanupInsertFlowReset;
     }
 
     // Only finalize once the user has fully confirmed a filter (no selectors open).
@@ -904,9 +916,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
     insertTailRef.current = null;
     // Avoid triggering a cascading render synchronously inside the effect.
-    requestAnimationFrame(() => setIsInsertFlowActive(false));
+    scheduleInsertFlowReset();
 
     setFilterValue(finalValue, onChange, inputRef);
+    return cleanupInsertFlowReset;
   }, [isInsertFlowActive, value, searchMode, onChange, inputRef]);
 
   const applyGroupedPattern = useCallback(
@@ -1948,6 +1961,43 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             if (trimmedFrom && trimmedTo) {
               // Both values provided - confirm the filter
               newPattern = `#${columnName} #${operator} ${trimmedFrom} #to ${trimmedTo}##`;
+              if (interruptedSelectorRef.current) {
+                const interrupted = interruptedSelectorRef.current;
+                const valuePart = `${trimmedFrom} #to ${trimmedTo}`;
+
+                if (interrupted.type === "column") {
+                  const joinMatch = interrupted.originalPattern.match(/#(and|or)\s*#\s*$/i);
+                  if (joinMatch) {
+                    const joinOp = joinMatch[1].toLowerCase();
+                    newPattern = `#${columnName} #${operator} ${valuePart} #${joinOp} #`;
+                  }
+                } else if (interrupted.type === "join") {
+                  newPattern = `#${columnName} #${operator} ${valuePart} #`;
+                } else if (interrupted.type === "operator") {
+                  const multiColMatch = interrupted.originalPattern.match(
+                    /#(and|or)\s+#([^\s#]+)\s*#\s*$/i,
+                  );
+                  if (multiColMatch) {
+                    const joinOp = multiColMatch[1].toLowerCase();
+                    const col2 = multiColMatch[2];
+                    newPattern = `#${columnName} #${operator} ${valuePart} #${joinOp} #${col2} #`;
+                  }
+                } else if (interrupted.type === "partial") {
+                  const partialMatch = interrupted.originalPattern.match(
+                    /#(and|or)\s+#([^\s#]+)\s+#([^\s#]+)\s*(.*)$/i,
+                  );
+                  if (partialMatch) {
+                    const joinOp = partialMatch[1].toLowerCase();
+                    const col2 = partialMatch[2];
+                    const op2 = partialMatch[3];
+                    const val2Part = partialMatch[4]?.trim() || "";
+                    newPattern = `#${columnName} #${operator} ${valuePart} #${joinOp} #${col2} #${op2} ${val2Part}`;
+                  }
+                }
+
+                interruptedSelectorRef.current = null;
+                preservedFilterRef.current = null;
+              }
               onChange({
                 target: { value: newPattern },
               } as React.ChangeEvent<HTMLInputElement>);

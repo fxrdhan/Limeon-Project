@@ -5,17 +5,17 @@ import React, {
   useImperativeHandle,
   useCallback,
   useEffect,
-} from 'react';
-import { z } from 'zod';
-import type { InputProps } from '@/types';
-import classNames from 'classnames';
-import { useFieldValidation } from '@/hooks/forms/useFieldValidation';
-import ValidationOverlay from '@/components/validation-overlay';
+} from "react";
+import { z } from "zod";
+import type { InputProps } from "@/types";
+import classNames from "classnames";
+import { useFieldValidation } from "@/hooks/forms/useFieldValidation";
+import ValidationOverlay from "@/components/validation-overlay";
 import {
   FORM_CONTROL_BORDER_DEFAULT_CLASS,
   FORM_CONTROL_DISABLED_READONLY_FOCUS_RESET_CLASS,
   FORM_CONTROL_FOCUS_CLASS,
-} from '@/styles/uiPrimitives';
+} from "@/styles/uiPrimitives";
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
   (
@@ -35,10 +35,10 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       onKeyDown,
       onChange,
       onMouseDown,
-      type = 'text',
+      type = "text",
       ...props
     },
-    ref
+    ref,
   ) => {
     const [isHovered, setIsHovered] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
@@ -51,28 +51,25 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 
     // Currency helper functions
     const getCleanPriceValue = useCallback((value: string) => {
-      if (!value) return '';
-      return value.replace(/^Rp\s*/, '').replace(/[^0-9]/g, '');
+      if (!value) return "";
+      return value.replace(/^Rp\s*/, "").replace(/[^0-9]/g, "");
     }, []);
 
     const formatCurrencyDisplay = useCallback(
       (value: string) => {
         const cleanValue = getCleanPriceValue(value);
-        if (!cleanValue) return '';
+        if (!cleanValue) return "";
 
         // Add thousand separators (dots) for Indonesian format
-        const formattedNumber = cleanValue.replace(
-          /\B(?=(\d{3})+(?!\d))/g,
-          '.'
-        );
+        const formattedNumber = cleanValue.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
         return `Rp ${formattedNumber}`;
       },
-      [getCleanPriceValue]
+      [getCleanPriceValue],
     );
 
     // Get the actual display value based on type
     const getDisplayValue = useCallback(() => {
-      if (type === 'currency' && typeof value === 'string') {
+      if (type === "currency" && typeof value === "string") {
         if (isFocused) {
           // When focused, show only numbers for easy editing
           return getCleanPriceValue(value);
@@ -86,8 +83,8 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 
     // Get the appropriate placeholder
     const getPlaceholder = useCallback(() => {
-      if (type === 'currency') {
-        return isFocused ? '0' : 'Rp 0';
+      if (type === "currency") {
+        return isFocused ? "0" : "Rp 0";
       }
       return props.placeholder;
     }, [type, isFocused, props.placeholder]);
@@ -101,10 +98,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     // Notify parent about validation changes
     useEffect(() => {
       if (validate && validationSchema && onValidationChange) {
-        onValidationChange(
-          validation.validation.isValid,
-          validation.validation.error
-        );
+        onValidationChange(validation.validation.isValid, validation.validation.error);
       }
     }, [
       validation.validation.isValid,
@@ -150,11 +144,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 
       const input = e.currentTarget;
 
-      if (
-        input.readOnly ||
-        input.disabled ||
-        document.activeElement === input
-      ) {
+      if (input.readOnly || input.disabled || document.activeElement === input) {
         return;
       }
 
@@ -162,7 +152,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 
       const inputLength = input.value.length;
       input.focus({ preventScroll: true });
-      input.setSelectionRange(inputLength, inputLength);
+      if (typeof input.setSelectionRange === "function" && type !== "number") {
+        input.setSelectionRange(inputLength, inputLength);
+      }
     };
 
     // Use refs to avoid dependency issues
@@ -185,14 +177,14 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         handleCloseValidation();
       }
 
-      if (type === 'currency') {
+      if (type === "currency") {
         const inputValue = e.target.value;
-        const cleanValue = inputValue.replace(/[^0-9]/g, ''); // Only keep numbers
+        const cleanValue = inputValue.replace(/[^0-9]/g, ""); // Only keep numbers
 
         // Create a normalized event object with the currency format.
         const patchedTarget = {
           name: e.target.name,
-          value: cleanValue ? `Rp ${cleanValue}` : '',
+          value: cleanValue ? `Rp ${cleanValue}` : "",
         } as EventTarget & HTMLInputElement;
         const newEvent = {
           ...e,
@@ -213,22 +205,21 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 
     const shouldShowOverlay = () => {
       const displayValue = getDisplayValue();
-      if (!displayValue || typeof displayValue !== 'string' || !isHovered)
-        return false;
+      if (!displayValue || typeof displayValue !== "string" || !isHovered) return false;
 
       // Create a temporary element to measure text width
-      const tempElement = document.createElement('span');
+      const tempElement = document.createElement("span");
       // Use font from Tailwind @theme (defined in App.css)
       const fontFamily = getComputedStyle(document.documentElement)
-        .getPropertyValue('--font-sans')
+        .getPropertyValue("--font-sans")
         .trim();
       const fontSize = getComputedStyle(document.documentElement)
-        .getPropertyValue('--font-size-base')
+        .getPropertyValue("--font-size-base")
         .trim();
       tempElement.style.font = `500 ${fontSize} ${fontFamily}`;
-      tempElement.style.visibility = 'hidden';
-      tempElement.style.position = 'absolute';
-      tempElement.style.whiteSpace = 'nowrap';
+      tempElement.style.visibility = "hidden";
+      tempElement.style.position = "absolute";
+      tempElement.style.whiteSpace = "nowrap";
       tempElement.textContent = displayValue;
 
       document.body.appendChild(tempElement);
@@ -243,7 +234,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     };
 
     return (
-      <div className={fullWidth ? 'w-full' : ''}>
+      <div className={fullWidth ? "w-full" : ""}>
         {label && (
           <label className="block text-slate-700 mb-2" htmlFor={props.id}>
             {label}
@@ -252,7 +243,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         <div className="relative">
           <input
             ref={inputRef}
-            type={type === 'currency' ? 'text' : type}
+            type={type === "currency" ? "text" : type}
             value={getDisplayValue()}
             placeholder={getPlaceholder()}
             onMouseEnter={() => setIsHovered(true)}
@@ -263,12 +254,12 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             onMouseDown={handleMouseDown}
             onChange={handleChange}
             className={classNames(
-              'p-2.5 border rounded-xl',
-              'px-3 text-sm font-medium text-slate-800',
-              'h-[2.5rem]',
-              'placeholder:text-slate-400',
+              "p-2.5 border rounded-xl",
+              "px-3 text-sm font-medium text-slate-800",
+              "h-[2.5rem]",
+              "placeholder:text-slate-400",
               {
-                'border-danger ring-3 ring-danger/20':
+                "border-danger ring-3 ring-danger/20":
                   error ||
                   (validate &&
                     !validation.validation.isValid &&
@@ -282,41 +273,37 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
                     isFocused),
               },
               FORM_CONTROL_FOCUS_CLASS,
-              'disabled:bg-slate-100 disabled:cursor-not-allowed read-only:bg-slate-100 read-only:cursor-default',
+              "disabled:bg-slate-100 disabled:cursor-not-allowed read-only:bg-slate-100 read-only:cursor-default",
               FORM_CONTROL_DISABLED_READONLY_FOCUS_RESET_CLASS,
-              'transition-all duration-200 ease-in-out',
+              "transition-all duration-200 ease-in-out",
               {
-                'w-full': fullWidth,
+                "w-full": fullWidth,
               },
-              className
+              className,
             )}
             {...props}
           />
           {shouldShowOverlay() && (
             <div
               className={classNames(
-                'absolute bottom-full left-0 right-0 z-10 mb-1',
-                'p-2.5 px-3 text-sm font-medium text-slate-800',
-                'border rounded-xl bg-white/50 backdrop-blur-md',
-                'shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1),4px_0_6px_-1px_rgba(0,0,0,0.1),-4px_0_6px_-1px_rgba(0,0,0,0.1)]',
-                'whitespace-pre-wrap break-words',
-                'min-h-[2.5rem] max-h-32 overflow-y-auto',
+                "absolute bottom-full left-0 right-0 z-10 mb-1",
+                "p-2.5 px-3 text-sm font-medium text-slate-800",
+                "border rounded-xl bg-white/50 backdrop-blur-md",
+                "shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1),4px_0_6px_-1px_rgba(0,0,0,0.1),-4px_0_6px_-1px_rgba(0,0,0,0.1)]",
+                "whitespace-pre-wrap break-words",
+                "min-h-[2.5rem] max-h-32 overflow-y-auto",
                 {
-                  'border-danger':
+                  "border-danger":
                     error ||
-                    (validate &&
-                      !validation.validation.isValid &&
-                      validation.validation.error),
+                    (validate && !validation.validation.isValid && validation.validation.error),
                   [FORM_CONTROL_BORDER_DEFAULT_CLASS]:
                     !error &&
-                    (!validate ||
-                      validation.validation.isValid ||
-                      !validation.validation.error),
+                    (!validate || validation.validation.isValid || !validation.validation.error),
                 },
-                'pointer-events-none'
+                "pointer-events-none",
               )}
             >
-              {type === 'currency' && typeof value === 'string'
+              {type === "currency" && typeof value === "string"
                 ? formatCurrencyDisplay(value)
                 : getDisplayValue()}
             </div>
@@ -337,9 +324,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         )}
       </div>
     );
-  }
+  },
 );
 
-Input.displayName = 'Input';
+Input.displayName = "Input";
 
 export default Input;

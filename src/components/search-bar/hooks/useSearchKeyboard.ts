@@ -1,26 +1,26 @@
-import { useCallback, useEffect } from 'react';
-import { KEY_CODES } from '../constants';
-import { EnhancedSearchState } from '../types';
+import { useCallback, useEffect } from "react";
+import { KEY_CODES } from "../constants";
+import { EnhancedSearchState } from "../types";
 import {
   insertGroupCloseToken,
   insertGroupOpenToken,
   removeGroupTokenAtIndex,
-} from '../utils/groupPatternUtils';
-import { PatternBuilder } from '../utils/PatternBuilder';
+} from "../utils/groupPatternUtils";
+import { PatternBuilder } from "../utils/PatternBuilder";
 
 export const stripTrailingConfirmation = (input: string): string => {
   const trimmed = input.trimEnd();
-  return trimmed.endsWith('##') ? trimmed.slice(0, -2).trimEnd() : trimmed;
+  return trimmed.endsWith("##") ? trimmed.slice(0, -2).trimEnd() : trimmed;
 };
 
 export const ensureTrailingHash = (input: string): string => {
   const trimmed = input.trimEnd();
-  if (!trimmed) return '#';
-  return trimmed.endsWith('#') ? trimmed : `${trimmed} #`;
+  if (!trimmed) return "#";
+  return trimmed.endsWith("#") ? trimmed : `${trimmed} #`;
 };
 
 export const collapsePatternWhitespace = (input: string): string => {
-  return input.replace(/\s{2,}/g, ' ').trimStart();
+  return input.replace(/\s{2,}/g, " ").trimStart();
 };
 
 /**
@@ -36,21 +36,21 @@ export const collapsePatternWhitespace = (input: string): string => {
  * to avoid re-applying filters while the user is editing via Delete key.
  */
 export const deleteLastBadgeUnit = (input: string): string => {
-  const hasConfirmation = input.trimEnd().endsWith('##');
+  const hasConfirmation = input.trimEnd().endsWith("##");
   const base = stripTrailingConfirmation(input);
   let working = base.trimEnd();
-  if (!working) return '';
+  if (!working) return "";
 
   // If selector markers exist, remove them first (invisible badge).
-  if (working.endsWith('#')) {
-    working = working.replace(/\s*#\s*$/, '').trimEnd();
-    if (!working) return '';
+  if (working.endsWith("#")) {
+    working = working.replace(/\s*#\s*$/, "").trimEnd();
+    if (!working) return "";
   }
 
   const finalize = (next: string): string => {
     let result = collapsePatternWhitespace(next);
     const trimmedEnd = result.trimEnd();
-    if (!trimmedEnd) return '';
+    if (!trimmedEnd) return "";
 
     // Ensure join tokens are not merged into the previous value during partial deletion.
     // The parser needs at least one trailing whitespace after `#and/#or` to recognize the join.
@@ -68,7 +68,7 @@ export const deleteLastBadgeUnit = (input: string): string => {
     // - a value segment (doesn't start with '#')
     // - group close token (`#)`) which tokenizes as `#)` + `##`
     if (hasConfirmation && resultTrimmed) {
-      if (resultTrimmed.endsWith('#)')) {
+      if (resultTrimmed.endsWith("#)")) {
         return `${resultTrimmed}##`;
       }
 
@@ -82,17 +82,17 @@ export const deleteLastBadgeUnit = (input: string): string => {
   };
 
   // 1) Group close/open tokens as explicit badges.
-  if (working.endsWith('#)')) {
-    return finalize(working.replace(/\s*#\)\s*$/, ''));
+  if (working.endsWith("#)")) {
+    return finalize(working.replace(/\s*#\)\s*$/, ""));
   }
-  if (working.endsWith('#(')) {
-    return finalize(working.replace(/\s*#\(\s*$/, ''));
+  if (working.endsWith("#(")) {
+    return finalize(working.replace(/\s*#\(\s*$/, ""));
   }
 
   // 2) Trailing hash token (column/operator/join/etc).
   const trailingTokenMatch = working.match(/(?:^|\s)#[^\s#]+$/);
   if (trailingTokenMatch) {
-    return finalize(working.replace(/(?:^|\s)#[^\s#]+$/, ''));
+    return finalize(working.replace(/(?:^|\s)#[^\s#]+$/, ""));
   }
 
   // 3) Trailing value segment (anything after the last hash token).
@@ -103,7 +103,7 @@ export const deleteLastBadgeUnit = (input: string): string => {
     lastToken = match;
   }
   if (!lastToken) {
-    return '';
+    return "";
   }
 
   const cutIndex = lastToken.index + lastToken[0].length;
@@ -112,28 +112,26 @@ export const deleteLastBadgeUnit = (input: string): string => {
 };
 
 export const deleteGroupedPartialTail = (input: string): string | null => {
-  const hasGroupTokens = input.includes('#(') || input.includes('#)');
+  const hasGroupTokens = input.includes("#(") || input.includes("#)");
   if (!hasGroupTokens) return null;
 
   const base = stripTrailingConfirmation(input);
-  const normalized = base.replace(/\s+/g, ' ').trimEnd();
+  const normalized = base.replace(/\s+/g, " ").trimEnd();
   if (!normalized) return null;
 
   // When a selector is open, patterns may end with a trailing "#" marker that is not
   // rendered as a badge. Treat it as invisible and delete the previous meaningful
   // token (e.g. "#(") instead of getting "stuck" on an unchanged UI.
-  if (normalized.endsWith('#')) {
-    const withoutMarker = base.replace(/\s*#\s*$/, '').trimEnd();
+  if (normalized.endsWith("#")) {
+    const withoutMarker = base.replace(/\s*#\s*$/, "").trimEnd();
     if (withoutMarker !== base) {
       return deleteGroupedPartialTail(withoutMarker) ?? withoutMarker;
     }
   }
 
-  if (normalized.endsWith('#(') || normalized.endsWith('#)')) {
-    const tokenType = normalized.endsWith('#(') ? 'groupOpen' : 'groupClose';
-    const tokenCount = (
-      input.match(tokenType === 'groupOpen' ? /#\(/g : /#\)/g) || []
-    ).length;
+  if (normalized.endsWith("#(") || normalized.endsWith("#)")) {
+    const tokenType = normalized.endsWith("#(") ? "groupOpen" : "groupClose";
+    const tokenCount = (input.match(tokenType === "groupOpen" ? /#\(/g : /#\)/g) || []).length;
     if (tokenCount > 0) {
       return removeGroupTokenAtIndex(input, tokenType, tokenCount - 1);
     }
@@ -141,14 +139,12 @@ export const deleteGroupedPartialTail = (input: string): string | null => {
 
   const joinTailMatch = normalized.match(/^(.*)\s+#(?:and|or)\s*(?:#\s*)?$/i);
   if (joinTailMatch) {
-    const withoutJoin = joinTailMatch[1]?.trimEnd() ?? '';
+    const withoutJoin = joinTailMatch[1]?.trimEnd() ?? "";
     return withoutJoin;
   }
 
   // Delete trailing value segment (anything after the last hash token)
-  const trailingValueMatch = normalized.match(
-    /^(.*#(?![()])[^\s#]+)\s+([^#]+)$/
-  );
+  const trailingValueMatch = normalized.match(/^(.*#(?![()])[^\s#]+)\s+([^#]+)$/);
   if (trailingValueMatch) {
     return `${trailingValueMatch[1]} `;
   }
@@ -156,7 +152,7 @@ export const deleteGroupedPartialTail = (input: string): string | null => {
   // Delete trailing hash token (operator/column/etc) and go back to selector state.
   const trailingTokenMatch = normalized.match(/^(.*)\s+#(?![()])[^\s#]+\s*$/);
   if (trailingTokenMatch) {
-    const prefix = trailingTokenMatch[1]?.trimEnd() ?? '';
+    const prefix = trailingTokenMatch[1]?.trimEnd() ?? "";
     return ensureTrailingHash(prefix);
   }
 
@@ -167,7 +163,7 @@ export const deleteGroupedPartialTail = (input: string): string | null => {
 // Delete behaves as a pure "remove 1 badge" operation, driven by the raw pattern string.
 
 // Scalable type for edit targets
-type EditValueTarget = 'value' | 'valueTo';
+type EditValueTarget = "value" | "valueTo";
 
 interface UseSearchKeyboardProps {
   value: string;
@@ -182,13 +178,10 @@ interface UseSearchKeyboardProps {
   onStepBackDelete?: () => boolean;
   onInvalidGroupOpen?: () => void;
   // Scalable handlers for N-condition support
-  editConditionValue?: (
-    conditionIndex: number,
-    target: EditValueTarget
-  ) => void;
+  editConditionValue?: (conditionIndex: number, target: EditValueTarget) => void;
   clearConditionPart?: (
     conditionIndex: number,
-    target: 'column' | 'operator' | 'value' | 'valueTo'
+    target: "column" | "operator" | "value" | "valueTo",
   ) => void;
   clearJoin?: (joinIndex: number) => void;
 }
@@ -230,12 +223,12 @@ export const useSearchKeyboard = ({
       if (searchMode.showJoinOperatorSelector) {
         e.preventDefault();
         e.stopPropagation();
-        const trimmedValue = value.replace(/\s+#\s*$/, '').trimEnd();
+        const trimmedValue = value.replace(/\s+#\s*$/, "").trimEnd();
         const newValue = trimmedValue
-          ? trimmedValue.endsWith('##')
+          ? trimmedValue.endsWith("##")
             ? trimmedValue
             : `${trimmedValue}##`
-          : '';
+          : "";
         onChange({
           target: { value: newValue },
         } as React.ChangeEvent<HTMLInputElement>);
@@ -253,7 +246,7 @@ export const useSearchKeyboard = ({
           const baseFilter = trailingJoinMatch[1].trimEnd();
           // Step back from “choosing next column” to “choosing join operator”.
           // Pattern: ... [Value] #and #  -> ... [Value] #
-          const newValue = baseFilter ? ensureTrailingHash(baseFilter) : '';
+          const newValue = baseFilter ? ensureTrailingHash(baseFilter) : "";
           onChange({
             target: { value: newValue },
           } as React.ChangeEvent<HTMLInputElement>);
@@ -261,7 +254,7 @@ export const useSearchKeyboard = ({
         }
       }
 
-      if (value.includes('#(') || value.includes('#)')) {
+      if (value.includes("#(") || value.includes("#)")) {
         const nextValue = deleteGroupedPartialTail(value);
         if (nextValue !== null && nextValue !== value) {
           e.preventDefault();
@@ -275,7 +268,7 @@ export const useSearchKeyboard = ({
 
       // Fallback: when a selector is open and focus is away from the input,
       // allow Delete to remove one badge unit from the end of the pattern.
-      if (value.trimStart().startsWith('#')) {
+      if (value.trimStart().startsWith("#")) {
         const nextValue = deleteLastBadgeUnit(value);
         if (nextValue !== value) {
           e.preventDefault();
@@ -287,9 +280,9 @@ export const useSearchKeyboard = ({
       }
     };
 
-    window.addEventListener('keydown', onGlobalKeyDown, { capture: true });
+    window.addEventListener("keydown", onGlobalKeyDown, { capture: true });
     return () => {
-      window.removeEventListener('keydown', onGlobalKeyDown, {
+      window.removeEventListener("keydown", onGlobalKeyDown, {
         capture: true,
       });
     };
@@ -313,7 +306,7 @@ export const useSearchKeyboard = ({
           searchMode.showJoinOperatorSelector;
 
         const isPatternMode =
-          value.trimStart().startsWith('#') ||
+          value.trimStart().startsWith("#") ||
           searchMode.showColumnSelector ||
           searchMode.showOperatorSelector ||
           searchMode.showJoinOperatorSelector ||
@@ -321,11 +314,11 @@ export const useSearchKeyboard = ({
 
         const canInsertGroupOpen = /#(?:and|or)\s+#\s*$/i.test(value.trimEnd());
 
-        if ((e.key === '(' || e.key === ')') && isPatternMode) {
+        if ((e.key === "(" || e.key === ")") && isPatternMode) {
           e.preventDefault();
           e.stopPropagation();
 
-          if (e.key === '(') {
+          if (e.key === "(") {
             if (!canInsertGroupOpen) {
               onInvalidGroupOpen?.();
               return;
@@ -342,7 +335,7 @@ export const useSearchKeyboard = ({
           if (pendingValue) {
             const trimmedValue = value.trimEnd();
             if (!trimmedValue.endsWith(pendingValue)) {
-              const separator = trimmedValue ? ' ' : '';
+              const separator = trimmedValue ? " " : "";
               baseValue = `${trimmedValue}${separator}${pendingValue}`;
             }
           }
@@ -403,43 +396,32 @@ export const useSearchKeyboard = ({
 
             // Check if current condition has a value being typed
             // (Exclude cases where input ends exactly with the operator badge pattern)
-            const opPattern = new RegExp(
-              `#${currentPartialCond.operator}\\s*$`
-            );
+            const opPattern = new RegExp(`#${currentPartialCond.operator}\\s*$`);
             const hasCondValue = !opPattern.test(currentValue);
 
-            if (
-              hasCondValue &&
-              !currentValue.endsWith('#') &&
-              !currentValue.endsWith('##')
-            ) {
+            if (hasCondValue && !currentValue.endsWith("#") && !currentValue.endsWith("##")) {
               // Special handling for Between (inRange) operator
-              if (currentPartialCond.operator === 'inRange') {
+              if (currentPartialCond.operator === "inRange") {
                 // Check if current condition already has #to marker
                 // Pattern: ... #and [#col] #inRange val [#to]
-                const inRangeRegex =
-                  /#(and|or)\s+(?:#[^\s#]+\s+)?#inRange\s+(.*)$/i;
+                const inRangeRegex = /#(and|or)\s+(?:#[^\s#]+\s+)?#inRange\s+(.*)$/i;
                 const match = currentValue.match(inRangeRegex);
                 if (match) {
                   const valPart = match[2].trim();
-                  if (!valPart.includes('#to')) {
+                  if (!valPart.includes("#to")) {
                     // Check for dash format first
                     const dashMatch = valPart.match(/^(.+?)-(.+)$/);
-                    if (
-                      dashMatch &&
-                      dashMatch[1].trim() &&
-                      dashMatch[2].trim()
-                    ) {
+                    if (dashMatch && dashMatch[1].trim() && dashMatch[2].trim()) {
                       // Confirm with ##
                       onChange({
-                        target: { value: currentValue + '##' },
+                        target: { value: currentValue + "##" },
                       } as React.ChangeEvent<HTMLInputElement>);
                       onClearPreservedState?.();
                       return;
                     }
                     // Add #to marker
                     onChange({
-                      target: { value: currentValue + ' #to ' },
+                      target: { value: currentValue + " #to " },
                     } as React.ChangeEvent<HTMLInputElement>);
                     return;
                   }
@@ -447,7 +429,7 @@ export const useSearchKeyboard = ({
               }
 
               // Confirm pattern
-              const newValue = currentValue + '##';
+              const newValue = currentValue + "##";
               onChange({
                 target: { value: newValue },
               } as React.ChangeEvent<HTMLInputElement>);
@@ -466,16 +448,16 @@ export const useSearchKeyboard = ({
               searchMode.filterSearch &&
               !searchMode.filterSearch.isConfirmed &&
               !searchMode.filterSearch.isMultiCondition &&
-              searchMode.filterSearch.value.trim() !== ''
+              searchMode.filterSearch.value.trim() !== ""
             ) {
               // Special handling for Between (inRange) operator: requires both values
               // When only first value exists, transition to "waiting for valueTo" state
               if (
-                searchMode.filterSearch.operator === 'inRange' &&
+                searchMode.filterSearch.operator === "inRange" &&
                 !searchMode.filterSearch.valueTo
               ) {
                 // Check if we're already waiting for valueTo (pattern contains #to marker)
-                if (value.includes('#to')) {
+                if (value.includes("#to")) {
                   // Already waiting for second value - don't confirm yet
                   return;
                 }
@@ -496,7 +478,7 @@ export const useSearchKeyboard = ({
                     if (firstVal.trim() && secondVal.trim()) {
                       // Has both values in dash format - confirm with ##
                       const currentValue = value.trim();
-                      const newValue = currentValue + '##';
+                      const newValue = currentValue + "##";
                       onChange({
                         target: { value: newValue },
                       } as React.ChangeEvent<HTMLInputElement>);
@@ -509,7 +491,7 @@ export const useSearchKeyboard = ({
                 // Pattern: #col #inRange 500 → #col #inRange 500 #to
                 // This makes the input area empty after badges, ready for second value
                 const currentValue = value.trim();
-                const newValue = currentValue + ' #to ';
+                const newValue = currentValue + " #to ";
                 onChange({
                   target: { value: newValue },
                 } as React.ChangeEvent<HTMLInputElement>);
@@ -520,8 +502,8 @@ export const useSearchKeyboard = ({
               const currentValue = value.trim(); // Trim to avoid trailing spaces
 
               // Safety check: don't add ## if value already has # at end (which would corrupt pattern)
-              if (!currentValue.endsWith('#')) {
-                const newValue = currentValue + '##';
+              if (!currentValue.endsWith("#")) {
+                const newValue = currentValue + "##";
                 onChange({
                   target: { value: newValue },
                 } as React.ChangeEvent<HTMLInputElement>);
@@ -537,6 +519,10 @@ export const useSearchKeyboard = ({
         // DELETE key: Used for badge deletion (works even when modal is open)
         // This is separate from Backspace which is used for modal internal search
         if (e.key === KEY_CODES.DELETE) {
+          if (!isModalOpen && e.currentTarget.value.length > 0) {
+            return;
+          }
+
           if (onStepBackDelete?.()) {
             e.preventDefault();
             e.stopPropagation();
@@ -548,18 +534,16 @@ export const useSearchKeyboard = ({
           if (searchMode.showJoinOperatorSelector) {
             e.preventDefault();
             e.stopPropagation();
-            const trimmedValue = value.replace(/\s+#\s*$/, '').trimEnd();
+            const trimmedValue = value.replace(/\s+#\s*$/, "").trimEnd();
             if (!trimmedValue) {
               onChange({
-                target: { value: '' },
+                target: { value: "" },
               } as React.ChangeEvent<HTMLInputElement>);
               return;
             }
             onChange({
               target: {
-                value: trimmedValue.endsWith('##')
-                  ? trimmedValue
-                  : `${trimmedValue}##`,
+                value: trimmedValue.endsWith("##") ? trimmedValue : `${trimmedValue}##`,
               },
             } as React.ChangeEvent<HTMLInputElement>);
             return;
@@ -575,26 +559,20 @@ export const useSearchKeyboard = ({
             e.preventDefault();
             e.stopPropagation();
 
-            if (
-              searchMode.filterSearch.operator === 'inRange' &&
-              searchMode.filterSearch.valueTo
-            ) {
+            if (searchMode.filterSearch.operator === "inRange" && searchMode.filterSearch.valueTo) {
               if (editConditionValue) {
-                editConditionValue(0, 'valueTo');
+                editConditionValue(0, "valueTo");
               } else if (clearConditionPart) {
-                clearConditionPart(0, 'valueTo');
+                clearConditionPart(0, "valueTo");
               }
               return;
             }
 
-            if (
-              searchMode.filterSearch.operator === 'inRange' &&
-              searchMode.filterSearch.value
-            ) {
+            if (searchMode.filterSearch.operator === "inRange" && searchMode.filterSearch.value) {
               if (editConditionValue) {
-                editConditionValue(0, 'value');
+                editConditionValue(0, "value");
               } else if (clearConditionPart) {
-                clearConditionPart(0, 'value');
+                clearConditionPart(0, "value");
               }
               return;
             }
@@ -608,7 +586,7 @@ export const useSearchKeyboard = ({
 
           // Sequential badge deletion in pattern/badge mode:
           // Delete removes exactly 1 badge from the far-right each press.
-          if (value.trimStart().startsWith('#')) {
+          if (value.trimStart().startsWith("#")) {
             e.preventDefault();
             e.stopPropagation();
 
@@ -622,7 +600,7 @@ export const useSearchKeyboard = ({
           }
 
           if (
-            (value.includes('#(') || value.includes('#)')) &&
+            (value.includes("#(") || value.includes("#)")) &&
             !searchMode.filterSearch?.filterGroup
           ) {
             const nextValue = deleteGroupedPartialTail(value);
@@ -639,14 +617,14 @@ export const useSearchKeyboard = ({
           // This handles the case when user has [Column][Between][Value][to] and presses Delete
           if (
             searchMode.isFilterMode &&
-            searchMode.filterSearch?.operator === 'inRange' &&
+            searchMode.filterSearch?.operator === "inRange" &&
             searchMode.filterSearch?.waitingForValueTo &&
             searchMode.filterSearch?.value &&
             !searchMode.filterSearch?.isMultiCondition
           ) {
             e.preventDefault();
             if (clearConditionPart) {
-              clearConditionPart(0, 'value');
+              clearConditionPart(0, "value");
             }
             return;
           }
@@ -657,25 +635,15 @@ export const useSearchKeyboard = ({
           const currentPartialCond = searchMode.partialConditions?.[activeIdx];
           const currentOp = currentPartialCond?.operator;
 
-          if (
-            activeIdx > 0 &&
-            currentOp &&
-            searchMode.partialJoin &&
-            !searchMode.isFilterMode
-          ) {
+          if (activeIdx > 0 && currentOp && searchMode.partialJoin && !searchMode.isFilterMode) {
             e.preventDefault();
 
-            const hasGroupTokens = value.includes('#(') || value.includes('#)');
+            const hasGroupTokens = value.includes("#(") || value.includes("#)");
             if (hasGroupTokens) {
-              const escapedOp = currentOp.replace(
-                /[.*+?^${}()|[\]\\]/g,
-                '\\$&'
-              );
-              const opRegex = new RegExp(`#${escapedOp}\\s*$`, 'i');
+              const escapedOp = currentOp.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+              const opRegex = new RegExp(`#${escapedOp}\\s*$`, "i");
               if (opRegex.test(value)) {
-                const newValue = value
-                  .replace(opRegex, '#')
-                  .replace(/\s+$/, ' ');
+                const newValue = value.replace(opRegex, "#").replace(/\s+$/, " ");
                 onChange({
                   target: { value: newValue },
                 } as React.ChangeEvent<HTMLInputElement>);
@@ -685,7 +653,7 @@ export const useSearchKeyboard = ({
 
             // Use PatternBuilder to reconstruct the pattern up to the current column, then add trailing '#'
             // This ensures the operator selector opens for the current condition.
-            const conditions = (searchMode.partialConditions || []).map(c => ({
+            const conditions = (searchMode.partialConditions || []).map((c) => ({
               field: c.column?.field || c.field,
               operator: c.operator,
               value: c.value,
@@ -703,12 +671,12 @@ export const useSearchKeyboard = ({
               conditions,
               searchMode.joins || [],
               searchMode.filterSearch?.isMultiColumn || false,
-              searchMode.filterSearch?.column?.field || '',
+              searchMode.filterSearch?.column?.field || "",
               {
                 confirmed: false,
                 openSelector: true,
                 stopAfterIndex: activeIdx,
-              }
+              },
             );
 
             // Clear preserved state to remove the operator badge from UI
@@ -742,18 +710,18 @@ export const useSearchKeyboard = ({
           // Only for single condition filters (multi-condition uses generalized logic above)
           if (
             searchMode.isFilterMode &&
-            searchMode.filterSearch?.value === '' &&
+            searchMode.filterSearch?.value === "" &&
             !searchMode.filterSearch?.isMultiCondition
           ) {
             if (
-              searchMode.filterSearch.operator === 'contains' &&
+              searchMode.filterSearch.operator === "contains" &&
               !searchMode.filterSearch.isExplicitOperator
             ) {
               if (onClearSearch) {
                 onClearSearch();
               } else {
                 onChange({
-                  target: { value: '' },
+                  target: { value: "" },
                 } as React.ChangeEvent<HTMLInputElement>);
               }
               return;
@@ -767,10 +735,7 @@ export const useSearchKeyboard = ({
               } as React.ChangeEvent<HTMLInputElement>);
               return;
             }
-          } else if (
-            searchMode.showOperatorSelector &&
-            searchMode.selectedColumn
-          ) {
+          } else if (searchMode.showOperatorSelector && searchMode.selectedColumn) {
             e.preventDefault();
 
             // Generalize: check if this is a subsequent condition's operator selector
@@ -781,21 +746,15 @@ export const useSearchKeyboard = ({
             ) {
               e.preventDefault();
 
-              const hasGroupTokens =
-                value.includes('#(') || value.includes('#)');
+              const hasGroupTokens = value.includes("#(") || value.includes("#)");
               if (hasGroupTokens && searchMode.selectedColumn?.field) {
                 const escapedField = searchMode.selectedColumn.field.replace(
                   /[.*+?^${}()|[\]\\]/g,
-                  '\\$&'
+                  "\\$&",
                 );
-                const columnRegex = new RegExp(
-                  `#${escapedField}\\s*#\\s*$`,
-                  'i'
-                );
+                const columnRegex = new RegExp(`#${escapedField}\\s*#\\s*$`, "i");
                 if (columnRegex.test(value)) {
-                  const newValue = value
-                    .replace(columnRegex, '#')
-                    .replace(/\s+$/, ' ');
+                  const newValue = value.replace(columnRegex, "#").replace(/\s+$/, " ");
                   onChange({
                     target: { value: newValue },
                   } as React.ChangeEvent<HTMLInputElement>);
@@ -806,14 +765,12 @@ export const useSearchKeyboard = ({
               // Go back to column selector while preserving the join badge
               // Pattern: ...[Join][Column]# -> ...[Join]#
               // This removes the column badge but keeps the join and opens column selector
-              const conditions = (searchMode.partialConditions || []).map(
-                c => ({
-                  field: c.column?.field || c.field,
-                  operator: c.operator,
-                  value: c.value,
-                  valueTo: c.valueTo,
-                })
-              );
+              const conditions = (searchMode.partialConditions || []).map((c) => ({
+                field: c.column?.field || c.field,
+                operator: c.operator,
+                value: c.value,
+                valueTo: c.valueTo,
+              }));
 
               // Build pattern up to previous condition (confirmed), then add join + # for column selector
               const prevActiveIdx = searchMode.activeConditionIndex - 1;
@@ -821,18 +778,16 @@ export const useSearchKeyboard = ({
                 conditions.slice(0, prevActiveIdx + 1),
                 (searchMode.joins || []).slice(0, prevActiveIdx),
                 searchMode.filterSearch?.isMultiColumn || false,
-                searchMode.filterSearch?.column?.field || '',
+                searchMode.filterSearch?.column?.field || "",
                 {
                   confirmed: false,
                   openSelector: false, // Don't add trailing # here
-                }
+                },
               );
 
               // Preserve the join operator and add trailing # for column selector
               const preservedJoin =
-                searchMode.joins?.[prevActiveIdx] ||
-                searchMode.partialJoin ||
-                'AND';
+                searchMode.joins?.[prevActiveIdx] || searchMode.partialJoin || "AND";
               const newValue = `${basePattern} #${preservedJoin.toLowerCase()} #`;
 
               onChange({
@@ -846,7 +801,7 @@ export const useSearchKeyboard = ({
               onClearSearch();
             } else {
               onChange({
-                target: { value: '' },
+                target: { value: "" },
               } as React.ChangeEvent<HTMLInputElement>);
             }
             return;
@@ -867,7 +822,7 @@ export const useSearchKeyboard = ({
 
         onKeyDown?.(e);
       } catch (error) {
-        console.error('Error in handleInputKeyDown:', error);
+        console.error("Error in handleInputKeyDown:", error);
         onKeyDown?.(e);
       }
     },
@@ -885,7 +840,7 @@ export const useSearchKeyboard = ({
       onInvalidGroupOpen,
       editConditionValue,
       clearConditionPart,
-    ]
+    ],
   );
 
   return {
