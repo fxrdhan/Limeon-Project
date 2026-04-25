@@ -3219,7 +3219,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   const columnSelectorConfig = useMemo(
     (): BaseSelectorConfig<SearchColumn> => ({
-      headerText: 'Pilih kolom untuk pencarian targeted',
+      headerText: 'Pilih kolom',
       footerSingular: 'kolom',
       maxHeight: '320px',
       noResultsText: 'Tidak ada kolom yang ditemukan untuk "{searchTerm}"',
@@ -3236,7 +3236,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   const operatorSelectorConfig = useMemo(
     (): BaseSelectorConfig<FilterOperator> => ({
-      headerText: 'Pilih operator filter untuk kolom',
+      headerText: 'Pilih operator filter',
       footerSingular: 'operator',
       maxHeight: '320px',
       noResultsText: 'Tidak ada operator yang ditemukan untuk "{searchTerm}"',
@@ -3254,7 +3254,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
   const joinSelectorConfig = useMemo(
     (): BaseSelectorConfig<JoinOperator> => ({
-      headerText: 'Pilih operator join untuk kondisi',
+      headerText: 'Pilih operator join',
       footerSingular: 'operator',
       maxHeight: '200px',
       noResultsText: 'Tidak ada operator yang ditemukan untuk "{searchTerm}"',
@@ -3531,7 +3531,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               ref={inputRef}
               type="text"
               placeholder={getPlaceholder()}
-              className="text-sm outline-none tracking-normal flex-grow min-w-[40px] bg-transparent border-none focus:ring-0 p-1 placeholder-slate-400"
+              className="text-sm outline-none tracking-normal flex-grow min-w-[40px] bg-transparent border-none focus:ring-0 py-1 pr-1 pl-2 placeholder-slate-400"
               value={displayValue}
               onChange={wrappedInputChangeHandler}
               onKeyDown={wrappedKeyDownHandler}

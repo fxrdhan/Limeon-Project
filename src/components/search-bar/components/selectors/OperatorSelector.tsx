@@ -18,7 +18,7 @@ const OperatorSelector: React.FC<OperatorSelectorProps> = ({
 }) => {
   const config = useMemo(
     (): BaseSelectorConfig<FilterOperator> => ({
-      headerText: 'Pilih operator filter untuk kolom',
+      headerText: 'Pilih operator filter',
       footerSingular: 'operator',
       maxHeight: '320px',
       noResultsText: 'Tidak ada operator yang ditemukan untuk "{searchTerm}"',

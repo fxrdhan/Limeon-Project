@@ -2534,7 +2534,7 @@ const ItemMasterNew = memo(() => {
                 variant="tabs"
                 size="md"
                 shape="rounded"
-                className="[&_[role=tab]]:rounded-lg [&_[role=tab]>.absolute]:rounded-lg"
+                className="z-[70] [&_[role=tab]]:rounded-lg [&_[role=tab]>.absolute]:rounded-lg"
                 collapsible={true}
                 defaultExpanded={false}
                 expandOnHover={true}

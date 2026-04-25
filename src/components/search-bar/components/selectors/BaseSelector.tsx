@@ -7,7 +7,6 @@ import {
   useCallback,
 } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { TbSearch, TbSparkles } from 'react-icons/tb';
 import fuzzysort from 'fuzzysort';
 import { BaseSelectorProps } from '../../types';
 import { SEARCH_CONSTANTS } from '../../constants';
@@ -605,8 +604,7 @@ function BaseSelector<T>({
   const headerContent = useMemo(() => {
     if (internalSearchTerm) {
       return (
-        <div className="flex items-center gap-2 text-xs text-slate-600">
-          <TbSearch className="w-3 h-3" />
+        <div className="flex items-center text-xs text-slate-600">
           <span>
             Searching:{' '}
             <span
@@ -625,8 +623,7 @@ function BaseSelector<T>({
       );
     }
     return (
-      <div className="flex items-center gap-2 text-xs text-slate-600">
-        <TbSparkles className="w-3 h-3" />
+      <div className="flex items-center text-xs text-slate-600">
         <span>{config.headerText}</span>
       </div>
     );
@@ -650,7 +647,7 @@ function BaseSelector<T>({
         <motion.div
           ref={modalRef}
           layout
-          className="fixed z-50 bg-white border border-slate-200 rounded-xl shadow-lg min-w-[180px] overflow-hidden"
+          className="fixed z-50 w-max min-w-[180px] max-w-[calc(100vw-1rem)] bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden"
           style={{
             top: 0,
             left: 0,
@@ -885,7 +882,7 @@ function BaseSelector<T>({
                                 <div className="flex-1 min-w-0 relative z-10">
                                   <div className="flex items-center gap-2">
                                     <span
-                                      className={`text-sm font-medium transition-colors duration-150 ${
+                                      className={`text-sm font-medium whitespace-nowrap transition-colors duration-150 ${
                                         isSelected
                                           ? selectedTextClass
                                           : 'text-slate-700'

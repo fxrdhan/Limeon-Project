@@ -27,6 +27,7 @@ const BRAND_NAME = 'PharmaSys';
 const SUBMENU_ITEM_HEIGHT = 48;
 const EXPANDED_CONTENT_DELAY_MS = 90;
 const HOVER_HIGHLIGHT_CLEAR_DELAY_MS = 80;
+const HOVER_HIGHLIGHT_LAYOUT_SYNC_MS = 450;
 
 type SubmenuItem = { name: string; path: string };
 
@@ -240,10 +241,11 @@ const brandTitleCharacterVariants = {
 } as const;
 
 const sidebarBackgroundTransition = {
-  type: 'spring',
-  stiffness: 520,
-  damping: 42,
-  mass: 0.7,
+  x: { duration: 0.12, ease: 'easeOut' },
+  y: { duration: 0.12, ease: 'easeOut' },
+  width: { duration: 0.12, ease: 'easeOut' },
+  height: { duration: 0.12, ease: 'easeOut' },
+  opacity: { duration: 0.08, ease: 'easeOut' },
 } as const;
 
 const getSidebarTargetId = (target: SidebarHoverTarget) =>
@@ -660,8 +662,17 @@ const Sidebar = ({
       }));
     };
 
-    updateHighlightFrame();
-    const animationFrameId = requestAnimationFrame(updateHighlightFrame);
+    let animationFrameId: number | null = null;
+    const syncStartTime = performance.now();
+    const syncHighlightFrame = () => {
+      updateHighlightFrame();
+
+      if (performance.now() - syncStartTime < HOVER_HIGHLIGHT_LAYOUT_SYNC_MS) {
+        animationFrameId = requestAnimationFrame(syncHighlightFrame);
+      }
+    };
+
+    syncHighlightFrame();
     const resizeObserver =
       typeof ResizeObserver === 'undefined'
         ? null
@@ -672,7 +683,9 @@ const Sidebar = ({
     window.addEventListener('resize', updateHighlightFrame);
 
     return () => {
-      cancelAnimationFrame(animationFrameId);
+      if (animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId);
+      }
       resizeObserver?.disconnect();
       window.removeEventListener('resize', updateHighlightFrame);
     };
@@ -716,7 +729,7 @@ const Sidebar = ({
         >
           <motion.div
             aria-hidden="true"
-            className={`pointer-events-none absolute left-0 top-0 z-0 bg-primary-light ${
+            className={`pointer-events-none absolute left-0 top-0 z-0 bg-primary/10 ${
               highlightedSidebarItem?.type === 'submenu'
                 ? 'rounded-r-xl'
                 : 'rounded-xl'

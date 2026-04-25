@@ -43,7 +43,7 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
 
   const config = useMemo(
     (): BaseSelectorConfig<SearchColumn> => ({
-      headerText: 'Pilih kolom untuk pencarian targeted',
+      headerText: 'Pilih kolom',
       footerSingular: 'kolom',
       maxHeight: '320px',
       noResultsText: 'Tidak ada kolom yang ditemukan untuk "{searchTerm}"',

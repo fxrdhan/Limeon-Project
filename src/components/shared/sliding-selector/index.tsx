@@ -60,11 +60,6 @@ const DIRECT_HOVER_TRANSITION = {
   ease: 'easeOut',
 } as const;
 
-const DIRECT_DROPDOWN_TRANSITION = {
-  duration: 0.32,
-  ease: 'easeOut',
-} as const;
-
 const CHEVRON_ROTATE_TRANSITION = {
   duration: 0.28,
   ease: 'easeInOut',
@@ -85,6 +80,15 @@ const ACTIVE_FILL_DELAYED_TRANSITION = {
 const ACTIVE_FILL_COLLAPSE_TRANSITION = {
   duration: 0.32,
   ease: 'easeInOut',
+} as const;
+
+const VERTICAL_SWAP_TRANSITION = {
+  layout: {
+    type: 'spring',
+    stiffness: 420,
+    damping: 34,
+    mass: 0.72,
+  },
 } as const;
 
 const SIZE_CLASSES = {
@@ -146,6 +150,13 @@ export const SlidingSelector = <T,>({
   const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   const activeOption = options.find(option => option.key === activeKey);
+  const verticalSwapOptions =
+    expandDirection === 'vertical' && activeOption
+      ? [
+          activeOption,
+          ...options.filter(option => option.key !== activeOption.key),
+        ]
+      : options;
   const animation = ANIMATION_PRESETS[animationPreset];
   const sizeClasses = SIZE_CLASSES[size];
   const shapeClasses = SHAPE_CLASSES[shape];
@@ -370,8 +381,10 @@ export const SlidingSelector = <T,>({
       hoveredIndex === index && !isActive && !disabled && !option.disabled;
 
     return (
-      <button
+      <motion.button
         key={option.key}
+        layout={isVerticalItem ? 'position' : undefined}
+        transition={isVerticalItem ? VERTICAL_SWAP_TRANSITION : undefined}
         ref={el => {
           buttonRefs.current[index] = el;
         }}
@@ -398,7 +411,7 @@ export const SlidingSelector = <T,>({
           <motion.div
             layoutId={`${layoutId || variant}-selector-hover-bg`}
             className={classNames(
-              'absolute inset-0 bg-primary-light',
+              'absolute inset-0 bg-primary/10',
               shapeClasses.background
             )}
             transition={DIRECT_HOVER_TRANSITION}
@@ -431,7 +444,7 @@ export const SlidingSelector = <T,>({
         >
           {getDisplayLabel(option, isActive)}
         </motion.span>
-      </button>
+      </motion.button>
     );
   };
 
@@ -504,7 +517,7 @@ export const SlidingSelector = <T,>({
             'ml-1 p-2 transition-colors duration-300 ease-in-out group relative z-10',
             shapeClasses.button,
             {
-              'hover:bg-primary-light': !showVerticalActiveFill,
+              'hover:bg-primary/10': !showVerticalActiveFill,
             }
           )}
         >
@@ -595,31 +608,25 @@ export const SlidingSelector = <T,>({
               ...animation.container,
             }}
           >
-            <div className="inline-flex items-center relative w-fit">
-              {renderCollapsedContent()}
-            </div>
-
-            <motion.div
-              aria-hidden={!isExpanded}
-              animate={{
-                height: isExpanded ? 'auto' : 0,
-                opacity: isExpanded ? 1 : 0,
-              }}
-              className={classNames(
-                'inline-flex max-h-[calc(100vh-10rem)] flex-col items-stretch overflow-y-auto overscroll-contain',
-                {
-                  'pointer-events-none': !isExpanded,
-                }
-              )}
-              initial={false}
-              transition={DIRECT_DROPDOWN_TRANSITION}
-            >
-              {options.map((option, index) =>
-                option.key === activeKey
-                  ? null
-                  : renderOption(option, index, true)
-              )}
-            </motion.div>
+            {isExpanded ? (
+              <motion.div
+                layout
+                className="inline-flex flex-col items-stretch overflow-hidden"
+                transition={VERTICAL_SWAP_TRANSITION}
+              >
+                {verticalSwapOptions.map(option =>
+                  renderOption(
+                    option,
+                    options.findIndex(item => item.key === option.key),
+                    true
+                  )
+                )}
+              </motion.div>
+            ) : (
+              <div className="inline-flex items-center relative w-fit">
+                {renderCollapsedContent()}
+              </div>
+            )}
           </motion.div>
         </div>
       </LayoutGroup>
@@ -635,7 +642,7 @@ export const SlidingSelector = <T,>({
         className={classNames(
           'bg-zinc-100 shadow-md text-slate-700 overflow-hidden select-none relative w-fit',
           isVerticalExpanded
-            ? 'inline-flex max-h-[calc(100vh-7rem)] max-w-[calc(100vw-3rem)] flex-col items-stretch overflow-y-auto overscroll-contain'
+            ? 'inline-flex max-w-[calc(100vw-3rem)] flex-col items-stretch overflow-hidden'
             : 'inline-flex items-center',
           sizeClasses.container,
           shapeClasses.container,

@@ -24,7 +24,7 @@ const JoinOperatorSelector: React.FC<JoinOperatorSelectorProps> = ({
 }) => {
   const config = useMemo(
     (): BaseSelectorConfig<JoinOperator> => ({
-      headerText: 'Pilih operator join untuk kondisi',
+      headerText: 'Pilih operator join',
       footerSingular: 'operator',
       maxHeight: '200px',
       noResultsText: 'Tidak ada operator yang ditemukan untuk "{searchTerm}"',
