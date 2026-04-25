@@ -73,6 +73,7 @@ const sizeClasses = {
 const PresenceAvatar = memo(
   ({ user, isOnline, size, layoutIdPrefix, overlap }: PresenceAvatarProps) => {
     const profilePhotoUrl = user.profilephoto_thumb ?? user.profilephoto ?? null;
+    const contentFilter = isOnline ? "grayscale(0)" : "grayscale(1)";
 
     return (
       <Tooltip side="bottom" className={cn("shrink-0", overlap && sizeClasses[size].overlap)}>
@@ -80,7 +81,6 @@ const PresenceAvatar = memo(
           <motion.div
             layoutId={`${layoutIdPrefix}-${user.id}`}
             animate={{
-              filter: isOnline ? "grayscale(0)" : "grayscale(1)",
               opacity: 1,
               scale: 1,
             }}
@@ -88,11 +88,22 @@ const PresenceAvatar = memo(
             initial={false}
             className="cursor-pointer"
           >
-            <Avatar className={cn("border-neutral-300", sizeClasses[size].avatar)}>
+            <Avatar className={cn("border-slate-200", sizeClasses[size].avatar)}>
               {profilePhotoUrl ? (
-                <AvatarImage src={profilePhotoUrl} alt={user.name} />
+                <AvatarImage
+                  src={profilePhotoUrl}
+                  alt={user.name}
+                  className="transition-[filter] duration-200 ease-out"
+                  style={{ filter: contentFilter }}
+                />
               ) : (
-                <AvatarFallback className={cn("text-white", getInitialsColor(user.id))}>
+                <AvatarFallback
+                  className={cn(
+                    "text-white transition-[filter] duration-200 ease-out",
+                    getInitialsColor(user.id),
+                  )}
+                  style={{ filter: contentFilter }}
+                >
                   {getInitials(user.name)}
                 </AvatarFallback>
               )}
@@ -143,7 +154,7 @@ const UserPresenceAvatar = memo(
             {groupedUsers.online.length > 0 ? (
               <motion.div
                 layout
-                className="rounded-full bg-neutral-300 p-0.5"
+                className="rounded-full bg-slate-200 p-0.5"
                 transition={groupContainerTransition}
               >
                 <div className={cn("flex items-center", sizeClasses[size].group)}>
@@ -164,7 +175,7 @@ const UserPresenceAvatar = memo(
             {groupedUsers.offline.length > 0 ? (
               <motion.div
                 layout
-                className="rounded-full bg-neutral-300 p-0.5"
+                className="rounded-full bg-slate-200 p-0.5"
                 transition={groupContainerTransition}
               >
                 <div className={cn("flex items-center", sizeClasses[size].group)}>
@@ -186,7 +197,7 @@ const UserPresenceAvatar = memo(
               <motion.div
                 layout
                 className={cn(
-                  "flex shrink-0 items-center justify-center rounded-full bg-neutral-200 font-medium text-slate-600",
+                  "flex shrink-0 items-center justify-center rounded-full bg-slate-100 font-medium text-slate-600",
                   sizeClasses[size].overflow,
                 )}
                 transition={groupContainerTransition}
