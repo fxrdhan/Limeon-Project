@@ -233,13 +233,29 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
 
       if (!isKeyboardNavigation) return;
 
+      if (heldHighlightFrame) {
+        onHoverDetailHide?.();
+        return;
+      }
+
       const frameId = window.requestAnimationFrame(() => {
         const container = optionsContainerRef.current;
         const highlightedOption = filteredOptions[highlightedIndex];
         const highlightedElement =
           container?.querySelectorAll<HTMLElement>('[role="option"]')[highlightedIndex];
 
-        if (!highlightedOption || !highlightedElement) {
+        if (!container || !highlightedOption || !highlightedElement) {
+          onHoverDetailHide?.();
+          return;
+        }
+
+        const containerRect = container.getBoundingClientRect();
+        const highlightedRect = highlightedElement.getBoundingClientRect();
+        const isHighlightedElementVisible =
+          highlightedRect.top >= containerRect.top - 1 &&
+          highlightedRect.bottom <= containerRect.bottom + 1;
+
+        if (!isHighlightedElementVisible) {
           onHoverDetailHide?.();
           return;
         }
@@ -266,6 +282,7 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
     }, [
       applyOpenStyles,
       filteredOptions,
+      heldHighlightFrame,
       highlightedIndex,
       isKeyboardNavigation,
       isOpen,
