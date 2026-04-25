@@ -8,7 +8,7 @@
 
 # Guidelines:
 
-- Run `bun run check --fix [filenames path]` after editing or adding complex lines in code files. This repo's canonical validation entrypoint is `vp check` via the `check` script, so do not call raw `tsc`, `vite`, or `vitest` unless the task explicitly requires it.
+- Run `vp check --fix [filenames path]` after editing or adding complex lines in code files. This repo's canonical validation entrypoint is VitePlus `vp check`, so do not call raw `tsc`, `vite`, or `vitest` unless the task explicitly requires it.
 - When creating Git commits, use git-commit skills.
 - Development, build, lint, format, check, and test flows are routed through `vp`/VitePlus. Legacy script names such as `dev:vite` are wrappers around `vp`, not plain Vite CLI usage.
 - Never start `dev` or `preview` servers yourself. Check whether the needed port is already active first; if it is not active, tell the user to start the server and wait for them to do so.
