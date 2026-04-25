@@ -10,6 +10,7 @@ import { formatLastSeen } from "./presence";
 
 interface ConversationHeaderContentProps {
   targetUser?: ChatSidebarPanelTargetUser;
+  isSelfConversation: boolean;
   displayTargetPhotoUrl: string | null;
   isTargetOnline: boolean;
   targetUserPresence: UserPresence | null;
@@ -31,6 +32,7 @@ const chatPopoverIconClassName =
 
 const ConversationHeaderContent = ({
   targetUser,
+  isSelfConversation,
   displayTargetPhotoUrl,
   isTargetOnline,
   targetUserPresence,
@@ -44,6 +46,10 @@ const ConversationHeaderContent = ({
   getInitials,
   getInitialsColor,
 }: ConversationHeaderContentProps) => {
+  const targetDisplayName = targetUser
+    ? `${targetUser.name}${isSelfConversation ? " (You)" : ""}`
+    : "Chat";
+
   return (
     <div className="flex w-full items-center gap-2.5">
       <div
@@ -66,9 +72,7 @@ const ConversationHeaderContent = ({
           )}
         </div>
         <div className="min-w-0 flex flex-col gap-1">
-          <h3 className="font-medium text-slate-900 truncate leading-tight">
-            {targetUser ? targetUser.name : "Chat"}
-          </h3>
+          <h3 className="font-medium text-slate-900 truncate leading-tight">{targetDisplayName}</h3>
           {isTargetOnline ? (
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 rounded-full bg-green-500" />

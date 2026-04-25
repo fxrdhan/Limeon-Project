@@ -39,7 +39,7 @@ const ContactListPanel = ({ onClose }: ContactListPanelProps) => {
     <motion.div
       initial={false}
       animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 16 }}
+      exit={{ opacity: 0, x: 0 }}
       transition={{ duration: 0.2, ease: "easeOut" }}
       className="flex h-full w-full flex-col bg-white"
     >
@@ -106,20 +106,15 @@ const ContactListPanel = ({ onClose }: ContactListPanelProps) => {
               key={portalUser.id}
               type="button"
               className={`group flex w-full items-center gap-3 px-4 py-3 text-left transition-colors ${
-                isCurrentUser ? "cursor-default bg-slate-50" : "cursor-pointer hover:bg-slate-50"
+                isCurrentUser ? "cursor-pointer bg-slate-50" : "cursor-pointer hover:bg-slate-50"
               }`}
               onMouseEnter={() => {
-                if (!isCurrentUser) {
-                  void prefetchConversationForUser(portalUser);
-                }
+                void prefetchConversationForUser(portalUser);
               }}
               onFocus={() => {
-                if (!isCurrentUser) {
-                  void prefetchConversationForUser(portalUser);
-                }
+                void prefetchConversationForUser(portalUser);
               }}
-              onClick={!isCurrentUser ? () => openChatForUser(portalUser) : undefined}
-              disabled={isCurrentUser}
+              onClick={() => openChatForUser(portalUser)}
             >
               <motion.div
                 initial={{ opacity: 0, scale: 0.92 }}

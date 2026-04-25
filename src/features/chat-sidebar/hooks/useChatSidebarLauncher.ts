@@ -32,7 +32,7 @@ export const useChatSidebarLauncher = (shouldLoadDirectory = false) => {
     async (targetUser: ChatTargetUser) => {
       const currentUserId = user?.id?.trim() || "";
       const targetUserId = targetUser.id.trim();
-      if (!currentUserId || !targetUserId || currentUserId === targetUserId) {
+      if (!currentUserId || !targetUserId) {
         return;
       }
 

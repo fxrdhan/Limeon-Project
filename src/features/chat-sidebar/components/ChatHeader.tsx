@@ -7,7 +7,7 @@ import SelectionHeaderContent from "./header/SelectionHeaderContent";
 
 type ChatHeaderRuntime = Pick<
   ChatSidebarRuntimeState,
-  "targetUser" | "displayTargetPhotoUrl" | "session" | "interaction" | "actions"
+  "user" | "targetUser" | "displayTargetPhotoUrl" | "session" | "interaction" | "actions"
 >;
 
 interface ChatHeaderProps {
@@ -120,6 +120,7 @@ const ChatHeader = ({ runtime }: ChatHeaderProps) => {
       ) : (
         <ConversationHeaderContent
           targetUser={runtime.targetUser}
+          isSelfConversation={runtime.targetUser?.id === runtime.user?.id}
           displayTargetPhotoUrl={runtime.displayTargetPhotoUrl}
           isTargetOnline={runtime.session.isTargetOnline}
           targetUserPresence={runtime.session.targetUserPresence}

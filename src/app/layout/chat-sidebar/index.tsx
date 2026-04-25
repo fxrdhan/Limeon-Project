@@ -1,24 +1,40 @@
 import type { ChatTargetUser } from "@/types";
 import { AnimatePresence, motion } from "motion/react";
+import type { Variants } from "motion/react";
 import { Suspense, lazy, useCallback, useEffect, useState } from "react";
 
 const ChatSidebarPanel = lazy(() => import("@/features/chat-sidebar"));
 const ContactListPanel = lazy(() => import("@/features/chat-sidebar/components/ContactListPanel"));
 
-const panelVariants = {
+const panelVariants: Variants = {
   enter: (direction: number) => ({
-    x: `${direction * 100}%`,
-    opacity: 0.98,
+    x: direction < 0 ? "0%" : "100%",
+    filter: "brightness(1)",
+    opacity: 1,
+    zIndex: direction < 0 ? 10 : 20,
   }),
   center: {
-    x: 0,
+    x: "0%",
+    filter: "brightness(1)",
     opacity: 1,
+    zIndex: 20,
   },
   exit: (direction: number) => ({
-    x: `${direction * -100}%`,
-    opacity: 0.98,
+    x: direction < 0 ? "100%" : "0%",
+    filter: "brightness(0.78)",
+    opacity: 1,
+    transition: {
+      duration: 0.28,
+      ease: [0.22, 1, 0.36, 1] as const,
+    },
+    zIndex: direction < 0 ? 30 : 10,
   }),
 };
+
+const panelTransition = {
+  duration: 0.42,
+  ease: [0.22, 1, 0.36, 1] as const,
+} as const;
 
 interface ChatSidebarProps {
   isOpen: boolean;
@@ -106,10 +122,7 @@ const ChatSidebar = ({ isOpen, onClose, targetUser }: ChatSidebarProps) => {
               initial="enter"
               animate="center"
               exit="exit"
-              transition={{
-                duration: 0.24,
-                ease: [0.22, 1, 0.36, 1],
-              }}
+              transition={panelTransition}
               className="absolute inset-0 h-full w-full"
             >
               {activeTargetUser ? (

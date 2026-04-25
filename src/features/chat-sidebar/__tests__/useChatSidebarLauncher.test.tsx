@@ -155,4 +155,49 @@ describe("useChatSidebarLauncher", () => {
       true,
     );
   });
+
+  it("prefetches the current user's self conversation", async () => {
+    fetchConversationMessagesMock.mockResolvedValue({
+      data: {
+        messages: [
+          {
+            id: "message-1",
+            sender_id: "user-a",
+            receiver_id: "user-a",
+            message: "Catatan pribadi",
+            created_at: "2026-03-26T00:00:00.000Z",
+          },
+        ],
+        hasMore: false,
+      },
+      error: null,
+    });
+
+    const { result } = renderHook(() => useChatSidebarLauncher());
+    const targetUser = {
+      id: "user-a",
+      name: "Admin",
+      email: "admin@example.com",
+      profilephoto: null,
+    };
+
+    await act(async () => {
+      await result.current.prefetchConversationForUser(targetUser);
+    });
+
+    expect(fetchConversationMessagesMock).toHaveBeenCalledWith("user-a", {
+      limit: 50,
+    });
+    expect(setConversationEntryMock).toHaveBeenCalledWith(
+      "dm_user-a_user-a",
+      [
+        expect.objectContaining({
+          id: "message-1",
+          sender_name: "Admin",
+          receiver_name: "Admin",
+        }),
+      ],
+      false,
+    );
+  });
 });
