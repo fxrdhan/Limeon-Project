@@ -19,6 +19,7 @@
 # Testing Policy
 
 - Testing in this project runs through VitePlus test tooling with Vitest-compatible APIs. Prefer `bun run test:agent` or `bun run test:agent:watch` when running tests. Use `bun run test:run` for regular local terminal output.
+- Do not use Playwright CLI or Playwright MCP for UI testing unless the user explicitly asks for it.
 - Tests must protect meaningful behavior, not implementation details. Good test targets include important user flows, state transitions, data transformations, persistence/cache behavior, side effects, permissions, failure handling, integration contracts, and regressions that are likely to recur.
 - Do not add tests that only verify static UI text, markup shape, element existence, Tailwind/class names, styling/layout values, animation props, focus implementation details, prop wiring to mocked children, or other internal rendering details.
 - Do not write "component renders" tests unless the render itself triggers a meaningful behavior or guards a known regression. A test that only proves React mounted a component is noise.
