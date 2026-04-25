@@ -1,30 +1,30 @@
-import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
-import { useCallback, useRef } from 'react';
-import toast from 'react-hot-toast';
-import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
-import { type ChatMessage } from '../data/chatSidebarGateway';
+import type { Dispatch, MutableRefObject, SetStateAction } from "react";
+import { useCallback, useRef } from "react";
+import toast from "react-hot-toast";
+import { CHAT_SIDEBAR_TOASTER_ID } from "../constants";
+import { type ChatMessage } from "../data/chatSidebarGateway";
 import {
   type AttachmentComposerRemoteFile,
   extractAttachmentComposerLinkFromMessageText,
   fetchAttachmentComposerRemoteFile,
-} from '../utils/composer-attachment-link';
-import { buildPendingFileComposerAttachment } from '../utils/pending-composer-attachment';
-import { clearPersistedComposerDraftAttachments } from '../utils/composer-draft-persistence';
+} from "../utils/composer-attachment-link";
+import { buildPendingFileComposerAttachment } from "../utils/pending-composer-attachment";
+import { clearPersistedComposerDraftAttachments } from "../utils/composer-draft-persistence";
 import {
   appendOptimisticAttachmentThread,
   createOptimisticAttachmentThread,
-} from '../utils/attachment-send';
+} from "../utils/attachment-send";
 import {
   useChatAttachmentSend,
   type PreparedComposerAttachmentOptimisticState,
   type SendableComposerAttachment,
-} from './useChatAttachmentSend';
-import { sendTextChatMessage } from '../utils/text-message-send';
+} from "./useChatAttachmentSend";
+import { sendTextChatMessage } from "../utils/text-message-send";
 import type {
   ChatSidebarPanelTargetUser,
   PendingSendRegistration,
   PendingComposerAttachment,
-} from '../types';
+} from "../types";
 
 interface ChatComposerSendMutationScope {
   conversationScopeKey: string | null;
@@ -50,9 +50,7 @@ interface UseChatComposerSendProps {
   rawAttachmentUrl: string | null;
   pendingComposerAttachments: PendingComposerAttachment[];
   clearPendingComposerAttachments: () => void;
-  restorePendingComposerAttachments: (
-    attachments: PendingComposerAttachment[]
-  ) => void;
+  restorePendingComposerAttachments: (attachments: PendingComposerAttachment[]) => void;
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
   scheduleScrollMessagesToBottom: () => void;
   triggerSendSuccessGlow: () => void;
@@ -62,22 +60,22 @@ interface UseChatComposerSendProps {
 }
 
 const buildRemoteComposerAttachment = (
-  attachmentRemoteFile: AttachmentComposerRemoteFile
+  attachmentRemoteFile: AttachmentComposerRemoteFile,
 ): SendableComposerAttachment => {
-  if (attachmentRemoteFile.fileKind === 'image') {
+  if (attachmentRemoteFile.fileKind === "image") {
     return attachmentRemoteFile;
   }
 
   const pendingAttachment = buildPendingFileComposerAttachment(
     attachmentRemoteFile.file,
-    'document'
+    "document",
   );
 
   return {
     file: pendingAttachment.file,
     fileName: pendingAttachment.fileName,
     fileTypeLabel: pendingAttachment.fileTypeLabel,
-    fileKind: 'document' as const,
+    fileKind: "document" as const,
     mimeType: pendingAttachment.mimeType,
     pdfCoverUrl: pendingAttachment.pdfCoverUrl,
     pdfPageCount: pendingAttachment.pdfPageCount,
@@ -86,10 +84,9 @@ const buildRemoteComposerAttachment = (
 
 const buildPendingAttachmentSendPlan = (
   attachments: PendingComposerAttachment[],
-  messageText: string
+  messageText: string,
 ) => {
-  const shouldAttachCaption =
-    attachments.length > 0 && messageText.trim().length > 0;
+  const shouldAttachCaption = attachments.length > 0 && messageText.trim().length > 0;
   const lastAttachmentIndex = attachments.length - 1;
 
   return {
@@ -97,18 +94,13 @@ const buildPendingAttachmentSendPlan = (
     jobs: attachments.map((attachment, attachmentIndex) => ({
       attachment,
       captionText:
-        shouldAttachCaption && attachmentIndex === lastAttachmentIndex
-          ? messageText
-          : undefined,
+        shouldAttachCaption && attachmentIndex === lastAttachmentIndex ? messageText : undefined,
     })),
   };
 };
 
-const shouldPreappendBulkImageOptimisticBatch = (
-  attachments: PendingComposerAttachment[]
-) =>
-  attachments.length > 1 &&
-  attachments.every(attachment => attachment.fileKind === 'image');
+const shouldPreappendBulkImageOptimisticBatch = (attachments: PendingComposerAttachment[]) =>
+  attachments.length > 1 && attachments.every((attachment) => attachment.fileKind === "image");
 
 export const useChatComposerSend = ({
   user,
@@ -183,26 +175,21 @@ export const useChatComposerSend = ({
       targetUser,
       triggerSendSuccessGlow,
       user,
-    ]
+    ],
   );
 
   const sendAttachmentMessage = useCallback(
-    async (
-      attachmentLink: string,
-      originalMessageText: string,
-      replyToId?: string | null
-    ) => {
-      setMessage('');
+    async (attachmentLink: string, originalMessageText: string, replyToId?: string | null) => {
+      setMessage("");
 
       try {
-        const attachmentRemoteFile =
-          await fetchAttachmentComposerRemoteFile(attachmentLink);
+        const attachmentRemoteFile = await fetchAttachmentComposerRemoteFile(attachmentLink);
         if (!attachmentRemoteFile) {
           if (isCurrentConversationScopeActive()) {
-            setMessage(currentMessage =>
-              currentMessage.length === 0 ? originalMessageText : currentMessage
+            setMessage((currentMessage) =>
+              currentMessage.length === 0 ? originalMessageText : currentMessage,
             );
-            toast.error('Link harus mengarah ke gambar atau PDF yang valid', {
+            toast.error("Link harus mengarah ke gambar atau PDF yang valid", {
               toasterId: CHAT_SIDEBAR_TOASTER_ID,
             });
           }
@@ -212,45 +199,42 @@ export const useChatComposerSend = ({
         const didSend = await sendComposerAttachment(
           buildRemoteComposerAttachment(attachmentRemoteFile),
           undefined,
-          replyToId
+          replyToId,
         );
 
         if (!didSend && isCurrentConversationScopeActive()) {
-          setMessage(currentMessage =>
-            currentMessage.length === 0 ? originalMessageText : currentMessage
+          setMessage((currentMessage) =>
+            currentMessage.length === 0 ? originalMessageText : currentMessage,
           );
         }
 
         return Boolean(didSend);
       } catch (error) {
-        console.error('Error sending attachment composer link:', error);
+        console.error("Error sending attachment composer link:", error);
         if (isCurrentConversationScopeActive()) {
-          setMessage(currentMessage =>
-            currentMessage.length === 0 ? originalMessageText : currentMessage
+          setMessage((currentMessage) =>
+            currentMessage.length === 0 ? originalMessageText : currentMessage,
           );
-          toast.error('Gagal mengambil file dari link', {
+          toast.error("Gagal mengambil file dari link", {
             toasterId: CHAT_SIDEBAR_TOASTER_ID,
           });
         }
         return false;
       }
     },
-    [isCurrentConversationScopeActive, sendComposerAttachment, setMessage]
+    [isCurrentConversationScopeActive, sendComposerAttachment, setMessage],
   );
 
   const sendPendingComposerAttachments = useCallback(
     async (
       attachmentsToSend: PendingComposerAttachment[],
       messageText: string,
-      replyToId?: string | null
+      replyToId?: string | null,
     ) => {
-      const sendPlan = buildPendingAttachmentSendPlan(
-        attachmentsToSend,
-        messageText
-      );
+      const sendPlan = buildPendingAttachmentSendPlan(attachmentsToSend, messageText);
 
       if (sendPlan.shouldAttachCaption) {
-        setMessage('');
+        setMessage("");
       }
 
       clearPendingComposerAttachments();
@@ -269,65 +253,58 @@ export const useChatComposerSend = ({
         const baseTimestamp = Date.now();
         let optimisticMessagesBatch: ChatMessage[] | null = null;
 
-        sendPlan.jobs.forEach(
-          ({ attachment, captionText }, attachmentIndex) => {
-            const localPreviewUrl = URL.createObjectURL(attachment.file);
-            const timestamp = new Date(
-              baseTimestamp + attachmentIndex
-            ).toISOString();
-            const optimisticThread = createOptimisticAttachmentThread({
-              tempIdPrefix: 'temp_image',
-              stableKeySuffix: 'image',
-              captionText,
-              currentChannelId,
-              localPreviewUrl,
-              timestamp,
-              user,
-              targetUser,
-              replyToId,
-              buildOptimisticMessage: ({
-                tempId,
-                stableKey,
-                localPreviewUrl: optimisticPreviewUrl,
-                timestamp: optimisticTimestamp,
-                replyToId: optimisticReplyToId,
-              }) => ({
-                id: tempId,
-                sender_id: user.id,
-                receiver_id: targetUser.id,
-                channel_id: currentChannelId,
-                message: optimisticPreviewUrl,
-                message_type: 'image',
-                created_at: optimisticTimestamp,
-                updated_at: optimisticTimestamp,
-                is_read: false,
-                reply_to_id: optimisticReplyToId ?? null,
-                sender_name: user.name || 'You',
-                receiver_name: targetUser.name || 'Unknown',
-                stableKey,
-              }),
-            });
+        sendPlan.jobs.forEach(({ attachment, captionText }, attachmentIndex) => {
+          const localPreviewUrl = URL.createObjectURL(attachment.file);
+          const timestamp = new Date(baseTimestamp + attachmentIndex).toISOString();
+          const optimisticThread = createOptimisticAttachmentThread({
+            tempIdPrefix: "temp_image",
+            stableKeySuffix: "image",
+            captionText,
+            currentChannelId,
+            localPreviewUrl,
+            timestamp,
+            user,
+            targetUser,
+            replyToId,
+            buildOptimisticMessage: ({
+              tempId,
+              stableKey,
+              localPreviewUrl: optimisticPreviewUrl,
+              timestamp: optimisticTimestamp,
+              replyToId: optimisticReplyToId,
+            }) => ({
+              id: tempId,
+              sender_id: user.id,
+              receiver_id: targetUser.id,
+              channel_id: currentChannelId,
+              message: optimisticPreviewUrl,
+              message_type: "image",
+              created_at: optimisticTimestamp,
+              updated_at: optimisticTimestamp,
+              is_read: false,
+              reply_to_id: optimisticReplyToId ?? null,
+              sender_name: user.name || "You",
+              receiver_name: targetUser.name || "Unknown",
+              stableKey,
+            }),
+          });
 
-            optimisticAttachmentStateById.set(attachment.id, {
-              appendBeforeSend: false,
-              localPreviewUrl,
-              thread: optimisticThread,
-            });
+          optimisticAttachmentStateById.set(attachment.id, {
+            appendBeforeSend: false,
+            localPreviewUrl,
+            thread: optimisticThread,
+          });
 
-            optimisticMessagesBatch = appendOptimisticAttachmentThread(
-              optimisticMessagesBatch ?? [],
-              optimisticThread
-            );
-          }
-        );
+          optimisticMessagesBatch = appendOptimisticAttachmentThread(
+            optimisticMessagesBatch ?? [],
+            optimisticThread,
+          );
+        });
 
         if (optimisticMessagesBatch) {
           const nextOptimisticMessagesBatch = optimisticMessagesBatch;
 
-          setMessages(previousMessages => [
-            ...previousMessages,
-            ...nextOptimisticMessagesBatch,
-          ]);
+          setMessages((previousMessages) => [...previousMessages, ...nextOptimisticMessagesBatch]);
           triggerSendSuccessGlow();
           scheduleScrollMessagesToBottom();
         }
@@ -347,13 +324,13 @@ export const useChatComposerSend = ({
             replyToId,
             {
               optimistic: optimisticAttachmentStateById.get(attachment.id),
-            }
+            },
           ),
         });
       }
       const failedAttachments = attachmentResults
-        .filter(attachmentResult => !attachmentResult.sentAttachmentMessageId)
-        .map(attachmentResult => attachmentResult.pendingAttachment);
+        .filter((attachmentResult) => !attachmentResult.sentAttachmentMessageId)
+        .map((attachmentResult) => attachmentResult.pendingAttachment);
 
       if (failedAttachments.length > 0) {
         if (isCurrentConversationScopeActive()) {
@@ -362,8 +339,7 @@ export const useChatComposerSend = ({
 
         const didCaptionAttachmentFail =
           sendPlan.shouldAttachCaption &&
-          !attachmentResults[attachmentResults.length - 1]
-            ?.sentAttachmentMessageId;
+          !attachmentResults[attachmentResults.length - 1]?.sentAttachmentMessageId;
 
         if (didCaptionAttachmentFail && isCurrentConversationScopeActive()) {
           setMessage(messageText);
@@ -375,7 +351,7 @@ export const useChatComposerSend = ({
         };
       }
 
-      await clearPersistedComposerDraftAttachments(currentChannelId);
+      await clearPersistedComposerDraftAttachments(currentChannelId, user?.id);
 
       return {
         didSendAllAttachments: true,
@@ -394,7 +370,7 @@ export const useChatComposerSend = ({
       targetUser,
       triggerSendSuccessGlow,
       user,
-    ]
+    ],
   );
 
   const handleSendMessage = useCallback(async () => {
@@ -410,8 +386,7 @@ export const useChatComposerSend = ({
     const messageText = message.trim();
     const attachmentLink =
       hasPendingAttachments ||
-      ((rawAttachmentUrl?.trim().length ?? 0) > 0 &&
-        rawAttachmentUrl?.trim() === messageText)
+      ((rawAttachmentUrl?.trim().length ?? 0) > 0 && rawAttachmentUrl?.trim() === messageText)
         ? null
         : extractAttachmentComposerLinkFromMessageText(messageText);
 
@@ -424,11 +399,8 @@ export const useChatComposerSend = ({
     try {
       if (attachmentLink) {
         return (
-          (await sendAttachmentMessage(
-            attachmentLink.url,
-            messageText,
-            replyingMessageId
-          )) !== false
+          (await sendAttachmentMessage(attachmentLink.url, messageText, replyingMessageId)) !==
+          false
         );
       }
 
@@ -436,7 +408,7 @@ export const useChatComposerSend = ({
         const attachmentSendResult = await sendPendingComposerAttachments(
           attachmentsToSend,
           messageText,
-          replyingMessageId
+          replyingMessageId,
         );
 
         if (!attachmentSendResult.didSendAllAttachments) {

@@ -1,56 +1,46 @@
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type RefObject,
-} from 'react';
-import toast from 'react-hot-toast';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
+import toast from "react-hot-toast";
 import {
   CHAT_SIDEBAR_TOASTER_ID,
   MAX_PENDING_COMPOSER_ATTACHMENTS,
   MAX_PENDING_COMPOSER_TOTAL_BYTES,
-} from '../constants';
-import { compressImageIfNeeded } from '@/utils/image';
-import { renderPdfPreviewDataUrl } from '../utils/pdf-preview';
-import { createImagePreviewBlob } from '../utils/image-message-preview';
-import type {
-  ComposerPendingFileKind,
-  PendingComposerAttachment,
-} from '../types';
+} from "../constants";
+import { compressImageIfNeeded } from "@/utils/image";
+import { renderPdfPreviewDataUrl } from "../utils/pdf-preview";
+import { createImagePreviewBlob } from "../utils/image-message-preview";
+import type { ComposerPendingFileKind, PendingComposerAttachment } from "../types";
 import {
   buildPendingFileComposerAttachment,
   buildPendingImageComposerAttachment,
   isPdfComposerAttachment,
   upsertPendingComposerAttachment,
-} from '../utils/pending-composer-attachment';
+} from "../utils/pending-composer-attachment";
 import {
   loadPersistedComposerDraftAttachments,
   persistComposerDraftAttachments,
-} from '../utils/composer-draft-persistence';
+} from "../utils/composer-draft-persistence";
 
 interface UseComposerPendingAttachmentsProps {
   currentChannelId: string | null;
+  userId?: string | null;
   editingMessageId: string | null;
   messageInputRef: RefObject<HTMLTextAreaElement | null>;
 }
 
-const buildPendingImagePreviewSignature = (
-  attachment: PendingComposerAttachment
-) =>
-  attachment.fileKind === 'image'
+const buildPendingImagePreviewSignature = (attachment: PendingComposerAttachment) =>
+  attachment.fileKind === "image"
     ? [
         attachment.id,
         attachment.file.name,
         attachment.file.size,
         attachment.file.lastModified,
         attachment.file.type,
-      ].join(':')
+      ].join(":")
     : null;
 
 export const useComposerPendingAttachments = ({
   currentChannelId,
+  userId = null,
   editingMessageId,
   messageInputRef,
 }: UseComposerPendingAttachmentsProps) => {
@@ -59,9 +49,7 @@ export const useComposerPendingAttachments = ({
   >([]);
   const pendingComposerAttachmentsRef = useRef<PendingComposerAttachment[]>([]);
   const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
-  const pendingImagePreviewGenerationRef = useRef<Map<string, string>>(
-    new Map()
-  );
+  const pendingImagePreviewGenerationRef = useRef<Map<string, string>>(new Map());
   const pendingComposerAttachmentsMutationVersionRef = useRef(0);
   const pendingComposerAttachmentsHydrationRef = useRef<{
     channelId: string | null;
@@ -72,8 +60,7 @@ export const useComposerPendingAttachments = ({
   });
   const releasePendingImagePreviewUrl = useCallback(
     (attachmentId: string, previewUrl?: string | null) => {
-      const trackedPreviewUrl =
-        pendingImagePreviewUrlsRef.current.get(attachmentId) || null;
+      const trackedPreviewUrl = pendingImagePreviewUrlsRef.current.get(attachmentId) || null;
 
       if (trackedPreviewUrl) {
         URL.revokeObjectURL(trackedPreviewUrl);
@@ -86,7 +73,7 @@ export const useComposerPendingAttachments = ({
 
       pendingImagePreviewGenerationRef.current.delete(attachmentId);
     },
-    []
+    [],
   );
 
   useEffect(() => {
@@ -97,8 +84,7 @@ export const useComposerPendingAttachments = ({
   useLayoutEffect(() => {
     let isCancelled = false;
     const pendingPdfAttachments = pendingComposerAttachments.filter(
-      attachment =>
-        attachment.pdfCoverUrl === null && isPdfComposerAttachment(attachment)
+      (attachment) => attachment.pdfCoverUrl === null && isPdfComposerAttachment(attachment),
     );
     if (pendingPdfAttachments.length === 0) return;
 
@@ -107,27 +93,24 @@ export const useComposerPendingAttachments = ({
         for (const pendingAttachment of pendingPdfAttachments) {
           if (isCancelled) return;
 
-          const renderedPreview = await renderPdfPreviewDataUrl(
-            pendingAttachment.file,
-            44
-          );
+          const renderedPreview = await renderPdfPreviewDataUrl(pendingAttachment.file, 44);
           if (isCancelled) return;
           if (!renderedPreview) continue;
 
-          setPendingComposerAttachments(previousAttachments =>
-            previousAttachments.map(attachment =>
+          setPendingComposerAttachments((previousAttachments) =>
+            previousAttachments.map((attachment) =>
               attachment.id === pendingAttachment.id
                 ? {
                     ...attachment,
                     pdfCoverUrl: renderedPreview.coverDataUrl,
                     pdfPageCount: renderedPreview.pageCount,
                   }
-                : attachment
-            )
+                : attachment,
+            ),
           );
         }
       } catch (error) {
-        console.error('Error rendering PDF cover preview:', error);
+        console.error("Error rendering PDF cover preview:", error);
       }
     };
 
@@ -140,11 +123,9 @@ export const useComposerPendingAttachments = ({
 
   useEffect(() => {
     const imageAttachments = pendingComposerAttachments.filter(
-      attachment => attachment.fileKind === 'image'
+      (attachment) => attachment.fileKind === "image",
     );
-    const activeImageAttachmentIds = new Set(
-      imageAttachments.map(attachment => attachment.id)
-    );
+    const activeImageAttachmentIds = new Set(imageAttachments.map((attachment) => attachment.id));
 
     pendingImagePreviewGenerationRef.current.forEach((_, attachmentId) => {
       if (!activeImageAttachmentIds.has(attachmentId)) {
@@ -152,24 +133,18 @@ export const useComposerPendingAttachments = ({
       }
     });
 
-    imageAttachments.forEach(attachment => {
+    imageAttachments.forEach((attachment) => {
       const previewSignature = buildPendingImagePreviewSignature(attachment);
 
       if (!previewSignature) {
         return;
       }
 
-      if (
-        pendingImagePreviewGenerationRef.current.get(attachment.id) ===
-        previewSignature
-      ) {
+      if (pendingImagePreviewGenerationRef.current.get(attachment.id) === previewSignature) {
         return;
       }
 
-      pendingImagePreviewGenerationRef.current.set(
-        attachment.id,
-        previewSignature
-      );
+      pendingImagePreviewGenerationRef.current.set(attachment.id, previewSignature);
 
       void (async () => {
         const previewBlob = await createImagePreviewBlob(attachment.file);
@@ -179,11 +154,10 @@ export const useComposerPendingAttachments = ({
 
         const nextPreviewUrl = URL.createObjectURL(previewBlob);
 
-        setPendingComposerAttachments(previousAttachments => {
+        setPendingComposerAttachments((previousAttachments) => {
           const targetAttachment = previousAttachments.find(
-            previousAttachment =>
-              previousAttachment.id === attachment.id &&
-              previousAttachment.fileKind === 'image'
+            (previousAttachment) =>
+              previousAttachment.id === attachment.id && previousAttachment.fileKind === "image",
           );
 
           if (!targetAttachment) {
@@ -191,10 +165,7 @@ export const useComposerPendingAttachments = ({
             return previousAttachments;
           }
 
-          if (
-            buildPendingImagePreviewSignature(targetAttachment) !==
-            previewSignature
-          ) {
+          if (buildPendingImagePreviewSignature(targetAttachment) !== previewSignature) {
             URL.revokeObjectURL(nextPreviewUrl);
             return previousAttachments;
           }
@@ -210,13 +181,13 @@ export const useComposerPendingAttachments = ({
             URL.revokeObjectURL(previousPreviewUrl);
           }
 
-          return previousAttachments.map(previousAttachment =>
+          return previousAttachments.map((previousAttachment) =>
             previousAttachment.id === attachment.id
               ? {
                   ...previousAttachment,
                   previewUrl: nextPreviewUrl,
                 }
-              : previousAttachment
+              : previousAttachment,
           );
         });
       })();
@@ -246,15 +217,14 @@ export const useComposerPendingAttachments = ({
     let isCancelled = false;
 
     pendingComposerAttachmentsMutationVersionRef.current += 1;
-    const hydrationVersion =
-      pendingComposerAttachmentsMutationVersionRef.current;
+    const hydrationVersion = pendingComposerAttachmentsMutationVersionRef.current;
     pendingComposerAttachmentsHydrationRef.current = {
       channelId: currentChannelId,
       isHydrating: true,
     };
 
-    setPendingComposerAttachments(previousAttachments => {
-      previousAttachments.forEach(attachment => {
+    setPendingComposerAttachments((previousAttachments) => {
+      previousAttachments.forEach((attachment) => {
         releasePendingImagePreviewUrl(attachment.id, attachment.previewUrl);
       });
       return [];
@@ -269,12 +239,13 @@ export const useComposerPendingAttachments = ({
     }
 
     void (async () => {
-      const persistedAttachments =
-        await loadPersistedComposerDraftAttachments(currentChannelId);
+      const persistedAttachments = await loadPersistedComposerDraftAttachments(
+        currentChannelId,
+        userId,
+      );
       if (
         isCancelled ||
-        pendingComposerAttachmentsMutationVersionRef.current !==
-          hydrationVersion
+        pendingComposerAttachmentsMutationVersionRef.current !== hydrationVersion
       ) {
         return;
       }
@@ -285,20 +256,17 @@ export const useComposerPendingAttachments = ({
         isHydrating: false,
       };
       setPendingComposerAttachments(() =>
-        persistedAttachments.map(attachment => ({
+        persistedAttachments.map((attachment) => ({
           ...attachment,
-          previewUrl:
-            attachment.fileKind === 'image'
-              ? URL.createObjectURL(attachment.file)
-              : null,
-        }))
+          previewUrl: attachment.fileKind === "image" ? URL.createObjectURL(attachment.file) : null,
+        })),
       );
     })();
 
     return () => {
       isCancelled = true;
     };
-  }, [currentChannelId, releasePendingImagePreviewUrl]);
+  }, [currentChannelId, releasePendingImagePreviewUrl, userId]);
 
   useEffect(() => {
     if (!currentChannelId) {
@@ -306,44 +274,33 @@ export const useComposerPendingAttachments = ({
     }
 
     const hydrationState = pendingComposerAttachmentsHydrationRef.current;
-    if (
-      hydrationState.channelId === currentChannelId &&
-      hydrationState.isHydrating
-    ) {
+    if (hydrationState.channelId === currentChannelId && hydrationState.isHydrating) {
       return;
     }
 
-    void persistComposerDraftAttachments(
-      currentChannelId,
-      pendingComposerAttachments
-    );
-  }, [currentChannelId, pendingComposerAttachments]);
+    void persistComposerDraftAttachments(currentChannelId, pendingComposerAttachments, userId);
+  }, [currentChannelId, pendingComposerAttachments, userId]);
 
   const removePendingComposerAttachment = useCallback(
     (attachmentId: string) => {
       markPendingComposerAttachmentsDirty();
-      setPendingComposerAttachments(previousAttachments => {
+      setPendingComposerAttachments((previousAttachments) => {
         const targetAttachment = previousAttachments.find(
-          attachment => attachment.id === attachmentId
+          (attachment) => attachment.id === attachmentId,
         );
         if (targetAttachment) {
-          releasePendingImagePreviewUrl(
-            targetAttachment.id,
-            targetAttachment.previewUrl
-          );
+          releasePendingImagePreviewUrl(targetAttachment.id, targetAttachment.previewUrl);
         }
-        return previousAttachments.filter(
-          attachment => attachment.id !== attachmentId
-        );
+        return previousAttachments.filter((attachment) => attachment.id !== attachmentId);
       });
     },
-    [markPendingComposerAttachmentsDirty, releasePendingImagePreviewUrl]
+    [markPendingComposerAttachmentsDirty, releasePendingImagePreviewUrl],
   );
 
   const clearPendingComposerAttachments = useCallback(() => {
     markPendingComposerAttachmentsDirty();
-    setPendingComposerAttachments(previousAttachments => {
-      previousAttachments.forEach(attachment => {
+    setPendingComposerAttachments((previousAttachments) => {
+      previousAttachments.forEach((attachment) => {
         releasePendingImagePreviewUrl(attachment.id, attachment.previewUrl);
       });
       return [];
@@ -353,40 +310,33 @@ export const useComposerPendingAttachments = ({
   const restorePendingComposerAttachments = useCallback(
     (attachments: PendingComposerAttachment[]) => {
       markPendingComposerAttachmentsDirty();
-      setPendingComposerAttachments(previousAttachments => {
-        previousAttachments.forEach(attachment => {
+      setPendingComposerAttachments((previousAttachments) => {
+        previousAttachments.forEach((attachment) => {
           releasePendingImagePreviewUrl(attachment.id, attachment.previewUrl);
         });
 
-        return attachments.map(attachment => ({
+        return attachments.map((attachment) => ({
           ...attachment,
-          previewUrl:
-            attachment.fileKind === 'image'
-              ? URL.createObjectURL(attachment.file)
-              : null,
+          previewUrl: attachment.fileKind === "image" ? URL.createObjectURL(attachment.file) : null,
         }));
       });
 
       focusTextarea();
     },
-    [
-      focusTextarea,
-      markPendingComposerAttachmentsDirty,
-      releasePendingImagePreviewUrl,
-    ]
+    [focusTextarea, markPendingComposerAttachmentsDirty, releasePendingImagePreviewUrl],
   );
 
   const queueComposerImage = useCallback(
     (file: File, replaceAttachmentId?: string) => {
-      if (!file.type.startsWith('image/')) {
-        toast.error('File harus berupa gambar', {
+      if (!file.type.startsWith("image/")) {
+        toast.error("File harus berupa gambar", {
           toasterId: CHAT_SIDEBAR_TOASTER_ID,
         });
         return false;
       }
 
       if (editingMessageId) {
-        toast.error('Selesaikan edit pesan terlebih dahulu', {
+        toast.error("Selesaikan edit pesan terlebih dahulu", {
           toasterId: CHAT_SIDEBAR_TOASTER_ID,
         });
         return false;
@@ -399,17 +349,13 @@ export const useComposerPendingAttachments = ({
       let rejectedPreviewUrl: string | null = null;
 
       markPendingComposerAttachmentsDirty();
-      setPendingComposerAttachments(previousAttachments => {
-        const upsertResult = upsertPendingComposerAttachment(
-          previousAttachments,
-          nextAttachment,
-          {
-            maxAttachments: MAX_PENDING_COMPOSER_ATTACHMENTS,
-            maxTotalBytes: MAX_PENDING_COMPOSER_TOTAL_BYTES,
-            replaceAttachmentId,
-            replaceableKinds: ['image'],
-          }
-        );
+      setPendingComposerAttachments((previousAttachments) => {
+        const upsertResult = upsertPendingComposerAttachment(previousAttachments, nextAttachment, {
+          maxAttachments: MAX_PENDING_COMPOSER_ATTACHMENTS,
+          maxTotalBytes: MAX_PENDING_COMPOSER_TOTAL_BYTES,
+          replaceAttachmentId,
+          replaceableKinds: ["image"],
+        });
 
         exceededCountLimit = upsertResult.exceededLimit;
         exceededSizeLimit = upsertResult.exceededSizeLimit;
@@ -419,10 +365,7 @@ export const useComposerPendingAttachments = ({
       });
 
       if (replacedPreviewUrl) {
-        releasePendingImagePreviewUrl(
-          replaceAttachmentId ?? '',
-          replacedPreviewUrl
-        );
+        releasePendingImagePreviewUrl(replaceAttachmentId ?? "", replacedPreviewUrl);
       }
 
       if (rejectedPreviewUrl) {
@@ -430,17 +373,14 @@ export const useComposerPendingAttachments = ({
       }
 
       if (exceededCountLimit) {
-        toast.error(
-          `Maksimal ${MAX_PENDING_COMPOSER_ATTACHMENTS} lampiran dalam satu kirim`,
-          {
-            toasterId: CHAT_SIDEBAR_TOASTER_ID,
-          }
-        );
+        toast.error(`Maksimal ${MAX_PENDING_COMPOSER_ATTACHMENTS} lampiran dalam satu kirim`, {
+          toasterId: CHAT_SIDEBAR_TOASTER_ID,
+        });
         return false;
       }
 
       if (exceededSizeLimit) {
-        toast.error('Maksimal total 2 GB lampiran dalam satu kirim', {
+        toast.error("Maksimal total 2 GB lampiran dalam satu kirim", {
           toasterId: CHAT_SIDEBAR_TOASTER_ID,
         });
         return false;
@@ -454,25 +394,21 @@ export const useComposerPendingAttachments = ({
       focusTextarea,
       markPendingComposerAttachmentsDirty,
       releasePendingImagePreviewUrl,
-    ]
+    ],
   );
 
   const queueComposerFile = useCallback(
-    (
-      file: File,
-      fileKind: ComposerPendingFileKind,
-      replaceAttachmentId?: string
-    ) => {
-      const isAudioFile = file.type.startsWith('audio/');
-      if (fileKind === 'audio' && !isAudioFile) {
-        toast.error('File harus berupa audio', {
+    (file: File, fileKind: ComposerPendingFileKind, replaceAttachmentId?: string) => {
+      const isAudioFile = file.type.startsWith("audio/");
+      if (fileKind === "audio" && !isAudioFile) {
+        toast.error("File harus berupa audio", {
           toasterId: CHAT_SIDEBAR_TOASTER_ID,
         });
         return false;
       }
 
       if (editingMessageId) {
-        toast.error('Selesaikan edit pesan terlebih dahulu', {
+        toast.error("Selesaikan edit pesan terlebih dahulu", {
           toasterId: CHAT_SIDEBAR_TOASTER_ID,
         });
         return false;
@@ -485,17 +421,13 @@ export const useComposerPendingAttachments = ({
       let rejectedPreviewUrl: string | null = null;
 
       markPendingComposerAttachmentsDirty();
-      setPendingComposerAttachments(previousAttachments => {
-        const upsertResult = upsertPendingComposerAttachment(
-          previousAttachments,
-          nextAttachment,
-          {
-            maxAttachments: MAX_PENDING_COMPOSER_ATTACHMENTS,
-            maxTotalBytes: MAX_PENDING_COMPOSER_TOTAL_BYTES,
-            replaceAttachmentId,
-            replaceableKinds: [fileKind],
-          }
-        );
+      setPendingComposerAttachments((previousAttachments) => {
+        const upsertResult = upsertPendingComposerAttachment(previousAttachments, nextAttachment, {
+          maxAttachments: MAX_PENDING_COMPOSER_ATTACHMENTS,
+          maxTotalBytes: MAX_PENDING_COMPOSER_TOTAL_BYTES,
+          replaceAttachmentId,
+          replaceableKinds: [fileKind],
+        });
 
         exceededCountLimit = upsertResult.exceededLimit;
         exceededSizeLimit = upsertResult.exceededSizeLimit;
@@ -505,10 +437,7 @@ export const useComposerPendingAttachments = ({
       });
 
       if (replacedPreviewUrl) {
-        releasePendingImagePreviewUrl(
-          replaceAttachmentId ?? '',
-          replacedPreviewUrl
-        );
+        releasePendingImagePreviewUrl(replaceAttachmentId ?? "", replacedPreviewUrl);
       }
 
       if (rejectedPreviewUrl) {
@@ -516,17 +445,14 @@ export const useComposerPendingAttachments = ({
       }
 
       if (exceededCountLimit) {
-        toast.error(
-          `Maksimal ${MAX_PENDING_COMPOSER_ATTACHMENTS} lampiran dalam satu kirim`,
-          {
-            toasterId: CHAT_SIDEBAR_TOASTER_ID,
-          }
-        );
+        toast.error(`Maksimal ${MAX_PENDING_COMPOSER_ATTACHMENTS} lampiran dalam satu kirim`, {
+          toasterId: CHAT_SIDEBAR_TOASTER_ID,
+        });
         return false;
       }
 
       if (exceededSizeLimit) {
-        toast.error('Maksimal total 2 GB lampiran dalam satu kirim', {
+        toast.error("Maksimal total 2 GB lampiran dalam satu kirim", {
           toasterId: CHAT_SIDEBAR_TOASTER_ID,
         });
         return false;
@@ -540,33 +466,26 @@ export const useComposerPendingAttachments = ({
       focusTextarea,
       markPendingComposerAttachmentsDirty,
       releasePendingImagePreviewUrl,
-    ]
+    ],
   );
 
   const compressPendingComposerImage = useCallback(
     async (attachmentId: string) => {
       const targetAttachment = pendingComposerAttachmentsRef.current.find(
-        attachment =>
-          attachment.id === attachmentId && attachment.fileKind === 'image'
+        (attachment) => attachment.id === attachmentId && attachment.fileKind === "image",
       );
       if (!targetAttachment) {
         return false;
       }
 
-      const compressedImage = await compressImageIfNeeded(
-        targetAttachment.file
-      );
+      const compressedImage = await compressImageIfNeeded(targetAttachment.file);
       const nextFile =
         compressedImage instanceof File
           ? compressedImage
-          : new File(
-              [compressedImage],
-              targetAttachment.file.name || targetAttachment.fileName,
-              {
-                type: compressedImage.type || targetAttachment.file.type,
-                lastModified: Date.now(),
-              }
-            );
+          : new File([compressedImage], targetAttachment.file.name || targetAttachment.fileName, {
+              type: compressedImage.type || targetAttachment.file.type,
+              lastModified: Date.now(),
+            });
 
       if (nextFile === targetAttachment.file) {
         focusTextarea();
@@ -579,86 +498,68 @@ export const useComposerPendingAttachments = ({
       };
 
       markPendingComposerAttachmentsDirty();
-      setPendingComposerAttachments(previousAttachments =>
-        previousAttachments.map(attachment =>
-          attachment.id === attachmentId ? nextAttachment : attachment
-        )
+      setPendingComposerAttachments((previousAttachments) =>
+        previousAttachments.map((attachment) =>
+          attachment.id === attachmentId ? nextAttachment : attachment,
+        ),
       );
 
-      releasePendingImagePreviewUrl(
-        targetAttachment.id,
-        targetAttachment.previewUrl
-      );
+      releasePendingImagePreviewUrl(targetAttachment.id, targetAttachment.previewUrl);
 
       focusTextarea();
       return true;
     },
-    [
-      focusTextarea,
-      markPendingComposerAttachmentsDirty,
-      releasePendingImagePreviewUrl,
-    ]
+    [focusTextarea, markPendingComposerAttachmentsDirty, releasePendingImagePreviewUrl],
   );
 
   const replacePendingComposerAttachmentFile = useCallback(
     (attachmentId: string, nextFile: File) => {
       const targetAttachment = pendingComposerAttachmentsRef.current.find(
-        attachment => attachment.id === attachmentId
+        (attachment) => attachment.id === attachmentId,
       );
       if (!targetAttachment) {
         return false;
       }
 
       const nextAttachment =
-        targetAttachment.fileKind === 'image'
+        targetAttachment.fileKind === "image"
           ? {
               ...buildPendingImageComposerAttachment(nextFile),
               id: targetAttachment.id,
             }
           : {
-              ...buildPendingFileComposerAttachment(
-                nextFile,
-                targetAttachment.fileKind
-              ),
+              ...buildPendingFileComposerAttachment(nextFile, targetAttachment.fileKind),
               id: targetAttachment.id,
             };
 
       markPendingComposerAttachmentsDirty();
-      setPendingComposerAttachments(previousAttachments =>
-        previousAttachments.map(attachment =>
-          attachment.id === attachmentId ? nextAttachment : attachment
-        )
+      setPendingComposerAttachments((previousAttachments) =>
+        previousAttachments.map((attachment) =>
+          attachment.id === attachmentId ? nextAttachment : attachment,
+        ),
       );
 
-      releasePendingImagePreviewUrl(
-        targetAttachment.id,
-        targetAttachment.previewUrl
-      );
+      releasePendingImagePreviewUrl(targetAttachment.id, targetAttachment.previewUrl);
 
       focusTextarea();
       return true;
     },
-    [
-      focusTextarea,
-      markPendingComposerAttachmentsDirty,
-      releasePendingImagePreviewUrl,
-    ]
+    [focusTextarea, markPendingComposerAttachmentsDirty, releasePendingImagePreviewUrl],
   );
 
   useEffect(() => {
     const pendingImagePreviewUrls = pendingImagePreviewUrlsRef.current;
     const pendingAttachments = pendingComposerAttachmentsRef.current;
-    const pendingImagePreviewGeneration =
-      pendingImagePreviewGenerationRef.current;
+    const pendingImagePreviewGeneration = pendingImagePreviewGenerationRef.current;
 
     return () => {
-      pendingImagePreviewUrls.forEach(previewUrl => {
+      pendingImagePreviewUrls.forEach((previewUrl) => {
         URL.revokeObjectURL(previewUrl);
       });
       pendingImagePreviewUrls.clear();
       pendingImagePreviewGeneration.clear();
 
-      pendingAttachments.forEach(attachment => {
+      pendingAttachments.forEach((attachment) => {
         if (attachment.previewUrl) {
           URL.revokeObjectURL(attachment.previewUrl);
         }

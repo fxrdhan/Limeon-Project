@@ -1,5 +1,9 @@
 begin;
 
+alter table public.chat_messages
+  add column if not exists file_storage_path text,
+  add column if not exists file_preview_url text;
+
 update public.chat_messages
 set file_storage_path = regexp_replace(
   message,

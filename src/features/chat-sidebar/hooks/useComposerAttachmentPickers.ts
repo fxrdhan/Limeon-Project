@@ -1,6 +1,36 @@
-import type { ChangeEvent } from 'react';
-import { useCallback, useRef } from 'react';
-import type { ComposerPendingFileKind } from '../types';
+import type { ChangeEvent } from "react";
+import { useCallback, useRef } from "react";
+import type { ComposerPendingFileKind } from "../types";
+
+const ALLOWED_DOCUMENT_EXTENSIONS = new Set([
+  "pdf",
+  "doc",
+  "docx",
+  "xls",
+  "xlsx",
+  "csv",
+  "txt",
+  "ppt",
+  "pptx",
+]);
+
+const ALLOWED_DOCUMENT_MIME_TYPES = new Set([
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "text/csv",
+  "text/plain",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+]);
+
+const isAllowedDocumentFile = (file: File) => {
+  const extension = file.name.split(".").pop()?.trim().toLowerCase() || "";
+  const mimeType = file.type.trim().toLowerCase();
+  return ALLOWED_DOCUMENT_EXTENSIONS.has(extension) || ALLOWED_DOCUMENT_MIME_TYPES.has(mimeType);
+};
 
 interface UseComposerAttachmentPickersProps {
   closeAttachModal: () => void;
@@ -8,7 +38,7 @@ interface UseComposerAttachmentPickersProps {
   queueComposerFile: (
     file: File,
     fileKind: ComposerPendingFileKind,
-    replaceAttachmentId?: string
+    replaceAttachmentId?: string,
   ) => boolean;
 }
 
@@ -23,24 +53,21 @@ export const useComposerAttachmentPickers = ({
   const replaceComposerImageAttachmentIdRef = useRef<string | null>(null);
   const replaceComposerDocumentAttachmentIdRef = useRef<string | null>(null);
 
-  const clearReplaceComposerAttachmentTargets = useCallback(
-    (attachmentId?: string) => {
-      if (
-        attachmentId === undefined ||
-        replaceComposerImageAttachmentIdRef.current === attachmentId
-      ) {
-        replaceComposerImageAttachmentIdRef.current = null;
-      }
+  const clearReplaceComposerAttachmentTargets = useCallback((attachmentId?: string) => {
+    if (
+      attachmentId === undefined ||
+      replaceComposerImageAttachmentIdRef.current === attachmentId
+    ) {
+      replaceComposerImageAttachmentIdRef.current = null;
+    }
 
-      if (
-        attachmentId === undefined ||
-        replaceComposerDocumentAttachmentIdRef.current === attachmentId
-      ) {
-        replaceComposerDocumentAttachmentIdRef.current = null;
-      }
-    },
-    []
-  );
+    if (
+      attachmentId === undefined ||
+      replaceComposerDocumentAttachmentIdRef.current === attachmentId
+    ) {
+      replaceComposerDocumentAttachmentIdRef.current = null;
+    }
+  }, []);
 
   const handleAttachImageClick = useCallback(
     (replaceAttachmentId?: string) => {
@@ -49,18 +76,17 @@ export const useComposerAttachmentPickers = ({
       closeAttachModal();
       imageInputRef.current?.click();
     },
-    [closeAttachModal]
+    [closeAttachModal],
   );
 
   const handleAttachDocumentClick = useCallback(
     (replaceAttachmentId?: string) => {
       replaceComposerImageAttachmentIdRef.current = null;
-      replaceComposerDocumentAttachmentIdRef.current =
-        replaceAttachmentId ?? null;
+      replaceComposerDocumentAttachmentIdRef.current = replaceAttachmentId ?? null;
       closeAttachModal();
       documentInputRef.current?.click();
     },
-    [closeAttachModal]
+    [closeAttachModal],
   );
 
   const handleAttachAudioClick = useCallback(() => {
@@ -72,7 +98,7 @@ export const useComposerAttachmentPickers = ({
   const handleImageFileChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       const selectedFiles = Array.from(event.target.files ?? []);
-      event.target.value = '';
+      event.target.value = "";
       if (selectedFiles.length === 0) {
         return;
       }
@@ -83,59 +109,62 @@ export const useComposerAttachmentPickers = ({
       for (const [fileIndex, selectedFile] of selectedFiles.entries()) {
         const didQueue = queueComposerImage(
           selectedFile,
-          fileIndex === 0 ? (replaceAttachmentId ?? undefined) : undefined
+          fileIndex === 0 ? (replaceAttachmentId ?? undefined) : undefined,
         );
         if (!didQueue) {
           break;
         }
       }
     },
-    [clearReplaceComposerAttachmentTargets, queueComposerImage]
+    [clearReplaceComposerAttachmentTargets, queueComposerImage],
   );
 
   const handleDocumentFileChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       const selectedFiles = Array.from(event.target.files ?? []);
-      event.target.value = '';
+      event.target.value = "";
       if (selectedFiles.length === 0) {
         return;
       }
 
-      const replaceAttachmentId =
-        replaceComposerDocumentAttachmentIdRef.current;
+      const replaceAttachmentId = replaceComposerDocumentAttachmentIdRef.current;
       replaceComposerDocumentAttachmentIdRef.current = null;
 
       for (const [fileIndex, selectedFile] of selectedFiles.entries()) {
+        if (!isAllowedDocumentFile(selectedFile)) {
+          continue;
+        }
+
         const didQueue = queueComposerFile(
           selectedFile,
-          'document',
-          fileIndex === 0 ? (replaceAttachmentId ?? undefined) : undefined
+          "document",
+          fileIndex === 0 ? (replaceAttachmentId ?? undefined) : undefined,
         );
         if (!didQueue) {
           break;
         }
       }
     },
-    [queueComposerFile]
+    [queueComposerFile],
   );
 
   const handleAudioFileChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       const selectedFiles = Array.from(event.target.files ?? []);
-      event.target.value = '';
+      event.target.value = "";
       if (selectedFiles.length === 0) {
         return;
       }
 
       replaceComposerDocumentAttachmentIdRef.current = null;
       for (const selectedFile of selectedFiles) {
-        const didQueue = queueComposerFile(selectedFile, 'audio');
+        const didQueue = queueComposerFile(selectedFile, "audio");
         if (!didQueue) {
           break;
         }
       }
     },
-    [queueComposerFile]
+    [queueComposerFile],
   );
 
   return {

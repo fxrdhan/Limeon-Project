@@ -84,7 +84,7 @@ describe("chat-cleanup actions", () => {
     expect(repository.recordCleanupFailure).not.toHaveBeenCalled();
   });
 
-  it("deletes storage paths for any participant-deletable thread", async () => {
+  it("deletes the thread but skips storage paths owned by the other participant", async () => {
     const repository = createRepository({
       parentMessage: buildParentMessage({
         sender_id: "user-2",
@@ -108,10 +108,7 @@ describe("chat-cleanup actions", () => {
         failedStoragePaths: [],
       },
     });
-    expect(repository.deleteStoragePaths).toHaveBeenCalledWith([
-      "documents/channel/user-2_report.pdf",
-      "previews/channel/user-2_report.png",
-    ]);
+    expect(repository.deleteStoragePaths).not.toHaveBeenCalled();
     expect(repository.recordCleanupFailure).not.toHaveBeenCalled();
   });
 

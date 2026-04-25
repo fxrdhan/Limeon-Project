@@ -1,12 +1,12 @@
-import { act, renderHook, waitFor } from '@testing-library/react';
-import { useEffect, useRef, useState } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
-import type { ChatMessage } from '../../../services/api/chat.service';
-import type { PendingComposerAttachment } from '../types';
-import { useChatComposerSend } from '../hooks/useChatComposerSend';
-import { useChatMutationScope } from '../hooks/useChatMutationScope';
-import { chatRuntimeCache } from '../utils/chatRuntimeCache';
-import { buildPdfMessagePreviewCacheKey } from '../utils/pdf-message-preview';
+import { act, renderHook, waitFor } from "@testing-library/react";
+import { useEffect, useRef, useState } from "react";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import type { ChatMessage } from "../../../services/api/chat.service";
+import type { PendingComposerAttachment } from "../types";
+import { useChatComposerSend } from "../hooks/useChatComposerSend";
+import { useChatMutationScope } from "../hooks/useChatMutationScope";
+import { chatRuntimeCache } from "../utils/chatRuntimeCache";
+import { buildPdfMessagePreviewCacheKey } from "../utils/pdf-message-preview";
 
 const { mockGateway, mockToast } = vi.hoisted(() => ({
   mockGateway: {
@@ -25,11 +25,10 @@ const { mockGateway, mockToast } = vi.hoisted(() => ({
     success: vi.fn(),
   },
 }));
-const { mockCreatePdfPreviewUploadArtifact, mockReadBlobAsDataUrl } =
-  vi.hoisted(() => ({
-    mockCreatePdfPreviewUploadArtifact: vi.fn(),
-    mockReadBlobAsDataUrl: vi.fn(),
-  }));
+const { mockCreatePdfPreviewUploadArtifact, mockReadBlobAsDataUrl } = vi.hoisted(() => ({
+  mockCreatePdfPreviewUploadArtifact: vi.fn(),
+  mockReadBlobAsDataUrl: vi.fn(),
+}));
 const { mockCreateImagePreviewUploadArtifact } = vi.hoisted(() => ({
   mockCreateImagePreviewUploadArtifact: vi.fn(),
 }));
@@ -42,7 +41,7 @@ const { mockClearPersistedComposerDraftAttachments } = vi.hoisted(() => ({
   mockClearPersistedComposerDraftAttachments: vi.fn(),
 }));
 
-vi.mock('@/services/api/chat.service', () => ({
+vi.mock("@/services/api/chat.service", () => ({
   chatMessagesService: {
     fetchMessagesBetweenUsers: mockGateway.fetchConversationMessages,
     insertMessage: mockGateway.createMessage,
@@ -54,7 +53,7 @@ vi.mock('@/services/api/chat.service', () => ({
   },
 }));
 
-vi.mock('../data/chatSidebarAssetsGateway', () => ({
+vi.mock("../data/chatSidebarAssetsGateway", () => ({
   chatSidebarAssetsGateway: {
     uploadImage: mockGateway.uploadImage,
     uploadAttachment: mockGateway.uploadAttachment,
@@ -63,7 +62,7 @@ vi.mock('../data/chatSidebarAssetsGateway', () => ({
   },
 }));
 
-vi.mock('../data/chatSidebarGateway', () => ({
+vi.mock("../data/chatSidebarGateway", () => ({
   chatSidebarMessagesGateway: {
     getMessageById: mockGateway.getMessageById,
     fetchConversationMessages: async (
@@ -97,8 +96,8 @@ vi.mock('../data/chatSidebarGateway', () => ({
   },
 }));
 
-vi.mock('../utils/pdf-message-preview', async () => {
-  const actual = await vi.importActual('../utils/pdf-message-preview');
+vi.mock("../utils/pdf-message-preview", async () => {
+  const actual = await vi.importActual("../utils/pdf-message-preview");
 
   return {
     ...actual,
@@ -107,59 +106,55 @@ vi.mock('../utils/pdf-message-preview', async () => {
   };
 });
 
-vi.mock('../utils/image-message-preview', () => ({
+vi.mock("../utils/image-message-preview", () => ({
   createImagePreviewUploadArtifact: mockCreateImagePreviewUploadArtifact,
 }));
 
-vi.mock('../utils/composer-draft-persistence', () => ({
-  clearPersistedComposerDraftAttachments:
-    mockClearPersistedComposerDraftAttachments,
+vi.mock("../utils/composer-draft-persistence", () => ({
+  clearPersistedComposerDraftAttachments: mockClearPersistedComposerDraftAttachments,
 }));
 
-vi.mock('react-hot-toast', () => ({
+vi.mock("react-hot-toast", () => ({
   default: mockToast,
 }));
 
 const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
-  id: overrides.id ?? 'message-1',
-  sender_id: overrides.sender_id ?? 'user-a',
-  receiver_id: overrides.receiver_id ?? 'user-b',
-  channel_id: overrides.channel_id ?? 'channel-1',
-  message: overrides.message ?? 'https://example.com/file.pdf',
-  message_type: overrides.message_type ?? 'file',
-  created_at: overrides.created_at ?? '2026-03-06T09:30:00.000Z',
-  updated_at: overrides.updated_at ?? '2026-03-06T09:30:00.000Z',
+  id: overrides.id ?? "message-1",
+  sender_id: overrides.sender_id ?? "user-a",
+  receiver_id: overrides.receiver_id ?? "user-b",
+  channel_id: overrides.channel_id ?? "channel-1",
+  message: overrides.message ?? "https://example.com/file.pdf",
+  message_type: overrides.message_type ?? "file",
+  created_at: overrides.created_at ?? "2026-03-06T09:30:00.000Z",
+  updated_at: overrides.updated_at ?? "2026-03-06T09:30:00.000Z",
   is_read: overrides.is_read ?? false,
   is_delivered: overrides.is_delivered ?? false,
   reply_to_id: overrides.reply_to_id ?? null,
   message_relation_kind: overrides.message_relation_kind ?? null,
-  file_name: overrides.file_name ?? 'stok.pdf',
-  file_kind: overrides.file_kind ?? 'document',
-  file_mime_type: overrides.file_mime_type ?? 'application/pdf',
+  file_name: overrides.file_name ?? "stok.pdf",
+  file_kind: overrides.file_kind ?? "document",
+  file_mime_type: overrides.file_mime_type ?? "application/pdf",
   file_size: overrides.file_size ?? 2048,
-  file_storage_path:
-    overrides.file_storage_path ?? 'documents/channel/stok.pdf',
+  file_storage_path: overrides.file_storage_path ?? "documents/channel/stok.pdf",
   file_preview_url: overrides.file_preview_url,
   file_preview_page_count: overrides.file_preview_page_count,
   file_preview_status: overrides.file_preview_status,
   file_preview_error: overrides.file_preview_error,
-  sender_name: overrides.sender_name ?? 'Admin',
-  receiver_name: overrides.receiver_name ?? 'Gudang',
+  sender_name: overrides.sender_name ?? "Admin",
+  receiver_name: overrides.receiver_name ?? "Gudang",
   stableKey: overrides.stableKey,
 });
 
 const buildPendingAttachment = (
-  overrides: Partial<PendingComposerAttachment> = {}
+  overrides: Partial<PendingComposerAttachment> = {},
 ): PendingComposerAttachment => ({
-  id: overrides.id ?? 'pending-1',
-  file:
-    overrides.file ??
-    new File(['pdf'], 'stok.pdf', { type: 'application/pdf' }),
-  fileName: overrides.fileName ?? 'stok.pdf',
-  fileTypeLabel: overrides.fileTypeLabel ?? 'PDF',
-  fileKind: overrides.fileKind ?? 'document',
-  mimeType: overrides.mimeType ?? 'application/pdf',
-  previewUrl: overrides.previewUrl ?? 'blob:pending-preview',
+  id: overrides.id ?? "pending-1",
+  file: overrides.file ?? new File(["pdf"], "stok.pdf", { type: "application/pdf" }),
+  fileName: overrides.fileName ?? "stok.pdf",
+  fileTypeLabel: overrides.fileTypeLabel ?? "PDF",
+  fileKind: overrides.fileKind ?? "document",
+  mimeType: overrides.mimeType ?? "application/pdf",
+  previewUrl: overrides.previewUrl ?? "blob:pending-preview",
   pdfCoverUrl: overrides.pdfCoverUrl ?? null,
   pdfPageCount: overrides.pdfPageCount ?? null,
 });
@@ -190,10 +185,7 @@ const useComposerSendWithMutationScope = ({
   messages = [],
   rawAttachmentUrl = null,
   ...props
-}: Omit<
-  Parameters<typeof useChatComposerSend>[0],
-  'mutationScope' | 'rawAttachmentUrl'
-> & {
+}: Omit<Parameters<typeof useChatComposerSend>[0], "mutationScope" | "rawAttachmentUrl"> & {
   messages?: ChatMessage[];
   rawAttachmentUrl?: string | null;
 }) => {
@@ -212,43 +204,37 @@ const useComposerSendWithMutationScope = ({
   });
 };
 
-describe('useChatComposerSend', () => {
+describe("useChatComposerSend", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
     chatRuntimeCache.pdfPreviews.reset();
     vi.stubGlobal(
-      'URL',
+      "URL",
       Object.assign(URL, {
         createObjectURL: vi
           .fn()
-          .mockReturnValueOnce('blob:temp-upload')
-          .mockReturnValueOnce('blob:preview-upload'),
+          .mockReturnValueOnce("blob:temp-upload")
+          .mockReturnValueOnce("blob:preview-upload"),
         revokeObjectURL: vi.fn(),
-      })
+      }),
     );
-    mockGateway.uploadAttachment.mockImplementation(
-      async (_file: File, path: string) => ({
-        path,
-      })
-    );
-    mockGateway.uploadPdfPreview.mockImplementation(
-      async (_file: File, path: string) => ({
-        path,
-      })
-    );
+    mockGateway.uploadAttachment.mockImplementation(async (_file: File, path: string) => ({
+      path,
+    }));
+    mockGateway.uploadPdfPreview.mockImplementation(async (_file: File, path: string) => ({
+      path,
+    }));
     mockGateway.fetchConversationMessages.mockResolvedValue({
       data: [],
       error: null,
     });
-    mockGateway.getMessageById.mockImplementation(
-      async (messageId: string) => ({
-        data: buildMessage({
-          id: messageId,
-        }),
-        error: null,
-      })
-    );
+    mockGateway.getMessageById.mockImplementation(async (messageId: string) => ({
+      data: buildMessage({
+        id: messageId,
+      }),
+      error: null,
+    }));
     mockGateway.cleanupStoragePaths.mockResolvedValue({
       data: {
         failedStoragePaths: [],
@@ -256,24 +242,19 @@ describe('useChatComposerSend', () => {
       error: null,
     });
     mockCreatePdfPreviewUploadArtifact.mockResolvedValue({
-      previewFile: new File(['preview'], 'server-file-preview.png', {
-        type: 'image/png',
+      previewFile: new File(["preview"], "server-file-preview.png", {
+        type: "image/png",
       }),
       pageCount: 2,
     });
-    mockReadBlobAsDataUrl.mockResolvedValue(
-      'data:image/png;base64,cHJldmlldw=='
-    );
+    mockReadBlobAsDataUrl.mockResolvedValue("data:image/png;base64,cHJldmlldw==");
     mockCreateImagePreviewUploadArtifact.mockImplementation(
       async (_file: File, storagePath: string) => ({
-        previewFile: new File(['preview'], 'server-image-preview.webp', {
-          type: 'image/webp',
+        previewFile: new File(["preview"], "server-image-preview.webp", {
+          type: "image/webp",
         }),
-        previewStoragePath: storagePath.replace(
-          /^(images|documents)\//,
-          'previews/'
-        ),
-      })
+        previewStoragePath: storagePath.replace(/^(images|documents)\//, "previews/"),
+      }),
     );
     mockChatSidebarAttachmentGateway.fetchRemoteAsset.mockResolvedValue({
       data: null,
@@ -282,12 +263,12 @@ describe('useChatComposerSend', () => {
     mockClearPersistedComposerDraftAttachments.mockResolvedValue(undefined);
   });
 
-  it('includes reply_to_id when sending a text reply', async () => {
+  it("includes reply_to_id when sending a text reply", async () => {
     mockGateway.createMessage.mockResolvedValue({
       data: buildMessage({
-        id: 'server-text-reply',
-        message: 'balasan',
-        message_type: 'text',
+        id: "server-text-reply",
+        message: "balasan",
+        message_type: "text",
       }),
       error: null,
     });
@@ -296,22 +277,22 @@ describe('useChatComposerSend', () => {
 
     const { result } = renderHook(() => {
       const [, setMessages] = useState<ChatMessage[]>([]);
-      const [draftMessage, setDraftMessage] = useState('balas ini');
+      const [draftMessage, setDraftMessage] = useState("balas ini");
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
       return useComposerSendWithMutationScope({
-        user: { id: 'user-a', name: 'Admin' },
+        user: { id: "user-a", name: "Admin" },
         targetUser: {
-          id: 'user-b',
-          name: 'Gudang',
-          email: 'gudang@example.com',
+          id: "user-b",
+          name: "Gudang",
+          email: "gudang@example.com",
           profilephoto: null,
         },
-        currentChannelId: 'channel-1',
+        currentChannelId: "channel-1",
         message: draftMessage,
         setMessage: setDraftMessage,
         editingMessageId: null,
-        replyingMessageId: 'message-1',
+        replyingMessageId: "message-1",
         pendingComposerAttachments: [],
         clearPendingComposerAttachments: vi.fn(),
         restorePendingComposerAttachments: vi.fn(),
@@ -329,33 +310,33 @@ describe('useChatComposerSend', () => {
 
     expect(mockGateway.createMessage).toHaveBeenCalledWith(
       expect.objectContaining({
-        message: 'balas ini',
-        message_type: 'text',
-        reply_to_id: 'message-1',
-      })
+        message: "balas ini",
+        message_type: "text",
+        reply_to_id: "message-1",
+      }),
     );
   });
 
-  it('rolls back the persisted attachment thread when caption insert fails', async () => {
+  it("rolls back the persisted attachment thread when caption insert fails", async () => {
     mockGateway.uploadAttachment.mockResolvedValue({
-      path: 'documents/channel/stok.pdf',
+      path: "documents/channel/stok.pdf",
     });
     mockGateway.createMessage
       .mockResolvedValueOnce({
         data: buildMessage({
-          id: 'server-file-1',
-          file_storage_path: 'documents/channel/stok.pdf',
-          file_preview_status: 'pending',
+          id: "server-file-1",
+          file_storage_path: "documents/channel/stok.pdf",
+          file_preview_status: "pending",
         }),
         error: null,
       })
       .mockResolvedValueOnce({
         data: null,
-        error: new Error('caption failed'),
+        error: new Error("caption failed"),
       });
     mockGateway.deleteMessageThreadAndCleanup.mockResolvedValue({
       data: {
-        deletedMessageIds: ['server-file-1'],
+        deletedMessageIds: ["server-file-1"],
         failedStoragePaths: [],
       },
       error: null,
@@ -367,18 +348,18 @@ describe('useChatComposerSend', () => {
 
     const { result } = renderHook(() => {
       const [messages, setMessages] = useState<ChatMessage[]>([]);
-      const [draftMessage, setDraftMessage] = useState('stok opname');
+      const [draftMessage, setDraftMessage] = useState("stok opname");
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
       const send = useComposerSendWithMutationScope({
-        user: { id: 'user-a', name: 'Admin' },
+        user: { id: "user-a", name: "Admin" },
         targetUser: {
-          id: 'user-b',
-          name: 'Gudang',
-          email: 'gudang@example.com',
+          id: "user-b",
+          name: "Gudang",
+          email: "gudang@example.com",
           profilephoto: null,
         },
-        currentChannelId: 'channel-1',
+        currentChannelId: "channel-1",
         message: draftMessage,
         setMessage: setDraftMessage,
         editingMessageId: null,
@@ -405,56 +386,54 @@ describe('useChatComposerSend', () => {
     });
 
     await waitFor(() => {
-      expect(mockGateway.deleteMessageThreadAndCleanup).toHaveBeenCalledWith(
-        'server-file-1'
-      );
+      expect(mockGateway.deleteMessageThreadAndCleanup).toHaveBeenCalledWith("server-file-1");
       expect(result.current.messages).toEqual([]);
-      expect(result.current.draftMessage).toBe('stok opname');
+      expect(result.current.draftMessage).toBe("stok opname");
     });
 
     expect(clearPendingComposerAttachments).toHaveBeenCalledOnce();
     expect(mockGateway.createMessage).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({
-        message_relation_kind: 'attachment_caption',
-        reply_to_id: 'server-file-1',
-      })
+        message_relation_kind: "attachment_caption",
+        reply_to_id: "server-file-1",
+      }),
     );
     expect(restorePendingComposerAttachments).toHaveBeenCalledWith([
       expect.objectContaining({
-        fileName: 'stok.pdf',
+        fileName: "stok.pdf",
       }),
     ]);
   });
 
-  it('restores the failed attachment slice back into the composer when send fails', async () => {
-    mockGateway.uploadAttachment.mockRejectedValue(new Error('upload failed'));
+  it("restores the failed attachment slice back into the composer when send fails", async () => {
+    mockGateway.uploadAttachment.mockRejectedValue(new Error("upload failed"));
 
     const restorePendingComposerAttachments = vi.fn();
     const firstAttachment = buildPendingAttachment({
-      id: 'pending-1',
-      fileName: 'stok-1.pdf',
+      id: "pending-1",
+      fileName: "stok-1.pdf",
     });
     const secondAttachment = buildPendingAttachment({
-      id: 'pending-2',
-      fileName: 'stok-2.pdf',
+      id: "pending-2",
+      fileName: "stok-2.pdf",
     });
     const { registerPendingSend } = createPendingSendRegistry();
 
     const { result } = renderHook(() => {
       const [, setMessages] = useState<ChatMessage[]>([]);
-      const [draftMessage, setDraftMessage] = useState('');
+      const [draftMessage, setDraftMessage] = useState("");
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
       return useComposerSendWithMutationScope({
-        user: { id: 'user-a', name: 'Admin' },
+        user: { id: "user-a", name: "Admin" },
         targetUser: {
-          id: 'user-b',
-          name: 'Gudang',
-          email: 'gudang@example.com',
+          id: "user-b",
+          name: "Gudang",
+          email: "gudang@example.com",
           profilephoto: null,
         },
-        currentChannelId: 'channel-1',
+        currentChannelId: "channel-1",
         message: draftMessage,
         setMessage: setDraftMessage,
         editingMessageId: null,
@@ -474,25 +453,25 @@ describe('useChatComposerSend', () => {
     });
 
     expect(restorePendingComposerAttachments).toHaveBeenCalledWith([
-      expect.objectContaining({ id: 'pending-1', fileName: 'stok-1.pdf' }),
-      expect.objectContaining({ id: 'pending-2', fileName: 'stok-2.pdf' }),
+      expect.objectContaining({ id: "pending-1", fileName: "stok-1.pdf" }),
+      expect.objectContaining({ id: "pending-2", fileName: "stok-2.pdf" }),
     ]);
     expect(mockClearPersistedComposerDraftAttachments).not.toHaveBeenCalled();
   });
 
-  it('clears persisted attachment drafts after a successful attachment send', async () => {
+  it("clears persisted attachment drafts after a successful attachment send", async () => {
     mockGateway.uploadAttachment.mockResolvedValue({
-      path: 'documents/channel/stok.pdf',
+      path: "documents/channel/stok.pdf",
     });
     mockGateway.createMessage.mockResolvedValue({
       data: buildMessage({
-        id: 'server-file-success',
-        message: 'documents/channel/stok.pdf',
-        message_type: 'file',
-        file_name: 'stok.pdf',
-        file_kind: 'document',
-        file_mime_type: 'application/pdf',
-        file_storage_path: 'documents/channel/stok.pdf',
+        id: "server-file-success",
+        message: "documents/channel/stok.pdf",
+        message_type: "file",
+        file_name: "stok.pdf",
+        file_kind: "document",
+        file_mime_type: "application/pdf",
+        file_storage_path: "documents/channel/stok.pdf",
       }),
       error: null,
     });
@@ -501,22 +480,22 @@ describe('useChatComposerSend', () => {
 
     const { result } = renderHook(() => {
       const [, setMessages] = useState<ChatMessage[]>([]);
-      const [draftMessage, setDraftMessage] = useState('');
+      const [draftMessage, setDraftMessage] = useState("");
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
       return useComposerSendWithMutationScope({
-        user: { id: 'user-a', name: 'Admin' },
+        user: { id: "user-a", name: "Admin" },
         targetUser: {
-          id: 'user-b',
-          name: 'Gudang',
-          email: 'gudang@example.com',
+          id: "user-b",
+          name: "Gudang",
+          email: "gudang@example.com",
           profilephoto: null,
         },
-        currentChannelId: 'channel-1',
+        currentChannelId: "channel-1",
         message: draftMessage,
         setMessage: setDraftMessage,
         editingMessageId: null,
-        replyingMessageId: 'message-1',
+        replyingMessageId: "message-1",
         pendingComposerAttachments: [buildPendingAttachment()],
         clearPendingComposerAttachments: vi.fn(),
         restorePendingComposerAttachments: vi.fn(),
@@ -532,49 +511,47 @@ describe('useChatComposerSend', () => {
       await result.current.handleSendMessage();
     });
 
-    expect(mockClearPersistedComposerDraftAttachments).toHaveBeenCalledWith(
-      'channel-1'
-    );
+    expect(mockClearPersistedComposerDraftAttachments).toHaveBeenCalledWith("channel-1", "user-a");
     expect(mockGateway.createMessage).toHaveBeenCalledWith(
       expect.objectContaining({
-        reply_to_id: 'message-1',
-      })
+        reply_to_id: "message-1",
+      }),
     );
   });
 
-  it('sends queued attachments sequentially and keeps the caption on the last queued attachment', async () => {
+  it("sends queued attachments sequentially and keeps the caption on the last queued attachment", async () => {
     vi.stubGlobal(
-      'URL',
+      "URL",
       Object.assign(URL, {
         createObjectURL: vi
           .fn()
-          .mockReturnValueOnce('blob:temp-upload-1')
-          .mockReturnValueOnce('blob:temp-upload-2'),
+          .mockReturnValueOnce("blob:temp-upload-1")
+          .mockReturnValueOnce("blob:temp-upload-2"),
         revokeObjectURL: vi.fn(),
-      })
+      }),
     );
 
     const uploadResolvers: Array<(value: { path: string }) => void> = [];
     const startedUploads: string[] = [];
     mockGateway.uploadAttachment.mockImplementation(
       (file: File) =>
-        new Promise(resolve => {
+        new Promise((resolve) => {
           startedUploads.push(file.name);
           uploadResolvers.push(resolve);
-        })
+        }),
     );
 
     let persistedMessageCount = 0;
-    mockGateway.createMessage.mockImplementation(async payload => {
-      if (payload.message_relation_kind === 'attachment_caption') {
+    mockGateway.createMessage.mockImplementation(async (payload) => {
+      if (payload.message_relation_kind === "attachment_caption") {
         return {
           data: buildMessage({
-            id: 'server-caption-1',
+            id: "server-caption-1",
             message: String(payload.message),
-            message_type: 'text',
+            message_type: "text",
             reply_to_id: String(payload.reply_to_id),
             file_name: null,
-            file_kind: null as unknown as ChatMessage['file_kind'],
+            file_kind: null as unknown as ChatMessage["file_kind"],
             file_mime_type: null,
             file_size: null,
             file_storage_path: null,
@@ -591,12 +568,10 @@ describe('useChatComposerSend', () => {
           message: String(payload.message),
           message_type: payload.message_type,
           file_name: payload.file_name ?? `stok-${persistedMessageCount}.pdf`,
-          file_kind: payload.file_kind ?? 'document',
-          file_mime_type: payload.file_mime_type ?? 'application/pdf',
+          file_kind: payload.file_kind ?? "document",
+          file_mime_type: payload.file_mime_type ?? "application/pdf",
           file_storage_path:
-            typeof payload.file_storage_path === 'string'
-              ? payload.file_storage_path
-              : null,
+            typeof payload.file_storage_path === "string" ? payload.file_storage_path : null,
         }),
         error: null,
       };
@@ -606,35 +581,35 @@ describe('useChatComposerSend', () => {
 
     const { result } = renderHook(() => {
       const [messages, setMessages] = useState<ChatMessage[]>([]);
-      const [draftMessage, setDraftMessage] = useState('stok opname');
+      const [draftMessage, setDraftMessage] = useState("stok opname");
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
       const send = useComposerSendWithMutationScope({
-        user: { id: 'user-a', name: 'Admin' },
+        user: { id: "user-a", name: "Admin" },
         targetUser: {
-          id: 'user-b',
-          name: 'Gudang',
-          email: 'gudang@example.com',
+          id: "user-b",
+          name: "Gudang",
+          email: "gudang@example.com",
           profilephoto: null,
         },
-        currentChannelId: 'channel-1',
+        currentChannelId: "channel-1",
         message: draftMessage,
         setMessage: setDraftMessage,
         editingMessageId: null,
         pendingComposerAttachments: [
           buildPendingAttachment({
-            id: 'pending-1',
-            file: new File(['pdf'], 'stok-1.pdf', {
-              type: 'application/pdf',
+            id: "pending-1",
+            file: new File(["pdf"], "stok-1.pdf", {
+              type: "application/pdf",
             }),
-            fileName: 'stok-1.pdf',
+            fileName: "stok-1.pdf",
           }),
           buildPendingAttachment({
-            id: 'pending-2',
-            file: new File(['pdf'], 'stok-2.pdf', {
-              type: 'application/pdf',
+            id: "pending-2",
+            file: new File(["pdf"], "stok-2.pdf", {
+              type: "application/pdf",
             }),
-            fileName: 'stok-2.pdf',
+            fileName: "stok-2.pdf",
           }),
         ],
         clearPendingComposerAttachments: vi.fn(),
@@ -658,25 +633,25 @@ describe('useChatComposerSend', () => {
       await Promise.resolve();
     });
 
-    expect(startedUploads).toEqual(['stok-1.pdf']);
+    expect(startedUploads).toEqual(["stok-1.pdf"]);
     expect(mockGateway.uploadAttachment).toHaveBeenCalledTimes(1);
     expect(result.current.messages).toHaveLength(1);
 
     await act(async () => {
       uploadResolvers[0]?.({
-        path: 'documents/channel-1/user-a_document_stok-1.pdf',
+        path: "documents/channel-1/user-a_document_stok-1.pdf",
       });
       await Promise.resolve();
     });
 
     await waitFor(() => {
-      expect(startedUploads).toEqual(['stok-1.pdf', 'stok-2.pdf']);
+      expect(startedUploads).toEqual(["stok-1.pdf", "stok-2.pdf"]);
       expect(mockGateway.uploadAttachment).toHaveBeenCalledTimes(2);
     });
 
     await act(async () => {
       uploadResolvers[1]?.({
-        path: 'documents/channel-1/user-a_document_stok-2.pdf',
+        path: "documents/channel-1/user-a_document_stok-2.pdf",
       });
       await sendPromise;
     });
@@ -684,65 +659,65 @@ describe('useChatComposerSend', () => {
     expect(mockGateway.createMessage).toHaveBeenNthCalledWith(
       1,
       expect.objectContaining({
-        message_type: 'file',
-        file_name: 'stok-1.pdf',
-      })
+        message_type: "file",
+        file_name: "stok-1.pdf",
+      }),
     );
     expect(mockGateway.createMessage).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({
-        message_type: 'file',
-        file_name: 'stok-2.pdf',
-      })
+        message_type: "file",
+        file_name: "stok-2.pdf",
+      }),
     );
     expect(mockGateway.createMessage).toHaveBeenNthCalledWith(
       3,
       expect.objectContaining({
-        message_relation_kind: 'attachment_caption',
-        message: 'stok opname',
-        reply_to_id: 'server-file-2',
-      })
+        message_relation_kind: "attachment_caption",
+        message: "stok opname",
+        reply_to_id: "server-file-2",
+      }),
     );
   });
 
-  it('appends bulk image optimistic messages in one pass before uploads settle', async () => {
+  it("appends bulk image optimistic messages in one pass before uploads settle", async () => {
     mockCreateImagePreviewUploadArtifact.mockResolvedValue(null);
 
     vi.stubGlobal(
-      'URL',
+      "URL",
       Object.assign(URL, {
         createObjectURL: vi
           .fn()
-          .mockReturnValueOnce('blob:image-batch-1')
-          .mockReturnValueOnce('blob:image-batch-2')
-          .mockReturnValueOnce('blob:image-batch-3')
-          .mockReturnValueOnce('blob:image-batch-4'),
+          .mockReturnValueOnce("blob:image-batch-1")
+          .mockReturnValueOnce("blob:image-batch-2")
+          .mockReturnValueOnce("blob:image-batch-3")
+          .mockReturnValueOnce("blob:image-batch-4"),
         revokeObjectURL: vi.fn(),
-      })
+      }),
     );
 
     const uploadResolvers: Array<(value: { path: string }) => void> = [];
     const startedUploads: string[] = [];
     mockGateway.uploadAttachment.mockImplementation(
       (file: File) =>
-        new Promise(resolve => {
+        new Promise((resolve) => {
           startedUploads.push(file.name);
           uploadResolvers.push(resolve);
-        })
+        }),
     );
 
     let persistedMessageCount = 0;
-    mockGateway.createMessage.mockImplementation(async payload => {
+    mockGateway.createMessage.mockImplementation(async (payload) => {
       persistedMessageCount += 1;
 
       return {
         data: buildMessage({
           id: `server-image-${persistedMessageCount}`,
           message: String(payload.message),
-          message_type: 'image',
+          message_type: "image",
           file_name: undefined,
           file_kind: undefined,
-          file_mime_type: 'image/png',
+          file_mime_type: "image/png",
           file_size: 1024,
           file_storage_path: String(payload.file_storage_path),
         }),
@@ -754,18 +729,18 @@ describe('useChatComposerSend', () => {
 
     const { result } = renderHook(() => {
       const [messages, setMessages] = useState<ChatMessage[]>([]);
-      const [draftMessage, setDraftMessage] = useState('');
+      const [draftMessage, setDraftMessage] = useState("");
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
       const send = useComposerSendWithMutationScope({
-        user: { id: 'user-a', name: 'Admin' },
+        user: { id: "user-a", name: "Admin" },
         targetUser: {
-          id: 'user-b',
-          name: 'Gudang',
-          email: 'gudang@example.com',
+          id: "user-b",
+          name: "Gudang",
+          email: "gudang@example.com",
           profilephoto: null,
         },
-        currentChannelId: 'channel-1',
+        currentChannelId: "channel-1",
         message: draftMessage,
         setMessage: setDraftMessage,
         editingMessageId: null,
@@ -773,14 +748,14 @@ describe('useChatComposerSend', () => {
           buildPendingAttachment({
             id: `pending-image-${index + 1}`,
             file: new File([`image-${index + 1}`], `chat-${index + 1}.png`, {
-              type: 'image/png',
+              type: "image/png",
             }),
             fileName: `chat-${index + 1}.png`,
-            fileTypeLabel: 'PNG',
-            fileKind: 'image',
-            mimeType: 'image/png',
+            fileTypeLabel: "PNG",
+            fileKind: "image",
+            mimeType: "image/png",
             previewUrl: `blob:composer-preview-${index + 1}`,
-          })
+          }),
         ),
         clearPendingComposerAttachments: vi.fn(),
         restorePendingComposerAttachments: vi.fn(),
@@ -803,76 +778,80 @@ describe('useChatComposerSend', () => {
       await Promise.resolve();
     });
 
-    expect(startedUploads).toEqual(['chat-1.png']);
+    expect(startedUploads).toEqual(["chat-1.png"]);
     expect(result.current.messages).toHaveLength(4);
-    expect(result.current.messages.map(message => message.message)).toEqual([
-      'blob:image-batch-1',
-      'blob:image-batch-2',
-      'blob:image-batch-3',
-      'blob:image-batch-4',
+    expect(result.current.messages.map((message) => message.message)).toEqual([
+      "blob:image-batch-1",
+      "blob:image-batch-2",
+      "blob:image-batch-3",
+      "blob:image-batch-4",
     ]);
-    expect(
-      result.current.messages.every(message => message.id.startsWith('temp_'))
-    ).toBe(true);
+    expect(result.current.messages.every((message) => message.id.startsWith("temp_"))).toBe(true);
 
     await act(async () => {
       uploadResolvers[0]?.({
-        path: 'images/channel-1/user-a_image_chat-1.png',
+        path: "images/channel-1/user-a_image_chat-1.png",
       });
       await Promise.resolve();
     });
 
     await waitFor(() => {
-      expect(
-        startedUploads.filter(fileName => fileName.startsWith('chat-'))
-      ).toEqual(['chat-1.png', 'chat-2.png']);
+      expect(startedUploads.filter((fileName) => fileName.startsWith("chat-"))).toEqual([
+        "chat-1.png",
+        "chat-2.png",
+      ]);
     });
 
     await act(async () => {
       uploadResolvers[1]?.({
-        path: 'images/channel-1/user-a_image_chat-2.png',
+        path: "images/channel-1/user-a_image_chat-2.png",
       });
       await Promise.resolve();
     });
 
     await waitFor(() => {
-      expect(
-        startedUploads.filter(fileName => fileName.startsWith('chat-'))
-      ).toEqual(['chat-1.png', 'chat-2.png', 'chat-3.png']);
+      expect(startedUploads.filter((fileName) => fileName.startsWith("chat-"))).toEqual([
+        "chat-1.png",
+        "chat-2.png",
+        "chat-3.png",
+      ]);
     });
 
     await act(async () => {
       uploadResolvers[2]?.({
-        path: 'images/channel-1/user-a_image_chat-3.png',
+        path: "images/channel-1/user-a_image_chat-3.png",
       });
       await Promise.resolve();
     });
 
     await waitFor(() => {
-      expect(
-        startedUploads.filter(fileName => fileName.startsWith('chat-'))
-      ).toEqual(['chat-1.png', 'chat-2.png', 'chat-3.png', 'chat-4.png']);
+      expect(startedUploads.filter((fileName) => fileName.startsWith("chat-"))).toEqual([
+        "chat-1.png",
+        "chat-2.png",
+        "chat-3.png",
+        "chat-4.png",
+      ]);
     });
 
     await act(async () => {
       uploadResolvers[3]?.({
-        path: 'images/channel-1/user-a_image_chat-4.png',
+        path: "images/channel-1/user-a_image_chat-4.png",
       });
       await sendPromise;
     });
   });
 
-  it('surfaces a cleanup warning when an uncommitted uploaded file cannot be deleted', async () => {
+  it("surfaces a cleanup warning when an uncommitted uploaded file cannot be deleted", async () => {
     mockGateway.uploadAttachment.mockResolvedValue({
-      path: 'documents/channel/stok.pdf',
+      path: "documents/channel/stok.pdf",
     });
     mockGateway.createMessage.mockResolvedValue({
       data: null,
-      error: new Error('insert failed'),
+      error: new Error("insert failed"),
     });
     mockGateway.cleanupStoragePaths.mockResolvedValue({
       data: {
-        failedStoragePaths: ['documents/channel/stok.pdf'],
+        failedStoragePaths: ["documents/channel/stok.pdf"],
       },
       error: null,
     });
@@ -883,18 +862,18 @@ describe('useChatComposerSend', () => {
 
     const { result } = renderHook(() => {
       const [, setMessages] = useState<ChatMessage[]>([]);
-      const [draftMessage, setDraftMessage] = useState('');
+      const [draftMessage, setDraftMessage] = useState("");
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
       return useComposerSendWithMutationScope({
-        user: { id: 'user-a', name: 'Admin' },
+        user: { id: "user-a", name: "Admin" },
         targetUser: {
-          id: 'user-b',
-          name: 'Gudang',
-          email: 'gudang@example.com',
+          id: "user-b",
+          name: "Gudang",
+          email: "gudang@example.com",
           profilephoto: null,
         },
-        currentChannelId: 'channel-1',
+        currentChannelId: "channel-1",
         message: draftMessage,
         setMessage: setDraftMessage,
         editingMessageId: null,
@@ -914,33 +893,33 @@ describe('useChatComposerSend', () => {
     });
 
     expect(mockGateway.cleanupStoragePaths).toHaveBeenCalledWith([
-      'documents/channel/stok.pdf',
+      "documents/channel/stok.pdf",
       expect.stringMatching(/^previews\/channel-1\/user-a_document_.+\.png$/),
     ]);
     expect(mockToast.error).toHaveBeenCalledWith(
-      'Pengiriman gagal dan file sementara tidak dapat dibersihkan',
+      "Pengiriman gagal dan file sementara tidak dapat dibersihkan",
       expect.objectContaining({
-        toasterId: 'chat-sidebar-toaster',
-      })
+        toasterId: "chat-sidebar-toaster",
+      }),
     );
   });
 
-  it('does nothing when attachment send is triggered without an active channel', async () => {
+  it("does nothing when attachment send is triggered without an active channel", async () => {
     const clearPendingComposerAttachments = vi.fn();
     const restorePendingComposerAttachments = vi.fn();
     const { registerPendingSend, pendingEntries } = createPendingSendRegistry();
 
     const { result } = renderHook(() => {
       const [, setMessages] = useState<ChatMessage[]>([]);
-      const [draftMessage, setDraftMessage] = useState('');
+      const [draftMessage, setDraftMessage] = useState("");
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
       return useComposerSendWithMutationScope({
-        user: { id: 'user-a', name: 'Admin' },
+        user: { id: "user-a", name: "Admin" },
         targetUser: {
-          id: 'user-b',
-          name: 'Gudang',
-          email: 'gudang@example.com',
+          id: "user-b",
+          name: "Gudang",
+          email: "gudang@example.com",
           profilephoto: null,
         },
         currentChannelId: null,
@@ -970,23 +949,20 @@ describe('useChatComposerSend', () => {
     expect(pendingEntries.size).toBe(0);
   });
 
-  it('persists pdf preview metadata during the send pipeline', async () => {
+  it("persists pdf preview metadata during the send pipeline", async () => {
     mockGateway.uploadAttachment.mockResolvedValue({
-      path: 'documents/channel/stok.pdf',
+      path: "documents/channel/stok.pdf",
     });
-    mockGateway.createMessage.mockImplementation(async payload => ({
+    mockGateway.createMessage.mockImplementation(async (payload) => ({
       data: buildMessage({
-        id: 'server-file-2',
+        id: "server-file-2",
         message: String(payload.message),
         file_storage_path: String(payload.file_storage_path),
-        file_preview_status:
-          payload.file_preview_status === 'ready' ? 'ready' : null,
+        file_preview_status: payload.file_preview_status === "ready" ? "ready" : null,
         file_preview_url:
-          typeof payload.file_preview_url === 'string'
-            ? payload.file_preview_url
-            : null,
+          typeof payload.file_preview_url === "string" ? payload.file_preview_url : null,
         file_preview_page_count:
-          typeof payload.file_preview_page_count === 'number'
+          typeof payload.file_preview_page_count === "number"
             ? payload.file_preview_page_count
             : null,
       }),
@@ -997,18 +973,18 @@ describe('useChatComposerSend', () => {
 
     const { result } = renderHook(() => {
       const [messages, setMessages] = useState<ChatMessage[]>([]);
-      const [draftMessage, setDraftMessage] = useState('');
+      const [draftMessage, setDraftMessage] = useState("");
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
       const send = useComposerSendWithMutationScope({
-        user: { id: 'user-a', name: 'Admin' },
+        user: { id: "user-a", name: "Admin" },
         targetUser: {
-          id: 'user-b',
-          name: 'Gudang',
-          email: 'gudang@example.com',
+          id: "user-b",
+          name: "Gudang",
+          email: "gudang@example.com",
           profilephoto: null,
         },
-        currentChannelId: 'channel-1',
+        currentChannelId: "channel-1",
         message: draftMessage,
         setMessage: setDraftMessage,
         editingMessageId: null,
@@ -1041,47 +1017,42 @@ describe('useChatComposerSend', () => {
     expect(mockCreatePdfPreviewUploadArtifact).toHaveBeenCalledTimes(1);
     expect(mockCreatePdfPreviewUploadArtifact).toHaveBeenCalledWith(
       expect.any(File),
-      expect.stringMatching(/^user-a_document_/)
+      expect.stringMatching(/^user-a_document_/),
     );
     expect(mockGateway.uploadPdfPreview).toHaveBeenCalledWith(
       expect.any(File),
-      expect.stringMatching(/^previews\/channel-1\/user-a_document_.+\.png$/)
+      expect.stringMatching(/^previews\/channel-1\/user-a_document_.+\.png$/),
     );
     expect(mockGateway.createMessage).toHaveBeenCalledWith(
       expect.objectContaining({
-        receiver_id: 'user-b',
-        message_type: 'file',
-        file_preview_status: 'ready',
-        file_preview_url: expect.stringMatching(
-          /^previews\/channel-1\/user-a_document_.+\.png$/
-        ),
+        receiver_id: "user-b",
+        message_type: "file",
+        file_preview_status: "ready",
+        file_preview_url: expect.stringMatching(/^previews\/channel-1\/user-a_document_.+\.png$/),
         file_preview_page_count: 2,
-      })
+      }),
     );
-    expect(result.current.messages[0]?.file_preview_status).toBe('ready');
+    expect(result.current.messages[0]?.file_preview_status).toBe("ready");
     expect(result.current.messages[0]?.file_preview_url).toMatch(
-      /^previews\/channel-1\/user-a_document_.+\.png$/
+      /^previews\/channel-1\/user-a_document_.+\.png$/,
     );
     expect(result.current.messages[0]?.file_preview_page_count).toBe(2);
   });
 
-  it('reuses the composer pdf cover in bubble cache after the send commits', async () => {
+  it("reuses the composer pdf cover in bubble cache after the send commits", async () => {
     mockGateway.uploadAttachment.mockResolvedValue({
-      path: 'documents/channel/stok.pdf',
+      path: "documents/channel/stok.pdf",
     });
-    mockGateway.createMessage.mockImplementation(async payload => ({
+    mockGateway.createMessage.mockImplementation(async (payload) => ({
       data: buildMessage({
-        id: 'server-file-cache',
+        id: "server-file-cache",
         message: String(payload.message),
         file_storage_path: String(payload.file_storage_path),
-        file_preview_status:
-          payload.file_preview_status === 'ready' ? 'ready' : null,
+        file_preview_status: payload.file_preview_status === "ready" ? "ready" : null,
         file_preview_url:
-          typeof payload.file_preview_url === 'string'
-            ? payload.file_preview_url
-            : null,
+          typeof payload.file_preview_url === "string" ? payload.file_preview_url : null,
         file_preview_page_count:
-          typeof payload.file_preview_page_count === 'number'
+          typeof payload.file_preview_page_count === "number"
             ? payload.file_preview_page_count
             : null,
       }),
@@ -1092,24 +1063,24 @@ describe('useChatComposerSend', () => {
 
     const { result } = renderHook(() => {
       const [messages, setMessages] = useState<ChatMessage[]>([]);
-      const [draftMessage, setDraftMessage] = useState('');
+      const [draftMessage, setDraftMessage] = useState("");
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
       const send = useComposerSendWithMutationScope({
-        user: { id: 'user-a', name: 'Admin' },
+        user: { id: "user-a", name: "Admin" },
         targetUser: {
-          id: 'user-b',
-          name: 'Gudang',
-          email: 'gudang@example.com',
+          id: "user-b",
+          name: "Gudang",
+          email: "gudang@example.com",
           profilephoto: null,
         },
-        currentChannelId: 'channel-1',
+        currentChannelId: "channel-1",
         message: draftMessage,
         setMessage: setDraftMessage,
         editingMessageId: null,
         pendingComposerAttachments: [
           buildPendingAttachment({
-            pdfCoverUrl: 'data:image/png;base64,localcover',
+            pdfCoverUrl: "data:image/png;base64,localcover",
             pdfPageCount: 3,
           }),
         ],
@@ -1134,37 +1105,35 @@ describe('useChatComposerSend', () => {
 
     await waitFor(() => {
       expect(result.current.messages).toHaveLength(1);
-      expect(result.current.messages[0]?.id).toBe('server-file-cache');
+      expect(result.current.messages[0]?.id).toBe("server-file-cache");
     });
 
     const realMessage = result.current.messages[0]!;
     const cacheKey = buildPdfMessagePreviewCacheKey(
       realMessage as Parameters<typeof buildPdfMessagePreviewCacheKey>[0],
-      realMessage.file_name ?? null
+      realMessage.file_name ?? null,
     );
 
     expect(chatRuntimeCache.pdfPreviews.get(cacheKey)).toEqual(
       expect.objectContaining({
         cacheKey,
-        coverDataUrl: 'data:image/png;base64,localcover',
+        coverDataUrl: "data:image/png;base64,localcover",
         pageCount: 3,
-      })
+      }),
     );
   });
 
-  it('cancels a temp text send instead of letting the persisted row reappear', async () => {
-    let resolveCreateMessage:
-      | ((value: { data: ChatMessage; error: null }) => void)
-      | undefined;
+  it("cancels a temp text send instead of letting the persisted row reappear", async () => {
+    let resolveCreateMessage: ((value: { data: ChatMessage; error: null }) => void) | undefined;
 
     mockGateway.createMessage.mockImplementation(
       () =>
-        new Promise(resolve => {
+        new Promise((resolve) => {
           resolveCreateMessage = resolve;
-        })
+        }),
     );
     mockGateway.deleteMessageThread.mockResolvedValue({
-      data: ['server-text-1'],
+      data: ["server-text-1"],
       error: null,
     });
 
@@ -1172,18 +1141,18 @@ describe('useChatComposerSend', () => {
 
     const { result } = renderHook(() => {
       const [messages, setMessages] = useState<ChatMessage[]>([]);
-      const [draftMessage, setDraftMessage] = useState('pesan pending');
+      const [draftMessage, setDraftMessage] = useState("pesan pending");
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
       const send = useComposerSendWithMutationScope({
-        user: { id: 'user-a', name: 'Admin' },
+        user: { id: "user-a", name: "Admin" },
         targetUser: {
-          id: 'user-b',
-          name: 'Gudang',
-          email: 'gudang@example.com',
+          id: "user-b",
+          name: "Gudang",
+          email: "gudang@example.com",
           profilephoto: null,
         },
-        currentChannelId: 'channel-1',
+        currentChannelId: "channel-1",
         message: draftMessage,
         setMessage: setDraftMessage,
         editingMessageId: null,
@@ -1209,20 +1178,18 @@ describe('useChatComposerSend', () => {
       const sendPromise = result.current.handleSendMessage();
       await Promise.resolve();
 
-      const tempMessageId = pendingEntries.keys().next().value as
-        | string
-        | undefined;
+      const tempMessageId = pendingEntries.keys().next().value as string | undefined;
       expect(tempMessageId).toBeDefined();
       pendingEntries.get(tempMessageId!)!.cancelled = true;
-      result.current.setMessages(previousMessages =>
-        previousMessages.filter(messageItem => messageItem.id !== tempMessageId)
+      result.current.setMessages((previousMessages) =>
+        previousMessages.filter((messageItem) => messageItem.id !== tempMessageId),
       );
 
       resolveCreateMessage?.({
         data: buildMessage({
-          id: 'server-text-1',
-          message: 'pesan pending',
-          message_type: 'text',
+          id: "server-text-1",
+          message: "pesan pending",
+          message_type: "text",
         }),
         error: null,
       });
@@ -1234,32 +1201,28 @@ describe('useChatComposerSend', () => {
       expect(result.current.messages).toEqual([]);
     });
 
-    expect(mockGateway.deleteMessageThread).toHaveBeenCalledWith(
-      'server-text-1'
-    );
-    expect(result.current.draftMessage).toBe('');
+    expect(mockGateway.deleteMessageThread).toHaveBeenCalledWith("server-text-1");
+    expect(result.current.draftMessage).toBe("");
   });
 
-  it('reconciles a cancelled temp text send when rollback cleanup fails', async () => {
-    let resolveCreateMessage:
-      | ((value: { data: ChatMessage; error: null }) => void)
-      | undefined;
+  it("reconciles a cancelled temp text send when rollback cleanup fails", async () => {
+    let resolveCreateMessage: ((value: { data: ChatMessage; error: null }) => void) | undefined;
 
     const persistedTextMessage = buildMessage({
-      id: 'server-text-rollback-fail',
-      message: 'pesan pending',
-      message_type: 'text',
+      id: "server-text-rollback-fail",
+      message: "pesan pending",
+      message_type: "text",
     });
 
     mockGateway.createMessage.mockImplementation(
       () =>
-        new Promise(resolve => {
+        new Promise((resolve) => {
           resolveCreateMessage = resolve;
-        })
+        }),
     );
     mockGateway.deleteMessageThread.mockResolvedValue({
       data: null,
-      error: new Error('delete failed'),
+      error: new Error("delete failed"),
     });
     mockGateway.fetchConversationMessages.mockResolvedValue({
       data: [persistedTextMessage],
@@ -1270,18 +1233,18 @@ describe('useChatComposerSend', () => {
 
     const { result } = renderHook(() => {
       const [messages, setMessages] = useState<ChatMessage[]>([]);
-      const [draftMessage, setDraftMessage] = useState('pesan pending');
+      const [draftMessage, setDraftMessage] = useState("pesan pending");
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
       const send = useComposerSendWithMutationScope({
-        user: { id: 'user-a', name: 'Admin' },
+        user: { id: "user-a", name: "Admin" },
         targetUser: {
-          id: 'user-b',
-          name: 'Gudang',
-          email: 'gudang@example.com',
+          id: "user-b",
+          name: "Gudang",
+          email: "gudang@example.com",
           profilephoto: null,
         },
-        currentChannelId: 'channel-1',
+        currentChannelId: "channel-1",
         message: draftMessage,
         setMessage: setDraftMessage,
         editingMessageId: null,
@@ -1307,13 +1270,11 @@ describe('useChatComposerSend', () => {
       const sendPromise = result.current.handleSendMessage();
       await Promise.resolve();
 
-      const tempMessageId = pendingEntries.keys().next().value as
-        | string
-        | undefined;
+      const tempMessageId = pendingEntries.keys().next().value as string | undefined;
       expect(tempMessageId).toBeDefined();
       pendingEntries.get(tempMessageId!)!.cancelled = true;
-      result.current.setMessages(previousMessages =>
-        previousMessages.filter(messageItem => messageItem.id !== tempMessageId)
+      result.current.setMessages((previousMessages) =>
+        previousMessages.filter((messageItem) => messageItem.id !== tempMessageId),
       );
 
       resolveCreateMessage?.({
@@ -1326,51 +1287,49 @@ describe('useChatComposerSend', () => {
 
     await waitFor(() => {
       expect(mockGateway.fetchConversationMessages).toHaveBeenCalledWith(
-        'user-b',
+        "user-b",
         expect.objectContaining({
           limit: 50,
-        })
+        }),
       );
       expect(result.current.messages).toEqual([
         expect.objectContaining({
-          id: 'server-text-rollback-fail',
-          message: 'pesan pending',
-          message_type: 'text',
+          id: "server-text-rollback-fail",
+          message: "pesan pending",
+          message_type: "text",
         }),
       ]);
     });
 
-    expect(result.current.draftMessage).toBe('');
+    expect(result.current.draftMessage).toBe("");
   });
 
-  it('reconciles the persisted attachment thread when cancellation rollback fails', async () => {
-    let resolveCreateMessage:
-      | ((value: { data: ChatMessage; error: null }) => void)
-      | undefined;
+  it("reconciles the persisted attachment thread when cancellation rollback fails", async () => {
+    let resolveCreateMessage: ((value: { data: ChatMessage; error: null }) => void) | undefined;
 
     const persistedImageMessage = buildMessage({
-      id: 'server-image-rollback-fail',
-      message: 'images/channel/chat.png',
-      message_type: 'image',
+      id: "server-image-rollback-fail",
+      message: "images/channel/chat.png",
+      message_type: "image",
       file_name: undefined,
       file_kind: undefined,
-      file_mime_type: 'image/png',
+      file_mime_type: "image/png",
       file_size: 1024,
-      file_storage_path: 'images/channel/chat.png',
+      file_storage_path: "images/channel/chat.png",
     });
 
     mockGateway.uploadAttachment.mockResolvedValue({
-      path: 'images/channel/chat.png',
+      path: "images/channel/chat.png",
     });
     mockGateway.createMessage.mockImplementation(
       () =>
-        new Promise(resolve => {
+        new Promise((resolve) => {
           resolveCreateMessage = resolve;
-        })
+        }),
     );
     mockGateway.deleteMessageThreadAndCleanup.mockResolvedValue({
       data: null,
-      error: new Error('delete failed'),
+      error: new Error("delete failed"),
     });
     mockGateway.fetchConversationMessages.mockResolvedValue({
       data: [persistedImageMessage],
@@ -1381,30 +1340,30 @@ describe('useChatComposerSend', () => {
 
     const { result } = renderHook(() => {
       const [messages, setMessages] = useState<ChatMessage[]>([]);
-      const [draftMessage, setDraftMessage] = useState('');
+      const [draftMessage, setDraftMessage] = useState("");
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
       const send = useComposerSendWithMutationScope({
-        user: { id: 'user-a', name: 'Admin' },
+        user: { id: "user-a", name: "Admin" },
         targetUser: {
-          id: 'user-b',
-          name: 'Gudang',
-          email: 'gudang@example.com',
+          id: "user-b",
+          name: "Gudang",
+          email: "gudang@example.com",
           profilephoto: null,
         },
-        currentChannelId: 'channel-1',
+        currentChannelId: "channel-1",
         message: draftMessage,
         setMessage: setDraftMessage,
         editingMessageId: null,
         pendingComposerAttachments: [
           buildPendingAttachment({
-            id: 'pending-image-1',
-            file: new File(['image'], 'chat.png', { type: 'image/png' }),
-            fileName: 'chat.png',
-            fileTypeLabel: 'PNG',
-            fileKind: 'image',
-            mimeType: 'image/png',
-            previewUrl: 'blob:image-preview',
+            id: "pending-image-1",
+            file: new File(["image"], "chat.png", { type: "image/png" }),
+            fileName: "chat.png",
+            fileTypeLabel: "PNG",
+            fileKind: "image",
+            mimeType: "image/png",
+            previewUrl: "blob:image-preview",
           }),
         ],
         clearPendingComposerAttachments: vi.fn(),
@@ -1428,25 +1387,19 @@ describe('useChatComposerSend', () => {
       await waitFor(() => {
         expect(mockGateway.createMessage).toHaveBeenCalledWith(
           expect.objectContaining({
-            receiver_id: 'user-b',
-            message: expect.stringMatching(
-              /^images\/channel-1\/user-a_image_.+\.png$/
-            ),
-            message_type: 'image',
-            file_storage_path: expect.stringMatching(
-              /^images\/channel-1\/user-a_image_.+\.png$/
-            ),
-          })
+            receiver_id: "user-b",
+            message: expect.stringMatching(/^images\/channel-1\/user-a_image_.+\.png$/),
+            message_type: "image",
+            file_storage_path: expect.stringMatching(/^images\/channel-1\/user-a_image_.+\.png$/),
+          }),
         );
       });
 
-      const tempMessageId = pendingEntries.keys().next().value as
-        | string
-        | undefined;
+      const tempMessageId = pendingEntries.keys().next().value as string | undefined;
       expect(tempMessageId).toBeDefined();
       pendingEntries.get(tempMessageId!)!.cancelled = true;
-      result.current.setMessages(previousMessages =>
-        previousMessages.filter(messageItem => messageItem.id !== tempMessageId)
+      result.current.setMessages((previousMessages) =>
+        previousMessages.filter((messageItem) => messageItem.id !== tempMessageId),
       );
 
       resolveCreateMessage?.({
@@ -1459,34 +1412,32 @@ describe('useChatComposerSend', () => {
 
     await waitFor(() => {
       expect(mockGateway.deleteMessageThreadAndCleanup).toHaveBeenCalledWith(
-        'server-image-rollback-fail'
+        "server-image-rollback-fail",
       );
       expect(mockGateway.fetchConversationMessages).toHaveBeenCalledWith(
-        'user-b',
+        "user-b",
         expect.objectContaining({
           limit: 50,
-        })
+        }),
       );
       expect(result.current.messages).toEqual([
         expect.objectContaining({
-          id: 'server-image-rollback-fail',
-          message: 'images/channel/chat.png',
-          message_type: 'image',
+          id: "server-image-rollback-fail",
+          message: "images/channel/chat.png",
+          message_type: "image",
         }),
       ]);
     });
   });
 
-  it('does not restore stale draft state after switching conversations during a failed text send', async () => {
-    let resolveCreateMessage:
-      | ((value: { data: null; error: Error }) => void)
-      | undefined;
+  it("does not restore stale draft state after switching conversations during a failed text send", async () => {
+    let resolveCreateMessage: ((value: { data: null; error: Error }) => void) | undefined;
 
     mockGateway.createMessage.mockImplementation(
       () =>
-        new Promise(resolve => {
+        new Promise((resolve) => {
           resolveCreateMessage = resolve;
-        })
+        }),
     );
     const { registerPendingSend } = createPendingSendRegistry();
 
@@ -1499,32 +1450,26 @@ describe('useChatComposerSend', () => {
     };
 
     const initialProps: HookProps = {
-      channelId: 'channel-1',
-      targetUserId: 'user-b',
-      targetUserName: 'Gudang',
-      initialDraftMessage: 'draft lama',
+      channelId: "channel-1",
+      targetUserId: "user-b",
+      targetUserName: "Gudang",
+      initialDraftMessage: "draft lama",
       initialMessages: [],
     };
 
     const nextProps: HookProps = {
-      channelId: 'channel-2',
-      targetUserId: 'user-c',
-      targetUserName: 'Kasir',
-      initialDraftMessage: '',
+      channelId: "channel-2",
+      targetUserId: "user-c",
+      targetUserName: "Kasir",
+      initialDraftMessage: "",
       initialMessages: [],
     };
 
     const { result, rerender } = renderHook(
       (props: HookProps) => {
-        const [messages, setMessages] = useState<ChatMessage[]>(
-          props.initialMessages
-        );
-        const [draftMessage, setDraftMessage] = useState(
-          props.initialDraftMessage
-        );
-        const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(
-          new Map()
-        );
+        const [messages, setMessages] = useState<ChatMessage[]>(props.initialMessages);
+        const [draftMessage, setDraftMessage] = useState(props.initialDraftMessage);
+        const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
         useEffect(() => {
           setMessages(props.initialMessages);
@@ -1532,7 +1477,7 @@ describe('useChatComposerSend', () => {
         }, [props.channelId, props.initialDraftMessage, props.initialMessages]);
 
         const send = useComposerSendWithMutationScope({
-          user: { id: 'user-a', name: 'Admin' },
+          user: { id: "user-a", name: "Admin" },
           targetUser: {
             id: props.targetUserId,
             name: props.targetUserName,
@@ -1559,7 +1504,7 @@ describe('useChatComposerSend', () => {
           draftMessage,
         };
       },
-      { initialProps }
+      { initialProps },
     );
 
     let sendPromise: Promise<boolean> | undefined;
@@ -1571,48 +1516,45 @@ describe('useChatComposerSend', () => {
     rerender(nextProps);
 
     await waitFor(() => {
-      expect(result.current.draftMessage).toBe('');
+      expect(result.current.draftMessage).toBe("");
       expect(result.current.messages).toEqual([]);
     });
 
     await act(async () => {
       resolveCreateMessage?.({
         data: null,
-        error: new Error('insert failed'),
+        error: new Error("insert failed"),
       });
       await sendPromise;
     });
 
-    expect(result.current.draftMessage).toBe('');
+    expect(result.current.draftMessage).toBe("");
     expect(result.current.messages).toEqual([]);
-    expect(mockToast.error).not.toHaveBeenCalledWith(
-      'Gagal mengirim pesan',
-      expect.anything()
-    );
+    expect(mockToast.error).not.toHaveBeenCalledWith("Gagal mengirim pesan", expect.anything());
   });
 
-  it('shows an error toast and restores draft text when text send fails', async () => {
+  it("shows an error toast and restores draft text when text send fails", async () => {
     mockGateway.createMessage.mockResolvedValue({
       data: null,
-      error: new Error('insert failed'),
+      error: new Error("insert failed"),
     });
 
     const { registerPendingSend } = createPendingSendRegistry();
 
     const { result } = renderHook(() => {
       const [messages, setMessages] = useState<ChatMessage[]>([]);
-      const [draftMessage, setDraftMessage] = useState('pesan gagal');
+      const [draftMessage, setDraftMessage] = useState("pesan gagal");
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
       const send = useComposerSendWithMutationScope({
-        user: { id: 'user-a', name: 'Admin' },
+        user: { id: "user-a", name: "Admin" },
         targetUser: {
-          id: 'user-b',
-          name: 'Gudang',
-          email: 'gudang@example.com',
+          id: "user-b",
+          name: "Gudang",
+          email: "gudang@example.com",
           profilephoto: null,
         },
-        currentChannelId: 'channel-1',
+        currentChannelId: "channel-1",
         message: draftMessage,
         setMessage: setDraftMessage,
         editingMessageId: null,
@@ -1638,40 +1580,38 @@ describe('useChatComposerSend', () => {
     });
 
     expect(result.current.messages).toEqual([]);
-    expect(result.current.draftMessage).toBe('pesan gagal');
-    expect(mockToast.error).toHaveBeenCalledWith('Gagal mengirim pesan', {
-      toasterId: 'chat-sidebar-toaster',
+    expect(result.current.draftMessage).toBe("pesan gagal");
+    expect(mockToast.error).toHaveBeenCalledWith("Gagal mengirim pesan", {
+      toasterId: "chat-sidebar-toaster",
     });
   });
 
-  it('preserves a newer draft when text send fails after the user keeps typing', async () => {
-    let resolveCreateMessage:
-      | ((value: { data: null; error: Error }) => void)
-      | undefined;
+  it("preserves a newer draft when text send fails after the user keeps typing", async () => {
+    let resolveCreateMessage: ((value: { data: null; error: Error }) => void) | undefined;
 
     mockGateway.createMessage.mockImplementation(
       () =>
-        new Promise(resolve => {
+        new Promise((resolve) => {
           resolveCreateMessage = resolve;
-        })
+        }),
     );
 
     const { registerPendingSend } = createPendingSendRegistry();
 
     const { result } = renderHook(() => {
       const [messages, setMessages] = useState<ChatMessage[]>([]);
-      const [draftMessage, setDraftMessage] = useState('pesan gagal');
+      const [draftMessage, setDraftMessage] = useState("pesan gagal");
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
       const send = useComposerSendWithMutationScope({
-        user: { id: 'user-a', name: 'Admin' },
+        user: { id: "user-a", name: "Admin" },
         targetUser: {
-          id: 'user-b',
-          name: 'Gudang',
-          email: 'gudang@example.com',
+          id: "user-b",
+          name: "Gudang",
+          email: "gudang@example.com",
           profilephoto: null,
         },
-        currentChannelId: 'channel-1',
+        currentChannelId: "channel-1",
         message: draftMessage,
         setMessage: setDraftMessage,
         editingMessageId: null,
@@ -1700,49 +1640,46 @@ describe('useChatComposerSend', () => {
     });
 
     act(() => {
-      result.current.setDraftMessage('draft baru');
+      result.current.setDraftMessage("draft baru");
     });
 
     await act(async () => {
       resolveCreateMessage?.({
         data: null,
-        error: new Error('insert failed'),
+        error: new Error("insert failed"),
       });
       await sendPromise;
     });
 
     expect(result.current.messages).toEqual([]);
-    expect(result.current.draftMessage).toBe('draft baru');
-    expect(mockToast.error).toHaveBeenCalledWith('Gagal mengirim pesan', {
-      toasterId: 'chat-sidebar-toaster',
+    expect(result.current.draftMessage).toBe("draft baru");
+    expect(mockToast.error).toHaveBeenCalledWith("Gagal mengirim pesan", {
+      toasterId: "chat-sidebar-toaster",
     });
   });
 
-  it('converts a pasted image url draft into an image attachment send', async () => {
-    mockGateway.createMessage.mockImplementation(async payload => ({
+  it("converts a pasted image url draft into an image attachment send", async () => {
+    mockGateway.createMessage.mockImplementation(async (payload) => ({
       data: buildMessage({
-        id: 'server-image-attachment',
+        id: "server-image-attachment",
         message: String(payload.message),
-        message_type: 'image',
+        message_type: "image",
         file_name: undefined,
         file_kind: undefined,
-        file_mime_type: 'image/png',
+        file_mime_type: "image/png",
         file_storage_path: String(payload.file_storage_path),
-        file_preview_status:
-          payload.file_preview_status === 'ready' ? 'ready' : null,
+        file_preview_status: payload.file_preview_status === "ready" ? "ready" : null,
         file_preview_url:
-          typeof payload.file_preview_url === 'string'
-            ? payload.file_preview_url
-            : null,
+          typeof payload.file_preview_url === "string" ? payload.file_preview_url : null,
       }),
       error: null,
     }));
     mockChatSidebarAttachmentGateway.fetchRemoteAsset.mockResolvedValue({
       data: {
-        blob: new Blob(['image'], { type: 'image/png' }),
+        blob: new Blob(["image"], { type: "image/png" }),
         contentDisposition: null,
-        contentType: 'image/png',
-        sourceUrl: 'https://example.com/attachment/receipt.png',
+        contentType: "image/png",
+        sourceUrl: "https://example.com/attachment/receipt.png",
       },
       error: null,
     });
@@ -1752,19 +1689,19 @@ describe('useChatComposerSend', () => {
     const { result } = renderHook(() => {
       const [, setMessages] = useState<ChatMessage[]>([]);
       const [draftMessage, setDraftMessage] = useState(
-        'https://example.com/attachment/receipt.png'
+        "https://example.com/attachment/receipt.png",
       );
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
       return useComposerSendWithMutationScope({
-        user: { id: 'user-a', name: 'Admin' },
+        user: { id: "user-a", name: "Admin" },
         targetUser: {
-          id: 'user-b',
-          name: 'Gudang',
-          email: 'gudang@example.com',
+          id: "user-b",
+          name: "Gudang",
+          email: "gudang@example.com",
           profilephoto: null,
         },
-        currentChannelId: 'channel-1',
+        currentChannelId: "channel-1",
         message: draftMessage,
         setMessage: setDraftMessage,
         editingMessageId: null,
@@ -1787,42 +1724,37 @@ describe('useChatComposerSend', () => {
       expect(mockGateway.uploadAttachment).toHaveBeenCalledWith(
         expect.any(File),
         expect.stringMatching(/^images\/channel-1\/user-a_image_.+\.png$/),
-        'image/png'
+        "image/png",
       );
     });
 
     expect(mockGateway.uploadImage).not.toHaveBeenCalled();
     expect(mockGateway.createMessage).toHaveBeenCalledWith(
       expect.objectContaining({
-        receiver_id: 'user-b',
-        message_type: 'image',
-        file_storage_path: expect.stringMatching(
-          /^images\/channel-1\/user-a_image_.+\.png$/
-        ),
-        file_preview_status: 'ready',
+        receiver_id: "user-b",
+        message_type: "image",
+        file_storage_path: expect.stringMatching(/^images\/channel-1\/user-a_image_.+\.png$/),
+        file_preview_status: "ready",
         file_preview_url: expect.stringMatching(
-          /^previews\/channel-1\/user-a_image_.+\.(webp|jpg|png)$/
+          /^previews\/channel-1\/user-a_image_.+\.(webp|jpg|png)$/,
         ),
-      })
+      }),
     );
   });
 
-  it('persists image preview metadata during the send pipeline', async () => {
-    mockGateway.createMessage.mockImplementation(async payload => ({
+  it("persists image preview metadata during the send pipeline", async () => {
+    mockGateway.createMessage.mockImplementation(async (payload) => ({
       data: buildMessage({
-        id: 'server-image-commit',
+        id: "server-image-commit",
         message: String(payload.message),
-        message_type: 'image',
+        message_type: "image",
         file_name: undefined,
         file_kind: undefined,
-        file_mime_type: 'image/png',
+        file_mime_type: "image/png",
         file_storage_path: String(payload.file_storage_path),
-        file_preview_status:
-          payload.file_preview_status === 'ready' ? 'ready' : null,
+        file_preview_status: payload.file_preview_status === "ready" ? "ready" : null,
         file_preview_url:
-          typeof payload.file_preview_url === 'string'
-            ? payload.file_preview_url
-            : null,
+          typeof payload.file_preview_url === "string" ? payload.file_preview_url : null,
       }),
       error: null,
     }));
@@ -1831,30 +1763,30 @@ describe('useChatComposerSend', () => {
 
     const { result } = renderHook(() => {
       const [, setMessages] = useState<ChatMessage[]>([]);
-      const [draftMessage, setDraftMessage] = useState('');
+      const [draftMessage, setDraftMessage] = useState("");
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
       return useComposerSendWithMutationScope({
-        user: { id: 'user-a', name: 'Admin' },
+        user: { id: "user-a", name: "Admin" },
         targetUser: {
-          id: 'user-b',
-          name: 'Gudang',
-          email: 'gudang@example.com',
+          id: "user-b",
+          name: "Gudang",
+          email: "gudang@example.com",
           profilephoto: null,
         },
-        currentChannelId: 'channel-1',
+        currentChannelId: "channel-1",
         message: draftMessage,
         setMessage: setDraftMessage,
         editingMessageId: null,
         pendingComposerAttachments: [
           buildPendingAttachment({
-            id: 'pending-image-commit',
-            file: new File(['image'], 'chat.png', { type: 'image/png' }),
-            fileName: 'chat.png',
-            fileTypeLabel: 'PNG',
-            fileKind: 'image',
-            mimeType: 'image/png',
-            previewUrl: 'blob:image-preview',
+            id: "pending-image-commit",
+            file: new File(["image"], "chat.png", { type: "image/png" }),
+            fileName: "chat.png",
+            fileTypeLabel: "PNG",
+            fileKind: "image",
+            mimeType: "image/png",
+            previewUrl: "blob:image-preview",
           }),
         ],
         clearPendingComposerAttachments: vi.fn(),
@@ -1874,23 +1806,23 @@ describe('useChatComposerSend', () => {
     await waitFor(() => {
       expect(mockGateway.createMessage).toHaveBeenCalledWith(
         expect.objectContaining({
-          receiver_id: 'user-b',
-          message_type: 'image',
-          file_preview_status: 'ready',
+          receiver_id: "user-b",
+          message_type: "image",
+          file_preview_status: "ready",
           file_preview_url: expect.stringMatching(
-            /^previews\/channel-1\/user-a_image_.+\.(webp|jpg|png)$/
+            /^previews\/channel-1\/user-a_image_.+\.(webp|jpg|png)$/,
           ),
-        })
+        }),
       );
     });
   });
 
-  it('sends a pasted image url as plain text when the draft is marked to stay raw', async () => {
+  it("sends a pasted image url as plain text when the draft is marked to stay raw", async () => {
     mockGateway.createMessage.mockResolvedValue({
       data: buildMessage({
-        id: 'server-text-url',
-        message: 'https://example.com/attachment/receipt.png',
-        message_type: 'text',
+        id: "server-text-url",
+        message: "https://example.com/attachment/receipt.png",
+        message_type: "text",
         file_name: undefined,
         file_kind: undefined,
         file_mime_type: undefined,
@@ -1904,23 +1836,23 @@ describe('useChatComposerSend', () => {
     const { result } = renderHook(() => {
       const [, setMessages] = useState<ChatMessage[]>([]);
       const [draftMessage, setDraftMessage] = useState(
-        'https://example.com/attachment/receipt.png'
+        "https://example.com/attachment/receipt.png",
       );
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
       return useComposerSendWithMutationScope({
-        user: { id: 'user-a', name: 'Admin' },
+        user: { id: "user-a", name: "Admin" },
         targetUser: {
-          id: 'user-b',
-          name: 'Gudang',
-          email: 'gudang@example.com',
+          id: "user-b",
+          name: "Gudang",
+          email: "gudang@example.com",
           profilephoto: null,
         },
-        currentChannelId: 'channel-1',
+        currentChannelId: "channel-1",
         message: draftMessage,
         setMessage: setDraftMessage,
         editingMessageId: null,
-        rawAttachmentUrl: 'https://example.com/attachment/receipt.png',
+        rawAttachmentUrl: "https://example.com/attachment/receipt.png",
         pendingComposerAttachments: [],
         clearPendingComposerAttachments: vi.fn(),
         restorePendingComposerAttachments: vi.fn(),
@@ -1936,42 +1868,40 @@ describe('useChatComposerSend', () => {
       await result.current.handleSendMessage();
     });
 
-    expect(
-      mockChatSidebarAttachmentGateway.fetchRemoteAsset
-    ).not.toHaveBeenCalled();
+    expect(mockChatSidebarAttachmentGateway.fetchRemoteAsset).not.toHaveBeenCalled();
     expect(mockGateway.uploadImage).not.toHaveBeenCalled();
     expect(mockGateway.uploadAttachment).not.toHaveBeenCalled();
     expect(mockGateway.createMessage).toHaveBeenCalledWith(
       expect.objectContaining({
-        receiver_id: 'user-b',
-        message: 'https://example.com/attachment/receipt.png',
-        message_type: 'text',
-      })
+        receiver_id: "user-b",
+        message: "https://example.com/attachment/receipt.png",
+        message_type: "text",
+      }),
     );
   });
 
-  it('converts a pdf attachment draft into a document attachment send', async () => {
+  it("converts a pdf attachment draft into a document attachment send", async () => {
     mockGateway.uploadAttachment.mockResolvedValue({
-      path: 'documents/channel-1/user-a_document_attachment.pdf',
+      path: "documents/channel-1/user-a_document_attachment.pdf",
     });
     mockGateway.createMessage.mockResolvedValue({
       data: buildMessage({
-        id: 'server-file-attachment',
-        message: 'documents/channel-1/user-a_document_attachment.pdf',
-        message_type: 'file',
-        file_name: 'invoice.pdf',
-        file_kind: 'document',
-        file_mime_type: 'application/pdf',
-        file_storage_path: 'documents/channel-1/user-a_document_attachment.pdf',
+        id: "server-file-attachment",
+        message: "documents/channel-1/user-a_document_attachment.pdf",
+        message_type: "file",
+        file_name: "invoice.pdf",
+        file_kind: "document",
+        file_mime_type: "application/pdf",
+        file_storage_path: "documents/channel-1/user-a_document_attachment.pdf",
       }),
       error: null,
     });
     mockChatSidebarAttachmentGateway.fetchRemoteAsset.mockResolvedValue({
       data: {
-        blob: new Blob(['pdf'], { type: 'application/pdf' }),
+        blob: new Blob(["pdf"], { type: "application/pdf" }),
         contentDisposition: 'attachment; filename="invoice.pdf"',
-        contentType: 'application/pdf',
-        sourceUrl: 'https://example.com/attachment/invoice',
+        contentType: "application/pdf",
+        sourceUrl: "https://example.com/attachment/invoice",
       },
       error: null,
     });
@@ -1981,19 +1911,19 @@ describe('useChatComposerSend', () => {
     const { result } = renderHook(() => {
       const [, setMessages] = useState<ChatMessage[]>([]);
       const [draftMessage, setDraftMessage] = useState(
-        '<iframe src="https://example.com/attachment/invoice"></iframe>'
+        '<iframe src="https://example.com/attachment/invoice"></iframe>',
       );
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
       return useComposerSendWithMutationScope({
-        user: { id: 'user-a', name: 'Admin' },
+        user: { id: "user-a", name: "Admin" },
         targetUser: {
-          id: 'user-b',
-          name: 'Gudang',
-          email: 'gudang@example.com',
+          id: "user-b",
+          name: "Gudang",
+          email: "gudang@example.com",
           profilephoto: null,
         },
-        currentChannelId: 'channel-1',
+        currentChannelId: "channel-1",
         message: draftMessage,
         setMessage: setDraftMessage,
         editingMessageId: null,
@@ -2015,53 +1945,49 @@ describe('useChatComposerSend', () => {
     await waitFor(() => {
       expect(mockGateway.uploadAttachment).toHaveBeenCalledWith(
         expect.any(File),
-        expect.stringMatching(
-          /^documents\/channel-1\/user-a_document_.+\.pdf$/
-        ),
-        'application/pdf'
+        expect.stringMatching(/^documents\/channel-1\/user-a_document_.+\.pdf$/),
+        "application/pdf",
       );
     });
 
     expect(mockGateway.uploadImage).not.toHaveBeenCalled();
     expect(mockGateway.createMessage).toHaveBeenCalledWith(
       expect.objectContaining({
-        receiver_id: 'user-b',
-        message_type: 'file',
-        file_name: 'invoice.pdf',
-        file_kind: 'document',
-        file_mime_type: 'application/pdf',
-        file_storage_path: expect.stringMatching(
-          /^documents\/channel-1\/user-a_document_.+\.pdf$/
-        ),
-      })
+        receiver_id: "user-b",
+        message_type: "file",
+        file_name: "invoice.pdf",
+        file_kind: "document",
+        file_mime_type: "application/pdf",
+        file_storage_path: expect.stringMatching(/^documents\/channel-1\/user-a_document_.+\.pdf$/),
+      }),
     );
   });
 
-  it('converts a google drive pdf url draft into a document attachment send', async () => {
+  it("converts a google drive pdf url draft into a document attachment send", async () => {
     mockGateway.uploadAttachment.mockResolvedValue({
-      path: 'documents/channel-1/user-a_document_attachment.pdf',
+      path: "documents/channel-1/user-a_document_attachment.pdf",
     });
     mockGateway.createMessage.mockResolvedValue({
       data: buildMessage({
-        id: 'server-file-drive',
-        message: 'documents/channel-1/user-a_document_attachment.pdf',
-        message_type: 'file',
-        file_name: 'invoice.pdf',
-        file_kind: 'document',
-        file_mime_type: 'application/pdf',
-        file_storage_path: 'documents/channel-1/user-a_document_attachment.pdf',
+        id: "server-file-drive",
+        message: "documents/channel-1/user-a_document_attachment.pdf",
+        message_type: "file",
+        file_name: "invoice.pdf",
+        file_kind: "document",
+        file_mime_type: "application/pdf",
+        file_storage_path: "documents/channel-1/user-a_document_attachment.pdf",
       }),
       error: null,
     });
     mockChatSidebarAttachmentGateway.fetchRemoteAsset.mockResolvedValue({
       data: {
-        blob: new Blob(['%PDF-1.4\n1 0 obj\n<</Title (Job Desk Minggu 4)>>'], {
-          type: 'application/octet-stream',
+        blob: new Blob(["%PDF-1.4\n1 0 obj\n<</Title (Job Desk Minggu 4)>>"], {
+          type: "application/octet-stream",
         }),
         contentDisposition: null,
-        contentType: 'application/octet-stream',
+        contentType: "application/octet-stream",
         sourceUrl:
-          'https://drive.google.com/uc?export=download&id=113Z7cPJCdAwGg8emnZfw0aCix4YeS_lH',
+          "https://drive.google.com/uc?export=download&id=113Z7cPJCdAwGg8emnZfw0aCix4YeS_lH",
       },
       error: null,
     });
@@ -2071,19 +1997,19 @@ describe('useChatComposerSend', () => {
     const { result } = renderHook(() => {
       const [, setMessages] = useState<ChatMessage[]>([]);
       const [draftMessage, setDraftMessage] = useState(
-        'https://drive.google.com/file/d/113Z7cPJCdAwGg8emnZfw0aCix4YeS_lH/view?usp=sharing'
+        "https://drive.google.com/file/d/113Z7cPJCdAwGg8emnZfw0aCix4YeS_lH/view?usp=sharing",
       );
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
       return useComposerSendWithMutationScope({
-        user: { id: 'user-a', name: 'Admin' },
+        user: { id: "user-a", name: "Admin" },
         targetUser: {
-          id: 'user-b',
-          name: 'Gudang',
-          email: 'gudang@example.com',
+          id: "user-b",
+          name: "Gudang",
+          email: "gudang@example.com",
           profilephoto: null,
         },
-        currentChannelId: 'channel-1',
+        currentChannelId: "channel-1",
         message: draftMessage,
         setMessage: setDraftMessage,
         editingMessageId: null,
@@ -2102,38 +2028,32 @@ describe('useChatComposerSend', () => {
       await result.current.handleSendMessage();
     });
 
-    expect(
-      mockChatSidebarAttachmentGateway.fetchRemoteAsset
-    ).toHaveBeenCalledWith(
-      'https://drive.google.com/uc?export=download&id=113Z7cPJCdAwGg8emnZfw0aCix4YeS_lH',
+    expect(mockChatSidebarAttachmentGateway.fetchRemoteAsset).toHaveBeenCalledWith(
+      "https://drive.google.com/uc?export=download&id=113Z7cPJCdAwGg8emnZfw0aCix4YeS_lH",
       {
         fileNameSourceUrl:
-          'https://drive.google.com/file/d/113Z7cPJCdAwGg8emnZfw0aCix4YeS_lH/view?usp=sharing',
-      }
+          "https://drive.google.com/file/d/113Z7cPJCdAwGg8emnZfw0aCix4YeS_lH/view?usp=sharing",
+      },
     );
 
     await waitFor(() => {
       expect(mockGateway.uploadAttachment).toHaveBeenCalledWith(
         expect.any(File),
-        expect.stringMatching(
-          /^documents\/channel-1\/user-a_document_.+\.pdf$/
-        ),
-        'application/pdf'
+        expect.stringMatching(/^documents\/channel-1\/user-a_document_.+\.pdf$/),
+        "application/pdf",
       );
     });
 
     expect(mockGateway.uploadImage).not.toHaveBeenCalled();
     expect(mockGateway.createMessage).toHaveBeenCalledWith(
       expect.objectContaining({
-        receiver_id: 'user-b',
-        message_type: 'file',
-        file_name: 'Job Desk Minggu 4.pdf',
-        file_kind: 'document',
-        file_mime_type: 'application/pdf',
-        file_storage_path: expect.stringMatching(
-          /^documents\/channel-1\/user-a_document_.+\.pdf$/
-        ),
-      })
+        receiver_id: "user-b",
+        message_type: "file",
+        file_name: "Job Desk Minggu 4.pdf",
+        file_kind: "document",
+        file_mime_type: "application/pdf",
+        file_storage_path: expect.stringMatching(/^documents\/channel-1\/user-a_document_.+\.pdf$/),
+      }),
     );
   });
 });

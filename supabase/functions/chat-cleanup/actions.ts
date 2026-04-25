@@ -121,7 +121,10 @@ export const deleteThreadAndCleanup = async ({
     };
   }
 
-  const storagePaths = resolveChatMessageStoragePaths(parentMessage);
+  const { ownedStoragePaths } = partitionOwnedChatPaths(
+    resolveChatMessageStoragePaths(parentMessage),
+    userId,
+  );
 
   const { deletedMessageIds, error: deleteError } =
     await repository.deleteMessageThread(normalizedMessageId);
@@ -134,7 +137,7 @@ export const deleteThreadAndCleanup = async ({
   }
 
   const failedStoragePaths =
-    storagePaths.length > 0 ? await repository.deleteStoragePaths(storagePaths) : [];
+    ownedStoragePaths.length > 0 ? await repository.deleteStoragePaths(ownedStoragePaths) : [];
 
   if (failedStoragePaths.length > 0) {
     await repository.recordCleanupFailure({

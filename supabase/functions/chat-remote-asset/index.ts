@@ -14,13 +14,11 @@ import {
 
 const buildCorsHeaders = (req: Request) => {
   const requestOrigin = req.headers.get("Origin");
-  const accessControlAllowOrigin =
-    requestOrigin && requestOrigin.length > 0 ? requestOrigin : "*";
+  const accessControlAllowOrigin = requestOrigin && requestOrigin.length > 0 ? requestOrigin : "*";
 
   return {
     "Access-Control-Allow-Origin": accessControlAllowOrigin,
-    "Access-Control-Allow-Headers":
-      "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Expose-Headers":
       "Content-Disposition, X-Chat-Remote-Content-Type, X-Chat-Remote-Source-Url, X-Chat-Remote-File-Name",
@@ -120,7 +118,7 @@ const fetchValidatedRemoteAssetResponse = async ({
   };
 };
 
-Deno.serve(async req => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", {
       status: 200,
@@ -180,15 +178,23 @@ Deno.serve(async req => {
     : null;
   if (resolvedFileNameSourceRequest && !resolvedFileNameSourceRequest.url) {
     return json(req, resolvedFileNameSourceRequest.status, {
-      error:
-        resolvedFileNameSourceRequest.error ?? "Invalid remote asset title URL",
+      error: resolvedFileNameSourceRequest.error ?? "Invalid remote asset title URL",
     });
+  }
+
+  if (resolvedFileNameSourceRequest?.url) {
+    const assetOrigin = new URL(resolvedAssetRequest.url).origin;
+    const titleOrigin = new URL(resolvedFileNameSourceRequest.url).origin;
+    if (titleOrigin !== assetOrigin) {
+      return json(req, 400, {
+        error: "Remote asset title URL must use the same origin as the asset",
+      });
+    }
   }
 
   const remoteAssetResponse = await fetchValidatedRemoteAssetResponse({
     url: resolvedAssetRequest.url,
-    accept:
-      "image/*,application/pdf,application/octet-stream;q=0.9,*/*;q=0.1",
+    accept: "image/*,application/pdf,application/octet-stream;q=0.9,*/*;q=0.1",
     failureMessage: "Failed to fetch remote asset",
   });
   if (!remoteAssetResponse.response) {
@@ -247,13 +253,10 @@ Deno.serve(async req => {
     headers: {
       "Cache-Control": "no-store",
       "Content-Type": "application/octet-stream",
-      ...(contentDisposition
-        ? { "Content-Disposition": contentDisposition }
-        : {}),
+      ...(contentDisposition ? { "Content-Disposition": contentDisposition } : {}),
       ...(fileNameHint ? { "X-Chat-Remote-File-Name": fileNameHint } : {}),
       "X-Chat-Remote-Content-Type": remoteContentType ?? "",
-      "X-Chat-Remote-Source-Url":
-        remoteAssetResponse.sourceUrl ?? resolvedAssetRequest.url,
+      "X-Chat-Remote-Source-Url": remoteAssetResponse.sourceUrl ?? resolvedAssetRequest.url,
       ...buildCorsHeaders(req),
     },
   });

@@ -1,31 +1,20 @@
-import type {
-  PendingComposerAttachment,
-  PendingComposerAttachmentKind,
-} from '../types';
-import {
-  deleteRuntimeStorage,
-  readRuntimeStorage,
-  writeRuntimeStorage,
-} from './chatRuntimeState';
+import type { PendingComposerAttachment, PendingComposerAttachmentKind } from "../types";
+import { deleteRuntimeStorage, readRuntimeStorage, writeRuntimeStorage } from "./chatRuntimeState";
 import {
   CHAT_RUNTIME_INDEXED_DB_NAMES,
   CHAT_RUNTIME_LOCAL_STORAGE_KEYS,
   closeRuntimeIndexedDb,
   deleteRuntimeIndexedDb,
   openRuntimeIndexedDb,
-} from './runtime-persistence';
+} from "./runtime-persistence";
 
-const COMPOSER_DRAFT_MESSAGES_STORAGE_KEY =
-  CHAT_RUNTIME_LOCAL_STORAGE_KEYS.composerDraftMessages;
-const COMPOSER_DRAFT_ATTACHMENTS_DB_NAME =
-  CHAT_RUNTIME_INDEXED_DB_NAMES.composerDrafts;
+const COMPOSER_DRAFT_MESSAGES_STORAGE_KEY = CHAT_RUNTIME_LOCAL_STORAGE_KEYS.composerDraftMessages;
+const COMPOSER_DRAFT_ATTACHMENTS_DB_NAME = CHAT_RUNTIME_INDEXED_DB_NAMES.composerDrafts;
 const COMPOSER_DRAFT_ATTACHMENTS_DB_VERSION = 1;
-const COMPOSER_DRAFT_ATTACHMENTS_STORE_NAME = 'composer-drafts';
+const COMPOSER_DRAFT_ATTACHMENTS_STORE_NAME = "composer-drafts";
 export const COMPOSER_DRAFT_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
-export const COMPOSER_DRAFT_ATTACHMENTS_MAX_CHANNEL_BYTES =
-  2 * 1024 * 1024 * 1024;
-export const COMPOSER_DRAFT_ATTACHMENTS_MAX_TOTAL_BYTES =
-  2 * 1024 * 1024 * 1024;
+export const COMPOSER_DRAFT_ATTACHMENTS_MAX_CHANNEL_BYTES = 2 * 1024 * 1024 * 1024;
+export const COMPOSER_DRAFT_ATTACHMENTS_MAX_TOTAL_BYTES = 2 * 1024 * 1024 * 1024;
 
 export interface PersistedComposerDraftMessageRecord {
   message: string;
@@ -66,26 +55,32 @@ export interface PersistedComposerDraftAttachment {
 
 let composerDraftDbPromise: Promise<IDBDatabase | null> | null = null;
 
-const normalizeChannelId = (channelId?: string | null) =>
-  channelId?.trim() || null;
+const normalizeChannelId = (channelId?: string | null) => channelId?.trim() || null;
+
+const normalizeDraftScopeKey = (channelId?: string | null, userId?: string | null) => {
+  const normalizedChannelId = normalizeChannelId(channelId);
+  if (!normalizedChannelId) {
+    return null;
+  }
+
+  const normalizedUserId = userId?.trim();
+  return normalizedUserId ? `${normalizedUserId}:${normalizedChannelId}` : normalizedChannelId;
+};
 
 const canUseIndexedDb = () =>
-  typeof window !== 'undefined' && typeof window.indexedDB !== 'undefined';
+  typeof window !== "undefined" && typeof window.indexedDB !== "undefined";
 
-const normalizeUpdatedAt = (
-  updatedAt: number | null | undefined,
-  now: number
-) =>
+const normalizeUpdatedAt = (updatedAt: number | null | undefined, now: number) =>
   Number.isFinite(updatedAt) && Number(updatedAt) > 0 ? Number(updatedAt) : now;
 
 const isComposerDraftFresh = (
   updatedAt: number | null | undefined,
   now: number,
-  maxAgeMs: number
+  maxAgeMs: number,
 ) => now - normalizeUpdatedAt(updatedAt, now) <= maxAgeMs;
 
 const getPersistedComposerDraftAttachmentRecordSize = (
-  record: Pick<PersistedComposerDraftRecord, 'attachments'>
+  record: Pick<PersistedComposerDraftRecord, "attachments">,
 ) =>
   record.attachments.reduce((totalSize, attachment) => {
     if (!(attachment.file instanceof Blob)) {
@@ -100,7 +95,7 @@ export const prunePersistedComposerDraftMessageStore = (
   options?: {
     now?: number;
     maxAgeMs?: number;
-  }
+  },
 ) => {
   const now = options?.now ?? Date.now();
   const maxAgeMs = options?.maxAgeMs ?? COMPOSER_DRAFT_MAX_AGE_MS;
@@ -109,11 +104,7 @@ export const prunePersistedComposerDraftMessageStore = (
 
   Object.entries(payload ?? {}).forEach(([rawChannelId, record]) => {
     const channelId = normalizeChannelId(rawChannelId);
-    if (
-      !channelId ||
-      typeof record?.message !== 'string' ||
-      record.message.length === 0
-    ) {
+    if (!channelId || typeof record?.message !== "string" || record.message.length === 0) {
       didPrune = true;
       return;
     }
@@ -147,18 +138,16 @@ export const prunePersistedComposerDraftAttachmentRecords = (
     maxAgeMs?: number;
     maxChannelBytes?: number;
     maxTotalBytes?: number;
-  }
+  },
 ) => {
   const now = options?.now ?? Date.now();
   const maxAgeMs = options?.maxAgeMs ?? COMPOSER_DRAFT_MAX_AGE_MS;
-  const maxChannelBytes =
-    options?.maxChannelBytes ?? COMPOSER_DRAFT_ATTACHMENTS_MAX_CHANNEL_BYTES;
-  const maxTotalBytes =
-    options?.maxTotalBytes ?? COMPOSER_DRAFT_ATTACHMENTS_MAX_TOTAL_BYTES;
+  const maxChannelBytes = options?.maxChannelBytes ?? COMPOSER_DRAFT_ATTACHMENTS_MAX_CHANNEL_BYTES;
+  const maxTotalBytes = options?.maxTotalBytes ?? COMPOSER_DRAFT_ATTACHMENTS_MAX_TOTAL_BYTES;
   const removedChannelIds = new Set<string>();
 
   const normalizedRecords = records
-    .flatMap(record => {
+    .flatMap((record) => {
       const channelId = normalizeChannelId(record?.channelId);
       if (!channelId || !Array.isArray(record?.attachments)) {
         if (channelId) {
@@ -180,8 +169,7 @@ export const prunePersistedComposerDraftAttachmentRecords = (
         attachments: record.attachments,
         updatedAt: normalizeUpdatedAt(record.updatedAt, now),
       };
-      const byteSize =
-        getPersistedComposerDraftAttachmentRecordSize(normalizedRecord);
+      const byteSize = getPersistedComposerDraftAttachmentRecordSize(normalizedRecord);
 
       if (byteSize === 0 || byteSize > maxChannelBytes) {
         removedChannelIds.add(channelId);
@@ -224,17 +212,13 @@ const getComposerDraftDb = async (): Promise<IDBDatabase | null> => {
       onOpenError: () => {
         composerDraftDbPromise = null;
       },
-      onUpgrade: database => {
-        if (
-          database.objectStoreNames.contains(
-            COMPOSER_DRAFT_ATTACHMENTS_STORE_NAME
-          )
-        ) {
+      onUpgrade: (database) => {
+        if (database.objectStoreNames.contains(COMPOSER_DRAFT_ATTACHMENTS_STORE_NAME)) {
           return;
         }
 
         database.createObjectStore(COMPOSER_DRAFT_ATTACHMENTS_STORE_NAME, {
-          keyPath: 'channelId',
+          keyPath: "channelId",
         });
       },
     });
@@ -244,23 +228,16 @@ const getComposerDraftDb = async (): Promise<IDBDatabase | null> => {
 };
 
 const listPersistedComposerDraftRecords = async (
-  database: IDBDatabase
+  database: IDBDatabase,
 ): Promise<PersistedComposerDraftRecord[]> =>
-  new Promise(resolve => {
-    const transaction = database.transaction(
-      COMPOSER_DRAFT_ATTACHMENTS_STORE_NAME,
-      'readonly'
-    );
-    const store = transaction.objectStore(
-      COMPOSER_DRAFT_ATTACHMENTS_STORE_NAME
-    );
+  new Promise((resolve) => {
+    const transaction = database.transaction(COMPOSER_DRAFT_ATTACHMENTS_STORE_NAME, "readonly");
+    const store = transaction.objectStore(COMPOSER_DRAFT_ATTACHMENTS_STORE_NAME);
     const request = store.getAll();
 
     request.onsuccess = () => {
       resolve(
-        Array.isArray(request.result)
-          ? (request.result as PersistedComposerDraftRecord[])
-          : []
+        Array.isArray(request.result) ? (request.result as PersistedComposerDraftRecord[]) : [],
       );
     };
 
@@ -269,27 +246,19 @@ const listPersistedComposerDraftRecords = async (
     };
   });
 
-const deletePersistedComposerDraftRecords = async (
-  database: IDBDatabase,
-  channelIds: string[]
-) => {
-  const normalizedChannelIds = [
-    ...new Set(channelIds.map(normalizeChannelId)),
-  ].filter((channelId): channelId is string => Boolean(channelId));
+const deletePersistedComposerDraftRecords = async (database: IDBDatabase, channelIds: string[]) => {
+  const normalizedChannelIds = [...new Set(channelIds.map(normalizeChannelId))].filter(
+    (channelId): channelId is string => Boolean(channelId),
+  );
   if (normalizedChannelIds.length === 0) {
     return;
   }
 
-  await new Promise<void>(resolve => {
-    const transaction = database.transaction(
-      COMPOSER_DRAFT_ATTACHMENTS_STORE_NAME,
-      'readwrite'
-    );
-    const store = transaction.objectStore(
-      COMPOSER_DRAFT_ATTACHMENTS_STORE_NAME
-    );
+  await new Promise<void>((resolve) => {
+    const transaction = database.transaction(COMPOSER_DRAFT_ATTACHMENTS_STORE_NAME, "readwrite");
+    const store = transaction.objectStore(COMPOSER_DRAFT_ATTACHMENTS_STORE_NAME);
 
-    normalizedChannelIds.forEach(channelId => {
+    normalizedChannelIds.forEach((channelId) => {
       store.delete(channelId);
     });
 
@@ -305,24 +274,19 @@ const deletePersistedComposerDraftRecords = async (
   });
 };
 
-const prunePersistedComposerDraftAttachments = async (
-  database: IDBDatabase
-) => {
+const prunePersistedComposerDraftAttachments = async (database: IDBDatabase) => {
   const records = await listPersistedComposerDraftRecords(database);
   const prunedRecords = prunePersistedComposerDraftAttachmentRecords(records);
 
   if (prunedRecords.removedChannelIds.length > 0) {
-    await deletePersistedComposerDraftRecords(
-      database,
-      prunedRecords.removedChannelIds
-    );
+    await deletePersistedComposerDraftRecords(database, prunedRecords.removedChannelIds);
   }
 
   return prunedRecords.records;
 };
 
 const mapPendingComposerAttachmentToPersistedRecord = (
-  attachment: PendingComposerAttachment
+  attachment: PendingComposerAttachment,
 ): PersistedComposerDraftAttachmentRecord => ({
   id: attachment.id,
   file: attachment.file,
@@ -334,11 +298,7 @@ const mapPendingComposerAttachmentToPersistedRecord = (
   pdfPageCount: attachment.pdfPageCount,
 });
 
-const coercePersistedDraftFile = (
-  file: unknown,
-  fileName: string,
-  mimeType: string
-) => {
+const coercePersistedDraftFile = (file: unknown, fileName: string, mimeType: string) => {
   if (file instanceof File) {
     return file;
   }
@@ -354,67 +314,62 @@ const coercePersistedDraftFile = (
 };
 
 export const readPersistedComposerDraftMessage = (
-  channelId?: string | null
+  channelId?: string | null,
+  userId?: string | null,
 ) => {
-  const normalizedChannelId = normalizeChannelId(channelId);
-  if (!normalizedChannelId) {
-    return '';
+  const draftScopeKey = normalizeDraftScopeKey(channelId, userId);
+  if (!draftScopeKey) {
+    return "";
   }
 
   const payload = readRuntimeStorage<PersistedComposerDraftMessageStore>(
     COMPOSER_DRAFT_MESSAGES_STORAGE_KEY,
-    'local'
+    "local",
   );
   const prunedPayload = prunePersistedComposerDraftMessageStore(payload);
   if (prunedPayload.didPrune) {
-    writeRuntimeStorage(
-      COMPOSER_DRAFT_MESSAGES_STORAGE_KEY,
-      prunedPayload.store,
-      'local'
-    );
+    writeRuntimeStorage(COMPOSER_DRAFT_MESSAGES_STORAGE_KEY, prunedPayload.store, "local");
   }
-  const record = prunedPayload.store[normalizedChannelId];
+  const record = prunedPayload.store[draftScopeKey];
 
-  return typeof record?.message === 'string' ? record.message : '';
+  return typeof record?.message === "string" ? record.message : "";
 };
 
 export const writePersistedComposerDraftMessage = (
   channelId: string | null | undefined,
-  message: string
+  message: string,
+  userId?: string | null,
 ) => {
-  const normalizedChannelId = normalizeChannelId(channelId);
-  if (!normalizedChannelId) {
+  const draftScopeKey = normalizeDraftScopeKey(channelId, userId);
+  if (!draftScopeKey) {
     return false;
   }
 
   const nextPayload = prunePersistedComposerDraftMessageStore(
     readRuntimeStorage<PersistedComposerDraftMessageStore>(
       COMPOSER_DRAFT_MESSAGES_STORAGE_KEY,
-      'local'
-    )
+      "local",
+    ),
   ).store;
 
   if (message.length === 0) {
-    delete nextPayload[normalizedChannelId];
+    delete nextPayload[draftScopeKey];
   } else {
-    nextPayload[normalizedChannelId] = {
+    nextPayload[draftScopeKey] = {
       message,
       updatedAt: Date.now(),
     };
   }
 
-  return writeRuntimeStorage(
-    COMPOSER_DRAFT_MESSAGES_STORAGE_KEY,
-    nextPayload,
-    'local'
-  );
+  return writeRuntimeStorage(COMPOSER_DRAFT_MESSAGES_STORAGE_KEY, nextPayload, "local");
 };
 
 export const loadPersistedComposerDraftAttachments = async (
-  channelId?: string | null
+  channelId?: string | null,
+  userId?: string | null,
 ): Promise<PersistedComposerDraftAttachment[]> => {
-  const normalizedChannelId = normalizeChannelId(channelId);
-  if (!normalizedChannelId) {
+  const draftScopeKey = normalizeDraftScopeKey(channelId, userId);
+  if (!draftScopeKey) {
     return [];
   }
 
@@ -424,28 +379,22 @@ export const loadPersistedComposerDraftAttachments = async (
   }
 
   const records = await prunePersistedComposerDraftAttachments(database);
-  const record = records.find(
-    persistedRecord => persistedRecord.channelId === normalizedChannelId
-  );
+  const record = records.find((persistedRecord) => persistedRecord.channelId === draftScopeKey);
   if (!record) {
     return [];
   }
 
-  return record.attachments.flatMap(attachment => {
-    const fileName = attachment?.fileName?.trim() || 'Lampiran';
+  return record.attachments.flatMap((attachment) => {
+    const fileName = attachment?.fileName?.trim() || "Lampiran";
     const fileKind = attachment?.fileKind;
-    if (
-      fileKind !== 'image' &&
-      fileKind !== 'document' &&
-      fileKind !== 'audio'
-    ) {
+    if (fileKind !== "image" && fileKind !== "document" && fileKind !== "audio") {
       return [];
     }
 
     const file = coercePersistedDraftFile(
       attachment.file,
       fileName,
-      attachment?.mimeType?.trim() || ''
+      attachment?.mimeType?.trim() || "",
     );
     if (!file) {
       return [];
@@ -454,28 +403,19 @@ export const loadPersistedComposerDraftAttachments = async (
     return [
       {
         id:
-          typeof attachment?.id === 'string' && attachment.id.trim()
+          typeof attachment?.id === "string" && attachment.id.trim()
             ? attachment.id
-            : `pending_file_${Date.now()}_${Math.random()
-                .toString(36)
-                .slice(2, 8)}`,
+            : `pending_file_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
         file,
         fileKind,
         fileName,
         fileTypeLabel:
-          typeof attachment?.fileTypeLabel === 'string' &&
-          attachment.fileTypeLabel.trim()
+          typeof attachment?.fileTypeLabel === "string" && attachment.fileTypeLabel.trim()
             ? attachment.fileTypeLabel
-            : 'FILE',
+            : "FILE",
         mimeType: attachment?.mimeType?.trim() || file.type,
-        pdfCoverUrl:
-          typeof attachment?.pdfCoverUrl === 'string'
-            ? attachment.pdfCoverUrl
-            : null,
-        pdfPageCount:
-          typeof attachment?.pdfPageCount === 'number'
-            ? attachment.pdfPageCount
-            : null,
+        pdfCoverUrl: typeof attachment?.pdfCoverUrl === "string" ? attachment.pdfCoverUrl : null,
+        pdfPageCount: typeof attachment?.pdfPageCount === "number" ? attachment.pdfPageCount : null,
       } satisfies PersistedComposerDraftAttachment,
     ];
   });
@@ -483,10 +423,11 @@ export const loadPersistedComposerDraftAttachments = async (
 
 export const persistComposerDraftAttachments = async (
   channelId: string | null | undefined,
-  attachments: PendingComposerAttachment[]
+  attachments: PendingComposerAttachment[],
+  userId?: string | null,
 ) => {
-  const normalizedChannelId = normalizeChannelId(channelId);
-  if (!normalizedChannelId) {
+  const draftScopeKey = normalizeDraftScopeKey(channelId, userId);
+  if (!draftScopeKey) {
     return;
   }
 
@@ -495,23 +436,16 @@ export const persistComposerDraftAttachments = async (
     return;
   }
 
-  await new Promise<void>(resolve => {
-    const transaction = database.transaction(
-      COMPOSER_DRAFT_ATTACHMENTS_STORE_NAME,
-      'readwrite'
-    );
-    const store = transaction.objectStore(
-      COMPOSER_DRAFT_ATTACHMENTS_STORE_NAME
-    );
+  await new Promise<void>((resolve) => {
+    const transaction = database.transaction(COMPOSER_DRAFT_ATTACHMENTS_STORE_NAME, "readwrite");
+    const store = transaction.objectStore(COMPOSER_DRAFT_ATTACHMENTS_STORE_NAME);
 
     if (attachments.length === 0) {
-      store.delete(normalizedChannelId);
+      store.delete(draftScopeKey);
     } else {
       store.put({
-        channelId: normalizedChannelId,
-        attachments: attachments.map(
-          mapPendingComposerAttachmentToPersistedRecord
-        ),
+        channelId: draftScopeKey,
+        attachments: attachments.map(mapPendingComposerAttachmentToPersistedRecord),
         updatedAt: Date.now(),
       } satisfies PersistedComposerDraftRecord);
     }
@@ -531,10 +465,11 @@ export const persistComposerDraftAttachments = async (
 };
 
 export const clearPersistedComposerDraftAttachments = async (
-  channelId?: string | null
+  channelId?: string | null,
+  userId?: string | null,
 ) => {
-  const normalizedChannelId = normalizeChannelId(channelId);
-  if (!normalizedChannelId) {
+  const draftScopeKey = normalizeDraftScopeKey(channelId, userId);
+  if (!draftScopeKey) {
     return;
   }
 
@@ -543,11 +478,11 @@ export const clearPersistedComposerDraftAttachments = async (
     return;
   }
 
-  await deletePersistedComposerDraftRecords(database, [normalizedChannelId]);
+  await deletePersistedComposerDraftRecords(database, [draftScopeKey]);
 };
 
 export const resetPersistedComposerDrafts = async () => {
-  deleteRuntimeStorage(COMPOSER_DRAFT_MESSAGES_STORAGE_KEY, 'local');
+  deleteRuntimeStorage(COMPOSER_DRAFT_MESSAGES_STORAGE_KEY, "local");
 
   await closeRuntimeIndexedDb(composerDraftDbPromise);
   composerDraftDbPromise = null;

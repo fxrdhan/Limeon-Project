@@ -1,9 +1,7 @@
-import { extractChatStoragePath } from '../../../shared/chatStoragePaths.ts';
-import type {
-  ChatSharedLinkResponse,
-} from '../../../shared/chatFunctionContracts.ts';
+import { extractChatStoragePath } from "../../../shared/chatStoragePaths.ts";
+import type { ChatSharedLinkResponse } from "../../../shared/chatFunctionContracts.ts";
 
-const CHAT_LINK_SLUG_ALPHABET = '23456789abcdefghjkmnpqrstuvwxyz';
+const CHAT_LINK_SLUG_ALPHABET = "23456789abcdefghjkmnpqrstuvwxyz";
 const CHAT_LINK_SLUG_LENGTH = 10;
 const CHAT_LINK_SLUG_PATTERN = /^[23456789abcdefghjkmnpqrstuvwxyz]{10}$/;
 const CHAT_LINK_SIGNED_URL_TTL_SECONDS = 60 * 60;
@@ -23,6 +21,7 @@ export interface ChatSharedLinkRecord {
   storage_path?: string | null;
   message_id?: string | null;
   revoked_at?: string | null;
+  expires_at?: string | null;
 }
 
 export interface ChatLinkRepository {
@@ -38,9 +37,7 @@ export interface ChatLinkRepository {
     link: ChatSharedLinkRecord | null;
     error: string | null;
   }>;
-  getActiveSharedLinkByStoragePath: (
-    storagePath: string
-  ) => Promise<{
+  getActiveSharedLinkByStoragePath: (storagePath: string) => Promise<{
     link: ChatSharedLinkRecord | null;
     error: string | null;
   }>;
@@ -60,20 +57,20 @@ export interface ChatLinkRepository {
   }>;
   assignSharedLinkToMessage: (
     linkId: string,
-    messageId: string
+    messageId: string,
   ) => Promise<{
     error: string | null;
   }>;
   syncAttachmentSharedLinkSlug: (
     messageId: string,
-    slug: string
+    slug: string,
   ) => Promise<{
     error: string | null;
   }>;
   touchSharedLinkAccess: (linkId: string) => Promise<void>;
   createSignedAssetUrl: (
     storagePath: string,
-    expiresInSeconds: number
+    expiresInSeconds: number,
   ) => Promise<{
     signedUrl: string | null;
     error: string | null;
@@ -87,15 +84,12 @@ export const normalizeChatLinkStoragePath = (value?: string | null) => {
   }
 
   const extractedStoragePath = extractChatStoragePath(rawValue);
-  const normalizedStoragePath = (extractedStoragePath ?? rawValue).replace(
-    /^\/+/,
-    ''
-  );
+  const normalizedStoragePath = (extractedStoragePath ?? rawValue).replace(/^\/+/, "");
 
   if (
     !normalizedStoragePath ||
-    normalizedStoragePath.includes('..') ||
-    normalizedStoragePath.includes('\\') ||
+    normalizedStoragePath.includes("..") ||
+    normalizedStoragePath.includes("\\") ||
     /^https?:\/\//i.test(normalizedStoragePath)
   ) {
     return null;
@@ -110,23 +104,21 @@ export const normalizeChatLinkMessageId = (value?: string | null) => {
     return null;
   }
 
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(
-    rawValue
-  )
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(rawValue)
     ? rawValue
     : null;
 };
 
 export const extractChatLinkSlugFromRequestUrl = (requestUrl: string) => {
   const url = new URL(requestUrl);
-  const querySlug = url.searchParams.get('s')?.trim().toLowerCase();
+  const querySlug = url.searchParams.get("s")?.trim().toLowerCase();
   if (querySlug && CHAT_LINK_SLUG_PATTERN.test(querySlug)) {
     return querySlug;
   }
 
-  const pathSegments = url.pathname.split('/').filter(Boolean);
+  const pathSegments = url.pathname.split("/").filter(Boolean);
   const candidateSlug = pathSegments.at(-1)?.trim().toLowerCase() || null;
-  if (!candidateSlug || candidateSlug === 'chat-link') {
+  if (!candidateSlug || candidateSlug === "chat-link") {
     return null;
   }
 
@@ -139,21 +131,15 @@ export const buildChatLinkShortUrl = (requestUrl: string, slug: string) => {
 };
 
 export const generateChatLinkSlug = () => {
-  const randomBytes = crypto.getRandomValues(
-    new Uint8Array(CHAT_LINK_SLUG_LENGTH)
-  );
+  const randomBytes = crypto.getRandomValues(new Uint8Array(CHAT_LINK_SLUG_LENGTH));
 
-  return Array.from(randomBytes, randomByte =>
-    CHAT_LINK_SLUG_ALPHABET[
-      randomByte % CHAT_LINK_SLUG_ALPHABET.length
-    ]
-  ).join('');
+  return Array.from(
+    randomBytes,
+    (randomByte) => CHAT_LINK_SLUG_ALPHABET[randomByte % CHAT_LINK_SLUG_ALPHABET.length],
+  ).join("");
 };
 
-const buildChatSharedLinkResponse = (
-  requestUrl: string,
-  link: ChatSharedLinkRecord
-) =>
+const buildChatSharedLinkResponse = (requestUrl: string, link: ChatSharedLinkRecord) =>
   ({
     slug: link.slug,
     shortUrl: buildChatLinkShortUrl(requestUrl, link.slug),
@@ -177,7 +163,7 @@ const syncAttachmentSharedLinkMetadata = async ({
   if (!link.message_id) {
     const { error: assignError } = await repository.assignSharedLinkToMessage(
       link.id,
-      attachmentMessageId
+      attachmentMessageId,
     );
     if (assignError) {
       return assignError;
@@ -187,7 +173,7 @@ const syncAttachmentSharedLinkMetadata = async ({
   if (attachment.shared_link_slug !== link.slug) {
     const { error: syncError } = await repository.syncAttachmentSharedLinkSlug(
       attachmentMessageId,
-      link.slug
+      link.slug,
     );
     if (syncError) {
       return syncError;
@@ -226,7 +212,7 @@ export const createChatSharedLink = async ({
     if (!attachment) {
       return {
         status: 403,
-        body: { error: 'Forbidden' },
+        body: { error: "Forbidden" },
       };
     }
 
@@ -234,14 +220,12 @@ export const createChatSharedLink = async ({
   }
 
   const normalizedStoragePath = normalizeChatLinkStoragePath(
-    accessibleAttachment?.file_storage_path ?? storagePath
+    accessibleAttachment?.file_storage_path ?? storagePath,
   );
   if (normalizedStoragePath) {
     if (!accessibleAttachment) {
       const { attachment, error: attachmentError } =
-        await repository.getAccessibleAttachmentByStoragePath(
-          normalizedStoragePath
-        );
+        await repository.getAccessibleAttachmentByStoragePath(normalizedStoragePath);
       if (attachmentError) {
         return {
           status: 500,
@@ -252,7 +236,7 @@ export const createChatSharedLink = async ({
       if (!attachment) {
         return {
           status: 403,
-          body: { error: 'Forbidden' },
+          body: { error: "Forbidden" },
         };
       }
 
@@ -348,13 +332,11 @@ export const createChatSharedLink = async ({
         };
       }
 
-      if (errorCode === '23505') {
-        const {
-          link: conflictedLinkByMessageId,
-          error: conflictedLinkByMessageIdError,
-        } = attachmentMessageId
-          ? await repository.getActiveSharedLinkByMessageId(attachmentMessageId)
-          : { link: null, error: null };
+      if (errorCode === "23505") {
+        const { link: conflictedLinkByMessageId, error: conflictedLinkByMessageIdError } =
+          attachmentMessageId
+            ? await repository.getActiveSharedLinkByMessageId(attachmentMessageId)
+            : { link: null, error: null };
 
         if (conflictedLinkByMessageIdError) {
           return {
@@ -363,12 +345,9 @@ export const createChatSharedLink = async ({
           };
         }
 
-        const { link: conflictedLink, error: conflictedLinkError } =
-          conflictedLinkByMessageId
-            ? { link: conflictedLinkByMessageId, error: null }
-            : await repository.getActiveSharedLinkByStoragePath(
-                normalizedStoragePath
-              );
+        const { link: conflictedLink, error: conflictedLinkError } = conflictedLinkByMessageId
+          ? { link: conflictedLinkByMessageId, error: null }
+          : await repository.getActiveSharedLinkByStoragePath(normalizedStoragePath);
 
         if (conflictedLinkError) {
           return {
@@ -401,19 +380,19 @@ export const createChatSharedLink = async ({
 
       return {
         status: 500,
-        body: { error: error ?? 'Failed to create chat shared link' },
+        body: { error: error ?? "Failed to create chat shared link" },
       };
     }
 
     return {
       status: 500,
-      body: { error: 'Failed to create chat shared link' },
+      body: { error: "Failed to create chat shared link" },
     };
   }
 
   return {
     status: 400,
-    body: { error: 'messageId or storagePath is required' },
+    body: { error: "messageId or storagePath is required" },
   };
 };
 
@@ -428,12 +407,11 @@ export const redirectChatSharedLink = async ({
   if (!slug) {
     return {
       status: 400,
-      body: { error: 'slug is required' },
+      body: { error: "slug is required" },
     };
   }
 
-  const { link, error: linkError } =
-    await repository.getActiveSharedLinkBySlug(slug);
+  const { link, error: linkError } = await repository.getActiveSharedLinkBySlug(slug);
   if (linkError) {
     return {
       status: 500,
@@ -441,29 +419,32 @@ export const redirectChatSharedLink = async ({
     };
   }
 
-  if (!link || link.revoked_at) {
+  if (
+    !link ||
+    link.revoked_at ||
+    (link.expires_at && new Date(link.expires_at).getTime() <= Date.now())
+  ) {
     return {
       status: 404,
-      body: { error: 'Not found' },
+      body: { error: "Not found" },
     };
   }
 
   if (!link.storage_path) {
     return {
       status: 404,
-      body: { error: 'Not found' },
+      body: { error: "Not found" },
     };
   }
 
-  const { signedUrl, error: signedUrlError } =
-    await repository.createSignedAssetUrl(
-      link.storage_path,
-      CHAT_LINK_SIGNED_URL_TTL_SECONDS
-    );
+  const { signedUrl, error: signedUrlError } = await repository.createSignedAssetUrl(
+    link.storage_path,
+    CHAT_LINK_SIGNED_URL_TTL_SECONDS,
+  );
   if (!signedUrl || signedUrlError) {
     return {
       status: 404,
-      body: { error: 'Attachment not found' },
+      body: { error: "Attachment not found" },
     };
   }
 

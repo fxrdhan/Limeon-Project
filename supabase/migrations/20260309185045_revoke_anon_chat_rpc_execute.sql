@@ -15,15 +15,23 @@ revoke all on function public.update_chat_file_preview_metadata(uuid, text, inte
 grant execute on function public.update_chat_file_preview_metadata(uuid, text, integer, character varying, text) to authenticated;
 grant execute on function public.update_chat_file_preview_metadata(uuid, text, integer, character varying, text) to service_role;
 
-revoke all on function public.mark_chat_message_ids_as_delivered(uuid[]) from anon;
-revoke all on function public.mark_chat_message_ids_as_delivered(uuid[]) from authenticated;
-grant execute on function public.mark_chat_message_ids_as_delivered(uuid[]) to authenticated;
-grant execute on function public.mark_chat_message_ids_as_delivered(uuid[]) to service_role;
+do $$
+begin
+  if to_regprocedure('public.mark_chat_message_ids_as_delivered(uuid[])') is not null then
+    revoke all on function public.mark_chat_message_ids_as_delivered(uuid[]) from anon;
+    revoke all on function public.mark_chat_message_ids_as_delivered(uuid[]) from authenticated;
+    grant execute on function public.mark_chat_message_ids_as_delivered(uuid[]) to authenticated;
+    grant execute on function public.mark_chat_message_ids_as_delivered(uuid[]) to service_role;
+  end if;
 
-revoke all on function public.mark_chat_message_ids_as_read(uuid[]) from anon;
-revoke all on function public.mark_chat_message_ids_as_read(uuid[]) from authenticated;
-grant execute on function public.mark_chat_message_ids_as_read(uuid[]) to authenticated;
-grant execute on function public.mark_chat_message_ids_as_read(uuid[]) to service_role;
+  if to_regprocedure('public.mark_chat_message_ids_as_read(uuid[])') is not null then
+    revoke all on function public.mark_chat_message_ids_as_read(uuid[]) from anon;
+    revoke all on function public.mark_chat_message_ids_as_read(uuid[]) from authenticated;
+    grant execute on function public.mark_chat_message_ids_as_read(uuid[]) to authenticated;
+    grant execute on function public.mark_chat_message_ids_as_read(uuid[]) to service_role;
+  end if;
+end
+$$;
 
 revoke all on function public.delete_chat_message_thread(uuid) from anon;
 revoke all on function public.delete_chat_message_thread(uuid) from authenticated;
