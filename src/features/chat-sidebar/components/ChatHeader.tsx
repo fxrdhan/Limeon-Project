@@ -1,3 +1,4 @@
+import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { TbCheckbox, TbSearch } from 'react-icons/tb';
 import type { ChatSidebarRuntimeState } from '../hooks/useChatSidebarRuntimeState';
@@ -18,6 +19,11 @@ type ChatHeaderRuntime = Pick<
 interface ChatHeaderProps {
   runtime: ChatHeaderRuntime;
 }
+
+const headerModeTransition = {
+  duration: 0.18,
+  ease: [0.22, 1, 0.36, 1],
+} as const;
 
 const ChatHeader = ({ runtime }: ChatHeaderProps) => {
   const [isOptionsMenuOpen, setIsOptionsMenuOpen] = useState(false);
@@ -96,67 +102,87 @@ const ChatHeader = ({ runtime }: ChatHeaderProps) => {
       : `${activeSearchResultIndex + 1}/${searchResultCount}${
           runtime.interaction.hasMoreSearchResults ? '+' : ''
         }`;
+  const headerMode = runtime.interaction.isSelectionMode
+    ? 'selection'
+    : runtime.interaction.isMessageSearchMode
+      ? 'search'
+      : 'conversation';
+  const headerInitialY = headerMode === 'selection' ? 6 : -6;
+  const headerExitY = headerMode === 'selection' ? -6 : 6;
 
   return (
     <div className="px-3 pt-4 pb-2.5">
-      {runtime.interaction.isSelectionMode ? (
-        <SelectionHeaderContent
-          selectedMessageCount={
-            runtime.interaction.selectedVisibleMessages.length
-          }
-          canDeleteSelectedMessages={
-            runtime.interaction.canDeleteSelectedMessages
-          }
-          onCopySelectedMessages={
-            runtime.interaction.handleCopySelectedMessages
-          }
-          onDeleteSelectedMessages={
-            runtime.actions.handleDeleteSelectedMessages
-          }
-          onClearSelectedMessages={
-            runtime.interaction.handleClearSelectedMessages
-          }
-          onExitSelectionMode={
-            runtime.interaction.handleExitMessageSelectionMode
-          }
-          onClose={runtime.actions.handleClose}
-        />
-      ) : runtime.interaction.isMessageSearchMode ? (
-        <SearchHeaderContent
-          searchQuery={runtime.interaction.messageSearchQuery}
-          searchState={runtime.interaction.messageSearchState}
-          searchResultPositionLabel={searchResultPositionLabel}
-          searchResultCount={searchResultCount}
-          canNavigateSearchUp={runtime.interaction.canNavigateSearchUp}
-          canNavigateSearchDown={runtime.interaction.canNavigateSearchDown}
-          searchInputRef={runtime.interaction.searchInputRef}
-          onSearchQueryChange={
-            runtime.interaction.handleMessageSearchQueryChange
-          }
-          onNavigateSearchUp={runtime.interaction.handleNavigateSearchUp}
-          onNavigateSearchDown={runtime.interaction.handleNavigateSearchDown}
-          onFocusSearchInput={runtime.interaction.handleFocusSearchInput}
-          onExitSearchMode={runtime.interaction.handleExitMessageSearchMode}
-          onClose={runtime.actions.handleClose}
-        />
-      ) : (
-        <ConversationHeaderContent
-          targetUser={runtime.targetUser}
-          isSelfConversation={runtime.targetUser?.id === runtime.user?.id}
-          displayTargetPhotoUrl={runtime.displayTargetPhotoUrl}
-          isTargetOnline={runtime.session.isTargetOnline}
-          targetUserPresence={runtime.session.targetUserPresence}
-          targetUserPresenceError={runtime.session.targetUserPresenceError}
-          isOptionsMenuOpen={isOptionsMenuOpen}
-          optionsButtonRef={optionsButtonRef}
-          optionsMenuRef={optionsMenuRef}
-          optionsActions={optionsActions}
-          onToggleOptionsMenu={toggleOptionsMenu}
-          onOpenContactList={runtime.actions.handleOpenContactList}
-          getInitials={runtime.actions.getInitials}
-          getInitialsColor={runtime.actions.getInitialsColor}
-        />
-      )}
+      <AnimatePresence initial={false} mode="popLayout">
+        <motion.div
+          key={headerMode}
+          initial={{ opacity: 0, y: headerInitialY }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: headerExitY }}
+          transition={headerModeTransition}
+          className="w-full"
+        >
+          {runtime.interaction.isSelectionMode ? (
+            <SelectionHeaderContent
+              selectedMessageCount={
+                runtime.interaction.selectedVisibleMessages.length
+              }
+              canDeleteSelectedMessages={
+                runtime.interaction.canDeleteSelectedMessages
+              }
+              onCopySelectedMessages={
+                runtime.interaction.handleCopySelectedMessages
+              }
+              onDeleteSelectedMessages={
+                runtime.actions.handleDeleteSelectedMessages
+              }
+              onClearSelectedMessages={
+                runtime.interaction.handleClearSelectedMessages
+              }
+              onExitSelectionMode={
+                runtime.interaction.handleExitMessageSelectionMode
+              }
+              onClose={runtime.actions.handleClose}
+            />
+          ) : runtime.interaction.isMessageSearchMode ? (
+            <SearchHeaderContent
+              searchQuery={runtime.interaction.messageSearchQuery}
+              searchState={runtime.interaction.messageSearchState}
+              searchResultPositionLabel={searchResultPositionLabel}
+              searchResultCount={searchResultCount}
+              canNavigateSearchUp={runtime.interaction.canNavigateSearchUp}
+              canNavigateSearchDown={runtime.interaction.canNavigateSearchDown}
+              searchInputRef={runtime.interaction.searchInputRef}
+              onSearchQueryChange={
+                runtime.interaction.handleMessageSearchQueryChange
+              }
+              onNavigateSearchUp={runtime.interaction.handleNavigateSearchUp}
+              onNavigateSearchDown={
+                runtime.interaction.handleNavigateSearchDown
+              }
+              onFocusSearchInput={runtime.interaction.handleFocusSearchInput}
+              onExitSearchMode={runtime.interaction.handleExitMessageSearchMode}
+              onClose={runtime.actions.handleClose}
+            />
+          ) : (
+            <ConversationHeaderContent
+              targetUser={runtime.targetUser}
+              isSelfConversation={runtime.targetUser?.id === runtime.user?.id}
+              displayTargetPhotoUrl={runtime.displayTargetPhotoUrl}
+              isTargetOnline={runtime.session.isTargetOnline}
+              targetUserPresence={runtime.session.targetUserPresence}
+              targetUserPresenceError={runtime.session.targetUserPresenceError}
+              isOptionsMenuOpen={isOptionsMenuOpen}
+              optionsButtonRef={optionsButtonRef}
+              optionsMenuRef={optionsMenuRef}
+              optionsActions={optionsActions}
+              onToggleOptionsMenu={toggleOptionsMenu}
+              onOpenContactList={runtime.actions.handleOpenContactList}
+              getInitials={runtime.actions.getInitials}
+              getInitialsColor={runtime.actions.getInitialsColor}
+            />
+          )}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 };
