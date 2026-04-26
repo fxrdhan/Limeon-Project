@@ -124,6 +124,44 @@ const getChangedFieldLabels = (
   return Object.keys(changedFields).map(formatHistoryFieldLabel).join(', ');
 };
 
+const HistoryTimelineSkeleton: React.FC<{
+  scrollContainerMaxHeight?: number;
+}> = ({ scrollContainerMaxHeight }) => (
+  <div className="p-6">
+    <div className="relative animate-pulse">
+      <div className="absolute left-[5.4px] top-8 bottom-0 z-0 w-0.5 bg-slate-200" />
+      <div
+        className="relative max-h-96 space-y-3 overflow-hidden"
+        style={
+          scrollContainerMaxHeight
+            ? { maxHeight: `${scrollContainerMaxHeight}px` }
+            : undefined
+        }
+      >
+        {Array.from({ length: 5 }).map((_, index) => (
+          <div
+            key={index}
+            className={`relative ${index === 0 ? 'pt-2' : ''} ${
+              index === 4 ? 'pb-2' : ''
+            }`}
+          >
+            <span className="absolute left-0 top-5 block h-3 w-3 rounded-full border-2 border-slate-200 bg-white" />
+            <div className="ml-6 rounded-xl border border-slate-200 px-4 py-3">
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-3">
+                  <div className="h-6 w-[62px] rounded bg-slate-200" />
+                  <div className="h-4 w-[104px] rounded bg-slate-200" />
+                </div>
+                <div className="h-6 w-8 rounded bg-slate-200" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
 const HistoryItemCard: React.FC<HistoryItemCardProps> = ({
   item,
   index,
@@ -320,7 +358,6 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
   showRestoreButton = false,
   onRestore,
   emptyMessage = 'Tidak ada riwayat perubahan',
-  loadingMessage = 'Loading history...',
   allowMultiSelect = false,
   onCompareSelected,
   maxSelections = 2,
@@ -675,13 +712,11 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
 
   // Only show empty state when no history exists (not loading)
   if (!history || history.length === 0) {
-    // Show loading spinner only if currently loading AND no data yet
     if (isLoading) {
       return (
-        <div className="p-6 text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-2 text-slate-500">{loadingMessage}</p>
-        </div>
+        <HistoryTimelineSkeleton
+          scrollContainerMaxHeight={scrollContainerMaxHeight}
+        />
       );
     }
 
