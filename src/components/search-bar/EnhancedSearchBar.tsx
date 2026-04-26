@@ -20,6 +20,7 @@ import BaseSelector from './components/selectors/BaseSelector';
 import { SEARCH_CONSTANTS } from './constants';
 import { useBadgeHandlers } from './hooks/useBadgeHandlers';
 import { useSearchInput } from './hooks/useSearchInput';
+import { useSearchAutoTypeFocus } from './hooks/useSearchAutoTypeFocus';
 import { useSearchKeyboard } from './hooks/useSearchKeyboard';
 import { useSearchState } from './hooks/useSearchState';
 import { useSelectionHandlers } from './hooks/useSelectionHandlers';
@@ -405,9 +406,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   onGlobalSearch,
   onClearSearch,
   onFilterSearch,
+  autoFocusOnType = true,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const internalInputRef = useRef<HTMLInputElement>(null);
+  const resolvedInputRef = inputRef ?? internalInputRef;
   const memoizedColumns = useMemo(() => columns, [columns]);
   // Keep a synchronous reference to the latest raw pattern value so rapid key presses
   // (before React/parent state re-renders) still step back one badge at a time.
@@ -419,6 +423,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   useEffect(() => {
     latestValueRef.current = value;
   }, [value]);
+
+  useSearchAutoTypeFocus(resolvedInputRef, autoFocusOnType);
 
   // Ref to store preserved filter when editing column/operator
   // Uses PreservedFilter type which supports N conditions via conditions[] array
@@ -600,7 +606,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     value,
     searchMode,
     onChange,
-    inputRef,
+    inputRef: resolvedInputRef,
   });
 
   const activeConditionIndex = searchMode.activeConditionIndex ?? 0;
@@ -624,7 +630,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     }
     if (!isSelectingConditionNColumn) return undefined; // First column: no anchor (or container left)
     if (!isEditingConditionNColumn)
-      return inputRef as React.RefObject<HTMLElement | null>; // Create mode: position at input (end of badges)
+      return resolvedInputRef as React.RefObject<HTMLElement | null>; // Create mode: position at input (end of badges)
     // Edit mode: position below the correct column badge
     // Note: activeConditionIndex >= 1 here (guaranteed by isSelectingConditionNColumn)
     if (activeConditionIndex === 1) return getLazyColumnRef(1);
@@ -685,7 +691,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     operatorAnchorAlign = 'left';
   } else if (isCreatingConditionNOp) {
     // CREATE/select operator for condition[N]: position at input caret
-    operatorAnchorRef = inputRef as React.RefObject<HTMLElement | null>;
+    operatorAnchorRef = resolvedInputRef as React.RefObject<HTMLElement | null>;
     operatorAnchorAlign = 'left';
   } else {
     // First operator: position after column badge
@@ -734,7 +740,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     }
 
     // 2. CREATE new join: position at the input (after last confirmed badge)
-    return inputRef as React.RefObject<HTMLElement | null>;
+    return resolvedInputRef as React.RefObject<HTMLElement | null>;
   };
 
   const joinAnchorRef = getJoinAnchorRef();
@@ -810,7 +816,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   } = useBadgeHandlers({
     value,
     onChange,
-    inputRef,
+    inputRef: resolvedInputRef,
     searchMode,
     preservedSearchMode,
     setPreservedSearchMode,
@@ -890,12 +896,12 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       );
 
       // Switch to join selector at the insertion point.
-      setFilterValue(newValue, onChange, inputRef);
+      setFilterValue(newValue, onChange, resolvedInputRef);
     },
     [
       preservedSearchMode,
       searchMode,
-      inputRef,
+      resolvedInputRef,
       onChange,
       setEditingBadge,
       setSelectedBadgeIndex,
@@ -999,9 +1005,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     // Avoid triggering a cascading render synchronously inside the effect.
     scheduleInsertFlowReset();
 
-    setFilterValue(finalValue, onChange, inputRef);
+    setFilterValue(finalValue, onChange, resolvedInputRef);
     return cleanupInsertFlowReset;
-  }, [isInsertFlowActive, value, searchMode, onChange, inputRef]);
+  }, [isInsertFlowActive, value, searchMode, onChange, resolvedInputRef]);
 
   const applyGroupedPattern = useCallback(
     (group: FilterGroup) => {
@@ -1235,9 +1241,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         occurrenceIndex
       );
       if (nextValue === value) return;
-      setFilterValue(nextValue, onChange, inputRef);
+      setFilterValue(nextValue, onChange, resolvedInputRef);
     },
-    [value, onChange, inputRef]
+    [value, onChange, resolvedInputRef]
   );
 
   // Use centralized selection handlers for column/operator/join selection
@@ -1245,7 +1251,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     useSelectionHandlers({
       value,
       onChange,
-      inputRef,
+      inputRef: resolvedInputRef,
       searchMode,
       preservedSearchMode,
       setPreservedSearchMode,
@@ -1376,25 +1382,25 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   const handleGroupColumnSelect = useCallback(
     (column: SearchColumn) => {
       const newValue = replaceTrailingHash(value, `#${column.field} #`);
-      setFilterValue(newValue, onChange, inputRef);
+      setFilterValue(newValue, onChange, resolvedInputRef);
     },
-    [value, onChange, inputRef]
+    [value, onChange, resolvedInputRef]
   );
 
   const handleGroupOperatorSelect = useCallback(
     (operator: FilterOperator) => {
       const newValue = replaceTrailingHash(value, `#${operator.value} `);
-      setFilterValue(newValue, onChange, inputRef);
+      setFilterValue(newValue, onChange, resolvedInputRef);
     },
-    [value, onChange, inputRef]
+    [value, onChange, resolvedInputRef]
   );
 
   const handleGroupJoinSelect = useCallback(
     (joinOp: JoinOperator) => {
       const newValue = replaceTrailingHash(value, `#${joinOp.value} #`);
-      setFilterValue(newValue, onChange, inputRef);
+      setFilterValue(newValue, onChange, resolvedInputRef);
     },
-    [value, onChange, inputRef]
+    [value, onChange, resolvedInputRef]
   );
 
   const handleColumnSelectWithGroups = useCallback(
@@ -1483,7 +1489,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   useEffect(() => {
     if (selectedBadgeIndex !== null) return;
     if (editingBadge || editingGroupBadge) return;
-    const inputEl = inputRef?.current;
+    const inputEl = resolvedInputRef?.current;
     if (!inputEl) return;
     if (document.activeElement !== inputEl) return;
     requestAnimationFrame(scrollBadgesToEnd);
@@ -1492,7 +1498,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     selectedBadgeIndex,
     editingBadge,
     editingGroupBadge,
-    inputRef,
+    resolvedInputRef,
     scrollBadgesToEnd,
   ]);
 
@@ -2102,7 +2108,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         setSelectedBadgeIndex(null); // Clear selection to prevent auto-selecting previous badge
         // Ensure focus returns to search input after clearing
         setTimeout(() => {
-          inputRef?.current?.focus();
+          resolvedInputRef?.current?.focus();
         }, 50);
         return;
       }
@@ -2187,7 +2193,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               setEditingBadge(null);
               setPreservedSearchMode(null);
               setTimeout(() => {
-                inputRef?.current?.focus();
+                resolvedInputRef?.current?.focus();
               }, 50);
               return;
             }
@@ -2216,10 +2222,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             setEditingBadge(null);
             // Focus input at end to wait for valueTo input
             setTimeout(() => {
-              if (inputRef?.current) {
-                inputRef.current.focus();
+              if (resolvedInputRef?.current) {
+                resolvedInputRef.current.focus();
                 const len = newPattern.length;
-                inputRef.current.setSelectionRange(len, len);
+                resolvedInputRef.current.setSelectionRange(len, len);
               }
             }, 50);
             return;
@@ -2304,7 +2310,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
         // Ensure focus returns to search input after edit completes
         setTimeout(() => {
-          inputRef?.current?.focus();
+          resolvedInputRef?.current?.focus();
         }, 50);
         return;
       }
@@ -2379,10 +2385,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
         // Focus input at end to wait for valueTo input
         setTimeout(() => {
-          if (inputRef?.current) {
-            inputRef.current.focus();
+          if (resolvedInputRef?.current) {
+            resolvedInputRef.current.focus();
             const len = newPattern.length;
-            inputRef.current.setSelectionRange(len, len);
+            resolvedInputRef.current.setSelectionRange(len, len);
           }
         }, 50);
         return;
@@ -2407,7 +2413,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
       // Ensure focus returns to search input after edit completes
       setTimeout(() => {
-        inputRef?.current?.focus();
+        resolvedInputRef?.current?.focus();
       }, 50);
     },
     [
@@ -2416,7 +2422,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       preservedSearchMode,
       onChange,
       clearConditionPart,
-      inputRef,
+      resolvedInputRef,
     ]
   );
 
@@ -2533,7 +2539,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       }
 
       // Focus input
-      inputRef?.current?.focus();
+      resolvedInputRef?.current?.focus();
     }, 50);
   }, [
     editingBadge,
@@ -2547,7 +2553,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     handleCloseColumnSelector,
     handleCloseOperatorSelector,
     handleCloseJoinOperatorSelector,
-    inputRef,
+    resolvedInputRef,
   ]);
 
   // Wrap onChange to reconstruct multi-condition pattern when confirming first value edit
@@ -2855,13 +2861,13 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       }
 
       // Focus input
-      inputRef?.current?.focus();
+      resolvedInputRef?.current?.focus();
 
       return true;
     },
     [
       selectedBadgeIndex,
-      inputRef,
+      resolvedInputRef,
       preservedSearchMode,
       searchMode.showColumnSelector,
       searchMode.showOperatorSelector,
@@ -3528,7 +3534,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               }
             />
             <input
-              ref={inputRef}
+              ref={resolvedInputRef}
               type="text"
               placeholder={getPlaceholder()}
               className="text-sm outline-none tracking-normal flex-grow min-w-[40px] bg-transparent border-none focus:ring-0 py-1 pr-1 pl-2 placeholder-slate-400"

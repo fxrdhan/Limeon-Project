@@ -53,6 +53,7 @@ export interface TableSearchProps {
   inputRef?: React.RefObject<HTMLInputElement | null>;
   searchState?: SearchState;
   showNotFoundArrow?: boolean;
+  autoFocusOnType?: boolean;
 }
 
 export interface EnhancedSearchBarProps

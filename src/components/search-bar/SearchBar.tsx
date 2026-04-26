@@ -3,6 +3,7 @@ import { TbArrowBack } from 'react-icons/tb';
 import { TableSearchProps } from './types';
 import { SEARCH_CONSTANTS } from './constants';
 import SearchIcon from './components/SearchIcon';
+import { useSearchAutoTypeFocus } from './hooks/useSearchAutoTypeFocus';
 import {
   FORM_CONTROL_BORDER_DEFAULT_CLASS,
   FORM_CONTROL_BORDER_ERROR_CLASS,
@@ -21,11 +22,16 @@ const SearchBar: React.FC<TableSearchProps> = ({
   inputRef,
   searchState = 'idle',
   showNotFoundArrow = true,
+  autoFocusOnType = true,
 }) => {
   const hasValue = value && value.length > 0;
+  const internalInputRef = useRef<HTMLInputElement>(null);
+  const resolvedInputRef = inputRef ?? internalInputRef;
   const textMeasureRef = useRef<HTMLSpanElement>(null);
   const lastSettledSearchStateRef = useRef(searchState);
   const [textWidth, setTextWidth] = useState(0);
+
+  useSearchAutoTypeFocus(resolvedInputRef, autoFocusOnType);
 
   useEffect(() => {
     if (textMeasureRef.current && value) {
@@ -56,7 +62,7 @@ const SearchBar: React.FC<TableSearchProps> = ({
         />
         <div className="relative flex-1">
           <input
-            ref={inputRef}
+            ref={resolvedInputRef}
             type="text"
             placeholder={placeholder}
             className={`text-sm outline-none tracking-normal w-full p-2.5 border transition-all duration-${SEARCH_CONSTANTS.ANIMATION_DURATION} ease-in-out ${
