@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, useIsPresent } from 'motion/react';
 import '@/features/item-management/presentation/organisms/styles/scrollbar.scss';
-import { TbArrowBackUp, TbHistory } from 'react-icons/tb';
+import { TbHistory } from 'react-icons/tb';
 import { formatDateTime } from '@/lib/formatters';
 
 export interface HistoryItem {
@@ -34,6 +34,7 @@ interface HistoryTimelineListProps {
   skipEntranceAnimation?: boolean;
   scrollContainerMaxHeight?: number;
   disableHoverDetails?: boolean;
+  showExpandedRestoreActions?: boolean;
 }
 
 interface HistoryItemCardProps {
@@ -51,6 +52,7 @@ interface HistoryItemCardProps {
   hoveredItem: string | null;
   bgColor: string;
   skipEntranceAnimation: boolean;
+  showExpandedRestoreActions: boolean;
   onMouseEnter: (itemId: string) => void;
   onMouseLeave: () => void;
   onClick: (item: HistoryItem) => void;
@@ -136,6 +138,7 @@ const HistoryItemCard: React.FC<HistoryItemCardProps> = ({
   showRestoreButton,
   bgColor,
   skipEntranceAnimation,
+  showExpandedRestoreActions,
   onMouseEnter,
   onMouseLeave,
   onClick,
@@ -149,6 +152,14 @@ const HistoryItemCard: React.FC<HistoryItemCardProps> = ({
       onRestore(version);
     }
   };
+  const canRestore =
+    showRestoreButton &&
+    item.version_number < latestVersion &&
+    Boolean(onRestore);
+  const hasExpandedContent =
+    isExpanded &&
+    (Boolean(item.changed_fields) ||
+      (showExpandedRestoreActions && canRestore && isSelected));
 
   return (
     <motion.div
@@ -248,58 +259,18 @@ const HistoryItemCard: React.FC<HistoryItemCardProps> = ({
             </span>
           </div>
           <div className="flex items-center gap-2">
-            {/* Version badge that transforms into restore button on hover */}
-            {showRestoreButton &&
-            item.version_number < latestVersion &&
-            onRestore ? (
-              <button
-                onClick={e => {
-                  e.stopPropagation(); // Prevent timeline item click
-                  handleRestore(e, item.version_number);
-                }}
-                className="
-                  relative
-                  group
-                  text-xs px-2 py-1 rounded
-                  flex items-center justify-center
-                  min-w-[2.5rem]
-                  transition-all duration-300 ease-in-out
-                  bg-purple-100 hover:bg-orange-50
-                  text-purple-700 hover:text-orange-600
-                  cursor-pointer
-                "
-                title="Restore ke versi ini"
-              >
-                {/* Version text - visible by default, fade out on hover */}
-                <span className="transition-opacity duration-300 ease-in-out group-hover:opacity-0">
-                  v{item.version_number}
-                </span>
-
-                {/* Restore icon - hidden by default, fade in on hover */}
-                <TbArrowBackUp
-                  className="
-                    absolute inset-0 m-auto
-                    opacity-0
-                    transition-opacity duration-300 ease-in-out
-                    group-hover:opacity-100
-                  "
-                  size={14}
-                />
-              </button>
-            ) : (
-              <span className="text-xs px-2 py-1 rounded bg-purple-100 text-purple-700">
-                v{item.version_number}
-              </span>
-            )}
+            <span className="text-xs px-2 py-1 rounded bg-purple-100 text-purple-700">
+              v{item.version_number}
+            </span>
           </div>
         </div>
 
         <motion.div
           initial={false}
           animate={{
-            height: isExpanded && item.changed_fields ? 'auto' : 0,
-            opacity: isExpanded && item.changed_fields ? 1 : 0,
-            marginTop: isExpanded && item.changed_fields ? 12 : 0,
+            height: hasExpandedContent ? 'auto' : 0,
+            opacity: hasExpandedContent ? 1 : 0,
+            marginTop: hasExpandedContent ? 12 : 0,
           }}
           transition={{
             duration: 0.24,
@@ -311,6 +282,27 @@ const HistoryItemCard: React.FC<HistoryItemCardProps> = ({
             <div className="text-xs p-3 rounded-xl border transition-all duration-300 bg-slate-50 border-slate-200 text-slate-600">
               <span className="font-medium">Mengubah:</span>{' '}
               {getChangedFieldLabels(item.changed_fields)}
+            </div>
+          )}
+          {showExpandedRestoreActions && canRestore && isSelected && (
+            <div className="mt-3 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                className="rounded-lg px-3 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                onClick={event => {
+                  event.stopPropagation();
+                  onClick(item);
+                }}
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                className="rounded-lg bg-orange-500 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-orange-600"
+                onClick={event => handleRestore(event, item.version_number)}
+              >
+                Rollback
+              </button>
             </div>
           )}
         </motion.div>
@@ -338,6 +330,7 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
   skipEntranceAnimation = false,
   scrollContainerMaxHeight,
   disableHoverDetails = false,
+  showExpandedRestoreActions = false,
 }) => {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [scrollState, setScrollState] = useState({
@@ -759,6 +752,7 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
                   hoveredItem={hoveredItem}
                   bgColor={getItemBgColor(item)}
                   skipEntranceAnimation={skipEntranceAnimation}
+                  showExpandedRestoreActions={showExpandedRestoreActions}
                   onMouseEnter={handleMouseEnter}
                   onMouseLeave={handleMouseLeave}
                   onClick={handleItemClick}

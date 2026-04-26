@@ -1,4 +1,10 @@
-import React, { useState, useEffect, Fragment, useRef } from 'react';
+import React, {
+  useState,
+  useEffect,
+  Fragment,
+  useRef,
+  useCallback,
+} from 'react';
 import { useEntityModal } from '../../shared/contexts/EntityModalContext';
 import toast from 'react-hot-toast';
 import HistoryTimelineList from './HistoryTimelineList';
@@ -9,17 +15,22 @@ import Button from '@/components/button';
 import { TbAlertTriangle, TbArrowBackUp, TbClock } from 'react-icons/tb';
 import { useHistorySelection } from '../hooks/useHistoryManagement';
 import { itemHistoryService } from '../../infrastructure/itemHistory.service';
+import type { HistoryRollbackAction } from './HistoryListContent.types';
 
 interface HistoryListContentProps {
   compareMode?: boolean;
+  onRollbackActionChange?: (action: HistoryRollbackAction | null) => void;
 }
 
 type RestoreMode = 'soft' | 'hard';
 
 const HistoryListContent: React.FC<HistoryListContentProps> = ({
   compareMode = false,
+  onRollbackActionChange,
 }) => {
   const { history: historyState, uiActions, comparison } = useEntityModal();
+  const { openComparison, closeComparison, openDualComparison, closeHistory } =
+    uiActions;
   const { entityTable, entityId, data: history, isLoading } = historyState;
   const queryClient = useQueryClient();
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
@@ -44,23 +55,23 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
     onVersionSelect: item => {
       const versionData = history?.find(h => h.id === item.id);
       if (versionData) {
-        uiActions.openComparison(versionData);
+        openComparison(versionData);
       }
     },
     onVersionDeselect: () => {
       if (comparison.isOpen) {
-        uiActions.closeComparison();
+        closeComparison();
       }
     },
     onCompareSelect: ([itemA, itemB]) => {
       const versionA = history?.find(h => h.id === itemA.id);
       const versionB = history?.find(h => h.id === itemB.id);
       if (versionA && versionB) {
-        uiActions.openDualComparison(versionA, versionB);
+        openDualComparison(versionA, versionB);
       }
     },
     onSelectionEmpty: () => {
-      uiActions.closeComparison();
+      closeComparison();
     },
   });
 
@@ -81,17 +92,51 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
     };
   }, []);
 
-  const handleRestore = async (version: number) => {
-    // Close comparison modal to avoid z-index conflicts and improve focus
-    if (comparison.isOpen) {
-      uiActions.closeComparison();
+  const handleRestore = useCallback(
+    async (version: number) => {
+      // Close comparison modal to avoid z-index conflicts and improve focus
+      if (comparison.isOpen) {
+        closeComparison();
+      }
+
+      // Open custom dialog instead of native confirm
+      setRestoreTargetVersion(version);
+      setRestoreMode('soft'); // Default to soft restore
+      setShowRestoreDialog(true);
+    },
+    [closeComparison, comparison.isOpen]
+  );
+
+  const latestVersion = history?.length
+    ? Math.max(...history.map(item => item.version_number))
+    : 0;
+  const canRollbackSelected =
+    !compareMode && selectedVersion !== null && selectedVersion < latestVersion;
+
+  useEffect(() => {
+    if (!onRollbackActionChange) return;
+
+    if (!canRollbackSelected || selectedVersion === null) {
+      onRollbackActionChange(null);
+      return;
     }
 
-    // Open custom dialog instead of native confirm
-    setRestoreTargetVersion(version);
-    setRestoreMode('soft'); // Default to soft restore
-    setShowRestoreDialog(true);
-  };
+    onRollbackActionChange({
+      version: selectedVersion,
+      onRollback: () => {
+        void handleRestore(selectedVersion);
+      },
+    });
+
+    return () => {
+      onRollbackActionChange(null);
+    };
+  }, [
+    canRollbackSelected,
+    handleRestore,
+    onRollbackActionChange,
+    selectedVersion,
+  ]);
 
   const closeRestoreDialog = () => {
     setShowRestoreDialog(false);
@@ -170,7 +215,7 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
       }
 
       closeRestoreDialog();
-      uiActions.closeHistory();
+      closeHistory();
     } catch (error) {
       console.error('Restore error:', error);
       const errorMessage =
@@ -199,8 +244,6 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
         onVersionClick={handleVersionClick}
         selectedVersion={selectedVersion}
         selectedVersions={selectedVersion ? [selectedVersion] : []}
-        showRestoreButton={true}
-        onRestore={handleRestore}
         emptyMessage="Tidak ada riwayat perubahan"
         loadingMessage="Loading history..."
         allowMultiSelect={compareMode}
@@ -215,7 +258,7 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
       {/* Custom Restore Dialog */}
       {createPortal(
         <Transition show={showRestoreDialog} as={Fragment}>
-          <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto">
+          <div className="fixed inset-0 z-[10070] flex items-center justify-center overflow-y-auto">
             <TransitionChild
               as={Fragment}
               enter="transition-opacity duration-300"

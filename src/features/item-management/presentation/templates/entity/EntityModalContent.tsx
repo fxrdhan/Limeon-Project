@@ -5,6 +5,7 @@ import { TbArrowLeft, TbHistory } from 'react-icons/tb';
 import { useEntityModal } from '../../../shared/contexts/EntityModalContext';
 import { EntityFormFields } from '../../molecules';
 import { HistoryListContent } from '../../organisms';
+import type { HistoryRollbackAction } from '../../organisms/HistoryListContent.types';
 import type { EntityData } from '../../../shared/types';
 
 interface EntityModalContentProps {
@@ -84,7 +85,8 @@ const EntityModalHeader: React.FC<{ initialData?: EntityData | null }> = ({
 const EntityModalFooter: React.FC<{
   compareMode?: boolean;
   onModeToggle?: () => void;
-}> = ({ compareMode = false, onModeToggle }) => {
+  historyRollbackAction?: HistoryRollbackAction | null;
+}> = ({ compareMode = false, onModeToggle, historyRollbackAction }) => {
   const { form, ui, action, formActions, uiActions } = useEntityModal();
   const { isDirty, isValid } = form;
   const { isEditMode, mode } = ui;
@@ -104,9 +106,14 @@ const EntityModalFooter: React.FC<{
             {compareMode ? 'Single View' : 'Compare Mode'}
           </Button>
         </div>
-        <Button type="button" variant="text" onClick={handleClose}>
-          Tutup
-        </Button>
+        <button
+          type="button"
+          className="rounded-xl bg-orange-500 px-4 py-2 font-medium text-white shadow-md transition-all duration-300 ease-in-out hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-orange-200"
+          onClick={historyRollbackAction?.onRollback}
+          disabled={!historyRollbackAction || compareMode}
+        >
+          Rollback
+        </button>
       </div>
     );
   }
@@ -153,6 +160,8 @@ const EntityModalContent: React.FC<EntityModalContentProps> = ({
   const { ui, uiActions } = useEntityModal();
   const { mode, isOpen } = ui;
   const [compareMode, setCompareMode] = useState(false);
+  const [historyRollbackAction, setHistoryRollbackAction] =
+    useState<HistoryRollbackAction | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const previousModeRef = useRef(mode);
   const latestModeRef = useRef(mode);
@@ -287,12 +296,24 @@ const EntityModalContent: React.FC<EntityModalContentProps> = ({
     // Close comparison modal when switching modes
     uiActions.closeComparison();
     setCompareMode(!compareMode);
+    setHistoryRollbackAction(null);
   };
+
+  useEffect(() => {
+    if (mode !== 'history') {
+      setHistoryRollbackAction(null);
+    }
+  }, [mode]);
 
   const renderContent = () => {
     switch (mode) {
       case 'history':
-        return <HistoryListContent compareMode={compareMode} />;
+        return (
+          <HistoryListContent
+            compareMode={compareMode}
+            onRollbackActionChange={setHistoryRollbackAction}
+          />
+        );
       case 'add':
       case 'edit':
       default:
@@ -340,6 +361,7 @@ const EntityModalContent: React.FC<EntityModalContentProps> = ({
         <EntityModalFooter
           compareMode={compareMode}
           onModeToggle={handleModeToggle}
+          historyRollbackAction={historyRollbackAction}
         />
       </div>
     </motion.div>

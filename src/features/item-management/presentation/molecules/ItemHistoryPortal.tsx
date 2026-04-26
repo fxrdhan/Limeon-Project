@@ -379,6 +379,7 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
                 autoScrollToSelected={true}
                 skipEntranceAnimation={hookSelectedVersion !== null}
                 disableHoverDetails={true}
+                showExpandedRestoreActions={true}
                 scrollContainerMaxHeight={Math.max(
                   120,
                   position.bodyMinHeight - 48
