@@ -281,9 +281,12 @@ export const SlidingSelector = <T,>({
   }, [expandOnHover, supportsHoverPointer]);
 
   const handleMouseLeave = useCallback(() => {
-    if (expandOnHover && supportsHoverPointer) {
+    if (!supportsHoverPointer) return;
+
+    setHoveredIndex(null);
+
+    if (expandOnHover) {
       setIsMouseOver(false);
-      setHoveredIndex(null);
       // Blur all buttons when mouse leaves to allow auto-collapse
       buttonRefs.current.forEach(btn => {
         if (btn && document.activeElement === btn) {
