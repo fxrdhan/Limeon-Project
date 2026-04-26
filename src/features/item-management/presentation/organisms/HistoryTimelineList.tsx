@@ -152,7 +152,7 @@ const HistoryItemCard: React.FC<HistoryItemCardProps> = ({
 
   return (
     <motion.div
-      layout
+      layout="position"
       initial={
         skipEntranceAnimation ? { opacity: 1, y: 0 } : { opacity: 0, y: -30 }
       }
@@ -164,6 +164,12 @@ const HistoryItemCard: React.FC<HistoryItemCardProps> = ({
           stiffness: 500,
           damping: 30,
           delay: skipEntranceAnimation ? 0 : index * 0.08,
+        },
+      }}
+      transition={{
+        layout: {
+          duration: 0.26,
+          ease: [0.22, 1, 0.36, 1],
         },
       }}
       exit={{
@@ -288,12 +294,18 @@ const HistoryItemCard: React.FC<HistoryItemCardProps> = ({
           </div>
         </div>
 
-        <div
-          className={`overflow-hidden transition-all duration-300 ease-in-out ${
-            isExpanded && item.changed_fields
-              ? 'max-h-24 opacity-100 mt-3'
-              : 'max-h-0 opacity-0 mt-0'
-          }`}
+        <motion.div
+          initial={false}
+          animate={{
+            height: isExpanded && item.changed_fields ? 'auto' : 0,
+            opacity: isExpanded && item.changed_fields ? 1 : 0,
+            marginTop: isExpanded && item.changed_fields ? 12 : 0,
+          }}
+          transition={{
+            duration: 0.24,
+            ease: [0.22, 1, 0.36, 1],
+          }}
+          className="overflow-hidden"
         >
           {item.changed_fields && (
             <div className="text-xs p-3 rounded-xl border transition-all duration-300 bg-slate-50 border-slate-200 text-slate-600">
@@ -301,7 +313,7 @@ const HistoryItemCard: React.FC<HistoryItemCardProps> = ({
               {getChangedFieldLabels(item.changed_fields)}
             </div>
           )}
-        </div>
+        </motion.div>
       </div>
     </motion.div>
   );
@@ -462,8 +474,7 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
       return;
     }
 
-    // Use shorter delay when skipping animation, longer when animating
-    const scrollDelay = skipEntranceAnimation ? 50 : 100;
+    const scrollDelay = skipEntranceAnimation ? 220 : 100;
 
     // Use setTimeout to wait for DOM updates and animations
     const scrollTimeout = setTimeout(() => {
@@ -475,9 +486,20 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
       ) as HTMLElement;
 
       if (element) {
+        const scrollMargin = 16;
+        const visibleTop = container.scrollTop + scrollMargin;
+        const visibleBottom =
+          container.scrollTop + container.clientHeight - scrollMargin;
+        const elementTop = element.offsetTop;
+        const elementBottom = elementTop + element.offsetHeight;
+
+        if (elementTop >= visibleTop && elementBottom <= visibleBottom) {
+          checkScrollPosition();
+          return;
+        }
+
         // Calculate scroll position to place item at desired position
         const containerHeight = container.clientHeight;
-        const elementTop = element.offsetTop;
         const elementHeight = element.offsetHeight;
 
         // Position item at 50% from top (center)
@@ -486,7 +508,7 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
 
         container.scrollTo({
           top: scrollTo,
-          behavior: skipEntranceAnimation ? 'instant' : 'smooth',
+          behavior: 'smooth',
         });
       }
     }, scrollDelay);
