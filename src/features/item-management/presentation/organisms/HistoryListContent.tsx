@@ -208,6 +208,7 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
         maxSelections={2}
         onSelectionEmpty={handleSelectionEmpty}
         isFlipped={comparison.isFlipped && comparison.isDualMode}
+        disableHoverDetails={true}
       />
 
       {/* Custom Restore Dialog */}
