@@ -3451,7 +3451,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
           <div
             ref={scrollAreaRef}
-            className={`relative flex-1 min-w-0 flex flex-nowrap items-center gap-1 px-1 py-0.5 min-h-[42px] border transition-[border-color,box-shadow,padding] duration-200 ease-in-out rounded-xl overflow-x-auto overflow-y-hidden scrollbar-hide ${
+            className={`relative flex-1 min-w-0 flex flex-wrap items-center content-center gap-1 px-1 py-1 min-h-[42px] border transition-[border-color,box-shadow,padding] duration-200 ease-in-out rounded-xl overflow-visible ${
               shouldShowLeftIcon ? 'pl-1' : 'pl-9'
             } ${
               showInputError || searchState === 'not-found'
@@ -3537,7 +3537,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               ref={resolvedInputRef}
               type="text"
               placeholder={getPlaceholder()}
-              className="text-sm outline-none tracking-normal flex-grow min-w-[40px] bg-transparent border-none focus:ring-0 py-1 pr-1 pl-2 placeholder-slate-400"
+              className="text-sm outline-none tracking-normal flex-[1_0_120px] min-w-[40px] bg-transparent border-none focus:ring-0 py-1 pr-1 pl-2 placeholder-slate-400"
               value={displayValue}
               onChange={wrappedInputChangeHandler}
               onKeyDown={wrappedKeyDownHandler}

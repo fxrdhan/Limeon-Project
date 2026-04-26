@@ -350,7 +350,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
           : badgeWithGlow;
 
         return (
-          <div key={badge.id} ref={handleRef}>
+          <div key={badge.id} ref={handleRef} className="flex-shrink-0">
             <Badge config={badgeWithErrorHandler} />
           </div>
         );
