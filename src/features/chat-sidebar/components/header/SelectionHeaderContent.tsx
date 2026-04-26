@@ -13,7 +13,7 @@ interface SelectionHeaderContentProps {
   onDeleteSelectedMessages: () => void;
   onClearSelectedMessages: () => void;
   onExitSelectionMode: () => void;
-  onClose: () => void;
+  onOpenContactList: () => void;
 }
 
 const floatingBlockClass =
@@ -27,7 +27,7 @@ const SelectionHeaderContent = ({
   onDeleteSelectedMessages,
   onClearSelectedMessages,
   onExitSelectionMode,
-  onClose,
+  onOpenContactList,
 }: SelectionHeaderContentProps) => (
   <div className="flex w-full items-center justify-end gap-2">
     <button
@@ -78,9 +78,9 @@ const SelectionHeaderContent = ({
       <TbX size={20} />
     </button>
     <button
-      onClick={onClose}
-      aria-label="Tutup sidebar chat"
-      title="Tutup sidebar chat"
+      onClick={onOpenContactList}
+      aria-label="Kembali ke daftar kontak"
+      title="Kembali ke daftar kontak"
       className={floatingIconButtonClass}
     >
       <TbLayoutSidebarRightCollapse size={20} />

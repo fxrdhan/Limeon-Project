@@ -85,6 +85,20 @@ describe('ChatHeader', () => {
     ).not.toHaveBeenCalled();
   });
 
+  it('returns to the contact list instead of closing the sidebar in selection mode', () => {
+    const runtime = createRuntime();
+    runtime.interaction.isSelectionMode = true;
+
+    render(<ChatHeader runtime={runtime} />);
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Kembali ke daftar kontak' })
+    );
+
+    expect(runtime.actions.handleOpenContactList).toHaveBeenCalledOnce();
+    expect(runtime.actions.handleClose).not.toHaveBeenCalled();
+  });
+
   it('marks the current user conversation in the header name', () => {
     const runtime = createRuntime();
     runtime.targetUser = {

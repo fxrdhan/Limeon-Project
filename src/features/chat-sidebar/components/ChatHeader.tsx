@@ -141,7 +141,7 @@ const ChatHeader = ({ runtime }: ChatHeaderProps) => {
               onExitSelectionMode={
                 runtime.interaction.handleExitMessageSelectionMode
               }
-              onClose={runtime.actions.handleClose}
+              onOpenContactList={runtime.actions.handleOpenContactList}
             />
           ) : runtime.interaction.isMessageSearchMode ? (
             <SearchHeaderContent
