@@ -292,10 +292,6 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
                   </h3>
                 </div>
 
-                <p className="text-slate-600 mb-6">
-                  Pilih metode restore yang sesuai dengan kebutuhan Anda:
-                </p>
-
                 {/* Restore Mode Options */}
                 <div className="space-y-3 mb-6">
                   {/* Soft Restore Option */}
@@ -357,7 +353,7 @@ const HistoryListContent: React.FC<HistoryListContentProps> = ({
                         </span>
                       </div>
                       <p className="text-sm text-slate-600 mb-2">
-                        Menghapus SEMUA versi setelah v{restoreTargetVersion}{' '}
+                        Menghapus semua versi setelah v{restoreTargetVersion}{' '}
                         secara permanen. Data yang dihapus tidak dapat
                         dikembalikan.
                       </p>

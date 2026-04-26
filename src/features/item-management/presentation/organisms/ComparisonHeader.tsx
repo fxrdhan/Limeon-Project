@@ -13,31 +13,42 @@ interface ComparisonHeaderProps {
 const UserInfo: React.FC<{
   userName?: string | null;
   userPhoto?: string | null;
-}> = ({ userName, userPhoto }) => {
+  avatarPosition?: 'left' | 'right';
+}> = ({ userName, userPhoto, avatarPosition = 'right' }) => {
+  const avatar = userPhoto ? (
+    <img
+      src={userPhoto}
+      alt={userName || 'User'}
+      className="w-6 h-6 rounded-full object-cover border border-slate-300"
+    />
+  ) : (
+    <TbUserCircle className="w-6 h-6 text-slate-400" />
+  );
+
   if (!userName) {
     return (
       <div className="flex items-center gap-2 text-sm text-slate-500">
+        {avatarPosition === 'left' && avatar}
         <span>Unknown</span>
-        <TbUserCircle className="w-5 h-5" />
+        {avatarPosition === 'right' && avatar}
       </div>
     );
   }
 
   return (
     <div className="flex items-center gap-2">
+      {avatarPosition === 'left' && avatar}
       <span className="text-sm text-slate-700 font-medium">{userName}</span>
-      {userPhoto ? (
-        <img
-          src={userPhoto}
-          alt={userName}
-          className="w-6 h-6 rounded-full object-cover border border-slate-300"
-        />
-      ) : (
-        <TbUserCircle className="w-6 h-6 text-slate-400" />
-      )}
+      {avatarPosition === 'right' && avatar}
     </div>
   );
 };
+
+const VersionBadge: React.FC<{ version?: number }> = ({ version }) => (
+  <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs">
+    v{version}
+  </span>
+);
 
 const ComparisonHeader: React.FC<ComparisonHeaderProps> = ({
   isDualMode,
@@ -51,23 +62,20 @@ const ComparisonHeader: React.FC<ComparisonHeaderProps> = ({
         /* Dual Mode Header */
         <div className="rounded-xl p-2">
           <div className="flex items-center justify-center gap-3 text-sm">
-            <div className="flex flex-col items-center gap-1.5">
-              <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs">
-                v{compData.leftVersion?.version_number}
-              </span>
+            <div className="flex items-center gap-2">
               <UserInfo
                 userName={compData.leftVersion?.user_name}
                 userPhoto={compData.leftVersion?.user_photo}
               />
+              <VersionBadge version={compData.leftVersion?.version_number} />
             </div>
-            <span className="text-slate-400 mt-4">vs</span>
-            <div className="flex flex-col items-center gap-1.5">
-              <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs">
-                v{compData.rightVersion?.version_number}
-              </span>
+            <span className="text-slate-400">vs</span>
+            <div className="flex items-center gap-2">
+              <VersionBadge version={compData.rightVersion?.version_number} />
               <UserInfo
                 userName={compData.rightVersion?.user_name}
                 userPhoto={compData.rightVersion?.user_photo}
+                avatarPosition="left"
               />
             </div>
           </div>
@@ -92,9 +100,7 @@ const ComparisonHeader: React.FC<ComparisonHeaderProps> = ({
                 userName={compData.leftVersion?.user_name}
                 userPhoto={compData.leftVersion?.user_photo}
               />
-              <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs">
-                v{compData.leftVersion?.version_number}
-              </span>
+              <VersionBadge version={compData.leftVersion?.version_number} />
             </div>
           </div>
         </div>
