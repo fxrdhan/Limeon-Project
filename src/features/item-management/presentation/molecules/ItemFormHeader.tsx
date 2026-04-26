@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { LayoutGroup, motion } from 'motion/react';
 import { TbArrowBackUp, TbHistoryToggle, TbX } from 'react-icons/tb';
 import { CardHeader, CardTitle } from '@/components/card';
 import Button from '@/components/button';
@@ -53,8 +54,15 @@ const ItemFormHeader: React.FC<LocalItemFormHeaderProps> = React.memo(
       setIsPortalOpen(!isPortalOpen);
     };
 
-    return (
+    const historyButtonContent = (
       <>
+        <TbHistoryToggle className="mr-1.5" size={16} />
+        Riwayat Perubahan
+      </>
+    );
+
+    return (
+      <LayoutGroup id="item-history-portal">
         <CardHeader className="flex items-center justify-between sticky z-10 py-5! px-4! border-b-2 border-slate-200 mb-6">
           {/* Left section - empty placeholder for symmetry */}
           <div className="flex items-center" />
@@ -80,8 +88,26 @@ const ItemFormHeader: React.FC<LocalItemFormHeaderProps> = React.memo(
                 aria-label="Buka riwayat perubahan"
                 tabIndex={-1}
               >
-                <TbHistoryToggle className="mr-1.5" size={16} />
-                Riwayat Perubahan
+                {isPortalOpen ? (
+                  <span
+                    className="inline-flex items-center opacity-0"
+                    aria-hidden="true"
+                  >
+                    {historyButtonContent}
+                  </span>
+                ) : (
+                  <motion.span
+                    layoutId="item-history-action-label"
+                    className="inline-flex items-center"
+                    transition={{
+                      type: 'spring',
+                      stiffness: 420,
+                      damping: 34,
+                    }}
+                  >
+                    {historyButtonContent}
+                  </motion.span>
+                )}
               </Button>
             )}
             {!isEditMode && onReset && (
@@ -126,7 +152,7 @@ const ItemFormHeader: React.FC<LocalItemFormHeaderProps> = React.memo(
             entityId={entityId}
           />
         )}
-      </>
+      </LayoutGroup>
     );
   }
 );

@@ -1,6 +1,7 @@
 import React, {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   Fragment,
@@ -51,7 +52,9 @@ type RestoreMode = 'soft' | 'hard';
 
 const PORTAL_MARGIN = 16;
 const PORTAL_WIDTH = 350;
-const PORTAL_TAB_HEIGHT = 52;
+const PORTAL_TAB_WIDTH = 180;
+const PORTAL_TAB_HEIGHT = 44;
+const PORTAL_RADIUS = 16;
 
 const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
   isOpen,
@@ -122,12 +125,12 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
     setIsPositioned(true);
   }, [triggerRef]);
 
-  useEffect(() => {
-    if (!isOpen) {
-      setIsPositioned(false);
-      return;
-    }
+  useLayoutEffect(() => {
+    updatePosition();
+  }, [updatePosition]);
 
+  useEffect(() => {
+    if (!isOpen) return;
     updatePosition();
     window.addEventListener('resize', updatePosition);
     window.addEventListener('scroll', updatePosition, true);
@@ -250,6 +253,28 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
     }
   };
 
+  const surfaceHeight = PORTAL_TAB_HEIGHT + position.bodyMinHeight;
+  const tabLeft = Math.max(
+    PORTAL_RADIUS * 2,
+    position.width - PORTAL_TAB_WIDTH
+  );
+  const historyPortalPath = [
+    `M 0 ${PORTAL_TAB_HEIGHT + PORTAL_RADIUS}`,
+    `Q 0 ${PORTAL_TAB_HEIGHT} ${PORTAL_RADIUS} ${PORTAL_TAB_HEIGHT}`,
+    `H ${tabLeft - PORTAL_RADIUS}`,
+    `Q ${tabLeft} ${PORTAL_TAB_HEIGHT} ${tabLeft} ${PORTAL_TAB_HEIGHT - PORTAL_RADIUS}`,
+    `V ${PORTAL_RADIUS}`,
+    `Q ${tabLeft} 0 ${tabLeft + PORTAL_RADIUS} 0`,
+    `H ${position.width - PORTAL_RADIUS}`,
+    `Q ${position.width} 0 ${position.width} ${PORTAL_RADIUS}`,
+    `V ${surfaceHeight - PORTAL_RADIUS}`,
+    `Q ${position.width} ${surfaceHeight} ${position.width - PORTAL_RADIUS} ${surfaceHeight}`,
+    `H ${PORTAL_RADIUS}`,
+    `Q 0 ${surfaceHeight} 0 ${surfaceHeight - PORTAL_RADIUS}`,
+    `V ${PORTAL_TAB_HEIGHT + PORTAL_RADIUS}`,
+    'Z',
+  ].join(' ');
+
   const portalContent = (
     <AnimatePresence>
       {isOpen && isPositioned && (
@@ -276,46 +301,69 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
             top: `${position.top}px`,
             left: `${position.left}px`,
             width: `${position.width}px`,
+            height: `${surfaceHeight}px`,
           }}
         >
-          <div className="relative">
+          <div className="relative h-full w-full">
+            <svg
+              className="pointer-events-none absolute inset-0 h-full w-full overflow-visible drop-shadow-xl"
+              viewBox={`0 0 ${position.width} ${surfaceHeight}`}
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <path
+                d={historyPortalPath}
+                fill="white"
+                stroke="#cbd5e1"
+                strokeWidth="1"
+                vectorEffect="non-scaling-stroke"
+              />
+            </svg>
+
             <div className="relative z-10 flex justify-end">
               <button
                 type="button"
                 onClick={onClose}
-                className="flex h-[44px] min-w-[180px] select-none items-center justify-center gap-2 rounded-t-xl border border-b-0 border-slate-300 bg-white px-4 text-sm font-medium text-black outline-none hover:bg-white active:bg-white focus:bg-white focus:outline-none focus:ring-0"
+                className="flex h-[44px] min-w-[180px] select-none items-center justify-center gap-2 bg-transparent px-4 text-sm font-medium text-black outline-none hover:bg-transparent active:bg-transparent focus:bg-transparent focus:outline-none focus:ring-0"
                 aria-label="Tutup riwayat perubahan"
               >
-                <TbHistoryToggle className="h-5 w-5" />
-                <span>Riwayat Perubahan</span>
+                <motion.span
+                  layoutId="item-history-action-label"
+                  className="inline-flex items-center"
+                  transition={{
+                    type: 'spring',
+                    stiffness: 420,
+                    damping: 34,
+                  }}
+                >
+                  <TbHistoryToggle className="mr-1.5" size={16} />
+                  Riwayat Perubahan
+                </motion.span>
               </button>
             </div>
 
             <div
-              className="-mt-px overflow-hidden rounded-b-xl rounded-tl-xl border border-slate-300 bg-white shadow-xl"
+              className="relative z-10 overflow-hidden pt-2"
               style={{
-                maxHeight: `${position.bodyMaxHeight}px`,
-                minHeight: `${position.bodyMinHeight}px`,
+                height: `${position.bodyMinHeight}px`,
               }}
             >
-              <div className="h-full overflow-hidden pt-2">
-                <HistoryTimelineList
-                  history={history}
-                  isLoading={isLoading}
-                  onVersionClick={handleVersionClick}
-                  selectedVersion={hookSelectedVersion}
-                  selectedVersions={
-                    hookSelectedVersion ? [hookSelectedVersion] : []
-                  }
-                  showRestoreButton={true}
-                  onRestore={handleRestore}
-                  emptyMessage="Tidak ada riwayat perubahan"
-                  loadingMessage="Loading history..."
-                  allowMultiSelect={false}
-                  autoScrollToSelected={true}
-                  skipEntranceAnimation={hookSelectedVersion !== null}
-                />
-              </div>
+              <HistoryTimelineList
+                history={history}
+                isLoading={isLoading}
+                onVersionClick={handleVersionClick}
+                selectedVersion={hookSelectedVersion}
+                selectedVersions={
+                  hookSelectedVersion ? [hookSelectedVersion] : []
+                }
+                showRestoreButton={true}
+                onRestore={handleRestore}
+                emptyMessage="Tidak ada riwayat perubahan"
+                loadingMessage="Loading history..."
+                allowMultiSelect={false}
+                autoScrollToSelected={true}
+                skipEntranceAnimation={hookSelectedVersion !== null}
+              />
             </div>
           </div>
         </motion.div>
