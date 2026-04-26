@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { TbCirclePlus, TbPencil, TbTrash, TbX } from 'react-icons/tb';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/tooltip';
 import { BADGE_COLORS, BadgeConfig } from '../types/badge';
 import { validateFilterValue } from '../utils/validationUtils';
 
@@ -385,36 +386,44 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
                 showEditButtonSpace ? 'w-6 opacity-100' : 'w-0 opacity-0'
               } ${showEditButtonSpace ? 'ml-1' : 'ml-0'}`}
             >
-              <button
-                onClick={e => {
-                  e.stopPropagation();
-                  if (isEditing) {
-                    onEditComplete?.(editingValue);
-                    return;
-                  }
-                  setIsMenuOpen(false);
-                  config.onEdit?.();
-                }}
-                onMouseDown={e => {
-                  e.stopPropagation();
-                  // Set flag to prevent blur validation when clicking X to cancel edit
-                  if (isEditing) {
-                    isClearing.current = true;
-                  }
-                }}
-                className={`rounded-md p-1 cursor-pointer ${colors.hoverBg} flex-shrink-0 transition-[opacity,transform] duration-150 ease-out ${
-                  editIconVisible
-                    ? 'opacity-100 translate-x-0'
-                    : 'pointer-events-none opacity-0 -translate-x-1'
-                }`}
-                type="button"
-              >
-                {isEditing ? (
-                  <TbX className="w-3.5 h-3.5 flex-shrink-0" />
-                ) : (
-                  <TbPencil className="w-3.5 h-3.5 flex-shrink-0" />
-                )}
-              </button>
+              <Tooltip side="bottom">
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={e => {
+                      e.stopPropagation();
+                      if (isEditing) {
+                        onEditComplete?.(editingValue);
+                        return;
+                      }
+                      setIsMenuOpen(false);
+                      config.onEdit?.();
+                    }}
+                    onMouseDown={e => {
+                      e.stopPropagation();
+                      // Set flag to prevent blur validation when clicking X to cancel edit
+                      if (isEditing) {
+                        isClearing.current = true;
+                      }
+                    }}
+                    className={`rounded-md p-1 cursor-pointer ${colors.hoverBg} flex-shrink-0 transition-[opacity,transform] duration-150 ease-out ${
+                      editIconVisible
+                        ? 'opacity-100 translate-x-0'
+                        : 'pointer-events-none opacity-0 -translate-x-1'
+                    }`}
+                    type="button"
+                    aria-label={isEditing ? 'Batal edit' : 'Edit'}
+                  >
+                    {isEditing ? (
+                      <TbX className="w-3.5 h-3.5 flex-shrink-0" />
+                    ) : (
+                      <TbPencil className="w-3.5 h-3.5 flex-shrink-0" />
+                    )}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {isEditing ? 'Batal edit' : 'Edit'}
+                </TooltipContent>
+              </Tooltip>
             </div>
           )}
           {/* Clear/Delete button (Trash) - shown on hover or selected, hidden when editing */}
@@ -424,25 +433,31 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
                 showDeleteButtonSpace ? 'w-6 opacity-100' : 'w-0 opacity-0'
               }`}
             >
-              <button
-                onClick={e => {
-                  e.stopPropagation();
-                  // Blur the button to release focus before clearing
-                  // This allows the parent handler to focus the input
-                  e.currentTarget.blur();
-                  setIsMenuOpen(false);
-                  config.onClear?.();
-                }}
-                onMouseDown={e => e.stopPropagation()}
-                className={`rounded-md p-1 cursor-pointer ${colors.hoverBg} flex-shrink-0 transition-[opacity,transform] duration-150 ease-out ${
-                  deleteIconVisible
-                    ? 'opacity-100 translate-x-0'
-                    : 'pointer-events-none opacity-0 -translate-x-1'
-                }`}
-                type="button"
-              >
-                <TbTrash className="w-3.5 h-3.5 flex-shrink-0" />
-              </button>
+              <Tooltip side="bottom">
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={e => {
+                      e.stopPropagation();
+                      // Blur the button to release focus before clearing
+                      // This allows the parent handler to focus the input
+                      e.currentTarget.blur();
+                      setIsMenuOpen(false);
+                      config.onClear?.();
+                    }}
+                    onMouseDown={e => e.stopPropagation()}
+                    className={`rounded-md p-1 cursor-pointer ${colors.hoverBg} flex-shrink-0 transition-[opacity,transform] duration-150 ease-out ${
+                      deleteIconVisible
+                        ? 'opacity-100 translate-x-0'
+                        : 'pointer-events-none opacity-0 -translate-x-1'
+                    }`}
+                    type="button"
+                    aria-label="Hapus"
+                  >
+                    <TbTrash className="w-3.5 h-3.5 flex-shrink-0" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Hapus</TooltipContent>
+              </Tooltip>
             </div>
           )}
 
@@ -453,24 +468,29 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
                 showInsertButtonSpace ? 'w-6 opacity-100' : 'w-0 opacity-0'
               }`}
             >
-              <button
-                onClick={e => {
-                  e.stopPropagation();
-                  e.currentTarget.blur();
-                  setIsMenuOpen(false);
-                  config.onInsert?.();
-                }}
-                onMouseDown={e => e.stopPropagation()}
-                className={`rounded-md p-1 cursor-pointer ${colors.hoverBg} flex-shrink-0 transition-[opacity,transform] duration-150 ease-out ${
-                  insertIconVisible
-                    ? 'opacity-100 translate-x-0'
-                    : 'pointer-events-none opacity-0 -translate-x-1'
-                }`}
-                type="button"
-                title="Tambah kondisi"
-              >
-                <TbCirclePlus className="w-4 h-4 flex-shrink-0" />
-              </button>
+              <Tooltip side="bottom">
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={e => {
+                      e.stopPropagation();
+                      e.currentTarget.blur();
+                      setIsMenuOpen(false);
+                      config.onInsert?.();
+                    }}
+                    onMouseDown={e => e.stopPropagation()}
+                    className={`rounded-md p-1 cursor-pointer ${colors.hoverBg} flex-shrink-0 transition-[opacity,transform] duration-150 ease-out ${
+                      insertIconVisible
+                        ? 'opacity-100 translate-x-0'
+                        : 'pointer-events-none opacity-0 -translate-x-1'
+                    }`}
+                    type="button"
+                    aria-label="Tambah kondisi"
+                  >
+                    <TbCirclePlus className="w-4 h-4 flex-shrink-0" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>Tambah kondisi</TooltipContent>
+              </Tooltip>
             </div>
           )}
         </div>

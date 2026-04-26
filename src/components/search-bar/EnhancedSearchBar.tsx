@@ -17,6 +17,7 @@ import {
 import SearchBadge from './components/SearchBadge';
 import SearchIcon from './components/SearchIcon';
 import BaseSelector from './components/selectors/BaseSelector';
+import { TooltipProvider } from '@/components/tooltip';
 import { SEARCH_CONSTANTS } from './constants';
 import { useBadgeHandlers } from './hooks/useBadgeHandlers';
 import { useSearchInput } from './hooks/useSearchInput';
@@ -3439,7 +3440,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     searchMode.showColumnSelector;
 
   return (
-    <>
+    <TooltipProvider>
       <div ref={containerRef} className={`mb-2 relative ${className}`}>
         <div className="flex items-center">
           <SearchIcon
@@ -3571,7 +3572,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           outsideClickIgnoreRef={containerRef}
         />
       )}
-    </>
+    </TooltipProvider>
   );
 };
 

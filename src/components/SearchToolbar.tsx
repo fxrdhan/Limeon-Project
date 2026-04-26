@@ -1,5 +1,11 @@
 import { ExportDropdown } from '@/components/export';
 import EnhancedSearchBar from '@/components/search-bar/EnhancedSearchBar';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/tooltip';
 import type { FilterSearch, SearchColumn } from '@/types/search';
 import type { GridApi } from 'ag-grid-community';
 import { memo } from 'react';
@@ -23,6 +29,7 @@ interface SearchToolbarProps<T = unknown> {
   search?: string;
   placeholder?: string;
   onAdd: () => void;
+  addTooltipLabel?: string;
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   // Optional props for items tab specific behavior
   items?: T[];
@@ -30,6 +37,7 @@ interface SearchToolbarProps<T = unknown> {
   // Export props
   gridApi?: GridApi | null;
   exportFilename?: string;
+  exportTooltipLabel?: string;
   // Tab navigation callback
   onTabNext?: () => void;
   onTabPrevious?: () => void;
@@ -42,11 +50,13 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
   search,
   placeholder,
   onAdd,
+  addTooltipLabel = 'Tambah Data Baru',
   onKeyDown,
   items,
   onItemSelect,
   gridApi,
   exportFilename = 'data-export',
+  exportTooltipLabel = 'Export Data',
   onTabNext,
   onTabPrevious,
 }: SearchToolbarProps<T>) {
@@ -100,7 +110,7 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
   };
 
   return (
-    <>
+    <TooltipProvider>
       <div className="flex items-center">
         <EnhancedSearchBar
           stateScopeKey={searchScopeKey}
@@ -110,21 +120,29 @@ const SearchToolbar = memo(function SearchToolbar<T extends { id: string }>({
           placeholder={placeholder || searchBarProps.placeholder || 'Cari...'}
           className="grow"
         />
-        <button
-          type="button"
-          className="inline-block ml-4 mb-2"
-          onClick={onAdd}
-          title="Tambah Item Baru"
-          aria-label="Tambah Item Baru"
-        >
-          <TbTablePlus className="h-8 w-8 text-primary cursor-pointer hover:text-primary/80 transition-colors duration-200" />
-        </button>
+        <Tooltip side="bottom">
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              className="inline-block ml-4 mb-2"
+              onClick={onAdd}
+              aria-label="Tambah Item Baru"
+            >
+              <TbTablePlus className="h-8 w-8 text-primary cursor-pointer hover:text-primary/80 transition-colors duration-200" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>{addTooltipLabel}</TooltipContent>
+        </Tooltip>
 
         <div className="inline-block ml-2 mb-1 mt-0.5">
-          <ExportDropdown gridApi={gridApi || null} filename={exportFilename} />
+          <ExportDropdown
+            gridApi={gridApi || null}
+            filename={exportFilename}
+            tooltipLabel={exportTooltipLabel}
+          />
         </div>
       </div>
-    </>
+    </TooltipProvider>
   );
 });
 

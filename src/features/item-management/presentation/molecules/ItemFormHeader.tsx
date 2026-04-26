@@ -12,7 +12,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/animate-ui/components/animate/tooltip';
+} from '@/components/tooltip';
 import { CardHeader, CardTitle } from '@/components/card';
 import Button from '@/components/button';
 import ItemHistoryPortal from './ItemHistoryPortal';

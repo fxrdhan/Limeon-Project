@@ -24,6 +24,7 @@ interface TooltipShowRequest {
 }
 
 interface TooltipProviderValue {
+  isProvided: boolean;
   openDelay: number;
   closeDelay: number;
   transition: Transition;
@@ -116,6 +117,7 @@ const defaultTooltipGeometry: TooltipGeometry = {
 };
 
 const TooltipProviderContext = React.createContext<TooltipProviderValue>({
+  isProvided: false,
   openDelay: 0,
   closeDelay: 300,
   transition: defaultTooltipTransition,
@@ -349,6 +351,7 @@ const TooltipProvider = ({
   closeDelay = 300,
   transition = defaultTooltipTransition,
 }: TooltipProviderProps) => {
+  const parentTooltipProvider = React.useContext(TooltipProviderContext);
   const [activeTooltip, setActiveTooltip] =
     React.useState<TooltipShowRequest | null>(null);
   const [isVisible, setIsVisible] = React.useState(false);
@@ -621,9 +624,20 @@ const TooltipProvider = ({
     content && placementReadyRef.current && isPlacementReady
   );
 
+  if (parentTooltipProvider.isProvided) {
+    return <>{children}</>;
+  }
+
   return (
     <TooltipProviderContext.Provider
-      value={{ openDelay, closeDelay, transition, showTooltip, hideTooltip }}
+      value={{
+        isProvided: true,
+        openDelay,
+        closeDelay,
+        transition,
+        showTooltip,
+        hideTooltip,
+      }}
     >
       {children}
       <motion.div

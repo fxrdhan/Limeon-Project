@@ -1,4 +1,10 @@
 import Button from '@/components/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/tooltip';
 import { googleSheetsService } from '@/utils/googleSheetsApi';
 import type { Column, GridApi, IRowNode } from 'ag-grid-community';
 import { AnimatePresence, motion } from 'motion/react';
@@ -23,10 +29,16 @@ interface ExportDropdownProps {
   gridApi: GridApi | null;
   filename?: string;
   className?: string;
+  tooltipLabel?: string;
 }
 
 const ExportDropdown: React.FC<ExportDropdownProps> = memo(
-  ({ gridApi, filename = 'data-export', className = '' }) => {
+  ({
+    gridApi,
+    filename = 'data-export',
+    className = '',
+    tooltipLabel = 'Export Data',
+  }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isGoogleSheetsLoading, setIsGoogleSheetsLoading] = useState(false);
     const [isAuthenticating, setIsAuthenticating] = useState(false);
@@ -463,97 +475,104 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
     }, [isOpen, closeDropdown, isAuthenticating, isGoogleSheetsLoading]);
 
     return (
-      <div className={`relative inline-block ${className}`}>
-        {/* Main Export Button */}
-        <button
-          ref={buttonRef}
-          onClick={toggleDropdown}
-          title="Export Data"
-          className="group inline-flex items-center justify-center w-8 h-8 cursor-pointer"
-        >
-          <TbTableExport className="-translate-y-0.7 h-8 w-8 text-primary transition-colors duration-200 group-hover:text-primary/80" />
-        </button>
+      <TooltipProvider>
+        <div className={`relative inline-block ${className}`}>
+          {/* Main Export Button */}
+          <Tooltip side="bottom">
+            <TooltipTrigger asChild>
+              <button
+                ref={buttonRef}
+                onClick={toggleDropdown}
+                aria-label={tooltipLabel}
+                className="group inline-flex items-center justify-center w-8 h-8 cursor-pointer"
+              >
+                <TbTableExport className="-translate-y-0.7 h-8 w-8 text-primary transition-colors duration-200 group-hover:text-primary/80" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>{tooltipLabel}</TooltipContent>
+          </Tooltip>
 
-        {/* Export Dropdown Portal */}
-        {gridApi &&
-          !gridApi.isDestroyed() &&
-          typeof document !== 'undefined' &&
-          createPortal(
-            <AnimatePresence>
-              {isOpen && (
-                <motion.div
-                  ref={dropdownRef}
-                  style={portalStyle}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.15, ease: 'easeOut' }}
-                  className="origin-top bg-white rounded-xl border border-slate-200 shadow-xl"
-                  role="menu"
-                  onClick={e => e.stopPropagation()}
-                >
-                  <div className="px-1 py-1">
-                    {/* CSV Export Option */}
-                    <Button
-                      variant="text"
-                      size="sm"
-                      withUnderline={false}
-                      onClick={handleCsvExport}
-                      className="w-full px-3 py-2 text-left text-slate-700 hover:text-slate-900 hover:bg-slate-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group"
-                    >
-                      <TbCsv className="h-6 w-6 text-slate-500 group-hover:text-primary" />
-                      <span>Export ke CSV</span>
-                    </Button>
+          {/* Export Dropdown Portal */}
+          {gridApi &&
+            !gridApi.isDestroyed() &&
+            typeof document !== 'undefined' &&
+            createPortal(
+              <AnimatePresence>
+                {isOpen && (
+                  <motion.div
+                    ref={dropdownRef}
+                    style={portalStyle}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.15, ease: 'easeOut' }}
+                    className="origin-top bg-white rounded-xl border border-slate-200 shadow-xl"
+                    role="menu"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <div className="px-1 py-1">
+                      {/* CSV Export Option */}
+                      <Button
+                        variant="text"
+                        size="sm"
+                        withUnderline={false}
+                        onClick={handleCsvExport}
+                        className="w-full px-3 py-2 text-left text-slate-700 hover:text-slate-900 hover:bg-slate-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group"
+                      >
+                        <TbCsv className="h-6 w-6 text-slate-500 group-hover:text-primary" />
+                        <span>Export ke CSV</span>
+                      </Button>
 
-                    {/* Excel Export Option */}
-                    <Button
-                      variant="text"
-                      size="sm"
-                      withUnderline={false}
-                      onClick={handleExcelExport}
-                      className="w-full px-3 py-2 text-left text-slate-700 hover:text-slate-900 hover:bg-slate-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group"
-                    >
-                      <TbTableFilled className="h-6 w-6 text-slate-500 group-hover:text-primary" />
-                      <span>Export ke Excel</span>
-                    </Button>
+                      {/* Excel Export Option */}
+                      <Button
+                        variant="text"
+                        size="sm"
+                        withUnderline={false}
+                        onClick={handleExcelExport}
+                        className="w-full px-3 py-2 text-left text-slate-700 hover:text-slate-900 hover:bg-slate-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group"
+                      >
+                        <TbTableFilled className="h-6 w-6 text-slate-500 group-hover:text-primary" />
+                        <span>Export ke Excel</span>
+                      </Button>
 
-                    {/* JSON Export Option */}
-                    <Button
-                      variant="text"
-                      size="sm"
-                      withUnderline={false}
-                      onClick={handleJsonExport}
-                      className="w-full px-3 py-2 text-left text-slate-700 hover:text-slate-900 hover:bg-slate-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group"
-                    >
-                      <TbJson className="h-6 w-6 text-slate-500 group-hover:text-primary" />
-                      <span>Export ke JSON</span>
-                    </Button>
+                      {/* JSON Export Option */}
+                      <Button
+                        variant="text"
+                        size="sm"
+                        withUnderline={false}
+                        onClick={handleJsonExport}
+                        className="w-full px-3 py-2 text-left text-slate-700 hover:text-slate-900 hover:bg-slate-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group"
+                      >
+                        <TbJson className="h-6 w-6 text-slate-500 group-hover:text-primary" />
+                        <span>Export ke JSON</span>
+                      </Button>
 
-                    {/* Google Sheets Export Option */}
-                    <Button
-                      variant="text"
-                      size="sm"
-                      withUnderline={false}
-                      onClick={handleGoogleSheetsExport}
-                      disabled={isGoogleSheetsLoading || isAuthenticating}
-                      className="w-full px-3 py-2 text-left text-slate-700 hover:text-slate-900 hover:bg-slate-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <TbBrandGoogle className="h-5 w-5 text-slate-500 group-hover:text-primary" />
-                      <span>
-                        {isAuthenticating
-                          ? 'Authenticating...'
-                          : isGoogleSheetsLoading
-                            ? 'Exporting...'
-                            : 'Export ke Google Sheets'}
-                      </span>
-                    </Button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>,
-            document.body
-          )}
-      </div>
+                      {/* Google Sheets Export Option */}
+                      <Button
+                        variant="text"
+                        size="sm"
+                        withUnderline={false}
+                        onClick={handleGoogleSheetsExport}
+                        disabled={isGoogleSheetsLoading || isAuthenticating}
+                        className="w-full px-3 py-2 text-left text-slate-700 hover:text-slate-900 hover:bg-slate-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <TbBrandGoogle className="h-5 w-5 text-slate-500 group-hover:text-primary" />
+                        <span>
+                          {isAuthenticating
+                            ? 'Authenticating...'
+                            : isGoogleSheetsLoading
+                              ? 'Exporting...'
+                              : 'Export ke Google Sheets'}
+                        </span>
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>,
+              document.body
+            )}
+        </div>
+      </TooltipProvider>
     );
   }
 );

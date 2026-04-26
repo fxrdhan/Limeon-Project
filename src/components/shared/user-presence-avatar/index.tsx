@@ -6,7 +6,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@/components/animate-ui/components/animate/tooltip';
+} from '@/components/tooltip';
 import { cn } from '@/lib/utils';
 import { getInitials, getInitialsColor } from '@/utils/avatar';
 

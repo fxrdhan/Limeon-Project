@@ -2045,6 +2045,22 @@ const ItemMasterNew = memo(() => {
         ? handleDoctorKeyDown
         : undefined;
 
+  const activeAddTooltipLabel = isItemTab
+    ? 'Tambah Item Baru'
+    : isSupplierTab
+      ? 'Tambah Supplier Baru'
+      : isOtherMasterTab && otherMasterDataConfig
+        ? `Tambah ${otherMasterDataConfig.entityName} Baru`
+        : (entityCurrentConfig?.addButtonText ?? 'Tambah Data Baru');
+
+  const activeExportTooltipLabel = isItemTab
+    ? 'Export Data Item'
+    : isSupplierTab
+      ? 'Export Data Supplier'
+      : isOtherMasterTab && otherMasterDataConfig
+        ? `Export Data ${otherMasterDataConfig.entityName}`
+        : `Export Data ${entityCurrentConfig?.entityName ?? 'Data'}`;
+
   const activeExportFilename = isItemTab
     ? 'daftar-item'
     : isSupplierTab
@@ -2223,11 +2239,13 @@ const ItemMasterNew = memo(() => {
               search={activeSearchValue}
               placeholder={activePlaceholder}
               onAdd={activeOnAdd}
+              addTooltipLabel={activeAddTooltipLabel}
               onKeyDown={activeOnKeyDown}
               items={activeItemsSelection}
               onItemSelect={activeOnItemSelect}
               gridApi={unifiedGridApi}
               exportFilename={activeExportFilename}
+              exportTooltipLabel={activeExportTooltipLabel}
               onTabNext={enableTabShortcuts ? handleTabNext : undefined}
               onTabPrevious={enableTabShortcuts ? handleTabPrevious : undefined}
             />
