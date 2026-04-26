@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { formatRupiah, extractNumericValue } from '@/lib/formatters';
 import { formatMarginPercentage } from '../../../shared/utils/PriceCalculator';
 import type { ItemFormData, PackageConversion } from '../../../shared/types';
@@ -15,6 +15,9 @@ interface UseAddItemFormStateProps {
   initialSearchQuery?: string;
 }
 
+const MAX_UNDO_HISTORY = 80;
+const UNDO_COMMIT_DELAY_MS = 500;
+
 /**
  * Hook for managing form state and display values
  */
@@ -22,7 +25,7 @@ export const useAddItemFormState = ({
   initialSearchQuery,
 }: UseAddItemFormStateProps) => {
   // Core form state
-  const [formData, setFormData] = useState<ItemFormData>({
+  const [formData, setFormDataState] = useState<ItemFormData>({
     code: '',
     name: initialSearchQuery || '',
     manufacturer_id: '',
@@ -100,21 +103,185 @@ export const useAddItemFormState = ({
 
   // Initialization tracking
   const hasInitialized = useRef(false);
+  const formDataRef = useRef(formData);
+  const undoStackRef = useRef<ItemFormData[]>([]);
+  const redoStackRef = useRef<ItemFormData[]>([]);
+  const pendingUndoBaseRef = useRef<ItemFormData | null>(null);
+  const pendingUndoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const [undoDepth, setUndoDepth] = useState(0);
+  const [redoDepth, setRedoDepth] = useState(0);
+  const [hasPendingUndo, setHasPendingUndo] = useState(false);
+
+  const setFormData = useCallback(
+    (
+      nextDataOrUpdater: ItemFormData | ((prev: ItemFormData) => ItemFormData)
+    ) => {
+      setFormDataState(previousData => {
+        const nextData =
+          typeof nextDataOrUpdater === 'function'
+            ? nextDataOrUpdater(previousData)
+            : nextDataOrUpdater;
+        formDataRef.current = nextData;
+        return nextData;
+      });
+    },
+    []
+  );
+
+  const updateUndoRedoDepth = useCallback(() => {
+    setUndoDepth(undoStackRef.current.length);
+    setRedoDepth(redoStackRef.current.length);
+  }, []);
+
+  const clearPendingUndoTimer = useCallback(() => {
+    if (pendingUndoTimerRef.current) {
+      clearTimeout(pendingUndoTimerRef.current);
+      pendingUndoTimerRef.current = null;
+    }
+  }, []);
+
+  const commitPendingUndoHistory = useCallback(() => {
+    const pendingUndoBase = pendingUndoBaseRef.current;
+    if (!pendingUndoBase) return;
+
+    undoStackRef.current = [
+      ...undoStackRef.current.slice(-(MAX_UNDO_HISTORY - 1)),
+      pendingUndoBase,
+    ];
+    pendingUndoBaseRef.current = null;
+    setHasPendingUndo(false);
+    clearPendingUndoTimer();
+    updateUndoRedoDepth();
+  }, [clearPendingUndoTimer, updateUndoRedoDepth]);
+
+  const schedulePendingUndoCommit = useCallback(
+    (baseData: ItemFormData) => {
+      if (!pendingUndoBaseRef.current) {
+        pendingUndoBaseRef.current = baseData;
+        setHasPendingUndo(true);
+      }
+
+      clearPendingUndoTimer();
+      pendingUndoTimerRef.current = setTimeout(() => {
+        commitPendingUndoHistory();
+      }, UNDO_COMMIT_DELAY_MS);
+    },
+    [clearPendingUndoTimer, commitPendingUndoHistory]
+  );
+
+  const syncDerivedFormState = useCallback((data: ItemFormData) => {
+    setDisplaySellPrice(formatRupiah(data.sell_price || 0));
+    setDisplayBasePrice(formatRupiah(data.base_price || 0));
+    setMarginPercentage(
+      formatMarginPercentage(data.base_price, data.sell_price)
+    );
+    setMinStockValue(String(data.min_stock || 10));
+  }, []);
+
+  const resetUndoRedoHistory = useCallback(() => {
+    undoStackRef.current = [];
+    redoStackRef.current = [];
+    pendingUndoBaseRef.current = null;
+    setHasPendingUndo(false);
+    clearPendingUndoTimer();
+    updateUndoRedoDepth();
+  }, [clearPendingUndoTimer, updateUndoRedoDepth]);
+
+  const applyFormData = useCallback(
+    (
+      nextDataOrUpdater:
+        | ItemFormData
+        | ((previousData: ItemFormData) => ItemFormData),
+      options: { recordHistory?: boolean } = {}
+    ) => {
+      const { recordHistory = true } = options;
+      const previousData = formDataRef.current;
+      const nextData =
+        typeof nextDataOrUpdater === 'function'
+          ? nextDataOrUpdater(previousData)
+          : nextDataOrUpdater;
+
+      if (JSON.stringify(previousData) === JSON.stringify(nextData)) {
+        return;
+      }
+
+      if (recordHistory) {
+        redoStackRef.current = [];
+        setRedoDepth(0);
+        schedulePendingUndoCommit(previousData);
+      }
+
+      syncDerivedFormState(nextData);
+      formDataRef.current = nextData;
+      setFormDataState(nextData);
+    },
+    [schedulePendingUndoCommit, syncDerivedFormState]
+  );
 
   /**
    * Updates form data and synchronized display values
    */
-  const updateFormData = useCallback((newData: Partial<ItemFormData>) => {
-    // Update display prices if price fields change
-    if (newData.sell_price !== undefined) {
-      setDisplaySellPrice(formatRupiah(newData.sell_price));
-    }
-    if (newData.base_price !== undefined) {
-      setDisplayBasePrice(formatRupiah(newData.base_price));
+  const updateFormData = useCallback(
+    (newData: Partial<ItemFormData>, options?: { recordHistory?: boolean }) => {
+      applyFormData(previousData => ({ ...previousData, ...newData }), options);
+    },
+    [applyFormData]
+  );
+
+  const undoFormChange = useCallback(() => {
+    const currentData = formDataRef.current;
+    const pendingUndoBase = pendingUndoBaseRef.current;
+    if (pendingUndoBase) {
+      pendingUndoBaseRef.current = null;
+      setHasPendingUndo(false);
+      clearPendingUndoTimer();
+      redoStackRef.current = [
+        ...redoStackRef.current.slice(-(MAX_UNDO_HISTORY - 1)),
+        currentData,
+      ];
+      updateUndoRedoDepth();
+      syncDerivedFormState(pendingUndoBase);
+      formDataRef.current = pendingUndoBase;
+      setFormDataState(pendingUndoBase);
+      return;
     }
 
-    setFormData(prev => ({ ...prev, ...newData }));
-  }, []);
+    const previousData = undoStackRef.current.pop();
+    if (!previousData) return;
+
+    redoStackRef.current = [
+      ...redoStackRef.current.slice(-(MAX_UNDO_HISTORY - 1)),
+      currentData,
+    ];
+    updateUndoRedoDepth();
+    syncDerivedFormState(previousData);
+    formDataRef.current = previousData;
+    setFormDataState(previousData);
+  }, [clearPendingUndoTimer, syncDerivedFormState, updateUndoRedoDepth]);
+
+  const redoFormChange = useCallback(() => {
+    commitPendingUndoHistory();
+    const currentData = formDataRef.current;
+    const nextData = redoStackRef.current.pop();
+    if (!nextData) return;
+
+    undoStackRef.current = [
+      ...undoStackRef.current.slice(-(MAX_UNDO_HISTORY - 1)),
+      currentData,
+    ];
+    updateUndoRedoDepth();
+    syncDerivedFormState(nextData);
+    formDataRef.current = nextData;
+    setFormDataState(nextData);
+  }, [commitPendingUndoHistory, syncDerivedFormState, updateUndoRedoDepth]);
+
+  useEffect(() => {
+    return () => {
+      clearPendingUndoTimer();
+    };
+  }, [clearPendingUndoTimer]);
 
   /**
    * Handles form input changes with type-specific processing
@@ -254,17 +421,9 @@ export const useAddItemFormState = ({
 
     setFormData(normalizedInitialState);
     setInitialFormData(normalizedInitialState);
+    resetUndoRedoHistory();
 
-    setDisplayBasePrice(formatRupiah(normalizedInitialState.base_price || 0));
-    setDisplaySellPrice(formatRupiah(normalizedInitialState.sell_price || 0));
-
-    setMarginPercentage(
-      formatMarginPercentage(
-        normalizedInitialState.base_price,
-        normalizedInitialState.sell_price
-      )
-    );
-    setMinStockValue(String(normalizedInitialState.min_stock || 10));
+    syncDerivedFormState(normalizedInitialState);
   };
 
   /**
@@ -272,17 +431,7 @@ export const useAddItemFormState = ({
    */
   const resetForm = () => {
     if (isEditMode && initialFormData && initialPackageConversions) {
-      setFormData({ ...initialFormData });
-      setDisplayBasePrice(formatRupiah(initialFormData.base_price || 0));
-      setDisplaySellPrice(formatRupiah(initialFormData.sell_price || 0));
-
-      setMarginPercentage(
-        formatMarginPercentage(
-          initialFormData.base_price,
-          initialFormData.sell_price
-        )
-      );
-      setMinStockValue(String(initialFormData.min_stock || 10));
+      applyFormData({ ...initialFormData });
     } else {
       setInitialDataForForm();
     }
@@ -293,6 +442,10 @@ export const useAddItemFormState = ({
     formData,
     setFormData,
     updateFormData,
+    undoFormChange,
+    redoFormChange,
+    canUndo: undoDepth > 0 || hasPendingUndo,
+    canRedo: redoDepth > 0,
 
     // Initial state tracking
     initialFormData,

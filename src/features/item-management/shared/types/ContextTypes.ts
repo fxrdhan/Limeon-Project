@@ -22,6 +22,8 @@ export interface ItemFormState {
   manufacturers: ItemManufacturerEntity[];
   loading: boolean;
   isDirty: () => boolean;
+  canUndo: boolean;
+  canRedo: boolean;
 }
 
 export interface ItemUIState {
@@ -82,12 +84,17 @@ export interface ItemRealtimeState {
 
 // Context Action Interfaces (Updated to match actual implementation)
 export interface ItemFormActions {
-  updateFormData: (data: Partial<ItemFormData>) => void;
+  updateFormData: (
+    data: Partial<ItemFormData>,
+    options?: { recordHistory?: boolean }
+  ) => void;
   handleChange: (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => void;
   handleSubmit: (e: React.FormEvent) => void;
   resetForm: () => void;
+  undoFormChange: () => void;
+  redoFormChange: () => void;
   setInitialPackageConversions: (conversions: PackageConversion[]) => void;
 }
 

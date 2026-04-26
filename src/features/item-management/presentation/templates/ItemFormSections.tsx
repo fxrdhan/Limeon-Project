@@ -163,6 +163,7 @@ const FormHeader: React.FC<{
   onClose: () => void;
   itemId?: string;
 }> = ({ onReset, onClose, itemId }) => {
+  const { canUndo, canRedo, undoFormChange, redoFormChange } = useItemForm();
   const {
     isEditMode,
     formattedUpdateAt,
@@ -193,6 +194,10 @@ const FormHeader: React.FC<{
       onVersionSelect={handleVersionSelect}
       onVersionDeselect={handleClearVersionView}
       entityId={itemId}
+      canUndo={canUndo}
+      canRedo={canRedo}
+      onUndo={undoFormChange}
+      onRedo={redoFormChange}
     />
   );
 };

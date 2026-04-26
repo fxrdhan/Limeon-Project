@@ -1,6 +1,12 @@
 import React, { useRef, useState } from 'react';
 import { LayoutGroup, motion } from 'motion/react';
-import { TbArrowBackUp, TbHistoryToggle, TbX } from 'react-icons/tb';
+import {
+  TbArrowBackUp,
+  TbHistoryToggle,
+  TbRotate2,
+  TbRotateClockwise,
+  TbX,
+} from 'react-icons/tb';
 import { CardHeader, CardTitle } from '@/components/card';
 import Button from '@/components/button';
 import ItemHistoryPortal from './ItemHistoryPortal';
@@ -32,12 +38,15 @@ interface LocalItemFormHeaderProps {
   ) => void;
   onVersionDeselect?: () => void;
   entityId?: string;
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onUndo?: () => void;
+  onRedo?: () => void;
 }
 
 const ItemFormHeader: React.FC<LocalItemFormHeaderProps> = React.memo(
   ({
     isEditMode,
-    formattedUpdateAt,
     isClosing,
     onReset,
     onClose,
@@ -48,6 +57,10 @@ const ItemFormHeader: React.FC<LocalItemFormHeaderProps> = React.memo(
     onVersionSelect,
     onVersionDeselect,
     entityId,
+    canUndo = false,
+    canRedo = false,
+    onUndo,
+    onRedo,
   }) => {
     const timestampButtonRef = useRef<HTMLButtonElement>(null);
     const [isPortalOpen, setIsPortalOpen] = useState(false);
@@ -59,8 +72,31 @@ const ItemFormHeader: React.FC<LocalItemFormHeaderProps> = React.memo(
     return (
       <LayoutGroup id="item-history-portal">
         <CardHeader className="flex items-center justify-between sticky z-10 py-5! px-4! border-b-2 border-slate-200 mb-6">
-          {/* Left section - empty placeholder for symmetry */}
-          <div className="flex items-center" />
+          {/* Left section */}
+          <div className="flex items-center space-x-1">
+            <Button
+              variant="text"
+              size="sm"
+              withUnderline={false}
+              onClick={onUndo}
+              disabled={!canUndo}
+              className="flex !h-9 !w-9 items-center justify-center !rounded-lg !p-0 !text-black transition-colors hover:bg-slate-100 disabled:!text-slate-300 disabled:hover:bg-transparent"
+              aria-label="Undo"
+            >
+              <TbRotate2 size={18} />
+            </Button>
+            <Button
+              variant="text"
+              size="sm"
+              withUnderline={false}
+              onClick={onRedo}
+              disabled={!canRedo}
+              className="flex !h-9 !w-9 items-center justify-center !rounded-lg !p-0 !text-black transition-colors hover:bg-slate-100 disabled:!text-slate-300 disabled:hover:bg-transparent"
+              aria-label="Redo"
+            >
+              <TbRotateClockwise size={18} />
+            </Button>
+          </div>
 
           {/* Center title */}
           <div className="absolute left-1/2 transform -translate-x-1/2">
@@ -73,7 +109,7 @@ const ItemFormHeader: React.FC<LocalItemFormHeaderProps> = React.memo(
 
           {/* Right section */}
           <div className="flex items-center space-x-1 shrink-0">
-            {isEditMode && formattedUpdateAt && formattedUpdateAt !== '-' && (
+            {isEditMode && (
               <Button
                 ref={timestampButtonRef}
                 variant="text"

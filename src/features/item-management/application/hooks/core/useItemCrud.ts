@@ -451,6 +451,8 @@ export const useAddItemForm = ({
     loading: formState.loading,
     saving: formState.saving,
     isEditMode: formState.isEditMode,
+    canUndo: formState.canUndo,
+    canRedo: formState.canRedo,
 
     // Modal states (from formState)
     isAddEditModalOpen: formState.isAddEditModalOpen,
@@ -496,6 +498,8 @@ export const useAddItemForm = ({
 
     // Utility functions
     updateFormData: formState.updateFormData,
+    undoFormChange: formState.undoFormChange,
+    redoFormChange: formState.redoFormChange,
     setInitialFormData: formState.setInitialFormData,
     setInitialPackageConversions: formState.setInitialPackageConversions,
     isDirty: userInteractions.isDirty,

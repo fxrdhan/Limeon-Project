@@ -76,6 +76,10 @@ const ItemModal: React.FC<ItemModalProps> = ({
     handleChange,
     handleSubmit,
     updateFormData,
+    undoFormChange,
+    redoFormChange,
+    canUndo,
+    canRedo,
     setInitialFormData,
     setInitialPackageConversions,
     resetForm,
@@ -246,7 +250,7 @@ const ItemModal: React.FC<ItemModalProps> = ({
 
       if (Object.keys(restUpdates).length > 0) {
         // Apply updates that don't conflict with user input
-        updateFormData(restUpdates);
+        updateFormData(restUpdates, { recordHistory: false });
         setInitialFormData(prev =>
           prev ? ({ ...prev, ...restUpdates } as typeof prev) : prev
         );
@@ -364,6 +368,8 @@ const ItemModal: React.FC<ItemModalProps> = ({
       manufacturers,
       loading,
       isDirty,
+      canUndo,
+      canRedo,
     },
     realtime: {
       smartFormSync,
@@ -413,6 +419,8 @@ const ItemModal: React.FC<ItemModalProps> = ({
     // Actions
     formActions: {
       updateFormData,
+      undoFormChange,
+      redoFormChange,
       handleChange,
       handleSubmit,
       resetForm,
