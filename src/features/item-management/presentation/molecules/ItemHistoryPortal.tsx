@@ -48,6 +48,35 @@ const PORTAL_WIDTH = 350;
 const PORTAL_TAB_WIDTH = 180;
 const PORTAL_TAB_HEIGHT = 44;
 const PORTAL_RADIUS = 16;
+const HISTORY_PORTAL_TITLE = 'Riwayat Perubahan';
+
+const historyPortalTitleVariants = {
+  hidden: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.012,
+      staggerDirection: 1,
+    },
+  },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.018,
+      delayChildren: 0.2,
+    },
+  },
+} as const;
+
+const historyPortalTitleCharacterVariants = {
+  hidden: {
+    opacity: 0,
+    x: 4,
+  },
+  visible: {
+    opacity: 1,
+    x: 0,
+  },
+} as const;
 
 const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
   isOpen,
@@ -334,18 +363,37 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
                 className="flex h-[44px] min-w-[180px] select-none items-center justify-center gap-2 bg-transparent px-4 text-sm font-medium text-black outline-none hover:bg-transparent active:bg-transparent focus:bg-transparent focus:outline-none focus:ring-0"
                 aria-label="Tutup riwayat perubahan"
               >
-                <motion.span
-                  layoutId="item-history-action-label"
-                  className="inline-flex items-center"
-                  transition={{
-                    type: 'spring',
-                    stiffness: 420,
-                    damping: 34,
-                  }}
-                >
-                  <TbHistoryToggle className="mr-1.5" size={16} />
-                  Riwayat Perubahan
-                </motion.span>
+                <span className="inline-flex items-center">
+                  <motion.span
+                    className="inline-flex overflow-hidden whitespace-nowrap"
+                    initial="hidden"
+                    animate="visible"
+                    exit="hidden"
+                    variants={historyPortalTitleVariants}
+                  >
+                    {HISTORY_PORTAL_TITLE.split('').map((character, index) => (
+                      <motion.span
+                        key={`${character}-${index}`}
+                        className="inline-block"
+                        variants={historyPortalTitleCharacterVariants}
+                        transition={{ duration: 0.08, ease: 'easeOut' }}
+                      >
+                        {character === ' ' ? '\u00A0' : character}
+                      </motion.span>
+                    ))}
+                  </motion.span>
+                  <motion.span
+                    layoutId="item-history-action-icon"
+                    className="ml-1.5 inline-flex items-center"
+                    transition={{
+                      type: 'spring',
+                      stiffness: 420,
+                      damping: 34,
+                    }}
+                  >
+                    <TbHistoryToggle size={16} />
+                  </motion.span>
+                </span>
               </button>
             </div>
 

@@ -56,13 +56,6 @@ const ItemFormHeader: React.FC<LocalItemFormHeaderProps> = React.memo(
       setIsPortalOpen(!isPortalOpen);
     };
 
-    const historyButtonContent = (
-      <>
-        <TbHistoryToggle className="mr-1.5" size={16} />
-        Riwayat Perubahan
-      </>
-    );
-
     return (
       <LayoutGroup id="item-history-portal">
         <CardHeader className="flex items-center justify-between sticky z-10 py-5! px-4! border-b-2 border-slate-200 mb-6">
@@ -86,20 +79,18 @@ const ItemFormHeader: React.FC<LocalItemFormHeaderProps> = React.memo(
                 variant="text"
                 size="sm"
                 onClick={handleTimestampClick}
-                className="text-sm !text-black whitespace-nowrap flex items-center transition-colors focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+                withUnderline={false}
+                className="flex !h-9 !w-9 items-center justify-center !rounded-lg !p-0 !text-black transition-colors hover:bg-slate-100 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
                 aria-label="Buka riwayat perubahan"
                 tabIndex={-1}
               >
                 {isPortalOpen ? (
-                  <span
-                    className="inline-flex items-center opacity-0"
-                    aria-hidden="true"
-                  >
-                    {historyButtonContent}
+                  <span className="inline-flex opacity-0" aria-hidden="true">
+                    <TbHistoryToggle size={18} />
                   </span>
                 ) : (
                   <motion.span
-                    layoutId="item-history-action-label"
+                    layoutId="item-history-action-icon"
                     className="inline-flex items-center"
                     transition={{
                       type: 'spring',
@@ -107,7 +98,7 @@ const ItemFormHeader: React.FC<LocalItemFormHeaderProps> = React.memo(
                       damping: 34,
                     }}
                   >
-                    {historyButtonContent}
+                    <TbHistoryToggle size={18} />
                   </motion.span>
                 )}
               </Button>
