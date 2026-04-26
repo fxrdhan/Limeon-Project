@@ -12,8 +12,8 @@ export const CurrentPageDisplay: React.FC<CurrentPageDisplayProps> = ({
     enter: (direction: number) => ({
       x:
         direction > 0
-          ? PAGINATION_CONSTANTS.ANIMATION.ENTER_X
-          : -PAGINATION_CONSTANTS.ANIMATION.ENTER_X,
+          ? PAGINATION_CONSTANTS.ANIMATION.PAGE_SWAP_X
+          : -PAGINATION_CONSTANTS.ANIMATION.PAGE_SWAP_X,
       opacity: 0,
     }),
     center: {
@@ -25,15 +25,18 @@ export const CurrentPageDisplay: React.FC<CurrentPageDisplayProps> = ({
       zIndex: 0,
       x:
         direction > 0
-          ? -PAGINATION_CONSTANTS.ANIMATION.EXIT_X
-          : PAGINATION_CONSTANTS.ANIMATION.EXIT_X,
+          ? -PAGINATION_CONSTANTS.ANIMATION.PAGE_SWAP_X
+          : PAGINATION_CONSTANTS.ANIMATION.PAGE_SWAP_X,
       opacity: 0,
     }),
   };
 
   return (
-    <div className="flex items-center justify-center min-w-8 h-8 rounded-full bg-primary text-white font-medium shadow-xs px-3 mx-1 overflow-hidden select-none">
-      <AnimatePresence initial={false} custom={direction} mode="popLayout">
+    <div className="relative flex items-center justify-center min-w-8 h-8 rounded-full bg-primary text-white font-medium shadow-xs px-3 mx-1 overflow-hidden select-none">
+      <span className="invisible select-none" aria-hidden="true">
+        {currentPage}
+      </span>
+      <AnimatePresence initial={false} custom={direction}>
         <motion.span
           key={`${currentPage}-${isFloating ? 'floating' : 'main'}`}
           custom={direction}
@@ -46,7 +49,7 @@ export const CurrentPageDisplay: React.FC<CurrentPageDisplayProps> = ({
             stiffness: PAGINATION_CONSTANTS.ANIMATION.PAGE_SPRING_STIFFNESS,
             damping: PAGINATION_CONSTANTS.ANIMATION.PAGE_SPRING_DAMPING,
           }}
-          className="flex items-center justify-center select-none"
+          className="absolute inset-0 flex items-center justify-center select-none"
         >
           {currentPage}
         </motion.span>

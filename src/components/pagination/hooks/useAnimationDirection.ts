@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { PAGINATION_CONSTANTS } from '../constants';
 import type {
   UseAnimationDirectionProps,
@@ -8,26 +8,18 @@ import type {
 export const useAnimationDirection = ({
   currentPage,
 }: UseAnimationDirectionProps): UseAnimationDirectionReturn => {
-  // Use getDerivedStateFromProps pattern - update prevPage during render
-  const [pageState, setPageState] = useState({
-    current: currentPage,
-    prev: currentPage,
-  });
+  const previousPageRef = useRef(currentPage);
 
-  // Derive new state during render (no effect needed!)
-  if (currentPage !== pageState.current) {
-    setPageState({ current: currentPage, prev: pageState.current });
-  }
+  const direction =
+    currentPage > previousPageRef.current
+      ? 1
+      : currentPage < previousPageRef.current
+        ? -1
+        : 0;
 
-  // Calculate direction from derived state
-  const direction = useMemo(() => {
-    if (pageState.current > pageState.prev) {
-      return 1;
-    } else if (pageState.current < pageState.prev) {
-      return -1;
-    }
-    return 0;
-  }, [pageState]);
+  useEffect(() => {
+    previousPageRef.current = currentPage;
+  }, [currentPage]);
 
   const variants = useMemo(
     () => ({

@@ -27,7 +27,7 @@ const AGGridPagination: React.FC<AGGridPaginationProps> = ({
   onPageSizeChange,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [paginationState, setPaginationState] = useState(0);
+  const [, setPaginationState] = useState(0);
 
   // ALWAYS call hooks first
   const { showFloating } = useFloatingPagination({
@@ -172,7 +172,7 @@ const AGGridPagination: React.FC<AGGridPaginationProps> = ({
   };
 
   return (
-    <PaginationProvider value={contextValue} key={paginationState}>
+    <PaginationProvider value={contextValue}>
       <div
         ref={containerRef}
         className={classNames(
