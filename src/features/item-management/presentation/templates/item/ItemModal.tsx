@@ -315,14 +315,9 @@ const ItemModal: React.FC<ItemModalProps> = ({
   // Clear version viewing (back to current)
   const handleClearVersionView = useCallback(() => {
     setViewingVersionNumber(null);
-
-    // Trigger modal close and reopen to reload current data
-    // This is the simplest approach - user experience is still smooth
-    setIsClosing(true);
-
-    // Alternative: We could refetch item data and update form
-    // But that would require more complex state management
-  }, [setIsClosing]);
+    resetForm();
+    setResetKey(prev => prev + 1);
+  }, [resetForm]);
 
   // Keyboard shortcut for Reset All (Ctrl+Shift+R)
   useEffect(() => {

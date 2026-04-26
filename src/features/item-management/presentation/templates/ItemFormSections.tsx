@@ -168,6 +168,7 @@ const FormHeader: React.FC<{
     formattedUpdateAt,
     isClosing,
     handleVersionSelect,
+    handleClearVersionView,
     viewingVersionNumber,
   } = useItemUI();
   const historyState = useItemHistory();
@@ -190,6 +191,7 @@ const FormHeader: React.FC<{
       selectedVersion={viewingVersionNumber}
       currentVersion={currentVersionNumber}
       onVersionSelect={handleVersionSelect}
+      onVersionDeselect={handleClearVersionView}
       entityId={itemId}
     />
   );

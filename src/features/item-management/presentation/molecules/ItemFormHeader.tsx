@@ -30,6 +30,7 @@ interface LocalItemFormHeaderProps {
     version: number,
     entityData: Record<string, unknown>
   ) => void;
+  onVersionDeselect?: () => void;
   entityId?: string;
 }
 
@@ -45,6 +46,7 @@ const ItemFormHeader: React.FC<LocalItemFormHeaderProps> = React.memo(
     selectedVersion,
     currentVersion,
     onVersionSelect,
+    onVersionDeselect,
     entityId,
   }) => {
     const timestampButtonRef = useRef<HTMLButtonElement>(null);
@@ -148,6 +150,7 @@ const ItemFormHeader: React.FC<LocalItemFormHeaderProps> = React.memo(
             selectedVersion={selectedVersion || null}
             currentVersion={currentVersion}
             onVersionSelect={onVersionSelect}
+            onVersionDeselect={onVersionDeselect}
             triggerRef={timestampButtonRef as React.RefObject<HTMLElement>}
             entityId={entityId}
           />

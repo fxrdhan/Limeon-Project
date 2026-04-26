@@ -42,6 +42,7 @@ interface ItemHistoryPortalProps {
     version: number,
     entityData: Record<string, unknown>
   ) => void;
+  onVersionDeselect?: () => void;
   triggerRef: React.RefObject<HTMLElement>;
   currentVersion?: number;
   entityTable?: string;
@@ -62,18 +63,20 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
   history,
   isLoading,
   onVersionSelect,
+  onVersionDeselect,
   triggerRef,
   entityTable = 'items',
   entityId,
 }) => {
   const portalRef = useRef<HTMLDivElement>(null);
+  const hasViewedVersionRef = useRef(false);
   const queryClient = useQueryClient();
   const [position, setPosition] = useState({
     top: 0,
     left: 0,
     width: 350,
     bodyMaxHeight: 420,
-    bodyMinHeight: 320,
+    bodyMinHeight: 460,
   });
   const [isPositioned, setIsPositioned] = useState(false);
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
@@ -92,10 +95,21 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
         // Update form with selected version data
         // Portal stays open so user can browse multiple versions
         const historyItem = item as HistoryItem;
+        hasViewedVersionRef.current = true;
         onVersionSelect(historyItem.version_number, historyItem.entity_data);
+      },
+      onVersionDeselect: () => {
+        hasViewedVersionRef.current = false;
+        onVersionDeselect?.();
       },
       enableKeyboardNav: isOpen, // Only enable keyboard nav when portal is open
     });
+
+  const handlePortalMouseLeave = () => {
+    if (hookSelectedVersion !== null || !hasViewedVersionRef.current) return;
+    hasViewedVersionRef.current = false;
+    onVersionDeselect?.();
+  };
 
   // Calculate position based on trigger element
   const updatePosition = useCallback(() => {
@@ -120,7 +134,7 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
       left,
       width,
       bodyMaxHeight,
-      bodyMinHeight: Math.min(320, bodyMaxHeight),
+      bodyMinHeight: Math.min(460, bodyMaxHeight),
     });
     setIsPositioned(true);
   }, [triggerRef]);
@@ -297,6 +311,7 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
           }}
           transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
           className="fixed z-[60] origin-top-right"
+          onMouseLeave={handlePortalMouseLeave}
           style={{
             top: `${position.top}px`,
             left: `${position.left}px`,
@@ -343,7 +358,7 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
             </div>
 
             <div
-              className="relative z-10 overflow-hidden pt-2"
+              className="relative z-10 overflow-hidden"
               style={{
                 height: `${position.bodyMinHeight}px`,
               }}
@@ -363,6 +378,11 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
                 allowMultiSelect={false}
                 autoScrollToSelected={true}
                 skipEntranceAnimation={hookSelectedVersion !== null}
+                disableHoverDetails={true}
+                scrollContainerMaxHeight={Math.max(
+                  120,
+                  position.bodyMinHeight - 48
+                )}
               />
             </div>
           </div>
