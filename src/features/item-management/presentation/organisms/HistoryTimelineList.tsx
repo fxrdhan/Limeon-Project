@@ -279,8 +279,8 @@ const HistoryItemCard: React.FC<HistoryItemCardProps> = ({
           className="overflow-hidden"
         >
           {item.changed_fields && (
-            <div className="text-xs p-3 rounded-xl border transition-all duration-300 bg-slate-50 border-slate-200 text-slate-600">
-              <span className="font-medium">Mengubah:</span>{' '}
+            <div className="text-xs text-slate-600">
+              <span className="font-medium text-slate-500">Mengubah:</span>{' '}
               {getChangedFieldLabels(item.changed_fields)}
             </div>
           )}
@@ -659,21 +659,16 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
         s => s.id === item.id
       );
       if (selectionIndex >= 0) {
-        // Apply flip logic: if flipped, swap the colors
-        if (isFlipped) {
-          return selectionIndex === 0 ? 'bg-purple-50' : 'bg-blue-50';
-        } else {
-          return selectionIndex === 0 ? 'bg-blue-50' : 'bg-purple-50';
-        }
+        return '';
       }
       return 'hover:bg-slate-50';
     }
 
     if (selectedVersions.includes(item.version_number)) {
-      return 'bg-blue-50';
+      return '';
     }
     if (selectedVersion === item.version_number) {
-      return 'bg-green-50';
+      return '';
     }
     return 'hover:bg-slate-50';
   };

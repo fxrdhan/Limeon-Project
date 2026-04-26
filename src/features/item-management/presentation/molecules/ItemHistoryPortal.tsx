@@ -4,22 +4,16 @@ import React, {
   useLayoutEffect,
   useRef,
   useState,
-  Fragment,
 } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { createPortal } from 'react-dom';
-import { Transition, TransitionChild } from '@headlessui/react';
 import toast from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import HistoryTimelineList from '../organisms/HistoryTimelineList';
+import HistoryRestoreDialog from './HistoryRestoreDialog';
+import type { RestoreMode } from './HistoryRestoreDialog';
 import { useHistorySelection } from '../hooks/useHistoryManagement';
-import Button from '@/components/button';
-import {
-  TbAlertTriangle,
-  TbArrowBackUp,
-  TbClock,
-  TbHistoryToggle,
-} from 'react-icons/tb';
+import { TbHistoryToggle } from 'react-icons/tb';
 import { itemHistoryService } from '../../infrastructure/itemHistory.service';
 
 interface HistoryItem {
@@ -48,8 +42,6 @@ interface ItemHistoryPortalProps {
   entityTable?: string;
   entityId?: string;
 }
-
-type RestoreMode = 'soft' | 'hard';
 
 const PORTAL_MARGIN = 16;
 const PORTAL_WIDTH = 350;
@@ -396,148 +388,15 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
     <>
       {createPortal(portalContent, document.body)}
 
-      {/* Restore Dialog */}
-      {createPortal(
-        <Transition show={showRestoreDialog} as={Fragment}>
-          <div className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto">
-            <TransitionChild
-              as={Fragment}
-              enter="transition-opacity duration-300"
-              enterFrom="opacity-0"
-              enterTo="opacity-100"
-              leave="transition-opacity duration-200"
-              leaveFrom="opacity-100"
-              leaveTo="opacity-0"
-            >
-              <div
-                className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-                onClick={closeRestoreDialog}
-                aria-hidden="true"
-              />
-            </TransitionChild>
-
-            <TransitionChild
-              as={Fragment}
-              enter="transition-all duration-300 ease-out"
-              enterFrom="opacity-0 scale-95"
-              enterTo="opacity-100 scale-100"
-              leave="transition-all duration-200 ease-in"
-              leaveFrom="opacity-100 scale-100"
-              leaveTo="opacity-0 scale-95"
-            >
-              <div className="relative bg-white rounded-xl shadow-xl max-w-lg w-full mx-4 p-6 z-10">
-                <div className="flex items-center gap-3 mb-4">
-                  <TbArrowBackUp className="w-6 h-6 text-blue-600" />
-                  <h3 className="text-xl font-semibold">
-                    Restore ke Versi {restoreTargetVersion}
-                  </h3>
-                </div>
-
-                <p className="text-slate-600 mb-6">
-                  Pilih metode restore yang sesuai dengan kebutuhan Anda:
-                </p>
-
-                <div className="space-y-3 mb-6">
-                  {/* Soft Restore */}
-                  <label
-                    className={`flex items-start gap-3 p-4 border-2 rounded-xl cursor-pointer transition-all ${
-                      restoreMode === 'soft'
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-slate-200 hover:border-slate-300'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="restoreMode"
-                      value="soft"
-                      checked={restoreMode === 'soft'}
-                      onChange={e =>
-                        setRestoreMode(e.target.value as RestoreMode)
-                      }
-                      className="mt-1"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <TbClock className="w-5 h-5 text-blue-600" />
-                        <span className="font-semibold text-slate-900">
-                          Soft Restore (Recommended)
-                        </span>
-                      </div>
-                      <p className="text-sm text-slate-600">
-                        Membuat versi baru dengan data dari v
-                        {restoreTargetVersion}. History lengkap tetap tersimpan.
-                      </p>
-                    </div>
-                  </label>
-
-                  {/* Hard Rollback */}
-                  <label
-                    className={`flex items-start gap-3 p-4 border-2 rounded-xl cursor-pointer transition-all ${
-                      restoreMode === 'hard'
-                        ? 'border-red-500 bg-red-50'
-                        : 'border-slate-200 hover:border-slate-300'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="restoreMode"
-                      value="hard"
-                      checked={restoreMode === 'hard'}
-                      onChange={e =>
-                        setRestoreMode(e.target.value as RestoreMode)
-                      }
-                      className="mt-1"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <TbAlertTriangle className="w-5 h-5 text-red-600" />
-                        <span className="font-semibold text-slate-900">
-                          Hard Rollback (Destructive)
-                        </span>
-                      </div>
-                      <p className="text-sm text-slate-600 mb-2">
-                        Menghapus SEMUA versi setelah v{restoreTargetVersion}{' '}
-                        secara permanen.
-                      </p>
-                      <div className="flex items-start gap-2 text-xs text-red-700 bg-red-100 p-2 rounded">
-                        <TbAlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                        <span>
-                          <strong>Peringatan:</strong> Aksi ini tidak dapat
-                          dibatalkan!
-                        </span>
-                      </div>
-                    </div>
-                  </label>
-                </div>
-
-                <div className="flex justify-end gap-3">
-                  <Button
-                    type="button"
-                    variant="text"
-                    onClick={closeRestoreDialog}
-                    disabled={isRestoring}
-                  >
-                    Batal
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={restoreMode === 'hard' ? 'danger' : 'primary'}
-                    onClick={handleRestoreConfirm}
-                    disabled={isRestoring}
-                  >
-                    {isRestoring
-                      ? 'Processing...'
-                      : restoreMode === 'hard'
-                        ? 'Hard Rollback'
-                        : 'Soft Restore'}
-                  </Button>
-                </div>
-              </div>
-            </TransitionChild>
-          </div>
-        </Transition>,
-        document.body
-      )}
+      <HistoryRestoreDialog
+        isOpen={showRestoreDialog}
+        targetVersion={restoreTargetVersion}
+        restoreMode={restoreMode}
+        isRestoring={isRestoring}
+        onRestoreModeChange={setRestoreMode}
+        onCancel={closeRestoreDialog}
+        onConfirm={handleRestoreConfirm}
+      />
     </>
   );
 };
