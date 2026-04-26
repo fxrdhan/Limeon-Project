@@ -1,3 +1,4 @@
+import { AnimatePresence, motion } from 'motion/react';
 import React, { useEffect, useMemo } from 'react';
 import { useBadgeBuilder } from '../hooks/useBadgeBuilder';
 import { EnhancedSearchState } from '../types';
@@ -334,27 +335,42 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   // Render as `contents` so the input stays in the same flex flow as badges.
   return (
     <div ref={badgesContainerRef} className="contents">
-      {finalBadges.map(badge => {
-        // Callback ref that updates the dynamic ref map for N-condition support
-        const handleRef = (element: HTMLDivElement | null) => {
-          setBadgeRef?.(badge.id, element);
-        };
+      <AnimatePresence initial={false}>
+        {finalBadges.map(badge => {
+          // Callback ref that updates the dynamic ref map for N-condition support
+          const handleRef = (element: HTMLDivElement | null) => {
+            setBadgeRef?.(badge.id, element);
+          };
 
-        // Add glow state based on selector being open
-        const shouldGlow = getBadgeGlowState(badge.id);
-        const badgeWithGlow = shouldGlow
-          ? { ...badge, isSelected: true }
-          : badge;
-        const badgeWithErrorHandler = onInvalidValue
-          ? { ...badgeWithGlow, onInvalidValue }
-          : badgeWithGlow;
+          // Add glow state based on selector being open
+          const shouldGlow = getBadgeGlowState(badge.id);
+          const badgeWithGlow = shouldGlow
+            ? { ...badge, isSelected: true }
+            : badge;
+          const badgeWithErrorHandler = onInvalidValue
+            ? { ...badgeWithGlow, onInvalidValue }
+            : badgeWithGlow;
 
-        return (
-          <div key={badge.id} ref={handleRef} className="flex-shrink-0">
-            <Badge config={badgeWithErrorHandler} />
-          </div>
-        );
-      })}
+          return (
+            <motion.div
+              key={badge.id}
+              ref={handleRef}
+              layout
+              initial={{ opacity: 0, scale: 0.96, y: -4 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: -4 }}
+              transition={{
+                duration: 0.16,
+                ease: 'easeOut',
+                layout: { duration: 0.18, ease: 'easeOut' },
+              }}
+              className="origin-left flex-shrink-0"
+            >
+              <Badge config={badgeWithErrorHandler} />
+            </motion.div>
+          );
+        })}
+      </AnimatePresence>
     </div>
   );
 };
