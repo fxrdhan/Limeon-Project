@@ -1,5 +1,5 @@
 import classNames from 'classnames';
-import { LayoutGroup, motion } from 'motion/react';
+import { AnimatePresence, LayoutGroup, motion } from 'motion/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { TbChevronDown } from 'react-icons/tb';
 
@@ -88,6 +88,16 @@ const ACTIVE_FILL_COLLAPSE_TRANSITION = {
   ease: 'easeInOut',
 } as const;
 
+const ACTIVE_LABEL_SLIDE_TRANSITION = {
+  duration: 0.22,
+  ease: 'easeOut',
+} as const;
+
+const VERTICAL_ITEM_ZOOM_EXIT_TRANSITION = {
+  duration: 0.18,
+  ease: 'easeOut',
+} as const;
+
 const canUseHoverPointer = () =>
   typeof window === 'undefined' ||
   window.matchMedia('(hover: hover) and (pointer: fine)').matches;
@@ -97,16 +107,19 @@ const SIZE_CLASSES = {
     container: 'p-0.5',
     button: 'px-2 py-1 text-sm',
     text: 'text-sm',
+    label: 'h-5 leading-5',
   },
   md: {
     container: 'p-1',
     button: 'px-3 py-1.5',
     text: 'text-base',
+    label: 'h-6 leading-6',
   },
   lg: {
     container: 'p-1.5',
     button: 'px-6 py-3 text-lg',
     text: 'text-lg',
+    label: 'h-7 leading-7',
   },
 };
 
@@ -158,6 +171,7 @@ export const SlidingSelector = <T,>({
   const sizeClasses = SIZE_CLASSES[size];
   const shapeClasses = SHAPE_CLASSES[shape];
   const isVerticalExpanded = isExpanded && expandDirection === 'vertical';
+  const supportsHoverPointer = canUseHoverPointer();
   const showVerticalActiveFill =
     expandDirection === 'vertical' && isVerticalActiveFillVisible;
 
@@ -207,6 +221,7 @@ export const SlidingSelector = <T,>({
   // Auto-collapse logic - don't collapse if keyboard navigating
   useEffect(() => {
     if (!collapsible || !expandOnHover) return;
+    if (!supportsHoverPointer) return;
 
     // Check if any button has focus (keyboard navigation)
     const hasFocus = buttonRefs.current.some(
@@ -239,6 +254,7 @@ export const SlidingSelector = <T,>({
     isExpanded,
     collapsible,
     expandOnHover,
+    supportsHoverPointer,
     autoCollapseDelay,
     focusedIndex,
   ]);
@@ -259,13 +275,13 @@ export const SlidingSelector = <T,>({
   }, [isExpanded, isMouseOver, expandOnHover, collapsible, options, activeKey]);
 
   const handleMouseEnter = useCallback(() => {
-    if (expandOnHover && canUseHoverPointer()) {
+    if (expandOnHover && supportsHoverPointer) {
       setIsMouseOver(true);
     }
-  }, [expandOnHover]);
+  }, [expandOnHover, supportsHoverPointer]);
 
   const handleMouseLeave = useCallback(() => {
-    if (expandOnHover) {
+    if (expandOnHover && supportsHoverPointer) {
       setIsMouseOver(false);
       setHoveredIndex(null);
       // Blur all buttons when mouse leaves to allow auto-collapse
@@ -276,7 +292,7 @@ export const SlidingSelector = <T,>({
       });
       setFocusedIndex(-1);
     }
-  }, [expandOnHover]);
+  }, [expandOnHover, supportsHoverPointer]);
 
   const toggleExpanded = useCallback(() => {
     if (collapsible) {
@@ -406,6 +422,12 @@ export const SlidingSelector = <T,>({
       <motion.button
         key={option.key}
         layoutId={verticalItemLayoutId}
+        initial={isVerticalItem ? { opacity: 0, scale: 0.98 } : false}
+        animate={isVerticalItem ? { opacity: 1, scale: 1 } : undefined}
+        exit={isVerticalItem ? { opacity: 0, scale: 0.72 } : undefined}
+        transition={
+          isVerticalItem ? VERTICAL_ITEM_ZOOM_EXIT_TRANSITION : undefined
+        }
         ref={el => {
           buttonRefs.current[index] = el;
         }}
@@ -499,7 +521,7 @@ export const SlidingSelector = <T,>({
         />
       )}
       <motion.button
-        key={activeKey}
+        layout
         layoutId={
           swapVerticalItemsOnSelect
             ? `${baseLayoutId}-vertical-item-${activeKey}`
@@ -517,6 +539,12 @@ export const SlidingSelector = <T,>({
         onClick={event =>
           activeOption && handleOptionClick(activeOption, event)
         }
+        transition={{
+          layout: {
+            type: 'spring',
+            ...animation.container,
+          },
+        }}
         disabled={disabled}
       >
         <motion.div
@@ -535,13 +563,31 @@ export const SlidingSelector = <T,>({
           }}
         />
         <motion.span
-          layout
+          layout="size"
           className={classNames(
-            'relative z-10 select-none font-medium text-white whitespace-nowrap',
-            sizeClasses.text
+            'relative z-10 inline-grid justify-items-start overflow-hidden text-left select-none font-medium text-white whitespace-nowrap',
+            sizeClasses.text,
+            sizeClasses.label
           )}
+          transition={{
+            layout: {
+              type: 'spring',
+              ...animation.container,
+            },
+          }}
         >
-          {activeOption && getDisplayLabel(activeOption, true)}
+          <AnimatePresence initial={false} mode="popLayout">
+            <motion.span
+              key={activeKey}
+              className="col-start-1 row-start-1 inline-block justify-self-start whitespace-nowrap text-left"
+              initial={{ opacity: 0, y: '110%' }}
+              animate={{ opacity: 1, y: '0%' }}
+              exit={{ opacity: 0, y: '-110%' }}
+              transition={ACTIVE_LABEL_SLIDE_TRANSITION}
+            >
+              {activeOption && getDisplayLabel(activeOption, true)}
+            </motion.span>
+          </AnimatePresence>
         </motion.span>
       </motion.button>
       {collapsible && (
@@ -596,7 +642,8 @@ export const SlidingSelector = <T,>({
         <span
           className={classNames(
             'relative z-10 select-none font-medium whitespace-nowrap',
-            sizeClasses.text
+            sizeClasses.text,
+            sizeClasses.label
           )}
         >
           {activeOption && getDisplayLabel(activeOption, true)}
@@ -635,19 +682,31 @@ export const SlidingSelector = <T,>({
           </div>
 
           <motion.div
+            layout
             className={classNames(
               'absolute left-0 top-0 inline-flex max-w-[calc(100vw-3rem)] origin-top flex-col bg-zinc-100 shadow-md text-slate-700 overflow-hidden w-fit',
               sizeClasses.container,
               shapeClasses.container
             )}
             transition={{
-              type: 'spring',
-              ...animation.container,
+              layout: {
+                type: 'spring',
+                ...animation.container,
+              },
             }}
           >
-            <div className="inline-flex items-center relative w-fit">
+            <motion.div
+              layout
+              className="inline-flex items-center relative w-fit"
+              transition={{
+                layout: {
+                  type: 'spring',
+                  ...animation.container,
+                },
+              }}
+            >
               {renderCollapsedContent()}
-            </div>
+            </motion.div>
 
             <motion.div
               aria-hidden={!isExpanded}
@@ -656,7 +715,7 @@ export const SlidingSelector = <T,>({
                 opacity: isExpanded ? 1 : 0,
               }}
               className={classNames(
-                'inline-flex max-h-[calc(100vh-10rem)] flex-col items-stretch overflow-y-auto overscroll-contain',
+                'scrollbar-hide inline-flex max-h-[calc(100vh-10rem)] flex-col items-stretch overflow-y-auto overscroll-contain',
                 {
                   'pointer-events-none': !isExpanded,
                 }
@@ -664,11 +723,13 @@ export const SlidingSelector = <T,>({
               initial={false}
               transition={DIRECT_DROPDOWN_TRANSITION}
             >
-              {options.map((option, index) =>
-                option.key === activeKey
-                  ? null
-                  : renderOption(option, index, true)
-              )}
+              <AnimatePresence initial={false} mode="popLayout">
+                {options.map((option, index) =>
+                  option.key === activeKey
+                    ? null
+                    : renderOption(option, index, true)
+                )}
+              </AnimatePresence>
             </motion.div>
           </motion.div>
         </div>
