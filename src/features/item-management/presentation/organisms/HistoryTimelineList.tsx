@@ -474,54 +474,56 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
       return;
     }
 
-    const scrollDelay = skipEntranceAnimation ? 220 : 100;
-
-    // Use setTimeout to wait for DOM updates and animations
-    const scrollTimeout = setTimeout(() => {
+    const scrollSelectedIntoView = (behavior: ScrollBehavior) => {
       const container = scrollContainerRef.current;
       if (!container) return;
 
-      const element = container.querySelector(
+      const element = container.querySelector<HTMLElement>(
         `[data-version-number="${selectedVersion}"]`
-      ) as HTMLElement;
+      );
+      if (!element) return;
 
-      if (element) {
-        const scrollMargin = 16;
-        const visibleTop = container.scrollTop + scrollMargin;
-        const visibleBottom =
-          container.scrollTop + container.clientHeight - scrollMargin;
-        const elementTop = element.offsetTop;
-        const elementBottom = elementTop + element.offsetHeight;
+      const scrollMargin = Math.min(
+        40,
+        Math.max(16, container.clientHeight * 0.12)
+      );
+      const containerRect = container.getBoundingClientRect();
+      const elementRect = element.getBoundingClientRect();
+      const visibleTop = containerRect.top + scrollMargin;
+      const visibleBottom = containerRect.bottom - scrollMargin;
+      const maxScroll = container.scrollHeight - container.clientHeight;
+      let nextScrollTop = container.scrollTop;
 
-        if (elementTop >= visibleTop && elementBottom <= visibleBottom) {
-          checkScrollPosition();
-          return;
-        }
-
-        // Calculate scroll position to place item at desired position
-        const containerHeight = container.clientHeight;
-        const elementHeight = element.offsetHeight;
-
-        // Position item at 50% from top (center)
-        const targetPosition = containerHeight * 0.5;
-        const scrollTo = elementTop - targetPosition + elementHeight / 2;
-
-        container.scrollTo({
-          top: scrollTo,
-          behavior: 'smooth',
-        });
+      if (elementRect.top < visibleTop) {
+        nextScrollTop += elementRect.top - visibleTop;
+      } else if (elementRect.bottom > visibleBottom) {
+        nextScrollTop += elementRect.bottom - visibleBottom;
       }
-    }, scrollDelay);
+
+      nextScrollTop = Math.max(0, Math.min(nextScrollTop, maxScroll));
+      if (Math.abs(nextScrollTop - container.scrollTop) < 1) {
+        checkScrollPosition();
+        return;
+      }
+
+      container.scrollTo({
+        top: nextScrollTop,
+        behavior,
+      });
+    };
+
+    const animationFrame = requestAnimationFrame(() => {
+      scrollSelectedIntoView('smooth');
+    });
+    const settleTimeout = setTimeout(() => {
+      scrollSelectedIntoView('smooth');
+    }, 260);
 
     return () => {
-      clearTimeout(scrollTimeout);
+      cancelAnimationFrame(animationFrame);
+      clearTimeout(settleTimeout);
     };
-  }, [
-    selectedVersion,
-    autoScrollToSelected,
-    allowMultiSelect,
-    skipEntranceAnimation,
-  ]);
+  }, [selectedVersion, autoScrollToSelected, allowMultiSelect]);
 
   // Custom smooth scrolling effect
   useEffect(() => {
