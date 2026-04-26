@@ -330,15 +330,12 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
   const showEditButtonSpace = wantsEditButton || editIconVisible;
   const showDeleteButtonSpace = wantsDeleteButton || deleteIconVisible;
   const showInsertButtonSpace = wantsInsertButton || insertIconVisible;
-  const wantsAnyButtons =
-    wantsEditButton || wantsDeleteButton || wantsInsertButton;
-  const badgeTransform = wantsAnyButtons ? 'scaleX(1.02)' : 'scaleX(1)';
   const hasMenuAction = hasActionMenu && !isEditing;
 
   return (
     <div
       ref={badgeRef}
-      className={`rounded-lg text-sm font-medium ${colors.bg} ${colors.text} flex-shrink-0 transition-[box-shadow] duration-150 ease-out ${selectedClass} ${errorClass}`}
+      className={`rounded-lg text-sm font-medium ${colors.bg} ${colors.text} flex-shrink-0 transition-[box-shadow,background-color] duration-200 ease-out ${selectedClass} ${errorClass}`}
       data-selected={isSelected}
       style={{
         ...shakeStyle,
@@ -362,7 +359,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
         : {})}
     >
       <div className="flex items-center">
-        <div className="flex items-center py-1.5 pl-2.5">
+        <div className="flex items-center py-1.5 pl-2.5 pr-1.5">
           {isEditing ? (
             <input
               ref={inputRef}
@@ -371,7 +368,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
               onChange={handleChange}
               onKeyDown={handleKeyDown}
               onBlur={handleBlur}
-              className={`bg-transparent border-none outline-none text-sm font-medium ${colors.text} max-w-[200px] p-0 badge-edit-input`}
+              className={`bg-transparent border-none outline-none text-sm font-medium ${colors.text} max-w-[200px] p-0 badge-edit-input transition-[width] duration-150 ease-out`}
               style={{ width: `${Math.max(editingValue.length * 8, 20)}px` }}
             />
           ) : (
@@ -380,19 +377,13 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
             </span>
           )}
         </div>
-        <div
-          className="flex items-center pr-1 transition-transform ease-out"
-          style={{
-            transform: badgeTransform,
-            transformOrigin: 'center',
-          }}
-        >
+        <div className="flex items-center pr-1">
           {/* Edit/Cancel button - same position, swaps icon based on mode */}
           {config.canEdit && config.onEdit && (
             <div
-              className={`flex-shrink-0 overflow-hidden transition-opacity duration-150 ease-out ml-1 ${
+              className={`flex-shrink-0 overflow-hidden transition-[width,opacity,margin] duration-150 ease-out ${
                 showEditButtonSpace ? 'w-6 opacity-100' : 'w-0 opacity-0'
-              }`}
+              } ${showEditButtonSpace ? 'ml-1' : 'ml-0'}`}
             >
               <button
                 onClick={e => {
@@ -429,7 +420,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
           {/* Clear/Delete button (Trash) - shown on hover or selected, hidden when editing */}
           {!isEditing && config.canClear && (
             <div
-              className={`flex-shrink-0 overflow-hidden transition-opacity duration-150 ease-out ${
+              className={`flex-shrink-0 overflow-hidden transition-[width,opacity] duration-150 ease-out ${
                 showDeleteButtonSpace ? 'w-6 opacity-100' : 'w-0 opacity-0'
               }`}
             >
@@ -458,7 +449,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
           {/* Insert button (Plus) - only enabled for eligible value badges */}
           {!isEditing && config.canInsert && config.onInsert && (
             <div
-              className={`flex-shrink-0 overflow-hidden transition-opacity duration-150 ease-out ${
+              className={`flex-shrink-0 overflow-hidden transition-[width,opacity] duration-150 ease-out ${
                 showInsertButtonSpace ? 'w-6 opacity-100' : 'w-0 opacity-0'
               }`}
             >
