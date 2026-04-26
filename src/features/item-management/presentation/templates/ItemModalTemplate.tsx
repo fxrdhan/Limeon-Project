@@ -204,13 +204,13 @@ const ItemModalTemplate: React.FC<ItemModalTemplateProps> = React.memo(
                     ) : (
                       // Standard form layout
                       <div className="h-full min-h-0 flex flex-col md:flex-row gap-5 overflow-visible md:overflow-hidden">
-                        <div className="w-full md:w-[40%] min-h-0 md:h-full md:max-h-full md:overflow-y-auto md:overscroll-contain md:pr-2 md:pl-2 md:[scrollbar-gutter:stable]">
+                        <div className="w-full md:w-[40%] min-h-0 md:h-full md:max-h-full md:overflow-y-auto md:overscroll-contain md:pr-2 md:pl-2">
                           {children.basicInfoRequired}
                           {children.categoryForm}
                         </div>
 
                         <div
-                          className={`w-full md:w-[60%] flex flex-col gap-0 min-h-0 md:h-full md:max-h-full md:overflow-y-auto md:overscroll-contain md:pl-2 md:pr-2 md:[scrollbar-gutter:stable] ${rightColumnClassName || ''}`}
+                          className={`w-full md:w-[60%] flex flex-col gap-0 min-h-0 md:h-full md:max-h-full md:overflow-y-auto md:overscroll-contain md:pl-2 md:pr-2 ${rightColumnClassName || ''}`}
                           {...restRightColumnProps}
                         >
                           {children.basicInfoOptional}
