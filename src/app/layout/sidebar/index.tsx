@@ -241,11 +241,11 @@ const brandTitleCharacterVariants = {
 } as const;
 
 const sidebarBackgroundTransition = {
-  x: { duration: 0.12, ease: 'easeOut' },
-  y: { duration: 0.12, ease: 'easeOut' },
-  width: { duration: 0.12, ease: 'easeOut' },
-  height: { duration: 0.12, ease: 'easeOut' },
-  opacity: { duration: 0.08, ease: 'easeOut' },
+  x: { duration: 0.22, ease: 'easeOut' },
+  y: { duration: 0.22, ease: 'easeOut' },
+  width: { duration: 0.2, ease: 'easeOut' },
+  height: { duration: 0.2, ease: 'easeOut' },
+  opacity: { duration: 0.12, ease: 'easeOut' },
 } as const;
 
 const getSidebarTargetId = (target: SidebarHoverTarget) =>
