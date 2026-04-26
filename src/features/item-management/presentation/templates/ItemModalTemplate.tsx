@@ -164,7 +164,7 @@ const ItemModalTemplate: React.FC<ItemModalTemplateProps> = React.memo(
               animate={isClosing ? 'exit' : 'visible'}
               exit="exit"
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="rounded-2xl bg-white shadow-xl w-[60vw] h-[90vh] max-h-[90vh] flex flex-col border border-slate-200"
+              className="rounded-2xl bg-white shadow-xl w-[60vw] max-h-[90vh] flex flex-col overflow-hidden border border-slate-200"
               onClick={e => e.stopPropagation()}
               ref={modalRef}
             >
@@ -187,30 +187,30 @@ const ItemModalTemplate: React.FC<ItemModalTemplateProps> = React.memo(
                 exit="exit"
                 transition={{ duration: 0.2, delay: 0.1 }}
                 onSubmit={onSubmit}
-                className="flex-1 basis-0 flex flex-col min-h-0"
+                className="flex flex-col min-h-0"
               >
-                <div className="flex-1 basis-0 min-h-0 overflow-y-auto overscroll-contain md:overflow-hidden">
-                  <div className="px-6 py-2 h-full min-h-0 flex flex-col">
+                <div className="min-h-0 max-h-[calc(90vh-12rem)] overflow-y-auto overscroll-contain md:overflow-visible">
+                  <div className="px-6 py-2 min-h-0">
                     {/* Detect if this is a full-width layout (only basicInfo, others are null) */}
                     {!children.settingsForm &&
                     !children.pricingForm &&
                     !children.packageConversionManager ? (
                       // Full-width layout for history mode
-                      <div className="w-full flex-1 min-h-0 overflow-y-auto scrollbar-hide">
+                      <div className="w-full min-h-0 max-h-[calc(90vh-12rem)] overflow-y-auto scrollbar-hide">
                         {children.basicInfoRequired}
                         {children.basicInfoOptional}
                         {children.categoryForm}
                       </div>
                     ) : (
                       // Standard form layout
-                      <div className="h-full min-h-0 flex flex-col md:flex-row gap-5 overflow-visible md:overflow-hidden">
-                        <div className="w-full md:w-[40%] min-h-0 md:h-full md:max-h-full md:overflow-y-auto md:overscroll-contain md:pr-2 md:pl-2">
+                      <div className="min-h-0 flex flex-col md:flex-row gap-5 overflow-visible md:max-h-[calc(90vh-12rem)]">
+                        <div className="w-full md:w-[40%] min-h-0 md:max-h-[calc(90vh-12rem)] md:overflow-y-auto md:overscroll-contain md:pr-2 md:pl-2">
                           {children.basicInfoRequired}
                           {children.categoryForm}
                         </div>
 
                         <div
-                          className={`w-full md:w-[60%] flex flex-col gap-0 min-h-0 md:h-full md:max-h-full md:overflow-y-auto md:overscroll-contain md:pl-2 md:pr-2 ${rightColumnClassName || ''}`}
+                          className={`w-full md:w-[60%] flex flex-col gap-0 min-h-0 md:max-h-[calc(90vh-12rem)] md:overflow-y-auto md:overscroll-contain md:pl-2 md:pr-2 ${rightColumnClassName || ''}`}
                           {...restRightColumnProps}
                         >
                           {children.basicInfoOptional}
