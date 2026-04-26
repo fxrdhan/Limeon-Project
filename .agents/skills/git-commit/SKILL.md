@@ -66,9 +66,9 @@ git restore --staged <paths>
 
 4. Run required validation before each commit.
    Always follow repository-level agent instructions first (for example `AGENTS.md`) and run the required validator command.
-   If the repository exposes a canonical validation script such as `check`, prefer that script first.
-   If the repository routes tooling through project scripts or wrapper CLIs, prefer those entrypoints over raw upstream commands. Examples: `bun run check`, `bun test:run`, or `vp test` instead of calling `tsc`, `vitest`, or `vite` directly.
-   If repo instructions and package scripts appear to conflict, treat raw tool commands in docs as potentially stale and verify the canonical script entrypoint from `package.json` before committing.
+   If the repository exposes a canonical validation command such as `vp check`, prefer that command first.
+   If the repository routes tooling through a wrapper CLI, prefer that CLI directly over package-script wrappers and raw upstream commands. For example, use `vp check` or `vp test run` when VitePlus is the canonical toolchain.
+   If repo instructions and package scripts appear to conflict, treat raw tool commands in docs as potentially stale and verify the canonical command entrypoint before committing.
    Default when no repo-specific override exists:
 
 ```bash
