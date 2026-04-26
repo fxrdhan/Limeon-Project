@@ -126,7 +126,7 @@ const TooltipProviderContext = React.createContext<TooltipProviderValue>({
 const TooltipContext = React.createContext<TooltipValue | null>(null);
 
 const TOOLTIP_ARROW_SIZE = 12;
-const TOOLTIP_ARROW_INSET = TOOLTIP_ARROW_SIZE * 0.65;
+const TOOLTIP_ARROW_DEPTH = 7;
 const TOOLTIP_HIDDEN_SCALE = 0.45;
 const TOOLTIP_GEOMETRY_EPSILON = 0.5;
 
@@ -169,7 +169,7 @@ const getTooltipTransformOrigin = (side: TooltipSide, arrowOffset: number) => {
 };
 
 const getTooltipArrowStyle = (side: TooltipSide): React.CSSProperties => {
-  const inset = -(TOOLTIP_ARROW_SIZE - TOOLTIP_ARROW_INSET);
+  const inset = -TOOLTIP_ARROW_DEPTH;
 
   if (side === 'top') {
     return {
@@ -191,6 +191,54 @@ const getTooltipArrowStyle = (side: TooltipSide): React.CSSProperties => {
 
   return {
     left: inset,
+  };
+};
+
+const getTooltipArrowFillPath = (side: TooltipSide) => {
+  if (side === 'top') {
+    return 'M0 0H12L6 7L0 0Z';
+  }
+
+  if (side === 'bottom') {
+    return 'M6 0L12 7H0L6 0Z';
+  }
+
+  if (side === 'left') {
+    return 'M0 0V12L7 6L0 0Z';
+  }
+
+  return 'M7 0V12L0 6L7 0Z';
+};
+
+const getTooltipArrowStrokePath = (side: TooltipSide) => {
+  if (side === 'top') {
+    return 'M0.75 0.75L6 6.1L11.25 0.75';
+  }
+
+  if (side === 'bottom') {
+    return 'M0.75 6.25L6 0.9L11.25 6.25';
+  }
+
+  if (side === 'left') {
+    return 'M0.75 0.75L6.1 6L0.75 11.25';
+  }
+
+  return 'M6.25 0.75L0.9 6L6.25 11.25';
+};
+
+const getTooltipArrowSvgSize = (side: TooltipSide) => {
+  if (side === 'top' || side === 'bottom') {
+    return {
+      width: TOOLTIP_ARROW_SIZE,
+      height: TOOLTIP_ARROW_DEPTH,
+      viewBox: '0 0 12 7',
+    };
+  }
+
+  return {
+    width: TOOLTIP_ARROW_DEPTH,
+    height: TOOLTIP_ARROW_SIZE,
+    viewBox: '0 0 7 12',
   };
 };
 
@@ -582,17 +630,19 @@ const TooltipProvider = ({
         ref={tooltipSizerRef}
         aria-hidden
         className={cn(
-          'pointer-events-none fixed left-0 top-0 -z-10 whitespace-nowrap rounded-md bg-slate-950 px-2 py-1 text-xs font-medium text-white opacity-0',
+          'pointer-events-none fixed left-0 top-0 -z-10 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2 py-1 text-sm font-medium text-black opacity-0 shadow-lg',
           content?.className
         )}
         style={content?.style}
       >
-        <span className="relative z-10">{content?.children}</span>
+        <span className="relative z-10 block max-w-full overflow-hidden whitespace-nowrap">
+          {content?.children}
+        </span>
       </motion.div>
       <motion.div
         ref={tooltipRef}
         className={cn(
-          'pointer-events-none fixed left-0 top-0 z-50 overflow-visible whitespace-nowrap rounded-md bg-slate-950 px-2 py-1 text-xs font-medium text-white shadow-md',
+          'pointer-events-none fixed left-0 top-0 z-50 overflow-visible whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2 py-1 text-sm font-medium text-black shadow-lg',
           content?.className
         )}
         style={{
@@ -606,13 +656,30 @@ const TooltipProvider = ({
         initial={false}
         animate={bubbleControls}
       >
-        <motion.span
-          className="pointer-events-none absolute z-0 block size-3 rotate-45 rounded-[2px] bg-inherit"
+        <motion.svg
+          {...getTooltipArrowSvgSize(activeTooltip?.side ?? 'top')}
+          className="pointer-events-none absolute -z-10 block overflow-visible"
           style={getTooltipArrowStyle(activeTooltip?.side ?? 'top')}
           initial={false}
           animate={arrowControls}
-        />
-        <span className="relative z-10">{content?.children}</span>
+        >
+          <path
+            d={getTooltipArrowFillPath(activeTooltip?.side ?? 'top')}
+            fill="white"
+          />
+          <path
+            d={getTooltipArrowStrokePath(activeTooltip?.side ?? 'top')}
+            fill="none"
+            stroke="#e2e8f0"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1"
+            vectorEffect="non-scaling-stroke"
+          />
+        </motion.svg>
+        <span className="relative z-10 block max-w-full overflow-hidden whitespace-nowrap">
+          {content?.children}
+        </span>
       </motion.div>
     </TooltipProviderContext.Provider>
   );
