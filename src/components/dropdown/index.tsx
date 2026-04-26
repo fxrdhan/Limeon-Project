@@ -29,6 +29,20 @@ let pinnedDropdownId: string | null = null;
 let activeManagedDropdownId: string | null = null;
 let activeManagedDropdownCloseCallback: (() => void) | null = null;
 
+const isEditableElement = (element: EventTarget | null) => {
+  if (!(element instanceof HTMLElement)) return false;
+
+  return (
+    element instanceof HTMLInputElement ||
+    element instanceof HTMLTextAreaElement ||
+    element.isContentEditable
+  );
+};
+
+const isPrintableSearchKey = (e: React.KeyboardEvent<HTMLElement>) => {
+  return e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey;
+};
+
 // Function overloads for different modes
 function Dropdown(props: DropdownProps): React.JSX.Element;
 function Dropdown(props: CheckboxDropdownProps): React.JSX.Element;
@@ -180,6 +194,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     searchState,
     filteredOptions,
     handleSearchChange,
+    updateSearchTerm,
     resetSearch,
   } = useDropdownSearch(options, searchList);
 
@@ -528,19 +543,30 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
   );
 
   const handleButtonBlur = useCallback(() => {
-    // Always set touched to true
-    setTouched(true);
+    setTimeout(() => {
+      const activeElement = document.activeElement;
+      const isFocusInDropdown =
+        dropdownRef.current?.contains(activeElement) ||
+        dropdownMenuRef.current?.contains(activeElement);
 
-    // Always run validation on blur if validation is enabled
-    if (validate || required) {
-      const isValid = validateDropdown();
-      if (!isValid && showValidationOnBlur) {
-        setShowValidationOverlay(true);
-      } else if (isValid) {
-        handleCloseValidation();
+      if (isFocusInDropdown) {
+        return;
       }
-    }
+
+      setTouched(true);
+
+      if (validate || required) {
+        const isValid = validateDropdown();
+        if (!isValid && showValidationOnBlur) {
+          setShowValidationOverlay(true);
+        } else if (isValid) {
+          handleCloseValidation();
+        }
+      }
+    }, 0);
   }, [
+    dropdownMenuRef,
+    dropdownRef,
     validate,
     required,
     validateDropdown,
@@ -567,6 +593,40 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
       }
     },
     [handleDropdownKeyDown]
+  );
+
+  const handleButtonKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLButtonElement>) => {
+      if (
+        effectiveIsOpen &&
+        searchList &&
+        isPrintableSearchKey(e) &&
+        !isEditableElement(e.target)
+      ) {
+        e.preventDefault();
+        if (enableHoverDetail) {
+          hideHoverDetail();
+        }
+        updateSearchTerm(`${searchTerm}${e.key}`);
+        searchInputRef.current?.focus();
+        queueMicrotask(() => {
+          const input = searchInputRef.current;
+          input?.setSelectionRange(input.value.length, input.value.length);
+        });
+        return;
+      }
+
+      handleDropdownKeyDown(e);
+    },
+    [
+      enableHoverDetail,
+      effectiveIsOpen,
+      handleDropdownKeyDown,
+      hideHoverDetail,
+      searchList,
+      searchTerm,
+      updateSearchTerm,
+    ]
   );
 
   const contextValue = {
@@ -653,7 +713,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
                 tabIndex={tabIndex}
                 disabled={disabled}
                 onClick={handleToggleDropdown}
-                onKeyDown={handleDropdownKeyDown}
+                onKeyDown={handleButtonKeyDown}
                 onBlur={handleButtonBlur}
               />
             </div>

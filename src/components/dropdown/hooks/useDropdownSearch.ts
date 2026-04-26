@@ -51,9 +51,8 @@ export const useDropdownSearch = (
     setSearchState(derivedSearchState);
   }, [derivedSearchState]);
 
-  const handleSearchChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newValue = e.target.value;
+  const updateSearchTerm = useCallback(
+    (newValue: string) => {
       setSearchTerm(newValue);
       setSearchState(
         newValue.trim() === ''
@@ -64,6 +63,13 @@ export const useDropdownSearch = (
       );
     },
     [searchState]
+  );
+
+  const handleSearchChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      updateSearchTerm(e.target.value);
+    },
+    [updateSearchTerm]
   );
 
   const resetSearch = useCallback(() => {
@@ -81,6 +87,7 @@ export const useDropdownSearch = (
     searchState,
     filteredOptions,
     handleSearchChange,
+    updateSearchTerm,
     resetSearch,
     updateSearchState,
   };

@@ -168,6 +168,25 @@ describe('Dropdown', () => {
     expect(screen.getByRole('button', { name: /Beta/ })).not.toBeNull();
   });
 
+  it('routes printable trigger key presses to the search input when open', () => {
+    render(<DropdownHarness />);
+
+    const trigger = screen.getByRole('button', { name: 'Pilih Pertama' });
+    act(() => {
+      fireEvent.click(trigger);
+      trigger.focus();
+      vi.advanceTimersByTime(200);
+    });
+
+    act(() => {
+      fireEvent.keyDown(trigger, { key: 'b', code: 'KeyB' });
+    });
+
+    const searchInput = screen.getByPlaceholderText('Cari...');
+    expect((searchInput as HTMLInputElement).value).toBe('b');
+    expect(document.activeElement).toBe(searchInput);
+  });
+
   it('opens add-new modal when the empty-search plus button is clicked', () => {
     render(<DropdownHarness />);
 
