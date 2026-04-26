@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { TbArrowBackUp, TbX } from 'react-icons/tb';
+import { TbArrowBackUp, TbHistoryToggle, TbX } from 'react-icons/tb';
 import { CardHeader, CardTitle } from '@/components/card';
 import Button from '@/components/button';
 import ItemHistoryPortal from './ItemHistoryPortal';
@@ -76,11 +76,12 @@ const ItemFormHeader: React.FC<LocalItemFormHeaderProps> = React.memo(
                 variant="text"
                 size="sm"
                 onClick={handleTimestampClick}
-                className="text-sm text-slate-500 hover:text-blue-600 italic whitespace-nowrap flex items-center transition-colors focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+                className="text-sm !text-black whitespace-nowrap flex items-center transition-colors focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
                 title="Lihat riwayat perubahan"
                 tabIndex={-1}
               >
-                {formattedUpdateAt}
+                <TbHistoryToggle className="mr-1.5" size={16} />
+                Riwayat Perubahan
               </Button>
             )}
             {!isEditMode && onReset && (
@@ -97,13 +98,14 @@ const ItemFormHeader: React.FC<LocalItemFormHeaderProps> = React.memo(
             <Button
               variant="text"
               size="sm"
+              withUnderline={false}
               onClick={() => {
                 if (!isClosing) {
                   onClose();
                 }
               }}
-              className="p-2"
-              title="Tutup"
+              className="flex !h-9 !w-9 items-center justify-center !rounded-lg !p-0 !text-black hover:bg-slate-100"
+              aria-label="Tutup"
             >
               <TbX size={18} />
             </Button>
