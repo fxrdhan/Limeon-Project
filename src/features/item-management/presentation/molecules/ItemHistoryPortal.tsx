@@ -1,4 +1,10 @@
-import React, { useEffect, useRef, useState, Fragment } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  Fragment,
+} from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { createPortal } from 'react-dom';
 import { Transition, TransitionChild } from '@headlessui/react';
@@ -7,7 +13,12 @@ import { useQueryClient } from '@tanstack/react-query';
 import HistoryTimelineList from '../organisms/HistoryTimelineList';
 import { useHistorySelection } from '../hooks/useHistoryManagement';
 import Button from '@/components/button';
-import { TbAlertTriangle, TbArrowBackUp, TbClock } from 'react-icons/tb';
+import {
+  TbAlertTriangle,
+  TbArrowBackUp,
+  TbClock,
+  TbHistoryToggle,
+} from 'react-icons/tb';
 import { itemHistoryService } from '../../infrastructure/itemHistory.service';
 
 interface HistoryItem {
@@ -38,6 +49,10 @@ interface ItemHistoryPortalProps {
 
 type RestoreMode = 'soft' | 'hard';
 
+const PORTAL_MARGIN = 16;
+const PORTAL_WIDTH = 350;
+const PORTAL_TAB_HEIGHT = 52;
+
 const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
   isOpen,
   onClose,
@@ -50,7 +65,13 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
 }) => {
   const portalRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
-  const [position, setPosition] = React.useState({ top: 0, left: 0 });
+  const [position, setPosition] = useState({
+    top: 0,
+    left: 0,
+    width: 350,
+    bodyMaxHeight: 420,
+    bodyMinHeight: 320,
+  });
   const [isPositioned, setIsPositioned] = useState(false);
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
   const [restoreTargetVersion, setRestoreTargetVersion] = useState<
@@ -74,18 +95,47 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
     });
 
   // Calculate position based on trigger element
+  const updatePosition = useCallback(() => {
+    const trigger = triggerRef.current;
+    if (!trigger) return;
+
+    const rect = trigger.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const width = Math.min(PORTAL_WIDTH, viewportWidth - PORTAL_MARGIN * 2);
+    const right = Math.min(viewportWidth - PORTAL_MARGIN, rect.right);
+    const left = Math.max(PORTAL_MARGIN, right - width);
+    const top = Math.max(PORTAL_MARGIN, rect.top - 12);
+    const availableHeight = viewportHeight - top - PORTAL_MARGIN;
+    const bodyMaxHeight = Math.max(
+      180,
+      availableHeight - PORTAL_TAB_HEIGHT + 1
+    );
+
+    setPosition({
+      top,
+      left,
+      width,
+      bodyMaxHeight,
+      bodyMinHeight: Math.min(320, bodyMaxHeight),
+    });
+    setIsPositioned(true);
+  }, [triggerRef]);
+
   useEffect(() => {
-    if (isOpen && triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      setPosition({
-        top: rect.bottom + 4,
-        left: rect.right - 350, // Align right edge of modal with right edge of button
-      });
-      setIsPositioned(true);
-    } else if (!isOpen) {
+    if (!isOpen) {
       setIsPositioned(false);
+      return;
     }
-  }, [isOpen, triggerRef]);
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [isOpen, updatePosition]);
 
   // Close on click outside
   useEffect(() => {
@@ -205,42 +255,68 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
       {isOpen && isPositioned && (
         <motion.div
           ref={portalRef}
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.15 }}
-          className="fixed z-[60] bg-white rounded-xl shadow-xl border border-slate-200 w-[350px] max-h-[600px] flex flex-col"
+          initial={{
+            opacity: 0,
+            scaleY: 0.96,
+            y: -8,
+          }}
+          animate={{
+            opacity: 1,
+            scaleY: 1,
+            y: 0,
+          }}
+          exit={{
+            opacity: 0,
+            scaleY: 0.96,
+            y: -8,
+          }}
+          transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
+          className="fixed z-[60] origin-top-right"
           style={{
             top: `${position.top}px`,
             left: `${position.left}px`,
+            width: `${position.width}px`,
           }}
         >
-          {/* Header */}
-          <div className="px-4 py-3 border-b border-slate-200 flex-shrink-0">
-            <h3 className="font-medium text-sm">Riwayat Perubahan</h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Pilih versi untuk melihat data
-            </p>
-          </div>
+          <div className="relative">
+            <div className="relative z-10 flex justify-end">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex h-[44px] min-w-[180px] select-none items-center justify-center gap-2 rounded-t-xl border border-b-0 border-slate-300 bg-white px-4 text-sm font-medium text-black outline-none hover:bg-white active:bg-white focus:bg-white focus:outline-none focus:ring-0"
+                aria-label="Tutup riwayat perubahan"
+              >
+                <TbHistoryToggle className="h-5 w-5" />
+                <span>Riwayat Perubahan</span>
+              </button>
+            </div>
 
-          {/* Content - Reuse HistoryTimelineList with keyboard navigation */}
-          <div className="flex-1 overflow-hidden">
-            <HistoryTimelineList
-              history={history}
-              isLoading={isLoading}
-              onVersionClick={handleVersionClick}
-              selectedVersion={hookSelectedVersion}
-              selectedVersions={
-                hookSelectedVersion ? [hookSelectedVersion] : []
-              }
-              showRestoreButton={true}
-              onRestore={handleRestore}
-              emptyMessage="Tidak ada riwayat perubahan"
-              loadingMessage="Loading history..."
-              allowMultiSelect={false}
-              autoScrollToSelected={true}
-              skipEntranceAnimation={hookSelectedVersion !== null}
-            />
+            <div
+              className="-mt-px overflow-hidden rounded-b-xl rounded-tl-xl border border-slate-300 bg-white shadow-xl"
+              style={{
+                maxHeight: `${position.bodyMaxHeight}px`,
+                minHeight: `${position.bodyMinHeight}px`,
+              }}
+            >
+              <div className="h-full overflow-hidden pt-2">
+                <HistoryTimelineList
+                  history={history}
+                  isLoading={isLoading}
+                  onVersionClick={handleVersionClick}
+                  selectedVersion={hookSelectedVersion}
+                  selectedVersions={
+                    hookSelectedVersion ? [hookSelectedVersion] : []
+                  }
+                  showRestoreButton={true}
+                  onRestore={handleRestore}
+                  emptyMessage="Tidak ada riwayat perubahan"
+                  loadingMessage="Loading history..."
+                  allowMultiSelect={false}
+                  autoScrollToSelected={true}
+                  skipEntranceAnimation={hookSelectedVersion !== null}
+                />
+              </div>
+            </div>
           </div>
         </motion.div>
       )}

@@ -77,7 +77,7 @@ const ItemFormHeader: React.FC<LocalItemFormHeaderProps> = React.memo(
                 size="sm"
                 onClick={handleTimestampClick}
                 className="text-sm !text-black whitespace-nowrap flex items-center transition-colors focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
-                title="Lihat riwayat perubahan"
+                aria-label="Buka riwayat perubahan"
                 tabIndex={-1}
               >
                 <TbHistoryToggle className="mr-1.5" size={16} />
