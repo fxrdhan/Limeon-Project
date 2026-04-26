@@ -65,6 +65,10 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
     const wasOpenRef = useRef(false);
     const [isActiveBackgroundReady, setIsActiveBackgroundReady] =
       useState(false);
+    const [
+      isHighlightSuppressedDuringScroll,
+      setIsHighlightSuppressedDuringScroll,
+    ] = useState(false);
 
     if (isOpen && !wasOpenRef.current) {
       openCycleRef.current += 1;
@@ -130,6 +134,7 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
 
             if (!currentContainer || !currentTargetElement) {
               setHeldHighlightFrame(null);
+              setIsHighlightSuppressedDuringScroll(false);
               releaseHeldHighlightFrameRef.current = null;
               return;
             }
@@ -147,6 +152,7 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
               hasHeldLongEnough
             ) {
               setHeldHighlightFrame(null);
+              setIsHighlightSuppressedDuringScroll(false);
               releaseHeldHighlightFrameRef.current = null;
               return;
             }
@@ -166,15 +172,8 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
             targetIndex: pendingHighlightedIndex,
           })
         ) {
-          setHeldHighlightFrame(
-            getKeyboardPinnedHighlightFrame({
-              container,
-              forceTargetEdgeFrame: true,
-              frameRootElement: menuElement,
-              scrollDirection: scrollTarget.direction,
-              targetElement,
-            })
-          );
+          setHeldHighlightFrame(null);
+          setIsHighlightSuppressedDuringScroll(true);
           if (typeof container.scrollTo === 'function') {
             container.scrollTo({
               top: scrollTarget.scrollTop,
@@ -187,6 +186,7 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
           return;
         }
 
+        setIsHighlightSuppressedDuringScroll(false);
         setHeldHighlightFrame(
           getKeyboardPinnedHighlightFrame({
             container,
@@ -223,6 +223,7 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
         releaseHeldHighlightFrameRef.current = null;
       }
       setHeldHighlightFrame(null);
+      setIsHighlightSuppressedDuringScroll(false);
     }, [isKeyboardNavigation]);
 
     useEffect(() => {
@@ -248,7 +249,7 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
 
       if (!isKeyboardNavigation) return;
 
-      if (heldHighlightFrame) {
+      if (heldHighlightFrame || isHighlightSuppressedDuringScroll) {
         onHoverDetailHide?.();
         return;
       }
@@ -301,6 +302,7 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
       filteredOptions,
       heldHighlightFrame,
       highlightedIndex,
+      isHighlightSuppressedDuringScroll,
       isKeyboardNavigation,
       isOpen,
       isPositionReady,
@@ -361,7 +363,10 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
                         : option.id === value
                     )}
                     isHighlighted={highlightedIndex === index}
-                    suppressHighlightBackground={Boolean(heldHighlightFrame)}
+                    suppressHighlightBackground={
+                      Boolean(heldHighlightFrame) ||
+                      isHighlightSuppressedDuringScroll
+                    }
                     activeBackgroundLayoutId={
                       isActiveBackgroundReady
                         ? activeBackgroundLayoutId
