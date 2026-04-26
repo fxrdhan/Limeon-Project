@@ -14,6 +14,7 @@ interface OptionRowProps {
   isSelected: boolean;
   isHighlighted: boolean;
   suppressHighlightBackground: boolean;
+  activeBackgroundLayoutId?: string;
   isKeyboardNavigation: boolean;
   isExpanded?: boolean;
 
@@ -45,6 +46,7 @@ const OptionRow: React.FC<OptionRowProps> = ({
   isSelected,
   isHighlighted,
   suppressHighlightBackground,
+  activeBackgroundLayoutId,
   isKeyboardNavigation,
   isExpanded = false,
   portalWidth,
@@ -157,7 +159,7 @@ const OptionRow: React.FC<OptionRowProps> = ({
     >
       {isHighlighted && !suppressHighlightBackground && (
         <motion.div
-          layoutId="dropdown-active-background"
+          layoutId={activeBackgroundLayoutId}
           className="pointer-events-none absolute inset-0 z-0 rounded-lg bg-primary/10"
           transition={{
             type: 'spring',

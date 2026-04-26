@@ -21,7 +21,7 @@ export const PAGINATION_CONSTANTS = {
     THRESHOLD: 0.5,
     ROOT_MARGIN: '0px',
     MIN_WIDTH: '400px',
-    Z_INDEX: 9998,
+    Z_INDEX: 40,
   },
 
   // Page sizes

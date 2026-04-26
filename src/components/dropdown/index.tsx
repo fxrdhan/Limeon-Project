@@ -653,7 +653,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
                 tabIndex={tabIndex}
                 disabled={disabled}
                 onClick={handleToggleDropdown}
-                onKeyDown={!searchList ? handleDropdownKeyDown : undefined}
+                onKeyDown={handleDropdownKeyDown}
                 onBlur={handleButtonBlur}
               />
             </div>

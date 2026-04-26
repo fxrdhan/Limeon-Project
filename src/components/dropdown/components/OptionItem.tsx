@@ -9,6 +9,7 @@ const OptionItem: FC<OptionItemProps> = ({
   isSelected,
   isHighlighted,
   suppressHighlightBackground,
+  activeBackgroundLayoutId,
   isExpanded,
   onHighlight,
   dropdownMenuRef,
@@ -30,6 +31,7 @@ const OptionItem: FC<OptionItemProps> = ({
       isSelected={isSelected}
       isHighlighted={isHighlighted}
       suppressHighlightBackground={suppressHighlightBackground}
+      activeBackgroundLayoutId={activeBackgroundLayoutId}
       isKeyboardNavigation={isKeyboardNavigation}
       isExpanded={isExpanded}
       portalWidth={portalStyle?.width}

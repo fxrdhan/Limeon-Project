@@ -130,16 +130,7 @@ const ItemModalTemplate: React.FC<ItemModalTemplateProps> = React.memo(
         ordered[nextIndex]?.focus();
       };
 
-      const focusFirst = () => {
-        const { ordered } = getFocusableElements();
-        if (ordered.length === 0) return;
-        if (!container.contains(document.activeElement)) {
-          ordered[0]?.focus();
-        }
-      };
-
       document.addEventListener('keydown', handleKeyDown, true);
-      requestAnimationFrame(focusFirst);
 
       return () => {
         document.removeEventListener('keydown', handleKeyDown, true);

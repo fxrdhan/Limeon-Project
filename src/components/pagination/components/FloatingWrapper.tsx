@@ -30,7 +30,8 @@ export const FloatingWrapper: React.FC<FloatingWrapperProps> = ({
 
   return createPortal(
     <div
-      className={`fixed inset-0 z-[${PAGINATION_CONSTANTS.FLOATING.Z_INDEX}] flex items-end justify-center pb-8 pointer-events-none`}
+      className="fixed inset-0 flex items-end justify-center pb-8 pointer-events-none"
+      style={{ zIndex: PAGINATION_CONSTANTS.FLOATING.Z_INDEX }}
     >
       <AnimatePresence>
         {show && !hideWhenModalOpen && (

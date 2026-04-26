@@ -12,7 +12,6 @@ export const useFocusManagement = ({
   shouldSkipOpenFocus,
   dropdownRef,
   dropdownMenuRef,
-  searchInputRef,
   optionsContainerRef,
   mode,
 }: UseFocusManagementProps) => {
@@ -30,36 +29,31 @@ export const useFocusManagement = ({
       if (shouldSkipOpenFocus?.()) {
         return;
       }
+      if (searchList) {
+        return;
+      }
       clearPendingFocus();
-      focusTimeoutRef.current = setTimeout(
-        () => {
-          focusTimeoutRef.current = null;
+      focusTimeoutRef.current = setTimeout(() => {
+        focusTimeoutRef.current = null;
 
-          const activeElement = document.activeElement;
-          const dropdownOwnerDialog =
-            dropdownRef.current?.closest(
-              '[role="dialog"][aria-modal="true"]'
-            ) ?? null;
-          const activeDialog =
-            activeElement instanceof Element
-              ? activeElement.closest('[role="dialog"][aria-modal="true"]')
-              : null;
+        const activeElement = document.activeElement;
+        const dropdownOwnerDialog =
+          dropdownRef.current?.closest('[role="dialog"][aria-modal="true"]') ??
+          null;
+        const activeDialog =
+          activeElement instanceof Element
+            ? activeElement.closest('[role="dialog"][aria-modal="true"]')
+            : null;
 
-          if (activeDialog && activeDialog !== dropdownOwnerDialog) {
-            return;
-          }
+        if (activeDialog && activeDialog !== dropdownOwnerDialog) {
+          return;
+        }
 
-          if (searchList) {
-            searchInputRef.current?.focus();
-          } else if (mode === 'input') {
-            // For text mode without search, don't auto-focus to avoid scroll conflicts.
-            optionsContainerRef.current?.focus();
-          }
-        },
-        searchList
-          ? DROPDOWN_CONSTANTS.SEARCH_FOCUS_DELAY
-          : DROPDOWN_CONSTANTS.FOCUS_DELAY
-      );
+        if (mode === 'input') {
+          // For text mode without search, don't auto-focus to avoid scroll conflicts.
+          optionsContainerRef.current?.focus();
+        }
+      }, DROPDOWN_CONSTANTS.FOCUS_DELAY);
     }
   }, [
     clearPendingFocus,
@@ -67,7 +61,6 @@ export const useFocusManagement = ({
     isOpen,
     mode,
     optionsContainerRef,
-    searchInputRef,
     searchList,
     shouldSkipOpenFocus,
   ]);

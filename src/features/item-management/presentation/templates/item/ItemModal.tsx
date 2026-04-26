@@ -47,7 +47,6 @@ const ItemModal: React.FC<ItemModalProps> = ({
   setIsClosing,
   refetchItems,
 }) => {
-  const nameInputRef = useRef<HTMLInputElement>(null);
   const expiryCheckboxRef = useRef<HTMLLabelElement>(null);
 
   // Main data hook - this is the orchestrator
@@ -288,7 +287,6 @@ const ItemModal: React.FC<ItemModalProps> = ({
   const handleReset = useCallback(() => {
     resetForm();
     setResetKey(prev => prev + 1); // Force re-mount of form sections to clear validation
-    nameInputRef.current?.focus();
   }, [resetForm]);
 
   const handleBackdropClick = () => {
@@ -357,36 +355,6 @@ const ItemModal: React.FC<ItemModalProps> = ({
       onClose();
     }
   }, [isClosing, onClose]);
-
-  useEffect(() => {
-    if (isOpen && !loading) {
-      const timer = setTimeout(() => {
-        // Prefer explicit ref when available.
-        if (nameInputRef.current) {
-          nameInputRef.current.focus();
-          return;
-        }
-
-        // Fallback: focus first input inside the modal.
-        const dialog = document.querySelector(
-          '[role="dialog"][aria-modal="true"]'
-        );
-        const nameInput = dialog?.querySelector<HTMLInputElement>(
-          'input[name="name"]:not([disabled])'
-        );
-        if (nameInput) {
-          nameInput.focus();
-          return;
-        }
-
-        const firstField = dialog?.querySelector<HTMLElement>(
-          'input:not([disabled]), textarea:not([disabled]), select:not([disabled])'
-        );
-        firstField?.focus();
-      }, 0);
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen, loading]);
 
   // Create consolidated context value
   const contextValue: ItemManagementContextValue = {

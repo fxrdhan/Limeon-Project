@@ -188,8 +188,13 @@ export const useKeyboardNavigation = ({
         return;
 
       let newIndex = highlightedIndex;
+      const selectedIndex =
+        value && items.length
+          ? items.findIndex(option => option.id === value)
+          : -1;
       const navigationBaseIndex =
-        keyboardHighlightIndexRef.current ?? highlightedIndex;
+        keyboardHighlightIndexRef.current ??
+        (highlightedIndex >= 0 ? highlightedIndex : selectedIndex);
       const keyActions: Record<string, () => void> = {
         [KEYBOARD_KEYS.ARROW_DOWN]: () => {
           newIndex = items.length
@@ -234,8 +239,10 @@ export const useKeyboardNavigation = ({
           }
         },
         [KEYBOARD_KEYS.ENTER]: () => {
-          if (highlightedIndex >= 0 && highlightedIndex < items.length) {
-            onSelect(items[highlightedIndex].id);
+          const activeIndex =
+            keyboardHighlightIndexRef.current ?? highlightedIndex;
+          if (activeIndex >= 0 && activeIndex < items.length) {
+            onSelect(items[activeIndex].id);
           } else if (
             (searchState === SEARCH_STATES.NOT_FOUND ||
               (searchState === SEARCH_STATES.TYPING &&
@@ -307,6 +314,7 @@ export const useKeyboardNavigation = ({
       isOpen,
       currentFilteredOptions,
       highlightedIndex,
+      value,
       onSelect,
       onCloseDropdown,
       onAddNew,

@@ -66,6 +66,23 @@ function DropdownHarness() {
   );
 }
 
+function KeyboardDropdownHarness() {
+  const [value, setValue] = useState('alpha');
+
+  return (
+    <Dropdown
+      name="keyboard_dropdown"
+      value={value}
+      options={[
+        { id: 'alpha', name: 'Alpha' },
+        { id: 'beta', name: 'Beta' },
+      ]}
+      placeholder="Pilih Keyboard"
+      onChange={setValue}
+    />
+  );
+}
+
 describe('Dropdown', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -118,5 +135,63 @@ describe('Dropdown', () => {
     });
 
     expect(screen.queryByPlaceholderText('Cari...')).toBeNull();
+  });
+
+  it('does not focus the dropdown search input when opened', () => {
+    render(<DropdownHarness />);
+
+    const trigger = screen.getByRole('button', { name: 'Pilih Pertama' });
+    act(() => {
+      fireEvent.click(trigger);
+      vi.advanceTimersByTime(200);
+    });
+
+    const searchInput = screen.getByPlaceholderText('Cari...');
+    expect(document.activeElement).not.toBe(searchInput);
+  });
+
+  it('keeps arrow key navigation on the trigger after opening', () => {
+    render(<KeyboardDropdownHarness />);
+
+    const trigger = screen.getByRole('button', { name: /Alpha/ });
+    act(() => {
+      fireEvent.click(trigger);
+      trigger.focus();
+      vi.advanceTimersByTime(200);
+    });
+
+    act(() => {
+      fireEvent.keyDown(trigger, { key: 'ArrowDown', code: 'ArrowDown' });
+      fireEvent.keyDown(trigger, { key: 'Enter', code: 'Enter' });
+    });
+
+    expect(screen.getByRole('button', { name: /Beta/ })).not.toBeNull();
+  });
+
+  it('opens add-new modal when the empty-search plus button is clicked', () => {
+    render(<DropdownHarness />);
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Pilih Pertama' }));
+    });
+
+    const searchInput = screen.getByPlaceholderText('Cari...');
+    act(() => {
+      fireEvent.change(searchInput, {
+        target: { value: 'Item yang tidak ada' },
+      });
+      vi.advanceTimersByTime(200);
+    });
+
+    act(() => {
+      fireEvent.mouseDown(
+        screen.getByRole('button', { name: 'Tambah data baru' })
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Tambah data baru' }));
+    });
+
+    expect(
+      screen.getByRole('dialog', { name: 'Add new modal' })
+    ).not.toBeNull();
   });
 });

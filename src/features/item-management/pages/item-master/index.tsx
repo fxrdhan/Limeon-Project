@@ -2142,6 +2142,7 @@ const ItemMasterNew = memo(() => {
     isEditPatientModalOpen ||
     isAddDoctorModalOpen ||
     isEditDoctorModalOpen;
+  const tabSelectorLayerClass = isAnyMasterDataModalOpen ? 'z-40' : 'z-[70]';
 
   useEffect(() => {
     if (!isItemTab || !unifiedGridApi || unifiedGridApi.isDestroyed()) {
@@ -2194,7 +2195,7 @@ const ItemMasterNew = memo(() => {
                 variant="tabs"
                 size="md"
                 shape="rounded"
-                className="z-[70] [&_[role=tab]]:rounded-lg [&_[role=tab]>.absolute]:rounded-lg"
+                className={`${tabSelectorLayerClass} [&_[role=tab]]:rounded-lg [&_[role=tab]>.absolute]:rounded-lg`}
                 collapsible={true}
                 defaultExpanded={false}
                 expandOnHover={true}

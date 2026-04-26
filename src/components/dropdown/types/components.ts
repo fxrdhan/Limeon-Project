@@ -13,6 +13,7 @@ export interface OptionItemProps {
   isSelected: boolean;
   isHighlighted: boolean;
   suppressHighlightBackground: boolean;
+  activeBackgroundLayoutId?: string;
   isExpanded: boolean;
   onHighlight: (index: number) => void;
   dropdownMenuRef: RefObject<HTMLDivElement | null>;

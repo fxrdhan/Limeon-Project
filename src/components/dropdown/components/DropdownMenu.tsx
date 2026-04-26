@@ -2,6 +2,7 @@ import {
   forwardRef,
   RefObject,
   useEffect,
+  useId,
   useLayoutEffect,
   useRef,
   useState,
@@ -59,6 +60,33 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
     const [heldHighlightFrame, setHeldHighlightFrame] =
       useState<KeyboardPinnedHighlightFrame | null>(null);
     const releaseHeldHighlightFrameRef = useRef<number | null>(null);
+    const highlightInstanceId = useId();
+    const openCycleRef = useRef(0);
+    const wasOpenRef = useRef(false);
+    const [isActiveBackgroundReady, setIsActiveBackgroundReady] =
+      useState(false);
+
+    if (isOpen && !wasOpenRef.current) {
+      openCycleRef.current += 1;
+    }
+    wasOpenRef.current = isOpen;
+
+    const activeBackgroundLayoutId = `dropdown-active-background-${highlightInstanceId}-${openCycleRef.current}`;
+
+    useEffect(() => {
+      if (!isOpen || !applyOpenStyles || !isPositionReady) {
+        setIsActiveBackgroundReady(false);
+        return;
+      }
+
+      const frameId = window.requestAnimationFrame(() => {
+        setIsActiveBackgroundReady(true);
+      });
+
+      return () => {
+        window.cancelAnimationFrame(frameId);
+      };
+    }, [applyOpenStyles, isOpen, isPositionReady, activeBackgroundLayoutId]);
 
     useLayoutEffect(() => {
       if (pendingHighlightedIndex === null || !isKeyboardNavigation) return;
@@ -147,10 +175,14 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
               targetElement,
             })
           );
-          container.scrollTo({
-            top: scrollTarget.scrollTop,
-            behavior: 'smooth',
-          });
+          if (typeof container.scrollTo === 'function') {
+            container.scrollTo({
+              top: scrollTarget.scrollTop,
+              behavior: 'smooth',
+            });
+          } else {
+            container.scrollTop = scrollTarget.scrollTop;
+          }
           releaseHeldHighlightWhenTargetSettles();
           return;
         }
@@ -164,7 +196,14 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
             targetElement,
           })
         );
-        container.scrollTo({ top: scrollTarget.scrollTop, behavior: 'smooth' });
+        if (typeof container.scrollTo === 'function') {
+          container.scrollTo({
+            top: scrollTarget.scrollTop,
+            behavior: 'smooth',
+          });
+        } else {
+          container.scrollTop = scrollTarget.scrollTop;
+        }
         releaseHeldHighlightWhenTargetSettles();
       }
     }, [
@@ -323,6 +362,11 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
                     )}
                     isHighlighted={highlightedIndex === index}
                     suppressHighlightBackground={Boolean(heldHighlightFrame)}
+                    activeBackgroundLayoutId={
+                      isActiveBackgroundReady
+                        ? activeBackgroundLayoutId
+                        : undefined
+                    }
                     isExpanded={expandedId === option.id}
                     onHighlight={index => {
                       onSetIsKeyboardNavigation(false);
