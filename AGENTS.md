@@ -1,86 +1,38 @@
-# Project Context
+# Project Instructions
 
-## Runtime and Tooling
+These instructions apply to `/home/fxrdhan/Documents/PharmaSys`.
 
-- Use Bun as the runtime environment for this project.
-- This repo uses the native VitePlus toolchain. Prefer direct `vp` commands over package script wrappers for VitePlus workflows.
-- Development, build, lint, format, check, and test flows are routed through `vp`/VitePlus.
+# Runtime and Tooling
+
+- Use Bun as the runtime environment and package manager for this project.
+- This repo uses the native VitePlus toolchain.
+- Prefer direct `vp` commands over package script wrappers for VitePlus workflows.
+- Development, build, lint, format, check, and test flows must go through `vp`/VitePlus.
 - Legacy script names such as `dev:vite` are wrappers around `vp`, not plain Vite CLI usage.
-- Use Bun for the runtime/package manager, but avoid package-script wrappers for VitePlus workflows when an equivalent `vp` command exists.
+- Do not call raw `tsc`, `vite`, or `vitest` unless the user explicitly asks for it.
 
-## External Research
+# External Research
 
-- Always use Exa MCP to search the web and scrape pages.
+- Always use Exa MCP for web search and page scraping.
+- Do not use other web-search paths unless Exa MCP is unavailable or the user explicitly asks for a different source.
 
-## Supabase
+# Supabase
 
 - Always use Supabase MCP when you need to understand this project's databases.
 - For any Supabase-related work, inspect `supabase/functions` and `supabase/migrations` first.
-- Treat `supabase/functions` and `supabase/migrations` as the source of truth for file-based changes so Edge Functions and migrations stay tracked in Git.
-- Do not make remote-only Supabase changes first. Update the relevant local files, confirm the intended changes are tracked by Git, then use Supabase MCP to deploy Edge Functions or apply migrations only when those local changes are ready.
-- If you need to inspect live database state such as tables, columns, schema definitions, RLS policies, or other metadata not represented in `supabase/`, use Supabase MCP.
+- Treat `supabase/functions` and `supabase/migrations` as the source of truth for file-based changes.
+- Keep Edge Functions and migrations tracked in Git.
+- Do not make remote-only Supabase changes first.
+- Update the relevant local files first, confirm the intended changes are tracked by Git, then use Supabase MCP to deploy Edge Functions or apply migrations only when those local changes are ready.
+- If you need live database state such as tables, columns, schema definitions, RLS policies, or other metadata not represented in `supabase/`, use Supabase MCP.
 
 # Code Exploration
 
-- Always read and understand relevant files before proposing code edits.
+- Always read and understand relevant files before proposing or making code edits.
 - Do not speculate about code you have not inspected.
 - If the user references a specific file or path, open and inspect it before explaining or proposing fixes.
 - Be rigorous and persistent when searching the codebase for key facts.
-- Review the existing style, conventions, and abstractions before implementing new features or abstractions.
-
-# Development Workflow
-
-## Validation
-
-- Run `vp check --fix [filenames path]` after editing or adding complex lines in code files.
-- This repo's canonical validation entrypoint is VitePlus `vp check`; do not call raw `tsc`, `vite`, or `vitest` unless the task explicitly requires it.
-
-## Local Servers
-
-- Never start `dev` or `preview` servers yourself.
-- Before working with a local server, check whether the needed port is already active.
-- If the needed port is not active, tell the user to start the server and wait for them to do so.
-
-## React Modules
-
-- Respect the React Fast Refresh lint rule `react-refresh/only-export-components`.
-- In files that export React components, do not also export shared hooks, constants, helpers, or other non-component values.
-- Move shared exports into a sibling module instead of mixing them into the component file.
-- Only use an inline disable when the file already follows an established repo pattern and separating the exports would be disproportionate.
-
-## Git
-
-- When creating Git commits, use the `git-commit` skill.
-
-# Testing Policy
-
-## Test Commands
-
-- Testing in this project runs through VitePlus test tooling with Vitest-compatible APIs.
-- Prefer `AI_AGENT=codex vp test run --passWithNoTests` when running agent tests.
-- Use `AI_AGENT=codex vp test watch` for agent test watch mode.
-- Use `vp test run --passWithNoTests` for regular local terminal output.
-- Do not use Playwright CLI or Playwright MCP for UI testing unless the user explicitly asks for it.
-
-## Test Quality
-
-- Tests must protect meaningful behavior, not implementation details.
-- Good test targets include important user flows, state transitions, data transformations, persistence/cache behavior, side effects, permissions, failure handling, integration contracts, and regressions that are likely to recur.
-- Do not add tests that only verify static UI text, markup shape, element existence, Tailwind/class names, styling/layout values, animation props, focus implementation details, prop wiring to mocked children, or other internal rendering details.
-- Do not write "component renders" tests unless the render itself triggers meaningful behavior or guards a known regression.
-- A test that only proves React mounted a component is noise.
-- For UI tests, assert the outcome a user or system depends on: callbacks invoked with correct payloads, disabled/enabled states that enforce rules, submitted data, navigation, persistence, error recovery, or visible state changes tied to real behavior.
-- Avoid asserting exact labels or DOM structure unless accessibility or contract behavior depends on them.
-- When a change is simple and low risk, prefer no new test over a noisy or brittle test with little regression value.
-
-## Test Maintenance
-
-- If a pre-commit hook fails in a test file, check whether it is a static type or lint error in the test itself rather than a failing runtime test.
-- When a DOM matcher depends on a specific element type, narrow the element first instead of asserting against a generic `HTMLElement`.
-- When touching existing tests, remove or rewrite low-value tests in the edited area instead of preserving them by default.
-- If a test would fail after harmless markup or styling refactors, it is probably too brittle for this project.
-- Keep test helpers local unless they remove real duplication across meaningful behavior tests.
-- Do not create shared testing abstractions for one-off cases.
+- Review existing style, conventions, and abstractions before implementing new features or abstractions.
 
 # Implementation Scope
 
@@ -98,3 +50,63 @@
 - Do not design for hypothetical future requirements.
 - The right amount of complexity is the minimum needed for the current task.
 - Reuse existing abstractions where possible and follow the DRY principle.
+
+# Validation
+
+## When to Run `vp check`
+
+- Run `vp check --fix [filenames path]` after editing or adding code that can affect behavior, typing, lint rules, imports/exports, data flow, or build output.
+- Run `vp check --fix [filenames path]` after complex code edits, shared module changes, type changes, hook/state changes, conditional rendering changes, API contract changes, config changes with runtime effect, or changes that touch multiple files in a connected flow.
+- Use this repo's canonical validation entrypoint: `vp check`.
+
+## When to Skip `vp check`
+
+- Do not run `vp check` for clearly low-risk, non-behavioral edits unless the user explicitly asks for validation.
+- Skip `vp check` for documentation-only edits, comments, copy/text tweaks, whitespace-only edits, formatting-only edits, CSS/Tailwind class or style-value micro-adjustments, visual spacing changes, non-runtime prose/config comments, and test snapshot/text expectation updates that do not change runtime behavior.
+- For small UI styling changes, inspect the relevant code and make the focused edit. Skip `vp check` when the edit is limited to numeric spacing, sizing, color, animation timing, or style values and does not touch component logic, imports, exports, hooks, props, state, or conditional rendering.
+- If validation is skipped, say it was intentionally skipped because the change was low-risk or non-behavioral.
+
+# Local Servers
+
+- Never start `dev` or `preview` servers yourself.
+- Before working with a local server, check whether the needed port is already active.
+- If the needed port is not active, tell the user to start the server and wait for them to do so.
+
+# React Modules
+
+- Respect the React Fast Refresh lint rule `react-refresh/only-export-components`.
+- In files that export React components, do not also export shared hooks, constants, helpers, or other non-component values.
+- Move shared exports into a sibling module instead of mixing them into the component file.
+- Only use an inline disable when the file already follows an established repo pattern and separating the exports would be disproportionate.
+
+# Git
+
+- When creating Git commits, use the `git-commit` skill.
+
+# Testing Commands
+
+- Testing in this project runs through VitePlus test tooling with Vitest-compatible APIs.
+- Prefer `AI_AGENT=codex vp test run --passWithNoTests` when running agent tests.
+- Use `AI_AGENT=codex vp test watch` for agent test watch mode.
+- Use `vp test run --passWithNoTests` for regular local terminal output.
+- Do not use Playwright CLI or Playwright MCP for UI testing unless the user explicitly asks for it.
+
+# Test Quality
+
+- Tests must protect meaningful behavior, not implementation details.
+- Good test targets include important user flows, state transitions, data transformations, persistence/cache behavior, side effects, permissions, failure handling, integration contracts, and regressions that are likely to recur.
+- Do not add tests that only verify static UI text, markup shape, element existence, Tailwind/class names, styling/layout values, animation props, focus implementation details, prop wiring to mocked children, or other internal rendering details.
+- Do not write "component renders" tests unless the render itself triggers meaningful behavior or guards a known regression.
+- A test that only proves React mounted a component is noise.
+- For UI tests, assert the outcome a user or system depends on: callbacks invoked with correct payloads, disabled/enabled states that enforce rules, submitted data, navigation, persistence, error recovery, or visible state changes tied to real behavior.
+- Avoid asserting exact labels or DOM structure unless accessibility or contract behavior depends on them.
+- When a change is simple and low risk, prefer no new test over a noisy or brittle test with little regression value.
+
+# Test Maintenance
+
+- If a pre-commit hook fails in a test file, check whether it is a static type or lint error in the test itself rather than a failing runtime test.
+- When a DOM matcher depends on a specific element type, narrow the element first instead of asserting against a generic `HTMLElement`.
+- When touching existing tests, remove or rewrite low-value tests in the edited area instead of preserving them by default.
+- If a test would fail after harmless markup or styling refactors, it is probably too brittle for this project.
+- Keep test helpers local unless they remove real duplication across meaningful behavior tests.
+- Do not create shared testing abstractions for one-off cases.
