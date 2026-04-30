@@ -75,7 +75,7 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
     }
     wasOpenRef.current = isOpen;
 
-    const activeBackgroundLayoutId = `dropdown-active-background-${highlightInstanceId}-${openCycleRef.current}`;
+    const activeBackgroundLayoutId = `dropdown-active-background-${highlightInstanceId}-${openCycleRef.current}-${searchTerm}-${filteredOptions[0]?.id ?? 'empty'}`;
 
     useEffect(() => {
       if (!isOpen || !applyOpenStyles || !isPositionReady) {

@@ -1,4 +1,11 @@
-import { RefObject, useState, useCallback, useEffect, useRef } from 'react';
+import {
+  RefObject,
+  useState,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+} from 'react';
 import { getKeyboardScrollTarget } from '@/components/shared/keyboard-pinned-highlight';
 import { KEYBOARD_KEYS, DROPDOWN_CONSTANTS, SEARCH_STATES } from '../constants';
 
@@ -135,6 +142,33 @@ export const useKeyboardNavigation = ({
       clearPendingHighlight();
     };
   }, [clearPendingHighlight]);
+
+  useLayoutEffect(() => {
+    if (!isOpen || isKeyboardNavigation || searchTerm.trim() === '') return;
+
+    clearPendingHighlight();
+
+    if (currentFilteredOptions.length === 0) {
+      if (highlightedIndex !== -1) {
+        setHighlightedIndex(-1);
+      }
+      setExpandedId(null);
+      return;
+    }
+
+    if (highlightedIndex !== 0) {
+      setHighlightedIndex(0);
+    }
+    setExpandedId(currentFilteredOptions[0].id);
+  }, [
+    clearPendingHighlight,
+    currentFilteredOptions,
+    highlightedIndex,
+    isKeyboardNavigation,
+    isOpen,
+    searchTerm,
+    setExpandedId,
+  ]);
 
   useEffect(() => {
     if (!isOpen) return;
