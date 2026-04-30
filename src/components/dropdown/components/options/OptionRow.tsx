@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import type { DropdownOption } from '@/types';
 import { truncateText, shouldTruncateText } from '@/utils/text';
 import { DROPDOWN_CONSTANTS } from '../../constants';
+import { getDropdownOptionMatchRanges } from '../../utils/dropdownUtils';
 import RadioIndicator from './RadioIndicator';
 import CheckboxIndicator from './CheckboxIndicator';
 
@@ -20,6 +21,7 @@ interface OptionRowProps {
 
   // Layout context
   portalWidth?: number | string;
+  searchTerm?: string;
   withRadio?: boolean;
   withCheckbox?: boolean;
 
@@ -50,6 +52,7 @@ const OptionRow: React.FC<OptionRowProps> = ({
   isKeyboardNavigation,
   isExpanded = false,
   portalWidth,
+  searchTerm = '',
   withRadio = false,
   withCheckbox = false,
   onSelect,
@@ -142,6 +145,36 @@ const OptionRow: React.FC<OptionRowProps> = ({
   const textStateClass = isSelected
     ? 'text-primary font-semibold'
     : 'text-slate-800';
+  const matchRanges = getDropdownOptionMatchRanges(displayText, searchTerm);
+  const shouldHighlightMatches = matchRanges.length > 0;
+  const renderDisplayText = () => {
+    if (!shouldHighlightMatches) return displayText;
+
+    const parts: React.ReactNode[] = [];
+    let currentIndex = 0;
+
+    matchRanges.forEach((range, rangeIndex) => {
+      if (range.start > currentIndex) {
+        parts.push(displayText.slice(currentIndex, range.start));
+      }
+
+      parts.push(
+        <span
+          key={`${range.start}-${range.end}-${rangeIndex}`}
+          className="font-bold"
+        >
+          {displayText.slice(range.start, range.end)}
+        </span>
+      );
+      currentIndex = range.end;
+    });
+
+    if (currentIndex < displayText.length) {
+      parts.push(displayText.slice(currentIndex));
+    }
+
+    return parts;
+  };
 
   return (
     <button
@@ -180,7 +213,7 @@ const OptionRow: React.FC<OptionRowProps> = ({
           className={`${baseTextClass} transition-all duration-200 text-left ${textStateClass} min-w-0 flex-1`}
           title={willTruncate && !shouldExpand ? option.name : undefined}
         >
-          {displayText}
+          {renderDisplayText()}
         </span>
       </span>
     </button>

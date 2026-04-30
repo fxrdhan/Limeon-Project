@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vite-plus/test';
-import { filterAndSortOptions, getDropdownOptionScore } from './dropdownUtils';
+import {
+  filterAndSortOptions,
+  getDropdownOptionMatchRanges,
+  getDropdownOptionScore,
+} from './dropdownUtils';
 
 describe('dropdownUtils', () => {
   it('prioritizes token prefix matches above incidental substrings', () => {
@@ -34,5 +38,16 @@ describe('dropdownUtils', () => {
     ).toBeGreaterThan(
       getDropdownOptionScore({ id: 'inj', name: 'INJECTABLE' }, 'table')
     );
+  });
+
+  it('groups fuzzy matched characters into display ranges', () => {
+    expect(getDropdownOptionMatchRanges('Antiacne', 'aacne')).toEqual([
+      { start: 0, end: 1 },
+      { start: 4, end: 8 },
+    ]);
+
+    expect(getDropdownOptionMatchRanges('Oftalmologi', 'oft')).toEqual([
+      { start: 0, end: 3 },
+    ]);
   });
 });

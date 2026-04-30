@@ -19,6 +19,7 @@ const OptionItem: FC<OptionItemProps> = ({
     withCheckbox = false,
     isKeyboardNavigation,
     portalStyle,
+    searchTerm,
     onSelect,
     onHoverDetailShow,
     onHoverDetailHide,
@@ -35,6 +36,7 @@ const OptionItem: FC<OptionItemProps> = ({
       isKeyboardNavigation={isKeyboardNavigation}
       isExpanded={isExpanded}
       portalWidth={portalStyle?.width}
+      searchTerm={searchTerm}
       withRadio={withRadio}
       withCheckbox={withCheckbox}
       onSelect={onSelect}

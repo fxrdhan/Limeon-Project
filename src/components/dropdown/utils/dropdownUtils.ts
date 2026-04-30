@@ -1,5 +1,10 @@
 import { fuzzyMatch } from '@/utils/search';
 
+export interface DropdownOptionMatchRange {
+  start: number;
+  end: number;
+}
+
 const tokenizeOptionName = (value: string) =>
   value
     .toLowerCase()
@@ -41,6 +46,41 @@ export const filterAndSortOptions = <T extends { id: string; name: string }>(
       if (a.name.length !== b.name.length) return a.name.length - b.name.length;
       return a.name.localeCompare(b.name);
     });
+};
+
+export const getDropdownOptionMatchRanges = (
+  text: string,
+  searchTerm: string
+): DropdownOptionMatchRange[] => {
+  const searchTermLower = searchTerm.trim().toLowerCase();
+  if (!text || !searchTermLower) return [];
+
+  const textLower = text.toLowerCase();
+  const matchedIndexes: number[] = [];
+  let textIndex = 0;
+
+  for (const searchCharacter of searchTermLower) {
+    const matchedIndex = textLower.indexOf(searchCharacter, textIndex);
+    if (matchedIndex === -1) return [];
+
+    matchedIndexes.push(matchedIndex);
+    textIndex = matchedIndex + 1;
+  }
+
+  return matchedIndexes.reduce<DropdownOptionMatchRange[]>(
+    (ranges, matchedIndex) => {
+      const previousRange = ranges[ranges.length - 1];
+
+      if (previousRange && previousRange.end === matchedIndex) {
+        previousRange.end = matchedIndex + 1;
+        return ranges;
+      }
+
+      ranges.push({ start: matchedIndex, end: matchedIndex + 1 });
+      return ranges;
+    },
+    []
+  );
 };
 
 export const getSearchIconColor = (searchState: string) => {
