@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import MenuPortal from './menu/MenuPortal';
 import MenuContent from './menu/MenuContent';
 import SearchBar from './SearchBar';
@@ -22,6 +23,22 @@ import {
   isWrappedKeyboardScroll,
   type KeyboardPinnedHighlightFrame,
 } from '@/components/shared/keyboard-pinned-highlight';
+
+const listOptionTransition = {
+  layout: {
+    type: 'spring' as const,
+    stiffness: 520,
+    damping: 38,
+    mass: 0.7,
+  },
+  opacity: {
+    duration: 0.1,
+  },
+  y: {
+    duration: 0.1,
+    ease: 'easeOut' as const,
+  },
+};
 
 const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
   ({ isFrozen = false, leaveTimeoutRef, onSearchKeyDown }, ref) => {
@@ -351,36 +368,45 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
               onScroll={onScroll}
               onKeyDown={!searchList ? onKeyDown : undefined}
             >
-              {filteredOptions.length > 0 ? (
-                filteredOptions.map((option, index) => (
-                  <OptionItem
+              <AnimatePresence initial={false} mode="popLayout">
+                {filteredOptions.map((option, index) => (
+                  <motion.div
                     key={option.id}
-                    option={option}
-                    index={index}
-                    isSelected={Boolean(
-                      withCheckbox && Array.isArray(value)
-                        ? value.includes(option.id)
-                        : option.id === value
-                    )}
-                    isHighlighted={highlightedIndex === index}
-                    suppressHighlightBackground={
-                      Boolean(heldHighlightFrame) ||
-                      isHighlightSuppressedDuringScroll
-                    }
-                    activeBackgroundLayoutId={
-                      isActiveBackgroundReady
-                        ? activeBackgroundLayoutId
-                        : undefined
-                    }
-                    isExpanded={expandedId === option.id}
-                    onHighlight={index => {
-                      onSetIsKeyboardNavigation(false);
-                      onSetHighlightedIndex(index);
-                    }}
-                    dropdownMenuRef={ref as RefObject<HTMLDivElement>}
-                  />
-                ))
-              ) : (
+                    layout="position"
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={listOptionTransition}
+                  >
+                    <OptionItem
+                      option={option}
+                      index={index}
+                      isSelected={Boolean(
+                        withCheckbox && Array.isArray(value)
+                          ? value.includes(option.id)
+                          : option.id === value
+                      )}
+                      isHighlighted={highlightedIndex === index}
+                      suppressHighlightBackground={
+                        Boolean(heldHighlightFrame) ||
+                        isHighlightSuppressedDuringScroll
+                      }
+                      activeBackgroundLayoutId={
+                        isActiveBackgroundReady
+                          ? activeBackgroundLayoutId
+                          : undefined
+                      }
+                      isExpanded={expandedId === option.id}
+                      onHighlight={index => {
+                        onSetIsKeyboardNavigation(false);
+                        onSetHighlightedIndex(index);
+                      }}
+                      dropdownMenuRef={ref as RefObject<HTMLDivElement>}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+              {filteredOptions.length === 0 && (
                 <EmptyState
                   searchState={searchState}
                   searchTerm={searchTerm}
