@@ -4,7 +4,6 @@ import ImageUploader from '@/components/image-manager';
 import ImageExpandPreview from '@/components/shared/image-expand-preview';
 import { TbArrowUp } from 'react-icons/tb';
 import {
-  COMPOSER_BASE_BORDER_COLOR,
   COMPOSER_BASE_SHADOW,
   COMPOSER_GLOW_SHADOW_FADE,
   COMPOSER_GLOW_SHADOW_HIGH,
@@ -163,9 +162,8 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                 layout
                 initial={false}
                 transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
-                className="relative mb-[-1px] grid min-h-0 shrink-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-t-3xl rounded-b-none border border-b-0 bg-white px-2.5 pt-2.5 pb-0 shadow-surface-thin"
+                className="relative mb-[-1px] grid min-h-0 shrink-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-t-2xl rounded-b-none bg-white px-2.5 pt-2.5 pb-0 shadow-surface-thin"
                 style={{
-                  borderColor: COMPOSER_BASE_BORDER_COLOR,
                   maxHeight:
                     composerTrayMaxHeight && composerTrayMaxHeight > 0
                       ? composerTrayMaxHeight
@@ -312,7 +310,6 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
               animate={
                 composer.isSendSuccessGlowVisible
                   ? {
-                      borderColor: COMPOSER_BASE_BORDER_COLOR,
                       boxShadow: hasComposerAttachmentTray
                         ? 'none'
                         : [
@@ -326,7 +323,6 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                           ],
                     }
                   : {
-                      borderColor: COMPOSER_BASE_BORDER_COLOR,
                       boxShadow: hasComposerAttachmentTray
                         ? 'none'
                         : COMPOSER_BASE_SHADOW,
@@ -346,19 +342,19 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                       ease: 'easeOut',
                     }
               }
-              className={`relative z-10 shrink-0 border bg-white ${
+              className={`relative z-10 shrink-0 bg-white ${
                 hasComposerAttachmentTray
-                  ? 'rounded-t-none rounded-b-3xl border-t-0'
-                  : 'rounded-3xl'
+                  ? 'rounded-t-none rounded-b-2xl'
+                  : 'rounded-2xl'
               }`}
             >
               <motion.div
                 layout
                 transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
-                className={`relative z-10 bg-white px-2.5 py-2.5 transition-[height,padding] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                className={`relative z-10 px-2.5 py-2.5 transition-[height,padding] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] ${
                   hasComposerAttachmentTray
-                    ? 'rounded-t-none rounded-b-[18px]'
-                    : 'rounded-[18px]'
+                    ? 'rounded-t-none rounded-b-xl'
+                    : 'rounded-xl'
                 }`}
               >
                 <AnimatePresence initial={false} mode="popLayout">
