@@ -5,15 +5,15 @@ CLI lokal untuk mengonversi warna `hex`, `rgb()`, `rgba()`, `hsl()`, dan `hsla()
 ## Pemakaian
 
 ```sh
-npx ./dev-tools/convert-to-oklch ./src/**/*.css
-npx ./dev-tools/convert-to-oklch ./src/**/*.css -p 2
-npx ./dev-tools/convert-to-oklch src/App.css src/components
+npx convert-to-oklch ./src/**/*.css
+npx convert-to-oklch ./src/**/*.css -p 2
+npx convert-to-oklch src/App.css src/components
 ```
 
 Alternatif dengan Bun:
 
 ```sh
-bunx --package "$PWD/dev-tools/convert-to-oklch" convert-to-oklch ./src/**/*.css
+bunx convert-to-oklch ./src/**/*.css
 ```
 
 Default-nya langsung menulis perubahan ke file seperti `convert-to-oklch` upstream. Tambahkan `--dry-run` untuk preview tanpa menulis.

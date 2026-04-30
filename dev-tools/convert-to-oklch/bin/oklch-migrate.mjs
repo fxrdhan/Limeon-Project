@@ -53,9 +53,9 @@ Options:
   --help, -h     Show this help.
 
 Examples:
-  npx ./dev-tools/convert-to-oklch ./src/**/*.css
-  npx ./dev-tools/convert-to-oklch ./src/**/*.css -p 2
-  bunx --package "$PWD/dev-tools/convert-to-oklch" convert-to-oklch ./src/**/*.css`);
+  npx convert-to-oklch ./src/**/*.css
+  npx convert-to-oklch ./src/**/*.css -p 2
+  bunx convert-to-oklch ./src/**/*.css`);
 }
 
 function parseArgs(argv) {
