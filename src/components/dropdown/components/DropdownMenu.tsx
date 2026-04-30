@@ -93,6 +93,7 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
     wasOpenRef.current = isOpen;
 
     const activeBackgroundLayoutId = `dropdown-active-background-${highlightInstanceId}-${openCycleRef.current}-${searchTerm}-${filteredOptions[0]?.id ?? 'empty'}`;
+    const shouldAnimateListItems = searchTerm.trim() !== '';
 
     useEffect(() => {
       if (!isOpen || !applyOpenStyles || !isPositionReady) {
@@ -372,10 +373,14 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
                 {filteredOptions.map((option, index) => (
                   <motion.div
                     key={option.id}
-                    layout="position"
-                    initial={{ opacity: 0, y: 6 }}
+                    layout={shouldAnimateListItems ? 'position' : false}
+                    initial={
+                      shouldAnimateListItems ? { opacity: 0, y: 6 } : false
+                    }
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
+                    exit={
+                      shouldAnimateListItems ? { opacity: 0, y: -6 } : undefined
+                    }
                     transition={listOptionTransition}
                   >
                     <OptionItem
