@@ -14,6 +14,9 @@ import type {
   DropdownOption,
 } from '@/types';
 
+const getDropdownVisibleHeight = (element: HTMLDivElement) =>
+  element.offsetHeight || element.clientHeight || element.scrollHeight;
+
 export const useDropdownPosition = (
   isOpen: boolean,
   buttonRef: RefObject<HTMLButtonElement | null>,
@@ -71,7 +74,9 @@ export const useDropdownPosition = (
     }
 
     const buttonRect = buttonRef.current.getBoundingClientRect();
-    const dropdownActualHeight = dropdownMenuRef.current.scrollHeight;
+    const dropdownActualHeight = getDropdownVisibleHeight(
+      dropdownMenuRef.current
+    );
     const viewportHeight = window.innerHeight;
     const viewportWidth = window.innerWidth;
 
