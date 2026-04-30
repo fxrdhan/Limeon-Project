@@ -1,6 +1,6 @@
-# convert-to-oklch
+# cto
 
-Local CLI package for migrating CSS color literals to `oklch()`.
+`cto` is the local command for `convert-to-oklch`, a CLI package for migrating CSS color literals to `oklch()`.
 
 It converts these source formats:
 
@@ -8,11 +8,61 @@ It converts these source formats:
 - RGB: `rgb()`, `rgba()`, including modern slash-alpha syntax
 - HSL: `hsl()`, `hsla()`, including modern slash-alpha syntax
 
-The package is registered in the root project as a local `file:` dependency, so it can be called directly from the repo:
+The package is registered in the root project as a local `file:` dependency, so package runners can resolve the `cto` binary directly from this repo.
+
+## Quick Start
+
+Use Bun:
 
 ```sh
-npx convert-to-oklch ./src/**/*.css
+bunx cto ./src/**/*.css
+```
+
+Preview first:
+
+```sh
+bunx cto --all --dry-run
+```
+
+Convert with more output precision:
+
+```sh
+bunx cto ./src/**/*.css -p 2
+```
+
+## Runtime Support
+
+The CLI is implemented as an ESM JavaScript executable using Node-compatible standard modules. It has no third-party runtime dependencies.
+
+Supported ways to run it from this repository:
+
+```sh
+# Bun package runner, preferred for this project
+bunx cto ./src/**/*.css
+
+# npm / Node.js
+npx cto ./src/**/*.css
+
+# Node.js direct script execution
+node ./dev-tools/convert-to-oklch/bin/oklch-migrate.mjs ./src/**/*.css
+
+# Bun direct script execution
+bun ./dev-tools/convert-to-oklch/bin/oklch-migrate.mjs ./src/**/*.css
+
+# Package-manager independent local bin
+./node_modules/.bin/cto ./src/**/*.css
+```
+
+Notes:
+
+- `bunx cto` and `npx cto` rely on the local `file:dev-tools/convert-to-oklch` dependency installed in this repo.
+- This repo declares Bun as its package manager. `pnpm` and `yarn` may reject command execution through Corepack in this project; use Bun, npm/npx, direct Node/Bun execution, or `./node_modules/.bin/cto`.
+
+The old aliases remain available for compatibility:
+
+```sh
 bunx convert-to-oklch ./src/**/*.css
+bunx oklch-migrate ./src/**/*.css
 ```
 
 ## Usage
@@ -20,38 +70,31 @@ bunx convert-to-oklch ./src/**/*.css
 Convert CSS files matched by a glob:
 
 ```sh
-npx convert-to-oklch ./src/**/*.css
+bunx cto ./src/**/*.css
 ```
 
 Convert one file and one directory:
 
 ```sh
-npx convert-to-oklch src/App.css src/components
+bunx cto src/App.css src/components
 ```
 
 Scan from the current working directory:
 
 ```sh
-npx convert-to-oklch --all
+bunx cto --all
 ```
 
 Preview changes without writing:
 
 ```sh
-npx convert-to-oklch --all --dry-run
-```
-
-Use a custom precision:
-
-```sh
-npx convert-to-oklch ./src/**/*.css --precision 2
-npx convert-to-oklch ./src/**/*.css -p 2
+bunx cto --all --dry-run
 ```
 
 Use it in CI as a guard:
 
 ```sh
-npx convert-to-oklch --all --check
+bunx cto --all --check
 ```
 
 `--check` is a dry run that exits with status `1` when any conversion would be made.
@@ -73,7 +116,7 @@ The default behavior matches the public `convert-to-oklch` tool: files are rewri
 Run with `--dry-run` first when you want an inventory:
 
 ```sh
-npx convert-to-oklch --all --dry-run
+bunx cto --all --dry-run
 ```
 
 The command prints each changed file and the number of converted color literals:
@@ -139,14 +182,14 @@ The only built-in directory exclusion is `.git`, because scanning VCS internals 
 Explicit file paths bypass ignore matching. For example, this processes the file even if it is ignored:
 
 ```sh
-npx convert-to-oklch dist/output.css
+bunx cto dist/output.css
 ```
 
 Directory and glob scans still respect ignore files:
 
 ```sh
-npx convert-to-oklch dist
-npx convert-to-oklch './dist/**/*.css'
+bunx cto dist
+bunx cto './dist/**/*.css'
 ```
 
 ## Tailwind Arbitrary Values

@@ -7,12 +7,12 @@ import process from 'node:process';
 const ALWAYS_IGNORED_DIRS = new Set(['.git']);
 
 function printHelp() {
-  console.log(`convert-to-oklch
+  console.log(`cto
 
 Usage:
-  convert-to-oklch ./src/**/*.css
-  convert-to-oklch --all
-  convert-to-oklch <file-or-folder-or-glob...>
+  cto ./src/**/*.css
+  cto --all
+  cto <file-or-folder-or-glob...>
 
 Options:
   --all          Scan all text files from the current working directory.
@@ -24,9 +24,9 @@ Options:
   --help, -h     Show this help.
 
 Examples:
-  npx convert-to-oklch ./src/**/*.css
-  npx convert-to-oklch ./src/**/*.css -p 2
-  bunx convert-to-oklch ./src/**/*.css`);
+  bunx cto ./src/**/*.css
+  bunx cto ./src/**/*.css -p 2
+  npx cto ./src/**/*.css`);
 }
 
 function parseArgs(argv) {

@@ -4,6 +4,7 @@
   "description": "CLI untuk migrasi warna hex, rgb(), rgba(), hsl(), dan hsla() ke format oklch().",
   "type": "module",
   "bin": {
+    "cto": "./bin/oklch-migrate.mjs",
     "convert-to-oklch": "./bin/oklch-migrate.mjs",
     "oklch-migrate": "./bin/oklch-migrate.mjs"
   },
