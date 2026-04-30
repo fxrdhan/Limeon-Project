@@ -128,9 +128,10 @@ const TooltipProviderContext = React.createContext<TooltipProviderValue>({
 const TooltipContext = React.createContext<TooltipValue | null>(null);
 
 const TOOLTIP_ARROW_SIZE = 12;
-const TOOLTIP_ARROW_DEPTH = 7;
 const TOOLTIP_HIDDEN_SCALE = 0.45;
 const TOOLTIP_GEOMETRY_EPSILON = 0.5;
+const TOOLTIP_SURFACE_SHADOW =
+  '0 0 1px rgba(71, 85, 105, 0.38), 0 1px 1px rgba(15, 23, 42, 0.08)';
 
 const hasTooltipGeometryChanged = (
   current: TooltipGeometry,
@@ -168,91 +169,6 @@ const getTooltipTransformOrigin = (side: TooltipSide, arrowOffset: number) => {
   }
 
   return `left ${arrowCenter}px`;
-};
-
-const getTooltipArrowStyle = (side: TooltipSide): React.CSSProperties => {
-  const inset = -TOOLTIP_ARROW_DEPTH;
-
-  if (side === 'top') {
-    return {
-      bottom: inset,
-    };
-  }
-
-  if (side === 'bottom') {
-    return {
-      top: inset,
-    };
-  }
-
-  if (side === 'left') {
-    return {
-      right: inset,
-    };
-  }
-
-  return {
-    left: inset,
-  };
-};
-
-const getTooltipArrowFillPath = (side: TooltipSide) => {
-  if (side === 'top') {
-    return 'M0 0H12L6 7L0 0Z';
-  }
-
-  if (side === 'bottom') {
-    return 'M6 0L12 7H0L6 0Z';
-  }
-
-  if (side === 'left') {
-    return 'M0 0V12L7 6L0 0Z';
-  }
-
-  return 'M7 0V12L0 6L7 0Z';
-};
-
-const getTooltipArrowStrokePath = (side: TooltipSide) => {
-  if (side === 'top') {
-    return 'M0.75 0.75L6 6.1L11.25 0.75';
-  }
-
-  if (side === 'bottom') {
-    return 'M0.75 6.25L6 0.9L11.25 6.25';
-  }
-
-  if (side === 'left') {
-    return 'M0.75 0.75L6.1 6L0.75 11.25';
-  }
-
-  return 'M6.25 0.75L0.9 6L6.25 11.25';
-};
-
-const getTooltipArrowSvgSize = (side: TooltipSide) => {
-  if (side === 'top' || side === 'bottom') {
-    return {
-      width: TOOLTIP_ARROW_SIZE,
-      height: TOOLTIP_ARROW_DEPTH,
-      viewBox: '0 0 12 7',
-    };
-  }
-
-  return {
-    width: TOOLTIP_ARROW_DEPTH,
-    height: TOOLTIP_ARROW_SIZE,
-    viewBox: '0 0 7 12',
-  };
-};
-
-const getTooltipArrowMotionTarget = (
-  side: TooltipSide,
-  arrowOffset: number
-) => {
-  if (side === 'top' || side === 'bottom') {
-    return { left: arrowOffset };
-  }
-
-  return { top: arrowOffset };
 };
 
 const getAlignedAxisPosition = (
@@ -358,7 +274,6 @@ const TooltipProvider = ({
   const [isPlacementReady, setIsPlacementReady] = React.useState(false);
   const [arrowOffset, setArrowOffset] = React.useState(0);
   const bubbleControls = useAnimationControls();
-  const arrowControls = useAnimationControls();
   const tooltipRef = React.useRef<HTMLDivElement | null>(null);
   const tooltipSizerRef = React.useRef<HTMLDivElement | null>(null);
   const visibleRef = React.useRef(false);
@@ -472,7 +387,6 @@ const TooltipProvider = ({
 
     if (visibleRef.current) {
       bubbleControls.stop();
-      arrowControls.stop();
       void bubbleControls.start({
         x: nextGeometry.bubbleX,
         y: nextGeometry.bubbleY,
@@ -482,15 +396,8 @@ const TooltipProvider = ({
         scale: 1,
         transition: tooltipRepositionTransition,
       });
-      void arrowControls.start({
-        ...getTooltipArrowMotionTarget(
-          activeTooltip.side,
-          nextGeometry.arrowOffset
-        ),
-        transition: tooltipRepositionTransition,
-      });
     }
-  }, [activeTooltip, arrowControls, bubbleControls, getTooltipSize]);
+  }, [activeTooltip, bubbleControls, getTooltipSize]);
 
   React.useLayoutEffect(() => {
     const size = getTooltipSize();
@@ -517,12 +424,6 @@ const TooltipProvider = ({
         opacity: 0,
         scale: TOOLTIP_HIDDEN_SCALE,
       });
-      arrowControls.set(
-        getTooltipArrowMotionTarget(
-          activeTooltip.side,
-          nextGeometry.arrowOffset
-        )
-      );
     }
 
     const revealTooltip = () => {
@@ -544,15 +445,6 @@ const TooltipProvider = ({
           ? tooltipAppearTransition
           : tooltipRepositionTransition,
       });
-      void arrowControls.start({
-        ...getTooltipArrowMotionTarget(
-          activeTooltip.side,
-          nextGeometry.arrowOffset
-        ),
-        transition: shouldUseAppearTransition
-          ? tooltipAppearTransition
-          : tooltipRepositionTransition,
-      });
     };
 
     if (!shouldUseAppearTransition && !shouldReposition) {
@@ -560,7 +452,6 @@ const TooltipProvider = ({
     }
 
     bubbleControls.stop();
-    arrowControls.stop();
 
     if (shouldUseAppearTransition) {
       animationFrameRef.current = window.requestAnimationFrame(() => {
@@ -577,7 +468,6 @@ const TooltipProvider = ({
     startAnimation();
   }, [
     activeTooltip,
-    arrowControls,
     bubbleControls,
     cancelPendingAnimationFrame,
     getTooltipSize,
@@ -644,10 +534,13 @@ const TooltipProvider = ({
         ref={tooltipSizerRef}
         aria-hidden
         className={cn(
-          'pointer-events-none fixed left-0 top-0 -z-10 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2 py-1 text-sm font-medium text-black opacity-0 shadow-lg',
+          'pointer-events-none fixed left-0 top-0 -z-10 whitespace-nowrap rounded-lg bg-white px-2 py-1 text-sm font-medium text-black opacity-0',
           content?.className
         )}
-        style={content?.style}
+        style={{
+          boxShadow: TOOLTIP_SURFACE_SHADOW,
+          ...content?.style,
+        }}
       >
         <span className="relative z-10 block max-w-full overflow-hidden whitespace-nowrap">
           {content?.children}
@@ -656,10 +549,11 @@ const TooltipProvider = ({
       <motion.div
         ref={tooltipRef}
         className={cn(
-          'pointer-events-none fixed left-0 top-0 z-50 overflow-visible whitespace-nowrap rounded-lg border border-slate-200 bg-white px-2 py-1 text-sm font-medium text-black shadow-lg',
+          'pointer-events-none fixed left-0 top-0 z-50 overflow-visible whitespace-nowrap rounded-lg bg-white px-2 py-1 text-sm font-medium text-black',
           content?.className
         )}
         style={{
+          boxShadow: TOOLTIP_SURFACE_SHADOW,
           ...content?.style,
           visibility: shouldShowTooltip ? 'visible' : 'hidden',
           transformOrigin: getTooltipTransformOrigin(
@@ -670,27 +564,6 @@ const TooltipProvider = ({
         initial={false}
         animate={bubbleControls}
       >
-        <motion.svg
-          {...getTooltipArrowSvgSize(activeTooltip?.side ?? 'top')}
-          className="pointer-events-none absolute -z-10 block overflow-visible"
-          style={getTooltipArrowStyle(activeTooltip?.side ?? 'top')}
-          initial={false}
-          animate={arrowControls}
-        >
-          <path
-            d={getTooltipArrowFillPath(activeTooltip?.side ?? 'top')}
-            fill="white"
-          />
-          <path
-            d={getTooltipArrowStrokePath(activeTooltip?.side ?? 'top')}
-            fill="none"
-            stroke="#e2e8f0"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="1"
-            vectorEffect="non-scaling-stroke"
-          />
-        </motion.svg>
         <span className="relative z-10 block max-w-full overflow-hidden whitespace-nowrap">
           {content?.children}
         </span>
@@ -703,7 +576,7 @@ const Tooltip = ({
   children,
   className,
   side = 'top',
-  sideOffset = 10,
+  sideOffset = 6,
   align = 'center',
   alignOffset = 0,
 }: TooltipProps) => {
