@@ -8,14 +8,7 @@ import {
   CardContent,
   CardFooter,
 } from '@/components/card';
-import {
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableHeader,
-} from '@/components/table';
+import DataGrid from '@/components/ag-grid/DataGrid';
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -29,7 +22,12 @@ import {
   saveInvoiceToDatabase,
   regenerateInvoiceData,
 } from '@/services/invoiceExtractor';
-import type { ExtractedInvoiceData } from '@/types';
+import type { ExtractedInvoiceData, ProductListItem } from '@/types';
+import type { ColDef } from 'ag-grid-community';
+
+type ProductListGridRow = ProductListItem & {
+  gridId: string;
+};
 
 const ConfirmInvoicePage = () => {
   const navigate = useNavigate();
@@ -171,6 +169,78 @@ const ConfirmInvoicePage = () => {
       {title}
     </h4>
   );
+  const productRows: ProductListGridRow[] = (
+    invoiceData.product_list ?? []
+  ).map((product, index) => ({
+    ...product,
+    gridId: product.sku
+      ? `product-${product.sku}-${index}`
+      : `product-${product.product_name ?? 'unknown'}-${index}`,
+  }));
+  const productColumnDefs: ColDef<ProductListGridRow>[] = [
+    {
+      field: 'sku',
+      headerName: 'SKU',
+      minWidth: 100,
+      valueFormatter: params => String(renderProductField(params.value)),
+    },
+    {
+      field: 'product_name',
+      headerName: 'Nama Produk',
+      minWidth: 220,
+      flex: 1,
+      valueFormatter: params => String(renderProductField(params.value)),
+    },
+    {
+      field: 'quantity',
+      headerName: 'Qty',
+      minWidth: 80,
+      cellStyle: { textAlign: 'center' },
+      valueFormatter: params => String(renderProductField(params.value)),
+    },
+    {
+      field: 'unit',
+      headerName: 'Satuan',
+      minWidth: 90,
+      cellStyle: { textAlign: 'center' },
+      valueFormatter: params => String(renderProductField(params.value)),
+    },
+    {
+      field: 'batch_number',
+      headerName: 'No. Batch',
+      minWidth: 110,
+      cellStyle: { textAlign: 'center' },
+      valueFormatter: params => String(renderProductField(params.value)),
+    },
+    {
+      field: 'expiry_date',
+      headerName: 'Exp',
+      minWidth: 110,
+      cellStyle: { textAlign: 'center' },
+      valueFormatter: params => String(renderProductField(params.value)),
+    },
+    {
+      field: 'unit_price',
+      headerName: 'Harga',
+      minWidth: 110,
+      cellStyle: { textAlign: 'right' },
+      valueFormatter: params => String(renderProductField(params.value)),
+    },
+    {
+      field: 'discount',
+      headerName: 'Disk',
+      minWidth: 80,
+      cellStyle: { textAlign: 'right' },
+      valueFormatter: params => String(renderProductField(params.value, true)),
+    },
+    {
+      field: 'total_price',
+      headerName: 'Total',
+      minWidth: 120,
+      cellStyle: { textAlign: 'right' },
+      valueFormatter: params => String(renderProductField(params.value)),
+    },
+  ];
 
   return (
     <Card className="shadow-lg max-w-7xl mx-auto">
@@ -257,125 +327,22 @@ const ConfirmInvoicePage = () => {
             </div>
             <div className="mb-6">
               <SectionTitle number="4" title="Daftar Produk" />
-              <Table
-                autoSize={true}
-                columns={[
-                  { key: 'sku', header: 'SKU', minWidth: 100 },
-                  { key: 'product_name', header: 'Nama Produk', minWidth: 200 },
-                  {
-                    key: 'quantity',
-                    header: 'Qty',
-                    minWidth: 60,
-                    align: 'center',
-                  },
-                  {
-                    key: 'unit',
-                    header: 'Satuan',
-                    minWidth: 80,
-                    align: 'center',
-                  },
-                  {
-                    key: 'batch_number',
-                    header: 'No. Batch',
-                    minWidth: 100,
-                    align: 'center',
-                  },
-                  {
-                    key: 'expiry_date',
-                    header: 'Exp',
-                    minWidth: 100,
-                    align: 'center',
-                  },
-                  {
-                    key: 'unit_price',
-                    header: 'Harga',
-                    minWidth: 80,
-                    align: 'right',
-                  },
-                  {
-                    key: 'discount',
-                    header: 'Disk',
-                    minWidth: 70,
-                    align: 'right',
-                  },
-                  {
-                    key: 'total_price',
-                    header: 'Total',
-                    minWidth: 100,
-                    align: 'right',
-                  },
-                ]}
-                data={invoiceData.product_list ?? []}
-              >
-                <TableHead>
-                  <TableRow>
-                    <TableHeader className="text-xs">SKU</TableHeader>
-                    <TableHeader className="text-xs">Nama Produk</TableHeader>
-                    <TableHeader className="text-xs text-center">
-                      Qty
-                    </TableHeader>
-                    <TableHeader className="text-xs text-center">
-                      Satuan
-                    </TableHeader>
-                    <TableHeader className="text-xs text-center">
-                      No. Batch
-                    </TableHeader>
-                    <TableHeader className="text-xs text-center">
-                      Exp
-                    </TableHeader>
-                    <TableHeader className="text-xs text-right">
-                      Harga
-                    </TableHeader>
-                    <TableHeader className="text-xs text-right">
-                      Disk
-                    </TableHeader>
-                    <TableHeader className="text-xs text-right">
-                      Total
-                    </TableHeader>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {(invoiceData.product_list ?? []).map(
-                    (product, index: number) => (
-                      <TableRow
-                        key={
-                          product.sku
-                            ? `product-${product.sku}-${index}`
-                            : `product-unknown-${index}`
-                        }
-                      >
-                        <TableCell className="text-sm">
-                          {renderProductField(product.sku)}
-                        </TableCell>
-                        <TableCell className="text-sm font-medium">
-                          {renderProductField(product.product_name)}
-                        </TableCell>
-                        <TableCell className="text-sm text-center">
-                          {renderProductField(product.quantity)}
-                        </TableCell>
-                        <TableCell className="text-sm text-center">
-                          {renderProductField(product.unit)}
-                        </TableCell>
-                        <TableCell className="text-sm text-center">
-                          {renderProductField(product.batch_number)}
-                        </TableCell>
-                        <TableCell className="text-sm text-center">
-                          {renderProductField(product.expiry_date)}
-                        </TableCell>
-                        <TableCell className="text-sm text-right">
-                          {renderProductField(product.unit_price)}
-                        </TableCell>
-                        <TableCell className="text-sm text-right">
-                          {renderProductField(product.discount, true)}
-                        </TableCell>
-                        <TableCell className="text-sm text-right">
-                          {renderProductField(product.total_price)}
-                        </TableCell>
-                      </TableRow>
-                    )
-                  )}
-                </TableBody>
-              </Table>
+              <DataGrid
+                rowData={productRows}
+                columnDefs={productColumnDefs}
+                disableFiltering={true}
+                suppressMovableColumns={true}
+                overlayNoRowsTemplate="<span style='padding: 10px; color: #64748b;'>Tidak ada produk di faktur ini</span>"
+                domLayout="normal"
+                getRowId={params => params.data?.gridId}
+                style={{
+                  width: '100%',
+                  height: Math.min(
+                    420,
+                    Math.max(160, productRows.length * 32 + 88)
+                  ),
+                }}
+              />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>

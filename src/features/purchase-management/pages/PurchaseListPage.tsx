@@ -3,24 +3,17 @@ import Pagination from '@/components/pagination';
 import { SearchBar } from '@/components/search-bar';
 import PageTitle from '@/components/page-title';
 import Badge from '@/components/badge';
+import DataGrid from '@/components/ag-grid/DataGrid';
 
 import UploadInvoicePortal from '@/features/purchase-management/components/UploadInvoicePortal';
 import { AddPurchasePortal } from '@/features/purchase-management';
 
-import {
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
-  TableHeader,
-  PurchaseListSkeleton,
-} from '@/components/table';
 import { useConfirmDialog } from '@/components/dialog-box';
 import { Card } from '@/components/card';
 import { Link } from 'react-router-dom';
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { TbEdit, TbEye, TbFileUpload, TbPlus, TbTrash } from 'react-icons/tb';
+import type { ColDef, ICellRendererParams } from 'ag-grid-community';
 import {
   useQuery,
   useMutation,
@@ -51,7 +44,6 @@ const PurchaseList = () => {
   const [showUploadPortal, setShowUploadPortal] = useState(false);
   const [showAddPurchasePortal, setShowAddPurchasePortal] = useState(false);
   const [isAddPurchaseClosing, setIsAddPurchaseClosing] = useState(false);
-  const [sortedPurchases, setSortedPurchases] = useState<Purchase[]>([]);
   const queryClient = useQueryClient();
   const { openConfirmDialog } = useConfirmDialog();
   const searchInputRef = useRef<HTMLInputElement>(
@@ -107,14 +99,6 @@ const PurchaseList = () => {
   const purchases = useMemo(() => data?.purchases || [], [data?.purchases]);
   const totalItems = data?.totalItems || 0;
 
-  useEffect(() => {
-    setSortedPurchases(purchases);
-  }, [purchases]);
-
-  const handleSort = (sortedData: Purchase[]) => {
-    setSortedPurchases(sortedData);
-  };
-
   const deletePurchaseMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } =
@@ -142,17 +126,20 @@ const PurchaseList = () => {
     setCurrentPage(1);
   };
 
-  const handleDelete = (purchase: Purchase) => {
-    openConfirmDialog({
-      title: 'Konfirmasi Hapus',
-      message: `Apakah Anda yakin ingin menghapus pembelian dengan nomor faktur "${purchase.invoice_number}"? Tindakan ini juga akan mengembalikan stok item yang terkait.`,
-      variant: 'danger',
-      confirmText: 'Hapus',
-      onConfirm: () => {
-        deletePurchaseMutation.mutate(purchase.id);
-      },
-    });
-  };
+  const handleDelete = useCallback(
+    (purchase: Purchase) => {
+      openConfirmDialog({
+        title: 'Konfirmasi Hapus',
+        message: `Apakah Anda yakin ingin menghapus pembelian dengan nomor faktur "${purchase.invoice_number}"? Tindakan ini juga akan mengembalikan stok item yang terkait.`,
+        variant: 'danger',
+        confirmText: 'Hapus',
+        onConfirm: () => {
+          deletePurchaseMutation.mutate(purchase.id);
+        },
+      });
+    },
+    [deletePurchaseMutation, openConfirmDialog]
+  );
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
@@ -194,6 +181,120 @@ const PurchaseList = () => {
   };
 
   const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const columnDefs = useMemo<ColDef<Purchase>[]>(
+    () => [
+      {
+        field: 'invoice_number',
+        headerName: 'No. Faktur',
+        minWidth: 140,
+        flex: 1,
+      },
+      {
+        field: 'date',
+        headerName: 'Tanggal',
+        minWidth: 120,
+        valueFormatter: params =>
+          params.value
+            ? new Date(params.value).toLocaleDateString('id-ID', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+              })
+            : '',
+      },
+      {
+        headerName: 'Supplier',
+        minWidth: 160,
+        flex: 1,
+        valueGetter: params =>
+          params.data?.supplier?.name || 'Tidak ada supplier',
+      },
+      {
+        field: 'total',
+        headerName: 'Total',
+        minWidth: 140,
+        cellStyle: { textAlign: 'right' },
+        valueFormatter: params =>
+          Number(params.value ?? 0).toLocaleString('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+          }),
+      },
+      {
+        field: 'payment_status',
+        headerName: 'Status Pembayaran',
+        minWidth: 160,
+        cellStyle: { textAlign: 'center' },
+        cellRenderer: (params: ICellRendererParams<Purchase>) => {
+          const status = params.data?.payment_status;
+          if (!status) return null;
+
+          return (
+            <Badge variant={getStatusBadgeVariant(status)}>
+              {getStatusLabel(status)}
+            </Badge>
+          );
+        },
+      },
+      {
+        field: 'payment_method',
+        headerName: 'Metode Pembayaran',
+        minWidth: 160,
+        cellStyle: { textAlign: 'center' },
+        valueFormatter: params => getPaymentMethodLabel(String(params.value)),
+      },
+      {
+        colId: 'actions',
+        headerName: 'Aksi',
+        minWidth: 140,
+        sortable: false,
+        filter: false,
+        cellStyle: { textAlign: 'center' },
+        cellRenderer: (params: ICellRendererParams<Purchase>) => {
+          const purchase = params.data;
+          if (!purchase) return null;
+          const isDeleting =
+            deletePurchaseMutation.isPending &&
+            deletePurchaseMutation.variables === purchase.id;
+
+          return (
+            <div className="flex justify-center space-x-2">
+              <Link to={`/purchases/view/${purchase.id}`}>
+                <Button variant="primary" size="sm">
+                  <TbEye />
+                </Button>
+              </Link>
+              <Link to={`/purchases/edit/${purchase.id}`}>
+                <Button variant="secondary" size="sm">
+                  <TbEdit />
+                </Button>
+              </Link>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={() => handleDelete(purchase)}
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"></span>
+                ) : (
+                  <TbTrash />
+                )}
+              </Button>
+            </div>
+          );
+        },
+      },
+    ],
+    [
+      deletePurchaseMutation.isPending,
+      deletePurchaseMutation.variables,
+      handleDelete,
+    ]
+  );
+  const overlayNoRowsTemplate = debouncedSearch
+    ? `<span style="padding: 10px; color: #64748b;">Tidak ada pembelian dengan kata kunci "${debouncedSearch}"</span>`
+    : '<span style="padding: 10px; color: #64748b;">Tidak ada data pembelian yang ditemukan</span>';
 
   return (
     <>
@@ -214,11 +315,7 @@ const PurchaseList = () => {
             }
             placeholder="Cari nomor faktur..."
             className="grow"
-            searchState={getSearchState(
-              search,
-              debouncedSearch,
-              sortedPurchases
-            )}
+            searchState={getSearchState(search, debouncedSearch, purchases)}
           />
           <div className="flex space-x-2 ml-4 mb-4">
             <Button
@@ -239,170 +336,30 @@ const PurchaseList = () => {
             </Button>
           </div>
         </div>
-        {isLoading && purchases.length === 0 ? (
-          <PurchaseListSkeleton rows={8} />
-        ) : (
-          <>
-            <Table
-              scrollable={true}
-              stickyHeader={true}
-              autoSize={true}
-              columns={[
-                {
-                  key: 'invoice_number',
-                  header: 'No. Faktur',
-                  minWidth: 140,
-                  sortable: true,
-                },
-                {
-                  key: 'date',
-                  header: 'Tanggal',
-                  minWidth: 100,
-                  sortable: true,
-                },
-                {
-                  key: 'supplier',
-                  header: 'Supplier',
-                  minWidth: 120,
-                  sortable: true,
-                },
-                {
-                  key: 'total',
-                  header: 'Total',
-                  minWidth: 120,
-                  align: 'right',
-                  sortable: true,
-                },
-                {
-                  key: 'payment_status',
-                  header: 'Status Pembayaran',
-                  minWidth: 140,
-                  align: 'center',
-                  sortable: true,
-                },
-                {
-                  key: 'payment_method',
-                  header: 'Metode Pembayaran',
-                  minWidth: 140,
-                  align: 'center',
-                  sortable: true,
-                },
-                {
-                  key: 'actions',
-                  header: 'Aksi',
-                  minWidth: 120,
-                  align: 'center',
-                  sortable: false,
-                },
-              ]}
-              data={purchases}
-              onSort={handleSort}
-            >
-              <TableHead>
-                <TableRow>
-                  <TableHeader>No. Faktur</TableHeader>
-                  <TableHeader>Tanggal</TableHeader>
-                  <TableHeader>Supplier</TableHeader>
-                  <TableHeader className="text-right">Total</TableHeader>
-                  <TableHeader className="text-center">
-                    Status Pembayaran
-                  </TableHeader>
-                  <TableHeader className="text-center">
-                    Metode Pembayaran
-                  </TableHeader>
-                  <TableHeader className="text-center">Aksi</TableHeader>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {sortedPurchases.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={7}
-                      className="text-center text-slate-600"
-                    >
-                      {debouncedSearch
-                        ? `Tidak ada pembelian dengan kata kunci "${debouncedSearch}"`
-                        : 'Tidak ada data pembelian yang ditemukan'}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  sortedPurchases.map(purchase => (
-                    <TableRow key={purchase.id}>
-                      <TableCell>{purchase.invoice_number}</TableCell>
-                      <TableCell>
-                        {new Date(purchase.date).toLocaleDateString('id-ID', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric',
-                        })}
-                      </TableCell>
-                      <TableCell>
-                        {purchase.supplier?.name || 'Tidak ada supplier'}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {purchase.total.toLocaleString('id-ID', {
-                          style: 'currency',
-                          currency: 'IDR',
-                        })}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Badge
-                          variant={getStatusBadgeVariant(
-                            purchase.payment_status
-                          )}
-                        >
-                          {getStatusLabel(purchase.payment_status)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {getPaymentMethodLabel(purchase.payment_method)}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <div className="flex justify-center space-x-2">
-                          <Link to={`/purchases/view/${purchase.id}`}>
-                            <Button variant="primary" size="sm">
-                              <TbEye />
-                            </Button>
-                          </Link>
-                          <Link to={`/purchases/edit/${purchase.id}`}>
-                            <Button variant="secondary" size="sm">
-                              <TbEdit />
-                            </Button>
-                          </Link>
-                          <Button
-                            variant="danger"
-                            size="sm"
-                            onClick={() => handleDelete(purchase)}
-                            disabled={
-                              deletePurchaseMutation.isPending &&
-                              deletePurchaseMutation.variables === purchase.id
-                            }
-                          >
-                            {deletePurchaseMutation.isPending &&
-                            deletePurchaseMutation.variables === purchase.id ? (
-                              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin inline-block"></span>
-                            ) : (
-                              <TbTrash />
-                            )}
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              totalItems={totalItems}
-              itemsPerPage={itemsPerPage}
-              itemsCount={sortedPurchases.length}
-              onPageChange={handlePageChange}
-              onItemsPerPageChange={handleItemsPerPageChange}
-            />
-          </>
-        )}
+        <DataGrid
+          rowData={purchases}
+          columnDefs={columnDefs}
+          loading={isLoading && purchases.length === 0}
+          overlayNoRowsTemplate={overlayNoRowsTemplate}
+          domLayout="normal"
+          disableFiltering={true}
+          suppressMovableColumns={true}
+          style={{
+            width: '100%',
+            height: 430,
+            marginTop: '1rem',
+            marginBottom: '1rem',
+          }}
+        />
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          itemsPerPage={itemsPerPage}
+          itemsCount={purchases.length}
+          onPageChange={handlePageChange}
+          onItemsPerPageChange={handleItemsPerPageChange}
+        />
       </Card>
 
       <UploadInvoicePortal

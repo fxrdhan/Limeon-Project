@@ -178,25 +178,6 @@ export interface TableSearchProps {
   resultsCount?: number;
 }
 
-export interface TableProps {
-  children: React.ReactNode;
-  className?: string;
-  scrollable?: boolean;
-  maxHeight?: string;
-  stickyHeader?: boolean;
-}
-
-export interface TableCellProps extends React.TdHTMLAttributes<HTMLTableCellElement> {
-  colSpan?: number;
-  rowSpan?: number;
-  align?: 'left' | 'center' | 'right';
-}
-
-export interface TableRowProps extends React.HTMLAttributes<HTMLTableRowElement> {
-  children: React.ReactNode;
-  className?: string;
-}
-
 export interface ImageUploaderProps {
   id: string;
   onImageUpload: (file: File) => Promise<void> | void;

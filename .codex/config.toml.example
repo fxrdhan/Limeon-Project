@@ -40,6 +40,7 @@ args = [
   "-y",
   "@supabase/mcp-server-supabase@latest",
   "--project-ref=psqmckbtwqphcteymjil",
+  "--features=database,debugging,development,functions,branching,storage",
 ]
 enabled = true
 env_vars = ["SUPABASE_ACCESS_TOKEN"]
