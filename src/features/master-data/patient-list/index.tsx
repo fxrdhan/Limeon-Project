@@ -197,7 +197,6 @@ const PatientListNew = () => {
         onRowClicked,
         onGridReady: handleGridReady,
         loading: isLoading,
-        sizeColumnsToFit: true,
         onFirstDataRendered: () => {},
         isExternalFilterPresent,
         doesExternalFilterPass,

@@ -175,7 +175,6 @@ const SupplierListNew = () => {
         onRowClicked,
         onGridReady: handleGridReady,
         loading: isLoading,
-        autoSizeColumns: ['name', 'phone', 'email', 'contact_person'],
         onFirstDataRendered: () => {},
         isExternalFilterPresent,
         doesExternalFilterPass,
