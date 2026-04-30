@@ -4,6 +4,7 @@ import PopupMenuContent, {
 import PopupMenuPopover from '@/components/shared/popup-menu-popover';
 import type { RefObject } from 'react';
 import { TbDotsVertical, TbLayoutSidebarRightCollapse } from 'react-icons/tb';
+import { CHAT_POPUP_SURFACE_CLASS_NAME } from '../chatPopupSurface';
 import type { UserPresence } from '../../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../../types';
 import { formatLastSeen } from './presence';
@@ -25,8 +26,7 @@ interface ConversationHeaderContentProps {
   getInitialsColor: (userId: string) => string;
 }
 
-const floatingBlockClass =
-  'rounded-full border border-slate-200/95 bg-white/95';
+const floatingBlockClass = `rounded-full ${CHAT_POPUP_SURFACE_CLASS_NAME}`;
 const floatingIconButtonClass = `${floatingBlockClass} inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center text-black transition-colors hover:bg-slate-50 hover:text-black disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-white`;
 const chatPopoverIconClassName =
   '[&>svg]:!text-black hover:[&>svg]:!text-black data-[preselected=true]:[&>svg]:!text-black';
@@ -54,7 +54,7 @@ const ConversationHeaderContent = ({
   return (
     <div className="flex w-full items-center gap-2.5">
       <div
-        className={`${floatingBlockClass} flex min-w-0 max-w-[calc(100%-5.75rem)] flex-1 items-center gap-3 px-3 py-1.5`}
+        className={`${floatingBlockClass} flex min-w-0 max-w-[calc(100%-5.75rem)] flex-1 items-center gap-2.5 py-1.5 pl-2 pr-3`}
       >
         <div className="w-9 h-9 rounded-full overflow-hidden shrink-0">
           {displayTargetPhotoUrl ? (
@@ -77,10 +77,7 @@ const ConversationHeaderContent = ({
             {targetDisplayName}
           </h3>
           {isTargetOnline ? (
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 rounded-full bg-green-500" />
-              <span className="text-xs text-green-600 font-medium">Online</span>
-            </div>
+            <span className="text-xs text-green-600 font-medium">Online</span>
           ) : targetUserPresenceError ? (
             <span className="text-xs text-amber-600">
               {targetUserPresenceError}
@@ -122,6 +119,7 @@ const ConversationHeaderContent = ({
                 minWidthClassName="min-w-[140px]"
                 iconClassName={chatPopoverIconClassName}
                 enableAnimatedHighlight
+                surfaceClassName={CHAT_POPUP_SURFACE_CLASS_NAME}
               />
             </div>
           </PopupMenuPopover>

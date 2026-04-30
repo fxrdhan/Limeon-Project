@@ -5,6 +5,7 @@ import { TbArrowUpRight, TbCopy, TbLink, TbPaperclip } from 'react-icons/tb';
 import { AnimatedMenuHighlight } from '@/components/shared/animated-menu-highlight';
 import { useAnimatedMenuHighlight } from '@/components/shared/use-animated-menu-highlight';
 import PopupMenuPopover from '@/components/shared/popup-menu-popover';
+import { CHAT_POPUP_SURFACE_CLASS_NAME } from '../chatPopupSurface';
 
 const ATTACHMENT_LINK_PROMPT_MIN_WIDTH = 156;
 const ATTACHMENT_PROMPT_BUTTON_CLASS_NAME =
@@ -116,8 +117,10 @@ const LinkPromptContent = ({
   return (
     <div
       ref={promptRef}
-      className="relative rounded-xl border border-slate-200 bg-white px-0.5 py-0.5 shadow-[0_-10px_15px_-3px_rgba(15,23,42,0.10),0_-4px_6px_-4px_rgba(15,23,42,0.10)]"
-      style={{ minWidth: ATTACHMENT_LINK_PROMPT_MIN_WIDTH }}
+      className={`relative rounded-xl px-0.5 py-0.5 ${CHAT_POPUP_SURFACE_CLASS_NAME}`}
+      style={{
+        minWidth: ATTACHMENT_LINK_PROMPT_MIN_WIDTH,
+      }}
       onClick={event => event.stopPropagation()}
       onMouseEnter={onMouseEnter}
       onMouseLeave={() => {

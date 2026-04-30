@@ -273,11 +273,11 @@ export const MessageItemBubble = ({
     shouldUseIndependentReplyPanelPadding ? 'p-0' : bubbleSpacingClass
   } ${bubbleTypographyClass} ${bubbleToneClass} ${bubbleOpacityClass} ${bubbleShapeClass} ${
     isActiveSearchMatch
-      ? 'shadow-[0_0_0_1px_rgba(15,23,42,0.12)]'
+      ? '!shadow-[0_0_0_1px_rgba(15,23,42,0.12)]'
       : isSearchMatch
-        ? 'shadow-[0_0_0_1px_rgba(15,23,42,0.08)]'
+        ? '!shadow-[0_0_0_1px_rgba(15,23,42,0.08)]'
         : ''
-  } ${isAttachmentGroup ? 'cursor-pointer overflow-visible' : 'cursor-pointer'} ${
+  } shadow-surface-thin ${isAttachmentGroup ? 'cursor-pointer overflow-visible' : 'cursor-pointer'} ${
     shouldDimBubble ? 'blur-[2px] brightness-95' : ''
   } select-none transition-[background-color,color,opacity,box-shadow,filter] duration-300 ease-in-out`;
 

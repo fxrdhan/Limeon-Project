@@ -11,6 +11,7 @@ import {
   TbLayoutSidebarRightCollapse,
   TbX,
 } from 'react-icons/tb';
+import { CHAT_POPUP_SURFACE_CLASS_NAME } from '../chatPopupSurface';
 
 interface SearchHeaderContentProps {
   searchQuery: string;
@@ -28,8 +29,7 @@ interface SearchHeaderContentProps {
   onClose: () => void;
 }
 
-const floatingBlockClass =
-  'rounded-full border border-slate-200/95 bg-white/95';
+const floatingBlockClass = `rounded-full ${CHAT_POPUP_SURFACE_CLASS_NAME}`;
 const floatingIconButtonClass = `${floatingBlockClass} inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center text-black transition-colors hover:bg-slate-50 hover:text-black disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-white`;
 const floatingSplitIconButtonClass =
   'inline-flex h-1/2 w-full cursor-pointer items-center justify-center text-black transition-colors hover:bg-slate-50 hover:text-black disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-white';
@@ -102,7 +102,7 @@ const SearchHeaderContent = ({
           aria-hidden={searchResultCount === 0}
         >
           <div
-            className={`${floatingBlockClass} inline-flex h-9 w-9 shrink-0 flex-col overflow-hidden divide-y divide-slate-200/95`}
+            className={`${floatingBlockClass} inline-flex h-9 w-9 shrink-0 flex-col overflow-hidden`}
           >
             <button
               type="button"

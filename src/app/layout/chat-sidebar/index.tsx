@@ -123,7 +123,7 @@ const ChatSidebar = ({ isOpen, onClose, targetUser }: ChatSidebarProps) => {
       onTransitionEnd={handleTransitionEnd}
       className={`h-full overflow-hidden transition-[width,opacity] duration-500 ease-in-out ${
         isOpen
-          ? 'border-l border-slate-200 bg-slate-100'
+          ? 'border-l border-slate-200 bg-white'
           : 'pointer-events-none border-l border-transparent bg-transparent'
       }`}
     >

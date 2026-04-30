@@ -4,6 +4,7 @@ import PopupMenuContent, {
 import PopupMenuPopover from '@/components/shared/popup-menu-popover';
 import { forwardRef, type CSSProperties, type MouseEventHandler } from 'react';
 import type { MotionProps } from 'motion/react';
+import { CHAT_POPUP_SURFACE_CLASS_NAME } from './chatPopupSurface';
 
 const CHAT_ACTION_POPOVER_LAYOUT_ID = 'chat-action-menu-popover';
 const CHAT_POPOVER_ICON_CLASS_NAME =
@@ -91,6 +92,7 @@ export const ChatActionPopover = forwardRef<
           iconClassName={iconClassName}
           dangerIconClassName={dangerIconClassName}
           enableAnimatedHighlight={enableAnimatedHighlight}
+          surfaceClassName={CHAT_POPUP_SURFACE_CLASS_NAME}
         />
       </div>
     </PopupMenuPopover>

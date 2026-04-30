@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { TbFileDescription, TbMusic, TbPhoto, TbPlus } from 'react-icons/tb';
 import { AnimatedMenuHighlight } from '@/components/shared/animated-menu-highlight';
 import { useAnimatedMenuHighlight } from '@/components/shared/use-animated-menu-highlight';
+import { CHAT_POPUP_SURFACE_CLASS_NAME } from '../chatPopupSurface';
 import { COMPOSER_SYNC_LAYOUT_TRANSITION } from '../../constants';
 
 interface ComposerAttachmentMenuProps {
@@ -103,7 +104,7 @@ export const ComposerAttachmentMenu = ({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 6, scale: 0.95 }}
               transition={{ duration: 0.15, ease: 'easeOut' }}
-              className="relative inline-flex w-max flex-col rounded-xl border border-slate-200 bg-white p-1 shadow-[0_-10px_15px_-3px_rgba(15,23,42,0.10),0_-4px_6px_-4px_rgba(15,23,42,0.10)]"
+              className={`relative inline-flex w-max flex-col rounded-xl p-1 ${CHAT_POPUP_SURFACE_CLASS_NAME}`}
               onMouseLeave={() => {
                 setHoveredActionIndex(null);
               }}

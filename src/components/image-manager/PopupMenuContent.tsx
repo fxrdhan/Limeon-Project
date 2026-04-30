@@ -2,6 +2,7 @@ import {
   useCallback,
   useLayoutEffect,
   useState,
+  type CSSProperties,
   type KeyboardEvent,
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
@@ -40,6 +41,8 @@ interface PopupMenuContentProps {
   iconClassName?: string;
   dangerIconClassName?: string;
   enableAnimatedHighlight?: boolean;
+  surfaceClassName?: string;
+  surfaceStyle?: CSSProperties;
 }
 
 const resolveInitialActionIndex = ({
@@ -85,6 +88,8 @@ const PopupMenuContent = ({
   iconClassName,
   dangerIconClassName,
   enableAnimatedHighlight = false,
+  surfaceClassName = `shadow-lg ${POPUP_SURFACE_CLASS}`,
+  surfaceStyle,
 }: PopupMenuContentProps) => {
   const [focusedActionIndex, setFocusedActionIndex] = useState<number | null>(
     () =>
@@ -193,7 +198,8 @@ const PopupMenuContent = ({
 
   return (
     <div
-      className={`relative px-1 py-1 rounded-xl shadow-lg ${POPUP_SURFACE_CLASS} ${minWidthClassName}`}
+      className={`relative px-1 py-1 rounded-xl ${surfaceClassName} ${minWidthClassName}`}
+      style={surfaceStyle}
       role={enableArrowNavigation ? 'menu' : undefined}
       onMouseLeave={() => {
         setHoveredActionIndex(null);
@@ -253,6 +259,7 @@ const PopupMenuContent = ({
             onMouseEnter={() => {
               if (!action.disabled) {
                 setHoveredActionIndex(actionIndex);
+                setFocusedActionIndexWithSync(actionIndex);
               }
             }}
             onMouseLeave={() => {

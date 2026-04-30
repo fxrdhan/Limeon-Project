@@ -1,6 +1,7 @@
 import { LayoutGroup } from 'motion/react';
 import { Fragment } from 'react';
 import { TbArrowDown } from 'react-icons/tb';
+import { CHAT_POPUP_SURFACE_CLASS_NAME } from './chatPopupSurface';
 import { buildMessageItemModel } from './messages/buildMessageItemModel';
 import MessageItem from './messages/MessageItem';
 import type { MessagesPaneRuntime } from './messagesPaneRuntime';
@@ -89,7 +90,7 @@ const MessagesPane = ({ runtime }: MessagesPaneProps) => {
                     disabled={
                       runtime.conversation.history.isLoadingOlderMessages
                     }
-                    className="cursor-pointer rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-black transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    className={`cursor-pointer rounded-full px-3 py-1 text-xs font-medium text-black transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 ${CHAT_POPUP_SURFACE_CLASS_NAME}`}
                   >
                     {runtime.conversation.history.isLoadingOlderMessages
                       ? 'Memuat pesan sebelumnya...'
@@ -138,7 +139,9 @@ const MessagesPane = ({ runtime }: MessagesPaneProps) => {
                           index === 0 ? 'pb-3' : 'py-3'
                         }`}
                       >
-                        <div className="inline-flex rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-[11px] font-medium text-black shadow-none">
+                        <div
+                          className={`inline-flex rounded-full px-3 py-1 text-[11px] font-medium text-black ${CHAT_POPUP_SURFACE_CLASS_NAME}`}
+                        >
                           {formatMessageGroupDate(messageItem.created_at)}
                         </div>
                       </div>
@@ -161,7 +164,7 @@ const MessagesPane = ({ runtime }: MessagesPaneProps) => {
           type="button"
           onClick={runtime.viewport.scrollToBottom}
           aria-label="Scroll ke pesan terbaru"
-          className="absolute left-1/2 z-20 flex h-8 w-8 -translate-x-1/2 cursor-pointer items-center justify-center rounded-xl bg-white text-black shadow-sm transition-colors hover:text-black/80"
+          className={`absolute left-1/2 z-20 flex h-8 w-8 -translate-x-1/2 cursor-pointer items-center justify-center rounded-xl text-black transition-colors hover:text-black/80 ${CHAT_POPUP_SURFACE_CLASS_NAME}`}
           style={{
             bottom: Math.max(
               runtime.viewport.composerContainerHeight +

@@ -130,9 +130,6 @@ const TooltipContext = React.createContext<TooltipValue | null>(null);
 const TOOLTIP_ARROW_SIZE = 12;
 const TOOLTIP_HIDDEN_SCALE = 0.45;
 const TOOLTIP_GEOMETRY_EPSILON = 0.5;
-const TOOLTIP_SURFACE_SHADOW =
-  '0 0 1px rgba(71, 85, 105, 0.38), 0 1px 1px rgba(15, 23, 42, 0.08)';
-
 const hasTooltipGeometryChanged = (
   current: TooltipGeometry,
   next: TooltipGeometry
@@ -534,11 +531,10 @@ const TooltipProvider = ({
         ref={tooltipSizerRef}
         aria-hidden
         className={cn(
-          'pointer-events-none fixed left-0 top-0 -z-10 whitespace-nowrap rounded-lg bg-white px-2 py-1 text-sm font-medium text-black opacity-0',
+          'pointer-events-none fixed left-0 top-0 -z-10 whitespace-nowrap rounded-lg bg-white px-2 py-1 text-sm font-medium text-black opacity-0 shadow-surface-thin',
           content?.className
         )}
         style={{
-          boxShadow: TOOLTIP_SURFACE_SHADOW,
           ...content?.style,
         }}
       >
@@ -549,11 +545,10 @@ const TooltipProvider = ({
       <motion.div
         ref={tooltipRef}
         className={cn(
-          'pointer-events-none fixed left-0 top-0 z-50 overflow-visible whitespace-nowrap rounded-lg bg-white px-2 py-1 text-sm font-medium text-black',
+          'pointer-events-none fixed left-0 top-0 z-50 overflow-visible whitespace-nowrap rounded-lg bg-white px-2 py-1 text-sm font-medium text-black shadow-surface-thin',
           content?.className
         )}
         style={{
-          boxShadow: TOOLTIP_SURFACE_SHADOW,
           ...content?.style,
           visibility: shouldShowTooltip ? 'visible' : 'hidden',
           transformOrigin: getTooltipTransformOrigin(
