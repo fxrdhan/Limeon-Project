@@ -21,7 +21,6 @@ import StandardPagination from '../atoms/StandardPagination';
 // Hooks
 import { useColumnDisplayMode } from '@/features/item-management/application/hooks/ui';
 import { useItemsDisplayTransform } from '@/features/item-management/application/hooks/ui/useItemsDisplayTransform';
-import { useDynamicGridHeight } from '@/hooks/ag-grid/useDynamicGridHeight';
 // Simple grid state utilities
 import * as gridStateManager from '@/utils/gridStateManager';
 import type { TableType } from '@/utils/gridStateManager';
@@ -179,7 +178,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
   // Single grid API for all tabs
   const [gridApi, setGridApi] = useState<GridApi | null>(null);
   const dataGridRef = useRef<AgGridReact>(null);
-  const [currentPageSize, setCurrentPageSize] = useState<number>(itemsPerPage);
+  const currentPageSizeRef = useRef<number>(itemsPerPage);
   const hasPersistedSearchPattern = useCallback((tableType: TableType) => {
     if (!isMasterDataTab(tableType)) {
       return false;
@@ -371,9 +370,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
     const isPaginationEnabled = api.getGridOption('pagination');
     const nextPageSize = isPaginationEnabled ? api.paginationGetPageSize() : -1;
 
-    setCurrentPageSize(currentPageSize =>
-      currentPageSize === nextPageSize ? currentPageSize : nextPageSize
-    );
+    currentPageSizeRef.current = nextPageSize;
   }, []);
 
   // 🎯 Load initial grid state for AG Grid's initialState prop
@@ -544,13 +541,6 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
     entityColumnDefs,
   ]);
 
-  // Call useDynamicGridHeight at top level (Rules of Hooks compliant)
-  const { gridHeight } = useDynamicGridHeight({
-    data: rowData,
-    currentPageSize,
-    viewportOffset: 320,
-  });
-
   // ✅ AG Grid Best Practice: No manual restoration needed!
   // initialState handles it automatically on mount/tab-switch
 
@@ -668,7 +658,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
   const handlePageSizeChange = useCallback(
     (newPageSize: number) => {
       /* c8 ignore next */
-      setCurrentPageSize(newPageSize);
+      currentPageSizeRef.current = newPageSize;
 
       if (
         gridApi &&
@@ -919,8 +909,8 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
   const shouldShowGridLoading = isLoading && rowData.length === 0;
 
   return (
-    <>
-      <div className="relative">
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="relative min-h-0 flex-1 py-4">
         <DataGrid
           ref={dataGridRef}
           rowData={rowData}
@@ -949,9 +939,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
           domLayout="normal"
           style={{
             width: '100%',
-            marginTop: '1rem',
-            marginBottom: '1rem',
-            height: `${gridHeight}px`,
+            height: '100%',
             transition: 'height 0.3s ease-in-out',
           }}
           // AG Grid Built-in Pagination
@@ -991,7 +979,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
         hideFloatingWhenModalOpen={hideFloatingPagination}
         onPageSizeChange={handlePageSizeChange}
       />
-    </>
+    </div>
   );
 });
 

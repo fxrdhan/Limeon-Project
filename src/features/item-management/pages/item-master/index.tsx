@@ -2200,7 +2200,7 @@ const ItemMasterNew = memo(() => {
   // Unified rendering - keep tabs always mounted for smooth animation
   return (
     <>
-      <div className="flex-1 flex flex-col p-6">
+      <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden p-6">
         <div className="relative flex items-center justify-center mb-0 pt-0">
           <div className="absolute left-0 pb-4 pt-6">
             {showTabSelector && (
@@ -2253,7 +2253,7 @@ const ItemMasterNew = memo(() => {
         </div>
 
         {/* Unified EntityGrid */}
-        <div>
+        <div className="min-h-0 flex-1">
           <EntityGrid
             activeTab={activeTab}
             itemsData={itemsManagement.data as ItemDataType[]}
