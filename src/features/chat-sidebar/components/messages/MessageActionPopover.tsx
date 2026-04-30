@@ -2,7 +2,7 @@ import PopupMenuContent, {
   type PopupMenuAction,
 } from '@/components/image-manager/PopupMenuContent';
 import PopupMenuPopover from '@/components/shared/popup-menu-popover';
-import { CHAT_POPUP_SURFACE_CLASS_NAME } from '../chatPopupSurface';
+import { CHAT_POPUP_MENU_SURFACE_CLASS_NAME } from '../chatPopupSurface';
 import type { MenuPlacement, MenuVerticalAnchor } from '../../types';
 
 const CHAT_POPOVER_ICON_CLASS_NAME =
@@ -88,7 +88,7 @@ export const MessageActionPopover = ({
           autoFocusFirstItem
           iconClassName={CHAT_POPOVER_ICON_CLASS_NAME}
           enableAnimatedHighlight
-          surfaceClassName={CHAT_POPUP_SURFACE_CLASS_NAME}
+          surfaceClassName={CHAT_POPUP_MENU_SURFACE_CLASS_NAME}
         />
       </div>
     </PopupMenuPopover>

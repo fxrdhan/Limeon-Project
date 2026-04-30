@@ -6,7 +6,7 @@ import { createPortal } from 'react-dom';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import toast from 'react-hot-toast';
 import { TbArrowUpRight, TbCopy, TbFileTypePdf } from 'react-icons/tb';
-import { CHAT_POPUP_SURFACE_CLASS_NAME } from '../chatPopupSurface';
+import { CHAT_POPUP_MENU_SURFACE_CLASS_NAME } from '../chatPopupSurface';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../../constants';
 import type { ChatMessage } from '../../data/chatSidebarGateway';
 import { copyTextToClipboard } from '../../utils/clipboard';
@@ -344,7 +344,7 @@ export const MessageBubbleContent = ({
                   actions={linkContextMenuActions}
                   minWidthClassName="min-w-[148px]"
                   enableAnimatedHighlight
-                  surfaceClassName={CHAT_POPUP_SURFACE_CLASS_NAME}
+                  surfaceClassName={CHAT_POPUP_MENU_SURFACE_CLASS_NAME}
                 />
               </div>
             </PopupMenuPopover>,

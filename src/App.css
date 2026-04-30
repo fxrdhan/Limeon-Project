@@ -23,12 +23,19 @@
     --color-danger: oklch(62.8% 0.257 29.234); /* red-600 */
     --shadow-surface-thin:
       0 0 1px rgba(71, 85, 105, 0.38), 0 1px 1px rgba(15, 23, 42, 0.08);
+    --shadow-surface-thin-md:
+      var(--shadow-surface-thin), 0 4px 6px -1px rgb(0 0 0 / 0.1),
+      0 2px 4px -2px rgb(0 0 0 / 0.1);
   }
 }
 
 @layer utilities {
   .shadow-surface-thin {
     box-shadow: var(--shadow-surface-thin);
+  }
+
+  .shadow-surface-thin-md {
+    box-shadow: var(--shadow-surface-thin-md);
   }
 }
 

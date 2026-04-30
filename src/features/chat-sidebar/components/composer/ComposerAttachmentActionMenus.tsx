@@ -2,7 +2,7 @@ import type { PopupMenuAction } from '@/components/image-manager/PopupMenuConten
 import PopupMenuContent from '@/components/image-manager/PopupMenuContent';
 import PopupMenuPopover from '@/components/shared/popup-menu-popover';
 import { createPortal } from 'react-dom';
-import { CHAT_POPUP_SURFACE_CLASS_NAME } from '../chatPopupSurface';
+import { CHAT_POPUP_MENU_SURFACE_CLASS_NAME } from '../chatPopupSurface';
 import {
   useEffect,
   useLayoutEffect,
@@ -391,7 +391,7 @@ export const ComposerAttachmentActionMenus = ({
                   autoFocusFirstItem
                   iconClassName={CHAT_POPOVER_ICON_CLASS_NAME}
                   enableAnimatedHighlight
-                  surfaceClassName={CHAT_POPUP_SURFACE_CLASS_NAME}
+                  surfaceClassName={CHAT_POPUP_MENU_SURFACE_CLASS_NAME}
                 />
               </div>
             </PopupMenuPopover>,
@@ -457,7 +457,7 @@ export const ComposerAttachmentActionMenus = ({
                   initialPreselectedIndex={1}
                   iconClassName={CHAT_POPOVER_ICON_CLASS_NAME}
                   enableAnimatedHighlight
-                  surfaceClassName={CHAT_POPUP_SURFACE_CLASS_NAME}
+                  surfaceClassName={CHAT_POPUP_MENU_SURFACE_CLASS_NAME}
                 />
               </div>
             </PopupMenuPopover>,

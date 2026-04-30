@@ -4,7 +4,10 @@ import PopupMenuContent, {
 import PopupMenuPopover from '@/components/shared/popup-menu-popover';
 import type { RefObject } from 'react';
 import { TbDotsVertical, TbLayoutSidebarRightCollapse } from 'react-icons/tb';
-import { CHAT_POPUP_SURFACE_CLASS_NAME } from '../chatPopupSurface';
+import {
+  CHAT_POPUP_MENU_SURFACE_CLASS_NAME,
+  CHAT_POPUP_SURFACE_CLASS_NAME,
+} from '../chatPopupSurface';
 import type { UserPresence } from '../../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../../types';
 import { formatLastSeen } from './presence';
@@ -119,7 +122,7 @@ const ConversationHeaderContent = ({
                 minWidthClassName="min-w-[140px]"
                 iconClassName={chatPopoverIconClassName}
                 enableAnimatedHighlight
-                surfaceClassName={CHAT_POPUP_SURFACE_CLASS_NAME}
+                surfaceClassName={CHAT_POPUP_MENU_SURFACE_CLASS_NAME}
               />
             </div>
           </PopupMenuPopover>
