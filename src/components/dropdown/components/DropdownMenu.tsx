@@ -24,6 +24,13 @@ import {
   type KeyboardPinnedHighlightFrame,
 } from '@/components/shared/keyboard-pinned-highlight';
 
+type DropdownSearchHighlightFrame = {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+};
+
 const listOptionTransition = {
   layout: {
     type: 'spring' as const,
@@ -86,6 +93,8 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
       isHighlightSuppressedDuringScroll,
       setIsHighlightSuppressedDuringScroll,
     ] = useState(false);
+    const [searchHighlightFrame, setSearchHighlightFrame] =
+      useState<DropdownSearchHighlightFrame | null>(null);
 
     if (isOpen && !wasOpenRef.current) {
       openCycleRef.current += 1;
@@ -94,6 +103,54 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
 
     const activeBackgroundLayoutId = `dropdown-active-background-${highlightInstanceId}-${openCycleRef.current}-${searchTerm}-${filteredOptions[0]?.id ?? 'empty'}`;
     const shouldAnimateListItems = searchTerm.trim() !== '';
+    const shouldPinSearchHighlight =
+      shouldAnimateListItems &&
+      highlightedIndex >= 0 &&
+      !heldHighlightFrame &&
+      !isHighlightSuppressedDuringScroll;
+
+    useLayoutEffect(() => {
+      if (!shouldPinSearchHighlight) {
+        setSearchHighlightFrame(null);
+        return;
+      }
+
+      const container = optionsContainerRef.current;
+      const highlightedItem = container?.querySelectorAll<HTMLElement>(
+        '[data-dropdown-option-frame]'
+      )[highlightedIndex];
+
+      if (!container || !highlightedItem) {
+        setSearchHighlightFrame(null);
+        return;
+      }
+
+      const nextFrame = {
+        top: highlightedItem.offsetTop,
+        left: highlightedItem.offsetLeft,
+        width: highlightedItem.offsetWidth,
+        height: highlightedItem.offsetHeight,
+      };
+
+      setSearchHighlightFrame(previousFrame => {
+        if (
+          previousFrame &&
+          previousFrame.top === nextFrame.top &&
+          previousFrame.left === nextFrame.left &&
+          previousFrame.width === nextFrame.width &&
+          previousFrame.height === nextFrame.height
+        ) {
+          return previousFrame;
+        }
+
+        return nextFrame;
+      });
+    }, [
+      filteredOptions,
+      highlightedIndex,
+      optionsContainerRef,
+      shouldPinSearchHighlight,
+    ]);
 
     useEffect(() => {
       if (!isOpen || !applyOpenStyles || !isPositionReady) {
@@ -369,10 +426,18 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
               onScroll={onScroll}
               onKeyDown={!searchList ? onKeyDown : undefined}
             >
+              {searchHighlightFrame && (
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute z-0 rounded-lg bg-primary/10"
+                  style={searchHighlightFrame}
+                />
+              )}
               <AnimatePresence initial={false} mode="popLayout">
                 {filteredOptions.map((option, index) => (
                   <motion.div
                     key={option.id}
+                    data-dropdown-option-frame
                     layout={shouldAnimateListItems ? 'position' : false}
                     initial={
                       shouldAnimateListItems ? { opacity: 0, y: 6 } : false
@@ -394,7 +459,8 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
                       isHighlighted={highlightedIndex === index}
                       suppressHighlightBackground={
                         Boolean(heldHighlightFrame) ||
-                        isHighlightSuppressedDuringScroll
+                        isHighlightSuppressedDuringScroll ||
+                        shouldPinSearchHighlight
                       }
                       activeBackgroundLayoutId={
                         isActiveBackgroundReady
