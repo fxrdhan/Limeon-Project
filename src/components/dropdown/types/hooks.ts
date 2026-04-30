@@ -40,6 +40,8 @@ export interface UseFocusManagementProps {
 export interface UseScrollManagementProps {
   isOpen: boolean;
   filteredOptions: Array<{ id: string; name: string }>;
+  searchTerm: string;
+  selectedValue?: string;
   optionsContainerRef: RefObject<HTMLDivElement | null>;
   autoScrollOnOpen: boolean;
 }

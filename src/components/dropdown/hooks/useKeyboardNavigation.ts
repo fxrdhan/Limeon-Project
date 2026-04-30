@@ -51,6 +51,7 @@ export const useKeyboardNavigation = ({
   const pendingHighlightTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const keyboardHighlightIndexRef = useRef<number | null>(null);
   const lastMousePositionRef = useRef({ x: 0, y: 0 });
+  const shouldRestoreHighlightAfterSearchClearRef = useRef(false);
 
   const clearPendingHighlight = useCallback(() => {
     if (pendingHighlightTimeoutRef.current) {
@@ -144,7 +145,15 @@ export const useKeyboardNavigation = ({
   }, [clearPendingHighlight]);
 
   useLayoutEffect(() => {
-    if (!isOpen || isKeyboardNavigation || searchTerm.trim() === '') return;
+    if (!isOpen || isKeyboardNavigation) return;
+
+    const hasSearchTerm = searchTerm.trim() !== '';
+
+    if (hasSearchTerm) {
+      shouldRestoreHighlightAfterSearchClearRef.current = true;
+    } else if (!shouldRestoreHighlightAfterSearchClearRef.current) {
+      return;
+    }
 
     clearPendingHighlight();
 
@@ -156,10 +165,27 @@ export const useKeyboardNavigation = ({
       return;
     }
 
-    if (highlightedIndex !== 0) {
-      setHighlightedIndex(0);
+    const nextHighlightedIndex = hasSearchTerm
+      ? 0
+      : value
+        ? currentFilteredOptions.findIndex(option => option.id === value)
+        : 0;
+
+    if (!hasSearchTerm && value && nextHighlightedIndex < 0) {
+      return;
     }
-    setExpandedId(currentFilteredOptions[0].id);
+
+    const normalizedHighlightedIndex =
+      nextHighlightedIndex >= 0 ? nextHighlightedIndex : 0;
+
+    if (highlightedIndex !== normalizedHighlightedIndex) {
+      setHighlightedIndex(normalizedHighlightedIndex);
+    }
+    setExpandedId(currentFilteredOptions[normalizedHighlightedIndex].id);
+
+    if (!hasSearchTerm) {
+      shouldRestoreHighlightAfterSearchClearRef.current = false;
+    }
   }, [
     clearPendingHighlight,
     currentFilteredOptions,
@@ -168,6 +194,7 @@ export const useKeyboardNavigation = ({
     isOpen,
     searchTerm,
     setExpandedId,
+    value,
   ]);
 
   useEffect(() => {

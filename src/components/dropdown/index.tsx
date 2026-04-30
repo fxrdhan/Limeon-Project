@@ -513,6 +513,8 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
   const { scrollState, checkScroll } = useScrollManagement({
     isOpen: effectiveIsOpen,
     filteredOptions,
+    searchTerm,
+    selectedValue: typeof value === 'string' ? value : undefined,
     optionsContainerRef,
     autoScrollOnOpen,
   });

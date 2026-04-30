@@ -3,6 +3,7 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useRef,
   RefObject,
 } from 'react';
 import { DROPDOWN_CONSTANTS } from '../constants';
@@ -10,13 +11,34 @@ import { DROPDOWN_CONSTANTS } from '../constants';
 interface UseScrollManagementProps {
   isOpen: boolean;
   filteredOptions: Array<{ id: string; name: string }>;
+  searchTerm: string;
+  selectedValue?: string;
   optionsContainerRef: RefObject<HTMLDivElement | null>;
   autoScrollOnOpen: boolean;
 }
 
+const scrollElementToPinnedTop = (
+  container: HTMLDivElement,
+  element: HTMLElement
+) => {
+  const containerHeight = container.clientHeight;
+  const maxScrollTop = container.scrollHeight - containerHeight;
+  const padding = 6;
+  const targetScrollTop = Math.min(
+    maxScrollTop,
+    Math.max(0, element.offsetTop - padding)
+  );
+  container.scrollTop = targetScrollTop;
+};
+
+const getOptionElementAtIndex = (container: HTMLDivElement, index: number) =>
+  container.querySelectorAll<HTMLElement>('[role="option"]')[index];
+
 export const useScrollManagement = ({
   isOpen,
   filteredOptions,
+  searchTerm,
+  selectedValue,
   optionsContainerRef,
   autoScrollOnOpen,
 }: UseScrollManagementProps) => {
@@ -25,6 +47,8 @@ export const useScrollManagement = ({
     reachedBottom: false,
     scrolledFromTop: false,
   });
+  const shouldRestoreScrollAfterSearchClearRef = useRef(false);
+  const restoreScrollFrameRef = useRef<number | null>(null);
 
   // Track if dropdown just opened (allow initial scroll only)
   // Use getDerivedStateFromProps pattern to reset when isOpen changes
@@ -100,15 +124,7 @@ export const useScrollManagement = ({
       );
 
     if (highlightedElement) {
-      const element = highlightedElement as HTMLElement;
-      const containerHeight = container.clientHeight;
-      const maxScrollTop = container.scrollHeight - containerHeight;
-      const padding = 12;
-      const targetScrollTop = Math.min(
-        maxScrollTop,
-        Math.max(0, element.offsetTop - padding)
-      );
-      container.scrollTop = targetScrollTop;
+      scrollElementToPinnedTop(container, highlightedElement as HTMLElement);
     }
     requestAnimationFrame(() => {
       setHasInitialScrolled(true);
@@ -119,6 +135,87 @@ export const useScrollManagement = ({
     hasInitialScrolled,
     filteredOptions.length,
     optionsContainerRef,
+  ]);
+
+  const firstFilteredOptionId = filteredOptions[0]?.id;
+
+  useLayoutEffect(() => {
+    if (restoreScrollFrameRef.current !== null) {
+      cancelAnimationFrame(restoreScrollFrameRef.current);
+      restoreScrollFrameRef.current = null;
+    }
+
+    if (!isOpen) return;
+    if (!optionsContainerRef.current) return;
+
+    const hasSearchTerm = searchTerm.trim() !== '';
+    const container = optionsContainerRef.current;
+
+    if (hasSearchTerm) {
+      shouldRestoreScrollAfterSearchClearRef.current = true;
+      container.scrollTop = 0;
+      requestAnimationFrame(checkScroll);
+      return;
+    }
+
+    if (!shouldRestoreScrollAfterSearchClearRef.current) return;
+
+    if (!selectedValue) {
+      container.scrollTop = 0;
+      shouldRestoreScrollAfterSearchClearRef.current = false;
+      requestAnimationFrame(checkScroll);
+      return;
+    }
+
+    const selectedIndex = filteredOptions.findIndex(
+      option => option.id === selectedValue
+    );
+
+    if (selectedIndex < 0) return;
+
+    const selectedElement = Array.from(
+      container.querySelectorAll<HTMLElement>('[role="option"]')
+    )[selectedIndex];
+
+    const restoreSelectedScroll = () => {
+      const currentContainer = optionsContainerRef.current;
+      if (!currentContainer) return false;
+
+      const currentSelectedElement = getOptionElementAtIndex(
+        currentContainer,
+        selectedIndex
+      );
+
+      if (!currentSelectedElement) return false;
+
+      scrollElementToPinnedTop(currentContainer, currentSelectedElement);
+      shouldRestoreScrollAfterSearchClearRef.current = false;
+      requestAnimationFrame(checkScroll);
+      return true;
+    };
+
+    if (!selectedElement || !restoreSelectedScroll()) {
+      restoreScrollFrameRef.current = requestAnimationFrame(() => {
+        restoreScrollFrameRef.current = null;
+        restoreSelectedScroll();
+      });
+    }
+
+    return () => {
+      if (restoreScrollFrameRef.current !== null) {
+        cancelAnimationFrame(restoreScrollFrameRef.current);
+        restoreScrollFrameRef.current = null;
+      }
+    };
+  }, [
+    checkScroll,
+    filteredOptions,
+    firstFilteredOptionId,
+    filteredOptions.length,
+    isOpen,
+    optionsContainerRef,
+    searchTerm,
+    selectedValue,
   ]);
 
   return {
