@@ -191,6 +191,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
 
   const {
     searchTerm,
+    debouncedSearchTerm,
     searchState,
     filteredOptions,
     handleSearchChange,
@@ -363,6 +364,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     setExpandedId,
     searchState,
     searchTerm,
+    debouncedSearchTerm,
     onSelect: handleSelect,
     onAddNew: handleAddNewPreservingDropdown,
     onCloseDropdown: closeDropdownAndReleasePin,
@@ -514,6 +516,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     isOpen: effectiveIsOpen,
     filteredOptions,
     searchTerm,
+    debouncedSearchTerm,
     selectedValue: typeof value === 'string' ? value : undefined,
     optionsContainerRef,
     autoScrollOnOpen,

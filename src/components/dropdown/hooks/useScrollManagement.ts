@@ -12,6 +12,7 @@ interface UseScrollManagementProps {
   isOpen: boolean;
   filteredOptions: Array<{ id: string; name: string }>;
   searchTerm: string;
+  debouncedSearchTerm: string;
   selectedValue?: string;
   optionsContainerRef: RefObject<HTMLDivElement | null>;
   autoScrollOnOpen: boolean;
@@ -38,6 +39,7 @@ export const useScrollManagement = ({
   isOpen,
   filteredOptions,
   searchTerm,
+  debouncedSearchTerm,
   selectedValue,
   optionsContainerRef,
   autoScrollOnOpen,
@@ -148,13 +150,18 @@ export const useScrollManagement = ({
     if (!isOpen) return;
     if (!optionsContainerRef.current) return;
 
-    const hasSearchTerm = searchTerm.trim() !== '';
+    const hasVisibleSearchResults = debouncedSearchTerm.trim() !== '';
     const container = optionsContainerRef.current;
 
-    if (hasSearchTerm) {
+    if (hasVisibleSearchResults) {
       shouldRestoreScrollAfterSearchClearRef.current = true;
       container.scrollTop = 0;
       requestAnimationFrame(checkScroll);
+      return;
+    }
+
+    if (searchTerm.trim() !== '') {
+      shouldRestoreScrollAfterSearchClearRef.current = true;
       return;
     }
 
@@ -209,6 +216,7 @@ export const useScrollManagement = ({
     };
   }, [
     checkScroll,
+    debouncedSearchTerm,
     filteredOptions,
     firstFilteredOptionId,
     filteredOptions.length,

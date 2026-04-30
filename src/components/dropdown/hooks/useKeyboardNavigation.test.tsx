@@ -25,6 +25,7 @@ describe('useKeyboardNavigation', () => {
           ...baseProps,
           currentFilteredOptions: [{ id: 'otologi', name: 'Otologi' }],
           searchTerm: 'oto',
+          debouncedSearchTerm: 'oto',
         },
       }
     );
@@ -35,6 +36,7 @@ describe('useKeyboardNavigation', () => {
       ...baseProps,
       currentFilteredOptions: [{ id: 'otologi', name: 'Otologi' }],
       searchTerm: '',
+      debouncedSearchTerm: 'oto',
     });
 
     expect(result.current.highlightedIndex).toBe(0);
@@ -46,6 +48,7 @@ describe('useKeyboardNavigation', () => {
         { id: 'mukolitik', name: 'Mukolitik' },
       ],
       searchTerm: '',
+      debouncedSearchTerm: '',
     });
 
     expect(result.current.highlightedIndex).toBe(1);

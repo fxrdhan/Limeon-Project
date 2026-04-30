@@ -16,6 +16,7 @@ interface UseKeyboardNavigationProps {
   setExpandedId: (id: string | null) => void;
   searchState: string;
   searchTerm: string;
+  debouncedSearchTerm: string;
   onSelect: (optionId: string) => void;
   onAddNew?: (term: string) => void;
   onCloseDropdown: () => void;
@@ -31,6 +32,7 @@ export const useKeyboardNavigation = ({
   setExpandedId,
   searchState,
   searchTerm,
+  debouncedSearchTerm,
   onSelect,
   onAddNew,
   onCloseDropdown,
@@ -147,9 +149,9 @@ export const useKeyboardNavigation = ({
   useLayoutEffect(() => {
     if (!isOpen || isKeyboardNavigation) return;
 
-    const hasSearchTerm = searchTerm.trim() !== '';
+    const hasVisibleSearchResults = debouncedSearchTerm.trim() !== '';
 
-    if (hasSearchTerm) {
+    if (hasVisibleSearchResults || searchTerm.trim() !== '') {
       shouldRestoreHighlightAfterSearchClearRef.current = true;
     } else if (!shouldRestoreHighlightAfterSearchClearRef.current) {
       return;
@@ -165,13 +167,13 @@ export const useKeyboardNavigation = ({
       return;
     }
 
-    const nextHighlightedIndex = hasSearchTerm
+    const nextHighlightedIndex = hasVisibleSearchResults
       ? 0
       : value
         ? currentFilteredOptions.findIndex(option => option.id === value)
         : 0;
 
-    if (!hasSearchTerm && value && nextHighlightedIndex < 0) {
+    if (!hasVisibleSearchResults && value && nextHighlightedIndex < 0) {
       return;
     }
 
@@ -183,12 +185,13 @@ export const useKeyboardNavigation = ({
     }
     setExpandedId(currentFilteredOptions[normalizedHighlightedIndex].id);
 
-    if (!hasSearchTerm) {
+    if (!hasVisibleSearchResults) {
       shouldRestoreHighlightAfterSearchClearRef.current = false;
     }
   }, [
     clearPendingHighlight,
     currentFilteredOptions,
+    debouncedSearchTerm,
     highlightedIndex,
     isKeyboardNavigation,
     isOpen,

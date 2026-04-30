@@ -41,6 +41,7 @@ export interface UseScrollManagementProps {
   isOpen: boolean;
   filteredOptions: Array<{ id: string; name: string }>;
   searchTerm: string;
+  debouncedSearchTerm: string;
   selectedValue?: string;
   optionsContainerRef: RefObject<HTMLDivElement | null>;
   autoScrollOnOpen: boolean;
