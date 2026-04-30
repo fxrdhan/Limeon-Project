@@ -4,36 +4,7 @@ import { readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 
-const EXCLUDED_DIRS = new Set([
-  '.agent',
-  '.agents',
-  '.claude',
-  '.codex',
-  '.gemini',
-  '.git',
-  '.playwright',
-  '.playwright-cli',
-  '.playwright-mcp',
-  '.venv',
-  '.yarn',
-  'artifacts',
-  'coverage',
-  'dist',
-  'dist-ssr',
-  'logs',
-  'node_modules',
-  'output',
-  'tmp',
-  'traces',
-]);
-
-const EXCLUDED_FILES = new Set([
-  'bun.lock',
-  'output.css',
-  'package-lock.json',
-  'pnpm-lock.yaml',
-  'yarn.lock',
-]);
+const ALWAYS_IGNORED_DIRS = new Set(['.git']);
 
 function printHelp() {
   console.log(`convert-to-oklch
@@ -114,28 +85,159 @@ function parsePrecision(value) {
   return precision;
 }
 
-function isExcludedDir(dirName) {
-  return EXCLUDED_DIRS.has(dirName);
+async function readOptionalTextFile(filePath) {
+  try {
+    return await readFile(filePath, 'utf8');
+  } catch (error) {
+    if (error?.code === 'ENOENT') {
+      return '';
+    }
+
+    throw error;
+  }
 }
 
-function isExcludedFile(fileName) {
-  if (fileName === '.env' || fileName.startsWith('.env.')) {
-    return true;
+function normalizeIgnorePath(filePath) {
+  return filePath.split(path.sep).join('/');
+}
+
+function escapeRegex(value) {
+  return value.replace(/[\\^$+?.()|{}[\]]/g, '\\$&');
+}
+
+function globPatternToRegExp(pattern) {
+  let source = '';
+
+  for (let index = 0; index < pattern.length; index += 1) {
+    const char = pattern[index];
+    const next = pattern[index + 1];
+
+    if (char === '*') {
+      if (next === '*') {
+        source += '.*';
+        index += 1;
+      } else {
+        source += '[^/]*';
+      }
+      continue;
+    }
+
+    if (char === '?') {
+      source += '[^/]';
+      continue;
+    }
+
+    source += escapeRegex(char);
   }
 
-  return EXCLUDED_FILES.has(fileName);
+  return source;
 }
 
-async function collectFiles(targetPath, explicitFile = false) {
+function parseIgnoreLine(line) {
+  let pattern = line.trim();
+  if (!pattern || pattern.startsWith('#')) {
+    return null;
+  }
+
+  let negated = false;
+  if (pattern.startsWith('!')) {
+    negated = true;
+    pattern = pattern.slice(1);
+  }
+
+  if (!pattern || pattern === '/') {
+    return null;
+  }
+
+  const directoryOnly = pattern.endsWith('/');
+  const anchored = pattern.startsWith('/');
+  pattern = pattern.replace(/^\/+/, '').replace(/\/+$/, '');
+
+  if (!pattern) {
+    return null;
+  }
+
+  const hasSlash = pattern.includes('/');
+  const regexBody = globPatternToRegExp(pattern);
+  const regex = new RegExp(
+    hasSlash || anchored
+      ? `^${regexBody}(?:/.*)?$`
+      : `(?:^|/)${regexBody}(?:/.*)?$`
+  );
+
+  return {
+    directoryOnly,
+    negated,
+    regex,
+  };
+}
+
+async function loadProjectIgnoreMatcher(rootDir) {
+  const ignoreFileNames = ['.gitignore', '.ignore'];
+  const rules = [];
+
+  for (const ignoreFileName of ignoreFileNames) {
+    const content = await readOptionalTextFile(
+      path.join(rootDir, ignoreFileName)
+    );
+    const lines = content.split(/\r?\n/);
+
+    for (const line of lines) {
+      const rule = parseIgnoreLine(line);
+      if (rule) {
+        rules.push(rule);
+      }
+    }
+  }
+
+  return (filePath, isDirectory) => {
+    const relativePath = normalizeIgnorePath(path.relative(rootDir, filePath));
+    if (!relativePath || relativePath.startsWith('..')) {
+      return false;
+    }
+
+    let ignored = false;
+    for (const rule of rules) {
+      if (
+        rule.directoryOnly &&
+        !isDirectory &&
+        !rule.regex.test(relativePath)
+      ) {
+        continue;
+      }
+
+      if (rule.regex.test(relativePath)) {
+        ignored = !rule.negated;
+      }
+    }
+
+    return ignored;
+  };
+}
+
+async function collectFiles(
+  targetPath,
+  explicitFile = false,
+  ignoreMatcher = () => false,
+  isRootTarget = true
+) {
   const targetStat = await stat(targetPath);
 
   if (targetStat.isFile()) {
-    return explicitFile || !isExcludedFile(path.basename(targetPath))
+    return explicitFile || !ignoreMatcher(targetPath, false)
       ? [targetPath]
       : [];
   }
 
   if (!targetStat.isDirectory()) {
+    return [];
+  }
+
+  if (
+    !isRootTarget &&
+    (ALWAYS_IGNORED_DIRS.has(path.basename(targetPath)) ||
+      ignoreMatcher(targetPath, true))
+  ) {
     return [];
   }
 
@@ -146,13 +248,18 @@ async function collectFiles(targetPath, explicitFile = false) {
     const entryPath = path.join(targetPath, entry.name);
 
     if (entry.isDirectory()) {
-      if (!isExcludedDir(entry.name)) {
-        files.push(...(await collectFiles(entryPath)));
+      if (
+        !ALWAYS_IGNORED_DIRS.has(entry.name) &&
+        !ignoreMatcher(entryPath, true)
+      ) {
+        files.push(
+          ...(await collectFiles(entryPath, false, ignoreMatcher, false))
+        );
       }
       continue;
     }
 
-    if (entry.isFile() && !isExcludedFile(entry.name)) {
+    if (entry.isFile() && !ignoreMatcher(entryPath, false)) {
       files.push(entryPath);
     }
   }
@@ -218,14 +325,18 @@ function globToRegExp(pattern) {
   return new RegExp(`${source}$`);
 }
 
-async function collectTargetFiles(target) {
+async function collectTargetFiles(target, ignoreMatcher) {
   if (!hasGlobMagic(target)) {
-    return collectFiles(path.resolve(process.cwd(), target), true);
+    return collectFiles(
+      path.resolve(process.cwd(), target),
+      true,
+      ignoreMatcher
+    );
   }
 
   const base = path.resolve(process.cwd(), getGlobBase(target));
   const matcher = globToRegExp(target);
-  const candidates = await collectFiles(base);
+  const candidates = await collectFiles(base, false, ignoreMatcher);
 
   return candidates.filter(file => matcher.test(normalizePathForGlob(file)));
 }
@@ -743,12 +854,13 @@ async function main() {
     ? [process.cwd(), ...options.paths]
     : options.paths;
   const files = new Set();
+  const ignoreMatcher = await loadProjectIgnoreMatcher(process.cwd());
 
   for (const target of targets) {
     const collected =
       options.all && target === process.cwd()
-        ? await collectFiles(target)
-        : await collectTargetFiles(target);
+        ? await collectFiles(target, false, ignoreMatcher)
+        : await collectTargetFiles(target, ignoreMatcher);
 
     if (collected.length === 0 && hasGlobMagic(target)) {
       console.warn(`No files matched: ${target}`);
