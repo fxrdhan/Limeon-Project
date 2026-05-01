@@ -181,6 +181,7 @@ const OptionRow: React.FC<OptionRowProps> = ({
       id={`dropdown-option-${option.id}`}
       role="option"
       aria-selected={Boolean(isSelected)}
+      data-dropdown-option-index={index}
       type="button"
       className={`relative z-10 flex ${shouldExpand ? 'items-start' : 'items-center'} w-full py-2 px-3 rounded-lg text-sm text-slate-800 cursor-pointer focus:outline-hidden transition-colors duration-150`}
       onClick={() => onSelect(option.id)}

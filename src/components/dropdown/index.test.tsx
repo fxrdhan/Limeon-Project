@@ -83,6 +83,24 @@ function KeyboardDropdownHarness() {
   );
 }
 
+function LargeDropdownHarness() {
+  const [value, setValue] = useState('');
+  const options = Array.from({ length: 250 }, (_, index) => ({
+    id: `item-${index + 1}`,
+    name: `Item ${index + 1}`,
+  }));
+
+  return (
+    <Dropdown
+      name="large_dropdown"
+      value={value}
+      options={options}
+      placeholder="Pilih Banyak"
+      onChange={setValue}
+    />
+  );
+}
+
 describe('Dropdown', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -185,6 +203,20 @@ describe('Dropdown', () => {
     const searchInput = screen.getByPlaceholderText('Cari...');
     expect((searchInput as HTMLInputElement).value).toBe('b');
     expect(document.activeElement).toBe(searchInput);
+  });
+
+  it('virtualizes large option lists instead of rendering every option', () => {
+    render(<LargeDropdownHarness />);
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Pilih Banyak' }));
+      vi.advanceTimersByTime(200);
+    });
+
+    const renderedOptions = screen.queryAllByRole('option');
+    expect(renderedOptions.length).toBeGreaterThan(0);
+    expect(renderedOptions.length).toBeLessThan(250);
+    expect(screen.queryByRole('option', { name: 'Item 250' })).toBeNull();
   });
 
   it('opens add-new modal when the empty-search plus button is clicked', () => {

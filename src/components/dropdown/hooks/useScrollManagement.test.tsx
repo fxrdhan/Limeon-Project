@@ -47,19 +47,31 @@ describe('useScrollManagement', () => {
       scrollHeight: { value: 400 },
     });
 
+    const firstOptionFrame = document.createElement('div');
+    firstOptionFrame.setAttribute('data-dropdown-option-frame', '');
+    firstOptionFrame.setAttribute('data-dropdown-option-index', '0');
+    Object.defineProperties(firstOptionFrame, {
+      offsetTop: { value: 0 },
+      offsetHeight: { value: 40 },
+    });
+
     const firstOption = document.createElement('button');
     firstOption.setAttribute('role', 'option');
-    Object.defineProperties(firstOption, {
-      offsetTop: { value: 0 },
+    firstOption.setAttribute('data-dropdown-option-index', '0');
+    firstOptionFrame.appendChild(firstOption);
+
+    const secondOptionFrame = document.createElement('div');
+    secondOptionFrame.setAttribute('data-dropdown-option-frame', '');
+    secondOptionFrame.setAttribute('data-dropdown-option-index', '1');
+    Object.defineProperties(secondOptionFrame, {
+      offsetTop: { value: 220 },
       offsetHeight: { value: 40 },
     });
 
     const secondOption = document.createElement('button');
     secondOption.setAttribute('role', 'option');
-    Object.defineProperties(secondOption, {
-      offsetTop: { value: 220 },
-      offsetHeight: { value: 40 },
-    });
+    secondOption.setAttribute('data-dropdown-option-index', '1');
+    secondOptionFrame.appendChild(secondOption);
 
     const optionsContainerRef = { current: container };
     const { rerender } = renderHook(props => useScrollManagement(props), {
@@ -86,8 +98,8 @@ describe('useScrollManagement', () => {
 
     expect(container.scrollTop).toBe(0);
 
-    container.appendChild(firstOption);
-    container.appendChild(secondOption);
+    container.appendChild(firstOptionFrame);
+    container.appendChild(secondOptionFrame);
 
     rerender({
       isOpen: true,

@@ -213,7 +213,7 @@ The component uses `DropdownProvider` to share state across sub-components. The 
 ## Performance Considerations
 
 - Debounced search input
-- Virtualized rendering not implemented (consider for large lists > 1000 items)
+- Virtualized rendering for large option lists
 - Efficient filtering and highlighting
 - Animation optimizations with CSS transforms
 

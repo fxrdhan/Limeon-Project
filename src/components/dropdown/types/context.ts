@@ -63,4 +63,5 @@ export interface DropdownContextType {
     options?: { immediate?: boolean }
   ) => Promise<void>;
   onHoverDetailHide?: () => void;
+  onHoverDetailSuppress?: () => boolean;
 }

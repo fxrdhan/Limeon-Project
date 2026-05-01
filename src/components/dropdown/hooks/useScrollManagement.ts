@@ -32,8 +32,27 @@ const scrollElementToPinnedTop = (
   container.scrollTop = targetScrollTop;
 };
 
-const getOptionElementAtIndex = (container: HTMLDivElement, index: number) =>
-  container.querySelectorAll<HTMLElement>('[role="option"]')[index];
+const getOptionFrameAtIndex = (container: HTMLDivElement, index: number) =>
+  container.querySelector<HTMLElement>(
+    `[data-dropdown-option-frame][data-dropdown-option-index="${index}"]`
+  );
+
+const scrollEstimatedOptionToPinnedTop = (
+  container: HTMLDivElement,
+  index: number,
+  itemCount: number
+) => {
+  const containerHeight = container.clientHeight;
+  const estimatedTotalHeight =
+    itemCount * DROPDOWN_CONSTANTS.OPTION_ESTIMATED_HEIGHT;
+  const maxScrollTop = Math.max(0, estimatedTotalHeight - containerHeight);
+  const padding = 6;
+  const targetScrollTop = Math.min(
+    maxScrollTop,
+    Math.max(0, index * DROPDOWN_CONSTANTS.OPTION_ESTIMATED_HEIGHT - padding)
+  );
+  container.scrollTop = targetScrollTop;
+};
 
 export const useScrollManagement = ({
   isOpen,
@@ -114,7 +133,7 @@ export const useScrollManagement = ({
     const optionElements = container.querySelectorAll('[role="option"]');
 
     // Find the highlighted/selected option using aria-selected or current highlight classes
-    const highlightedElement =
+    const highlightedOption =
       Array.from(optionElements).find(
         el => el.getAttribute('aria-selected') === 'true'
       ) ||
@@ -124,9 +143,24 @@ export const useScrollManagement = ({
           el.classList.contains('bg-slate-300/50') ||
           el.classList.contains('bg-slate-300/30')
       );
+    const highlightedElement =
+      highlightedOption?.closest<HTMLElement>('[data-dropdown-option-frame]') ??
+      null;
 
     if (highlightedElement) {
       scrollElementToPinnedTop(container, highlightedElement as HTMLElement);
+    } else if (selectedValue) {
+      const selectedIndex = filteredOptions.findIndex(
+        option => option.id === selectedValue
+      );
+
+      if (selectedIndex >= 0) {
+        scrollEstimatedOptionToPinnedTop(
+          container,
+          selectedIndex,
+          filteredOptions.length
+        );
+      }
     }
     requestAnimationFrame(() => {
       setHasInitialScrolled(true);
@@ -135,8 +169,9 @@ export const useScrollManagement = ({
     autoScrollOnOpen,
     isOpen,
     hasInitialScrolled,
-    filteredOptions.length,
+    filteredOptions,
     optionsContainerRef,
+    selectedValue,
   ]);
 
   const firstFilteredOptionId = filteredOptions[0]?.id;
@@ -180,20 +215,27 @@ export const useScrollManagement = ({
 
     if (selectedIndex < 0) return;
 
-    const selectedElement = Array.from(
-      container.querySelectorAll<HTMLElement>('[role="option"]')
-    )[selectedIndex];
+    const selectedElement = getOptionFrameAtIndex(container, selectedIndex);
 
     const restoreSelectedScroll = () => {
       const currentContainer = optionsContainerRef.current;
       if (!currentContainer) return false;
 
-      const currentSelectedElement = getOptionElementAtIndex(
+      const currentSelectedElement = getOptionFrameAtIndex(
         currentContainer,
         selectedIndex
       );
 
-      if (!currentSelectedElement) return false;
+      if (!currentSelectedElement) {
+        scrollEstimatedOptionToPinnedTop(
+          currentContainer,
+          selectedIndex,
+          filteredOptions.length
+        );
+        shouldRestoreScrollAfterSearchClearRef.current = false;
+        requestAnimationFrame(checkScroll);
+        return true;
+      }
 
       scrollElementToPinnedTop(currentContainer, currentSelectedElement);
       shouldRestoreScrollAfterSearchClearRef.current = false;

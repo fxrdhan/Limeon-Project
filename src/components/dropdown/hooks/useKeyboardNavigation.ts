@@ -6,7 +6,10 @@ import {
   useLayoutEffect,
   useRef,
 } from 'react';
-import { getKeyboardScrollTarget } from '@/components/shared/keyboard-pinned-highlight';
+import {
+  getKeyboardScrollTarget,
+  KEYBOARD_SCROLL_VISIBILITY_INSET,
+} from '@/components/shared/keyboard-pinned-highlight';
 import { KEYBOARD_KEYS, DROPDOWN_CONSTANTS, SEARCH_STATES } from '../constants';
 
 interface UseKeyboardNavigationProps {
@@ -24,6 +27,44 @@ interface UseKeyboardNavigationProps {
   autoHighlightOnOpen?: boolean;
   optionsContainerRef: RefObject<HTMLDivElement>;
 }
+
+const getOptionFrameAtIndex = (container: HTMLDivElement, index: number) =>
+  container.querySelector<HTMLElement>(
+    `[data-dropdown-option-frame][data-dropdown-option-index="${index}"]`
+  );
+
+const getEstimatedScrollTopForIndex = ({
+  container,
+  index,
+  itemCount,
+}: {
+  container: HTMLDivElement;
+  index: number;
+  itemCount: number;
+}) => {
+  const itemTop = index * DROPDOWN_CONSTANTS.OPTION_ESTIMATED_HEIGHT;
+  const itemBottom = itemTop + DROPDOWN_CONSTANTS.OPTION_ESTIMATED_HEIGHT;
+  const containerHeight = container.clientHeight;
+
+  if (itemTop < container.scrollTop + KEYBOARD_SCROLL_VISIBILITY_INSET) {
+    return Math.max(0, itemTop - KEYBOARD_SCROLL_VISIBILITY_INSET);
+  }
+
+  if (
+    itemBottom >
+    container.scrollTop + containerHeight - KEYBOARD_SCROLL_VISIBILITY_INSET
+  ) {
+    return Math.max(
+      0,
+      index === itemCount - 1
+        ? itemCount * DROPDOWN_CONSTANTS.OPTION_ESTIMATED_HEIGHT -
+            containerHeight
+        : itemBottom - containerHeight + KEYBOARD_SCROLL_VISIBILITY_INSET
+    );
+  }
+
+  return null;
+};
 
 export const useKeyboardNavigation = ({
   isOpen,
@@ -76,10 +117,16 @@ export const useKeyboardNavigation = ({
   const getRequiredScrollTop = useCallback(
     (index: number): number | null => {
       const container = optionsContainerRef.current;
-      const optionElement =
-        container?.querySelectorAll<HTMLElement>('[role="option"]')[index];
+      if (!container) return null;
 
-      if (!container || !optionElement) return null;
+      const optionElement = getOptionFrameAtIndex(container, index);
+      if (!optionElement) {
+        return getEstimatedScrollTopForIndex({
+          container,
+          index,
+          itemCount: currentFilteredOptions.length,
+        });
+      }
 
       return (
         getKeyboardScrollTarget({

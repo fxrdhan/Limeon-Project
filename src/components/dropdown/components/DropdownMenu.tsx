@@ -1,6 +1,7 @@
 import {
   forwardRef,
   RefObject,
+  useCallback,
   useEffect,
   useId,
   useLayoutEffect,
@@ -14,6 +15,7 @@ import SearchBar from './SearchBar';
 import OptionItem from './OptionItem';
 import EmptyState from './menu/EmptyState';
 import { useDropdownContext } from '../hooks/useDropdownContext';
+import { useDropdownVirtualization } from '../hooks/useDropdownVirtualization';
 import type { DropdownMenuProps } from '../types';
 import { DROPDOWN_CONSTANTS } from '../constants';
 import {
@@ -30,6 +32,24 @@ type DropdownSearchHighlightFrame = {
   width: number;
   height: number;
 };
+
+type PointerPosition = {
+  x: number;
+  y: number;
+};
+
+type HoverDetailTarget = {
+  index: number;
+  element: HTMLElement;
+};
+
+const getOptionFrameElementAtIndex = (
+  container: HTMLDivElement,
+  index: number
+) =>
+  container.querySelector<HTMLElement>(
+    `[data-dropdown-option-frame][data-dropdown-option-index="${index}"]`
+  );
 
 const listOptionTransition = {
   layout: {
@@ -76,6 +96,7 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
       onScroll,
       onHoverDetailShow,
       onHoverDetailHide,
+      onHoverDetailSuppress,
       dropdownMenuRef,
       searchInputRef,
       optionsContainerRef,
@@ -95,6 +116,24 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
     ] = useState(false);
     const [searchHighlightFrame, setSearchHighlightFrame] =
       useState<DropdownSearchHighlightFrame | null>(null);
+    const lastPointerPositionRef = useRef<PointerPosition | null>(null);
+    const hoverDetailScrollIdleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const shouldVirtualize =
+      filteredOptions.length > DROPDOWN_CONSTANTS.VIRTUALIZATION_THRESHOLD;
+    const {
+      isVirtualized,
+      totalSize,
+      virtualItems,
+      visibleRange,
+      measureElement,
+      getScrollTargetForIndex,
+      updateScrollMetrics,
+    } = useDropdownVirtualization({
+      enabled: shouldVirtualize,
+      itemCount: filteredOptions.length,
+      resetKey: filteredOptions,
+      scrollContainerRef: optionsContainerRef,
+    });
 
     if (isOpen && !wasOpenRef.current) {
       openCycleRef.current += 1;
@@ -102,7 +141,7 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
     wasOpenRef.current = isOpen;
 
     const activeBackgroundLayoutId = `dropdown-active-background-${highlightInstanceId}-${openCycleRef.current}-${searchTerm}-${filteredOptions[0]?.id ?? 'empty'}`;
-    const shouldAnimateListItems = searchTerm.trim() !== '';
+    const shouldAnimateListItems = searchTerm.trim() !== '' && !isVirtualized;
     const shouldPinSearchHighlight =
       shouldAnimateListItems &&
       highlightedIndex >= 0 &&
@@ -116,9 +155,9 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
       }
 
       const container = optionsContainerRef.current;
-      const highlightedItem = container?.querySelectorAll<HTMLElement>(
-        '[data-dropdown-option-frame]'
-      )[highlightedIndex];
+      const highlightedItem = container
+        ? getOptionFrameElementAtIndex(container, highlightedIndex)
+        : null;
 
       if (!container || !highlightedItem) {
         setSearchHighlightFrame(null);
@@ -172,18 +211,38 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
 
       const container = optionsContainerRef.current;
       const menuElement = dropdownMenuRef.current;
-      const optionElements = container
-        ? Array.from(container.querySelectorAll<HTMLElement>('[role="option"]'))
-        : [];
-      const targetElement = optionElements[pendingHighlightedIndex];
+      const targetElement =
+        container && pendingHighlightedIndex !== null
+          ? getOptionFrameElementAtIndex(container, pendingHighlightedIndex)
+          : null;
       const sourceElement =
-        pendingHighlightSourceIndex !== null
-          ? optionElements[pendingHighlightSourceIndex]
-          : highlightedIndex >= 0
-            ? optionElements[highlightedIndex]
+        container && pendingHighlightSourceIndex !== null
+          ? getOptionFrameElementAtIndex(container, pendingHighlightSourceIndex)
+          : container && highlightedIndex >= 0
+            ? getOptionFrameElementAtIndex(container, highlightedIndex)
             : null;
 
-      if (!container || !menuElement || !targetElement) return;
+      if (!container || !menuElement) return;
+
+      if (!targetElement) {
+        const virtualScrollTarget = getScrollTargetForIndex(
+          pendingHighlightedIndex
+        );
+
+        if (virtualScrollTarget) {
+          if (typeof container.scrollTo === 'function') {
+            container.scrollTo({
+              top: virtualScrollTarget.scrollTop,
+              behavior: 'smooth',
+            });
+          } else {
+            container.scrollTop = virtualScrollTarget.scrollTop;
+          }
+          updateScrollMetrics();
+        }
+
+        return;
+      }
 
       const scrollTarget = getKeyboardScrollTarget({
         container,
@@ -203,20 +262,28 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
           const checkTarget = () => {
             const currentContainer = optionsContainerRef.current;
             const currentTargetElement =
-              currentContainer?.querySelectorAll<HTMLElement>(
-                '[role="option"]'
-              )[pendingHighlightedIndex];
+              currentContainer && pendingHighlightedIndex !== null
+                ? getOptionFrameElementAtIndex(
+                    currentContainer,
+                    pendingHighlightedIndex
+                  )
+                : null;
+            const hasHeldLongEnough =
+              window.performance.now() - startedAt >=
+              DROPDOWN_CONSTANTS.KEYBOARD_SCROLL_HIGHLIGHT_MAX_HOLD;
 
             if (!currentContainer || !currentTargetElement) {
+              if (isVirtualized && !hasHeldLongEnough) {
+                releaseHeldHighlightFrameRef.current =
+                  window.requestAnimationFrame(checkTarget);
+                return;
+              }
+
               setHeldHighlightFrame(null);
               setIsHighlightSuppressedDuringScroll(false);
               releaseHeldHighlightFrameRef.current = null;
               return;
             }
-
-            const hasHeldLongEnough =
-              window.performance.now() - startedAt >=
-              DROPDOWN_CONSTANTS.KEYBOARD_SCROLL_HIGHLIGHT_MAX_HOLD;
 
             if (
               hasKeyboardScrollTargetSettled({
@@ -289,6 +356,11 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
       optionsContainerRef,
       pendingHighlightedIndex,
       pendingHighlightSourceIndex,
+      getScrollTargetForIndex,
+      isVirtualized,
+      updateScrollMetrics,
+      visibleRange.endIndex,
+      visibleRange.startIndex,
     ]);
 
     useLayoutEffect(() => {
@@ -332,10 +404,9 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
       const frameId = window.requestAnimationFrame(() => {
         const container = optionsContainerRef.current;
         const highlightedOption = filteredOptions[highlightedIndex];
-        const highlightedElement =
-          container?.querySelectorAll<HTMLElement>('[role="option"]')[
-            highlightedIndex
-          ];
+        const highlightedElement = container
+          ? getOptionFrameElementAtIndex(container, highlightedIndex)
+          : null;
 
         if (!container || !highlightedOption || !highlightedElement) {
           onHoverDetailHide?.();
@@ -386,6 +457,157 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
       optionsContainerRef,
     ]);
 
+    const getHoverDetailTargetAfterScroll =
+      useCallback((): HoverDetailTarget | null => {
+        const container = optionsContainerRef.current;
+        if (!container) return null;
+
+        if (isKeyboardNavigation && highlightedIndex >= 0) {
+          const highlightedElement = getOptionFrameElementAtIndex(
+            container,
+            highlightedIndex
+          );
+
+          return highlightedElement
+            ? { index: highlightedIndex, element: highlightedElement }
+            : null;
+        }
+
+        const pointerPosition = lastPointerPositionRef.current;
+        if (!pointerPosition) return null;
+
+        const pointerElement = document.elementFromPoint(
+          pointerPosition.x,
+          pointerPosition.y
+        );
+        const optionElement = pointerElement?.closest<HTMLElement>(
+          '[role="option"][data-dropdown-option-index]'
+        );
+
+        if (!optionElement || !container.contains(optionElement)) return null;
+
+        const index = Number(optionElement.dataset.dropdownOptionIndex);
+        if (!Number.isInteger(index)) return null;
+
+        return { index, element: optionElement };
+      }, [highlightedIndex, isKeyboardNavigation, optionsContainerRef]);
+
+    const restoreHoverDetailAfterScroll = useCallback(() => {
+      if (
+        !onHoverDetailShow ||
+        !isOpen ||
+        !applyOpenStyles ||
+        !isPositionReady
+      ) {
+        return;
+      }
+
+      const target = getHoverDetailTargetAfterScroll();
+      if (!target) return;
+
+      const option = filteredOptions[target.index];
+      if (!option) return;
+
+      void onHoverDetailShow(
+        option.id,
+        target.element,
+        {
+          id: option.id,
+          name: option.name,
+          code: option.code,
+          description: option.description,
+          metaLabel: option.metaLabel,
+          metaTone: option.metaTone,
+          updated_at: option.updated_at,
+        },
+        { immediate: true }
+      );
+    }, [
+      applyOpenStyles,
+      filteredOptions,
+      getHoverDetailTargetAfterScroll,
+      isOpen,
+      isPositionReady,
+      onHoverDetailShow,
+    ]);
+
+    const setLastPointerPosition = useCallback(
+      (
+        event:
+          | React.MouseEvent<HTMLDivElement>
+          | React.WheelEvent<HTMLDivElement>
+      ) => {
+        lastPointerPositionRef.current = {
+          x: event.clientX,
+          y: event.clientY,
+        };
+      },
+      []
+    );
+
+    const handleOptionsScroll = useCallback(() => {
+      updateScrollMetrics();
+      onScroll();
+
+      if (!onHoverDetailSuppress || !onHoverDetailShow) return;
+
+      const shouldRestoreHoverDetail = onHoverDetailSuppress();
+      if (!shouldRestoreHoverDetail) return;
+
+      if (hoverDetailScrollIdleTimeoutRef.current) {
+        clearTimeout(hoverDetailScrollIdleTimeoutRef.current);
+      }
+
+      hoverDetailScrollIdleTimeoutRef.current = setTimeout(() => {
+        hoverDetailScrollIdleTimeoutRef.current = null;
+        restoreHoverDetailAfterScroll();
+      }, DROPDOWN_CONSTANTS.HOVER_DETAIL_SCROLL_IDLE_DELAY);
+    }, [
+      onHoverDetailShow,
+      onHoverDetailSuppress,
+      onScroll,
+      restoreHoverDetailAfterScroll,
+      updateScrollMetrics,
+    ]);
+
+    useEffect(() => {
+      return () => {
+        if (hoverDetailScrollIdleTimeoutRef.current) {
+          clearTimeout(hoverDetailScrollIdleTimeoutRef.current);
+        }
+      };
+    }, []);
+
+    const renderOptionItem = (
+      option: (typeof filteredOptions)[number],
+      index: number
+    ) => (
+      <OptionItem
+        option={option}
+        index={index}
+        isSelected={Boolean(
+          withCheckbox && Array.isArray(value)
+            ? value.includes(option.id)
+            : option.id === value
+        )}
+        isHighlighted={highlightedIndex === index}
+        suppressHighlightBackground={
+          Boolean(heldHighlightFrame) ||
+          isHighlightSuppressedDuringScroll ||
+          shouldPinSearchHighlight
+        }
+        activeBackgroundLayoutId={
+          isActiveBackgroundReady ? activeBackgroundLayoutId : undefined
+        }
+        isExpanded={expandedId === option.id}
+        onHighlight={index => {
+          onSetIsKeyboardNavigation(false);
+          onSetHighlightedIndex(index);
+        }}
+        dropdownMenuRef={ref as RefObject<HTMLDivElement>}
+      />
+    );
+
     return (
       <MenuPortal
         ref={ref}
@@ -423,7 +645,12 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
               role="listbox"
               tabIndex={-1}
               className="relative p-1 max-h-60 overflow-y-auto focus:outline-hidden"
-              onScroll={onScroll}
+              onScroll={handleOptionsScroll}
+              onWheel={setLastPointerPosition}
+              onMouseMove={setLastPointerPosition}
+              onMouseLeave={() => {
+                lastPointerPositionRef.current = null;
+              }}
               onKeyDown={!searchList ? onKeyDown : undefined}
             >
               {searchHighlightFrame && (
@@ -433,50 +660,54 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
                   style={searchHighlightFrame}
                 />
               )}
-              <AnimatePresence initial={false} mode="popLayout">
-                {filteredOptions.map((option, index) => (
-                  <motion.div
-                    key={option.id}
-                    data-dropdown-option-frame
-                    layout={shouldAnimateListItems ? 'position' : false}
-                    initial={
-                      shouldAnimateListItems ? { opacity: 0, y: 6 } : false
-                    }
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={
-                      shouldAnimateListItems ? { opacity: 0, y: -6 } : undefined
-                    }
-                    transition={listOptionTransition}
-                  >
-                    <OptionItem
-                      option={option}
-                      index={index}
-                      isSelected={Boolean(
-                        withCheckbox && Array.isArray(value)
-                          ? value.includes(option.id)
-                          : option.id === value
-                      )}
-                      isHighlighted={highlightedIndex === index}
-                      suppressHighlightBackground={
-                        Boolean(heldHighlightFrame) ||
-                        isHighlightSuppressedDuringScroll ||
-                        shouldPinSearchHighlight
+              {isVirtualized ? (
+                <div className="relative" style={{ height: totalSize }}>
+                  {virtualItems.map(virtualItem => {
+                    const option = filteredOptions[virtualItem.index];
+                    if (!option) return null;
+
+                    return (
+                      <div
+                        key={option.id}
+                        ref={element => {
+                          if (element) {
+                            measureElement(virtualItem.index, element);
+                          }
+                        }}
+                        data-dropdown-option-frame
+                        data-dropdown-option-index={virtualItem.index}
+                        className="absolute left-0 right-0"
+                        style={{ top: virtualItem.start }}
+                      >
+                        {renderOptionItem(option, virtualItem.index)}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <AnimatePresence initial={false} mode="popLayout">
+                  {filteredOptions.map((option, index) => (
+                    <motion.div
+                      key={option.id}
+                      data-dropdown-option-frame
+                      data-dropdown-option-index={index}
+                      layout={shouldAnimateListItems ? 'position' : false}
+                      initial={
+                        shouldAnimateListItems ? { opacity: 0, y: 6 } : false
                       }
-                      activeBackgroundLayoutId={
-                        isActiveBackgroundReady
-                          ? activeBackgroundLayoutId
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={
+                        shouldAnimateListItems
+                          ? { opacity: 0, y: -6 }
                           : undefined
                       }
-                      isExpanded={expandedId === option.id}
-                      onHighlight={index => {
-                        onSetIsKeyboardNavigation(false);
-                        onSetHighlightedIndex(index);
-                      }}
-                      dropdownMenuRef={ref as RefObject<HTMLDivElement>}
-                    />
-                  </motion.div>
-                ))}
-              </AnimatePresence>
+                      transition={listOptionTransition}
+                    >
+                      {renderOptionItem(option, index)}
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              )}
               {filteredOptions.length === 0 && (
                 <EmptyState
                   searchState={searchState}

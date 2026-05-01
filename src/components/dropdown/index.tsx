@@ -529,6 +529,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     data: hoverDetailData,
     handleOptionHover,
     handleOptionLeave,
+    suppressPortal: suppressHoverDetail,
     hidePortal: hideHoverDetail,
   } = useHoverDetail({
     isEnabled: enableHoverDetail,
@@ -687,6 +688,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     // Hover detail handlers
     onHoverDetailShow: enableHoverDetail ? handleOptionHover : undefined,
     onHoverDetailHide: enableHoverDetail ? handleOptionLeave : undefined,
+    onHoverDetailSuppress: enableHoverDetail ? suppressHoverDetail : undefined,
   };
 
   return (

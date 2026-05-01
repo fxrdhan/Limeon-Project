@@ -243,6 +243,17 @@ export const useHoverDetail = ({
     handleOptionLeave();
   }, [handleOptionLeave]);
 
+  const suppressPortal = useCallback(() => {
+    if (!isEnabled) return false;
+
+    const shouldRestoreAfterSuppression = isPortalShownRef.current || isVisible;
+
+    clearTimeouts();
+    setIsVisible(false);
+    setIsLoading(false);
+    return shouldRestoreAfterSuppression;
+  }, [clearTimeouts, isEnabled, isVisible]);
+
   const hidePortal = useCallback(() => {
     clearTimeouts();
     isPortalShownRef.current = false;
@@ -276,6 +287,7 @@ export const useHoverDetail = ({
     handleOptionLeave,
     handlePortalHover,
     handlePortalLeave,
+    suppressPortal,
     hidePortal,
   };
 };
