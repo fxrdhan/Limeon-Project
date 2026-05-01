@@ -121,7 +121,7 @@ const HoverDetailContent = ({ data }: { data: HoverDetailData }) => {
               {data.code}
             </Badge>
           )}
-          <h3 className="font-semibold text-slate-900 break-words">
+          <h3 className="min-w-0 whitespace-normal break-words font-semibold text-slate-900">
             {data.name}
           </h3>
         </div>
@@ -138,7 +138,7 @@ const HoverDetailContent = ({ data }: { data: HoverDetailData }) => {
 
       {data.description && (
         <div className="mb-3">
-          <p className="text-sm text-slate-600 leading-relaxed break-words">
+          <p className="whitespace-normal break-words text-sm text-slate-600 leading-relaxed">
             {data.description}
           </p>
         </div>
@@ -171,10 +171,19 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
   const showContent = isVisible && !!data;
   const popupSizerRef = useRef<HTMLDivElement | null>(null);
   const geometryRef = useRef<HoverDetailGeometry>(defaultHoverDetailGeometry);
+  const visibleGeometryRef = useRef<HoverDetailGeometry>(
+    defaultHoverDetailGeometry
+  );
   const visibleRef = useRef(false);
   const animationFrameRef = useRef<number | null>(null);
+  const contentGenerationRef = useRef(0);
   const controls = useAnimationControls();
   const [isPlacementReady, setIsPlacementReady] = useState(false);
+  const [activeGeometry, setActiveGeometry] =
+    useState<HoverDetailGeometry | null>(null);
+  const [renderedData, setRenderedData] = useState<HoverDetailData | null>(
+    data
+  );
 
   const cancelPendingAnimationFrame = useCallback(() => {
     if (animationFrameRef.current === null) return;
@@ -198,13 +207,21 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
       const size = getPopupSize();
       if (!data || !size) return;
 
+      const currentVisibleGeometry = visibleGeometryRef.current;
       const nextGeometry = getHoverDetailGeometry(position, size);
       const shouldAppear = forceAppear || !visibleRef.current;
+      const generation = ++contentGenerationRef.current;
+      const shouldDelayContentSwap =
+        visibleRef.current &&
+        (nextGeometry.width > currentVisibleGeometry.width + 1 ||
+          nextGeometry.height > currentVisibleGeometry.height + 1);
 
       geometryRef.current = nextGeometry;
+      setActiveGeometry(nextGeometry);
       controls.stop();
 
       if (shouldAppear) {
+        setRenderedData(data);
         controls.set({
           x: nextGeometry.hiddenX,
           y: nextGeometry.hiddenY,
@@ -220,7 +237,7 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
           visibleRef.current = true;
           animationFrameRef.current = window.requestAnimationFrame(() => {
             animationFrameRef.current = null;
-            void controls.start({
+            const appearAnimation = controls.start({
               x: nextGeometry.x,
               y: nextGeometry.y,
               width: nextGeometry.width,
@@ -229,14 +246,23 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
               scale: 1,
               transition: hoverDetailAppearTransition,
             });
+            void appearAnimation.then(() => {
+              if (contentGenerationRef.current === generation) {
+                visibleGeometryRef.current = nextGeometry;
+              }
+            });
           });
         });
         return;
       }
 
+      if (!shouldDelayContentSwap) {
+        setRenderedData(data);
+      }
+
       setIsPlacementReady(true);
       visibleRef.current = true;
-      void controls.start({
+      const resizeAnimation = controls.start({
         x: nextGeometry.x,
         y: nextGeometry.y,
         width: nextGeometry.width,
@@ -244,6 +270,12 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
         opacity: 1,
         scale: 1,
         transition: hoverDetailRepositionTransition,
+      });
+      void resizeAnimation.then(() => {
+        if (contentGenerationRef.current === generation) {
+          visibleGeometryRef.current = nextGeometry;
+          setRenderedData(data);
+        }
       });
     },
     [cancelPendingAnimationFrame, controls, data, getPopupSize, position]
@@ -269,9 +301,14 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
   }, [animateToMeasuredGeometry, showContent]);
 
   useEffect(() => {
-    if (isVisible) return;
+    if (isVisible) {
+      return;
+    }
 
     visibleRef.current = false;
+    visibleGeometryRef.current = defaultHoverDetailGeometry;
+    setActiveGeometry(null);
+    setRenderedData(null);
   }, [isVisible]);
 
   useEffect(
@@ -299,7 +336,7 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
           }
         }}
       >
-        {isVisible && data && (
+        {isVisible && renderedData && activeGeometry && (
           <motion.div
             key="hover-detail-portal"
             className={hoverDetailSurfaceClassName}
@@ -313,7 +350,14 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
               transformOrigin:
                 position.direction === 'right' ? 'left center' : 'right center',
             }}
-            initial={false}
+            initial={{
+              x: activeGeometry.hiddenX,
+              y: activeGeometry.hiddenY,
+              width: activeGeometry.width,
+              height: activeGeometry.height,
+              opacity: 0,
+              scale: 0.95,
+            }}
             animate={controls}
             exit={{
               x: geometryRef.current.hiddenX,
@@ -323,7 +367,7 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
               transition: hoverDetailExitTransition,
             }}
           >
-            <HoverDetailContent data={data} />
+            <HoverDetailContent data={renderedData} />
           </motion.div>
         )}
       </AnimatePresence>
