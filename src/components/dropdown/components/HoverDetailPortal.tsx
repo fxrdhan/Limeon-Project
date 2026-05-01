@@ -37,6 +37,7 @@ interface HoverDetailSize {
 
 const viewportPadding = 12;
 const hiddenOffset = 4;
+const surfaceHorizontalPadding = 32;
 
 const hoverDetailAppearTransition = {
   type: 'spring',
@@ -171,12 +172,8 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
   const showContent = isVisible && !!data;
   const popupSizerRef = useRef<HTMLDivElement | null>(null);
   const geometryRef = useRef<HoverDetailGeometry>(defaultHoverDetailGeometry);
-  const visibleGeometryRef = useRef<HoverDetailGeometry>(
-    defaultHoverDetailGeometry
-  );
   const visibleRef = useRef(false);
   const animationFrameRef = useRef<number | null>(null);
-  const contentGenerationRef = useRef(0);
   const controls = useAnimationControls();
   const [isPlacementReady, setIsPlacementReady] = useState(false);
   const [activeGeometry, setActiveGeometry] =
@@ -207,21 +204,15 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
       const size = getPopupSize();
       if (!data || !size) return;
 
-      const currentVisibleGeometry = visibleGeometryRef.current;
       const nextGeometry = getHoverDetailGeometry(position, size);
       const shouldAppear = forceAppear || !visibleRef.current;
-      const generation = ++contentGenerationRef.current;
-      const shouldDelayContentSwap =
-        visibleRef.current &&
-        (nextGeometry.width > currentVisibleGeometry.width + 1 ||
-          nextGeometry.height > currentVisibleGeometry.height + 1);
 
       geometryRef.current = nextGeometry;
       setActiveGeometry(nextGeometry);
+      setRenderedData(data);
       controls.stop();
 
       if (shouldAppear) {
-        setRenderedData(data);
         controls.set({
           x: nextGeometry.hiddenX,
           y: nextGeometry.hiddenY,
@@ -237,7 +228,7 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
           visibleRef.current = true;
           animationFrameRef.current = window.requestAnimationFrame(() => {
             animationFrameRef.current = null;
-            const appearAnimation = controls.start({
+            void controls.start({
               x: nextGeometry.x,
               y: nextGeometry.y,
               width: nextGeometry.width,
@@ -246,23 +237,14 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
               scale: 1,
               transition: hoverDetailAppearTransition,
             });
-            void appearAnimation.then(() => {
-              if (contentGenerationRef.current === generation) {
-                visibleGeometryRef.current = nextGeometry;
-              }
-            });
           });
         });
         return;
       }
 
-      if (!shouldDelayContentSwap) {
-        setRenderedData(data);
-      }
-
       setIsPlacementReady(true);
       visibleRef.current = true;
-      const resizeAnimation = controls.start({
+      void controls.start({
         x: nextGeometry.x,
         y: nextGeometry.y,
         width: nextGeometry.width,
@@ -270,12 +252,6 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
         opacity: 1,
         scale: 1,
         transition: hoverDetailRepositionTransition,
-      });
-      void resizeAnimation.then(() => {
-        if (contentGenerationRef.current === generation) {
-          visibleGeometryRef.current = nextGeometry;
-          setRenderedData(data);
-        }
       });
     },
     [cancelPendingAnimationFrame, controls, data, getPopupSize, position]
@@ -306,7 +282,6 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
     }
 
     visibleRef.current = false;
-    visibleGeometryRef.current = defaultHoverDetailGeometry;
     setActiveGeometry(null);
     setRenderedData(null);
   }, [isVisible]);
@@ -367,7 +342,16 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
               transition: hoverDetailExitTransition,
             }}
           >
-            <HoverDetailContent data={renderedData} />
+            <div
+              style={{
+                width: Math.max(
+                  0,
+                  activeGeometry.width - surfaceHorizontalPadding
+                ),
+              }}
+            >
+              <HoverDetailContent data={renderedData} />
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
