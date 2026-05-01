@@ -1,7 +1,6 @@
 import { forwardRef, CSSProperties, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { DropDirection } from '../../constants';
-import { PORTAL_SURFACE_CLASS } from '@/styles/uiPrimitives';
 
 interface MenuPortalProps {
   isOpen: boolean;
@@ -41,17 +40,11 @@ const MenuPortal = forwardRef<HTMLDivElement, MenuPortalProps>(
       ? createPortal(
           <div
             ref={ref}
-            style={{
-              ...portalStyle,
-              ...(dropDirection === 'up' && {
-                boxShadow:
-                  '0 -20px 25px -5px oklch(0% 0 0 / 0.1), 0 -10px 10px -5px oklch(0% 0 0 / 0.04)',
-              }),
-            }}
+            style={portalStyle}
             className={`
               ${dropDirection === 'down' ? 'origin-top' : 'origin-bottom'}
-              ${PORTAL_SURFACE_CLASS}
-              ${dropDirection === 'down' ? 'shadow-xl' : ''}
+              bg-white rounded-xl overflow-hidden
+              shadow-thin-md
               transition-all duration-150 ease-out
               ${isClosing || !applyOpenStyles ? 'opacity-0 scale-95' : !isPositionReady ? 'opacity-0' : 'opacity-100 scale-100'}
               ${isFrozen ? 'pointer-events-none select-none' : ''}

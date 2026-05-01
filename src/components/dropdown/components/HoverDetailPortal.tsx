@@ -2,10 +2,6 @@ import React, { useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import Badge from '@/components/badge';
-import {
-  POPUP_HOVER_BG_CLASS,
-  POPUP_SURFACE_CLASS,
-} from '@/components/shared/popup-styles';
 import type { HoverDetailData } from '@/types';
 
 interface HoverDetailPortalProps {
@@ -38,8 +34,6 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
   const popupRef = useRef<HTMLDivElement>(null);
   const [popupSize, setPopupSize] = useState({ width: 320, height: 120 });
   const viewportPadding = 12;
-  const arrowSize = 12;
-  const arrowPadding = 12;
   const viewportWidth =
     typeof window === 'undefined' ? 1024 : window.innerWidth;
   const viewportHeight =
@@ -49,16 +43,6 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
     viewportHeight - popupSize.height - viewportPadding
   );
   const resolvedTop = Math.min(Math.max(position.top, viewportPadding), maxTop);
-  const arrowCenterY = Math.min(
-    Math.max(
-      position.anchorCenterY - resolvedTop,
-      arrowPadding + arrowSize / 2
-    ),
-    Math.max(
-      arrowPadding + arrowSize / 2,
-      popupSize.height - arrowPadding - arrowSize / 2
-    )
-  );
   const clampedLeft =
     typeof window === 'undefined'
       ? position.left
@@ -84,23 +68,31 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
       {isVisible && data && (
         <motion.div
           key="hover-detail-portal"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={{
-            duration: 0.15,
-            ease: 'easeOut',
-          }}
-          className="fixed z-[9999] pointer-events-none"
-          style={{
+          initial={{
+            opacity: 0,
+            scale: 0.95,
             top: resolvedTop,
             left: clampedLeft,
           }}
+          animate={{
+            opacity: 1,
+            scale: 1,
+            top: resolvedTop,
+            left: clampedLeft,
+          }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          transition={{
+            opacity: { duration: 0.15, ease: 'easeOut' },
+            scale: { duration: 0.15, ease: 'easeOut' },
+            top: { duration: 0.18, ease: 'easeOut' },
+            left: { duration: 0.18, ease: 'easeOut' },
+          }}
+          className="fixed z-[9999] pointer-events-none"
         >
           {/* Container with layout animation - resizes first, NO text animation */}
           <motion.div
             ref={popupRef}
-            className={`group pointer-events-auto transition-colors duration-150 rounded-xl p-4 min-w-[250px] max-w-[500px] w-max relative shadow-xl ${POPUP_SURFACE_CLASS} ${POPUP_HOVER_BG_CLASS}`}
+            className="group pointer-events-auto transition-colors duration-150 rounded-xl p-4 min-w-[250px] max-w-[500px] w-max relative bg-white shadow-thin-md"
             layout="size"
             transition={{
               layout: {
@@ -165,28 +157,6 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
                 </div>
               )}
             </motion.div>
-
-            {/* Dynamic arrow based on position - always visible */}
-            <div
-              className={`absolute pointer-events-none h-3 w-3 border border-slate-300 bg-white transition-colors duration-150 group-hover:bg-slate-100 ${
-                position.direction === 'right'
-                  ? 'border-r-0 border-t-0'
-                  : 'border-l-0 border-b-0'
-              }`}
-              style={
-                position.direction === 'right'
-                  ? {
-                      left: '-6px',
-                      top: `${arrowCenterY}px`,
-                      transform: 'translateY(-50%) rotate(45deg)',
-                    }
-                  : {
-                      right: '-6px',
-                      top: `${arrowCenterY}px`,
-                      transform: 'translateY(-50%) rotate(45deg)',
-                    }
-              }
-            />
           </motion.div>
         </motion.div>
       )}

@@ -531,7 +531,7 @@ const TooltipProvider = ({
         ref={tooltipSizerRef}
         aria-hidden
         className={cn(
-          'pointer-events-none fixed left-0 top-0 -z-10 whitespace-nowrap rounded-lg bg-white px-2 py-1 text-sm font-medium text-black opacity-0 shadow-surface-thin',
+          'pointer-events-none fixed left-0 top-0 -z-10 whitespace-nowrap rounded-lg bg-white px-2 py-1 text-sm font-medium text-black opacity-0 shadow-thin',
           content?.className
         )}
         style={{
@@ -545,7 +545,7 @@ const TooltipProvider = ({
       <motion.div
         ref={tooltipRef}
         className={cn(
-          'pointer-events-none fixed left-0 top-0 z-50 overflow-visible whitespace-nowrap rounded-lg bg-white px-2 py-1 text-sm font-medium text-black shadow-surface-thin',
+          'pointer-events-none fixed left-0 top-0 z-50 overflow-visible whitespace-nowrap rounded-lg bg-white px-2 py-1 text-sm font-medium text-black shadow-thin',
           content?.className
         )}
         style={{

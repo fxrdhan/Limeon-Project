@@ -700,7 +700,7 @@ export const SlidingSelector = <T,>({
           <div
             aria-hidden="true"
             className={classNames(
-              'invisible inline-flex items-center bg-white shadow-surface-thin text-slate-700 overflow-hidden w-fit',
+              'invisible inline-flex items-center bg-white shadow-thin text-slate-700 overflow-hidden w-fit',
               sizeClasses.container,
               shapeClasses.container
             )}
@@ -711,7 +711,7 @@ export const SlidingSelector = <T,>({
           <motion.div
             layout
             className={classNames(
-              'absolute left-0 top-0 inline-flex max-w-[calc(100vw-3rem)] origin-top flex-col bg-white shadow-surface-thin text-slate-700 overflow-hidden w-fit',
+              'absolute left-0 top-0 inline-flex max-w-[calc(100vw-3rem)] origin-top flex-col bg-white shadow-thin text-slate-700 overflow-hidden w-fit',
               sizeClasses.container,
               shapeClasses.container
             )}
@@ -750,7 +750,7 @@ export const SlidingSelector = <T,>({
         role="tablist"
         aria-label="Navigation tabs"
         className={classNames(
-          'bg-white shadow-surface-thin text-slate-700 overflow-hidden select-none relative w-fit',
+          'bg-white shadow-thin text-slate-700 overflow-hidden select-none relative w-fit',
           isVerticalExpanded
             ? 'inline-flex max-h-[calc(100vh-7rem)] max-w-[calc(100vw-3rem)] flex-col items-stretch overflow-y-auto overscroll-contain'
             : 'inline-flex items-center',

@@ -15,7 +15,7 @@ export const PaginationContent: React.FC<PaginationContentProps> = ({
     <div
       className={classNames(
         'flex justify-between items-center gap-4 select-none',
-        isFloating ? 'rounded-full shadow-surface-thin p-4 relative' : 'mt-4',
+        isFloating ? 'rounded-full shadow-thin p-4 relative' : 'mt-4',
         !isFloating && className
       )}
       style={

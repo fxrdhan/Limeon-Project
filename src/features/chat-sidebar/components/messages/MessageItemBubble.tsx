@@ -277,7 +277,7 @@ export const MessageItemBubble = ({
       : isSearchMatch
         ? '!shadow-[0_0_0_1px_oklch(20.8%_0.04_265.8_/_0.08)]'
         : ''
-  } shadow-surface-thin ${isAttachmentGroup ? 'cursor-pointer overflow-visible' : 'cursor-pointer'} ${
+  } shadow-thin ${isAttachmentGroup ? 'cursor-pointer overflow-visible' : 'cursor-pointer'} ${
     shouldDimBubble ? 'blur-[2px] brightness-95' : ''
   } select-none transition-[background-color,color,opacity,box-shadow,filter] duration-300 ease-in-out`;
 

@@ -21,22 +21,22 @@
     --color-primary-light: oklch(95% 0.052 163.051 / 60%);
     --color-secondary: oklch(62.8% 0.215 282.463); /* purple-600 */
     --color-danger: oklch(62.8% 0.257 29.234); /* red-600 */
-    --shadow-surface-thin:
+    --shadow-thin:
       0 0 1px oklch(37.2% 0.039 257.3 / 0.52),
       0 0 2px oklch(20.8% 0.04 265.8 / 0.15);
-    --shadow-surface-thin-md:
-      var(--shadow-surface-thin), 0 4px 6px -1px oklch(0% 0 0 / 0.1),
+    --shadow-thin-md:
+      var(--shadow-thin), 0 4px 6px -1px oklch(0% 0 0 / 0.1),
       0 2px 4px -2px oklch(0% 0 0 / 0.1);
   }
 }
 
 @layer utilities {
-  .shadow-surface-thin {
-    box-shadow: var(--shadow-surface-thin);
+  .shadow-thin {
+    box-shadow: var(--shadow-thin);
   }
 
-  .shadow-surface-thin-md {
-    box-shadow: var(--shadow-surface-thin-md);
+  .shadow-thin-md {
+    box-shadow: var(--shadow-thin-md);
   }
 }
 

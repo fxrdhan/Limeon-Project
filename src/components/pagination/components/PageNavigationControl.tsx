@@ -31,7 +31,7 @@ export const PageNavigationControl: React.FC<PageNavigationControlProps> = ({
   };
 
   return (
-    <div className="flex items-center rounded-full bg-white p-1 text-slate-700 shadow-surface-thin overflow-hidden select-none">
+    <div className="flex items-center rounded-full bg-white p-1 text-slate-700 shadow-thin overflow-hidden select-none">
       <PaginationButton
         direction="prev"
         disabled={currentPage === 1}

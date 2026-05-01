@@ -162,7 +162,7 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                 layout
                 initial={false}
                 transition={{ layout: COMPOSER_SYNC_LAYOUT_TRANSITION }}
-                className="relative mb-[-1px] grid min-h-0 shrink-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-t-2xl rounded-b-none bg-white px-2.5 pt-2.5 pb-0 shadow-surface-thin"
+                className="relative mb-[-1px] grid min-h-0 shrink-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-t-2xl rounded-b-none bg-white px-2.5 pt-2.5 pb-0 shadow-thin"
                 style={{
                   maxHeight:
                     composerTrayMaxHeight && composerTrayMaxHeight > 0

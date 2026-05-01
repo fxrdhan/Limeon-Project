@@ -139,7 +139,7 @@ export const PageSizeSelector: React.FC = () => {
     <LayoutGroup id={layoutGroupId}>
       <div
         ref={rootRef}
-        className="inline-flex w-fit items-center overflow-hidden rounded-full bg-white p-1 text-slate-700 shadow-surface-thin select-none"
+        className="inline-flex w-fit items-center overflow-hidden rounded-full bg-white p-1 text-slate-700 shadow-thin select-none"
         onMouseEnter={expandForHover}
         onMouseLeave={collapseForHover}
       >

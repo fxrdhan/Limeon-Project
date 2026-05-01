@@ -45,7 +45,7 @@ export const COMPOSER_SYNC_LAYOUT_TRANSITION = {
   duration: 0.22,
 };
 export const COMPOSER_BASE_BORDER_COLOR = 'oklch(92.9% 0.013 255.5 / 0.65)';
-export const COMPOSER_BASE_SHADOW = 'var(--shadow-surface-thin)';
+export const COMPOSER_BASE_SHADOW = 'var(--shadow-thin)';
 export const COMPOSER_GLOW_SHADOW_PEAK = `0 16px 42px -18px oklch(50.8% 0.118 165.612 / 0.52),0 0 34px -5px oklch(50.8% 0.118 165.612 / 0.38),0 0 52px -18px oklch(50.8% 0.118 165.612 / 0.22),${COMPOSER_BASE_SHADOW}`;
 export const COMPOSER_GLOW_SHADOW_HIGH = `0 14px 38px -19px oklch(50.8% 0.118 165.612 / 0.44),0 0 30px -6px oklch(50.8% 0.118 165.612 / 0.3),0 0 44px -18px oklch(50.8% 0.118 165.612 / 0.18),${COMPOSER_BASE_SHADOW}`;
 export const COMPOSER_GLOW_SHADOW_MID = `0 12px 34px -20px oklch(50.8% 0.118 165.612 / 0.34),0 0 26px -7px oklch(50.8% 0.118 165.612 / 0.24),0 0 38px -18px oklch(50.8% 0.118 165.612 / 0.14),${COMPOSER_BASE_SHADOW}`;

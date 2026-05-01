@@ -163,7 +163,7 @@ PaginationContent → PageNavigationControl
 #### Shared Features Utilized
 
 - **Pagination State**: Uses the pagination context's `itemsPerPage` and page-size callback
-- **Surface Styling**: Uses the shared white surface and `shadow-surface-thin` token
+- **Surface Styling**: Uses the shared white surface and `shadow-thin` token
 
 #### Benefits of Separation
 
