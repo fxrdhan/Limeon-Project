@@ -8,7 +8,6 @@ import React, {
 } from 'react';
 import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
-import Cropper from 'cropperjs';
 import { TbPhotoUp } from 'react-icons/tb';
 import { formatItemDisplayName } from '@/lib/item-display';
 import { parseDisplayNameToMeasurement } from '@/lib/item-measurement-parser';
@@ -56,6 +55,9 @@ import ItemPackageConversionManager from '../organisms/ItemPackageConversionForm
 import ImageUploader from '@/components/image-manager';
 import Button from '@/components/button';
 import ImageExpandPreview from '@/components/shared/image-expand-preview';
+import ImageCropper, {
+  type ImageCropperHandle,
+} from '@/components/image-cropper';
 
 const MAX_ITEM_IMAGE_SOURCE_BYTES = 20 * 1024 * 1024;
 const ALLOWED_ITEM_IMAGE_TYPES = new Set([
@@ -135,26 +137,6 @@ const enrichInventoryUnitsWithDosageDetails = <
       updated_at: dosage.updated_at ?? unit.updated_at ?? null,
     };
   });
-
-const ITEM_IMAGE_CROPPER_TEMPLATE =
-  '<cropper-canvas background>' +
-  '<cropper-image rotatable scalable skewable translatable initial-center-size="contain"></cropper-image>' +
-  '<cropper-shade hidden></cropper-shade>' +
-  '<cropper-handle action="move" plain></cropper-handle>' +
-  '<cropper-selection initial-coverage="0.5" movable resizable>' +
-  '<cropper-grid role="grid" bordered covered></cropper-grid>' +
-  '<cropper-crosshair centered></cropper-crosshair>' +
-  '<cropper-handle action="move" theme-color="oklch(100% 0 0 / 0.35)"></cropper-handle>' +
-  '<cropper-handle action="n-resize"></cropper-handle>' +
-  '<cropper-handle action="e-resize"></cropper-handle>' +
-  '<cropper-handle action="s-resize"></cropper-handle>' +
-  '<cropper-handle action="w-resize"></cropper-handle>' +
-  '<cropper-handle action="ne-resize"></cropper-handle>' +
-  '<cropper-handle action="nw-resize"></cropper-handle>' +
-  '<cropper-handle action="se-resize"></cropper-handle>' +
-  '<cropper-handle action="sw-resize"></cropper-handle>' +
-  '</cropper-selection>' +
-  '</cropper-canvas>';
 
 // Header Section
 
@@ -925,9 +907,7 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
   } | null>(null);
   const [isCropperVisible, setIsCropperVisible] = useState(false);
   const [isCropping, setIsCropping] = useState(false);
-  const cropperRef = useRef<Cropper | null>(null);
-  const cropperContainerRef = useRef<HTMLDivElement | null>(null);
-  const cropperImageRef = useRef<HTMLImageElement | null>(null);
+  const imageCropperRef = useRef<ImageCropperHandle | null>(null);
   const previewCloseTimerRef = useRef<number | null>(null);
   const cropperCloseTimerRef = useRef<number | null>(null);
   const localPreviewUrlsRef = useRef<Record<number, string>>({});
@@ -1014,187 +994,6 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
       }
     };
   }, []);
-
-  useEffect(() => {
-    if (
-      !cropState ||
-      !isCropperVisible ||
-      !cropperImageRef.current ||
-      !cropperContainerRef.current
-    ) {
-      return;
-    }
-
-    let isCancelled = false;
-
-    const imageElement = cropperImageRef.current;
-    const cropperContainer = cropperContainerRef.current;
-
-    const initCropper = () => {
-      if (isCancelled || !imageElement || !cropperContainer) return;
-      const cropperInstance = new Cropper(imageElement, {
-        container: cropperContainer,
-        template: ITEM_IMAGE_CROPPER_TEMPLATE,
-      });
-      const selection = cropperInstance.getCropperSelection();
-      const cropperImage = cropperInstance.getCropperImage();
-      void cropperImage?.$ready(image => {
-        const cropperCanvas = cropperInstance.getCropperCanvas();
-        if (!cropperCanvas || !cropperImage) return;
-
-        const canvasRect = cropperCanvas.getBoundingClientRect();
-        const scale = Math.min(
-          canvasRect.width / image.naturalWidth,
-          canvasRect.height / image.naturalHeight
-        );
-        const renderedWidth = image.naturalWidth * scale;
-        const renderedHeight = image.naturalHeight * scale;
-        const offsetX = (canvasRect.width - renderedWidth) / 2;
-        const offsetY = (canvasRect.height - renderedHeight) / 2;
-
-        cropperImage.$setTransform(scale, 0, 0, scale, offsetX, offsetY);
-
-        window.requestAnimationFrame(() => {
-          if (!selection) return;
-
-          const squareSize = Math.min(renderedWidth, renderedHeight) * 0.92;
-          const x = offsetX + (renderedWidth - squareSize) / 2;
-          const y = offsetY + (renderedHeight - squareSize) / 2;
-
-          selection.$change(x, y, squareSize, squareSize, 1);
-        });
-      });
-      if (selection) {
-        const keepSelectionWithinImage = (
-          event: Event & {
-            detail?: { height: number; width: number; x: number; y: number };
-          }
-        ) => {
-          const cropperCanvas = cropperInstance.getCropperCanvas();
-          const cropperImage = cropperInstance.getCropperImage();
-          const detail = event.detail;
-
-          if (!cropperCanvas || !cropperImage || !detail) return;
-
-          const canvasRect = cropperCanvas.getBoundingClientRect();
-          const imageRect = cropperImage.getBoundingClientRect();
-          const selectionBounds = {
-            x: imageRect.left - canvasRect.left,
-            y: imageRect.top - canvasRect.top,
-            width: imageRect.width,
-            height: imageRect.height,
-          };
-          const isWithinImageBounds =
-            detail.x >= selectionBounds.x &&
-            detail.y >= selectionBounds.y &&
-            detail.x + detail.width <=
-              selectionBounds.x + selectionBounds.width &&
-            detail.y + detail.height <=
-              selectionBounds.y + selectionBounds.height;
-
-          if (!isWithinImageBounds) {
-            event.preventDefault();
-          }
-        };
-
-        selection.initialAspectRatio = 1;
-        selection.aspectRatio = 1;
-        selection.initialCoverage = 0.92;
-        selection.addEventListener(
-          'change',
-          keepSelectionWithinImage as EventListener
-        );
-
-        const keepImageCoveringSelection = (
-          event: Event & { detail?: { matrix?: number[] } }
-        ) => {
-          const cropperCanvas = cropperInstance.getCropperCanvas();
-          const nextMatrix = event.detail?.matrix;
-
-          if (!cropperCanvas || !cropperImage || !nextMatrix) return;
-
-          const cropperImageClone = cropperImage.cloneNode() as HTMLElement;
-          cropperImageClone.style.transform = `matrix(${nextMatrix.join(', ')})`;
-          cropperImageClone.style.opacity = '0';
-          cropperCanvas.appendChild(cropperImageClone);
-
-          const transformedImageRect =
-            cropperImageClone.getBoundingClientRect();
-          cropperCanvas.removeChild(cropperImageClone);
-
-          const canvasRect = cropperCanvas.getBoundingClientRect();
-          const selectionRect = selection.getBoundingClientRect();
-          const selectionBounds = {
-            x: selectionRect.left - canvasRect.left,
-            y: selectionRect.top - canvasRect.top,
-            width: selectionRect.width,
-            height: selectionRect.height,
-          };
-          const imageBounds = {
-            x: transformedImageRect.left - canvasRect.left,
-            y: transformedImageRect.top - canvasRect.top,
-            width: transformedImageRect.width,
-            height: transformedImageRect.height,
-          };
-          const doesImageCoverSelection =
-            imageBounds.x <= selectionBounds.x &&
-            imageBounds.y <= selectionBounds.y &&
-            imageBounds.x + imageBounds.width >=
-              selectionBounds.x + selectionBounds.width &&
-            imageBounds.y + imageBounds.height >=
-              selectionBounds.y + selectionBounds.height;
-
-          if (!doesImageCoverSelection) {
-            event.preventDefault();
-          }
-        };
-
-        cropperImage?.addEventListener(
-          'transform',
-          keepImageCoveringSelection as EventListener
-        );
-
-        cropperRef.current = cropperInstance;
-
-        return () => {
-          selection.removeEventListener(
-            'change',
-            keepSelectionWithinImage as EventListener
-          );
-          cropperImage?.removeEventListener(
-            'transform',
-            keepImageCoveringSelection as EventListener
-          );
-        };
-      }
-
-      cropperRef.current = cropperInstance;
-
-      return undefined;
-    };
-
-    let cleanupSelectionListener: (() => void) | undefined;
-
-    if (imageElement.complete) {
-      cleanupSelectionListener = initCropper();
-    } else {
-      imageElement.onload = () => {
-        cleanupSelectionListener = initCropper();
-      };
-    }
-
-    return () => {
-      isCancelled = true;
-      cleanupSelectionListener?.();
-      if (imageElement) {
-        imageElement.onload = null;
-      }
-      if (cropperRef.current) {
-        cropperRef.current.destroy();
-        cropperRef.current = null;
-      }
-    };
-  }, [cropState, isCropperVisible]);
 
   const buildSlotsFromUrls = buildSlotsFromUrlsWithItem;
 
@@ -1503,29 +1302,16 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
   );
 
   const handleCropConfirm = useCallback(async () => {
-    if (!cropState || !cropperRef.current) return;
+    if (!cropState || !imageCropperRef.current) return;
     setIsCropping(true);
 
     try {
-      const selection = cropperRef.current.getCropperSelection();
-      if (!selection) {
-        throw new Error('Gagal memproses gambar.');
-      }
-      const canvas = await selection.$toCanvas({
+      const mimeType = cropState.file.type || 'image/jpeg';
+      const blob = await imageCropperRef.current.toBlob({
         width: 1024,
         height: 1024,
-      });
-
-      const mimeType = cropState.file.type || 'image/jpeg';
-      const blob = await new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob(
-          (result: Blob | null) => {
-            if (result) resolve(result);
-            else reject(new Error('Gagal memproses gambar.'));
-          },
-          mimeType,
-          0.9
-        );
+        mimeType,
+        quality: 0.9,
       });
 
       const croppedFile = new File([blob], cropState.file.name, {
@@ -1740,16 +1526,13 @@ const BasicInfoOptionalSection: React.FC<OptionalSectionProps> = ({
                 Crop gambar (1:1)
               </div>
               <div className="px-6 pb-6">
-                <div
-                  ref={cropperContainerRef}
-                  className="aspect-square w-full overflow-hidden rounded-xl bg-slate-100 [&_cropper-canvas]:m-0 [&_cropper-canvas]:h-full [&_cropper-canvas]:w-full [&_cropper-canvas]:bg-slate-100"
-                >
-                  <img
-                    ref={cropperImageRef}
+                <div className="aspect-square w-full overflow-hidden rounded-xl bg-slate-100">
+                  <ImageCropper
+                    ref={imageCropperRef}
                     src={cropState.previewUrl}
                     alt="Crop"
-                    className="block h-full w-full object-contain"
-                    crossOrigin="anonymous"
+                    aspectRatio={1}
+                    fitMode="aspect-fit"
                   />
                 </div>
               </div>
