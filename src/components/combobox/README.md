@@ -1,20 +1,20 @@
 # Combobox Component
 
-Komponen `Combobox` adalah komponen React terkontrol untuk memilih opsi tunggal atau banyak opsi dari daftar `ComboboxOption`. Implementasinya berada di `src/components/combobox`, sedangkan kontrak tipe publiknya diekspor dari `src/types/components.ts`.
+The `Combobox` component is a controlled React component for selecting a single option or multiple options from a `ComboboxOption` list. Its implementation lives in `src/components/combobox`, while the public type contract is exported from `src/types/components.ts`.
 
-## Ringkasan
+## Overview
 
-`Combobox` menangani beberapa workflow form yang umum dipakai di PharmaSys:
+`Combobox` covers several common PharmaSys form workflows:
 
-- Single-select default untuk field relasional seperti kategori, produsen, supplier, status, dan metode pembayaran.
-- Single-select dengan indikator radio melalui `withRadio`.
-- Multi-select dengan checkbox melalui `withCheckbox`.
-- Search client-side dengan fuzzy matching, debounced filtering, highlight hasil pencarian, dan tombol add-new saat hasil kosong.
-- Validasi required dengan integrasi `ValidationOverlay`.
-- Portal menu ke `document.body` agar tidak terpotong container parent.
-- Positioning otomatis terhadap viewport, termasuk opsi manual `top`, `bottom`, dan `left`.
-- Hover detail portal untuk menampilkan metadata opsi tanpa mengubah pilihan.
-- Keyboard navigation, focus management, auto-scroll ke opsi terpilih, dan virtualisasi untuk list besar.
+- Default single-select for relational fields such as categories, manufacturers, suppliers, statuses, and payment methods.
+- Single-select with a radio indicator via `withRadio`.
+- Multi-select with checkboxes via `withCheckbox`.
+- Client-side search with fuzzy matching, debounced filtering, highlighted results, and an add-new action when no results are found.
+- Required validation integrated with `ValidationOverlay`.
+- Menu portal rendering to `document.body` so parent containers do not clip the menu.
+- Automatic viewport-aware positioning, including manual `top`, `bottom`, and `left` options.
+- Hover-detail portal rendering to display option metadata without changing the selection.
+- Keyboard navigation, focus management, auto-scroll to the selected option, and virtualization for large lists.
 
 ## Import
 
@@ -23,19 +23,19 @@ import Combobox from '@/components/combobox';
 import type { ComboboxOption, HoverDetailData } from '@/types';
 ```
 
-## Struktur File
+## File Structure
 
 ```txt
 combobox/
-|-- index.tsx                         # Root orchestrator dan public component
-|-- constants.ts                      # Timing, keyboard keys, search states, layout constants
+|-- index.tsx                         # Root orchestrator and public component
+|-- constants.ts                      # Timing, keyboard keys, search states, and layout constants
 |-- components/
 |   |-- ComboboxButton.tsx            # Trigger button
 |   |-- ComboboxMenu.tsx              # Portal content orchestrator
-|   |-- HoverDetailPortal.tsx         # Detail popup untuk opsi
-|   |-- OptionItem.tsx                # Adapter context ke OptionRow
-|   |-- SearchBar.tsx                 # Search input dan add-new action
-|   |-- button/                       # Button primitive khusus combobox
+|   |-- HoverDetailPortal.tsx         # Option detail popup
+|   |-- OptionItem.tsx                # Context adapter for OptionRow
+|   |-- SearchBar.tsx                 # Search input and add-new action
+|   |-- button/                       # Combobox-specific button primitive
 |   |-- menu/                         # Portal, content wrapper, empty state, scroll indicators
 |   |-- options/                      # Option row, radio indicator, checkbox indicator
 |   `-- search/                       # Search input, icon, add-new button
@@ -44,11 +44,11 @@ combobox/
 |   |-- useComboboxSearch.ts          # Search term, debounce, filter, sort, search state
 |   |-- useComboboxValidation.ts      # Required validation state
 |   |-- useComboboxPosition.ts        # Portal positioning and width calculation
-|   |-- useKeyboardNavigation.ts      # Arrow, Tab, PageUp, PageDown, Enter, Escape
+|   |-- useKeyboardNavigation.ts      # Arrow, PageUp, PageDown, Enter, Escape, and Tab close handling
 |   |-- useFocusManagement.ts         # Focus-out close and delayed focus handling
 |   |-- useScrollManagement.ts        # Scroll indicators and selected-option restoration
 |   |-- useComboboxEffects.ts         # Open side effects, hover-to-open, listeners
-|   |-- useComboboxVirtualization.ts  # Windowed rendering for large option lists
+|   |-- useComboboxVirtualization.ts   # Windowed rendering for large option lists
 |   |-- useHoverDetail.ts             # Hover detail visibility, fetch, suppression
 |   `-- useTextExpansion.ts           # Truncated text expansion state
 |-- providers/
@@ -79,7 +79,7 @@ export interface ComboboxOption {
 }
 ```
 
-`id` adalah value yang dikirim ke `onChange`. `name` adalah label utama. Field opsional dipakai untuk search display, badge kecil pada trigger atau hover detail, dan payload dasar sebelum `onFetchHoverDetail` selesai.
+`id` is the value passed to `onChange`. `name` is the primary label. Optional fields are used for search display, the small badge on the trigger or hover detail, and the base payload before `onFetchHoverDetail` resolves.
 
 ### HoverDetailData
 
@@ -145,28 +145,28 @@ export interface CheckboxComboboxProps extends Omit<
 }
 ```
 
-`withCheckbox` mengubah kontrak `value` dan `onChange` menjadi array. `withRadio` hanya mengubah affordance visual single-select dan tidak mengubah tipe value.
+`withCheckbox` changes the `value` and `onChange` contract to arrays. `withRadio` only changes the visual affordance of single-select mode and does not change the value type.
 
 ## Defaults
 
-| Prop                   | Default         | Catatan                                                                        |
-| ---------------------- | --------------- | ------------------------------------------------------------------------------ |
-| `mode`                 | `'input'`       | Trigger tampil seperti form control.                                           |
-| `placeholder`          | `'-- Pilih --'` | Ditampilkan saat belum ada selected option.                                    |
-| `persistOpen`          | `false`         | Menu normalnya tertutup setelah select single option atau outside interaction. |
-| `freezePersistedMenu`  | `false`         | Saat `true`, portal tetap terlihat tetapi non-interactive.                     |
-| `searchList`           | `true`          | Menampilkan search input di bagian atas menu.                                  |
-| `autoScrollOnOpen`     | `true`          | Scroll list ke selected option saat pertama dibuka.                            |
-| `required`             | `false`         | Mengaktifkan validasi required di hook.                                        |
-| `disabled`             | `false`         | Menonaktifkan trigger dan handler interaksi.                                   |
-| `validate`             | `false`         | Merender `ValidationOverlay` jika error perlu ditampilkan.                     |
-| `showValidationOnBlur` | `true`          | Menampilkan overlay saat blur jika invalid.                                    |
-| `validationAutoHide`   | `true`          | Diteruskan ke `ValidationOverlay`.                                             |
-| `portalWidth`          | `'auto'`        | Lebar mengikuti trigger.                                                       |
-| `position`             | `'auto'`        | Memilih atas atau bawah berdasarkan ruang viewport.                            |
-| `align`                | `'right'`       | Right edge portal sejajar dengan right edge trigger.                           |
-| `enableHoverDetail`    | `false`         | Hover detail tidak aktif kecuali diminta.                                      |
-| `hoverDetailDelay`     | `800`           | Delay awal sebelum detail muncul.                                              |
+| Prop                   | Default         | Notes                                                                                 |
+| ---------------------- | --------------- | ------------------------------------------------------------------------------------- |
+| `mode`                 | `'input'`       | Trigger renders like a form control.                                                  |
+| `placeholder`          | `'-- Pilih --'` | Displayed when no option is selected.                                                 |
+| `persistOpen`          | `false`         | The menu normally closes after a single option is selected or on outside interaction. |
+| `freezePersistedMenu`  | `false`         | When `true`, the portal remains visible but becomes non-interactive.                  |
+| `searchList`           | `true`          | Shows the search input at the top of the menu.                                        |
+| `autoScrollOnOpen`     | `true`          | Scrolls the list to the selected option on first open.                                |
+| `required`             | `false`         | Enables required validation in the hook.                                              |
+| `disabled`             | `false`         | Disables the trigger and interaction handlers.                                        |
+| `validate`             | `false`         | Renders `ValidationOverlay` when an error should be shown.                            |
+| `showValidationOnBlur` | `true`          | Shows the overlay on blur when invalid.                                               |
+| `validationAutoHide`   | `true`          | Passed through to `ValidationOverlay`.                                                |
+| `portalWidth`          | `'auto'`        | Width follows the trigger.                                                            |
+| `position`             | `'auto'`        | Chooses above or below based on viewport space.                                       |
+| `align`                | `'right'`       | The portal's right edge aligns with the trigger's right edge.                         |
+| `enableHoverDetail`    | `false`         | Hover detail is disabled unless explicitly requested.                                 |
+| `hoverDetailDelay`     | `800`           | Initial delay before the detail appears.                                              |
 
 ## Basic Usage
 
@@ -185,13 +185,13 @@ const suppliers: ComboboxOption[] = [
   value={supplierId}
   onChange={setSupplierId}
   options={suppliers}
-  placeholder="-- Pilih Supplier --"
+  placeholder="-- Select Supplier --"
 />;
 ```
 
 ### Radio Style Single Select
 
-Gunakan `withRadio` untuk pilihan enum yang tidak memerlukan search.
+Use `withRadio` for enum-like choices that do not need search.
 
 ```tsx
 <Combobox
@@ -199,9 +199,9 @@ Gunakan `withRadio` untuk pilihan enum yang tidak memerlukan search.
   value={paymentStatus}
   onChange={setPaymentStatus}
   options={[
-    { id: 'unpaid', name: 'Belum Dibayar' },
-    { id: 'partial', name: 'Sebagian' },
-    { id: 'paid', name: 'Lunas' },
+    { id: 'unpaid', name: 'Unpaid' },
+    { id: 'partial', name: 'Partial' },
+    { id: 'paid', name: 'Paid' },
   ]}
   withRadio
   searchList={false}
@@ -222,11 +222,11 @@ const [selectedIds, setSelectedIds] = useState<string[]>([]);
 />;
 ```
 
-Dalam mode checkbox, klik opsi akan toggle item di array dan menu tetap terbuka agar pengguna bisa memilih beberapa opsi.
+In checkbox mode, clicking an option toggles the item in the array and the menu remains open so users can select multiple options.
 
-### Text Mode Untuk Compact Controls
+### Text Mode for Compact Controls
 
-`mode="text"` dipakai untuk trigger kecil seperti selector bulan dan tahun pada calendar header.
+`mode="text"` is used for compact triggers such as month and year selectors in the calendar header.
 
 ```tsx
 <Combobox
@@ -242,9 +242,9 @@ Dalam mode checkbox, klik opsi akan toggle item di array dan menu tetap terbuka 
 />
 ```
 
-## Validasi
+## Validation
 
-Validasi required dikelola oleh `useComboboxValidation`.
+Required validation is handled by `useComboboxValidation`.
 
 ```tsx
 <Combobox
@@ -252,7 +252,7 @@ Validasi required dikelola oleh `useComboboxValidation`.
   value={categoryId}
   onChange={setCategoryId}
   options={categories}
-  placeholder="Pilih Kategori"
+  placeholder="Select Category"
   required
   validate
   showValidationOnBlur
@@ -261,22 +261,22 @@ Validasi required dikelola oleh `useComboboxValidation`.
 />
 ```
 
-Aturan penting:
+Important rules:
 
-- `required` mengecek value kosong dan menghasilkan pesan `Pilihan harus diisi`.
-- `validate` diperlukan jika error harus tampil melalui `ValidationOverlay`.
-- `required` tanpa `validate` tetap mempengaruhi state error trigger, tetapi overlay tidak dirender karena root component hanya merender `ValidationOverlay` saat `validate` bernilai `true`.
-- Error dibersihkan setelah value valid dipilih.
-- Untuk checkbox combobox, validasi root saat ini mengevaluasi array dengan mengambil value pertama jika array tidak kosong.
+- `required` checks for an empty value and emits the message `Pilihan harus diisi` (`Selection is required`).
+- `validate` is required when the error must be shown through `ValidationOverlay`.
+- `required` without `validate` still affects the trigger's error state, but the overlay is not rendered because the root component only renders `ValidationOverlay` when `validate` is `true`.
+- Errors are cleared after a valid value is selected.
+- For checkbox comboboxes, root validation currently evaluates the array by taking the first value when the array is not empty.
 
 ## Search
 
-Search aktif secara default melalui `searchList={true}`. Flow-nya:
+Search is enabled by default through `searchList={true}`. The flow is:
 
-1. User mengetik di search input, atau mengetik printable key pada trigger saat menu terbuka.
-2. `useComboboxSearch` menyimpan `searchTerm` langsung dan `debouncedSearchTerm` setelah `COMBOBOX_CONSTANTS.DEBOUNCE_DELAY` (`150ms`).
-3. `filterAndSortOptions` mencari opsi dengan `includes` atau `fuzzyMatch`.
-4. Hasil diurutkan dengan score:
+1. The user types in the search input, or types a printable key on the trigger while the menu is open.
+2. `useComboboxSearch` stores `searchTerm` immediately and `debouncedSearchTerm` after `COMBOBOX_CONSTANTS.DEBOUNCE_DELAY` (`150ms`).
+3. `filterAndSortOptions` searches options with `includes` or `fuzzyMatch`.
+4. Results are sorted by score:
    - exact name match
    - name prefix
    - exact token
@@ -284,13 +284,13 @@ Search aktif secara default melalui `searchList={true}`. Flow-nya:
    - token contains
    - name contains
    - fuzzy match
-5. `OptionRow` menebalkan karakter yang cocok berdasarkan `getComboboxOptionMatchRanges`.
+5. `OptionRow` bolds matching characters based on `getComboboxOptionMatchRanges`.
 
-Jika `searchList={false}`, search input tidak dirender. Keyboard navigation tetap berjalan pada listbox untuk tombol navigasi.
+If `searchList={false}`, the search input is not rendered. Keyboard navigation still works on the listbox for navigation keys.
 
 ## Add New Flow
 
-`onAddNew` aktif ketika search tidak menemukan opsi dan search term tidak kosong.
+`onAddNew` becomes active when search does not find any option and the search term is not empty.
 
 ```tsx
 <Combobox
@@ -305,22 +305,22 @@ Jika `searchList={false}`, search input tidak dirender. Keyboard navigation teta
 />
 ```
 
-User bisa memicu add-new dengan:
+Users can trigger add-new with:
 
-- tombol plus pada search bar,
-- `Enter` saat search state `not-found`,
-- `Enter` saat search state `typing` dan hasil masih kosong.
+- the plus button in the search bar,
+- `Enter` when the search state is `not-found`,
+- `Enter` when the search state is `typing` and the results are still empty.
 
-Saat add-new dipicu, root component:
+When add-new is triggered, the root component:
 
-- membatalkan pending focus,
-- blur element aktif,
-- mem-pin combobox agar tetap terbuka,
-- memanggil `onAddNew(term)`.
+- cancels pending focus,
+- blurs the active element,
+- pins the combobox so it stays open,
+- calls `onAddNew(term)`.
 
-## Persisted And Frozen Menu
+## Persisted and Frozen Menu
 
-Props `persistOpen`, `onPersistOpenClear`, dan `freezePersistedMenu` dipakai ketika add-new membuka modal tetapi combobox asal perlu tetap berada di konteks visual.
+The `persistOpen`, `onPersistOpenClear`, and `freezePersistedMenu` props are used when add-new opens a modal but the original combobox must remain in the visual context.
 
 ```tsx
 <Combobox
@@ -339,14 +339,14 @@ Props `persistOpen`, `onPersistOpenClear`, dan `freezePersistedMenu` dipakai ket
 
 Behavior:
 
-- `persistOpen` membuat menu efektif tetap open meskipun state internal close.
-- `freezePersistedMenu` membuat portal non-interactive dengan `pointer-events-none select-none` dan `aria-hidden`.
-- Klik di luar combobox akan clear persisted state dan menutup menu, kecuali klik berada di modal `[role="dialog"][aria-modal="true"]`.
-- Saat combobox lain dibuka, combobox aktif sebelumnya ditutup melalui singleton active combobox callback.
+- `persistOpen` keeps the menu effectively open even if the internal state closes.
+- `freezePersistedMenu` makes the portal non-interactive with `pointer-events-none select-none` and `aria-hidden`.
+- Clicking outside the combobox clears the persisted state and closes the menu, unless the click occurs inside a modal with `[role="dialog"][aria-modal="true"]`.
+- When another combobox opens, the previously active combobox is closed through the singleton active combobox callback.
 
 ## Hover Detail
 
-Hover detail menampilkan panel informasi di samping opsi. Data awal diambil dari `ComboboxOption`, lalu bisa diperkaya oleh `onFetchHoverDetail`.
+Hover detail shows an information panel beside the option. The initial data comes from `ComboboxOption`, and it can be enriched through `onFetchHoverDetail`.
 
 ```tsx
 <Combobox
@@ -372,86 +372,86 @@ Hover detail menampilkan panel informasi di samping opsi. Data awal diambil dari
 />
 ```
 
-Detail penting:
+Important details:
 
-- Delay awal memakai `hoverDetailDelay`; setelah portal terlihat, perpindahan opsi memperbarui data tanpa delay panjang.
-- Portal diposisikan di kanan opsi jika ruang cukup, lalu fallback ke kiri.
-- Saat user scroll list, portal disembunyikan sementara dan dipulihkan setelah scroll idle.
-- Keyboard highlight juga bisa memicu hover detail secara immediate jika opsi highlighted terlihat penuh di viewport list.
-- `onFetchHoverDetail` harus mengembalikan `HoverDetailData | null`; error fetch hanya dicatat ke console dan tidak memblokir combobox.
+- The initial delay uses `hoverDetailDelay`; once the portal is visible, switching options updates the data without a long delay.
+- The portal is positioned to the right of the option when there is enough space, then falls back to the left.
+- When the user scrolls the list, the portal is temporarily hidden and restored after scrolling becomes idle.
+- Keyboard highlight can also trigger hover detail immediately if the highlighted option is fully visible in the list viewport.
+- `onFetchHoverDetail` must return `HoverDetailData | null`; fetch errors are only logged to the console and do not block the combobox.
 
-## Positioning And Width
+## Positioning and Width
 
-Positioning dihitung oleh `useComboboxPosition` berdasarkan `getBoundingClientRect()` trigger dan ukuran menu.
+Positioning is calculated by `useComboboxPosition` based on the trigger's `getBoundingClientRect()` and the menu size.
 
-| Prop          | Nilai       | Behavior                                                                                        |
-| ------------- | ----------- | ----------------------------------------------------------------------------------------------- |
-| `position`    | `'auto'`    | Pilih drop up atau down berdasarkan ruang atas/bawah.                                           |
-| `position`    | `'top'`     | Paksa drop up.                                                                                  |
-| `position`    | `'bottom'`  | Paksa drop down.                                                                                |
-| `position`    | `'left'`    | Tempatkan menu di kiri trigger jika ruang cukup, fallback ke alignment normal jika tidak cukup. |
-| `align`       | `'right'`   | Right edge menu sejajar dengan right edge trigger.                                              |
-| `align`       | `'left'`    | Left edge menu sejajar dengan left edge trigger.                                                |
-| `portalWidth` | `'auto'`    | Lebar sama dengan trigger.                                                                      |
-| `portalWidth` | `'content'` | Lebar dihitung dari opsi terpanjang, min `120px`, max `400px`.                                  |
-| `portalWidth` | `number`    | Dipakai sebagai pixel width.                                                                    |
-| `portalWidth` | `string`    | Diteruskan sebagai CSS width, contoh `'120px'`.                                                 |
+| Prop          | Value       | Behavior                                                                                                      |
+| ------------- | ----------- | ------------------------------------------------------------------------------------------------------------- |
+| `position`    | `'auto'`    | Choose drop-up or drop-down based on available space above and below.                                         |
+| `position`    | `'top'`     | Force drop-up.                                                                                                |
+| `position`    | `'bottom'`  | Force drop-down.                                                                                              |
+| `position`    | `'left'`    | Place the menu to the left of the trigger when there is enough room, otherwise fall back to normal alignment. |
+| `align`       | `'right'`   | Align the right edge of the menu with the right edge of the trigger.                                          |
+| `align`       | `'left'`    | Align the left edge of the menu with the left edge of the trigger.                                            |
+| `portalWidth` | `'auto'`    | Use the same width as the trigger.                                                                            |
+| `portalWidth` | `'content'` | Calculate width from the longest option, with a minimum of `120px` and a maximum of `400px`.                  |
+| `portalWidth` | `number`    | Use the value as the pixel width.                                                                             |
+| `portalWidth` | `string`    | Pass the value through as CSS width, for example `'120px'`.                                                   |
 
-Portal normal menggunakan `position: fixed`, kecuali mode `position="left"` yang memakai `absolute`. Z-index portal adalah `COMBOBOX_CONSTANTS.PORTAL_Z_INDEX` (`1060`).
+The default portal uses `position: fixed`, except in `position="left"` mode, which uses `absolute`. The portal z-index is `COMBOBOX_CONSTANTS.PORTAL_Z_INDEX` (`1060`).
 
 ## Keyboard Interaction
 
-Combobox menangani keyboard di trigger, search input, dan list container.
+Combobox handles keyboard input in the trigger, the search input, and the list container.
 
-| Key           | Behavior                                                                                               |
-| ------------- | ------------------------------------------------------------------------------------------------------ |
-| `ArrowDown`   | Highlight opsi berikutnya, wrap ke awal.                                                               |
-| `ArrowUp`     | Highlight opsi sebelumnya, wrap ke akhir.                                                              |
-| `Tab`         | Saat menu terbuka, bergerak antar opsi dan mencegah default tab movement. `Shift+Tab` bergerak mundur. |
-| `PageDown`    | Lompat sampai `COMBOBOX_CONSTANTS.PAGE_SIZE` (`5`) item ke bawah.                                      |
-| `PageUp`      | Lompat sampai 5 item ke atas.                                                                          |
-| `Enter`       | Pilih opsi highlighted, atau jalankan `onAddNew(searchTerm)` saat search kosong hasil.                 |
-| `Escape`      | Tutup combobox dan reset expanded text.                                                                |
-| Printable key | Jika menu terbuka dan `searchList` aktif, key diarahkan ke search input.                               |
+| Key           | Behavior                                                                                                      |
+| ------------- | ------------------------------------------------------------------------------------------------------------- |
+| `ArrowDown`   | Highlight the next option and wrap to the beginning.                                                          |
+| `ArrowUp`     | Highlight the previous option and wrap to the end.                                                            |
+| `Tab`         | Close the combobox and allow the browser to move focus to the next control. `Shift+Tab` moves focus backward. |
+| `PageDown`    | Jump down by `COMBOBOX_CONSTANTS.PAGE_SIZE` (`5`) items.                                                      |
+| `PageUp`      | Jump up by 5 items.                                                                                           |
+| `Enter`       | Select the highlighted option, or run `onAddNew(searchTerm)` when search returns no results.                  |
+| `Escape`      | Close the combobox and reset expanded text.                                                                   |
+| Printable key | If the menu is open and `searchList` is enabled, route the key to the search input.                           |
 
-Saat keyboard navigation aktif, cursor disembunyikan pada area combobox dan highlight list memakai pinned frame agar animasi scroll tidak membuat highlight hilang.
+When keyboard navigation is active, the cursor is hidden inside the combobox area and the list highlight uses a pinned frame so scroll animation does not make the highlight disappear.
 
-## Focus And Close Behavior
+## Focus and Close Behavior
 
-Open/close state dipisahkan menjadi:
+Open and close state is split into:
 
-- `isOpen`: menu aktif.
-- `isClosing`: close animation masih berjalan.
-- `applyOpenStyles`: class scale/opacity sudah boleh diterapkan setelah posisi siap.
+- `isOpen`: the menu is active.
+- `isClosing`: the close animation is still running.
+- `applyOpenStyles`: the scale/opacity class may be applied after position is ready.
 - `effectiveIsOpen`: `isOpen || persistOpen || pinnedOpen`.
 
-Close terjadi pada kondisi berikut:
+Close occurs in these cases:
 
-- klik trigger saat menu terbuka,
-- select single option,
+- clicking the trigger while the menu is open,
+- selecting a single option,
 - `Escape`,
-- focus keluar dari combobox ketika tidak persisted,
-- pointer down di luar combobox saat persisted tetapi tidak frozen,
-- combobox lain dibuka.
+- focus leaving the combobox when it is not persisted,
+- pointer down outside the combobox while it is persisted but not frozen,
+- another combobox opening.
 
-Saat menu terbuka, `useComboboxEffects` sementara mengatur `document.body.style.overflow = 'hidden'` dan memasang listener `scroll`, `resize`, dan `focusout` untuk menjaga posisi dan close behavior.
+When the menu is open, `useComboboxEffects` temporarily sets `document.body.style.overflow = 'hidden'` and registers `scroll`, `resize`, and `focusout` listeners to keep positioning and close behavior stable.
 
-## Scroll And Virtualization
+## Scroll and Virtualization
 
-`useScrollManagement` menangani:
+`useScrollManagement` handles:
 
-- deteksi apakah list scrollable,
-- indikator top/bottom melalui `ScrollIndicators`,
-- initial scroll ke selected option saat `autoScrollOnOpen=true`,
-- scroll ke atas saat search menghasilkan filtered results,
-- restore scroll ke selected option setelah search dikosongkan.
+- detecting whether the list is scrollable,
+- top and bottom indicators through `ScrollIndicators`,
+- initial scroll to the selected option when `autoScrollOnOpen=true`,
+- scrolling back to the top when search produces filtered results,
+- restoring scroll to the selected option after search is cleared.
 
-Virtualisasi aktif otomatis ketika jumlah hasil lebih besar dari `COMBOBOX_CONSTANTS.VIRTUALIZATION_THRESHOLD` (`100`). `useComboboxVirtualization`:
+Virtualization is enabled automatically when the number of results is greater than `COMBOBOX_CONSTANTS.VIRTUALIZATION_THRESHOLD` (`100`). `useComboboxVirtualization`:
 
-- mengestimasi tinggi item dengan `OPTION_ESTIMATED_HEIGHT` (`36`),
-- mengukur tinggi nyata item yang dirender,
-- hanya merender window terlihat ditambah overscan `6`,
-- tetap menyediakan target scroll untuk keyboard navigation.
+- estimates item height with `OPTION_ESTIMATED_HEIGHT` (`36`),
+- measures the actual height of rendered items,
+- renders only the visible window plus an overscan of `6`,
+- still provides a scroll target for keyboard navigation.
 
 ## Internal Data Flow
 
@@ -478,41 +478,41 @@ props
       -> HoverDetailPortal
 ```
 
-State yang dibutuhkan child component dibagikan lewat `ComboboxContext`. Root tetap memegang event handler utama agar selection, search, validasi, positioning, dan close behavior tidak tersebar sebagai prop drilling.
+The state needed by child components is shared through `ComboboxContext`. The root still owns the main event handlers so selection, search, validation, positioning, and close behavior do not spread through prop drilling.
 
 ## Accessibility Notes
 
-- Trigger memakai `aria-haspopup="menu"`, `aria-expanded`, dan `aria-controls` saat list terbuka.
-- Menu portal memakai `role="menu"`.
-- Options container memakai `role="listbox"`.
-- Opsi memakai `role="option"` dan `aria-selected`.
-- Disabled trigger memakai native `disabled`.
-- Keyboard support tersedia untuk navigasi dan selection.
+- The trigger uses `aria-haspopup="menu"`, `aria-expanded`, and `aria-controls` when the list is open.
+- The menu portal uses `role="menu"`.
+- The options container uses `role="listbox"`.
+- Options use `role="option"` and `aria-selected`.
+- The disabled trigger uses the native `disabled` attribute.
+- Keyboard support is available for navigation and selection.
 
-Catatan: role menu dan listbox saat ini berada dalam portal yang sama. Jika mengubah markup accessibility, pastikan behavior keyboard, tests, dan screen reader semantics diperiksa bersamaan.
+Note: the menu and listbox roles currently live inside the same portal. If you change the accessibility markup, verify keyboard behavior, tests, and screen reader semantics together.
 
 ## Constants
 
-Nilai utama berada di `constants.ts`.
+The main values live in `constants.ts`.
 
-| Constant                   | Nilai  | Fungsi                                        |
-| -------------------------- | ------ | --------------------------------------------- |
-| `ANIMATION_DURATION`       | `100`  | Durasi close state sebelum DOM menu dilepas.  |
-| `CLOSE_TIMEOUT`            | `200`  | Delay close untuk hover-to-open leave intent. |
-| `HOVER_TIMEOUT`            | `100`  | Delay sebelum hover membuka combobox.         |
-| `DEBOUNCE_DELAY`           | `150`  | Debounce search term.                         |
-| `FOCUS_DELAY`              | `50`   | Delay focus list saat open tanpa search.      |
-| `VIEWPORT_MARGIN`          | `16`   | Margin aman portal dari viewport.             |
-| `MAX_HEIGHT`               | `240`  | Tinggi maksimum list (`max-h-60`).            |
-| `PAGE_SIZE`                | `5`    | Step PageUp/PageDown.                         |
-| `VIRTUALIZATION_THRESHOLD` | `100`  | Batas aktivasi virtualisasi.                  |
-| `VIRTUALIZATION_OVERSCAN`  | `6`    | Extra item di luar viewport.                  |
-| `OPTION_ESTIMATED_HEIGHT`  | `36`   | Estimasi tinggi item virtualized.             |
-| `PORTAL_Z_INDEX`           | `1060` | Layer portal combobox.                        |
+| Constant                   | Value  | Purpose                                                     |
+| -------------------------- | ------ | ----------------------------------------------------------- |
+| `ANIMATION_DURATION`       | `100`  | Duration of the close state before the menu DOM is removed. |
+| `CLOSE_TIMEOUT`            | `200`  | Close delay for hover-to-open leave intent.                 |
+| `HOVER_TIMEOUT`            | `100`  | Delay before hover opens the combobox.                      |
+| `DEBOUNCE_DELAY`           | `150`  | Debounce delay for the search term.                         |
+| `FOCUS_DELAY`              | `50`   | Delay before focusing the list on open without search.      |
+| `VIEWPORT_MARGIN`          | `16`   | Safe margin between the portal and the viewport edge.       |
+| `MAX_HEIGHT`               | `240`  | Maximum list height (`max-h-60`).                           |
+| `PAGE_SIZE`                | `5`    | Step size for PageUp/PageDown.                              |
+| `VIRTUALIZATION_THRESHOLD` | `100`  | Threshold for enabling virtualization.                      |
+| `VIRTUALIZATION_OVERSCAN`  | `6`    | Extra items rendered outside the viewport.                  |
+| `OPTION_ESTIMATED_HEIGHT`  | `36`   | Estimated height for virtualized items.                     |
+| `PORTAL_Z_INDEX`           | `1060` | Combobox portal layer.                                      |
 
 ## Testing
 
-Test terkait berada di:
+Related tests live in:
 
 - `src/components/combobox/index.test.tsx`
 - `src/components/combobox/utils/comboboxUtils.test.ts`
@@ -521,28 +521,28 @@ Test terkait berada di:
 - `src/components/combobox/hooks/useHoverDetail.test.tsx`
 - `src/components/combobox/hooks/useScrollManagement.test.tsx`
 
-Jalankan test lewat VitePlus:
+Run tests through VitePlus:
 
 ```bash
 AI_AGENT=codex vp test run --passWithNoTests src/components/combobox
 ```
 
-Untuk perubahan runtime atau tipe, jalankan check sesuai standar repo:
+For runtime or type changes, run the repo-standard check:
 
 ```bash
 vp check --fix src/components/combobox
 ```
 
-Dokumentasi-only change tidak perlu menjalankan `vp check`.
+Documentation-only changes do not require `vp check`.
 
 ## Implementation Guidelines
 
-- Perlakukan `Combobox` sebagai controlled component. Parent harus menyimpan `value` dan memperbaruinya dari `onChange`.
-- Gunakan `ComboboxOption.id` sebagai value stabil. Jangan pakai label sebagai id jika label bisa berubah.
-- Gunakan `searchList={false}` untuk opsi enum kecil seperti status atau bulan/tahun.
-- Gunakan `withRadio` untuk single-select yang secara visual perlu memperlihatkan pilihan aktif.
-- Gunakan `withCheckbox` hanya jika parent memang menyimpan array id.
-- Untuk required field yang perlu overlay error, pasang `required` dan `validate`.
-- Untuk workflow add-new dengan modal, koordinasikan `onAddNew`, `persistOpen`, `freezePersistedMenu`, dan `onPersistOpenClear`.
-- Jangan memasukkan network fetch langsung ke option render. Pakai `onFetchHoverDetail` agar fetch hanya terjadi ketika detail diminta.
-- Hindari mengekspor helper baru dari file component React. Ikuti aturan Fast Refresh dengan memindahkan shared non-component export ke sibling module.
+- Treat `Combobox` as a controlled component. The parent must own `value` and update it through `onChange`.
+- Use `ComboboxOption.id` as the stable value. Do not use the label as the id if the label can change.
+- Use `searchList={false}` for small enum-like options such as statuses or month/year selectors.
+- Use `withRadio` for single-select controls that need to show the active choice visually.
+- Use `withCheckbox` only when the parent actually stores an array of ids.
+- For required fields that need an error overlay, pass `required` and `validate`.
+- For add-new workflows with a modal, coordinate `onAddNew`, `persistOpen`, `freezePersistedMenu`, and `onPersistOpenClear`.
+- Do not place network fetches directly in option rendering. Use `onFetchHoverDetail` so fetching only happens when detail is requested.
+- Avoid exporting new helpers from a React component file. Follow the Fast Refresh rule by moving shared non-component exports into a sibling module.
