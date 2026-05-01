@@ -1,6 +1,6 @@
 import React from 'react';
 import Input from '@/components/input';
-import Dropdown from '@/components/dropdown';
+import Combobox from '@/components/combobox';
 import Calendar from '@/components/calendar';
 import Button from '@/components/button';
 import { TbBan, TbDeviceFloppy, TbPencil } from 'react-icons/tb';
@@ -85,7 +85,7 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
   const renderEditableField = () => {
     if (field.isRadioDropdown && field.options) {
       return (
-        <Dropdown
+        <Combobox
           name={field.key}
           options={field.options}
           value={String(fieldValue ?? '')}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { TbArrowBack } from 'react-icons/tb';
-import Dropdown from '@/components/dropdown';
+import Combobox from '@/components/combobox';
 import FormField from '@/components/form-field';
 import Input from '@/components/input';
 import type { DropdownOption } from '@/types/components';
@@ -102,7 +102,7 @@ export default function PackageConversionInput({
       </p>
       <div className="grid gap-4 md:grid-cols-3 mb-3">
         <FormField label="Unit" className="flex-1" required={true}>
-          <Dropdown
+          <Combobox
             name="inventory_unit_id"
             tabIndex={tabIndex}
             value={formData.inventory_unit_id}
@@ -128,7 +128,7 @@ export default function PackageConversionInput({
         </FormField>
 
         <FormField label="Dalam" className="flex-1" required={true}>
-          <Dropdown
+          <Combobox
             name="parent_inventory_unit_id"
             tabIndex={tabIndex + 1}
             value={formData.parent_inventory_unit_id}
