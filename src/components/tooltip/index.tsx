@@ -119,7 +119,7 @@ const defaultTooltipGeometry: TooltipGeometry = {
 const TooltipProviderContext = React.createContext<TooltipProviderValue>({
   isProvided: false,
   openDelay: 0,
-  closeDelay: 300,
+  closeDelay: 100,
   transition: defaultTooltipTransition,
   showTooltip: () => undefined,
   hideTooltip: () => undefined,
@@ -261,7 +261,7 @@ const getTooltipGeometry = (
 const TooltipProvider = ({
   children,
   openDelay = 0,
-  closeDelay = 300,
+  closeDelay = 100,
   transition = defaultTooltipTransition,
 }: TooltipProviderProps) => {
   const parentTooltipProvider = React.useContext(TooltipProviderContext);
@@ -640,7 +640,13 @@ const Tooltip = ({
     contentRef.current = content;
   }, []);
 
-  React.useEffect(() => clearTooltipTimeout, [clearTooltipTimeout]);
+  React.useEffect(
+    () => () => {
+      clearTooltipTimeout();
+      hideTooltip(id);
+    },
+    [clearTooltipTimeout, hideTooltip, id]
+  );
 
   return (
     <TooltipContext.Provider value={{ setContent }}>
