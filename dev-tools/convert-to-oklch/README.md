@@ -1,6 +1,6 @@
 # cto
 
-`cto` is the local command for `convert-to-oklch`, a CLI package for migrating CSS color literals to `oklch()`.
+`cto` is the local command for `convert-to-oklch`, a Rust-backed CLI package for migrating CSS color literals to `oklch()`.
 
 It converts these source formats:
 
@@ -32,7 +32,9 @@ bunx cto ./src/**/*.css -p 2
 
 ## Runtime Support
 
-The CLI is implemented as an ESM JavaScript executable using Node-compatible standard modules. It has no third-party runtime dependencies.
+The migration engine is implemented as a Rust binary and processes files in parallel. The package keeps a small POSIX shim at `bin/oklch-migrate` so existing package-runner commands can continue to resolve `cto`, `convert-to-oklch`, and `oklch-migrate`. A Node-compatible shim remains available at `bin/oklch-migrate.mjs` for direct Node/Bun execution.
+
+On a clean checkout, the first shim invocation compiles the release binary with Cargo. Later invocations run `target/release/oklch-migrate` directly.
 
 Supported ways to run it from this repository:
 
@@ -49,6 +51,9 @@ node ./dev-tools/convert-to-oklch/bin/oklch-migrate.mjs ./src/**/*.css
 # Bun direct script execution
 bun ./dev-tools/convert-to-oklch/bin/oklch-migrate.mjs ./src/**/*.css
 
+# Cargo direct execution
+cargo run --release --manifest-path ./dev-tools/convert-to-oklch/Cargo.toml -- ./src/**/*.css
+
 # Package-manager independent local bin
 ./node_modules/.bin/cto ./src/**/*.css
 ```
@@ -56,7 +61,15 @@ bun ./dev-tools/convert-to-oklch/bin/oklch-migrate.mjs ./src/**/*.css
 Notes:
 
 - `bunx cto` and `npx cto` rely on the local `file:dev-tools/convert-to-oklch` dependency installed in this repo.
+- The shim requires a working Rust/Cargo toolchain when the native binary has not been built yet.
 - This repo declares Bun as its package manager. `pnpm` and `yarn` may reject command execution through Corepack in this project; use Bun, npm/npx, direct Node/Bun execution, or `./node_modules/.bin/cto`.
+
+For CLI development:
+
+```sh
+cargo test --manifest-path ./dev-tools/convert-to-oklch/Cargo.toml
+cargo build --release --manifest-path ./dev-tools/convert-to-oklch/Cargo.toml
+```
 
 The old aliases remain available for compatibility:
 

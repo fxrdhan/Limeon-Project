@@ -1,0 +1,12 @@
+[package]
+name = "convert-to-oklch"
+version = "0.0.0"
+edition = "2024"
+description = "CLI untuk migrasi warna hex, rgb(), rgba(), hsl(), dan hsla() ke format oklch()."
+
+[[bin]]
+name = "oklch-migrate"
+path = "src/main.rs"
+
+[dependencies]
+regex = "1.12.2"

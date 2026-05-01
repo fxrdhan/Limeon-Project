@@ -1,0 +1,38 @@
+#!/usr/bin/env sh
+set -eu
+
+script_path=$0
+case "$script_path" in
+  */*) ;;
+  *) script_path=$(command -v "$script_path") ;;
+esac
+
+while [ -L "$script_path" ]; do
+  link_target=$(readlink "$script_path")
+  case "$link_target" in
+    /*) script_path=$link_target ;;
+    *) script_path=$(dirname "$script_path")/$link_target ;;
+  esac
+done
+
+script_dir=$(CDPATH= cd "$(dirname "$script_path")" && pwd)
+package_dir=$(dirname "$script_dir")
+workspace_package_dir=$(dirname "$(dirname "$package_dir")")/dev-tools/convert-to-oklch
+
+if [ -f "$workspace_package_dir/Cargo.toml" ]; then
+  package_dir=$workspace_package_dir
+fi
+
+binary_name=oklch-migrate
+release_binary="$package_dir/target/release/$binary_name"
+debug_binary="$package_dir/target/debug/$binary_name"
+
+if [ -x "$release_binary" ]; then
+  exec "$release_binary" "$@"
+fi
+
+if [ -x "$debug_binary" ]; then
+  exec "$debug_binary" "$@"
+fi
+
+exec cargo run --quiet --release --manifest-path "$package_dir/Cargo.toml" -- "$@"

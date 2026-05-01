@@ -19,6 +19,7 @@ node_modules
 .claude/
 dist
 dist-ssr
+dev-tools/convert-to-oklch/target/
 *.local
 coverage
 !scripts/coverage/
