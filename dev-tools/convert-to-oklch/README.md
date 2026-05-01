@@ -1,6 +1,6 @@
 # cto
 
-`cto` is the local command for `convert-to-oklch`, a Rust-backed CLI package for migrating CSS color literals to `oklch()`.
+`cto` is the local command for `convert-to-oklch`, a CLI package for converting CSS color literals to `oklch()`.
 
 It converts these source formats:
 
@@ -32,7 +32,7 @@ bunx cto ./src/**/*.css -p 2
 
 ## Runtime Support
 
-The migration engine is implemented as a Rust binary and processes files in parallel. The package keeps a small POSIX shim at `bin/oklch-migrate` so existing package-runner commands can continue to resolve `cto`, `convert-to-oklch`, and `oklch-migrate`. A Node-compatible shim remains available at `bin/oklch-migrate.mjs` for direct Node/Bun execution.
+The CLI is implemented as a Rust binary and processes files in parallel. The package keeps a small POSIX shim at `bin/oklch-migrate` so package-runner commands can resolve `cto`, `convert-to-oklch`, and `oklch-migrate`. A Node-compatible shim is available at `bin/oklch-migrate.mjs` for direct Node/Bun execution.
 
 On a clean checkout, the first shim invocation compiles the release binary with Cargo. Later invocations run `target/release/oklch-migrate` directly.
 
@@ -71,7 +71,7 @@ cargo test --manifest-path ./dev-tools/convert-to-oklch/Cargo.toml
 cargo build --release --manifest-path ./dev-tools/convert-to-oklch/Cargo.toml
 ```
 
-The old aliases remain available for compatibility:
+Aliases:
 
 ```sh
 bunx convert-to-oklch ./src/**/*.css
@@ -190,7 +190,7 @@ Supported ignore syntax:
 
 The CLI intentionally does not hardcode project-specific generated outputs such as `dist`, `coverage`, lockfiles, or generated CSS. If those paths should be skipped, put them in `.gitignore` or `.ignore`.
 
-The only built-in directory exclusion is `.git`, because scanning VCS internals is never useful for source color migration.
+The only built-in directory exclusion is `.git`, because scanning VCS internals is never useful for color conversion.
 
 Explicit file paths bypass ignore matching. For example, this processes the file even if it is ignored:
 
@@ -236,9 +236,10 @@ It also skips:
 - `url(...)` contents
 - likely CSS ID selectors
 - hex values inside likely attribute selectors
+- malformed numeric tokens such as `rgb(10px 20 30)`, `rgb(10abc 20 30)`, or `rgb(10 % 20% 30%)`
 
 ## Limitations
 
 The ignore parser supports the gitignore patterns commonly used in this project, but it is not a complete reimplementation of Git's ignore engine. In particular, deeply nested re-inclusion inside an ignored parent directory follows normal traversal limits: if a parent directory is ignored and skipped, descendants are not scanned unless the parent itself is unignored.
 
-The CLI is designed for source migration, not CSS parsing. It preserves file text and performs targeted literal replacement rather than rebuilding AST output.
+The CLI is designed for targeted color conversion, not full CSS parsing. It preserves file text and performs literal replacement rather than rebuilding AST output.

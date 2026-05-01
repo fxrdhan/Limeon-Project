@@ -632,99 +632,78 @@ fn parse_hex_pair(first: u8, second: u8) -> Option<u8> {
     Some(high * 16 + low)
 }
 
-fn parse_float_prefix(value: &str) -> Option<f64> {
-    let value = value.trim_start();
-    let bytes = value.as_bytes();
-    let mut index = 0;
+fn css_number_regex() -> &'static Regex {
+    static CSS_NUMBER_RE: OnceLock<Regex> = OnceLock::new();
+    CSS_NUMBER_RE.get_or_init(|| {
+        Regex::new(r"^[+-]?(?:[0-9]+(?:\.[0-9]+)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?$")
+            .expect("valid CSS number regex")
+    })
+}
 
-    if matches!(bytes.get(index), Some(b'+') | Some(b'-')) {
-        index += 1;
-    }
+fn parse_css_number(value: &str) -> Option<f64> {
+    parse_css_number_token(value.trim())
+}
 
-    let mut has_digits = false;
-    while matches!(bytes.get(index), Some(byte) if byte.is_ascii_digit()) {
-        index += 1;
-        has_digits = true;
-    }
-
-    if bytes.get(index) == Some(&b'.') {
-        index += 1;
-        while matches!(bytes.get(index), Some(byte) if byte.is_ascii_digit()) {
-            index += 1;
-            has_digits = true;
-        }
-    }
-
-    if !has_digits {
+fn parse_css_number_token(token: &str) -> Option<f64> {
+    if !css_number_regex().is_match(token) {
         return None;
     }
 
-    let before_exponent = index;
-    if matches!(bytes.get(index), Some(b'e') | Some(b'E')) {
-        index += 1;
-
-        if matches!(bytes.get(index), Some(b'+') | Some(b'-')) {
-            index += 1;
-        }
-
-        let exponent_start = index;
-        while matches!(bytes.get(index), Some(byte) if byte.is_ascii_digit()) {
-            index += 1;
-        }
-
-        if index == exponent_start {
-            index = before_exponent;
-        }
-    }
-
-    value[..index].parse::<f64>().ok()
+    let number = token.parse::<f64>().ok()?;
+    number.is_finite().then_some(number)
 }
 
 fn parse_rgb_channel(value: &str) -> Option<f64> {
     let trimmed = value.trim();
     if let Some(percent_value) = trimmed.strip_suffix('%') {
-        let percent = parse_float_prefix(percent_value)?;
+        let percent = parse_css_number_token(percent_value)?;
         return Some(clamp((percent / 100.0) * 255.0, 0.0, 255.0));
     }
 
-    let channel = parse_float_prefix(trimmed)?;
+    let channel = parse_css_number(trimmed)?;
     Some(clamp(channel, 0.0, 255.0))
 }
 
 fn parse_alpha(value: &str) -> Option<f64> {
     let trimmed = value.trim();
     if let Some(percent_value) = trimmed.strip_suffix('%') {
-        let percent = parse_float_prefix(percent_value)?;
+        let percent = parse_css_number_token(percent_value)?;
         return Some(clamp(percent / 100.0, 0.0, 1.0));
     }
 
-    let alpha = parse_float_prefix(trimmed)?;
+    let alpha = parse_css_number(trimmed)?;
     Some(clamp(alpha, 0.0, 1.0))
 }
 
 fn parse_hue(value: &str) -> Option<f64> {
     let trimmed = value.trim().to_ascii_lowercase();
-    let number = parse_float_prefix(&trimmed)?;
 
-    if trimmed.ends_with("turn") {
+    if let Some(number_value) = trimmed.strip_suffix("turn") {
+        let number = parse_css_number_token(number_value)?;
         return Some(number * 360.0);
     }
 
-    if trimmed.ends_with("rad") {
-        return Some(number * 180.0 / std::f64::consts::PI);
-    }
-
-    if trimmed.ends_with("grad") {
+    if let Some(number_value) = trimmed.strip_suffix("grad") {
+        let number = parse_css_number_token(number_value)?;
         return Some(number * 0.9);
     }
 
-    Some(number)
+    if let Some(number_value) = trimmed.strip_suffix("rad") {
+        let number = parse_css_number_token(number_value)?;
+        return Some(number * 180.0 / std::f64::consts::PI);
+    }
+
+    if let Some(number_value) = trimmed.strip_suffix("deg") {
+        return parse_css_number_token(number_value);
+    }
+
+    parse_css_number_token(&trimmed)
 }
 
 fn parse_percentage(value: &str) -> Option<f64> {
     let trimmed = value.trim();
     let percent_value = trimmed.strip_suffix('%')?;
-    let percent = parse_float_prefix(percent_value)?;
+    let percent = parse_css_number_token(percent_value)?;
     Some(clamp(percent / 100.0, 0.0, 1.0))
 }
 
@@ -1385,6 +1364,39 @@ mod tests {
                 "r",
                 "gb(var(--x)); border-color: oklch(0% 0 0); }"
             )
+        );
+    }
+
+    #[test]
+    fn rejects_malformed_numeric_tokens() {
+        assert!(parse_rgb_color("rgb", "10abc 20 30").is_none());
+        assert!(parse_rgb_color("rgb", "10px 20 30").is_none());
+        assert!(parse_rgb_color("rgb", "10 % 20% 30%").is_none());
+        assert!(parse_rgb_color("rgba", "10, 20, 30, 0.5foo").is_none());
+        assert!(parse_hsl_color("hsl", "90deg 50 % 50%").is_none());
+
+        assert!(parse_rgb_color("rgb", "+10 .5 1e2").is_some());
+        assert!(parse_alpha("50%").is_some());
+        assert!(parse_alpha("50 %").is_none());
+    }
+
+    #[test]
+    fn parses_css_hue_units_strictly() {
+        assert_close(parse_hue("90").expect("unitless hue"), 90.0);
+        assert_close(parse_hue("90deg").expect("deg hue"), 90.0);
+        assert_close(parse_hue("100grad").expect("grad hue"), 90.0);
+        assert_close(parse_hue("0.25turn").expect("turn hue"), 90.0);
+        assert_close(parse_hue("1.5707963267948966rad").expect("rad hue"), 90.0);
+
+        assert!(parse_hue("90 deg").is_none());
+        assert!(parse_hue("90degfoo").is_none());
+        assert!(parse_hue("100gradfoo").is_none());
+    }
+
+    fn assert_close(actual: f64, expected: f64) {
+        assert!(
+            (actual - expected).abs() < 0.0000001,
+            "expected {actual} to be close to {expected}"
         );
     }
 }
