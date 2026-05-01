@@ -190,7 +190,7 @@ Supported ignore syntax:
 
 The CLI intentionally does not hardcode project-specific generated outputs such as `dist`, `coverage`, lockfiles, or generated CSS. If those paths should be skipped, put them in `.gitignore` or `.ignore`.
 
-The only built-in directory exclusion is `.git`, because scanning VCS internals is never useful for color conversion.
+The built-in directory exclusions are `.git` and hidden directories whose names start with `.`. Hidden directories are skipped during recursive scans even if `.ignore` contains a negated rule for them.
 
 Explicit file paths bypass ignore matching. For example, this processes the file even if it is ignored:
 
