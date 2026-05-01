@@ -10,7 +10,7 @@ import {
 } from 'react-icons/tb';
 import { AnimatePresence, motion } from 'motion/react';
 import Switch from '@/components/switch';
-import Dropdown from '@/components/dropdown';
+import Combobox from '@/components/combobox';
 import Input from '@/components/input';
 import FormField from '@/components/form-field';
 import Button from '@/components/button';
@@ -663,7 +663,7 @@ export default function ItemPricingForm({
                 <div className="grid grid-cols-2 gap-4">
                   <FormField label="Unit Dasar" required={true}>
                     <div className="space-y-2">
-                      <Dropdown
+                      <Combobox
                         name="base_inventory_unit_id"
                         value={baseUnitId}
                         onChange={onBaseUnitChange}

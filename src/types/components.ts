@@ -29,6 +29,12 @@ export type DropdownPortalWidth = string | number;
 export type DropdownPosition = 'auto' | 'top' | 'bottom' | 'left';
 export type DropdownAlign = 'left' | 'right';
 
+export type ComboboxOption = DropdownOption;
+export type ComboboxMode = DropdownMode;
+export type ComboboxPortalWidth = DropdownPortalWidth;
+export type ComboboxPosition = DropdownPosition;
+export type ComboboxAlign = DropdownAlign;
+
 // Base dropdown props for single selection
 export interface DropdownProps {
   mode?: DropdownMode;
@@ -67,6 +73,49 @@ export interface DropdownProps {
 // Extended dropdown props for checkbox mode (multiple selection)
 export interface CheckboxDropdownProps extends Omit<
   DropdownProps,
+  'value' | 'onChange' | 'withRadio'
+> {
+  value: string[];
+  onChange: (value: string[]) => void;
+  withCheckbox: true;
+}
+
+export interface ComboboxProps {
+  mode?: ComboboxMode;
+  options: ComboboxOption[];
+  value: string;
+  tabIndex?: number;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  name: string;
+  required?: boolean;
+  disabled?: boolean;
+  onAddNew?: (searchTerm?: string) => void;
+  persistOpen?: boolean;
+  onPersistOpenClear?: () => void;
+  freezePersistedMenu?: boolean;
+  withRadio?: boolean;
+  searchList?: boolean;
+  autoScrollOnOpen?: boolean;
+  validate?: boolean;
+  showValidationOnBlur?: boolean;
+  validationAutoHide?: boolean;
+  validationAutoHideDelay?: number;
+  hoverToOpen?: boolean;
+  // Portal width control
+  portalWidth?: ComboboxPortalWidth;
+  // Position control
+  position?: ComboboxPosition;
+  // Alignment control
+  align?: ComboboxAlign;
+  // Hover detail functionality
+  enableHoverDetail?: boolean;
+  hoverDetailDelay?: number;
+  onFetchHoverDetail?: (optionId: string) => Promise<HoverDetailData | null>;
+}
+
+export interface CheckboxComboboxProps extends Omit<
+  ComboboxProps,
   'value' | 'onChange' | 'withRadio'
 > {
   value: string[];
