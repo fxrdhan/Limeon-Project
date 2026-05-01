@@ -108,6 +108,8 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
     const highlightInstanceId = useId();
     const openCycleRef = useRef(0);
     const wasOpenRef = useRef(false);
+    const [isActiveBackgroundReady, setIsActiveBackgroundReady] =
+      useState(false);
     const [
       isHighlightSuppressedDuringScroll,
       setIsHighlightSuppressedDuringScroll,
@@ -145,6 +147,21 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
       highlightedIndex >= 0 &&
       !heldHighlightFrame &&
       !isHighlightSuppressedDuringScroll;
+
+    useEffect(() => {
+      if (!isOpen || !applyOpenStyles || !isPositionReady) {
+        setIsActiveBackgroundReady(false);
+        return;
+      }
+
+      const frameId = window.requestAnimationFrame(() => {
+        setIsActiveBackgroundReady(true);
+      });
+
+      return () => {
+        window.cancelAnimationFrame(frameId);
+      };
+    }, [applyOpenStyles, isOpen, isPositionReady, activeBackgroundLayoutId]);
 
     useLayoutEffect(() => {
       if (!shouldPinSearchHighlight) {
@@ -579,7 +596,9 @@ const DropdownMenu = forwardRef<HTMLDivElement, DropdownMenuProps>(
           isHighlightSuppressedDuringScroll ||
           shouldPinSearchHighlight
         }
-        activeBackgroundLayoutId={activeBackgroundLayoutId}
+        activeBackgroundLayoutId={
+          isActiveBackgroundReady ? activeBackgroundLayoutId : undefined
+        }
         isExpanded={expandedId === option.id}
         onHighlight={index => {
           onSetIsKeyboardNavigation(false);

@@ -193,7 +193,9 @@ const OptionRow: React.FC<OptionRowProps> = ({
     >
       {isHighlighted && !suppressHighlightBackground && (
         <motion.div
+          key={activeBackgroundLayoutId ?? 'static-highlight-background'}
           layoutId={activeBackgroundLayoutId}
+          initial={false}
           className="pointer-events-none absolute inset-0 z-0 rounded-lg bg-primary/10"
           transition={{
             type: 'spring',
