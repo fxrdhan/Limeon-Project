@@ -97,11 +97,13 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
           </div>
           <motion.div
             layout
-            className="relative ml-2 mr-1 flex h-6 shrink-0 items-center justify-center overflow-hidden"
+            className="relative flex h-6 shrink-0 items-center justify-center overflow-hidden"
             initial={false}
             animate={{
               width: searchTerm ? 24 : 0,
               opacity: searchTerm ? 1 : 0,
+              marginLeft: searchTerm ? 8 : 0,
+              marginRight: searchTerm ? 4 : 0,
             }}
             transition={{ type: 'spring', stiffness: 320, damping: 28 }}
           >
