@@ -34,6 +34,13 @@ These instructions apply to `/home/fxrdhan/Documents/PharmaSys`.
 - Be rigorous and persistent when searching the codebase for key facts.
 - Review existing style, conventions, and abstractions before implementing new features or abstractions.
 
+## TypeScript LSP Skills
+
+- Use `rg` first for fast text search and broad codebase discovery.
+- Use the `ts-lsp-goto-definition` skill when you need the real TypeScript definition for a symbol, especially across path aliases, re-exports, overloads, or same-name text matches.
+- Use the `ts-lsp-call-hierarchy` skill when you need semantic caller/callee answers such as "who calls this?" or "what does this call?" instead of search-based guesses.
+- Prefer LSP results over text matches when refactoring, tracing imports, or reasoning about TypeScript symbol ownership.
+
 # Implementation Scope
 
 - Avoid over-engineering.
