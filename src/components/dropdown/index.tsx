@@ -369,7 +369,7 @@ function Dropdown(allProps: DropdownProps | CheckboxDropdownProps) {
     onAddNew: handleAddNewPreservingDropdown,
     onCloseDropdown: closeDropdownAndReleasePin,
     onCloseValidation: handleCloseValidation,
-    autoHighlightOnOpen: mode !== 'text',
+    autoHighlightOnOpen: true,
     optionsContainerRef: optionsContainerRef as RefObject<HTMLDivElement>,
   });
 
