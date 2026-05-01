@@ -50,6 +50,10 @@ export const getRenderedImageRect = (
     return { x: 0, y: 0, width: 0, height: 0 };
   }
 
+  if (fitMode === 'scale-to-fill') {
+    return { x: 0, y: 0, width: stageSize.width, height: stageSize.height };
+  }
+
   const aspectFitScale = Math.min(
     stageSize.width / imageSize.width,
     stageSize.height / imageSize.height
@@ -58,12 +62,7 @@ export const getRenderedImageRect = (
     stageSize.width / imageSize.width,
     stageSize.height / imageSize.height
   );
-  const scale =
-    fitMode === 'aspect-fill'
-      ? aspectFillScale
-      : fitMode === 'scale-to-fit'
-        ? Math.min(1, aspectFitScale)
-        : aspectFitScale;
+  const scale = fitMode === 'aspect-fill' ? aspectFillScale : aspectFitScale;
   const width = imageSize.width * scale;
   const height = imageSize.height * scale;
 

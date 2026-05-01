@@ -39,22 +39,25 @@ export interface ImageCropperProps {
 }
 ```
 
-| Prop              | Type                                              | Default        | Description                                                                                                                           |
-| ----------------- | ------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `src`             | `string`                                          | required       | Image URL to crop. This can be an object URL, data URL, or remote URL.                                                                |
-| `alt`             | `string`                                          | `'Crop'`       | Alternative text for the `<img>` element.                                                                                             |
-| `aspectRatio`     | `number \| 'free'`                                | `1`            | Crop ratio. A number keeps the crop fixed-aspect, for example `1`, `4 / 3`, `16 / 9`, or `3 / 4`. `'free'` enables freeform resizing. |
-| `fitMode`         | `'aspect-fit' \| 'aspect-fill' \| 'scale-to-fit'` | `'aspect-fit'` | How the image is rendered inside the stage. See Fit Modes for details.                                                                |
-| `initialCoverage` | `number`                                          | `0.92`         | Initial percentage of the crop bounds covered by the crop rect. The value is clamped from `0.1` to `1`.                               |
-| `minCropSize`     | `number`                                          | `36`           | Minimum crop size in stage pixels. In fixed-aspect mode, this value is used as the minimum dimension during resize.                   |
-| `className`       | `string`                                          | undefined      | Additional class for the root container. Use this for container background, border, radius, or sizing adjustments.                    |
-| `imageClassName`  | `string`                                          | undefined      | Additional class for the `<img>` element.                                                                                             |
-| `crossOrigin`     | `HTMLImageElement['crossOrigin']`                 | undefined      | Forwarded to `<img>`. Required when exporting canvas data from remote images that support CORS.                                       |
+| Prop              | Type                                               | Default        | Description                                                                                                                           |
+| ----------------- | -------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `src`             | `string`                                           | required       | Image URL to crop. This can be an object URL, data URL, or remote URL.                                                                |
+| `alt`             | `string`                                           | `'Crop'`       | Alternative text for the `<img>` element.                                                                                             |
+| `aspectRatio`     | `number \| 'free'`                                 | `1`            | Crop ratio. A number keeps the crop fixed-aspect, for example `1`, `4 / 3`, `16 / 9`, or `3 / 4`. `'free'` enables freeform resizing. |
+| `fitMode`         | `'scale-to-fill' \| 'aspect-fit' \| 'aspect-fill'` | `'aspect-fit'` | How the image is rendered inside the stage. See Fit Modes for details.                                                                |
+| `initialCoverage` | `number`                                           | `0.92`         | Initial percentage of the crop bounds covered by the crop rect. The value is clamped from `0.1` to `1`.                               |
+| `minCropSize`     | `number`                                           | `36`           | Minimum crop size in stage pixels. In fixed-aspect mode, this value is used as the minimum dimension during resize.                   |
+| `className`       | `string`                                           | undefined      | Additional class for the root container. Use this for container background, border, radius, or sizing adjustments.                    |
+| `imageClassName`  | `string`                                           | undefined      | Additional class for the `<img>` element.                                                                                             |
+| `crossOrigin`     | `HTMLImageElement['crossOrigin']`                  | undefined      | Forwarded to `<img>`. Required when exporting canvas data from remote images that support CORS.                                       |
 
 ### Types
 
 ```ts
-export type ImageCropperFitMode = 'aspect-fit' | 'aspect-fill' | 'scale-to-fit';
+export type ImageCropperFitMode =
+  | 'scale-to-fill'
+  | 'aspect-fit'
+  | 'aspect-fill';
 
 export type ImageCropperAspectRatio = number | 'free';
 
@@ -77,13 +80,13 @@ export interface ImageCropperHandle {
 
 `fitMode` controls the visual image size inside the stage before cropping.
 
-| Mode           | Behavior                                                                                                           | Use Case                                                                                             |
-| -------------- | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| `aspect-fit`   | Scales the image so the full image is visible inside the stage. Empty space can appear horizontally or vertically. | Safe default for manual cropping because the user can inspect the full source image.                 |
-| `aspect-fill`  | Scales the image until the entire stage is covered. Some image areas can be outside the stage.                     | Useful when the stage must always be filled and cropping should only happen within the visible area. |
-| `scale-to-fit` | Same as `aspect-fit`, but small images are not enlarged beyond their natural size.                                 | Useful when small image previews should preserve 1:1 source pixels on a larger stage.                |
+| Mode            | Behavior                                                                                                           | Use Case                                                                                             |
+| --------------- | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| `scale-to-fill` | Stretches the image to exactly fill the stage. The source aspect ratio is not preserved.                           | Useful when the preview must fill a fixed box even if the image becomes visually distorted.          |
+| `aspect-fit`    | Scales the image so the full image is visible inside the stage. Empty space can appear horizontally or vertically. | Safe default for manual cropping because the user can inspect the full source image.                 |
+| `aspect-fill`   | Scales the image until the entire stage is covered. Some image areas can be outside the stage.                     | Useful when the stage must always be filled and cropping should only happen within the visible area. |
 
-Crop bounds are always the intersection between the stage and the rendered image. With `aspect-fill`, image areas outside the stage cannot be selected because the bounds are clipped to the stage.
+Crop bounds are always the intersection between the stage and the rendered image. With `scale-to-fill`, the rendered image is exactly the stage size, so the whole stage is selectable. With `aspect-fill`, image areas outside the stage cannot be selected because the bounds are clipped to the stage.
 
 ## Imperative Export
 

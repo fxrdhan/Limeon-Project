@@ -1,4 +1,7 @@
-export type ImageCropperFitMode = 'aspect-fit' | 'aspect-fill' | 'scale-to-fit';
+export type ImageCropperFitMode =
+  | 'scale-to-fill'
+  | 'aspect-fit'
+  | 'aspect-fill';
 
 export type ImageCropperAspectRatio = number | 'free';
 

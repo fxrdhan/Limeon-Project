@@ -13,7 +13,15 @@ describe('image cropper geometry', () => {
     expect(normalizeAspectRatio('free')).toBeNull();
   });
 
-  it('calculates aspect-fit, aspect-fill, and scale-to-fit image rectangles', () => {
+  it('calculates scale-to-fill, aspect-fit, and aspect-fill image rectangles', () => {
+    expect(
+      getRenderedImageRect(
+        { width: 400, height: 400 },
+        { width: 800, height: 200 },
+        'scale-to-fill'
+      )
+    ).toEqual({ x: 0, y: 0, width: 400, height: 400 });
+
     expect(
       getRenderedImageRect(
         { width: 400, height: 400 },
@@ -29,14 +37,6 @@ describe('image cropper geometry', () => {
         'aspect-fill'
       )
     ).toEqual({ x: -600, y: 0, width: 1600, height: 400 });
-
-    expect(
-      getRenderedImageRect(
-        { width: 400, height: 400 },
-        { width: 120, height: 80 },
-        'scale-to-fit'
-      )
-    ).toEqual({ x: 140, y: 160, width: 120, height: 80 });
   });
 
   it('keeps fixed-aspect resizing inside the crop bounds', () => {
