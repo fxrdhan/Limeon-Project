@@ -1,7 +1,7 @@
 import { forwardRef, useRef, type CSSProperties } from 'react';
 import { TbChevronDown } from 'react-icons/tb';
 import { AnimatePresence, motion } from 'motion/react';
-import Dropdown from '@/components/dropdown';
+import Combobox from '@/components/combobox';
 import Checkbox from '@/components/checkbox';
 import FormField from '@/components/form-field';
 import {
@@ -134,7 +134,7 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
                 data-section-content="true"
               >
                 <FormField label="Status" required={true}>
-                  <Dropdown
+                  <Combobox
                     name="is_active"
                     tabIndex={18}
                     value={formData.is_active ? 'true' : 'false'}

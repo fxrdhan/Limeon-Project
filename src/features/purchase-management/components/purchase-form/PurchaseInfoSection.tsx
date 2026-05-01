@@ -1,7 +1,7 @@
 import React from 'react';
 import FormSection from '@/components/form-section';
 import Input from '@/components/input';
-import Dropdown from '@/components/dropdown';
+import Combobox from '@/components/combobox';
 import Calendar from '@/components/calendar';
 import DescriptiveTextarea from '@/components/descriptive-textarea';
 import type { CustomDateValueType } from '@/components/calendar/types';
@@ -70,7 +70,7 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
           <label className="block text-sm font-medium text-slate-700 mb-1">
             Supplier
           </label>
-          <Dropdown
+          <Combobox
             name="supplier_id"
             value={formData.supplier_id}
             onChange={value => handleDropdownChange('supplier_id', value)}
@@ -113,7 +113,7 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
           <label className="block text-sm font-medium text-slate-700 mb-1">
             Status Pembayaran
           </label>
-          <Dropdown
+          <Combobox
             name="payment_status"
             value={formData.payment_status}
             onChange={value => handleDropdownChange('payment_status', value)}
@@ -130,7 +130,7 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
           <label className="block text-sm font-medium text-slate-700 mb-1">
             Metode Pembayaran
           </label>
-          <Dropdown
+          <Combobox
             name="payment_method"
             value={formData.payment_method}
             onChange={value => handleDropdownChange('payment_method', value)}

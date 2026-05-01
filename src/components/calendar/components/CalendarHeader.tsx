@@ -1,6 +1,6 @@
 import React from 'react';
 import { TbChevronLeft, TbChevronRight } from 'react-icons/tb';
-import Dropdown from '@/components/dropdown';
+import Combobox from '@/components/combobox';
 import { MONTH_NAMES_ID } from '../constants';
 import type { CalendarHeaderProps } from '../types';
 
@@ -30,7 +30,7 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   return (
     <div className="calendar__header">
       <div className="calendar__header-controls">
-        <Dropdown
+        <Combobox
           mode="text"
           portalWidth="120px"
           position="bottom"
@@ -43,7 +43,7 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
           searchList={false}
         />
 
-        <Dropdown
+        <Combobox
           mode="text"
           portalWidth="100px"
           position="bottom"

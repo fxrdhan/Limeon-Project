@@ -1,39 +1,39 @@
 /**
- * Dropdown Configuration Factory System
+ * Combobox Configuration Factory System
  *
- * This factory eliminates massive duplication in dropdown configurations across forms,
- * particularly the 5 identical dropdowns in ItemBasicInfoForm (~25 lines each = 125 lines total).
+ * This factory eliminates massive duplication in combobox configurations across forms,
+ * particularly the 5 identical comboboxes in ItemBasicInfoForm (~25 lines each = 125 lines total).
  *
  * Replaces:
- * - Duplicate dropdown configurations in ItemBasicInfoForm
+ * - Duplicate combobox configurations in ItemBasicInfoForm
  * - Similar patterns in other form components
  * - Repetitive loading checks, validation props, hover details, etc.
  *
  * Benefits:
- * - Eliminates 100+ lines of duplicate dropdown configuration
- * - Consistent dropdown behavior across all forms
+ * - Eliminates 100+ lines of duplicate combobox configuration
+ * - Consistent combobox behavior across all forms
  * - Type-safe configuration system
  * - Easy to maintain and extend
- * - Centralized dropdown patterns
+ * - Centralized combobox patterns
  */
 
 import React from 'react';
-import Dropdown from '@/components/dropdown';
+import Combobox from '@/components/combobox';
 import Input from '@/components/input';
 import FormField from '@/components/form-field';
-import type { DropdownOption, HoverDetailData } from '@/types/components';
+import type { ComboboxOption, HoverDetailData } from '@/types/components';
 
-// Type-safe dropdown props
-type DropdownProps = React.ComponentProps<typeof Dropdown>;
+// Type-safe combobox props
+type ComboboxProps = React.ComponentProps<typeof Combobox>;
 
 // ============================================================================
 // CONFIGURATION TYPES
 // ============================================================================
 
 /**
- * Dropdown field configuration
+ * Combobox field configuration
  */
-export interface DropdownFieldConfig {
+export interface ComboboxFieldConfig {
   /** Field identifier */
   name: string;
 
@@ -72,21 +72,21 @@ export interface DropdownFieldConfig {
   /** CSS classes */
   className?: string;
 
-  /** Additional dropdown props */
-  dropdownProps?: Partial<
-    Omit<DropdownProps, 'name' | 'value' | 'onChange' | 'options'>
+  /** Additional combobox props */
+  comboboxProps?: Partial<
+    Omit<ComboboxProps, 'name' | 'value' | 'onChange' | 'options'>
   >;
 }
 
 /**
- * Smart dropdown props
+ * Smart combobox props
  */
-export interface SmartDropdownProps extends DropdownFieldConfig {
+export interface SmartComboboxProps extends ComboboxFieldConfig {
   /** Current value */
   value: string;
 
   /** Available options */
-  options: DropdownOption[];
+  options: ComboboxOption[];
 
   /** Loading state */
   loading: boolean;
@@ -102,16 +102,16 @@ export interface SmartDropdownProps extends DropdownFieldConfig {
 }
 
 // ============================================================================
-// SMART DROPDOWN COMPONENT
+// SMART COMBOBOX COMPONENT
 // ============================================================================
 
 /**
- * Smart dropdown component with built-in loading states and consistent configuration
+ * Smart combobox component with built-in loading states and consistent configuration
  *
  * Handles loading states, validation, hover details, and other common patterns
  * automatically based on configuration.
  */
-export function SmartDropdown({
+export function SmartCombobox({
   name,
   label,
   value,
@@ -125,11 +125,11 @@ export function SmartDropdown({
   showLoading = true,
   loadingMessage,
   className,
-  dropdownProps = {},
+  comboboxProps = {},
   onChange,
   onAddNew,
   onFetchHoverDetail,
-}: SmartDropdownProps) {
+}: SmartComboboxProps) {
   // Default validation configuration
   const validationConfig = {
     enabled: true,
@@ -158,7 +158,7 @@ export function SmartDropdown({
       {shouldShowLoading ? (
         <Input value={finalLoadingMessage} readOnly disabled />
       ) : (
-        <Dropdown
+        <Combobox
           name={name}
           tabIndex={tabIndex}
           value={value}
@@ -174,7 +174,7 @@ export function SmartDropdown({
           enableHoverDetail={hoverDetailConfig.enabled}
           hoverDetailDelay={hoverDetailConfig.delay}
           onFetchHoverDetail={onFetchHoverDetail}
-          {...dropdownProps}
+          {...comboboxProps}
         />
       )}
     </FormField>
@@ -182,14 +182,14 @@ export function SmartDropdown({
 }
 
 // ============================================================================
-// DROPDOWN CONFIGURATION PRESETS
+// COMBOBOX CONFIGURATION PRESETS
 // ============================================================================
 
 /**
- * Standard entity dropdown configuration
+ * Standard entity combobox configuration
  */
 // eslint-disable-next-line react-refresh/only-export-components
-export const ENTITY_DROPDOWN_CONFIG: Partial<DropdownFieldConfig> = {
+export const ENTITY_COMBOBOX_CONFIG: Partial<ComboboxFieldConfig> = {
   validation: {
     enabled: true,
     showOnBlur: true,
@@ -204,22 +204,22 @@ export const ENTITY_DROPDOWN_CONFIG: Partial<DropdownFieldConfig> = {
 };
 
 /**
- * Required entity dropdown configuration
+ * Required entity combobox configuration
  */
 // eslint-disable-next-line react-refresh/only-export-components
-export const REQUIRED_ENTITY_DROPDOWN_CONFIG: Partial<DropdownFieldConfig> = {
-  ...ENTITY_DROPDOWN_CONFIG,
+export const REQUIRED_ENTITY_COMBOBOX_CONFIG: Partial<ComboboxFieldConfig> = {
+  ...ENTITY_COMBOBOX_CONFIG,
   required: true,
 };
 
 // ============================================================================
-// SPECIALIZED DROPDOWN FACTORIES
+// SPECIALIZED COMBOBOX FACTORIES
 // ============================================================================
 
 /**
- * Entity dropdown factory for common item management entities
+ * Entity combobox factory for common item management entities
  */
-export interface EntityDropdownProps {
+export interface EntityComboboxProps {
   entityType:
     | 'categories'
     | 'types'
@@ -228,7 +228,7 @@ export interface EntityDropdownProps {
     | 'dosages'
     | 'manufacturers';
   value: string;
-  options: DropdownOption[];
+  options: ComboboxOption[];
   loading: boolean;
   tabIndex?: number;
   required?: boolean;
@@ -239,9 +239,9 @@ export interface EntityDropdownProps {
 }
 
 /**
- * Entity dropdown configurations
+ * Entity combobox configurations
  */
-const ENTITY_DROPDOWN_CONFIGS = {
+const ENTITY_COMBOBOX_CONFIGS = {
   categories: {
     name: 'category_id',
     label: 'Kategori',
@@ -275,11 +275,11 @@ const ENTITY_DROPDOWN_CONFIGS = {
 } as const;
 
 /**
- * Factory function to create entity dropdowns with consistent configuration
+ * Factory function to create entity comboboxes with consistent configuration
  *
- * Eliminates the need to repeat dropdown configuration across multiple forms.
+ * Eliminates the need to repeat combobox configuration across multiple forms.
  */
-export function EntityDropdown({
+export function EntityCombobox({
   entityType,
   value,
   options,
@@ -290,13 +290,13 @@ export function EntityDropdown({
   onAddNew,
   onFetchHoverDetail,
   className,
-}: EntityDropdownProps) {
-  const config = ENTITY_DROPDOWN_CONFIGS[entityType];
+}: EntityComboboxProps) {
+  const config = ENTITY_COMBOBOX_CONFIGS[entityType];
 
   return (
-    <SmartDropdown
+    <SmartCombobox
       {...config}
-      {...ENTITY_DROPDOWN_CONFIG}
+      {...ENTITY_COMBOBOX_CONFIG}
       value={value}
       options={options}
       loading={loading}
@@ -311,31 +311,31 @@ export function EntityDropdown({
 }
 
 // ============================================================================
-// BATCH DROPDOWN UTILITIES
+// BATCH COMBOBOX UTILITIES
 // ============================================================================
 
 /**
- * Props for batch dropdown management
+ * Props for batch combobox management
  */
-export interface BatchDropdownProps {
+export interface BatchComboboxProps {
   /** Form data containing all field values */
   formData: Record<string, string>;
 
-  /** All dropdown options */
+  /** All combobox options */
   options: {
-    categories: DropdownOption[];
-    types: DropdownOption[];
-    packages: DropdownOption[];
-    units: DropdownOption[];
-    dosages: DropdownOption[];
-    manufacturers: DropdownOption[];
+    categories: ComboboxOption[];
+    types: ComboboxOption[];
+    packages: ComboboxOption[];
+    units: ComboboxOption[];
+    dosages: ComboboxOption[];
+    manufacturers: ComboboxOption[];
   };
 
   /** Loading states */
   loading: boolean;
 
-  /** Change handler for all dropdowns */
-  onDropdownChange: (field: string, value: string) => void;
+  /** Change handler for all comboboxes */
+  onComboboxChange: (field: string, value: string) => void;
 
   /** Add new handlers */
   onAddNew: {
@@ -362,21 +362,21 @@ export interface BatchDropdownProps {
 }
 
 /**
- * Batch entity dropdown renderer
+ * Batch entity combobox renderer
  *
- * Renders multiple entity dropdowns with consistent configuration and automatic tab indexing.
- * Replaces the massive dropdown duplication in forms like ItemBasicInfoForm.
+ * Renders multiple entity comboboxes with consistent configuration and automatic tab indexing.
+ * Replaces the massive combobox duplication in forms like ItemBasicInfoForm.
  */
-export function BatchEntityDropdowns({
+export function BatchEntityComboboxes({
   formData,
   options,
   loading,
-  onDropdownChange,
+  onComboboxChange,
   onAddNew,
   hoverDetailFetchers,
   startingTabIndex = 1,
-}: BatchDropdownProps) {
-  const entityTypes: Array<keyof typeof ENTITY_DROPDOWN_CONFIGS> = [
+}: BatchComboboxProps) {
+  const entityTypes: Array<keyof typeof ENTITY_COMBOBOX_CONFIGS> = [
     'categories',
     'types',
     'packages',
@@ -388,11 +388,11 @@ export function BatchEntityDropdowns({
   return (
     <>
       {entityTypes.map((entityType, index) => {
-        const config = ENTITY_DROPDOWN_CONFIGS[entityType];
+        const config = ENTITY_COMBOBOX_CONFIGS[entityType];
         const fieldName = config.name as keyof typeof formData;
 
         return (
-          <EntityDropdown
+          <EntityCombobox
             key={entityType}
             entityType={entityType}
             value={formData[fieldName] || ''}
@@ -400,7 +400,7 @@ export function BatchEntityDropdowns({
             loading={loading}
             tabIndex={startingTabIndex + index}
             required={true}
-            onChange={value => onDropdownChange(fieldName, value)}
+            onChange={value => onComboboxChange(fieldName, value)}
             onAddNew={onAddNew[entityType]}
             onFetchHoverDetail={hoverDetailFetchers[entityType]}
           />

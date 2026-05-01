@@ -1,6 +1,6 @@
 import { forwardRef, useMemo, useEffect, useRef, useState } from 'react';
 import Input from '@/components/input';
-import Dropdown from '@/components/dropdown';
+import Combobox from '@/components/combobox';
 import FormField from '@/components/form-field';
 import { itemNameSchema } from '@/schemas/manual/itemValidation';
 import type { DropdownOption } from '@/types/components';
@@ -220,7 +220,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
             </FormField>
 
             <FormField label="Tipe Produk" required={true}>
-              <Dropdown
+              <Combobox
                 name="is_medicine"
                 tabIndex={2}
                 value={formData.is_medicine ? 'obat' : 'non-obat'}
@@ -246,7 +246,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
               {loading && manufacturers.length === 0 ? (
                 <Input value="Memuat produsen..." readOnly disabled />
               ) : (
-                <Dropdown
+                <Combobox
                   name="manufacturer_id"
                   tabIndex={3}
                   value={formData.manufacturer_id}
@@ -277,7 +277,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
               {loading && categories.length === 0 ? (
                 <Input value="Memuat kategori..." readOnly disabled />
               ) : (
-                <Dropdown
+                <Combobox
                   name="category_id"
                   tabIndex={4}
                   value={formData.category_id}
@@ -308,7 +308,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
               {loading && types.length === 0 ? (
                 <Input value="Memuat jenis..." readOnly disabled />
               ) : (
-                <Dropdown
+                <Combobox
                   name="type_id"
                   tabIndex={5}
                   value={formData.type_id}
@@ -339,7 +339,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
               {loading && packages.length === 0 ? (
                 <Input value="Memuat kemasan..." readOnly disabled />
               ) : (
-                <Dropdown
+                <Combobox
                   name="package_id"
                   tabIndex={6}
                   value={formData.package_id}
@@ -370,7 +370,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
               {loading && dosages.length === 0 ? (
                 <Input value="Memuat sediaan..." readOnly disabled />
               ) : (
-                <Dropdown
+                <Combobox
                   name="dosage_id"
                   tabIndex={7}
                   value={formData.dosage_id}
