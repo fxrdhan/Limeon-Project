@@ -186,6 +186,29 @@ describe('Combobox', () => {
     expect(screen.getByRole('button', { name: /Beta/ })).not.toBeNull();
   });
 
+  it('closes on Tab without blocking browser focus navigation', () => {
+    render(<KeyboardComboboxHarness />);
+
+    const trigger = screen.getByRole('button', { name: /Alpha/ });
+    act(() => {
+      fireEvent.click(trigger);
+      trigger.focus();
+      vi.advanceTimersByTime(200);
+    });
+
+    const wasNotPrevented = fireEvent.keyDown(trigger, {
+      key: 'Tab',
+      code: 'Tab',
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(150);
+    });
+
+    expect(wasNotPrevented).toBe(true);
+    expect(screen.queryByRole('listbox')).toBeNull();
+  });
+
   it('routes printable trigger key presses to the search input when open', () => {
     render(<ComboboxHarness />);
 

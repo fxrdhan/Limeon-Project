@@ -117,4 +117,46 @@ describe('useKeyboardNavigation', () => {
     expect(result.current.highlightedIndex).toBe(6);
     expect(result.current.pendingHighlightedIndex).toBeNull();
   });
+
+  it('closes the combobox on Tab without preventing default focus navigation', () => {
+    const optionsContainerRef = { current: document.createElement('div') };
+    const onCloseCombobox = vi.fn();
+    const setExpandedId = vi.fn();
+    const preventDefault = vi.fn();
+
+    const { result } = renderHook(() =>
+      useKeyboardNavigation({
+        isOpen: true,
+        value: 'alpha',
+        currentFilteredOptions: [
+          { id: 'alpha', name: 'Alpha' },
+          { id: 'beta', name: 'Beta' },
+        ],
+        setExpandedId,
+        searchState: 'idle',
+        searchTerm: '',
+        debouncedSearchTerm: '',
+        onSelect: vi.fn(),
+        onCloseCombobox,
+        onCloseValidation: vi.fn(),
+        autoHighlightOnOpen: false,
+        optionsContainerRef,
+      })
+    );
+
+    act(() => {
+      result.current.handleComboboxKeyDown({
+        key: 'Tab',
+        preventDefault,
+        shiftKey: false,
+        ctrlKey: false,
+        metaKey: false,
+        altKey: false,
+      } as never);
+    });
+
+    expect(preventDefault).not.toHaveBeenCalled();
+    expect(onCloseCombobox).toHaveBeenCalledTimes(1);
+    expect(setExpandedId).toHaveBeenLastCalledWith(null);
+  });
 });

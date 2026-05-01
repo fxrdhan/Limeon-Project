@@ -285,16 +285,20 @@ export const useKeyboardNavigation = ({
     (e: React.KeyboardEvent<HTMLElement>) => {
       if (!isOpen) return;
 
+      if (e.key === KEYBOARD_KEYS.TAB) {
+        clearPendingHighlight();
+        onCloseCombobox();
+        setExpandedId(null);
+        setIsKeyboardNavigation(false);
+        return;
+      }
+
       const items = currentFilteredOptions;
       if (
         !items.length &&
-        !(
-          [
-            KEYBOARD_KEYS.ESCAPE,
-            KEYBOARD_KEYS.TAB,
-            KEYBOARD_KEYS.ENTER,
-          ] as string[]
-        ).includes(e.key)
+        !([KEYBOARD_KEYS.ESCAPE, KEYBOARD_KEYS.ENTER] as string[]).includes(
+          e.key
+        )
       )
         return;
 
@@ -316,17 +320,6 @@ export const useKeyboardNavigation = ({
           newIndex = items.length
             ? (navigationBaseIndex - 1 + items.length) % items.length
             : -1;
-        },
-        [KEYBOARD_KEYS.TAB]: () => {
-          if (items.length) {
-            newIndex = e.shiftKey
-              ? navigationBaseIndex <= 0
-                ? items.length - 1
-                : navigationBaseIndex - 1
-              : navigationBaseIndex >= items.length - 1
-                ? 0
-                : navigationBaseIndex + 1;
-          }
         },
         [KEYBOARD_KEYS.PAGE_DOWN]: () => {
           if (items.length) {
