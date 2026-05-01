@@ -8,6 +8,7 @@ import React, {
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useAnimationControls } from 'motion/react';
 import Badge from '@/components/badge';
+import { cn } from '@/lib/utils';
 import type { HoverDetailData } from '@/types';
 
 interface HoverDetailPortalProps {
@@ -115,7 +116,12 @@ const HoverDetailContent = ({ data }: { data: HoverDetailData }) => {
 
   return (
     <div className="pointer-events-auto max-h-[calc(100vh-24px)] overflow-y-auto">
-      <div className="mb-3 flex items-start justify-between gap-3">
+      <div
+        className={cn(
+          'flex items-start justify-between gap-3',
+          data.description && 'mb-3'
+        )}
+      >
         <div className="flex min-w-0 items-center gap-2">
           {data.code && (
             <Badge variant="success" size="sm" className="rounded-md">
@@ -138,23 +144,10 @@ const HoverDetailContent = ({ data }: { data: HoverDetailData }) => {
       </div>
 
       {data.description && (
-        <div className="mb-3">
+        <div>
           <p className="whitespace-normal break-words text-sm text-slate-600 leading-relaxed">
             {data.description}
           </p>
-        </div>
-      )}
-
-      {data.updated_at && (
-        <div className="border-t border-slate-100 pt-2">
-          <div className="text-xs text-slate-500">
-            <div className="flex justify-between">
-              <span>Updated:</span>
-              <span className="ml-2">
-                {new Date(data.updated_at).toLocaleDateString('id-ID')}
-              </span>
-            </div>
-          </div>
         </div>
       )}
     </div>
@@ -294,12 +287,12 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
   );
 
   return createPortal(
-    <>
+    <div className="pointer-events-none fixed inset-0 z-[9999] overflow-hidden">
       {data && (
         <div
           ref={popupSizerRef}
           aria-hidden
-          className={`${hoverDetailSurfaceClassName} pointer-events-none fixed left-0 top-0 -z-10 opacity-0`}
+          className={`${hoverDetailSurfaceClassName} pointer-events-none absolute left-0 top-0 opacity-0`}
         >
           <HoverDetailContent data={data} />
         </div>
@@ -316,10 +309,9 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
             key="hover-detail-portal"
             className={hoverDetailSurfaceClassName}
             style={{
-              position: 'fixed',
+              position: 'absolute',
               left: 0,
               top: 0,
-              zIndex: 9999,
               overflow: 'hidden',
               visibility: isPlacementReady ? 'visible' : 'hidden',
               transformOrigin:
@@ -355,7 +347,7 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
           </motion.div>
         )}
       </AnimatePresence>
-    </>,
+    </div>,
     document.body
   );
 };
