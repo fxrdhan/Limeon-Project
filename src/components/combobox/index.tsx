@@ -759,12 +759,3 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
 }
 
 export default Combobox;
-export { Combobox as ComboboxRoot };
-export {
-  ComboboxButton as ComboboxTrigger,
-  ComboboxMenu as ComboboxContent,
-  HoverDetailPortal as ComboboxHoverDetail,
-};
-export { default as ComboboxSearch } from './components/SearchBar';
-export { default as ComboboxItem } from './components/OptionItem';
-export { ComboboxProvider } from './providers/ComboboxContext';

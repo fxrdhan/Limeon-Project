@@ -16,7 +16,7 @@ import FormField from '@/components/form-field';
 import Button from '@/components/button';
 import { formatRupiah } from '@/lib/formatters';
 import type { CustomerLevel } from '@/types/database';
-import type { DropdownOption } from '@/types/components';
+import type { ComboboxOption } from '@/types/components';
 import {
   COLLAPSIBLE_SECTION_HEADER_CLASS,
   POPOVER_SURFACE_CLASS,
@@ -42,7 +42,7 @@ interface ItemPricingFormProps {
   displaySellPrice: string;
   baseUnitId: string;
   baseUnit: string;
-  baseUnitOptions: DropdownOption[];
+  baseUnitOptions: ComboboxOption[];
   marginEditing: {
     isEditing: boolean;
     percentage: string;

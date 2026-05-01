@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { Category, Item } from './database';
 
 // Component props and UI-related types
-export interface DropdownOption {
+export interface ComboboxOption {
   id: string;
   name: string;
   code?: string;
@@ -24,61 +24,10 @@ export interface HoverDetailData {
   updated_at?: string | null;
 }
 
-export type DropdownMode = 'input' | 'text';
-export type DropdownPortalWidth = string | number;
-export type DropdownPosition = 'auto' | 'top' | 'bottom' | 'left';
-export type DropdownAlign = 'left' | 'right';
-
-export type ComboboxOption = DropdownOption;
-export type ComboboxMode = DropdownMode;
-export type ComboboxPortalWidth = DropdownPortalWidth;
-export type ComboboxPosition = DropdownPosition;
-export type ComboboxAlign = DropdownAlign;
-
-// Base dropdown props for single selection
-export interface DropdownProps {
-  mode?: DropdownMode;
-  options: DropdownOption[];
-  value: string;
-  tabIndex?: number;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  name: string;
-  required?: boolean;
-  disabled?: boolean;
-  onAddNew?: (searchTerm?: string) => void;
-  persistOpen?: boolean;
-  onPersistOpenClear?: () => void;
-  freezePersistedMenu?: boolean;
-  withRadio?: boolean;
-  searchList?: boolean;
-  autoScrollOnOpen?: boolean;
-  validate?: boolean;
-  showValidationOnBlur?: boolean;
-  validationAutoHide?: boolean;
-  validationAutoHideDelay?: number;
-  hoverToOpen?: boolean;
-  // Portal width control
-  portalWidth?: DropdownPortalWidth;
-  // Position control
-  position?: DropdownPosition;
-  // Alignment control
-  align?: DropdownAlign;
-  // Hover detail functionality
-  enableHoverDetail?: boolean;
-  hoverDetailDelay?: number;
-  onFetchHoverDetail?: (optionId: string) => Promise<HoverDetailData | null>;
-}
-
-// Extended dropdown props for checkbox mode (multiple selection)
-export interface CheckboxDropdownProps extends Omit<
-  DropdownProps,
-  'value' | 'onChange' | 'withRadio'
-> {
-  value: string[];
-  onChange: (value: string[]) => void;
-  withCheckbox: true;
-}
+export type ComboboxMode = 'input' | 'text';
+export type ComboboxPortalWidth = string | number;
+export type ComboboxPosition = 'auto' | 'top' | 'bottom' | 'left';
+export type ComboboxAlign = 'left' | 'right';
 
 export interface ComboboxProps {
   mode?: ComboboxMode;

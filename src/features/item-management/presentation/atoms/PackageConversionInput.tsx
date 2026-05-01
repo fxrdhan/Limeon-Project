@@ -3,7 +3,7 @@ import { TbArrowBack } from 'react-icons/tb';
 import Combobox from '@/components/combobox';
 import FormField from '@/components/form-field';
 import Input from '@/components/input';
-import type { DropdownOption } from '@/types/components';
+import type { ComboboxOption } from '@/types/components';
 import type { PackageConversionLogicFormData } from '../../shared/types';
 import type { ItemInventoryUnit } from '@/types/database';
 import { getInventoryUnitMetaLabel } from '@/lib/item-units';
@@ -12,8 +12,8 @@ interface LocalPackageConversionInputProps {
   baseUnit: string;
   baseUnitId: string;
   availableUnits: ItemInventoryUnit[];
-  baseUnitOption?: DropdownOption | null;
-  existingUnits: DropdownOption[];
+  baseUnitOption?: ComboboxOption | null;
+  existingUnits: ComboboxOption[];
   formData: PackageConversionLogicFormData;
   onFormDataChange: (data: PackageConversionLogicFormData) => void;
   onAddConversion: () => void;
@@ -88,7 +88,7 @@ export default function PackageConversionInput({
             description: baseUnitOption?.description,
             updated_at: baseUnitOption?.updated_at,
             metaLabel: 'Unit Dasar',
-          } satisfies DropdownOption,
+          } satisfies ComboboxOption,
         ]
       : []),
     ...existingUnits.filter(unit => unit.id !== formData.inventory_unit_id),

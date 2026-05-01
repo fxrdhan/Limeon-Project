@@ -3,7 +3,7 @@ import Input from '@/components/input';
 import Combobox from '@/components/combobox';
 import FormField from '@/components/form-field';
 import { itemNameSchema } from '@/schemas/manual/itemValidation';
-import type { DropdownOption } from '@/types/components';
+import type { ComboboxOption } from '@/types/components';
 import {
   SECTION_HEADER_CLASS,
   SURFACE_CARD_CLASS,
@@ -32,11 +32,11 @@ interface ItemBasicInfoFormProps {
     package_id: string;
     dosage_id: string;
   };
-  categories: DropdownOption[];
-  types: DropdownOption[];
-  packages: DropdownOption[];
-  dosages: DropdownOption[];
-  manufacturers: DropdownOption[];
+  categories: ComboboxOption[];
+  types: ComboboxOption[];
+  packages: ComboboxOption[];
+  dosages: ComboboxOption[];
+  manufacturers: ComboboxOption[];
   loading: boolean;
   disabled?: boolean;
   onDisplayNameChange: (value: string) => void;

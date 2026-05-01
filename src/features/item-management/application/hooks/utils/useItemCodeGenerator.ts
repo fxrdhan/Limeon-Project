@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { DropdownOption } from '@/types/components';
+import type { ComboboxOption } from '@/types/components';
 
 interface UseItemCodeGeneratorProps {
   categoryId: string;
@@ -7,11 +7,11 @@ interface UseItemCodeGeneratorProps {
   packageId: string;
   dosageId: string;
   manufacturerId: string;
-  categories: DropdownOption[];
-  types: DropdownOption[];
-  packages: DropdownOption[];
-  dosages: DropdownOption[];
-  manufacturers: DropdownOption[];
+  categories: ComboboxOption[];
+  types: ComboboxOption[];
+  packages: ComboboxOption[];
+  dosages: ComboboxOption[];
+  manufacturers: ComboboxOption[];
 }
 
 interface CodeGenerationResult {
