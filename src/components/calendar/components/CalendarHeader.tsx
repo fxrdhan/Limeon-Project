@@ -63,7 +63,7 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
           className="calendar__nav-button"
           aria-label="Previous month"
         >
-          <TbChevronLeft size={12} />
+          <TbChevronLeft aria-hidden="true" className="h-5 w-5" />
         </button>
 
         <button
@@ -71,7 +71,7 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
           className="calendar__nav-button"
           aria-label="Next month"
         >
-          <TbChevronRight size={12} />
+          <TbChevronRight aria-hidden="true" className="h-5 w-5" />
         </button>
       </div>
     </div>
