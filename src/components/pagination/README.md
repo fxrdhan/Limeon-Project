@@ -31,6 +31,7 @@ Modular component design allows for flexible UI composition:
 - `PaginationContent`: Main content wrapper
 - `FloatingWrapper`: Floating pagination container
 - `PageSizeSelector`: Items per page selector
+- `PageNavigationControl`: Page navigation surface
 - `PaginationButton`: Navigation buttons
 - `CurrentPageDisplay`: Current page indicator
 
@@ -135,26 +136,24 @@ Mathematical helpers for pagination calculations:
 
 ## Component Dependencies
 
-### SlidingSelector Integration
-
-The pagination component leverages the shared `SlidingSelector` component for its page size selection functionality:
+### Page Size Selector
 
 #### Architecture Relationship
 
 ```typescript
-PageSizeSelector → SlidingSelector (shared/SlidingSelector)
+PaginationContent → PageSizeSelector
+PaginationContent → PageNavigationControl
 ```
 
 #### Implementation Details
 
-- **Base Component**: `SlidingSelector` provides the animated UI foundation with Framer Motion
-- **Adapter Pattern**: `PageSizeSelector` acts as an adapter, converting pagination-specific data to `SlidingSelectorOption` format
-- **Configuration Mapping**:
+- **Pagination-owned UI**: `PageSizeSelector` implements its own pill expand/collapse behavior instead of sharing tab navigation components
+- **Separate Controls**: `PageSizeSelector` and `PageNavigationControl` each consume pagination context directly
+- **Interaction Model**: Desktop expands on hover and collapses on mouse leave; touch devices expand/collapse by click
+- **Label Mapping**:
   ```typescript
-  // Pagination pageSizes: [25, 50, 100, -1]
-  // Transforms to SlidingSelector options:
+  // pageSizes: [25, 50, 100, -1]
   {
-    key: "25",
     value: 25,
     defaultLabel: "25",
     activeLabel: "25 items"
@@ -163,17 +162,14 @@ PageSizeSelector → SlidingSelector (shared/SlidingSelector)
 
 #### Shared Features Utilized
 
-- **Smooth Animations**: Spring physics animations via Framer Motion's `layoutId`
-- **Layout Animations**: Seamless transitions between size options
-- **Visual Variants**: Uses `selector` variant with `pill` shape
-- **Dual Context Support**: Different `layoutId` for static vs floating mode
+- **Pagination State**: Uses the pagination context's `itemsPerPage` and page-size callback
+- **Surface Styling**: Uses the shared white surface and `shadow-surface-thin` token
 
-#### Benefits of Integration
+#### Benefits of Separation
 
-- **Code Reusability**: Leverages battle-tested UI component across the application
-- **Consistent UX**: Maintains consistent interaction patterns across different UI contexts
-- **Performance**: Optimized animations and state management from shared component
-- **Maintainability**: Single source of truth for sliding selector behavior
+- **Clear Ownership**: Pagination behavior is not coupled to tab/navigation behavior
+- **Safer Iteration**: Page-size animation changes do not affect item-master tabs
+- **Focused UX**: Pagination can use hover/touch rules specific to compact controls
 
 ## Features
 

@@ -17,13 +17,6 @@ export interface PaginationButtonProps {
   ariaLabel: string;
 }
 
-export interface PageSizeSelectorProps {
-  pageSizes: number[];
-  currentSize: number;
-  onSizeChange: (size: number, event: React.MouseEvent) => void;
-  isFloating?: boolean;
-}
-
 export interface CurrentPageDisplayProps {
   currentPage: number;
   direction: number;

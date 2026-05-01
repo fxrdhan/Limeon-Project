@@ -2,46 +2,20 @@ import React from 'react';
 import classNames from 'classnames';
 import { usePaginationContext } from '../hooks';
 import { PageSizeSelector } from './PageSizeSelector';
-import { PaginationButton } from './PaginationButton';
-import { CurrentPageDisplay } from './CurrentPageDisplay';
+import { PageNavigationControl } from './PageNavigationControl';
 import { PAGINATION_CONSTANTS } from '../constants';
 import type { PaginationContentProps } from '../types';
 
 export const PaginationContent: React.FC<PaginationContentProps> = ({
   isFloating = false,
 }) => {
-  const {
-    currentPage,
-    totalPages,
-    itemsPerPage,
-    onPageChange,
-    handleItemsPerPageClick,
-    direction,
-    className,
-    pageSizes,
-  } = usePaginationContext();
-
-  const handlePrevClick = (event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    if (currentPage > 1) {
-      onPageChange(currentPage - 1);
-    }
-  };
-
-  const handleNextClick = (event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    if (currentPage < totalPages && totalPages !== 0) {
-      onPageChange(currentPage + 1);
-    }
-  };
+  const { className } = usePaginationContext();
 
   return (
     <div
       className={classNames(
         'flex justify-between items-center gap-4 select-none',
-        isFloating ? 'rounded-full shadow-2xl p-4 relative' : 'mt-4',
+        isFloating ? 'rounded-full shadow-surface-thin p-4 relative' : 'mt-4',
         !isFloating && className
       )}
       style={
@@ -57,34 +31,8 @@ export const PaginationContent: React.FC<PaginationContentProps> = ({
           : undefined
       }
     >
-      <PageSizeSelector
-        pageSizes={pageSizes}
-        currentSize={itemsPerPage}
-        onSizeChange={handleItemsPerPageClick}
-        isFloating={isFloating}
-      />
-
-      <div className="flex items-center rounded-full bg-zinc-100 p-1 shadow-md text-slate-700 overflow-hidden select-none">
-        <PaginationButton
-          direction="prev"
-          disabled={currentPage === 1}
-          onClick={handlePrevClick}
-          ariaLabel={PAGINATION_CONSTANTS.ARIA_LABELS.PREVIOUS_PAGE}
-        />
-
-        <CurrentPageDisplay
-          currentPage={currentPage}
-          direction={direction}
-          isFloating={isFloating}
-        />
-
-        <PaginationButton
-          direction="next"
-          disabled={currentPage === totalPages || totalPages === 0}
-          onClick={handleNextClick}
-          ariaLabel={PAGINATION_CONSTANTS.ARIA_LABELS.NEXT_PAGE}
-        />
-      </div>
+      <PageSizeSelector />
+      <PageNavigationControl isFloating={isFloating} />
     </div>
   );
 };

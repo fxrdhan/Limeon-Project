@@ -66,15 +66,15 @@ const DIRECT_DROPDOWN_TRANSITION = {
   ease: 'easeOut',
 } as const;
 
-const CHEVRON_ROTATE_TRANSITION = {
-  duration: 0.28,
-  ease: 'easeInOut',
-} as const;
-
 const CHEVRON_EXIT_TRANSITION = {
   duration: 0.18,
   delay: 0.28,
   ease: 'easeOut',
+} as const;
+
+const CHEVRON_ROTATE_TRANSITION = {
+  duration: 0.28,
+  ease: 'easeInOut',
 } as const;
 
 const ACTIVE_FILL_DELAYED_TRANSITION = {
@@ -658,6 +658,30 @@ export const SlidingSelector = <T,>({
     </div>
   );
 
+  const renderVerticalOptionList = () => (
+    <motion.div
+      aria-hidden={!isExpanded}
+      animate={{
+        height: isExpanded ? 'auto' : 0,
+        opacity: isExpanded ? 1 : 0,
+      }}
+      className={classNames(
+        'scrollbar-hide inline-flex max-h-[calc(100vh-10rem)] flex-col items-stretch overflow-y-auto overscroll-contain',
+        {
+          'pointer-events-none': !isExpanded,
+        }
+      )}
+      initial={false}
+      transition={DIRECT_DROPDOWN_TRANSITION}
+    >
+      <AnimatePresence initial={false} mode="popLayout">
+        {options.map((option, index) =>
+          option.key === activeKey ? null : renderOption(option, index, true)
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+
   if (collapsible && expandDirection === 'vertical') {
     return (
       <LayoutGroup id={layoutId || `sliding-selector-${variant}`}>
@@ -676,7 +700,7 @@ export const SlidingSelector = <T,>({
           <div
             aria-hidden="true"
             className={classNames(
-              'invisible inline-flex items-center bg-zinc-100 shadow-md text-slate-700 overflow-hidden w-fit',
+              'invisible inline-flex items-center bg-white shadow-surface-thin text-slate-700 overflow-hidden w-fit',
               sizeClasses.container,
               shapeClasses.container
             )}
@@ -687,7 +711,7 @@ export const SlidingSelector = <T,>({
           <motion.div
             layout
             className={classNames(
-              'absolute left-0 top-0 inline-flex max-w-[calc(100vw-3rem)] origin-top flex-col bg-zinc-100 shadow-md text-slate-700 overflow-hidden w-fit',
+              'absolute left-0 top-0 inline-flex max-w-[calc(100vw-3rem)] origin-top flex-col bg-white shadow-surface-thin text-slate-700 overflow-hidden w-fit',
               sizeClasses.container,
               shapeClasses.container
             )}
@@ -711,29 +735,7 @@ export const SlidingSelector = <T,>({
               {renderCollapsedContent()}
             </motion.div>
 
-            <motion.div
-              aria-hidden={!isExpanded}
-              animate={{
-                height: isExpanded ? 'auto' : 0,
-                opacity: isExpanded ? 1 : 0,
-              }}
-              className={classNames(
-                'scrollbar-hide inline-flex max-h-[calc(100vh-10rem)] flex-col items-stretch overflow-y-auto overscroll-contain',
-                {
-                  'pointer-events-none': !isExpanded,
-                }
-              )}
-              initial={false}
-              transition={DIRECT_DROPDOWN_TRANSITION}
-            >
-              <AnimatePresence initial={false} mode="popLayout">
-                {options.map((option, index) =>
-                  option.key === activeKey
-                    ? null
-                    : renderOption(option, index, true)
-                )}
-              </AnimatePresence>
-            </motion.div>
+            {renderVerticalOptionList()}
           </motion.div>
         </div>
       </LayoutGroup>
@@ -748,7 +750,7 @@ export const SlidingSelector = <T,>({
         role="tablist"
         aria-label="Navigation tabs"
         className={classNames(
-          'bg-zinc-100 shadow-md text-slate-700 overflow-hidden select-none relative w-fit',
+          'bg-white shadow-surface-thin text-slate-700 overflow-hidden select-none relative w-fit',
           isVerticalExpanded
             ? 'inline-flex max-h-[calc(100vh-7rem)] max-w-[calc(100vw-3rem)] flex-col items-stretch overflow-y-auto overscroll-contain'
             : 'inline-flex items-center',
