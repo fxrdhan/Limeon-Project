@@ -40,6 +40,7 @@ coverage
 # AI project instructions
 CLAUDE.md
 .agent/
+docs/
 
 # supabase generated artifacts
 supabase/.temp/
