@@ -16,7 +16,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   className = '',
   disabled = false,
   tabIndex,
-  loadingIcon = <ClipLoader color="#ffffff" size={20} loading={true} />,
+  loadingIcon = <ClipLoader color="oklch(100% 0 0)" size={20} loading={true} />,
   shape = 'full',
   interaction = 'menu',
   popupTrigger = 'hover',

@@ -21,18 +21,18 @@
 }
 
 .scrollbar-gutter-stable::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: oklch(86.9% 0.02 252.9);
   border-radius: 4px;
 }
 
 .scrollbar-gutter-stable::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: oklch(71.1% 0.035 256.8);
 }
 
 /* Firefox scrollbar styling */
 .scrollbar-gutter-stable {
   scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
+  scrollbar-color: oklch(86.9% 0.02 252.9) transparent;
 }
 
 /* Hide scrollbar for history list only */

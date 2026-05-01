@@ -54,10 +54,10 @@ const ChatSidebarPanel = memo(
           }}
           toastOptions={{
             style: {
-              boxShadow: '0 10px 30px -12px rgba(0, 0, 0, 0.35)',
-              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-              border: '1px solid rgba(226, 232, 240, 1)',
-              color: '#0f172a',
+              boxShadow: '0 10px 30px -12px oklch(0% 0 0 / 0.35)',
+              backgroundColor: 'oklch(100% 0 0 / 0.95)',
+              border: '1px solid oklch(92.9% 0.013 255.5)',
+              color: 'oklch(20.8% 0.04 265.8)',
             },
             success: {
               style: {

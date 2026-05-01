@@ -257,7 +257,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
 
   // Glow effect - red for invalid/shaking, otherwise badge type color
   const errorGlow =
-    'shadow-[0_0_12px_rgba(244,63,94,0.5),0_0_24px_rgba(244,63,94,0.3)]';
+    'shadow-[0_0_12px_oklch(64.5%_0.215_16.4_/_0.5),0_0_24px_oklch(64.5%_0.215_16.4_/_0.3)]';
   const selectedClass =
     isShaking || hasInvalidValue
       ? errorGlow

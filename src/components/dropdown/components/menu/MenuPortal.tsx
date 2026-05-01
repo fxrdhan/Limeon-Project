@@ -45,7 +45,7 @@ const MenuPortal = forwardRef<HTMLDivElement, MenuPortalProps>(
               ...portalStyle,
               ...(dropDirection === 'up' && {
                 boxShadow:
-                  '0 -20px 25px -5px rgba(0, 0, 0, 0.1), 0 -10px 10px -5px rgba(0, 0, 0, 0.04)',
+                  '0 -20px 25px -5px oklch(0% 0 0 / 0.1), 0 -10px 10px -5px oklch(0% 0 0 / 0.04)',
               }),
             }}
             className={`

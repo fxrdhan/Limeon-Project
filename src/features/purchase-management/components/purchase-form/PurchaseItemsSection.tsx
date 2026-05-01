@@ -438,7 +438,7 @@ const PurchaseItemsSection: React.FC<PurchaseItemsSectionProps> = ({
         columnDefs={columnDefs}
         disableFiltering={true}
         suppressMovableColumns={true}
-        overlayNoRowsTemplate="<span style='padding: 10px; color: #64748b;'>Belum ada item ditambahkan</span>"
+        overlayNoRowsTemplate="<span style='padding: 10px; color: oklch(55.4% 0.041 257.4);'>Belum ada item ditambahkan</span>"
         domLayout="normal"
         getRowId={params => params.data?.id}
         rowClass=""

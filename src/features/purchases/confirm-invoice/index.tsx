@@ -332,7 +332,7 @@ const ConfirmInvoicePage = () => {
                 columnDefs={productColumnDefs}
                 disableFiltering={true}
                 suppressMovableColumns={true}
-                overlayNoRowsTemplate="<span style='padding: 10px; color: #64748b;'>Tidak ada produk di faktur ini</span>"
+                overlayNoRowsTemplate="<span style='padding: 10px; color: oklch(55.4% 0.041 257.4);'>Tidak ada produk di faktur ini</span>"
                 domLayout="normal"
                 getRowId={params => params.data?.gridId}
                 style={{

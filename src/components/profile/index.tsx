@@ -25,11 +25,11 @@ const Profile = () => {
     user?.profilephoto ?? user?.profilephoto_thumb ?? null;
 
   const glowShadows = [
-    '0 0 15px rgba(99, 102, 241, 0.7), 0 0 30px rgba(99, 102, 241, 0.5), 0 0 45px rgba(99, 102, 241, 0.3)',
-    '0 0 20px rgba(245, 158, 11, 0.8), 0 0 40px rgba(239, 68, 68, 0.6), 0 0 60px rgba(236, 72, 153, 0.4)',
-    '0 0 18px rgba(16, 185, 129, 0.8), 0 0 35px rgba(6, 182, 212, 0.6), 0 0 55px rgba(59, 130, 246, 0.4)',
-    '0 0 22px rgba(139, 92, 246, 0.9), 0 0 45px rgba(217, 70, 239, 0.7), 0 0 65px rgba(245, 158, 11, 0.5)',
-    '0 0 15px rgba(99, 102, 241, 0.7), 0 0 30px rgba(99, 102, 241, 0.5), 0 0 45px rgba(99, 102, 241, 0.3)',
+    '0 0 15px oklch(58.5% 0.204 277.1 / 0.7), 0 0 30px oklch(58.5% 0.204 277.1 / 0.5), 0 0 45px oklch(58.5% 0.204 277.1 / 0.3)',
+    '0 0 20px oklch(76.9% 0.165 70.1 / 0.8), 0 0 40px oklch(63.7% 0.208 25.3 / 0.6), 0 0 60px oklch(65.6% 0.212 354.3 / 0.4)',
+    '0 0 18px oklch(69.6% 0.149 162.5 / 0.8), 0 0 35px oklch(71.5% 0.126 215.2 / 0.6), 0 0 55px oklch(62.3% 0.188 259.8 / 0.4)',
+    '0 0 22px oklch(60.6% 0.219 292.7 / 0.9), 0 0 45px oklch(66.7% 0.259 322.1 / 0.7), 0 0 65px oklch(76.9% 0.165 70.1 / 0.5)',
+    '0 0 15px oklch(58.5% 0.204 277.1 / 0.7), 0 0 30px oklch(58.5% 0.204 277.1 / 0.5), 0 0 45px oklch(58.5% 0.204 277.1 / 0.3)',
   ];
 
   const glowTransition = {
@@ -39,11 +39,11 @@ const Profile = () => {
   };
 
   const backgroundGradients = [
-    'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%)',
-    'linear-gradient(135deg, #f59e0b 0%, #ef4444 50%, #ec4899 100%)',
-    'linear-gradient(135deg, #10b981 0%, #06b6d4 50%, #3b82f6 100%)',
-    'linear-gradient(135deg, #8b5cf6 0%, #d946ef 50%, #f59e0b 100%)',
-    'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%)',
+    'linear-gradient(135deg, oklch(58.5% 0.204 277.1) 0%, oklch(60.6% 0.219 292.7) 50%, oklch(66.7% 0.259 322.1) 100%)',
+    'linear-gradient(135deg, oklch(76.9% 0.165 70.1) 0%, oklch(63.7% 0.208 25.3) 50%, oklch(65.6% 0.212 354.3) 100%)',
+    'linear-gradient(135deg, oklch(69.6% 0.149 162.5) 0%, oklch(71.5% 0.126 215.2) 50%, oklch(62.3% 0.188 259.8) 100%)',
+    'linear-gradient(135deg, oklch(60.6% 0.219 292.7) 0%, oklch(66.7% 0.259 322.1) 50%, oklch(76.9% 0.165 70.1) 100%)',
+    'linear-gradient(135deg, oklch(58.5% 0.204 277.1) 0%, oklch(60.6% 0.219 292.7) 50%, oklch(66.7% 0.259 322.1) 100%)',
   ];
 
   const handleProfileClick = () => {
@@ -239,9 +239,9 @@ const Profile = () => {
                               y: -20,
                               opacity: 0,
                               backgroundImage:
-                                'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%)',
+                                'linear-gradient(135deg, oklch(58.5% 0.204 277.1) 0%, oklch(60.6% 0.219 292.7) 50%, oklch(66.7% 0.259 322.1) 100%)',
                               boxShadow:
-                                '0 0 15px rgba(99, 102, 241, 0.7), 0 0 30px rgba(99, 102, 241, 0.5), 0 0 45px rgba(99, 102, 241, 0.3)',
+                                '0 0 15px oklch(58.5% 0.204 277.1 / 0.7), 0 0 30px oklch(58.5% 0.204 277.1 / 0.5), 0 0 45px oklch(58.5% 0.204 277.1 / 0.3)',
                             }}
                             animate={{
                               y: 0,

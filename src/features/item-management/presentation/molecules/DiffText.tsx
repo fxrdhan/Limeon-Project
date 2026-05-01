@@ -42,13 +42,13 @@ const DiffText: React.FC<LocalDiffTextProps> = ({
     if (type === 'added') {
       return {
         className: 'bg-green-400 text-slate-900 py-0.5 font-medium',
-        style: { backgroundColor: '#4ade80' },
+        style: { backgroundColor: 'oklch(80% 0.182 151.7)' },
         title: 'Ditambahkan',
       };
     } else {
       return {
         className: 'bg-red-400 text-slate-900 py-0.5 font-medium',
-        style: { backgroundColor: '#f87171' },
+        style: { backgroundColor: 'oklch(71.1% 0.166 22.2)' },
         title: 'Dihapus',
       };
     }

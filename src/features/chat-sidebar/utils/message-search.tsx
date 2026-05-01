@@ -13,8 +13,8 @@ const MESSAGE_LINK_PATTERN =
 const TRAILING_LINK_PUNCTUATION_PATTERN = /[),.!?;:]+$/;
 const MESSAGE_LINK_PROTOCOL_PATTERN = /^[a-z][a-z\d+.-]*:/i;
 const SUPPORTED_MESSAGE_LINK_PROTOCOLS = new Set(['http:', 'https:']);
-const MESSAGE_LINK_DEFAULT_COLOR = '#2563eb';
-const MESSAGE_LINK_HOVER_COLOR = '#0369a1';
+const MESSAGE_LINK_DEFAULT_COLOR = 'oklch(54.6% 0.215 262.9)';
+const MESSAGE_LINK_HOVER_COLOR = 'oklch(50% 0.119 242.7)';
 
 interface RenderHighlightedTextOptions {
   linkify?: boolean;

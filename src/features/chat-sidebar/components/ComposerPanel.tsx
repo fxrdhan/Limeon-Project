@@ -32,9 +32,9 @@ interface ComposerPanelProps {
 }
 
 const COMPOSER_ATTACHMENT_TOP_FOG_GRADIENT =
-  'linear-gradient(to top, rgba(255,255,255,0) 0%, rgba(255,255,255,0.34) 18%, rgba(255,255,255,0.72) 42%, rgba(255,255,255,0.96) 68%, rgba(255,255,255,1) 84%, rgba(255,255,255,1) 100%)';
+  'linear-gradient(to top, oklch(100% 0 0 / 0) 0%, oklch(100% 0 0 / 0.34) 18%, oklch(100% 0 0 / 0.72) 42%, oklch(100% 0 0 / 0.96) 68%, oklch(100% 0 0) 84%, oklch(100% 0 0) 100%)';
 const COMPOSER_ATTACHMENT_BOTTOM_FOG_GRADIENT =
-  'linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.34) 18%, rgba(255,255,255,0.72) 42%, rgba(255,255,255,0.96) 68%, rgba(255,255,255,1) 84%, rgba(255,255,255,1) 100%)';
+  'linear-gradient(to bottom, oklch(100% 0 0 / 0) 0%, oklch(100% 0 0 / 0.34) 18%, oklch(100% 0 0 / 0.72) 42%, oklch(100% 0 0 / 0.96) 68%, oklch(100% 0 0) 84%, oklch(100% 0 0) 100%)';
 
 const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
   const { composer, previews, mutations, refs, viewport } = runtime;
@@ -147,7 +147,7 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
         className="pointer-events-none absolute bottom-0 left-0 right-0 z-[5] h-12"
         style={{
           background:
-            'linear-gradient(to top, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.72) 46%, rgba(255,255,255,0) 100%)',
+            'linear-gradient(to top, oklch(100% 0 0 / 0.98) 0%, oklch(100% 0 0 / 0.72) 46%, oklch(100% 0 0 / 0) 100%)',
         }}
       />
 
@@ -268,7 +268,7 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
                       }`}
                       style={{
                         background: isComposerAttachmentTrayScrolledToBottom
-                          ? 'rgb(255,255,255)'
+                          ? 'oklch(100% 0 0)'
                           : COMPOSER_ATTACHMENT_BOTTOM_FOG_GRADIENT,
                       }}
                     />

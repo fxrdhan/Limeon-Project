@@ -62,7 +62,7 @@ const renderPdfPreviewCanvas = async (
       canvas,
       canvasContext: context,
       viewport,
-      background: 'rgb(255, 255, 255)',
+      background: 'oklch(100% 0 0)',
     }).promise;
 
     return {

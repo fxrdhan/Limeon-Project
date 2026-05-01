@@ -146,15 +146,15 @@ export function useRandomItemCreation(
       },
       {
         style: {
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          boxShadow: '0 25px 50px -12px oklch(0% 0 0 / 0.25)',
+          backgroundColor: 'oklch(0% 0 0 / 0.7)',
           backdropFilter: 'blur(8px)',
-          border: '1px solid rgba(255, 255, 255, 0.2)',
+          border: '1px solid oklch(100% 0 0 / 0.2)',
           color: 'white',
         },
         success: {
           style: {
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            boxShadow: '0 25px 50px -12px oklch(0% 0 0 / 0.25)',
             backgroundColor: 'oklch(26.2% 0.051 172.552 / 0.7)',
             backdropFilter: 'blur(8px)',
             border: '1px solid oklch(26.2% 0.051 172.552 / 0.2)',
@@ -163,7 +163,7 @@ export function useRandomItemCreation(
         },
         error: {
           style: {
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            boxShadow: '0 25px 50px -12px oklch(0% 0 0 / 0.25)',
             backgroundColor: 'oklch(27.1% 0.105 12.094 / 0.7)',
             backdropFilter: 'blur(8px)',
             border: '1px solid oklch(27.1% 0.105 12.094 / 0.2)',

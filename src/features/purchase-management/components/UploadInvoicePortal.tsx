@@ -500,13 +500,13 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
                             contain: 'layout style paint',
                             isolation: 'isolate',
                             backgroundColor: isHovering
-                              ? 'rgba(240, 253, 250, 0.5)'
+                              ? 'oklch(98.4% 0.014 180.7 / 0.5)'
                               : 'transparent',
                             borderColor: isHovering
-                              ? 'rgb(20, 184, 166)'
+                              ? 'oklch(70.4% 0.123 182.5)'
                               : isDragging
-                                ? 'rgb(20, 184, 166)'
-                                : 'rgb(209, 213, 219)',
+                                ? 'oklch(70.4% 0.123 182.5)'
+                                : 'oklch(87.2% 0.009 258.3)',
                             transition:
                               'border-color 200ms cubic-bezier(0.4, 0, 0.2, 1), background-color 200ms cubic-bezier(0.4, 0, 0.2, 1)',
                           }}

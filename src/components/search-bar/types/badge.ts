@@ -20,19 +20,19 @@ export const BADGE_COLORS: Record<BadgeType, BadgeColorScheme> = {
     bg: 'bg-purple-100',
     text: 'text-purple-700',
     hoverBg: 'hover:bg-purple-200',
-    glow: 'shadow-[0_0_12px_rgba(192,132,252,0.5),0_0_24px_rgba(192,132,252,0.3)]',
+    glow: 'shadow-[0_0_12px_oklch(72.2%_0.177_305.5_/_0.5),0_0_24px_oklch(72.2%_0.177_305.5_/_0.3)]',
   },
   operator: {
     bg: 'bg-blue-100',
     text: 'text-blue-700',
     hoverBg: 'hover:bg-blue-200',
-    glow: 'shadow-[0_0_12px_rgba(96,165,250,0.5),0_0_24px_rgba(96,165,250,0.3)]',
+    glow: 'shadow-[0_0_12px_oklch(71.4%_0.143_254.6_/_0.5),0_0_24px_oklch(71.4%_0.143_254.6_/_0.3)]',
   },
   value: {
     bg: 'bg-slate-100',
     text: 'text-slate-700',
     hoverBg: 'hover:bg-slate-200',
-    glow: 'shadow-[0_0_12px_rgba(156,163,175,0.5),0_0_24px_rgba(156,163,175,0.3)]',
+    glow: 'shadow-[0_0_12px_oklch(71.4%_0.019_261.3_/_0.5),0_0_24px_oklch(71.4%_0.019_261.3_/_0.3)]',
   },
   separator: {
     bg: 'bg-slate-100',
@@ -44,13 +44,13 @@ export const BADGE_COLORS: Record<BadgeType, BadgeColorScheme> = {
     bg: 'bg-slate-100',
     text: 'text-slate-700',
     hoverBg: 'hover:bg-slate-200',
-    glow: 'shadow-[0_0_12px_rgba(156,163,175,0.5),0_0_24px_rgba(156,163,175,0.3)]',
+    glow: 'shadow-[0_0_12px_oklch(71.4%_0.019_261.3_/_0.5),0_0_24px_oklch(71.4%_0.019_261.3_/_0.3)]',
   },
   join: {
     bg: 'bg-orange-100',
     text: 'text-orange-700',
     hoverBg: 'hover:bg-orange-200',
-    glow: 'shadow-[0_0_12px_rgba(251,146,60,0.5),0_0_24px_rgba(251,146,60,0.3)]',
+    glow: 'shadow-[0_0_12px_oklch(75.8%_0.159_55.9_/_0.5),0_0_24px_oklch(75.8%_0.159_55.9_/_0.3)]',
   },
   groupOpen: {
     bg: 'bg-slate-200',

@@ -350,7 +350,7 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
               <path
                 d={historyPortalPath}
                 fill="white"
-                stroke="#cbd5e1"
+                stroke="oklch(86.9% 0.02 252.9)"
                 strokeWidth="1"
                 vectorEffect="non-scaling-stroke"
               />

@@ -26,7 +26,7 @@ interface PerformanceSectionProps {
 const salesChartConfig = {
   revenue: {
     label: 'Penjualan Harian',
-    color: '#0f766e',
+    color: 'oklch(51.1% 0.086 186.4)',
   },
 } satisfies ChartConfig;
 
@@ -172,7 +172,7 @@ const PerformanceSection: React.FC<PerformanceSectionProps> = ({
                   activeDot={{
                     fill: 'var(--color-revenue)',
                     r: 4,
-                    stroke: '#ffffff',
+                    stroke: 'oklch(100% 0 0)',
                     strokeWidth: 2,
                   }}
                 />

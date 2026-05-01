@@ -68,8 +68,8 @@ const MasterDataListPage: React.FC<MasterDataListPageProps> = ({
       return replacements[char] ?? char;
     });
   const overlayNoRowsTemplate = searchValue
-    ? `<span style="padding: 10px; color: #888;">Tidak ada ${escapeOverlayText(entityLabel)} dengan nama "${escapeOverlayText(searchValue)}"</span>`
-    : `<span style="padding: 10px; color: #888;">Tidak ada data ${entityLabel} yang ditemukan</span>`;
+    ? `<span style="padding: 10px; color: oklch(62.7% 0 0);">Tidak ada ${escapeOverlayText(entityLabel)} dengan nama "${escapeOverlayText(searchValue)}"</span>`
+    : `<span style="padding: 10px; color: oklch(62.7% 0 0);">Tidak ada data ${entityLabel} yang ditemukan</span>`;
   const gridStyle = {
     width: '100%',
     marginTop: '1rem',

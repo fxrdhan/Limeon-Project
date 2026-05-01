@@ -9,8 +9,10 @@ export const CheckboxIcon: React.FC<CheckboxIconProps> = ({
   disabled = false,
   className = '',
 }) => {
-  const backgroundColor = checked ? 'var(--color-primary)' : '#ffffff';
-  const borderColor = checked ? 'var(--color-primary)' : '#d1d5db';
+  const backgroundColor = checked ? 'var(--color-primary)' : 'oklch(100% 0 0)';
+  const borderColor = checked
+    ? 'var(--color-primary)'
+    : 'oklch(87.2% 0.009 258.3)';
 
   return (
     <motion.div

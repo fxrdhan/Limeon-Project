@@ -293,8 +293,8 @@ const PurchaseList = () => {
     ]
   );
   const overlayNoRowsTemplate = debouncedSearch
-    ? `<span style="padding: 10px; color: #64748b;">Tidak ada pembelian dengan kata kunci "${debouncedSearch}"</span>`
-    : '<span style="padding: 10px; color: #64748b;">Tidak ada data pembelian yang ditemukan</span>';
+    ? `<span style="padding: 10px; color: oklch(55.4% 0.041 257.4);">Tidak ada pembelian dengan kata kunci "${debouncedSearch}"</span>`
+    : '<span style="padding: 10px; color: oklch(55.4% 0.041 257.4);">Tidak ada data pembelian yang ditemukan</span>';
 
   return (
     <>

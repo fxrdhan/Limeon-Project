@@ -871,9 +871,9 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
         (search.includes(':') || search.includes(' #'));
 
       if (search && !isBadgeMode) {
-        return `<span style="padding: 10px; color: #888;">Tidak ada item dengan nama "${escapeOverlayText(search)}"</span>`;
+        return `<span style="padding: 10px; color: oklch(62.7% 0 0);">Tidak ada item dengan nama "${escapeOverlayText(search)}"</span>`;
       }
-      return '<span style="padding: 10px; color: #888;">Tidak ada data item yang ditemukan</span>';
+      return '<span style="padding: 10px; color: oklch(62.7% 0 0);">Tidak ada data item yang ditemukan</span>';
     } else if (activeTab === 'suppliers') {
       const isBadgeMode =
         search.startsWith('#') &&
@@ -881,9 +881,9 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
 
       /* c8 ignore next */
       if (search && !isBadgeMode) {
-        return `<span style="padding: 10px; color: #888;">Tidak ada supplier dengan nama "${escapeOverlayText(search)}"</span>`;
+        return `<span style="padding: 10px; color: oklch(62.7% 0 0);">Tidak ada supplier dengan nama "${escapeOverlayText(search)}"</span>`;
       }
-      return '<span style="padding: 10px; color: #888;">Tidak ada data supplier yang ditemukan</span>';
+      return '<span style="padding: 10px; color: oklch(62.7% 0 0);">Tidak ada data supplier yang ditemukan</span>';
     } else {
       // Entity overlay
       const isBadgeMode =
@@ -891,10 +891,10 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
         (search.includes(':') || search.includes(' #'));
 
       if (search && !isBadgeMode) {
-        return `<span style="padding: 10px; color: #888;">${escapeOverlayText(entityConfig?.searchNoDataMessage || 'Tidak ada data yang cocok dengan pencarian')} "${escapeOverlayText(search)}"</span>`;
+        return `<span style="padding: 10px; color: oklch(62.7% 0 0);">${escapeOverlayText(entityConfig?.searchNoDataMessage || 'Tidak ada data yang cocok dengan pencarian')} "${escapeOverlayText(search)}"</span>`;
       }
       /* c8 ignore next */
-      return `<span style="padding: 10px; color: #888;">${escapeOverlayText(entityConfig?.noDataMessage || 'Tidak ada data')}</span>`;
+      return `<span style="padding: 10px; color: oklch(62.7% 0 0);">${escapeOverlayText(entityConfig?.noDataMessage || 'Tidak ada data')}</span>`;
     }
   }, [activeTab, search, entityConfig]);
 

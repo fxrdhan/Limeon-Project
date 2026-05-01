@@ -77,26 +77,26 @@ const SearchIcon: React.FC<SearchIconProps> = ({
       : !isDefaultIcon || (!!displayValue && !displayValue.startsWith('#'));
 
   const getSearchIconColor = () => {
-    if (currentIcon === 'search-error') return '#F59E0B';
-    if (currentIcon === 'search-not-found') return '#EF4444';
-    if (currentIcon === 'filter-error') return '#EF4444';
-    if (currentIcon === 'hash-purple') return '#A855F7'; // text-purple-500
-    if (currentIcon === 'hash-dynamic') return '#A855F7'; // text-purple-500
-    if (currentIcon === 'filters-join') return '#F97316'; // text-orange-500
+    if (currentIcon === 'search-error') return 'oklch(76.9% 0.165 70.1)';
+    if (currentIcon === 'search-not-found') return 'oklch(63.7% 0.208 25.3)';
+    if (currentIcon === 'filter-error') return 'oklch(63.7% 0.208 25.3)';
+    if (currentIcon === 'hash-purple') return 'oklch(62.7% 0.233 303.9)'; // text-purple-500
+    if (currentIcon === 'hash-dynamic') return 'oklch(62.7% 0.233 303.9)'; // text-purple-500
+    if (currentIcon === 'filters-join') return 'oklch(70.5% 0.187 47.6)'; // text-orange-500
     if (currentIcon === 'filter' || resolvedSearchMode.isFilterMode)
-      return '#3B82F6'; // text-blue-500
+      return 'oklch(62.3% 0.188 259.8)'; // text-blue-500
 
     switch (searchState) {
       case 'idle':
-        return '#9CA3AF'; // text-slate-400
+        return 'oklch(71.4% 0.019 261.3)'; // text-slate-400
       case 'typing':
-        return '#1F2937'; // text-slate-800
+        return 'oklch(27.8% 0.03 256.8)'; // text-slate-800
       case 'found':
-        return '#10B981'; // text-primary
+        return 'oklch(69.6% 0.149 162.5)'; // text-primary
       case 'not-found':
-        return '#EF4444'; // text-red-500
+        return 'oklch(63.7% 0.208 25.3)'; // text-red-500
       default:
-        return '#9CA3AF';
+        return 'oklch(71.4% 0.019 261.3)';
     }
   };
 

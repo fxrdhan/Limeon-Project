@@ -371,10 +371,10 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
           tab.document.write(`
             <html>
               <head><title>Creating Google Sheet...</title></head>
-              <body style="font-family: ${fontFamily}; text-align: center; padding: 50px; background: #f5f5f5;">
+              <body style="font-family: ${fontFamily}; text-align: center; padding: 50px; background: oklch(97% 0 0);">
                 <h2>☁️ Creating your Google Sheet...</h2>
                 <p>Please wait while we prepare your data...</p>
-                <div style="margin: 20px auto; width: 50px; height: 50px; border: 3px solid #e3e3e3; border-top: 3px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                <div style="margin: 20px auto; width: 50px; height: 50px; border: 3px solid oklch(91.6% 0 0); border-top: 3px solid oklch(65.3% 0.135 242.7); border-radius: 50%; animation: spin 1s linear infinite;"></div>
                 <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
               </body>
             </html>

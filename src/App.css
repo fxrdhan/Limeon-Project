@@ -22,10 +22,11 @@
     --color-secondary: oklch(62.8% 0.215 282.463); /* purple-600 */
     --color-danger: oklch(62.8% 0.257 29.234); /* red-600 */
     --shadow-surface-thin:
-      0 0 1px rgba(51, 65, 85, 0.52), 0 1px 1px rgba(15, 23, 42, 0.14);
+      0 0 1px oklch(37.2% 0.039 257.3 / 0.52),
+      0 1px 1px oklch(20.8% 0.04 265.8 / 0.14);
     --shadow-surface-thin-md:
-      var(--shadow-surface-thin), 0 4px 6px -1px rgb(0 0 0 / 0.1),
-      0 2px 4px -2px rgb(0 0 0 / 0.1);
+      var(--shadow-surface-thin), 0 4px 6px -1px oklch(0% 0 0 / 0.1),
+      0 2px 4px -2px oklch(0% 0 0 / 0.1);
   }
 }
 
@@ -43,8 +44,8 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  color: #213547;
-  background-color: #ffffff;
+  color: oklch(32.1% 0.041 246.7);
+  background-color: oklch(100% 0 0);
   font-family: var(--font-sans);
 }
 
@@ -97,18 +98,18 @@ h1 {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: oklch(86.9% 0.02 252.9);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: oklch(71.1% 0.035 256.8);
 }
 
 /* Untuk Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
+  scrollbar-color: oklch(86.9% 0.02 252.9) transparent;
 }
 
 /* AG Grid specific scrollbar fix untuk Firefox */
