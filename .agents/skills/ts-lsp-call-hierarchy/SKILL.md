@@ -7,7 +7,7 @@ description: Perform LSP Call Hierarchy for TypeScript/JavaScript by talking to 
 
 ## Overview
 
-Run a Rust CLI that executes the realistic LSP call hierarchy flow:
+Run a Bun/TypeScript CLI that executes the realistic LSP call hierarchy flow:
 
 1. Start `typescript-language-server` (stdio)
 2. Send `initialize`
@@ -19,7 +19,7 @@ Run a Rust CLI that executes the realistic LSP call hierarchy flow:
 
 ### Prerequisites
 
-- Rust toolchain available (`cargo`).
+- Bun available on PATH.
 - `typescript-language-server` available on PATH, or use `./node_modules/.bin/typescript-language-server` in a TS workspace.
 
 If you need to install it in a Bun-based repo:
@@ -31,7 +31,7 @@ bun add -d typescript typescript-language-server
 ### Incoming + outgoing calls (both)
 
 ```bash
-/home/fxrdhan/.codex/skills/ts-lsp-call-hierarchy/scripts/ts_call_hierarchy \
+./.agents/skills/ts-lsp-call-hierarchy/scripts/ts_call_hierarchy \
   --root . \
   --file src/path/to/file.ts \
   --line 12 \
@@ -42,7 +42,7 @@ bun add -d typescript typescript-language-server
 ### Incoming + outgoing calls (both) without manual line/character
 
 ```bash
-/home/fxrdhan/.codex/skills/ts-lsp-call-hierarchy/scripts/ts_call_hierarchy \
+./.agents/skills/ts-lsp-call-hierarchy/scripts/ts_call_hierarchy \
   --root . \
   --file src/path/to/file.ts \
   --find "symbolNameHere" \
@@ -52,7 +52,7 @@ bun add -d typescript typescript-language-server
 ### Only “who calls this?” (incoming)
 
 ```bash
-/home/fxrdhan/.codex/skills/ts-lsp-call-hierarchy/scripts/ts_call_hierarchy \
+./.agents/skills/ts-lsp-call-hierarchy/scripts/ts_call_hierarchy \
   --root . \
   --file src/path/to/file.ts \
   --line 12 \
@@ -63,7 +63,7 @@ bun add -d typescript typescript-language-server
 ### Only “what does this call?” (outgoing)
 
 ```bash
-/home/fxrdhan/.codex/skills/ts-lsp-call-hierarchy/scripts/ts_call_hierarchy \
+./.agents/skills/ts-lsp-call-hierarchy/scripts/ts_call_hierarchy \
   --root . \
   --file src/path/to/file.ts \
   --line 12 \
@@ -74,7 +74,7 @@ bun add -d typescript typescript-language-server
 ### If server is not on PATH
 
 ```bash
-/home/fxrdhan/.codex/skills/ts-lsp-call-hierarchy/scripts/ts_call_hierarchy \
+./.agents/skills/ts-lsp-call-hierarchy/scripts/ts_call_hierarchy \
   --server ./node_modules/.bin/typescript-language-server \
   --root . \
   --file src/path/to/file.ts \
@@ -88,6 +88,8 @@ bun add -d typescript typescript-language-server
 The CLI prints JSON with:
 
 - `prepare`: CallHierarchyItem[] from `textDocument/prepareCallHierarchy`
+- `target`: selected CallHierarchyItem used for incoming/outgoing calls
+- `targetIndex`: 1-based selected item index
 - `incoming`: CallHierarchyIncomingCall[] (when `--mode incoming|both`)
 - `outgoing`: CallHierarchyOutgoingCall[] (when `--mode outgoing|both`)
 
@@ -95,4 +97,9 @@ The CLI uses 1-based `--line`/`--character` flags, but LSP payloads/returned ran
 
 ## Notes
 
-- The CLI currently uses the first item returned by `prepareCallHierarchy` as the target (see `references/flow.md`).
+- `--file` is resolved relative to `--root` unless it is absolute.
+- `--find` places the cursor inside the matched text, which is usually more reliable than the first byte of a token.
+- The CLI uses the first item returned by `prepareCallHierarchy` by default. Use `--item <n>` to choose another prepared item.
+- Treat `target.uri` and `target.selectionRange` as the source of truth for the selected symbol. Same-name text matches from `rg` are not necessarily call sites; they may resolve to a different import or package.
+- If `incoming` is empty, first confirm the selected symbol is actually referenced semantically. Empty incoming calls are valid for unused symbols and for text matches that only share the same local name.
+- See `references/flow.md` for the protocol flow.
