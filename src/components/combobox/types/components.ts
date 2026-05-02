@@ -1,24 +1,21 @@
 import type {
   ButtonHTMLAttributes,
   CSSProperties,
-  ElementType,
   ForwardedRef,
   HTMLAttributes,
+  InputHTMLAttributes,
   KeyboardEvent,
-  ReactElement,
   ReactNode,
   RefObject,
   SyntheticEvent,
 } from 'react';
-import type { ComboboxOption } from '@/types';
+import type { ComboboxOption, ComboboxRenderProp } from '@/types';
 
-export type ComboboxRenderProp<
-  Props,
-  State,
-  RootElement extends ElementType = ElementType,
-> =
-  | ReactElement<Partial<Props>, RootElement>
-  | ((props: Props, state: State) => ReactElement<Partial<Props>, RootElement>);
+export type {
+  ComboboxRenderProp,
+  ComboboxRootRenderProps,
+  ComboboxRootState,
+} from '@/types';
 
 export interface ComboboxTriggerState {
   open: boolean;
@@ -169,5 +166,27 @@ export interface ComboboxSearchProps {
     HTMLAttributes<HTMLDivElement>,
     ComboboxSearchState,
     'div'
+  >;
+}
+
+export interface ComboboxSearchInputState {
+  open: boolean;
+  empty: boolean;
+  value: string;
+  invalid: boolean;
+}
+
+export type ComboboxSearchInputRenderProps =
+  InputHTMLAttributes<HTMLInputElement> & {
+    ref: ForwardedRef<HTMLInputElement>;
+  };
+
+export interface ComboboxSearchInputProps {
+  className?: string;
+  style?: CSSProperties;
+  render?: ComboboxRenderProp<
+    ComboboxSearchInputRenderProps,
+    ComboboxSearchInputState,
+    'input'
   >;
 }

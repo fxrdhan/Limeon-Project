@@ -20,7 +20,7 @@ interface ComboboxButtonProps {
   name?: string;
   popupId: string;
   listboxId: string;
-  searchList: boolean;
+  popupHasSearch: boolean;
   activeDescendantId?: string;
   tabIndex?: number;
   required?: boolean;
@@ -52,7 +52,7 @@ const ComboboxButton = forwardRef<HTMLButtonElement, ComboboxButtonProps>(
       name,
       popupId,
       listboxId,
-      searchList,
+      popupHasSearch,
       activeDescendantId,
       tabIndex,
       required = false,
@@ -107,7 +107,7 @@ const ComboboxButton = forwardRef<HTMLButtonElement, ComboboxButtonProps>(
         name={name}
         popupId={popupId}
         listboxId={listboxId}
-        searchList={searchList}
+        popupHasSearch={popupHasSearch}
         activeDescendantId={activeDescendantId}
         tabIndex={tabIndex}
         required={required}

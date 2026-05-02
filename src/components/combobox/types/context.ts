@@ -27,6 +27,7 @@ export interface ComboboxContextType {
   withRadio?: boolean;
   withCheckbox?: boolean;
   searchList: boolean;
+  popupHasSearch: boolean;
   required: boolean;
   disabled: boolean;
 
@@ -77,6 +78,7 @@ export interface ComboboxContextType {
   ) => void;
   onAddNew?: (term: string) => void;
   onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSearchPartMount: () => () => void;
   onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => void;
   onSetHighlightedIndex: (
     index: number,

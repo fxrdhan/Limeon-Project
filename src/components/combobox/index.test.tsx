@@ -13,6 +13,19 @@ import type {
   ComboboxOpenChangeDetails,
   ComboboxProps,
 } from '../../types';
+import type {
+  ComboboxListItemState,
+  ComboboxListRenderProps,
+  ComboboxListState,
+  ComboboxPopupRenderProps,
+  ComboboxPopupState,
+  ComboboxRootRenderProps,
+  ComboboxRootState,
+  ComboboxSearchInputRenderProps,
+  ComboboxSearchInputState,
+  ComboboxTriggerRenderProps,
+  ComboboxTriggerState,
+} from './types';
 import FormField from '../form-field';
 import Combobox from './index';
 import {
@@ -20,6 +33,7 @@ import {
   ComboboxListItem,
   ComboboxPopup,
   ComboboxSearch,
+  ComboboxSearchInput,
   ComboboxTrigger,
   useComboboxContext,
 } from './exports';
@@ -263,7 +277,10 @@ function RenderPartComboboxHarness() {
       onChange={setValue}
     >
       <ComboboxTrigger
-        render={(props, state) => (
+        render={(
+          props: ComboboxTriggerRenderProps,
+          state: ComboboxTriggerState
+        ) => (
           <button
             {...props}
             data-rendered-trigger=""
@@ -272,7 +289,10 @@ function RenderPartComboboxHarness() {
         )}
       />
       <ComboboxPopup
-        render={(props, state) => (
+        render={(
+          props: ComboboxPopupRenderProps,
+          state: ComboboxPopupState
+        ) => (
           <div
             {...props}
             data-rendered-popup=""
@@ -291,7 +311,7 @@ function CustomCompoundContent() {
     <>
       <ComboboxSearch />
       <ComboboxList
-        render={(props, state) => (
+        render={(props: ComboboxListRenderProps, state: ComboboxListState) => (
           <div
             {...props}
             data-rendered-list=""
@@ -304,7 +324,10 @@ function CustomCompoundContent() {
             key={option.id}
             option={option}
             index={index}
-            render={(props, state) => (
+            render={(
+              props: React.HTMLAttributes<HTMLDivElement>,
+              state: ComboboxListItemState
+            ) => (
               <div
                 {...props}
                 data-rendered-option=""
@@ -389,6 +412,113 @@ function ElementRenderComboboxHarness({
       />
       <ComboboxPopup render={<div data-rendered-popup-element="" />}>
         <ElementRenderCompoundContent />
+      </ComboboxPopup>
+    </Combobox>
+  );
+}
+
+function RootRenderComboboxHarness() {
+  const [value, setValue] = useState('');
+
+  return (
+    <Combobox
+      name="root_render_dropdown"
+      value={value}
+      options={[
+        { id: 'alpha', name: 'Alpha' },
+        { id: 'beta', name: 'Beta' },
+      ]}
+      placeholder="Pilih Root Render"
+      onChange={setValue}
+      className="root-class"
+      render={(props: ComboboxRootRenderProps, state: ComboboxRootState) => (
+        <div
+          {...props}
+          data-rendered-root=""
+          data-open-state={state.open ? 'open' : 'closed'}
+        />
+      )}
+    />
+  );
+}
+
+function ListOnlyCompoundContent() {
+  const { filteredOptions } = useComboboxContext();
+
+  return (
+    <ComboboxList>
+      {filteredOptions.map((option, index) => (
+        <ComboboxListItem key={option.id} option={option} index={index} />
+      ))}
+    </ComboboxList>
+  );
+}
+
+function ListOnlyCompoundComboboxHarness() {
+  const [value, setValue] = useState('');
+
+  return (
+    <Combobox
+      name="list_only_compound_dropdown"
+      value={value}
+      options={[
+        { id: 'alpha', name: 'Alpha' },
+        { id: 'beta', name: 'Beta' },
+      ]}
+      placeholder="Pilih List Only"
+      onChange={setValue}
+    >
+      <ComboboxTrigger />
+      <ComboboxPopup>
+        <ListOnlyCompoundContent />
+      </ComboboxPopup>
+    </Combobox>
+  );
+}
+
+function SearchInputCompoundContent() {
+  const { filteredOptions } = useComboboxContext();
+
+  return (
+    <>
+      <ComboboxSearchInput
+        render={(
+          props: ComboboxSearchInputRenderProps,
+          state: ComboboxSearchInputState
+        ) => (
+          <input
+            {...props}
+            data-rendered-search-input=""
+            data-search-empty={state.empty ? 'empty' : 'filled'}
+          />
+        )}
+      />
+      <ComboboxList>
+        {filteredOptions.map((option, index) => (
+          <ComboboxListItem key={option.id} option={option} index={index} />
+        ))}
+      </ComboboxList>
+    </>
+  );
+}
+
+function SearchInputCompoundComboboxHarness() {
+  const [value, setValue] = useState('');
+
+  return (
+    <Combobox
+      name="search_input_compound_dropdown"
+      value={value}
+      options={[
+        { id: 'alpha', name: 'Alpha' },
+        { id: 'beta', name: 'Beta' },
+      ]}
+      placeholder="Pilih Search Input"
+      onChange={setValue}
+    >
+      <ComboboxTrigger />
+      <ComboboxPopup>
+        <SearchInputCompoundContent />
       </ComboboxPopup>
     </Combobox>
   );
@@ -871,6 +1001,49 @@ describe('Combobox', () => {
     expect(document.querySelector('[data-rendered-popup]')).toBeTruthy();
   });
 
+  it('supports root render composition and root state data attributes', () => {
+    render(<RootRenderComboboxHarness />);
+
+    const root = document.querySelector('[data-rendered-root]');
+    const trigger = screen.getByRole('combobox', {
+      name: 'Pilih Root Render',
+    });
+
+    expect(root).toBeTruthy();
+    expect(root?.className).toContain('root-class');
+    expect(root?.getAttribute('data-state')).toBe('closed');
+    expect(root?.getAttribute('data-open-state')).toBe('closed');
+    expect(trigger.getAttribute('data-state')).toBe('closed');
+
+    act(() => {
+      fireEvent.click(trigger);
+      vi.advanceTimersByTime(200);
+    });
+
+    expect(root?.getAttribute('data-state')).toBe('open');
+    expect(root?.getAttribute('data-open-state')).toBe('open');
+    expect(trigger.getAttribute('data-state')).toBe('open');
+  });
+
+  it('uses listbox popup semantics for composed content without a search part', () => {
+    render(<ListOnlyCompoundComboboxHarness />);
+
+    const trigger = screen.getByRole('combobox', {
+      name: 'Pilih List Only',
+    });
+
+    act(() => {
+      fireEvent.click(trigger);
+      vi.advanceTimersByTime(200);
+    });
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(
+      screen.getByRole('listbox', { name: 'Daftar pilihan' })
+    ).toBeTruthy();
+    expect(trigger.getAttribute('aria-haspopup')).toBe('listbox');
+  });
+
   it('supports composed search, list, and list item parts inside the popup', () => {
     render(<CustomCompoundComboboxHarness />);
 
@@ -884,6 +1057,9 @@ describe('Combobox', () => {
     });
 
     expect(screen.getByRole('textbox', { name: 'Cari pilihan' })).toBeTruthy();
+    expect(
+      screen.getByRole('dialog', { name: 'Pilih Custom Compound pilihan' })
+    ).toBeTruthy();
     expect(document.querySelector('[data-rendered-list]')).toBeTruthy();
     const renderedOptions = document.querySelectorAll('[data-rendered-option]');
     expect(renderedOptions).toHaveLength(2);
@@ -901,6 +1077,33 @@ describe('Combobox', () => {
     });
 
     expect(screen.getByRole('combobox', { name: /Beta/ })).toBeTruthy();
+  });
+
+  it('supports a primitive search input render part inside composed popup content', () => {
+    render(<SearchInputCompoundComboboxHarness />);
+
+    const trigger = screen.getByRole('combobox', {
+      name: 'Pilih Search Input',
+    });
+
+    act(() => {
+      fireEvent.click(trigger);
+      vi.advanceTimersByTime(200);
+    });
+
+    const searchInput = screen.getByRole('textbox', {
+      name: 'Cari pilihan',
+    });
+    expect(searchInput.getAttribute('data-rendered-search-input')).toBe('');
+    expect(searchInput.getAttribute('data-state')).toBe('open');
+    expect(trigger.getAttribute('aria-haspopup')).toBe('dialog');
+
+    act(() => {
+      fireEvent.change(searchInput, { target: { value: 'be' } });
+      vi.advanceTimersByTime(200);
+    });
+
+    expect((searchInput as HTMLInputElement).value).toBe('be');
   });
 
   it('supports ReactElement render overrides and composes their handlers', () => {

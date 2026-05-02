@@ -199,6 +199,7 @@ const OptionRow: React.FC<OptionRowProps> = ({
     'aria-disabled': isDisabled || undefined,
     'aria-posinset': index + 1,
     'aria-setsize': optionCount,
+    'data-state': isSelected ? 'selected' : 'unselected',
     'data-dropdown-option-frame': '',
     'data-dropdown-option-index': index,
     'data-combobox-item': '',

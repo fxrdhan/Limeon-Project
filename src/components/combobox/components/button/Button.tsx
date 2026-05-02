@@ -29,7 +29,7 @@ interface ButtonProps {
   name?: string;
   popupId: string;
   listboxId: string;
-  searchList: boolean;
+  popupHasSearch: boolean;
   activeDescendantId?: string;
   tabIndex?: number;
   required?: boolean;
@@ -67,7 +67,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       name,
       popupId,
       listboxId,
-      searchList,
+      popupHasSearch,
       activeDescendantId,
       tabIndex,
       required = false,
@@ -86,8 +86,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
-    const popupControlId = searchList ? popupId : listboxId;
-    const popupRole = searchList ? 'dialog' : 'listbox';
+    const popupControlId = popupHasSearch ? popupId : listboxId;
+    const popupRole = popupHasSearch ? 'dialog' : 'listbox';
     const valueTextId = `${id}-value`;
     const labelledBy = ariaLabelledBy
       ? `${ariaLabelledBy} ${valueTextId}`
@@ -122,6 +122,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         isOpen && activeDescendantId ? activeDescendantId : undefined,
       'aria-invalid': hasError || undefined,
       'aria-required': required || undefined,
+      'data-state': isOpen && !isClosing ? 'open' : 'closed',
       'data-popup-open': isOpen ? '' : undefined,
       'data-disabled': disabled ? '' : undefined,
       'data-invalid': hasError ? '' : undefined,

@@ -76,6 +76,7 @@ const MenuPortal = forwardRef<HTMLDivElement, MenuPortalProps>(
       'data-state': isOpen && !isClosing ? 'open' : 'closed',
       'data-popup-open': isOpen && !isClosing ? '' : undefined,
       'data-popup-side': side,
+      'data-frozen': isFrozen ? '' : undefined,
       className: `
               ${dropDirection === 'down' ? 'origin-top' : 'origin-bottom'}
               bg-white rounded-xl overflow-hidden

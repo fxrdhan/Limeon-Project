@@ -18,7 +18,7 @@ const ComboboxTrigger = ({
     name,
     popupId,
     listboxId,
-    searchList,
+    popupHasSearch,
     activeDescendantId,
     tabIndex,
     required,
@@ -44,7 +44,7 @@ const ComboboxTrigger = ({
       name={name}
       popupId={popupId}
       listboxId={listboxId}
-      searchList={searchList}
+      popupHasSearch={popupHasSearch}
       activeDescendantId={activeDescendantId}
       tabIndex={tabIndex}
       required={required}

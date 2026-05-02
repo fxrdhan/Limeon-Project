@@ -14,6 +14,8 @@ import type {
   ComboboxHighlightChangeReason,
   ComboboxOpenChangeReason,
   ComboboxOpenChangeDetails,
+  ComboboxRootRenderProps,
+  ComboboxRootState,
   ComboboxValueChangeDetails,
 } from '@/types';
 import ValidationOverlay from '@/components/validation-overlay';
@@ -35,6 +37,7 @@ import { useComboboxEffects } from './hooks/useComboboxEffects';
 import { useHoverDetail } from './hooks/useHoverDetail';
 import { DEFAULT_COMBOBOX_LABELS, KEYBOARD_KEYS } from './constants';
 import { createComboboxChangeDetails } from './utils/eventDetails';
+import { renderComboboxElement } from './utils/renderPart';
 
 const COMBOBOX_OPEN_EVENT = 'pharmasys:combobox-open';
 
@@ -75,6 +78,9 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
   const {
     id,
     children,
+    className,
+    style,
+    render,
     mode = 'input',
     options,
     value,
@@ -154,6 +160,7 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
   const selectedOption = !withCheckbox
     ? options.find(option => option?.id === value)
     : null;
+  const hasCustomLayout = children !== undefined;
 
   // Refs
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -167,6 +174,15 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
   const frozenValueRef = useRef<string | null>(null);
   const notifiedHighlightedValueRef = useRef<string | undefined>(undefined);
   const [isLocallyFrozen, setIsLocallyFrozen] = useState(false);
+  const [mountedSearchPartCount, setMountedSearchPartCount] = useState(0);
+
+  const handleSearchPartMount = useCallback(() => {
+    setMountedSearchPartCount(count => count + 1);
+
+    return () => {
+      setMountedSearchPartCount(count => Math.max(0, count - 1));
+    };
+  }, []);
 
   // Hooks
   const shouldKeepComboboxOpen = useCallback(
@@ -836,6 +852,9 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
       updateSearchTerm,
     ]
   );
+  const popupHasSearch = hasCustomLayout
+    ? mountedSearchPartCount > 0
+    : searchList;
 
   const contextValue = {
     // State
@@ -850,6 +869,7 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
     withRadio,
     withCheckbox,
     searchList,
+    popupHasSearch,
     required,
     disabled,
 
@@ -893,6 +913,7 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
     onSelect: handleSelect,
     onAddNew: handleAddNewPreservingCombobox,
     onSearchChange: handleSearchChangeWithHoverReset,
+    onSearchPartMount: handleSearchPartMount,
     onKeyDown: handleComboboxKeyDown,
     onSetHighlightedIndex: (
       index: number,
@@ -973,86 +994,113 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
       />
     );
 
-  return (
-    <ComboboxProvider value={contextValue}>
-      <div
-        className={`relative inline-flex w-full ${isKeyboardNavigation ? 'cursor-none' : ''}`}
-        ref={dropdownRef}
-        onMouseEnter={() => {
-          handleTriggerAreaEnter();
-          setIsHovered(true);
-        }}
-        onMouseLeave={() => {
-          handleMouseLeaveWithCloseIntent();
-          setIsHovered(false);
-        }}
-      >
-        <div className="w-full flex">
-          <div className="hs-dropdown relative inline-flex w-full">
-            <div className="relative w-full">
-              {children ?? (
-                <ComboboxButton
-                  ref={buttonRef}
-                  id={buttonId}
-                  mode={mode}
-                  selectedOption={selectedOption || undefined}
-                  placeholder={placeholder}
-                  isOpen={effectiveIsOpen}
-                  isClosing={effectiveIsClosing}
-                  hasError={hasError}
-                  name={name}
-                  popupId={popupId}
-                  listboxId={listboxId}
-                  searchList={searchList}
-                  activeDescendantId={activeDescendantId}
-                  tabIndex={tabIndex}
-                  required={required}
-                  disabled={disabled}
-                  ariaLabel={ariaLabel}
-                  ariaLabelledBy={ariaLabelledBy}
-                  onClick={handleToggleCombobox}
-                  onKeyDown={handleButtonKeyDown}
-                  onBlur={handleButtonBlur}
-                />
-              )}
-              {formValueInputs}
-            </div>
-
-            {children ? null : (
-              <ComboboxMenu
-                ref={dropdownMenuRef}
+  const rootContent = (
+    <>
+      <div className="w-full flex">
+        <div className="hs-dropdown relative inline-flex w-full">
+          <div className="relative w-full">
+            {children ?? (
+              <ComboboxButton
+                ref={buttonRef}
+                id={buttonId}
+                mode={mode}
+                selectedOption={selectedOption || undefined}
+                placeholder={placeholder}
+                isOpen={effectiveIsOpen}
+                isClosing={effectiveIsClosing}
+                hasError={hasError}
+                name={name}
                 popupId={popupId}
-                popupLabel={resolvedLabels.popup(
-                  selectedOption?.name || placeholder
-                )}
-                isFrozen={isPortalFrozen}
-                leaveTimeoutRef={leaveTimeoutRef}
-                onSearchKeyDown={handleSearchBarKeyDown}
+                listboxId={listboxId}
+                popupHasSearch={popupHasSearch}
+                activeDescendantId={activeDescendantId}
+                tabIndex={tabIndex}
+                required={required}
+                disabled={disabled}
+                ariaLabel={ariaLabel}
+                ariaLabelledBy={ariaLabelledBy}
+                onClick={handleToggleCombobox}
+                onKeyDown={handleButtonKeyDown}
+                onBlur={handleButtonBlur}
               />
             )}
+            {formValueInputs}
           </div>
+
+          {children ? null : (
+            <ComboboxMenu
+              ref={dropdownMenuRef}
+              popupId={popupId}
+              popupLabel={resolvedLabels.popup(
+                selectedOption?.name || placeholder
+              )}
+              isFrozen={isPortalFrozen}
+              leaveTimeoutRef={leaveTimeoutRef}
+              onSearchKeyDown={handleSearchBarKeyDown}
+            />
+          )}
         </div>
-        {validate && (
-          <ValidationOverlay
-            error={errorMessage}
-            showError={showValidationOverlay && hasError}
-            targetRef={buttonRef}
-            autoHide={validationAutoHide}
-            autoHideDelay={validationAutoHideDelay}
-            onAutoHide={handleValidationAutoHide}
-            isHovered={isHovered}
-            hasAutoHidden={hasAutoHidden}
-            isOpen={effectiveIsOpen}
-          />
-        )}
-        {!children && enableHoverDetail && (
-          <HoverDetailPortal
-            isVisible={isHoverDetailVisible}
-            position={hoverDetailPosition}
-            data={hoverDetailData}
-          />
-        )}
       </div>
+      {validate && (
+        <ValidationOverlay
+          error={errorMessage}
+          showError={showValidationOverlay && hasError}
+          targetRef={buttonRef}
+          autoHide={validationAutoHide}
+          autoHideDelay={validationAutoHideDelay}
+          onAutoHide={handleValidationAutoHide}
+          isHovered={isHovered}
+          hasAutoHidden={hasAutoHidden}
+          isOpen={effectiveIsOpen}
+        />
+      )}
+      {!children && enableHoverDetail && (
+        <HoverDetailPortal
+          isVisible={isHoverDetailVisible}
+          position={hoverDetailPosition}
+          data={hoverDetailData}
+        />
+      )}
+    </>
+  );
+  const rootProps = {
+    ref: dropdownRef,
+    className: `relative inline-flex w-full ${isKeyboardNavigation ? 'cursor-none' : ''} ${className ?? ''}`,
+    style,
+    'data-combobox-root': '',
+    'data-state': effectiveIsOpen && !effectiveIsClosing ? 'open' : 'closed',
+    'data-popup-open': effectiveIsOpen ? '' : undefined,
+    'data-disabled': disabled ? '' : undefined,
+    'data-invalid': hasError ? '' : undefined,
+    'data-required': required ? '' : undefined,
+    onMouseEnter: () => {
+      handleTriggerAreaEnter();
+      setIsHovered(true);
+    },
+    onMouseLeave: () => {
+      handleMouseLeaveWithCloseIntent();
+      setIsHovered(false);
+    },
+    children: rootContent,
+  } as ComboboxRootRenderProps;
+  const rootState = {
+    open: effectiveIsOpen && !effectiveIsClosing,
+    disabled,
+    invalid: hasError,
+    required,
+    mode,
+  } satisfies ComboboxRootState;
+  const renderedRoot = renderComboboxElement(render, rootProps, rootState);
+  const { ref: _rootRef, ...rootDomProps } = rootProps;
+
+  return (
+    <ComboboxProvider value={contextValue}>
+      {renderedRoot ?? (
+        <div
+          ref={dropdownRef}
+          {...(rootDomProps as React.ComponentPropsWithoutRef<'div'>)}
+        />
+      )}
     </ComboboxProvider>
   );
 }

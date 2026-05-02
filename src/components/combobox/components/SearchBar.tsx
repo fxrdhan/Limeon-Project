@@ -1,4 +1,4 @@
-import { forwardRef } from 'react';
+import { forwardRef, useLayoutEffect } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { TbSearch } from 'react-icons/tb';
 import SearchInput from './search/SearchInput';
@@ -65,7 +65,10 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
       labels,
       onAddNew,
       onSearchChange,
+      onSearchPartMount,
     } = useComboboxContext();
+
+    useLayoutEffect(() => onSearchPartMount(), [onSearchPartMount]);
 
     const handleAddNewFromSearch = (term: string) => {
       onAddNew?.(term);
@@ -80,6 +83,9 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
     const searchProps = {
       className: `p-2 border-b border-slate-200 sticky top-0 z-10 ${className ?? ''}`,
       style,
+      'data-state': isOpen ? 'open' : 'closed',
+      'data-empty': filteredOptions.length === 0 ? '' : undefined,
+      'data-value': searchTerm,
       children: (
         <div className="relative flex items-center min-w-0">
           <div className="relative flex-1 min-w-0">

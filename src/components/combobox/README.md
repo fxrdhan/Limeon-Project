@@ -112,6 +112,13 @@ export interface HoverDetailData extends ComboboxItem {
 export interface ComboboxProps {
   id?: string;
   children?: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+  render?: ComboboxRenderProp<
+    ComboboxRootRenderProps,
+    ComboboxRootState,
+    'div'
+  >;
   mode?: 'input' | 'text';
   options: ComboboxOption[];
   value: string;
@@ -214,6 +221,7 @@ import {
   ComboboxList,
   ComboboxListItem,
   ComboboxSearch,
+  ComboboxSearchInput,
   ComboboxHoverDetail,
   ComboboxProvider,
   useComboboxContext,
@@ -239,7 +247,9 @@ These parts consume `ComboboxRoot` context and can be used as children when the 
 </ComboboxRoot>
 ```
 
-`ComboboxTrigger`, `ComboboxPopup`, `ComboboxSearch`, `ComboboxList`, and `ComboboxListItem` accept `className`, `style`, and `render` props for Base UI-like root element composition. `render` may be a function or a React element; element render overrides are cloned with the internal ARIA, data attributes, handlers, and children merged in. Element render handlers run before internal handlers, and calling `event.preventDefault()` skips the matching internal handler. Native element overrides are typed per part: trigger renders as a `button`, while popup, search, list, and item roots render as `div` elements.
+`ComboboxRoot`, `ComboboxTrigger`, `ComboboxPopup`, `ComboboxSearch`, `ComboboxSearchInput`, `ComboboxList`, and `ComboboxListItem` accept `className`, `style`, and `render` props for Base UI-like root element composition. `render` may be a function or a React element; element render overrides are cloned with the internal ARIA, data attributes, handlers, and children merged in. Element render handlers run before internal handlers, and calling `event.preventDefault()` skips the matching internal handler. Native element overrides are typed per part: root, popup, search, list, and item roots render as `div` elements; trigger renders as a `button`; search input renders as an `input`.
+
+Popup semantics follow composition. The default menu uses `role="dialog"` when `searchList` renders the built-in search field. Composed popup content only receives dialog semantics after a `ComboboxSearch` or `ComboboxSearchInput` part is mounted; list-only popup content leaves the wrapper presentational and keeps `role="listbox"` on `ComboboxList`.
 
 ## Defaults
 
@@ -599,11 +609,12 @@ The state needed by child components is shared through `ComboboxContext`. The ro
 ## Accessibility Notes
 
 - The trigger is exposed as the single field-level `role="combobox"` with `aria-expanded`, `aria-haspopup`, `aria-controls`, and `aria-activedescendant` when an option is highlighted.
-- The popup wrapper uses `role="dialog"` only for the input-inside-popup pattern. Without the search input, the wrapper is presentational and the options container owns the `role="listbox"` semantics.
+- The popup wrapper uses `role="dialog"` only when a search part is present. Without the search input, the wrapper is presentational and the options container owns the `role="listbox"` semantics.
 - The search input inside the popup remains a labelled text filter with `aria-autocomplete="list"` and points at the listbox without creating a second combobox role.
 - When a parent label is available, pass `aria-labelledby` or use `FormField`; the trigger combines the field label with the current visible value for a stable accessible name.
 - Listbox and option IDs are generated per combobox instance so multiple comboboxes do not share ARIA targets.
-- Options use `role="option"`, `aria-selected`, `aria-posinset`, `aria-setsize`, and Base UI-like data attributes such as `data-selected` and `data-highlighted`.
+- Root, trigger, popup, list, search, search input, and option parts expose Base UI-like data attributes such as `data-state`, `data-disabled`, `data-invalid`, `data-selected`, and `data-highlighted`.
+- Options use `role="option"`, `aria-selected`, `aria-posinset`, and `aria-setsize`.
 - Option buttons are removed from the tab order with `tabIndex={-1}` so keyboard focus stays on the trigger, search input, or listbox container.
 - The disabled trigger uses the native `disabled` attribute.
 - Keyboard support is available for navigation and selection.

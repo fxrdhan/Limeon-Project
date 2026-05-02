@@ -56,6 +56,16 @@ export type ComboboxMode = 'input' | 'text';
 export type ComboboxPortalWidth = string | number;
 export type ComboboxPosition = 'auto' | 'top' | 'bottom' | 'left';
 export type ComboboxAlign = 'left' | 'right';
+export type ComboboxRenderProp<
+  Props,
+  State,
+  RootElement extends React.ElementType = React.ElementType,
+> =
+  | React.ReactElement<Partial<Props>, RootElement>
+  | ((
+      props: Props,
+      state: State
+    ) => React.ReactElement<Partial<Props>, RootElement>);
 export type ComboboxOpenChangeReason =
   | 'trigger-press'
   | 'trigger-hover'
@@ -107,9 +117,28 @@ export interface ComboboxLabels {
 
 export type ResolvedComboboxLabels = Required<ComboboxLabels>;
 
+export interface ComboboxRootState {
+  open: boolean;
+  disabled: boolean;
+  invalid: boolean;
+  required: boolean;
+  mode: ComboboxMode;
+}
+
+export type ComboboxRootRenderProps = React.HTMLAttributes<HTMLDivElement> & {
+  ref: React.Ref<HTMLDivElement>;
+};
+
 export interface ComboboxProps {
   id?: string;
   children?: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+  render?: ComboboxRenderProp<
+    ComboboxRootRenderProps,
+    ComboboxRootState,
+    'div'
+  >;
   mode?: ComboboxMode;
   options: ComboboxOption[];
   value: string;

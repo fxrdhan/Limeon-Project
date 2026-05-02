@@ -92,6 +92,7 @@ const ComboboxMenu = forwardRef<HTMLDivElement, ComboboxMenuProps>(
       isPositionReady,
       isKeyboardNavigation,
       searchList,
+      popupHasSearch,
       searchTerm,
       searchState,
       filteredOptions,
@@ -631,7 +632,7 @@ const ComboboxMenu = forwardRef<HTMLDivElement, ComboboxMenuProps>(
       <MenuPortal
         ref={ref}
         id={popupId}
-        role={searchList ? 'dialog' : undefined}
+        role={popupHasSearch ? 'dialog' : undefined}
         ariaLabel={popupLabel}
         isFrozen={isFrozen}
         isOpen={isOpen}
@@ -674,7 +675,9 @@ const ComboboxMenu = forwardRef<HTMLDivElement, ComboboxMenuProps>(
                 aria-label={labels.listbox}
                 aria-multiselectable={withCheckbox ? true : undefined}
                 aria-activedescendant={activeDescendantId}
+                data-state={isOpen ? 'open' : 'closed'}
                 data-list-empty={filteredOptions.length === 0 ? '' : undefined}
+                data-empty={filteredOptions.length === 0 ? '' : undefined}
                 data-popup-open={isOpen ? '' : undefined}
                 tabIndex={-1}
                 className="relative p-1 max-h-60 overflow-y-auto focus:outline-hidden"
