@@ -222,6 +222,7 @@ type ComboboxContextValue<Item> = {
     event?: EventLike
   ) => void;
   selectItem: (item: Item, event?: EventLike) => void;
+  focusTrigger: () => void;
   getItemId: (item: Item, fallbackIndex?: number) => string;
   registerLabel: () => () => void;
 };
@@ -370,6 +371,31 @@ const findNextEnabledIndex = <Item,>(
   return -1;
 };
 
+const findNextInputLoopIndex = <Item,>(
+  items: Item[],
+  currentIndex: number,
+  direction: 1 | -1,
+  loop: boolean
+) => {
+  if (items.length === 0) return null;
+
+  if (currentIndex < 0) {
+    const inputStartIndex = direction === 1 ? -1 : items.length;
+    const nextIndex = findNextEnabledIndex(
+      items,
+      inputStartIndex,
+      direction,
+      false
+    );
+    return nextIndex >= 0 ? nextIndex : null;
+  }
+
+  const nextIndex = findNextEnabledIndex(items, currentIndex, direction, false);
+  if (nextIndex >= 0) return nextIndex;
+
+  return loop ? -1 : null;
+};
+
 const getSafeIdPart = (value: string) =>
   value.replace(/[^a-zA-Z0-9_-]/g, '_') || 'item';
 
@@ -420,6 +446,7 @@ function Root<Item, Multiple extends boolean | undefined = false>({
   const rootRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const popupRef = useRef<HTMLDivElement | null>(null);
+  const suppressAutoHighlightRef = useRef(false);
   const isOpenControlled = open !== undefined;
   const isValueControlled = value !== undefined;
   const isInputControlled = inputValue !== undefined;
@@ -516,6 +543,7 @@ function Root<Item, Multiple extends boolean | undefined = false>({
       const details = createComboboxChangeDetails(reason, event);
       onInputValueChange?.(nextInputValue, details);
       if (details.isCanceled) return;
+      suppressAutoHighlightRef.current = false;
       if (!isInputControlled) setUncontrolledInputValue(nextInputValue);
     },
     [isInputControlled, onInputValueChange]
@@ -542,6 +570,8 @@ function Root<Item, Multiple extends boolean | undefined = false>({
       };
       onItemHighlighted?.(resolvedHighlightedItem, details);
       if (details.isCanceled) return;
+      suppressAutoHighlightRef.current =
+        reason === 'keyboard' && resolvedHighlightedItem === null;
       if (!isHighlightControlled)
         setUncontrolledHighlightedItem(resolvedHighlightedItem);
     },
@@ -559,6 +589,14 @@ function Root<Item, Multiple extends boolean | undefined = false>({
     },
     [disabled, isValueControlled, onValueChange, readOnly]
   );
+
+  const focusTrigger = useCallback(() => {
+    window.requestAnimationFrame(() => {
+      triggerRef.current?.focus({
+        preventScroll: true,
+      });
+    });
+  }, []);
 
   const selectItem = useCallback(
     (item: Item, event?: EventLike) => {
@@ -580,13 +618,24 @@ function Root<Item, Multiple extends boolean | undefined = false>({
       }
 
       commitValue(item, event);
-      commitOpen(false, 'item-press', event);
+      const details = commitOpen(false, 'item-press', event);
+      if (!details?.isCanceled) focusTrigger();
     },
-    [commitOpen, commitValue, isItemEqualToValue, isMultiple, selectedItems]
+    [
+      commitOpen,
+      commitValue,
+      focusTrigger,
+      isItemEqualToValue,
+      isMultiple,
+      selectedItems,
+    ]
   );
 
   useEffect(() => {
-    if (!actualOpen) return;
+    if (!actualOpen) {
+      suppressAutoHighlightRef.current = false;
+      return;
+    }
 
     const firstEnabledIndex = findNextEnabledIndex(visibleItems, -1, 1, false);
 
@@ -606,6 +655,10 @@ function Root<Item, Multiple extends boolean | undefined = false>({
       );
 
     if (highlightedItemVisible) return;
+
+    if (suppressAutoHighlightRef.current && actualHighlightedItem === null) {
+      return;
+    }
 
     if (!autoHighlight) {
       if (actualHighlightedItem !== null) {
@@ -711,6 +764,7 @@ function Root<Item, Multiple extends boolean | undefined = false>({
       setInputValue: commitInputValue,
       highlightItem: commitHighlightedItem,
       selectItem,
+      focusTrigger,
       getItemId,
       registerLabel,
     }),
@@ -723,6 +777,7 @@ function Root<Item, Multiple extends boolean | undefined = false>({
       commitInputValue,
       commitOpen,
       disabled,
+      focusTrigger,
       form,
       getItemId,
       highlightedIndex,
@@ -1216,15 +1271,15 @@ const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
       direction: 1 | -1,
       event: KeyboardEvent<HTMLInputElement>
     ) => {
-      const nextIndex = findNextEnabledIndex(
+      const nextIndex = findNextInputLoopIndex(
         context.visibleItems,
         context.highlightedIndex,
         direction,
         context.loopFocus
       );
-      if (nextIndex >= 0) {
+      if (nextIndex !== null) {
         context.highlightItem(
-          context.visibleItems[nextIndex] ?? null,
+          nextIndex >= 0 ? (context.visibleItems[nextIndex] ?? null) : null,
           'keyboard',
           event
         );
@@ -1241,9 +1296,6 @@ const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
       'aria-autocomplete': 'list',
       'aria-controls': context.listId,
       'aria-expanded': context.open,
-      'aria-labelledby':
-        props['aria-labelledby'] ??
-        (context.labelMounted ? context.labelId : undefined),
       'aria-activedescendant':
         context.highlightedItem && context.highlightedIndex >= 0
           ? context.getItemId(context.highlightedItem)
@@ -1278,6 +1330,7 @@ const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
         } else if (event.key === 'Escape') {
           event.preventDefault();
           const details = context.setOpen(false, 'escape-key', event);
+          if (!details?.isCanceled) context.focusTrigger();
           if (!details?.isPropagationAllowed) {
             event.stopPropagation();
           }
@@ -1322,7 +1375,9 @@ function List({ children, render, className, onKeyDown, ...props }: ListProps) {
     const highlightedId = getItemId(highlightedItem);
     const frame = window.requestAnimationFrame(() => {
       const highlightedElement = document.getElementById(highlightedId);
-      highlightedElement?.scrollIntoView({ block: 'nearest' });
+      if (typeof highlightedElement?.scrollIntoView === 'function') {
+        highlightedElement.scrollIntoView({ block: 'nearest' });
+      }
     });
 
     return () => {
@@ -1376,6 +1431,7 @@ function List({ children, render, className, onKeyDown, ...props }: ListProps) {
       } else if (event.key === 'Escape') {
         event.preventDefault();
         const details = context.setOpen(false, 'escape-key', event);
+        if (!details?.isCanceled) context.focusTrigger();
         if (!details?.isPropagationAllowed) {
           event.stopPropagation();
         }

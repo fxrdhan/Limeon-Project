@@ -27,8 +27,8 @@ The primitive is value-model agnostic and intentionally headless. Items can be s
         <Combobox.SearchInput placeholder="Cari..." />
         <Combobox.List>
           <Combobox.Collection />
-          <Combobox.Empty>Tidak ada data</Combobox.Empty>
         </Combobox.List>
+        <Combobox.Empty>Tidak ada data</Combobox.Empty>
       </Combobox.Popup>
     </Combobox.Positioner>
   </Combobox.Portal>

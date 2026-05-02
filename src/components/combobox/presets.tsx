@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
   TbCheck,
   TbChevronDown,
@@ -14,6 +14,7 @@ import { Combobox } from './index';
 type IndicatorKind = 'check' | 'radio' | 'checkbox' | 'none';
 
 export interface PharmaComboboxSelectProps<Item> {
+  id?: string;
   name: string;
   items: Item[];
   value: Item | null;
@@ -42,6 +43,9 @@ export interface PharmaComboboxSelectProps<Item> {
   };
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  'aria-label'?: string;
+  'aria-labelledby'?: string;
+  'aria-describedby'?: string;
 }
 
 const setRef = <Node,>(
@@ -80,6 +84,7 @@ const getIndicator = (kind: IndicatorKind, selected: boolean) => {
 };
 
 export function PharmaComboboxSelect<Item>({
+  id,
   name,
   items,
   value,
@@ -101,8 +106,13 @@ export function PharmaComboboxSelect<Item>({
   createAction,
   open,
   onOpenChange,
+  'aria-label': ariaLabel,
+  'aria-labelledby': ariaLabelledBy,
+  'aria-describedby': ariaDescribedBy,
 }: PharmaComboboxSelectProps<Item>) {
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const fallbackLabelId = useId();
+  const valueId = useId();
   const [inputValue, setInputValue] = useState('');
   const [blurred, setBlurred] = useState(false);
   const showValidation =
@@ -118,6 +128,14 @@ export function PharmaComboboxSelect<Item>({
 
   const selectedValue = useMemo(() => value, [value]);
   const isOpenControlled = open !== undefined;
+  const controlName =
+    placeholder.replace(/^-+\s*|\s*-+$/g, '').trim() ||
+    name.replace(/[_-]+/g, ' ');
+  const triggerLabelledBy = ariaLabelledBy
+    ? `${ariaLabelledBy} ${valueId}`
+    : ariaLabel
+      ? undefined
+      : `${fallbackLabelId} ${valueId}`;
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen && !isOpenControlled) setInputValue('');
     onOpenChange?.(nextOpen);
@@ -129,6 +147,11 @@ export function PharmaComboboxSelect<Item>({
 
   return (
     <div ref={rootRef} className={className}>
+      {!ariaLabelledBy && !ariaLabel ? (
+        <span id={fallbackLabelId} className="sr-only">
+          {controlName}
+        </span>
+      ) : null}
       <Combobox.Root
         items={items}
         value={selectedValue}
@@ -155,6 +178,10 @@ export function PharmaComboboxSelect<Item>({
         }
       >
         <Combobox.Trigger
+          id={id}
+          aria-label={ariaLabel}
+          aria-labelledby={triggerLabelledBy}
+          aria-describedby={ariaDescribedBy}
           placeholder={placeholder}
           tabIndex={tabIndex}
           render={(props, state) => (
@@ -176,6 +203,7 @@ export function PharmaComboboxSelect<Item>({
               }`}
             >
               <span
+                id={valueId}
                 className={
                   state.selectedLabel ? 'truncate' : 'truncate text-slate-400'
                 }
@@ -202,6 +230,7 @@ export function PharmaComboboxSelect<Item>({
               {searchable ? (
                 <Combobox.SearchInput
                   className="w-full border-0 border-b border-slate-100 px-3 py-2 text-sm outline-hidden focus:ring-0"
+                  aria-label={`Cari ${controlName}`}
                   placeholder="Cari..."
                 />
               ) : null}
@@ -236,10 +265,10 @@ export function PharmaComboboxSelect<Item>({
                     </Combobox.Item>
                   )}
                 </Combobox.Collection>
-                <Combobox.Empty className="px-3 py-4 text-center text-sm text-slate-500">
-                  Tidak ada data
-                </Combobox.Empty>
               </Combobox.List>
+              <Combobox.Empty className="px-3 py-4 text-center text-sm text-slate-500">
+                Tidak ada data
+              </Combobox.Empty>
               {canCreate ? (
                 <button
                   type="button"

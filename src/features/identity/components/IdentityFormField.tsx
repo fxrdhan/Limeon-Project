@@ -91,6 +91,7 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
 
       return (
         <PharmaComboboxSelect
+          id={field.key}
           name={field.key}
           items={optionValues}
           value={String(fieldValue ?? '')}

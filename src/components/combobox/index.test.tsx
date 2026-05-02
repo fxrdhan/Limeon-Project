@@ -280,6 +280,39 @@ describe('Combobox primitive', () => {
     expect(screen.queryByRole('listbox')).toBeNull();
   });
 
+  it('includes the search input in the arrow-key highlight loop', async () => {
+    render(<BasicCombobox />);
+
+    fireEvent.click(screen.getByRole('button', { name: /fruit/i }));
+    const input = screen.getByRole('combobox');
+    const appleOption = screen.getByRole('option', { name: /apple/i });
+    const cherryOption = screen.getByRole('option', { name: /cherry/i });
+
+    await waitFor(() => {
+      expect(input.getAttribute('aria-activedescendant')).toBe(appleOption.id);
+    });
+
+    fireEvent.keyDown(input, { key: 'ArrowUp' });
+    expect(input.hasAttribute('aria-activedescendant')).toBe(false);
+
+    fireEvent.keyDown(input, { key: 'ArrowUp' });
+    expect(input.getAttribute('aria-activedescendant')).toBe(cherryOption.id);
+  });
+
+  it('returns focus to the trigger when the popup closes from the search input', async () => {
+    render(<BasicCombobox />);
+
+    const trigger = screen.getByRole('button', { name: /fruit/i });
+    fireEvent.click(trigger);
+    const input = screen.getByRole('combobox');
+    input.focus();
+    fireEvent.keyDown(input, { key: 'Escape' });
+
+    await waitFor(() => {
+      expect(document.activeElement).toBe(trigger);
+    });
+  });
+
   it('skips disabled items during auto-highlight and keyboard selection', () => {
     const onValueChange = vi.fn();
     const disabledItems: FruitOption[] = [
@@ -639,6 +672,56 @@ describe('Combobox primitive', () => {
 });
 
 describe('Combobox app presets', () => {
+  it('passes external field labeling to the trigger without labeling popup search as the field', () => {
+    render(
+      <>
+        <label id="supplier-label" htmlFor="supplier-trigger">
+          Supplier
+        </label>
+        <PharmaComboboxSelect<EntityItem>
+          id="supplier-trigger"
+          name="supplier_id"
+          aria-labelledby="supplier-label"
+          items={[{ id: 'supplier-a', name: 'Supplier A' }]}
+          value={null}
+          onValueChange={() => {}}
+          itemToStringLabel={item => item.name}
+          itemToStringValue={item => item.id}
+          placeholder="Pilih Supplier"
+        />
+      </>
+    );
+
+    const trigger = screen.getByLabelText(/supplier/i);
+    expect(trigger.id).toBe('supplier-trigger');
+    expect(trigger.getAttribute('aria-labelledby')).toContain('supplier-label');
+
+    fireEvent.click(trigger);
+    const searchInput = screen.getByRole('combobox', {
+      name: /cari pilih supplier/i,
+    });
+    expect(searchInput.hasAttribute('aria-labelledby')).toBe(false);
+  });
+
+  it('keeps empty status outside the listbox in the standard preset composition', () => {
+    render(
+      <PharmaComboboxSelect<EntityItem>
+        name="category_id"
+        items={[]}
+        value={null}
+        onValueChange={() => {}}
+        itemToStringLabel={item => item.name}
+        itemToStringValue={item => item.id}
+        placeholder="Pilih kategori"
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /pilih kategori/i }));
+    const listbox = screen.getByRole('listbox');
+    const emptyStatus = screen.getByRole('status');
+    expect(listbox.contains(emptyStatus)).toBe(false);
+  });
+
   it('covers an entity field with validation and add-new action', () => {
     const onCreate = vi.fn();
     render(
