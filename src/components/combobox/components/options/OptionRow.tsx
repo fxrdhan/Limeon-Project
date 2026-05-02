@@ -4,8 +4,10 @@ import type { ComboboxOption } from '@/types';
 import { truncateText, shouldTruncateText } from '@/utils/text';
 import { COMBOBOX_CONSTANTS } from '../../constants';
 import { getComboboxOptionMatchRanges } from '../../utils/comboboxUtils';
+import { renderComboboxElement } from '../../utils/renderPart';
 import RadioIndicator from './RadioIndicator';
 import CheckboxIndicator from './CheckboxIndicator';
+import type { ComboboxListItemState, ComboboxRenderProp } from '../../types';
 
 interface OptionRowProps {
   option: ComboboxOption;
@@ -41,14 +43,10 @@ interface OptionRowProps {
   dropdownMenuRef: RefObject<HTMLDivElement | null>;
   className?: string;
   style?: React.CSSProperties;
-  render?: (
-    props: React.HTMLAttributes<HTMLDivElement>,
-    state: {
-      selected: boolean;
-      highlighted: boolean;
-      disabled: boolean;
-    }
-  ) => React.ReactElement;
+  render?: ComboboxRenderProp<
+    React.HTMLAttributes<HTMLDivElement>,
+    ComboboxListItemState
+  >;
 
   // Hover detail (opsional)
   onHoverDetailShow?: (
@@ -201,6 +199,7 @@ const OptionRow: React.FC<OptionRowProps> = ({
     'aria-selected': Boolean(isSelected),
     'aria-posinset': index + 1,
     'aria-setsize': optionCount,
+    'data-dropdown-option-frame': '',
     'data-dropdown-option-index': index,
     'data-combobox-item': '',
     'data-selected': isSelected ? '' : undefined,
@@ -256,13 +255,10 @@ const OptionRow: React.FC<OptionRowProps> = ({
     selected: isSelected,
     highlighted: isHighlighted,
     disabled: false,
-  };
+  } satisfies ComboboxListItemState;
+  const renderedElement = renderComboboxElement(render, optionProps, state);
 
-  if (render) {
-    return render(optionProps, state);
-  }
-
-  return <div {...optionProps} />;
+  return renderedElement ?? <div {...optionProps} />;
 };
 
 export default OptionRow;

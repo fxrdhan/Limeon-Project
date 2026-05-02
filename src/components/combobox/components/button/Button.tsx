@@ -1,7 +1,13 @@
 import React, { forwardRef } from 'react';
 import ButtonText from './ButtonText';
 import ButtonIcon from './ButtonIcon';
+import { renderComboboxElement } from '../../utils/renderPart';
 import type { ComboboxMode } from '@/types';
+import type {
+  ComboboxRenderProp,
+  ComboboxTriggerRenderProps,
+  ComboboxTriggerState,
+} from '../../types';
 import {
   FORM_CONTROL_BORDER_DEFAULT_CLASS,
   FORM_CONTROL_BORDER_ERROR_CLASS,
@@ -32,17 +38,7 @@ interface ButtonProps {
   ariaLabelledBy?: string;
   className?: string;
   style?: React.CSSProperties;
-  render?: (
-    props: React.ButtonHTMLAttributes<HTMLButtonElement> & {
-      ref: React.ForwardedRef<HTMLButtonElement>;
-    },
-    state: {
-      open: boolean;
-      disabled: boolean;
-      invalid: boolean;
-      placeholder: boolean;
-    }
-  ) => React.ReactElement;
+  render?: ComboboxRenderProp<ComboboxTriggerRenderProps, ComboboxTriggerState>;
   onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
   onKeyDown?: (e: React.KeyboardEvent<HTMLButtonElement>) => void;
   onMouseEnter: () => void;
@@ -98,7 +94,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       disabled,
       invalid: hasError,
       placeholder: isPlaceholder,
-    };
+    } satisfies ComboboxTriggerState;
     const commonButtonProps = {
       id,
       type: 'button' as const,
@@ -164,19 +160,19 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             <ButtonIcon isOpen={isOpen} isClosing={isClosing} />
           </>
         ),
-      } as React.ButtonHTMLAttributes<HTMLButtonElement> & {
-        ref: React.ForwardedRef<HTMLButtonElement>;
-      };
+      } as ComboboxTriggerRenderProps;
+      const renderedElement = renderComboboxElement(render, renderProps, state);
 
-      if (render) {
-        return render(renderProps, state);
+      if (renderedElement) {
+        return renderedElement;
       }
+
+      const { ref: _renderRef, ...buttonProps } = renderProps;
 
       return (
         <button
           ref={ref}
-          {...(commonButtonProps as React.ComponentPropsWithoutRef<'button'>)}
-          className={textClassName}
+          {...(buttonProps as React.ComponentPropsWithoutRef<'button'>)}
         />
       );
     }
@@ -199,19 +195,19 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           <ButtonIcon isOpen={isOpen} isClosing={isClosing} />
         </>
       ),
-    } as React.ButtonHTMLAttributes<HTMLButtonElement> & {
-      ref: React.ForwardedRef<HTMLButtonElement>;
-    };
+    } as ComboboxTriggerRenderProps;
+    const renderedElement = renderComboboxElement(render, renderProps, state);
 
-    if (render) {
-      return render(renderProps, state);
+    if (renderedElement) {
+      return renderedElement;
     }
+
+    const { ref: _renderRef, ...buttonProps } = renderProps;
 
     return (
       <button
         ref={ref}
-        {...(commonButtonProps as React.ComponentPropsWithoutRef<'button'>)}
-        className={inputClassName}
+        {...(buttonProps as React.ComponentPropsWithoutRef<'button'>)}
       />
     );
   }

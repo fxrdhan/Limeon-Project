@@ -301,6 +301,60 @@ function CustomCompoundComboboxHarness() {
   );
 }
 
+function ElementRenderCompoundContent() {
+  const { filteredOptions } = useComboboxContext();
+
+  return (
+    <>
+      <ComboboxSearch render={<section data-rendered-search-element="" />} />
+      <ComboboxList render={<section data-rendered-list-element="" />}>
+        {filteredOptions.map((option, index) => (
+          <ComboboxListItem
+            key={option.id}
+            option={option}
+            index={index}
+            render={<div data-rendered-option-element="" />}
+          />
+        ))}
+      </ComboboxList>
+    </>
+  );
+}
+
+function ElementRenderComboboxHarness({
+  onRenderedTriggerClick,
+}: {
+  onRenderedTriggerClick: () => void;
+}) {
+  const [value, setValue] = useState('');
+
+  return (
+    <Combobox
+      name="element_render_dropdown"
+      value={value}
+      options={[
+        { id: 'alpha', name: 'Alpha' },
+        { id: 'beta', name: 'Beta' },
+      ]}
+      placeholder="Pilih Element Render"
+      onChange={setValue}
+    >
+      <ComboboxTrigger
+        render={
+          <button
+            type="button"
+            data-rendered-trigger-element=""
+            onClick={onRenderedTriggerClick}
+          />
+        }
+      />
+      <ComboboxPopup render={<section data-rendered-popup-element="" />}>
+        <ElementRenderCompoundContent />
+      </ComboboxPopup>
+    </Combobox>
+  );
+}
+
 describe('Combobox', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -544,6 +598,7 @@ describe('Combobox', () => {
       expect.objectContaining({
         reason: 'trigger-press',
         event: expect.any(MouseEvent),
+        trigger,
         cancel: expect.any(Function),
         allowPropagation: expect.any(Function),
         isCanceled: false,
@@ -721,7 +776,15 @@ describe('Combobox', () => {
 
     expect(screen.getByRole('textbox', { name: 'Cari pilihan' })).toBeTruthy();
     expect(document.querySelector('[data-rendered-list]')).toBeTruthy();
-    expect(document.querySelectorAll('[data-rendered-option]')).toHaveLength(2);
+    const renderedOptions = document.querySelectorAll('[data-rendered-option]');
+    expect(renderedOptions).toHaveLength(2);
+    renderedOptions.forEach(option => {
+      expect(option.getAttribute('role')).toBe('option');
+      expect(option.getAttribute('data-dropdown-option-frame')).toBe('');
+      expect(
+        option.parentElement?.hasAttribute('data-dropdown-option-frame')
+      ).toBe(false);
+    });
 
     act(() => {
       fireEvent.click(screen.getByRole('option', { name: 'Beta' }));
@@ -729,6 +792,108 @@ describe('Combobox', () => {
     });
 
     expect(screen.getByRole('combobox', { name: /Beta/ })).toBeTruthy();
+  });
+
+  it('supports ReactElement render overrides and composes their handlers', () => {
+    const onRenderedTriggerClick = vi.fn();
+    render(
+      <ElementRenderComboboxHarness
+        onRenderedTriggerClick={onRenderedTriggerClick}
+      />
+    );
+
+    const trigger = screen.getByRole('combobox', {
+      name: 'Pilih Element Render',
+    });
+    expect(
+      document.querySelector('[data-rendered-trigger-element]')
+    ).toBeTruthy();
+
+    act(() => {
+      fireEvent.click(trigger);
+      vi.advanceTimersByTime(200);
+    });
+
+    expect(onRenderedTriggerClick).toHaveBeenCalledTimes(1);
+    expect(
+      document.querySelector('[data-rendered-popup-element]')
+    ).toBeTruthy();
+    expect(
+      document.querySelector('[data-rendered-search-element]')
+    ).toBeTruthy();
+    expect(document.querySelector('[data-rendered-list-element]')).toBeTruthy();
+    expect(
+      document.querySelectorAll('[data-rendered-option-element]')
+    ).toHaveLength(2);
+
+    act(() => {
+      fireEvent.click(screen.getByRole('option', { name: 'Beta' }));
+      vi.advanceTimersByTime(200);
+    });
+
+    expect(screen.getByRole('combobox', { name: /Beta/ })).toBeTruthy();
+  });
+
+  it('lets ReactElement render handlers prevent internal combobox actions', () => {
+    const onRenderedTriggerClick = vi.fn(
+      (event: React.MouseEvent<HTMLButtonElement>) => {
+        event.preventDefault();
+      }
+    );
+
+    render(
+      <Combobox
+        name="prevent_default_render_dropdown"
+        value=""
+        options={[{ id: 'alpha', name: 'Alpha' }]}
+        placeholder="Pilih Prevent Default"
+        onChange={() => {}}
+      >
+        <ComboboxTrigger
+          render={<button type="button" onClick={onRenderedTriggerClick} />}
+        />
+        <ComboboxPopup />
+      </Combobox>
+    );
+
+    const trigger = screen.getByRole('combobox', {
+      name: 'Pilih Prevent Default',
+    });
+
+    act(() => {
+      fireEvent.click(trigger);
+      vi.advanceTimersByTime(200);
+    });
+
+    expect(onRenderedTriggerClick).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('uses the root part as details.trigger when an inner trigger element is pressed', () => {
+    const onOpenChange = vi.fn();
+    render(
+      <ControlledComboboxHarness
+        onOpenChange={onOpenChange}
+        onInputValueChange={vi.fn()}
+      />
+    );
+
+    const trigger = screen.getByRole('combobox', {
+      name: /Alpha/,
+    });
+
+    act(() => {
+      fireEvent.click(screen.getByText('Alpha'));
+      vi.advanceTimersByTime(200);
+    });
+
+    expect(onOpenChange).toHaveBeenCalledWith(
+      true,
+      expect.objectContaining({
+        reason: 'trigger-press',
+        trigger,
+      })
+    );
   });
 
   it('stops Escape key propagation unless the event details allow it', () => {

@@ -11,6 +11,10 @@ import type {
 } from 'react';
 import type { ComboboxOption } from '@/types';
 
+export type ComboboxRenderProp<Props, State> =
+  | ReactElement
+  | ((props: Props, state: State) => ReactElement);
+
 export interface ComboboxTriggerState {
   open: boolean;
   disabled: boolean;
@@ -18,15 +22,15 @@ export interface ComboboxTriggerState {
   placeholder: boolean;
 }
 
+export type ComboboxTriggerRenderProps =
+  ButtonHTMLAttributes<HTMLButtonElement> & {
+    ref: ForwardedRef<HTMLButtonElement>;
+  };
+
 export interface ComboboxTriggerProps {
   className?: string;
   style?: CSSProperties;
-  render?: (
-    props: ButtonHTMLAttributes<HTMLButtonElement> & {
-      ref: ForwardedRef<HTMLButtonElement>;
-    },
-    state: ComboboxTriggerState
-  ) => ReactElement;
+  render?: ComboboxRenderProp<ComboboxTriggerRenderProps, ComboboxTriggerState>;
 }
 
 export interface ComboboxPopupState {
@@ -36,16 +40,15 @@ export interface ComboboxPopupState {
   side: 'top' | 'bottom';
 }
 
+export type ComboboxPopupRenderProps = HTMLAttributes<HTMLDivElement> & {
+  ref: ForwardedRef<HTMLDivElement>;
+};
+
 export interface ComboboxPopupProps {
   children?: ReactNode;
   className?: string;
   style?: CSSProperties;
-  render?: (
-    props: HTMLAttributes<HTMLDivElement> & {
-      ref: ForwardedRef<HTMLDivElement>;
-    },
-    state: ComboboxPopupState
-  ) => ReactElement;
+  render?: ComboboxRenderProp<ComboboxPopupRenderProps, ComboboxPopupState>;
 }
 
 export interface ComboboxListState {
@@ -54,16 +57,15 @@ export interface ComboboxListState {
   highlightedIndex: number;
 }
 
+export type ComboboxListRenderProps = HTMLAttributes<HTMLDivElement> & {
+  ref: RefObject<HTMLDivElement>;
+};
+
 export interface ComboboxListProps {
   children?: ReactNode;
   className?: string;
   style?: CSSProperties;
-  render?: (
-    props: HTMLAttributes<HTMLDivElement> & {
-      ref: RefObject<HTMLDivElement>;
-    },
-    state: ComboboxListState
-  ) => ReactElement;
+  render?: ComboboxRenderProp<ComboboxListRenderProps, ComboboxListState>;
 }
 
 export interface ComboboxListItemState {
@@ -77,10 +79,10 @@ export interface ComboboxListItemProps {
   index?: number;
   className?: string;
   style?: CSSProperties;
-  render?: (
-    props: HTMLAttributes<HTMLDivElement>,
-    state: ComboboxListItemState
-  ) => ReactElement;
+  render?: ComboboxRenderProp<
+    HTMLAttributes<HTMLDivElement>,
+    ComboboxListItemState
+  >;
 }
 
 export interface ComboboxMenuProps {
@@ -92,12 +94,7 @@ export interface ComboboxMenuProps {
   onSearchKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void;
   className?: string;
   style?: CSSProperties;
-  render?: (
-    props: HTMLAttributes<HTMLDivElement> & {
-      ref: ForwardedRef<HTMLDivElement>;
-    },
-    state: ComboboxPopupState
-  ) => ReactElement;
+  render?: ComboboxRenderProp<ComboboxPopupRenderProps, ComboboxPopupState>;
 }
 
 export interface OptionItemProps {
@@ -117,14 +114,35 @@ export interface OptionItemProps {
   dropdownMenuRef: RefObject<HTMLDivElement | null>;
   className?: string;
   style?: CSSProperties;
-  render?: (
-    props: HTMLAttributes<HTMLDivElement>,
-    state: ComboboxListItemState
-  ) => ReactElement;
+  render?: ComboboxRenderProp<
+    HTMLAttributes<HTMLDivElement>,
+    ComboboxListItemState
+  >;
 }
 
 export interface SearchBarProps {
   onKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void;
   onFocus: () => void;
   leaveTimeoutRef: RefObject<NodeJS.Timeout | null>;
+  className?: string;
+  style?: CSSProperties;
+  render?: ComboboxRenderProp<
+    HTMLAttributes<HTMLDivElement>,
+    ComboboxSearchState
+  >;
+}
+
+export interface ComboboxSearchState {
+  open: boolean;
+  empty: boolean;
+  value: string;
+}
+
+export interface ComboboxSearchProps {
+  className?: string;
+  style?: CSSProperties;
+  render?: ComboboxRenderProp<
+    HTMLAttributes<HTMLDivElement>,
+    ComboboxSearchState
+  >;
 }

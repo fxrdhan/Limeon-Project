@@ -1,13 +1,17 @@
 import {
+  type ComponentPropsWithoutRef,
   forwardRef,
   type CSSProperties,
-  type ForwardedRef,
-  type HTMLAttributes,
-  type ReactElement,
   type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { DropDirection } from '../../constants';
+import { renderComboboxElement } from '../../utils/renderPart';
+import type {
+  ComboboxPopupRenderProps,
+  ComboboxPopupState,
+  ComboboxRenderProp,
+} from '../../types';
 
 interface MenuPortalProps {
   id: string;
@@ -23,17 +27,7 @@ interface MenuPortalProps {
   isPositionReady: boolean;
   isKeyboardNavigation?: boolean;
   className?: string;
-  render?: (
-    props: HTMLAttributes<HTMLDivElement> & {
-      ref: ForwardedRef<HTMLDivElement>;
-    },
-    state: {
-      open: boolean;
-      closed: boolean;
-      frozen: boolean;
-      side: 'top' | 'bottom';
-    }
-  ) => ReactElement;
+  render?: ComboboxRenderProp<ComboboxPopupRenderProps, ComboboxPopupState>;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
   children: ReactNode;
@@ -92,21 +86,23 @@ const MenuPortal = forwardRef<HTMLDivElement, MenuPortalProps>(
       onMouseEnter,
       onMouseLeave,
       children,
-    };
-    const state: {
-      open: boolean;
-      closed: boolean;
-      frozen: boolean;
-      side: 'top' | 'bottom';
-    } = {
+    } as ComboboxPopupRenderProps;
+    const state = {
       open: isOpen && !isClosing,
       closed: !isOpen || isClosing,
       frozen: isFrozen,
       side,
-    };
+    } satisfies ComboboxPopupState;
+    const renderedElement = renderComboboxElement(render, popupProps, state);
+    const { ref: _renderRef, ...popupDomProps } = popupProps;
 
     return createPortal(
-      render ? render(popupProps, state) : <div {...popupProps} />,
+      renderedElement ?? (
+        <div
+          ref={ref}
+          {...(popupDomProps as ComponentPropsWithoutRef<'div'>)}
+        />
+      ),
       document.body
     );
   }

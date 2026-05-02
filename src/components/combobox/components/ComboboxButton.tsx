@@ -2,6 +2,11 @@ import React, { forwardRef } from 'react';
 import Button from './button/Button';
 import { useTextExpansion } from '../hooks/useTextExpansion';
 import type { ComboboxMode } from '@/types';
+import type {
+  ComboboxRenderProp,
+  ComboboxTriggerRenderProps,
+  ComboboxTriggerState,
+} from '../types';
 
 interface ComboboxButtonProps {
   id: string;
@@ -23,17 +28,7 @@ interface ComboboxButtonProps {
   ariaLabelledBy?: string;
   className?: string;
   style?: React.CSSProperties;
-  render?: (
-    props: React.ButtonHTMLAttributes<HTMLButtonElement> & {
-      ref: React.ForwardedRef<HTMLButtonElement>;
-    },
-    state: {
-      open: boolean;
-      disabled: boolean;
-      invalid: boolean;
-      placeholder: boolean;
-    }
-  ) => React.ReactElement;
+  render?: ComboboxRenderProp<ComboboxTriggerRenderProps, ComboboxTriggerState>;
   onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
   onKeyDown?: (e: React.KeyboardEvent<HTMLButtonElement>) => void;
   onBlur: () => void;

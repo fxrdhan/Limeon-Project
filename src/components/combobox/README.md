@@ -67,12 +67,15 @@ combobox/
 
 ## Data Model
 
-### ComboboxOption
+### ComboboxItem and ComboboxOption
 
 ```ts
-export interface ComboboxOption {
+export interface ComboboxItem {
   id: string;
   name: string;
+}
+
+export interface ComboboxOption extends ComboboxItem {
   code?: string;
   description?: string;
   metaLabel?: string;
@@ -81,15 +84,13 @@ export interface ComboboxOption {
 }
 ```
 
-`id` is the value passed to `onChange`. `name` is the primary label. Optional fields are used for search display, the small badge on the trigger or hover detail, and the base payload before `onFetchHoverDetail` resolves.
+`ComboboxItem` is the primitive identity contract: `id` is the value passed to `onChange`, and `name` is the primary label. `ComboboxOption` extends that core shape with optional display/detail metadata used by search display, the small badge on the trigger, hover detail, and the base payload before `onFetchHoverDetail` resolves.
 
 ### HoverDetailData
 
 ```ts
-export interface HoverDetailData {
-  id: string;
+export interface HoverDetailData extends ComboboxItem {
   code?: string;
-  name: string;
   description?: string;
   metaLabel?: string;
   metaTone?: 'default' | 'info' | 'success' | 'warning';
@@ -174,7 +175,7 @@ export interface CheckboxComboboxProps extends Omit<
 
 The `name` prop is mirrored to visually hidden native form input(s). Single-select mode renders one input with the selected id, while checkbox mode renders one input per selected id. Empty required checkbox mode renders one empty required input that remains eligible for native constraint validation.
 
-Change handlers receive Base UI-like `details` objects with `reason`, `event`, `cancel()`, `allowPropagation()`, `isCanceled`, and `isPropagationAllowed`. `cancel()` prevents the combobox from applying follow-up internal behavior for cancelable open, input, and value changes. Escape key propagation is stopped by default; call `details.allowPropagation()` in `onOpenChange` for `reason === 'escape-key'` when parent popups should also handle Escape.
+Change handlers receive Base UI-like `details` objects with `reason`, `event`, `trigger`, `cancel()`, `allowPropagation()`, `isCanceled`, and `isPropagationAllowed`. `cancel()` prevents the combobox from applying follow-up internal behavior for cancelable open, input, and value changes. Escape key propagation is stopped by default; call `details.allowPropagation()` in `onOpenChange` for `reason === 'escape-key'` when parent popups should also handle Escape.
 
 ### Compound Exports
 
@@ -213,7 +214,7 @@ These parts consume `ComboboxRoot` context and can be used as children when the 
 </ComboboxRoot>
 ```
 
-`ComboboxTrigger`, `ComboboxPopup`, `ComboboxList`, and `ComboboxListItem` accept `className`, `style`, and `render` props for Base UI-like root element composition.
+`ComboboxTrigger`, `ComboboxPopup`, `ComboboxSearch`, `ComboboxList`, and `ComboboxListItem` accept `className`, `style`, and `render` props for Base UI-like root element composition. `render` may be a function or a React element; element render overrides are cloned with the internal ARIA, data attributes, handlers, and children merged in. Element render handlers run before internal handlers, and calling `event.preventDefault()` skips the matching internal handler.
 
 ## Defaults
 

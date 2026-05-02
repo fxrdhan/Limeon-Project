@@ -1,8 +1,10 @@
+import type { ComponentPropsWithoutRef } from 'react';
 import MenuContent from '../menu/MenuContent';
 import EmptyState from '../menu/EmptyState';
 import { useComboboxContext } from '../../hooks/useComboboxContext';
 import ComboboxListItem from './ComboboxListItem';
 import type { ComboboxListProps } from '../../types';
+import { renderComboboxElement } from '../../utils/renderPart';
 
 const ComboboxList = ({
   children,
@@ -66,10 +68,14 @@ const ComboboxList = ({
     empty: filteredOptions.length === 0,
     highlightedIndex,
   };
+  const renderedElement = renderComboboxElement(render, listProps, state);
+  const { ref, ...listDomProps } = listProps;
 
   return (
     <MenuContent scrollState={scrollState}>
-      {render ? render(listProps, state) : <div {...listProps} />}
+      {renderedElement ?? (
+        <div ref={ref} {...(listDomProps as ComponentPropsWithoutRef<'div'>)} />
+      )}
     </MenuContent>
   );
 };

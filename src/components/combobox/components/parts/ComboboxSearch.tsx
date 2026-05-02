@@ -1,7 +1,8 @@
 import SearchBar from '../SearchBar';
 import { useComboboxContext } from '../../hooks/useComboboxContext';
+import type { ComboboxSearchProps } from '../../types';
 
-const ComboboxSearch = () => {
+const ComboboxSearch = ({ className, style, render }: ComboboxSearchProps) => {
   const { searchInputRef, leaveTimeoutRef, onSearchKeyDown } =
     useComboboxContext();
 
@@ -11,6 +12,9 @@ const ComboboxSearch = () => {
       onKeyDown={onSearchKeyDown}
       onFocus={() => {}}
       leaveTimeoutRef={leaveTimeoutRef}
+      className={className}
+      style={style}
+      render={render}
     />
   );
 };

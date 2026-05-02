@@ -32,26 +32,24 @@ const ComboboxListItem = ({
     : value === option.id;
 
   return (
-    <div data-dropdown-option-frame data-dropdown-option-index={resolvedIndex}>
-      <OptionItem
-        option={option}
-        index={resolvedIndex}
-        optionId={getOptionId(option.id)}
-        optionCount={filteredOptions.length}
-        isSelected={isSelected}
-        isHighlighted={highlightedIndex === resolvedIndex}
-        suppressHighlightBackground={false}
-        isExpanded={expandedId === option.id}
-        onHighlight={(nextIndex, event) => {
-          onSetIsKeyboardNavigation(false);
-          onSetHighlightedIndex(nextIndex, event);
-        }}
-        dropdownMenuRef={dropdownMenuRef}
-        className={className}
-        style={style}
-        render={render}
-      />
-    </div>
+    <OptionItem
+      option={option}
+      index={resolvedIndex}
+      optionId={getOptionId(option.id)}
+      optionCount={filteredOptions.length}
+      isSelected={isSelected}
+      isHighlighted={highlightedIndex === resolvedIndex}
+      suppressHighlightBackground={false}
+      isExpanded={expandedId === option.id}
+      onHighlight={(nextIndex, event) => {
+        onSetIsKeyboardNavigation(false);
+        onSetHighlightedIndex(nextIndex, event);
+      }}
+      dropdownMenuRef={dropdownMenuRef}
+      className={className}
+      style={style}
+      render={render}
+    />
   );
 };
 

@@ -6,6 +6,7 @@ import SearchIcon from './search/SearchIcon';
 import AddNewButton from './search/AddNewButton';
 import { SEARCH_STATES } from '../constants';
 import { getSearchIconColor } from '../utils/comboboxUtils';
+import { renderComboboxElement } from '../utils/renderPart';
 import { useComboboxContext } from '../hooks/useComboboxContext';
 import type { SearchBarProps } from '../types';
 
@@ -52,7 +53,7 @@ const searchIconVariants = {
 };
 
 const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
-  ({ onKeyDown, onFocus, leaveTimeoutRef }, ref) => {
+  ({ onKeyDown, onFocus, leaveTimeoutRef, className, style, render }, ref) => {
     const {
       searchTerm,
       searchState,
@@ -75,8 +76,10 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
       onAddNew;
     const iconColor = getSearchIconColor(searchState);
 
-    return (
-      <div className="p-2 border-b border-slate-200 sticky top-0 z-10">
+    const searchProps = {
+      className: `p-2 border-b border-slate-200 sticky top-0 z-10 ${className ?? ''}`,
+      style,
+      children: (
         <div className="relative flex items-center min-w-0">
           <div className="relative flex-1 min-w-0">
             <SearchInput
@@ -143,8 +146,16 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
             </AnimatePresence>
           </motion.div>
         </div>
-      </div>
-    );
+      ),
+    };
+    const state = {
+      open: isOpen,
+      empty: filteredOptions.length === 0,
+      value: searchTerm,
+    };
+    const renderedElement = renderComboboxElement(render, searchProps, state);
+
+    return renderedElement ?? <div {...searchProps} />;
   }
 );
 

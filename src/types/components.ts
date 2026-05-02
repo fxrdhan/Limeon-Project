@@ -3,9 +3,12 @@ import { z } from 'zod';
 import { Category, Item } from './database';
 
 // Component props and UI-related types
-export interface ComboboxOption {
+export interface ComboboxItem {
   id: string;
   name: string;
+}
+
+export interface ComboboxOption extends ComboboxItem {
   code?: string;
   description?: string;
   metaLabel?: string;
@@ -13,10 +16,8 @@ export interface ComboboxOption {
   updated_at?: string | null;
 }
 
-export interface HoverDetailData {
-  id: string;
+export interface HoverDetailData extends ComboboxItem {
   code?: string;
-  name: string;
   description?: string;
   metaLabel?: string;
   metaTone?: 'default' | 'info' | 'success' | 'warning';
@@ -46,6 +47,7 @@ export type ComboboxHighlightChangeReason = 'keyboard' | 'pointer' | 'none';
 export interface BaseUIChangeEventDetails<Reason extends string = string> {
   reason: Reason;
   event: Event | null;
+  trigger: Element | undefined;
   cancel: () => void;
   allowPropagation: () => void;
   readonly isCanceled: boolean;
