@@ -10,6 +10,7 @@ import {
 } from '@/styles/uiPrimitives';
 
 interface ButtonProps {
+  id: string;
   mode?: ComboboxMode;
   displayText: string;
   titleText?: string;
@@ -20,7 +21,12 @@ interface ButtonProps {
   isExpanded: boolean;
   hasError: boolean;
   name?: string;
+  popupId: string;
+  listboxId: string;
+  searchList: boolean;
+  activeDescendantId?: string;
   tabIndex?: number;
+  required?: boolean;
   disabled?: boolean;
   onClick: (e: React.MouseEvent) => void;
   onKeyDown?: (e: React.KeyboardEvent<HTMLButtonElement>) => void;
@@ -33,6 +39,7 @@ interface ButtonProps {
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
     {
+      id,
       mode = 'input',
       displayText,
       titleText,
@@ -43,7 +50,12 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       isExpanded,
       hasError,
       name,
+      popupId,
+      listboxId,
+      searchList,
+      activeDescendantId,
       tabIndex,
+      required = false,
       disabled = false,
       onClick,
       onKeyDown,
@@ -54,11 +66,14 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
+    const popupControlId = searchList ? popupId : listboxId;
+
     // For text mode, render as plain text appearance
     if (mode === 'text') {
       return (
         <button
           ref={ref}
+          id={id}
           type="button"
           name={name}
           tabIndex={tabIndex}
@@ -70,7 +85,6 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
                 ? 'text-slate-500 hover:text-slate-600 cursor-pointer'
                 : 'text-slate-700 hover:text-slate-800 cursor-pointer'
           }`}
-          aria-haspopup="menu"
           aria-expanded={isOpen || isClosing}
           onClick={disabled ? undefined : onClick}
           onKeyDown={disabled ? undefined : onKeyDown}
@@ -78,7 +92,19 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           onMouseLeave={disabled ? undefined : onMouseLeave}
           onFocus={disabled ? undefined : onFocus}
           onBlur={disabled ? undefined : onBlur}
-          aria-controls={isOpen ? 'dropdown-options-list' : undefined}
+          role="combobox"
+          aria-label={titleText}
+          aria-controls={isOpen || isClosing ? popupControlId : undefined}
+          aria-activedescendant={
+            isOpen && activeDescendantId ? activeDescendantId : undefined
+          }
+          aria-invalid={hasError || undefined}
+          aria-required={required || undefined}
+          data-popup-open={isOpen ? '' : undefined}
+          data-disabled={disabled ? '' : undefined}
+          data-invalid={hasError ? '' : undefined}
+          data-required={required ? '' : undefined}
+          data-placeholder={isPlaceholder ? '' : undefined}
         >
           <ButtonText
             displayText={displayText}
@@ -96,6 +122,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         ref={ref}
+        id={id}
         type="button"
         name={name}
         tabIndex={tabIndex}
@@ -109,7 +136,6 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
               ? `bg-white text-slate-800 hover:bg-slate-50 ${FORM_CONTROL_BORDER_ERROR_CLASS} ${FORM_CONTROL_FOCUS_ERROR_CLASS}`
               : `bg-white text-slate-800 hover:bg-slate-50 ${FORM_CONTROL_BORDER_DEFAULT_CLASS} ${FORM_CONTROL_FOCUS_CLASS}`
         }`}
-        aria-haspopup="menu"
         aria-expanded={isOpen || isClosing}
         onClick={disabled ? undefined : onClick}
         onKeyDown={disabled ? undefined : onKeyDown}
@@ -117,7 +143,19 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         onMouseLeave={disabled ? undefined : onMouseLeave}
         onFocus={onFocus}
         onBlur={onBlur}
-        aria-controls={isOpen ? 'dropdown-options-list' : undefined}
+        role="combobox"
+        aria-label={titleText}
+        aria-controls={isOpen || isClosing ? popupControlId : undefined}
+        aria-activedescendant={
+          isOpen && activeDescendantId ? activeDescendantId : undefined
+        }
+        aria-invalid={hasError || undefined}
+        aria-required={required || undefined}
+        data-popup-open={isOpen ? '' : undefined}
+        data-disabled={disabled ? '' : undefined}
+        data-invalid={hasError ? '' : undefined}
+        data-required={required ? '' : undefined}
+        data-placeholder={isPlaceholder ? '' : undefined}
       >
         <ButtonText
           displayText={displayText}

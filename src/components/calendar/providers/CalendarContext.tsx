@@ -293,12 +293,19 @@ export const CalendarProvider: React.FC<CalendarProviderProps> = ({
       // Check if click is inside trigger input
       if (triggerInputRef.current?.contains(target)) return;
 
-      // Check if click is inside dropdown menu (calendar header dropdowns)
-      const dropdownMenu = (target as Element).closest('[role="menu"]');
+      // Check if click is inside dropdown popup (calendar header dropdowns)
+      const dropdownMenu = (target as Element).closest(
+        '[role="menu"], [data-combobox-popup]'
+      );
       if (dropdownMenu) return;
 
-      // Check if target itself is a dropdown menu
-      if ((target as Element).getAttribute?.('role') === 'menu') return;
+      // Check if target itself is a dropdown popup
+      if (
+        (target as Element).getAttribute?.('role') === 'menu' ||
+        (target as Element).hasAttribute?.('data-combobox-popup')
+      ) {
+        return;
+      }
 
       // If none of the above, close calendar
       if (isOpen) {

@@ -3,6 +3,9 @@ import { createPortal } from 'react-dom';
 import { DropDirection } from '../../constants';
 
 interface MenuPortalProps {
+  id: string;
+  role?: 'dialog';
+  ariaLabel: string;
   isOpen: boolean;
   isClosing: boolean;
   applyOpenStyles: boolean;
@@ -20,6 +23,9 @@ const MenuPortal = forwardRef<HTMLDivElement, MenuPortalProps>(
   (
     {
       isOpen,
+      id,
+      role,
+      ariaLabel,
       isClosing,
       applyOpenStyles,
       isFrozen = false,
@@ -35,12 +41,20 @@ const MenuPortal = forwardRef<HTMLDivElement, MenuPortalProps>(
   ) => {
     // Always render portal when open or closing to ensure DOM element exists for positioning
     if (!isOpen && !isClosing) return null;
+    const portalRole = role ?? 'dialog';
 
     return typeof document !== 'undefined'
       ? createPortal(
           <div
             ref={ref}
+            id={id}
+            role={portalRole}
+            aria-label={ariaLabel}
             style={portalStyle}
+            data-combobox-popup=""
+            data-state={isOpen && !isClosing ? 'open' : 'closed'}
+            data-popup-open={isOpen && !isClosing ? '' : undefined}
+            data-popup-side={dropDirection === 'down' ? 'bottom' : 'top'}
             className={`
               ${dropDirection === 'down' ? 'origin-top' : 'origin-bottom'}
               bg-white rounded-xl overflow-hidden
@@ -50,9 +64,7 @@ const MenuPortal = forwardRef<HTMLDivElement, MenuPortalProps>(
               ${isFrozen ? 'pointer-events-none select-none' : ''}
               ${isKeyboardNavigation ? 'cursor-none' : ''}
           `}
-            role="menu"
             aria-hidden={isFrozen}
-            onClick={e => e.stopPropagation()}
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
           >

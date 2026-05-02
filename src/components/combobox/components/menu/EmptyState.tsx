@@ -19,7 +19,12 @@ const EmptyState: React.FC<EmptyStateProps> = ({
     searchTerm.trim() !== '';
 
   return (
-    <div className="py-2 px-3 text-sm text-slate-500">
+    <div
+      className="py-2 px-3 text-sm text-slate-500"
+      role="status"
+      aria-live="polite"
+      data-combobox-empty=""
+    >
       {isSearchWithAddNew ? (
         <div>
           <div>{VALIDATION_MESSAGES.NO_OPTIONS}</div>

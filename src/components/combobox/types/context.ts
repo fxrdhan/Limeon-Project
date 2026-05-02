@@ -11,6 +11,8 @@ export interface ComboboxContextType {
   withRadio?: boolean;
   withCheckbox?: boolean;
   searchList: boolean;
+  required: boolean;
+  disabled: boolean;
 
   // Search state
   searchTerm: string;
@@ -23,6 +25,7 @@ export interface ComboboxContextType {
   pendingHighlightedIndex: number | null;
   pendingHighlightSourceIndex: number | null;
   expandedId: string | null;
+  activeDescendantId?: string;
 
   // Validation state
   hasError: boolean;
@@ -38,6 +41,10 @@ export interface ComboboxContextType {
   dropDirection: DropDirection;
   portalStyle: React.CSSProperties;
   isPositionReady: boolean;
+  popupId: string;
+  listboxId: string;
+  searchInputId: string;
+  getOptionId: (optionId: string) => string;
 
   // Refs
   buttonRef: RefObject<HTMLButtonElement>;

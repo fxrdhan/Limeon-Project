@@ -6,6 +6,8 @@ import type { OptionItemProps } from '../types';
 const OptionItem: FC<OptionItemProps> = ({
   option,
   index,
+  optionId,
+  optionCount,
   isSelected,
   isHighlighted,
   suppressHighlightBackground,
@@ -29,6 +31,8 @@ const OptionItem: FC<OptionItemProps> = ({
     <OptionRow
       option={option}
       index={index}
+      optionId={optionId}
+      optionCount={optionCount}
       isSelected={isSelected}
       isHighlighted={isHighlighted}
       suppressHighlightBackground={suppressHighlightBackground}

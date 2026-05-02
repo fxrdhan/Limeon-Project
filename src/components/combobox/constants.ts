@@ -25,10 +25,13 @@ export const COMBOBOX_CONSTANTS = {
 export const KEYBOARD_KEYS = {
   ARROW_DOWN: 'ArrowDown',
   ARROW_UP: 'ArrowUp',
+  HOME: 'Home',
+  END: 'End',
   TAB: 'Tab',
   PAGE_DOWN: 'PageDown',
   PAGE_UP: 'PageUp',
   ENTER: 'Enter',
+  SPACE: ' ',
   ESCAPE: 'Escape',
 } as const;
 

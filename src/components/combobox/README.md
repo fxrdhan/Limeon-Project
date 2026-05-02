@@ -15,6 +15,8 @@ The `Combobox` component is a controlled React component for selecting a single 
 - Automatic viewport-aware positioning, including manual `top`, `bottom`, and `left` options.
 - Hover-detail portal rendering to display option metadata without changing the selection.
 - Keyboard navigation, focus management, auto-scroll to the selected option, and virtualization for large lists.
+- Base UI-like controlled state hooks for popup open state, search input value, and highlighted item.
+- Compound-part exports for advanced composition while keeping the default `<Combobox />` API stable.
 
 ## Import
 
@@ -102,13 +104,25 @@ export interface HoverDetailData {
 
 ```ts
 export interface ComboboxProps {
+  id?: string;
   mode?: 'input' | 'text';
   options: ComboboxOption[];
   value: string;
+  open?: boolean;
+  defaultOpen?: boolean;
+  onOpenChange?: (open: boolean, details: ComboboxOpenChangeDetails) => void;
+  inputValue?: string;
+  onInputValueChange?: (value: string) => void;
+  highlightedValue?: string;
+  onHighlightedValueChange?: (
+    value: string | undefined,
+    details: ComboboxHighlightChangeDetails
+  ) => void;
   tabIndex?: number;
   onChange: (value: string) => void;
   placeholder?: string;
   name: string;
+  form?: string;
   required?: boolean;
   disabled?: boolean;
   onAddNew?: (searchTerm?: string) => void;
@@ -146,6 +160,27 @@ export interface CheckboxComboboxProps extends Omit<
 ```
 
 `withCheckbox` changes the `value` and `onChange` contract to arrays. `withRadio` only changes the visual affordance of single-select mode and does not change the value type.
+
+The `name` prop is mirrored to visually hidden native form input(s). Single-select mode renders one input with the selected id, while checkbox mode renders one input per selected id. Empty required checkbox mode renders one empty required input so native form validation can catch the missing selection.
+
+### Compound Exports
+
+The default export remains the recommended app-level API. Advanced consumers can import Base UI-like parts from `@/components/combobox/exports`:
+
+```tsx
+import {
+  ComboboxRoot,
+  ComboboxTrigger,
+  ComboboxPopup,
+  ComboboxListItem,
+  ComboboxSearch,
+  ComboboxHoverDetail,
+  ComboboxProvider,
+  useComboboxContext,
+} from '@/components/combobox/exports';
+```
+
+These parts are low-level and expect the same provider/context contract used internally by `ComboboxRoot`.
 
 ## Defaults
 
@@ -405,12 +440,15 @@ Combobox handles keyboard input in the trigger, the search input, and the list c
 
 | Key           | Behavior                                                                                                      |
 | ------------- | ------------------------------------------------------------------------------------------------------------- |
-| `ArrowDown`   | Highlight the next option and wrap to the beginning.                                                          |
-| `ArrowUp`     | Highlight the previous option and wrap to the end.                                                            |
+| `ArrowDown`   | Opens the popup from the trigger when closed, then highlights the next option and wraps to the beginning.     |
+| `ArrowUp`     | Opens the popup from the trigger when closed, then highlights the previous option and wraps to the end.       |
+| `Home`        | Highlight the first option when the popup is open.                                                            |
+| `End`         | Highlight the last option when the popup is open.                                                             |
 | `Tab`         | Close the combobox and allow the browser to move focus to the next control. `Shift+Tab` moves focus backward. |
 | `PageDown`    | Jump down by `COMBOBOX_CONSTANTS.PAGE_SIZE` (`5`) items.                                                      |
 | `PageUp`      | Jump up by 5 items.                                                                                           |
 | `Enter`       | Select the highlighted option, or run `onAddNew(searchTerm)` when search returns no results.                  |
+| `Space`       | Select the highlighted option when the popup is open without a search input.                                  |
 | `Escape`      | Close the combobox and reset expanded text.                                                                   |
 | Printable key | If the menu is open and `searchList` is enabled, route the key to the search input.                           |
 
@@ -482,14 +520,16 @@ The state needed by child components is shared through `ComboboxContext`. The ro
 
 ## Accessibility Notes
 
-- The trigger uses `aria-haspopup="menu"`, `aria-expanded`, and `aria-controls` when the list is open.
-- The menu portal uses `role="menu"`.
-- The options container uses `role="listbox"`.
-- Options use `role="option"` and `aria-selected`.
+- The trigger is exposed as a select-only `role="combobox"` with `aria-haspopup="listbox"`, `aria-expanded`, `aria-controls`, and `aria-activedescendant` when an option is highlighted.
+- The popup wrapper is presentational and marks itself with `data-combobox-popup`; the options container owns the `role="listbox"` semantics.
+- The search input inside the popup is also exposed as an editable `role="combobox"` with `aria-autocomplete="list"` and points at the same listbox.
+- Listbox and option IDs are generated per combobox instance so multiple comboboxes do not share ARIA targets.
+- Options use `role="option"`, `aria-selected`, `aria-posinset`, `aria-setsize`, and Base UI-like data attributes such as `data-selected` and `data-highlighted`.
+- Option buttons are removed from the tab order with `tabIndex={-1}` so keyboard focus stays on the trigger, search input, or listbox container.
 - The disabled trigger uses the native `disabled` attribute.
 - Keyboard support is available for navigation and selection.
 
-Note: the menu and listbox roles currently live inside the same portal. If you change the accessibility markup, verify keyboard behavior, tests, and screen reader semantics together.
+Note: the popup and listbox roles are intentionally split. If you change the accessibility markup, verify keyboard behavior, tests, and screen reader semantics together.
 
 ## Constants
 

@@ -8,11 +8,13 @@ import {
 } from '@/styles/uiPrimitives';
 
 interface SearchInputProps {
+  id: string;
+  listboxId: string;
+  activeDescendantId?: string;
   searchTerm: string;
   searchState: string;
   isOpen: boolean;
-  highlightedIndex: number;
-  currentFilteredOptions: Array<{ id: string; name: string }>;
+  isListEmpty: boolean;
   onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   onFocus: () => void;
@@ -22,11 +24,13 @@ interface SearchInputProps {
 const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
   (
     {
+      id,
+      listboxId,
+      activeDescendantId,
       searchTerm,
       searchState,
       isOpen,
-      highlightedIndex,
-      currentFilteredOptions,
+      isListEmpty,
       onSearchChange,
       onKeyDown,
       onFocus,
@@ -36,8 +40,10 @@ const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
   ) => {
     return (
       <input
+        id={id}
         ref={ref}
         type="text"
+        role="combobox"
         className={`w-full py-2 text-sm border rounded-lg focus:outline-hidden transition-all duration-300 ease-in-out min-w-0 pl-2 ${
           searchState === SEARCH_STATES.NOT_FOUND
             ? `${FORM_CONTROL_BORDER_ERROR_CLASS} ${FORM_CONTROL_FOCUS_ERROR_CLASS}`
@@ -56,12 +62,13 @@ const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
           onFocus();
         }}
         data-open={isOpen ? 'true' : 'false'}
-        aria-controls="dropdown-options-list"
-        aria-activedescendant={
-          highlightedIndex >= 0 && currentFilteredOptions[highlightedIndex]
-            ? `dropdown-option-${currentFilteredOptions[highlightedIndex].id}`
-            : undefined
-        }
+        data-popup-open={isOpen ? '' : undefined}
+        data-list-empty={isListEmpty ? '' : undefined}
+        aria-label="Cari pilihan"
+        aria-expanded={isOpen}
+        aria-autocomplete="list"
+        aria-controls={isOpen ? listboxId : undefined}
+        aria-activedescendant={isOpen ? activeDescendantId : undefined}
       />
     );
   }

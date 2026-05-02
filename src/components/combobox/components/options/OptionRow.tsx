@@ -10,6 +10,8 @@ import CheckboxIndicator from './CheckboxIndicator';
 interface OptionRowProps {
   option: ComboboxOption;
   index: number;
+  optionId: string;
+  optionCount: number;
 
   // Visual states
   isSelected: boolean;
@@ -45,6 +47,8 @@ interface OptionRowProps {
 const OptionRow: React.FC<OptionRowProps> = ({
   option,
   index,
+  optionId,
+  optionCount,
   isSelected,
   isHighlighted,
   suppressHighlightBackground,
@@ -83,9 +87,7 @@ const OptionRow: React.FC<OptionRowProps> = ({
       ? truncateText(option.name, maxTextWidth)
       : option.name;
 
-  const handleMouseEnter = async (
-    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
-  ) => {
+  const handleMouseEnter = async (e: React.MouseEvent<HTMLElement>) => {
     if (isKeyboardNavigation) return;
     onHighlight(index);
 
@@ -102,9 +104,7 @@ const OptionRow: React.FC<OptionRowProps> = ({
     }
   };
 
-  const handleMouseMove = (
-    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
-  ) => {
+  const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
     if (!isKeyboardNavigation) return;
     onHighlight(index);
 
@@ -177,12 +177,18 @@ const OptionRow: React.FC<OptionRowProps> = ({
   };
 
   return (
-    <button
-      id={`dropdown-option-${option.id}`}
+    <div
+      id={optionId}
       role="option"
       aria-selected={Boolean(isSelected)}
+      aria-posinset={index + 1}
+      aria-setsize={optionCount}
       data-dropdown-option-index={index}
-      type="button"
+      data-combobox-item=""
+      data-selected={isSelected ? '' : undefined}
+      data-highlighted={isHighlighted ? '' : undefined}
+      data-value={option.id}
+      tabIndex={-1}
       className={`relative z-10 flex ${shouldExpand ? 'items-start' : 'items-center'} w-full py-2 px-3 rounded-lg text-sm text-slate-800 cursor-pointer focus:outline-hidden transition-colors duration-150`}
       onClick={() => onSelect(option.id)}
       onMouseEnter={handleMouseEnter}
@@ -219,7 +225,7 @@ const OptionRow: React.FC<OptionRowProps> = ({
           {renderDisplayText()}
         </span>
       </span>
-    </button>
+    </div>
   );
 };
 

@@ -68,7 +68,10 @@ const listOptionTransition = {
 };
 
 const ComboboxMenu = forwardRef<HTMLDivElement, ComboboxMenuProps>(
-  ({ isFrozen = false, leaveTimeoutRef, onSearchKeyDown }, ref) => {
+  (
+    { popupId, popupLabel, isFrozen = false, leaveTimeoutRef, onSearchKeyDown },
+    ref
+  ) => {
     const {
       isOpen,
       isClosing,
@@ -85,8 +88,11 @@ const ComboboxMenu = forwardRef<HTMLDivElement, ComboboxMenuProps>(
       pendingHighlightedIndex,
       pendingHighlightSourceIndex,
       expandedId,
+      activeDescendantId,
       value,
       withCheckbox,
+      listboxId,
+      getOptionId,
       onAddNew,
       onKeyDown,
       onSetHighlightedIndex,
@@ -585,6 +591,8 @@ const ComboboxMenu = forwardRef<HTMLDivElement, ComboboxMenuProps>(
       <OptionItem
         option={option}
         index={index}
+        optionId={getOptionId(option.id)}
+        optionCount={filteredOptions.length}
         isSelected={Boolean(
           withCheckbox && Array.isArray(value)
             ? value.includes(option.id)
@@ -611,6 +619,9 @@ const ComboboxMenu = forwardRef<HTMLDivElement, ComboboxMenuProps>(
     return (
       <MenuPortal
         ref={ref}
+        id={popupId}
+        role={searchList ? 'dialog' : undefined}
+        ariaLabel={popupLabel}
         isFrozen={isFrozen}
         isOpen={isOpen}
         isClosing={isClosing}
@@ -640,9 +651,14 @@ const ComboboxMenu = forwardRef<HTMLDivElement, ComboboxMenuProps>(
           )}
           <MenuContent scrollState={scrollState}>
             <div
-              id="dropdown-options-list"
+              id={listboxId}
               ref={optionsContainerRef}
               role="listbox"
+              aria-label="Daftar pilihan"
+              aria-multiselectable={withCheckbox ? true : undefined}
+              aria-activedescendant={activeDescendantId}
+              data-list-empty={filteredOptions.length === 0 ? '' : undefined}
+              data-popup-open={isOpen ? '' : undefined}
               tabIndex={-1}
               className="relative p-1 max-h-60 overflow-y-auto focus:outline-hidden"
               onScroll={handleOptionsScroll}

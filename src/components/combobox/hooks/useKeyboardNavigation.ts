@@ -11,6 +11,7 @@ import {
   KEYBOARD_SCROLL_VISIBILITY_INSET,
 } from '@/components/shared/keyboard-pinned-highlight';
 import { KEYBOARD_KEYS, COMBOBOX_CONSTANTS, SEARCH_STATES } from '../constants';
+import type { ComboboxOpenChangeReason } from '@/types';
 
 interface UseKeyboardNavigationProps {
   isOpen: boolean;
@@ -22,7 +23,7 @@ interface UseKeyboardNavigationProps {
   debouncedSearchTerm: string;
   onSelect: (optionId: string) => void;
   onAddNew?: (term: string) => void;
-  onCloseCombobox: () => void;
+  onCloseCombobox: (reason?: ComboboxOpenChangeReason) => void;
   onCloseValidation: () => void;
   autoHighlightOnOpen?: boolean;
   optionsContainerRef: RefObject<HTMLDivElement>;
@@ -287,7 +288,7 @@ export const useKeyboardNavigation = ({
 
       if (e.key === KEYBOARD_KEYS.TAB) {
         clearPendingHighlight();
-        onCloseCombobox();
+        onCloseCombobox('focus-out');
         setExpandedId(null);
         setIsKeyboardNavigation(false);
         return;
@@ -320,6 +321,12 @@ export const useKeyboardNavigation = ({
           newIndex = items.length
             ? (navigationBaseIndex - 1 + items.length) % items.length
             : -1;
+        },
+        [KEYBOARD_KEYS.HOME]: () => {
+          newIndex = items.length ? 0 : -1;
+        },
+        [KEYBOARD_KEYS.END]: () => {
+          newIndex = items.length ? items.length - 1 : -1;
         },
         [KEYBOARD_KEYS.PAGE_DOWN]: () => {
           if (items.length) {
@@ -359,8 +366,16 @@ export const useKeyboardNavigation = ({
           }
           return;
         },
+        [KEYBOARD_KEYS.SPACE]: () => {
+          const activeIndex =
+            keyboardHighlightIndexRef.current ?? highlightedIndex;
+          if (activeIndex >= 0 && activeIndex < items.length) {
+            onSelect(items[activeIndex].id);
+          }
+          return;
+        },
         [KEYBOARD_KEYS.ESCAPE]: () => {
-          onCloseCombobox();
+          onCloseCombobox('escape-key');
           setExpandedId(null);
           return;
         },
@@ -368,20 +383,20 @@ export const useKeyboardNavigation = ({
 
       if (keyActions[e.key]) {
         e.preventDefault();
-        if (
-          !([KEYBOARD_KEYS.ENTER, KEYBOARD_KEYS.ESCAPE] as string[]).includes(
-            e.key
-          )
-        ) {
+        const shouldMoveHighlight = !(
+          [
+            KEYBOARD_KEYS.ENTER,
+            KEYBOARD_KEYS.SPACE,
+            KEYBOARD_KEYS.ESCAPE,
+          ] as string[]
+        ).includes(e.key);
+
+        if (shouldMoveHighlight) {
           setIsKeyboardNavigation(true);
           setExpandedId(null);
         }
         keyActions[e.key]();
-        if (
-          !([KEYBOARD_KEYS.ENTER, KEYBOARD_KEYS.ESCAPE] as string[]).includes(
-            e.key
-          )
-        ) {
+        if (shouldMoveHighlight) {
           const shouldPinHighlight =
             newIndex >= 0 && getRequiredScrollTop(newIndex) !== null;
 
@@ -407,6 +422,7 @@ export const useKeyboardNavigation = ({
           }
 
           clearPendingHighlight();
+          keyboardHighlightIndexRef.current = newIndex;
           setHighlightedIndex(newIndex);
           if (newIndex >= 0 && items[newIndex]) {
             setExpandedId(items[newIndex].id);

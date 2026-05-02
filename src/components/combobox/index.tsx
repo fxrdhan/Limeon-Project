@@ -6,7 +6,12 @@ import React, {
   useState,
   useId,
 } from 'react';
-import type { ComboboxProps, CheckboxComboboxProps } from '@/types';
+import type {
+  ComboboxProps,
+  CheckboxComboboxProps,
+  ComboboxHighlightChangeReason,
+  ComboboxOpenChangeReason,
+} from '@/types';
 import ValidationOverlay from '@/components/validation-overlay';
 import ComboboxButton from './components/ComboboxButton';
 import ComboboxMenu from './components/ComboboxMenu';
@@ -24,10 +29,9 @@ import { useFocusManagement } from './hooks/useFocusManagement';
 import { useScrollManagement } from './hooks/useScrollManagement';
 import { useComboboxEffects } from './hooks/useComboboxEffects';
 import { useHoverDetail } from './hooks/useHoverDetail';
+import { KEYBOARD_KEYS } from './constants';
 
-let pinnedComboboxId: string | null = null;
-let activeManagedComboboxId: string | null = null;
-let activeManagedComboboxCloseCallback: (() => void) | null = null;
+const COMBOBOX_OPEN_EVENT = 'pharmasys:combobox-open';
 
 const isEditableElement = (element: EventTarget | null) => {
   if (!(element instanceof HTMLElement)) return false;
@@ -43,14 +47,27 @@ const isPrintableSearchKey = (e: React.KeyboardEvent<HTMLElement>) => {
   return e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey;
 };
 
+const sanitizeDomId = (value: string) => {
+  const sanitizedValue = value.replace(/[^A-Za-z0-9_-]/g, '-');
+  return sanitizedValue || 'value';
+};
+
 // Function overloads for different modes
 function Combobox(props: ComboboxProps): React.JSX.Element;
 function Combobox(props: CheckboxComboboxProps): React.JSX.Element;
 function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
   const {
+    id,
     mode = 'input',
     options,
     value,
+    open,
+    defaultOpen,
+    onOpenChange,
+    inputValue,
+    onInputValueChange,
+    highlightedValue,
+    onHighlightedValueChange,
     placeholder = '-- Pilih --',
     onAddNew,
     persistOpen = false,
@@ -66,6 +83,7 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
     validationAutoHide = true,
     validationAutoHideDelay,
     name, // Used for form field identification and validation
+    form,
     hoverToOpen = false,
     // Portal width control
     portalWidth = 'auto',
@@ -81,7 +99,19 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
 
   const withCheckbox = 'withCheckbox' in allProps && allProps.withCheckbox;
   const withRadio = 'withRadio' in allProps ? allProps.withRadio : false;
+  const isHighlightedValueControlled = 'highlightedValue' in allProps;
   const instanceId = useId();
+  const idBase = id
+    ? sanitizeDomId(id)
+    : `combobox-${sanitizeDomId(instanceId)}`;
+  const buttonId = idBase;
+  const popupId = `${idBase}-popup`;
+  const listboxId = `${idBase}-listbox`;
+  const searchInputId = `${idBase}-search`;
+  const getOptionId = useCallback(
+    (optionId: string) => `${idBase}-option-${sanitizeDomId(optionId)}`,
+    [idBase]
+  );
 
   // Type guard for checkbox mode - memoized to prevent useCallback dependency changes
   const isCheckboxMode = useCallback(
@@ -108,13 +138,22 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
   const suppressFocusOnNextOpenRef = useRef(false);
   const previousMenuFrozenRef = useRef(false);
   const frozenValueRef = useRef<string | null>(null);
+  const openChangeReasonRef = useRef<ComboboxOpenChangeReason>('none');
+  const notifiedHighlightedValueRef = useRef<string | undefined>(undefined);
   const [isLocallyFrozen, setIsLocallyFrozen] = useState(false);
 
   // Hooks
+  const handleOpenChange = useCallback(
+    (nextOpen: boolean) => {
+      onOpenChange?.(nextOpen, { reason: openChangeReasonRef.current });
+      openChangeReasonRef.current = 'none';
+    },
+    [onOpenChange]
+  );
+
   const shouldKeepComboboxOpen = useCallback(
-    () =>
-      persistOpen || pinnedOpenRef.current || pinnedComboboxId === instanceId,
-    [instanceId, persistOpen]
+    () => persistOpen || pinnedOpenRef.current,
+    [persistOpen]
   );
   const shouldSkipOpenFocus = useCallback(() => {
     const shouldSkip = suppressFocusOnNextOpenRef.current;
@@ -132,6 +171,9 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
     toggleCombobox,
   } = useComboboxState({
     shouldKeepOpen: shouldKeepComboboxOpen,
+    open,
+    defaultOpen,
+    onOpenChange: handleOpenChange,
   });
   const isMenuFrozen = freezePersistedMenu || isLocallyFrozen;
   const effectiveIsOpen = isOpen || shouldKeepComboboxOpen();
@@ -140,35 +182,29 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
 
   const pinComboboxOpen = useCallback(() => {
     pinnedOpenRef.current = true;
-    pinnedComboboxId = instanceId;
-  }, [instanceId]);
+  }, []);
 
   const releasePinnedOpen = useCallback(() => {
     pinnedOpenRef.current = false;
-    if (pinnedComboboxId === instanceId) {
-      pinnedComboboxId = null;
-    }
-  }, [instanceId]);
+  }, []);
 
-  const closeComboboxAndReleasePin = useCallback(() => {
-    onPersistOpenClear?.();
-    releasePinnedOpen();
-    actualCloseCombobox(true);
-  }, [actualCloseCombobox, onPersistOpenClear, releasePinnedOpen]);
-
-  const closeOtherActiveCombobox = useCallback(() => {
-    if (
-      activeManagedComboboxId !== null &&
-      activeManagedComboboxId !== instanceId
-    ) {
-      activeManagedComboboxCloseCallback?.();
-    }
-  }, [instanceId]);
+  const closeComboboxAndReleasePin = useCallback(
+    (reason: ComboboxOpenChangeReason = 'none') => {
+      openChangeReasonRef.current = reason;
+      onPersistOpenClear?.();
+      releasePinnedOpen();
+      actualCloseCombobox(true);
+    },
+    [actualCloseCombobox, onPersistOpenClear, releasePinnedOpen]
+  );
 
   const openComboboxExclusively = useCallback(() => {
-    closeOtherActiveCombobox();
+    openChangeReasonRef.current = 'trigger-press';
+    document.dispatchEvent(
+      new CustomEvent(COMBOBOX_OPEN_EVENT, { detail: { instanceId } })
+    );
     openThisCombobox();
-  }, [closeOtherActiveCombobox, openThisCombobox]);
+  }, [instanceId, openThisCombobox]);
 
   const handleToggleCombobox = useCallback(
     (e: React.MouseEvent) => {
@@ -176,13 +212,16 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
         onPersistOpenClear?.();
         releasePinnedOpen();
       } else {
-        closeOtherActiveCombobox();
+        document.dispatchEvent(
+          new CustomEvent(COMBOBOX_OPEN_EVENT, { detail: { instanceId } })
+        );
       }
+      openChangeReasonRef.current = 'trigger-press';
       toggleCombobox(e);
     },
     [
-      closeOtherActiveCombobox,
       effectiveIsOpen,
+      instanceId,
       onPersistOpenClear,
       releasePinnedOpen,
       toggleCombobox,
@@ -197,7 +236,7 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
     handleSearchChange,
     updateSearchTerm,
     resetSearch,
-  } = useComboboxSearch(options, searchList);
+  } = useComboboxSearch(options, searchList, inputValue, onInputValueChange);
 
   const {
     hasError,
@@ -279,11 +318,8 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
   useEffect(() => {
     return () => {
       pinnedOpenRef.current = false;
-      if (pinnedComboboxId === instanceId) {
-        pinnedComboboxId = null;
-      }
     };
-  }, [instanceId]);
+  }, []);
 
   useEffect(() => {
     const wasFrozen = previousMenuFrozenRef.current;
@@ -334,7 +370,7 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
         if (optionId && optionId.trim() !== '') {
           handleCloseValidation();
         }
-        closeComboboxAndReleasePin();
+        closeComboboxAndReleasePin('item-press');
         resetSearch();
         setTimeout(() => buttonRef.current?.focus(), 150);
       }
@@ -372,24 +408,73 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
     autoHighlightOnOpen: true,
     optionsContainerRef: optionsContainerRef as RefObject<HTMLDivElement>,
   });
+  const activeDescendantId =
+    highlightedIndex >= 0 && filteredOptions[highlightedIndex]
+      ? getOptionId(filteredOptions[highlightedIndex].id)
+      : undefined;
+
+  const notifyHighlightedValueChange = useCallback(
+    (index: number, reason: ComboboxHighlightChangeReason) => {
+      if (!onHighlightedValueChange) return;
+
+      const highlightedOption = index >= 0 ? filteredOptions[index] : undefined;
+      const nextHighlightedValue = highlightedOption?.id;
+
+      if (notifiedHighlightedValueRef.current === nextHighlightedValue) {
+        return;
+      }
+
+      notifiedHighlightedValueRef.current = nextHighlightedValue;
+      onHighlightedValueChange(nextHighlightedValue, {
+        reason,
+        index,
+      });
+    },
+    [filteredOptions, onHighlightedValueChange]
+  );
 
   useEffect(() => {
-    if (!effectiveIsOpen) {
-      if (activeManagedComboboxId === instanceId) {
-        activeManagedComboboxId = null;
-        activeManagedComboboxCloseCallback = null;
-      }
-      return;
-    }
+    notifyHighlightedValueChange(
+      highlightedIndex,
+      isKeyboardNavigation ? 'keyboard' : 'none'
+    );
+  }, [highlightedIndex, isKeyboardNavigation, notifyHighlightedValueChange]);
 
-    activeManagedComboboxId = instanceId;
-    activeManagedComboboxCloseCallback = closeComboboxAndReleasePin;
+  useEffect(() => {
+    if (!isHighlightedValueControlled) return;
+
+    const nextHighlightedIndex =
+      highlightedValue === undefined
+        ? -1
+        : filteredOptions.findIndex(option => option.id === highlightedValue);
+
+    setHighlightedIndex(nextHighlightedIndex);
+    setExpandedId(
+      nextHighlightedIndex >= 0
+        ? (filteredOptions[nextHighlightedIndex]?.id ?? null)
+        : null
+    );
+  }, [
+    filteredOptions,
+    highlightedValue,
+    isHighlightedValueControlled,
+    setExpandedId,
+    setHighlightedIndex,
+  ]);
+
+  useEffect(() => {
+    const handlePeerOpen = (event: Event) => {
+      const peerInstanceId = (event as CustomEvent<{ instanceId?: string }>)
+        .detail?.instanceId;
+
+      if (peerInstanceId === instanceId || !effectiveIsOpen) return;
+      closeComboboxAndReleasePin('none');
+    };
+
+    document.addEventListener(COMBOBOX_OPEN_EVENT, handlePeerOpen);
 
     return () => {
-      if (activeManagedComboboxId === instanceId) {
-        activeManagedComboboxId = null;
-        activeManagedComboboxCloseCallback = null;
-      }
+      document.removeEventListener(COMBOBOX_OPEN_EVENT, handlePeerOpen);
     };
   }, [closeComboboxAndReleasePin, effectiveIsOpen, instanceId]);
 
@@ -425,7 +510,7 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
         Boolean(target.closest('[role="dialog"][aria-modal="true"]'));
 
       if (!isInsideCombobox && !isInsideModal) {
-        closeComboboxAndReleasePin();
+        closeComboboxAndReleasePin('outside-press');
       }
     };
 
@@ -601,8 +686,56 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
     [handleComboboxKeyDown]
   );
 
+  const openComboboxFromButtonKeyboard = useCallback(
+    (e: React.KeyboardEvent<HTMLButtonElement>) => {
+      if (effectiveIsOpen) return false;
+
+      const shouldOpen =
+        e.key === KEYBOARD_KEYS.ARROW_DOWN ||
+        e.key === KEYBOARD_KEYS.ARROW_UP ||
+        e.key === KEYBOARD_KEYS.ENTER ||
+        e.key === KEYBOARD_KEYS.SPACE;
+
+      if (!shouldOpen) return false;
+
+      e.preventDefault();
+      openComboboxExclusively();
+      setIsKeyboardNavigation(true);
+
+      if (filteredOptions.length === 0) {
+        setHighlightedIndex(-1);
+        setExpandedId(null);
+        return true;
+      }
+
+      const selectedIndex =
+        typeof value === 'string'
+          ? filteredOptions.findIndex(option => option.id === value)
+          : -1;
+      const fallbackIndex =
+        e.key === KEYBOARD_KEYS.ARROW_UP ? filteredOptions.length - 1 : 0;
+      const nextHighlightedIndex =
+        selectedIndex >= 0 ? selectedIndex : fallbackIndex;
+
+      setHighlightedIndex(nextHighlightedIndex);
+      setExpandedId(filteredOptions[nextHighlightedIndex].id);
+      return true;
+    },
+    [
+      effectiveIsOpen,
+      filteredOptions,
+      openComboboxExclusively,
+      setExpandedId,
+      setHighlightedIndex,
+      setIsKeyboardNavigation,
+      value,
+    ]
+  );
+
   const handleButtonKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLButtonElement>) => {
+      if (openComboboxFromButtonKeyboard(e)) return;
+
       if (
         effectiveIsOpen &&
         searchList &&
@@ -629,6 +762,7 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
       effectiveIsOpen,
       handleComboboxKeyDown,
       hideHoverDetail,
+      openComboboxFromButtonKeyboard,
       searchList,
       searchTerm,
       updateSearchTerm,
@@ -645,6 +779,8 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
     withRadio,
     withCheckbox,
     searchList,
+    required,
+    disabled,
 
     // Search state
     searchTerm,
@@ -657,6 +793,7 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
     pendingHighlightedIndex,
     pendingHighlightSourceIndex,
     expandedId,
+    activeDescendantId,
 
     // Validation state
     hasError,
@@ -668,6 +805,10 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
     dropDirection,
     portalStyle,
     isPositionReady,
+    popupId,
+    listboxId,
+    searchInputId,
+    getOptionId,
 
     // Refs
     buttonRef: buttonRef as RefObject<HTMLButtonElement>,
@@ -680,7 +821,10 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
     onAddNew: handleAddNewPreservingCombobox,
     onSearchChange: handleSearchChangeWithHoverReset,
     onKeyDown: handleComboboxKeyDown,
-    onSetHighlightedIndex: setHighlightedIndex,
+    onSetHighlightedIndex: (index: number) => {
+      setHighlightedIndex(index);
+      notifyHighlightedValueChange(index, 'pointer');
+    },
     onSetIsKeyboardNavigation: setIsKeyboardNavigation,
     onMenuEnter: handleMenuEnter,
     onMenuLeave: handleMouseLeaveWithCloseIntent,
@@ -690,6 +834,51 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
     onHoverDetailHide: enableHoverDetail ? handleOptionLeave : undefined,
     onHoverDetailSuppress: enableHoverDetail ? suppressHoverDetail : undefined,
   };
+  const nativeFormInputClassName =
+    'sr-only absolute h-px w-px overflow-hidden whitespace-nowrap border-0 p-0';
+  const formValueInputs =
+    withCheckbox && isCheckboxMode(allProps) ? (
+      allProps.value.length > 0 ? (
+        allProps.value.map(selectedValue => (
+          <input
+            key={selectedValue}
+            className={nativeFormInputClassName}
+            name={name}
+            form={form}
+            value={selectedValue}
+            required={required}
+            disabled={disabled}
+            readOnly
+            tabIndex={-1}
+            aria-hidden="true"
+          />
+        ))
+      ) : (
+        <input
+          className={nativeFormInputClassName}
+          name={name}
+          form={form}
+          value=""
+          required={required}
+          disabled={disabled}
+          readOnly
+          tabIndex={-1}
+          aria-hidden="true"
+        />
+      )
+    ) : (
+      <input
+        className={nativeFormInputClassName}
+        name={name}
+        form={form}
+        value={typeof value === 'string' ? value : ''}
+        required={required}
+        disabled={disabled}
+        readOnly
+        tabIndex={-1}
+        aria-hidden="true"
+      />
+    );
 
   return (
     <ComboboxProvider value={contextValue}>
@@ -710,6 +899,7 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
             <div className="relative w-full">
               <ComboboxButton
                 ref={buttonRef}
+                id={buttonId}
                 mode={mode}
                 selectedOption={selectedOption || undefined}
                 placeholder={placeholder}
@@ -717,16 +907,24 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
                 isClosing={effectiveIsClosing}
                 hasError={hasError}
                 name={name}
+                popupId={popupId}
+                listboxId={listboxId}
+                searchList={searchList}
+                activeDescendantId={activeDescendantId}
                 tabIndex={tabIndex}
+                required={required}
                 disabled={disabled}
                 onClick={handleToggleCombobox}
                 onKeyDown={handleButtonKeyDown}
                 onBlur={handleButtonBlur}
               />
+              {formValueInputs}
             </div>
 
             <ComboboxMenu
               ref={dropdownMenuRef}
+              popupId={popupId}
+              popupLabel={`${selectedOption?.name || placeholder} pilihan`}
               isFrozen={isPortalFrozen}
               leaveTimeoutRef={leaveTimeoutRef}
               onSearchKeyDown={handleSearchBarKeyDown}

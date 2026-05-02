@@ -57,7 +57,9 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
       searchTerm,
       searchState,
       isOpen,
-      highlightedIndex,
+      listboxId,
+      searchInputId,
+      activeDescendantId,
       filteredOptions,
       onAddNew,
       onSearchChange,
@@ -79,11 +81,13 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
           <div className="relative flex-1 min-w-0">
             <SearchInput
               ref={ref}
+              id={searchInputId}
+              listboxId={listboxId}
+              activeDescendantId={activeDescendantId}
               searchTerm={searchTerm}
               searchState={searchState}
               isOpen={isOpen}
-              highlightedIndex={highlightedIndex}
-              currentFilteredOptions={filteredOptions}
+              isListEmpty={filteredOptions.length === 0}
               onSearchChange={onSearchChange}
               onKeyDown={onKeyDown}
               onFocus={onFocus}

@@ -28,15 +28,44 @@ export type ComboboxMode = 'input' | 'text';
 export type ComboboxPortalWidth = string | number;
 export type ComboboxPosition = 'auto' | 'top' | 'bottom' | 'left';
 export type ComboboxAlign = 'left' | 'right';
+export type ComboboxOpenChangeReason =
+  | 'trigger-press'
+  | 'outside-press'
+  | 'item-press'
+  | 'escape-key'
+  | 'focus-out'
+  | 'none';
+export type ComboboxHighlightChangeReason = 'keyboard' | 'pointer' | 'none';
+
+export interface ComboboxOpenChangeDetails {
+  reason: ComboboxOpenChangeReason;
+}
+
+export interface ComboboxHighlightChangeDetails {
+  reason: ComboboxHighlightChangeReason;
+  index: number;
+}
 
 export interface ComboboxProps {
+  id?: string;
   mode?: ComboboxMode;
   options: ComboboxOption[];
   value: string;
+  open?: boolean;
+  defaultOpen?: boolean;
+  onOpenChange?: (open: boolean, details: ComboboxOpenChangeDetails) => void;
+  inputValue?: string;
+  onInputValueChange?: (value: string) => void;
+  highlightedValue?: string;
+  onHighlightedValueChange?: (
+    value: string | undefined,
+    details: ComboboxHighlightChangeDetails
+  ) => void;
   tabIndex?: number;
   onChange: (value: string) => void;
   placeholder?: string;
   name: string;
+  form?: string;
   required?: boolean;
   disabled?: boolean;
   onAddNew?: (searchTerm?: string) => void;

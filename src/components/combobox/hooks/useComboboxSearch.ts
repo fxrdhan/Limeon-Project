@@ -5,9 +5,13 @@ import type { ComboboxOption } from '@/types';
 
 export const useComboboxSearch = (
   options: ComboboxOption[],
-  searchList: boolean
+  searchList: boolean,
+  inputValue?: string,
+  onInputValueChange?: (value: string) => void
 ) => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const isControlled = inputValue !== undefined;
+  const [uncontrolledSearchTerm, setUncontrolledSearchTerm] = useState('');
+  const searchTerm = isControlled ? inputValue : uncontrolledSearchTerm;
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [searchState, setSearchState] = useState<SearchState>(
     SEARCH_STATES.IDLE
@@ -53,7 +57,10 @@ export const useComboboxSearch = (
 
   const updateSearchTerm = useCallback(
     (newValue: string) => {
-      setSearchTerm(newValue);
+      if (!isControlled) {
+        setUncontrolledSearchTerm(newValue);
+      }
+      onInputValueChange?.(newValue);
       setSearchState(
         newValue.trim() === ''
           ? SEARCH_STATES.IDLE
@@ -62,7 +69,7 @@ export const useComboboxSearch = (
             : searchState
       );
     },
-    [searchState]
+    [isControlled, onInputValueChange, searchState]
   );
 
   const handleSearchChange = useCallback(
@@ -73,9 +80,12 @@ export const useComboboxSearch = (
   );
 
   const resetSearch = useCallback(() => {
-    setSearchTerm('');
+    if (!isControlled) {
+      setUncontrolledSearchTerm('');
+    }
+    onInputValueChange?.('');
     setSearchState(SEARCH_STATES.IDLE);
-  }, []);
+  }, [isControlled, onInputValueChange]);
 
   const updateSearchState = useCallback((state: SearchState) => {
     setSearchState(state);

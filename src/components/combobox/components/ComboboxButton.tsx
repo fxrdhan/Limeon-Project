@@ -4,6 +4,7 @@ import { useTextExpansion } from '../hooks/useTextExpansion';
 import type { ComboboxMode } from '@/types';
 
 interface ComboboxButtonProps {
+  id: string;
   mode?: ComboboxMode;
   selectedOption?: { id: string; name: string; metaLabel?: string };
   placeholder?: string;
@@ -11,7 +12,12 @@ interface ComboboxButtonProps {
   isClosing: boolean;
   hasError: boolean;
   name?: string;
+  popupId: string;
+  listboxId: string;
+  searchList: boolean;
+  activeDescendantId?: string;
   tabIndex?: number;
+  required?: boolean;
   disabled?: boolean;
   onClick: (e: React.MouseEvent) => void;
   onKeyDown?: (e: React.KeyboardEvent<HTMLButtonElement>) => void;
@@ -21,6 +27,7 @@ interface ComboboxButtonProps {
 const ComboboxButton = forwardRef<HTMLButtonElement, ComboboxButtonProps>(
   (
     {
+      id,
       mode = 'input',
       selectedOption,
       placeholder = 'Pilih',
@@ -28,7 +35,12 @@ const ComboboxButton = forwardRef<HTMLButtonElement, ComboboxButtonProps>(
       isClosing,
       hasError,
       name,
+      popupId,
+      listboxId,
+      searchList,
+      activeDescendantId,
       tabIndex,
+      required = false,
       disabled = false,
       onClick,
       onKeyDown,
@@ -59,6 +71,7 @@ const ComboboxButton = forwardRef<HTMLButtonElement, ComboboxButtonProps>(
     return (
       <Button
         ref={ref}
+        id={id}
         mode={mode}
         displayText={displayText}
         titleText={titleText}
@@ -69,7 +82,12 @@ const ComboboxButton = forwardRef<HTMLButtonElement, ComboboxButtonProps>(
         isExpanded={isExpanded}
         hasError={hasError}
         name={name}
+        popupId={popupId}
+        listboxId={listboxId}
+        searchList={searchList}
+        activeDescendantId={activeDescendantId}
         tabIndex={tabIndex}
+        required={required}
         disabled={disabled}
         onClick={onClick}
         onKeyDown={onKeyDown}
