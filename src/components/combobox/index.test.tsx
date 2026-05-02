@@ -1,1379 +1,546 @@
 import React, { useState } from 'react';
-import { act, fireEvent, render, screen } from '@testing-library/react';
 import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vite-plus/test';
-import type {
-  ComboboxInputValueChangeDetails,
-  ComboboxOpenChangeDetails,
-  ComboboxProps,
-} from '../../types';
-import type {
-  ComboboxListItemState,
-  ComboboxListRenderProps,
-  ComboboxListState,
-  ComboboxPopupRenderProps,
-  ComboboxPopupState,
-  ComboboxRootRenderProps,
-  ComboboxRootState,
-  ComboboxSearchInputRenderProps,
-  ComboboxSearchInputState,
-  ComboboxTriggerRenderProps,
-  ComboboxTriggerState,
-} from './types';
-import FormField from '../form-field';
-import Combobox from './index';
-import {
-  ComboboxList,
-  ComboboxListItem,
-  ComboboxPopup,
-  ComboboxSearch,
-  ComboboxSearchInput,
-  ComboboxTrigger,
-  useComboboxContext,
-} from './exports';
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
+import { describe, expect, it, vi } from 'vite-plus/test';
+import { findComboboxItemByValue } from './helpers';
+import { Combobox } from './index';
+import { PharmaComboboxSelect } from './presets';
 
-function ComboboxHarness() {
-  const [persistedComboboxName, setPersistedComboboxName] = useState<
-    string | null
-  >(null);
-  const [isAddNewModalOpen, setIsAddNewModalOpen] = useState(false);
+const fruitItems = ['Apple', 'Banana', 'Cherry'];
+type EntityItem = { id: string; name: string };
 
-  const clearPersistedCombobox = () => {
-    setPersistedComboboxName(null);
-  };
-
-  return (
-    <div>
-      <Combobox
-        name="first_dropdown"
-        value=""
-        options={[
-          { id: 'alpha', name: 'Alpha' },
-          { id: 'beta', name: 'Beta' },
-        ]}
-        placeholder="Pilih Pertama"
-        onChange={() => {}}
-        onAddNew={() => {
-          setPersistedComboboxName('first_dropdown');
-          setIsAddNewModalOpen(true);
-        }}
-        persistOpen={persistedComboboxName === 'first_dropdown'}
-        freezePersistedMenu={
-          isAddNewModalOpen && persistedComboboxName === 'first_dropdown'
-        }
-        onPersistOpenClear={clearPersistedCombobox}
-      />
-
-      <Combobox
-        name="second_dropdown"
-        value=""
-        options={[
-          { id: 'gamma', name: 'Gamma' },
-          { id: 'delta', name: 'Delta' },
-        ]}
-        placeholder="Pilih Kedua"
-        onChange={() => {}}
-        searchList={false}
-        onPersistOpenClear={clearPersistedCombobox}
-      />
-
-      {isAddNewModalOpen ? (
-        <div role="dialog" aria-modal="true" aria-label="Add new modal">
-          <button type="button" onClick={() => setIsAddNewModalOpen(false)}>
-            Tutup modal add new
-          </button>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function KeyboardComboboxHarness() {
-  const [value, setValue] = useState('alpha');
-
-  return (
-    <Combobox
-      name="keyboard_dropdown"
-      value={value}
-      options={[
-        { id: 'alpha', name: 'Alpha' },
-        { id: 'beta', name: 'Beta' },
-      ]}
-      placeholder="Pilih Keyboard"
-      onChange={setValue}
-    />
-  );
-}
-
-function LargeComboboxHarness() {
-  const [value, setValue] = useState('');
-  const options = Array.from({ length: 250 }, (_, index) => ({
-    id: `item-${index + 1}`,
-    name: `Item ${index + 1}`,
-  }));
-
-  return (
-    <Combobox
-      name="large_dropdown"
-      value={value}
-      options={options}
-      placeholder="Pilih Banyak"
-      onChange={setValue}
-    />
-  );
-}
-
-function ControlledComboboxHarness({
-  onOpenChange,
-  onInputValueChange,
+function BasicCombobox({
+  onValueChange,
 }: {
-  onOpenChange: React.ComponentProps<typeof Combobox>['onOpenChange'];
-  onInputValueChange: NonNullable<
-    React.ComponentProps<typeof Combobox>['onInputValueChange']
-  >;
+  onValueChange?: (value: string | null) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const [inputValue, setInputValue] = useState('');
+  const [value, setValue] = useState<string | null>('Apple');
 
   return (
-    <Combobox
-      name="controlled_dropdown"
-      value="alpha"
-      open={open}
-      onOpenChange={(nextOpen: boolean, details: ComboboxOpenChangeDetails) => {
-        onOpenChange?.(nextOpen, details);
-        setOpen(nextOpen);
+    <Combobox.Root
+      items={fruitItems}
+      value={value}
+      onValueChange={(nextValue, details) => {
+        setValue(nextValue);
+        onValueChange?.(nextValue);
+        expect(details.reason).toBe('item-press');
       }}
-      inputValue={inputValue}
-      onInputValueChange={(
-        nextInputValue: string,
-        details: ComboboxInputValueChangeDetails
-      ) => {
-        onInputValueChange(nextInputValue, details);
-        setInputValue(nextInputValue);
-      }}
-      highlightedValue="beta"
-      options={[
-        { id: 'alpha', name: 'Alpha' },
-        { id: 'beta', name: 'Beta' },
-      ]}
-      placeholder="Pilih Controlled"
-      onChange={() => {}}
-    />
-  );
-}
-
-function RequiredCheckboxComboboxHarness() {
-  return (
-    <Combobox
-      name="required_multi_dropdown"
-      value={[]}
-      options={[
-        { id: 'alpha', name: 'Alpha' },
-        { id: 'beta', name: 'Beta' },
-      ]}
-      placeholder="Pilih Wajib"
-      onChange={() => {}}
-      withCheckbox
-      required
-    />
-  );
-}
-
-function LabelledComboboxHarness() {
-  return (
-    <FormField label="Supplier">
-      <Combobox
-        name="supplier_id"
-        value=""
-        options={[
-          { id: 'alpha', name: 'Alpha' },
-          { id: 'beta', name: 'Beta' },
-        ]}
-        placeholder="-- Pilih Supplier --"
-        onChange={() => {}}
-      />
-    </FormField>
-  );
-}
-
-function CustomLabelsComboboxHarness() {
-  return (
-    <Combobox
-      name="custom_labels_dropdown"
-      value=""
-      options={[]}
-      placeholder="Pick one"
-      labels={{
-        search: 'Search medicines',
-        searchPlaceholder: 'Type medicine',
-        addNew: 'Create medicine',
-        listbox: 'Medicine choices',
-        noOptions: 'No medicines',
-        addNewHint: 'Press Enter to create',
-        popup: (triggerLabel: string) => `Choices for ${triggerLabel}`,
-      }}
-      onAddNew={() => {}}
-      onChange={() => {}}
-    />
-  );
-}
-
-function DisabledOptionComboboxHarness() {
-  const [value, setValue] = useState('');
-
-  return (
-    <Combobox
-      name="disabled_option_dropdown"
-      value={value}
-      options={[
-        { id: 'alpha', name: 'Alpha', disabled: true },
-        { id: 'beta', name: 'Beta' },
-      ]}
-      placeholder="Pilih Disabled"
-      onChange={setValue}
-    />
-  );
-}
-
-function CompoundComboboxHarness() {
-  const [value, setValue] = useState('');
-
-  return (
-    <Combobox
-      name="compound_dropdown"
-      value={value}
-      options={[
-        { id: 'alpha', name: 'Alpha' },
-        { id: 'beta', name: 'Beta' },
-      ]}
-      placeholder="Pilih Compound"
-      onChange={setValue}
+      name="fruit"
     >
-      <ComboboxTrigger />
-      <ComboboxPopup />
-    </Combobox>
+      <Combobox.Label>Fruit</Combobox.Label>
+      <Combobox.Trigger placeholder="Choose fruit" />
+      <Combobox.Portal>
+        <Combobox.Positioner>
+          <Combobox.Popup>
+            <Combobox.SearchInput placeholder="Search fruit" />
+            <Combobox.List />
+          </Combobox.Popup>
+        </Combobox.Positioner>
+      </Combobox.Portal>
+    </Combobox.Root>
   );
 }
 
-function RenderPartComboboxHarness() {
-  const [value, setValue] = useState('');
+describe('Combobox primitive', () => {
+  it('supports controlled value and writes a hidden form value', () => {
+    const onValueChange = vi.fn();
+    render(<BasicCombobox onValueChange={onValueChange} />);
 
-  return (
-    <Combobox
-      name="render_part_dropdown"
-      value={value}
-      options={[
-        { id: 'alpha', name: 'Alpha' },
-        { id: 'beta', name: 'Beta' },
-      ]}
-      placeholder="Pilih Render Part"
-      onChange={setValue}
-    >
-      <ComboboxTrigger
-        render={(
-          props: ComboboxTriggerRenderProps,
-          state: ComboboxTriggerState
-        ) => (
-          <button
-            {...props}
-            data-rendered-trigger=""
-            data-open-state={state.open ? 'open' : 'closed'}
-          />
-        )}
-      />
-      <ComboboxPopup
-        render={(
-          props: ComboboxPopupRenderProps,
-          state: ComboboxPopupState
-        ) => (
-          <div
-            {...props}
-            data-rendered-popup=""
-            data-open-state={state.open ? 'open' : 'closed'}
-          />
-        )}
-      />
-    </Combobox>
-  );
-}
+    const trigger = screen.getByRole('button', { name: /fruit/i });
+    expect(trigger.textContent).toContain('Apple');
+    fireEvent.click(trigger);
+    fireEvent.click(screen.getByRole('option', { name: /banana/i }));
 
-function CustomCompoundContent() {
-  const { filteredOptions } = useComboboxContext();
-
-  return (
-    <>
-      <ComboboxSearch />
-      <ComboboxList
-        render={(props: ComboboxListRenderProps, state: ComboboxListState) => (
-          <div
-            {...props}
-            data-rendered-list=""
-            data-list-state={state.empty ? 'empty' : 'filled'}
-          />
-        )}
-      >
-        {filteredOptions.map((option, index) => (
-          <ComboboxListItem
-            key={option.id}
-            option={option}
-            index={index}
-            render={(
-              props: React.HTMLAttributes<HTMLDivElement>,
-              state: ComboboxListItemState
-            ) => (
-              <div
-                {...props}
-                data-rendered-option=""
-                data-selected-state={state.selected ? 'selected' : 'idle'}
-              />
-            )}
-          />
-        ))}
-      </ComboboxList>
-    </>
-  );
-}
-
-function CustomCompoundComboboxHarness() {
-  const [value, setValue] = useState('');
-
-  return (
-    <Combobox
-      name="custom_compound_dropdown"
-      value={value}
-      options={[
-        { id: 'alpha', name: 'Alpha' },
-        { id: 'beta', name: 'Beta' },
-      ]}
-      placeholder="Pilih Custom Compound"
-      onChange={setValue}
-    >
-      <ComboboxTrigger />
-      <ComboboxPopup>
-        <CustomCompoundContent />
-      </ComboboxPopup>
-    </Combobox>
-  );
-}
-
-function ElementRenderCompoundContent() {
-  const { filteredOptions } = useComboboxContext();
-
-  return (
-    <>
-      <ComboboxSearch render={<div data-rendered-search-element="" />} />
-      <ComboboxList render={<div data-rendered-list-element="" />}>
-        {filteredOptions.map((option, index) => (
-          <ComboboxListItem
-            key={option.id}
-            option={option}
-            index={index}
-            render={<div data-rendered-option-element="" />}
-          />
-        ))}
-      </ComboboxList>
-    </>
-  );
-}
-
-function ElementRenderComboboxHarness({
-  onRenderedTriggerClick,
-}: {
-  onRenderedTriggerClick: () => void;
-}) {
-  const [value, setValue] = useState('');
-
-  return (
-    <Combobox
-      name="element_render_dropdown"
-      value={value}
-      options={[
-        { id: 'alpha', name: 'Alpha' },
-        { id: 'beta', name: 'Beta' },
-      ]}
-      placeholder="Pilih Element Render"
-      onChange={setValue}
-    >
-      <ComboboxTrigger
-        render={
-          <button
-            type="button"
-            data-rendered-trigger-element=""
-            onClick={onRenderedTriggerClick}
-          />
-        }
-      />
-      <ComboboxPopup render={<div data-rendered-popup-element="" />}>
-        <ElementRenderCompoundContent />
-      </ComboboxPopup>
-    </Combobox>
-  );
-}
-
-function RootRenderComboboxHarness() {
-  const [value, setValue] = useState('');
-
-  return (
-    <Combobox
-      name="root_render_dropdown"
-      value={value}
-      options={[
-        { id: 'alpha', name: 'Alpha' },
-        { id: 'beta', name: 'Beta' },
-      ]}
-      placeholder="Pilih Root Render"
-      onChange={setValue}
-      className="root-class"
-      render={(props: ComboboxRootRenderProps, state: ComboboxRootState) => (
-        <div
-          {...props}
-          data-rendered-root=""
-          data-open-state={state.open ? 'open' : 'closed'}
-        />
-      )}
-    />
-  );
-}
-
-function ListOnlyCompoundContent() {
-  const { filteredOptions } = useComboboxContext();
-
-  return (
-    <ComboboxList>
-      {filteredOptions.map((option, index) => (
-        <ComboboxListItem key={option.id} option={option} index={index} />
-      ))}
-    </ComboboxList>
-  );
-}
-
-function ListOnlyCompoundComboboxHarness() {
-  const [value, setValue] = useState('');
-
-  return (
-    <Combobox
-      name="list_only_compound_dropdown"
-      value={value}
-      options={[
-        { id: 'alpha', name: 'Alpha' },
-        { id: 'beta', name: 'Beta' },
-      ]}
-      placeholder="Pilih List Only"
-      onChange={setValue}
-    >
-      <ComboboxTrigger />
-      <ComboboxPopup>
-        <ListOnlyCompoundContent />
-      </ComboboxPopup>
-    </Combobox>
-  );
-}
-
-function SearchInputCompoundContent() {
-  const { filteredOptions } = useComboboxContext();
-
-  return (
-    <>
-      <ComboboxSearchInput
-        render={(
-          props: ComboboxSearchInputRenderProps,
-          state: ComboboxSearchInputState
-        ) => (
-          <input
-            {...props}
-            data-rendered-search-input=""
-            data-search-empty={state.empty ? 'empty' : 'filled'}
-          />
-        )}
-      />
-      <ComboboxList>
-        {filteredOptions.map((option, index) => (
-          <ComboboxListItem key={option.id} option={option} index={index} />
-        ))}
-      </ComboboxList>
-    </>
-  );
-}
-
-function SearchInputCompoundComboboxHarness() {
-  const [value, setValue] = useState('');
-
-  return (
-    <Combobox
-      name="search_input_compound_dropdown"
-      value={value}
-      options={[
-        { id: 'alpha', name: 'Alpha' },
-        { id: 'beta', name: 'Beta' },
-      ]}
-      placeholder="Pilih Search Input"
-      onChange={setValue}
-    >
-      <ComboboxTrigger />
-      <ComboboxPopup>
-        <SearchInputCompoundContent />
-      </ComboboxPopup>
-    </Combobox>
-  );
-}
-
-describe('Combobox', () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(
-      () => null
-    );
-  });
-
-  afterEach(() => {
-    vi.runOnlyPendingTimers();
-    vi.useRealTimers();
-    vi.restoreAllMocks();
-    document.body.style.overflow = '';
-  });
-
-  it('closes a pinned dropdown when another dropdown opens', () => {
-    render(<ComboboxHarness />);
-
-    act(() => {
-      fireEvent.click(screen.getByRole('combobox', { name: 'Pilih Pertama' }));
-    });
-
-    const searchInput = screen.getByPlaceholderText('Cari...');
-    act(() => {
-      fireEvent.change(searchInput, {
-        target: { value: 'Item yang tidak ada' },
-      });
-    });
-
-    act(() => {
-      vi.advanceTimersByTime(200);
-    });
-
-    act(() => {
-      fireEvent.keyDown(searchInput, { key: 'Enter', code: 'Enter' });
-    });
-
+    expect(onValueChange).toHaveBeenCalledWith('Banana');
     expect(
-      screen.getByRole('dialog', { name: 'Add new modal' })
-    ).not.toBeNull();
-
-    act(() => {
-      fireEvent.click(
-        screen.getByRole('button', { name: 'Tutup modal add new' })
-      );
-    });
-
-    act(() => {
-      fireEvent.click(screen.getByRole('combobox', { name: 'Pilih Kedua' }));
-      vi.advanceTimersByTime(150);
-    });
-
-    expect(screen.queryByPlaceholderText('Cari...')).toBeNull();
+      screen.getByRole('button', { name: /fruit/i }).textContent
+    ).toContain('Banana');
+    expect(
+      document.querySelector('input[name="fruit"]')?.getAttribute('value')
+    ).toBe('Banana');
   });
 
-  it('does not focus the dropdown search input when opened', () => {
-    render(<ComboboxHarness />);
-
-    const trigger = screen.getByRole('combobox', { name: 'Pilih Pertama' });
-    act(() => {
-      fireEvent.click(trigger);
-      vi.advanceTimersByTime(200);
-    });
-
-    const searchInput = screen.getByPlaceholderText('Cari...');
-    expect(document.activeElement).not.toBe(searchInput);
-  });
-
-  it('wires trigger, search input, and listbox with combobox semantics', () => {
-    render(<KeyboardComboboxHarness />);
-
-    const trigger = screen.getByRole('combobox', { name: /Alpha/ });
-
-    act(() => {
-      fireEvent.click(trigger);
-      vi.advanceTimersByTime(200);
-    });
-
-    act(() => {
-      fireEvent.keyDown(trigger, { key: 'ArrowDown', code: 'ArrowDown' });
-    });
-
-    const popup = screen.getByRole('dialog');
-    const listbox = screen.getByRole('listbox', { name: 'Daftar pilihan' });
-    const searchInput = screen.getByRole('textbox', {
-      name: 'Cari pilihan',
-    });
-    const betaOption = screen.getByRole('option', { name: 'Beta' });
-
-    expect(document.querySelector('[role="menu"]')).toBeNull();
-    expect(trigger.getAttribute('aria-controls')).toBe(popup.id);
-    expect(trigger.getAttribute('aria-haspopup')).toBe('dialog');
-    expect(searchInput.getAttribute('aria-controls')).toBe(listbox.id);
-    expect(trigger.getAttribute('aria-activedescendant')).toBe(betaOption.id);
-    expect(searchInput.getAttribute('aria-activedescendant')).toBe(
-      betaOption.id
-    );
-    expect(betaOption.tabIndex).toBe(-1);
-    expect(betaOption.getAttribute('data-highlighted')).toBe('');
-  });
-
-  it('uses listbox popup semantics when no search input is rendered', () => {
+  it('supports defaultValue and multiple selection', () => {
     render(
-      <Combobox
-        name="enum_dropdown"
-        value="alpha"
-        options={[
-          { id: 'alpha', name: 'Alpha' },
-          { id: 'beta', name: 'Beta' },
-        ]}
-        placeholder="Pilih Enum"
-        onChange={() => {}}
-        searchList={false}
-      />
+      <Combobox.Root
+        items={fruitItems}
+        defaultValue={['Apple']}
+        multiple
+        name="fruit"
+      >
+        <Combobox.Trigger />
+        <Combobox.Portal>
+          <Combobox.Positioner>
+            <Combobox.Popup>
+              <Combobox.List />
+            </Combobox.Popup>
+          </Combobox.Positioner>
+        </Combobox.Portal>
+      </Combobox.Root>
     );
 
-    const trigger = screen.getByRole('combobox', { name: /Alpha/ });
-    act(() => {
-      fireEvent.click(trigger);
-      vi.advanceTimersByTime(200);
-    });
+    fireEvent.click(screen.getByRole('button', { name: /apple/i }));
+    fireEvent.click(screen.getByRole('option', { name: /banana/i }));
 
-    const listbox = screen.getByRole('listbox', { name: 'Daftar pilihan' });
-    expect(trigger.getAttribute('aria-controls')).toBe(listbox.id);
-    expect(trigger.getAttribute('aria-haspopup')).toBe('listbox');
-    expect(screen.queryByRole('dialog')).toBeNull();
+    const hiddenValues = Array.from(
+      document.querySelectorAll('input[name="fruit"]')
+    ).map(input => input.getAttribute('value'));
+    expect(hiddenValues).toEqual(['Apple', 'Banana']);
   });
 
-  it('opens from the collapsed trigger with ArrowDown', () => {
-    render(<KeyboardComboboxHarness />);
-
-    const trigger = screen.getByRole('combobox', { name: /Alpha/ });
-    act(() => {
-      fireEvent.keyDown(trigger, { key: 'ArrowDown', code: 'ArrowDown' });
-      vi.advanceTimersByTime(200);
+  it('highlights and scrolls the last selected option when the popup opens', async () => {
+    const scrollIntoView = vi.fn();
+    const scrollIntoViewDescriptor = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      'scrollIntoView'
+    );
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: scrollIntoView,
     });
 
-    const popup = screen.getByRole('dialog');
-    expect(trigger.getAttribute('aria-expanded')).toBe('true');
-    expect(trigger.getAttribute('aria-controls')).toBe(popup.id);
-  });
-
-  it('keeps arrow key navigation on the trigger after opening', () => {
-    render(<KeyboardComboboxHarness />);
-
-    const trigger = screen.getByRole('combobox', { name: /Alpha/ });
-    act(() => {
-      fireEvent.click(trigger);
-      trigger.focus();
-      vi.advanceTimersByTime(200);
-    });
-
-    act(() => {
-      fireEvent.keyDown(trigger, { key: 'ArrowDown', code: 'ArrowDown' });
-      fireEvent.keyDown(trigger, { key: 'Enter', code: 'Enter' });
-    });
-
-    expect(screen.getByRole('combobox', { name: /Beta/ })).not.toBeNull();
-  });
-
-  it('supports Home and End keyboard navigation while open', () => {
-    render(<KeyboardComboboxHarness />);
-
-    const initialTrigger = screen.getByRole('combobox', { name: /Alpha/ });
-    act(() => {
-      fireEvent.click(initialTrigger);
-      vi.advanceTimersByTime(200);
-    });
-
-    act(() => {
-      fireEvent.keyDown(initialTrigger, { key: 'End', code: 'End' });
-      fireEvent.keyDown(initialTrigger, { key: 'Enter', code: 'Enter' });
-    });
-
-    act(() => {
-      vi.advanceTimersByTime(200);
-    });
-
-    const betaTrigger = screen.getByRole('combobox', { name: /Beta/ });
-    act(() => {
-      fireEvent.click(betaTrigger);
-      vi.advanceTimersByTime(200);
-    });
-
-    act(() => {
-      fireEvent.keyDown(betaTrigger, { key: 'Home', code: 'Home' });
-      fireEvent.keyDown(betaTrigger, { key: 'Enter', code: 'Enter' });
-    });
-
-    act(() => {
-      vi.advanceTimersByTime(200);
-    });
-
-    expect(screen.getByRole('combobox', { name: /Alpha/ })).not.toBeNull();
-  });
-
-  it('mirrors the selected value to a hidden form input', () => {
-    render(<KeyboardComboboxHarness />);
-
-    const getHiddenInput = () =>
-      document.querySelector<HTMLInputElement>(
-        'input[name="keyboard_dropdown"]'
+    try {
+      render(
+        <Combobox.Root items={fruitItems} defaultValue="Cherry">
+          <Combobox.Trigger />
+          <Combobox.Portal>
+            <Combobox.Positioner>
+              <Combobox.Popup>
+                <Combobox.List />
+              </Combobox.Popup>
+            </Combobox.Positioner>
+          </Combobox.Portal>
+        </Combobox.Root>
       );
 
-    expect(getHiddenInput()?.value).toBe('alpha');
+      fireEvent.click(screen.getByRole('button', { name: /cherry/i }));
+      const cherryOption = screen.getByRole('option', { name: /cherry/i });
 
-    const trigger = screen.getByRole('combobox', { name: /Alpha/ });
-    act(() => {
-      fireEvent.click(trigger);
-      vi.advanceTimersByTime(200);
-    });
-
-    act(() => {
-      fireEvent.keyDown(trigger, { key: 'ArrowDown', code: 'ArrowDown' });
-      fireEvent.keyDown(trigger, { key: 'Enter', code: 'Enter' });
-    });
-
-    expect(getHiddenInput()?.value).toBe('beta');
+      await waitFor(() => {
+        expect(cherryOption.hasAttribute('data-highlighted')).toBe(true);
+        expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' });
+      });
+    } finally {
+      if (scrollIntoViewDescriptor) {
+        Object.defineProperty(
+          HTMLElement.prototype,
+          'scrollIntoView',
+          scrollIntoViewDescriptor
+        );
+      } else {
+        Reflect.deleteProperty(HTMLElement.prototype, 'scrollIntoView');
+      }
+    }
   });
 
-  it('supports controlled open, input, and highlighted item state', () => {
-    const onOpenChange = vi.fn();
-    const onInputValueChange = vi.fn();
+  it('supports object-valued items with custom equality and stringification', () => {
+    const items = [
+      { id: 'a', name: 'Alpha' },
+      { id: 'b', name: 'Beta' },
+    ];
+    const selected = { id: 'a', name: 'Alpha copy' };
+    const onValueChange = vi.fn();
+
     render(
-      <ControlledComboboxHarness
-        onOpenChange={onOpenChange}
-        onInputValueChange={onInputValueChange}
-      />
+      <Combobox.Root
+        items={items}
+        value={selected}
+        onValueChange={onValueChange}
+        itemToStringLabel={item => item.name}
+        itemToStringValue={item => item.id}
+        isItemEqualToValue={(item, value) => item.id === value.id}
+        name="entity_id"
+      >
+        <Combobox.Trigger />
+        <Combobox.Portal>
+          <Combobox.Positioner>
+            <Combobox.Popup>
+              <Combobox.List />
+            </Combobox.Popup>
+          </Combobox.Positioner>
+        </Combobox.Portal>
+      </Combobox.Root>
     );
 
-    const trigger = screen.getByRole('combobox', {
-      name: /Alpha/,
-    });
-    act(() => {
-      fireEvent.click(trigger);
-      vi.advanceTimersByTime(200);
-    });
-
-    expect(onOpenChange).toHaveBeenCalledWith(
-      true,
-      expect.objectContaining({
-        reason: 'trigger-press',
-        event: expect.any(MouseEvent),
-        trigger,
-        cancel: expect.any(Function),
-        allowPropagation: expect.any(Function),
-        isCanceled: false,
-        isPropagationAllowed: false,
-      })
-    );
+    fireEvent.click(screen.getByRole('button', { name: /alpha copy/i }));
     expect(
       screen
-        .getByRole('option', { name: 'Beta' })
-        .getAttribute('data-highlighted')
-    ).toBe('');
+        .getByRole('option', { name: /alpha/i })
+        .hasAttribute('data-selected')
+    ).toBe(true);
+    fireEvent.click(screen.getByRole('option', { name: /beta/i }));
 
-    const searchInput = screen.getByRole('textbox', {
-      name: 'Cari pilihan',
-    });
-    act(() => {
-      fireEvent.change(searchInput, { target: { value: 'be' } });
-    });
-
-    expect(onInputValueChange).toHaveBeenCalledWith(
-      'be',
-      expect.objectContaining({
-        reason: 'input-change',
-        event: expect.any(Event),
-      })
+    expect(onValueChange).toHaveBeenCalledWith(
+      items[1],
+      expect.objectContaining({ reason: 'item-press' })
     );
-    expect((searchInput as HTMLInputElement).value).toBe('be');
+    expect(
+      document.querySelector('input[name="entity_id"]')?.getAttribute('value')
+    ).toBe('a');
   });
 
-  it('lets consumers cancel uncontrolled open changes', () => {
-    const onOpenChange = vi.fn(
-      (_nextOpen: boolean, details: ComboboxOpenChangeDetails) => {
-        details.cancel();
-      }
+  it('filters from input and accepts caller-supplied filteredItems', () => {
+    const { rerender } = render(<BasicCombobox />);
+
+    fireEvent.click(screen.getByRole('button', { name: /fruit/i }));
+    fireEvent.change(screen.getByPlaceholderText('Search fruit'), {
+      target: { value: 'cher' },
+    });
+    expect(screen.getByRole('option', { name: /cherry/i })).toBeTruthy();
+    expect(screen.queryByRole('option', { name: /banana/i })).toBeNull();
+
+    rerender(
+      <Combobox.Root items={fruitItems} filteredItems={['Banana']}>
+        <Combobox.Trigger />
+        <Combobox.Portal>
+          <Combobox.Positioner>
+            <Combobox.Popup>
+              <Combobox.List />
+            </Combobox.Popup>
+          </Combobox.Positioner>
+        </Combobox.Portal>
+      </Combobox.Root>
+    );
+    fireEvent.click(screen.getByRole('button', { name: /pilih/i }));
+    expect(screen.getByRole('option', { name: /banana/i })).toBeTruthy();
+    expect(screen.queryByRole('option', { name: /apple/i })).toBeNull();
+  });
+
+  it('supports collection grouping and list-only popup composition', () => {
+    render(
+      <Combobox.Root items={fruitItems} filter={null}>
+        <Combobox.Trigger>Open list</Combobox.Trigger>
+        <Combobox.Portal>
+          <Combobox.Positioner>
+            <Combobox.Popup>
+              <Combobox.List>
+                <Combobox.Collection label="Group A" items={['Apple']}>
+                  {(item, index) => (
+                    <Combobox.Item key={item} item={item} index={index} />
+                  )}
+                </Combobox.Collection>
+                <Combobox.Collection label="Group B" items={['Banana']} />
+              </Combobox.List>
+            </Combobox.Popup>
+          </Combobox.Positioner>
+        </Combobox.Portal>
+      </Combobox.Root>
     );
 
+    fireEvent.click(screen.getByRole('button', { name: /open list/i }));
+    expect(screen.getByText('Group A')).toBeTruthy();
+    expect(screen.getByRole('option', { name: /apple/i })).toBeTruthy();
+    expect(screen.getByRole('option', { name: /banana/i })).toBeTruthy();
+    expect(screen.queryByPlaceholderText(/search/i)).toBeNull();
+  });
+
+  it('flips the portal position above the trigger when bottom space is constrained', () => {
     render(
-      <Combobox
-        name="cancel_open_dropdown"
-        value=""
-        options={[{ id: 'alpha', name: 'Alpha' }]}
-        placeholder="Pilih Cancel Open"
-        onChange={() => {}}
+      <Combobox.Root items={fruitItems} defaultOpen>
+        <Combobox.Trigger>Open</Combobox.Trigger>
+        <Combobox.Portal>
+          <Combobox.Positioner>
+            <Combobox.Popup>
+              <Combobox.List />
+            </Combobox.Popup>
+          </Combobox.Positioner>
+        </Combobox.Portal>
+      </Combobox.Root>
+    );
+
+    const trigger = screen.getByRole('button', { name: /open/i });
+    const popup = screen.getByRole('dialog');
+    Object.defineProperty(window, 'innerHeight', {
+      configurable: true,
+      value: 120,
+    });
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: 320,
+    });
+    Object.defineProperty(trigger, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => ({
+        x: 16,
+        y: 90,
+        top: 90,
+        right: 136,
+        bottom: 110,
+        left: 16,
+        width: 120,
+        height: 20,
+        toJSON: () => ({}),
+      }),
+    });
+    Object.defineProperty(popup, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => ({
+        x: 0,
+        y: 0,
+        top: 0,
+        right: 120,
+        bottom: 80,
+        left: 0,
+        width: 120,
+        height: 80,
+        toJSON: () => ({}),
+      }),
+    });
+
+    fireEvent(window, new Event('resize'));
+
+    expect(popup.parentElement?.getAttribute('data-side')).toBe('top');
+    expect(popup.parentElement?.hasAttribute('data-positioned')).toBe(true);
+    expect(popup.getAttribute('data-side')).toBe('top');
+    expect(popup.hasAttribute('data-positioned')).toBe(true);
+    expect(popup.style.maxHeight).toBe('78px');
+  });
+
+  it('reports highlight reasons and supports cancelable open and value events', () => {
+    const onItemHighlighted = vi.fn();
+    const onOpenChange = vi.fn((_: boolean, details) => details.cancel());
+    const onValueChange = vi.fn((_: string | null, details) =>
+      details.cancel()
+    );
+
+    const { rerender } = render(
+      <Combobox.Root
+        key="cancel-open"
+        items={fruitItems}
         onOpenChange={onOpenChange}
-      />
-    );
-
-    act(() => {
-      fireEvent.click(
-        screen.getByRole('combobox', { name: 'Pilih Cancel Open' })
-      );
-      vi.advanceTimersByTime(200);
-    });
-
-    expect(onOpenChange).toHaveBeenCalledWith(
-      true,
-      expect.objectContaining({ reason: 'trigger-press', isCanceled: true })
-    );
-    expect(screen.queryByRole('dialog')).toBeNull();
-  });
-
-  it('passes cancelable value-change details and keeps the popup open when canceled', () => {
-    const onChange = vi.fn(
-      (
-        _nextValue: string,
-        details: Parameters<ComboboxProps['onChange']>[1]
-      ) => {
-        details.cancel();
-      }
-    );
-
-    render(
-      <Combobox
-        name="cancel_value_dropdown"
-        value="alpha"
-        options={[
-          { id: 'alpha', name: 'Alpha' },
-          { id: 'beta', name: 'Beta' },
-        ]}
-        placeholder="Pilih Cancel Value"
-        onChange={onChange}
-      />
-    );
-
-    const trigger = screen.getByRole('combobox', { name: /Alpha/ });
-    act(() => {
-      fireEvent.click(trigger);
-      vi.advanceTimersByTime(200);
-    });
-
-    act(() => {
-      fireEvent.click(screen.getByRole('option', { name: 'Beta' }));
-      vi.advanceTimersByTime(200);
-    });
-
-    expect(onChange).toHaveBeenCalledWith(
-      'beta',
-      expect.objectContaining({ reason: 'item-press', isCanceled: true })
-    );
-    expect(screen.getByRole('dialog')).toBeTruthy();
-    expect(screen.getByRole('combobox', { name: /Alpha/ })).toBeTruthy();
-  });
-
-  it('uses a native required form control for empty required multi-selects', () => {
-    render(<RequiredCheckboxComboboxHarness />);
-
-    const nativeInput = document.querySelector<HTMLInputElement>(
-      'input[name="required_multi_dropdown"]'
-    );
-
-    expect(nativeInput?.type).toBe('text');
-    expect(nativeInput?.required).toBe(true);
-    expect(nativeInput?.readOnly).toBe(false);
-    expect(nativeInput?.willValidate).toBe(true);
-    expect(nativeInput?.validity.valueMissing).toBe(true);
-    expect(nativeInput?.checkValidity()).toBe(false);
-    expect(nativeInput?.value).toBe('');
-  });
-
-  it('uses the field label as the stable accessible combobox name', () => {
-    render(<LabelledComboboxHarness />);
-
-    const trigger = screen.getByRole('combobox', {
-      name: /Supplier/,
-    });
-
-    expect(trigger.getAttribute('aria-labelledby')).toBeTruthy();
-    expect(trigger.getAttribute('aria-label')).toBeNull();
-  });
-
-  it('allows primitive labels to be supplied by the consumer', () => {
-    render(<CustomLabelsComboboxHarness />);
-
-    const trigger = screen.getByRole('combobox', { name: 'Pick one' });
-
-    act(() => {
-      fireEvent.click(trigger);
-      vi.advanceTimersByTime(200);
-    });
-
-    expect(
-      screen.getByRole('dialog', { name: 'Choices for Pick one' })
-    ).toBeTruthy();
-    const searchInput = screen.getByRole('textbox', {
-      name: 'Search medicines',
-    });
-    expect(searchInput.getAttribute('placeholder')).toBe('Type medicine');
-    expect(
-      screen.getByRole('listbox', { name: 'Medicine choices' })
-    ).toBeTruthy();
-
-    act(() => {
-      fireEvent.change(searchInput, { target: { value: 'zzz' } });
-      vi.advanceTimersByTime(200);
-    });
-
-    expect(screen.getByText('No medicines')).toBeTruthy();
-    expect(screen.getByText('Press Enter to create')).toBeTruthy();
-    expect(
-      screen.getByRole('button', { name: 'Create medicine' })
-    ).toBeTruthy();
-  });
-
-  it('does not highlight or select disabled options', async () => {
-    render(<DisabledOptionComboboxHarness />);
-
-    const trigger = screen.getByRole('combobox', {
-      name: 'Pilih Disabled',
-    });
-
-    await act(async () => {
-      fireEvent.click(trigger);
-      vi.advanceTimersByTime(200);
-      await Promise.resolve();
-    });
-
-    const disabledOption = screen.getByRole('option', { name: 'Alpha' });
-    const enabledOption = screen.getByRole('option', { name: 'Beta' });
-
-    expect(disabledOption.getAttribute('aria-disabled')).toBe('true');
-    expect(enabledOption.getAttribute('data-highlighted')).toBe('');
-
-    act(() => {
-      fireEvent.click(disabledOption);
-      vi.advanceTimersByTime(200);
-    });
-
-    expect(
-      screen.getByRole('combobox', { name: 'Pilih Disabled' })
-    ).toBeTruthy();
-
-    await act(async () => {
-      fireEvent.keyDown(trigger, { key: 'Enter', code: 'Enter' });
-      vi.advanceTimersByTime(200);
-      await Promise.resolve();
-    });
-
-    expect(screen.getByRole('combobox', { name: /Beta/ })).toBeTruthy();
-  });
-
-  it('supports Base UI-like compound trigger and popup parts', () => {
-    render(<CompoundComboboxHarness />);
-
-    const trigger = screen.getByRole('combobox', { name: 'Pilih Compound' });
-    act(() => {
-      fireEvent.click(trigger);
-      vi.advanceTimersByTime(200);
-    });
-
-    expect(
-      screen.getByRole('dialog', { name: 'Pilih Compound pilihan' })
-    ).toBeTruthy();
-  });
-
-  it('supports render props on Base UI-like compound parts', () => {
-    render(<RenderPartComboboxHarness />);
-
-    const trigger = screen.getByRole('combobox', {
-      name: 'Pilih Render Part',
-    });
-
-    expect(trigger.getAttribute('data-rendered-trigger')).toBe('');
-    expect(trigger.getAttribute('data-open-state')).toBe('closed');
-
-    act(() => {
-      fireEvent.click(trigger);
-      vi.advanceTimersByTime(200);
-    });
-
-    expect(trigger.getAttribute('data-open-state')).toBe('open');
-    expect(document.querySelector('[data-rendered-popup]')).toBeTruthy();
-  });
-
-  it('supports root render composition and root state data attributes', () => {
-    render(<RootRenderComboboxHarness />);
-
-    const root = document.querySelector('[data-rendered-root]');
-    const trigger = screen.getByRole('combobox', {
-      name: 'Pilih Root Render',
-    });
-
-    expect(root).toBeTruthy();
-    expect(root?.className).toContain('root-class');
-    expect(root?.getAttribute('data-state')).toBe('closed');
-    expect(root?.getAttribute('data-open-state')).toBe('closed');
-    expect(trigger.getAttribute('data-state')).toBe('closed');
-
-    act(() => {
-      fireEvent.click(trigger);
-      vi.advanceTimersByTime(200);
-    });
-
-    expect(root?.getAttribute('data-state')).toBe('open');
-    expect(root?.getAttribute('data-open-state')).toBe('open');
-    expect(trigger.getAttribute('data-state')).toBe('open');
-  });
-
-  it('uses listbox popup semantics for composed content without a search part', () => {
-    render(<ListOnlyCompoundComboboxHarness />);
-
-    const trigger = screen.getByRole('combobox', {
-      name: 'Pilih List Only',
-    });
-
-    act(() => {
-      fireEvent.click(trigger);
-      vi.advanceTimersByTime(200);
-    });
-
-    expect(screen.queryByRole('dialog')).toBeNull();
-    expect(
-      screen.getByRole('listbox', { name: 'Daftar pilihan' })
-    ).toBeTruthy();
-    expect(trigger.getAttribute('aria-haspopup')).toBe('listbox');
-  });
-
-  it('supports composed search, list, and list item parts inside the popup', () => {
-    render(<CustomCompoundComboboxHarness />);
-
-    const trigger = screen.getByRole('combobox', {
-      name: 'Pilih Custom Compound',
-    });
-
-    act(() => {
-      fireEvent.click(trigger);
-      vi.advanceTimersByTime(200);
-    });
-
-    expect(screen.getByRole('textbox', { name: 'Cari pilihan' })).toBeTruthy();
-    expect(
-      screen.getByRole('dialog', { name: 'Pilih Custom Compound pilihan' })
-    ).toBeTruthy();
-    expect(document.querySelector('[data-rendered-list]')).toBeTruthy();
-    const renderedOptions = document.querySelectorAll('[data-rendered-option]');
-    expect(renderedOptions).toHaveLength(2);
-    renderedOptions.forEach(option => {
-      expect(option.getAttribute('role')).toBe('option');
-      expect(option.getAttribute('data-dropdown-option-frame')).toBe('');
-      expect(
-        option.parentElement?.hasAttribute('data-dropdown-option-frame')
-      ).toBe(false);
-    });
-
-    act(() => {
-      fireEvent.click(screen.getByRole('option', { name: 'Beta' }));
-      vi.advanceTimersByTime(200);
-    });
-
-    expect(screen.getByRole('combobox', { name: /Beta/ })).toBeTruthy();
-  });
-
-  it('supports a primitive search input render part inside composed popup content', () => {
-    render(<SearchInputCompoundComboboxHarness />);
-
-    const trigger = screen.getByRole('combobox', {
-      name: 'Pilih Search Input',
-    });
-
-    act(() => {
-      fireEvent.click(trigger);
-      vi.advanceTimersByTime(200);
-    });
-
-    const searchInput = screen.getByRole('textbox', {
-      name: 'Cari pilihan',
-    });
-    expect(searchInput.getAttribute('data-rendered-search-input')).toBe('');
-    expect(searchInput.getAttribute('data-state')).toBe('open');
-    expect(trigger.getAttribute('aria-haspopup')).toBe('dialog');
-
-    act(() => {
-      fireEvent.change(searchInput, { target: { value: 'be' } });
-      vi.advanceTimersByTime(200);
-    });
-
-    expect((searchInput as HTMLInputElement).value).toBe('be');
-  });
-
-  it('supports ReactElement render overrides and composes their handlers', () => {
-    const onRenderedTriggerClick = vi.fn();
-    render(
-      <ElementRenderComboboxHarness
-        onRenderedTriggerClick={onRenderedTriggerClick}
-      />
-    );
-
-    const trigger = screen.getByRole('combobox', {
-      name: 'Pilih Element Render',
-    });
-    expect(
-      document.querySelector('[data-rendered-trigger-element]')
-    ).toBeTruthy();
-
-    act(() => {
-      fireEvent.click(trigger);
-      vi.advanceTimersByTime(200);
-    });
-
-    expect(onRenderedTriggerClick).toHaveBeenCalledTimes(1);
-    expect(
-      document.querySelector('[data-rendered-popup-element]')
-    ).toBeTruthy();
-    expect(
-      document.querySelector('[data-rendered-search-element]')
-    ).toBeTruthy();
-    expect(document.querySelector('[data-rendered-list-element]')).toBeTruthy();
-    expect(
-      document.querySelectorAll('[data-rendered-option-element]')
-    ).toHaveLength(2);
-
-    act(() => {
-      fireEvent.click(screen.getByRole('option', { name: 'Beta' }));
-      vi.advanceTimersByTime(200);
-    });
-
-    expect(screen.getByRole('combobox', { name: /Beta/ })).toBeTruthy();
-  });
-
-  it('lets ReactElement render handlers prevent internal combobox actions', () => {
-    const onRenderedTriggerClick = vi.fn(
-      (event: React.MouseEvent<HTMLButtonElement>) => {
-        event.preventDefault();
-      }
-    );
-
-    render(
-      <Combobox
-        name="prevent_default_render_dropdown"
-        value=""
-        options={[{ id: 'alpha', name: 'Alpha' }]}
-        placeholder="Pilih Prevent Default"
-        onChange={() => {}}
+        onItemHighlighted={onItemHighlighted}
       >
-        <ComboboxTrigger
-          render={<button type="button" onClick={onRenderedTriggerClick} />}
-        />
-        <ComboboxPopup />
-      </Combobox>
+        <Combobox.Trigger>Open</Combobox.Trigger>
+        <Combobox.Portal>
+          <Combobox.Positioner>
+            <Combobox.Popup>
+              <Combobox.List />
+            </Combobox.Popup>
+          </Combobox.Positioner>
+        </Combobox.Portal>
+      </Combobox.Root>
     );
 
-    const trigger = screen.getByRole('combobox', {
-      name: 'Pilih Prevent Default',
-    });
+    fireEvent.click(screen.getByRole('button', { name: /open/i }));
+    expect(screen.queryByRole('listbox')).toBeNull();
+    expect(onOpenChange).toHaveBeenCalledWith(
+      true,
+      expect.objectContaining({ reason: 'trigger-press' })
+    );
 
-    act(() => {
-      fireEvent.click(trigger);
-      vi.advanceTimersByTime(200);
-    });
+    rerender(
+      <Combobox.Root
+        key="cancel-value"
+        items={fruitItems}
+        defaultOpen
+        onValueChange={onValueChange}
+        onItemHighlighted={onItemHighlighted}
+      >
+        <Combobox.Trigger>Open</Combobox.Trigger>
+        <Combobox.Portal>
+          <Combobox.Positioner>
+            <Combobox.Popup>
+              <Combobox.List />
+            </Combobox.Popup>
+          </Combobox.Positioner>
+        </Combobox.Portal>
+      </Combobox.Root>
+    );
 
-    expect(onRenderedTriggerClick).toHaveBeenCalledTimes(1);
-    expect(screen.queryByRole('dialog')).toBeNull();
+    fireEvent.mouseEnter(screen.getByRole('option', { name: /banana/i }));
+    expect(onItemHighlighted).toHaveBeenCalledWith(
+      'Banana',
+      expect.objectContaining({ reason: 'pointer', index: 1 })
+    );
+    fireEvent.click(screen.getByRole('option', { name: /banana/i }));
+    expect(onValueChange).toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: /open/i })).toBeTruthy();
   });
 
-  it('uses the root part as details.trigger when an inner trigger element is pressed', () => {
-    const onOpenChange = vi.fn();
+  it('merges render props with refs, event handlers, classes, and styles', () => {
+    const elementClick = vi.fn();
+    const rootClick = vi.fn();
+
     render(
-      <ControlledComboboxHarness
-        onOpenChange={onOpenChange}
-        onInputValueChange={vi.fn()}
+      <Combobox.Root
+        items={fruitItems}
+        render={(props, state) => (
+          <div
+            {...props}
+            data-root-open={state.open}
+            className={`${props.className ?? ''} custom-root`}
+          />
+        )}
+        className="base-root"
+        onClick={rootClick}
+      >
+        <Combobox.Trigger
+          render={
+            <button
+              type="button"
+              className="custom-trigger"
+              style={{ color: 'red' }}
+              onClick={elementClick}
+            />
+          }
+        />
+      </Combobox.Root>
+    );
+
+    const root = document.querySelector('.custom-root');
+    const trigger = screen.getByRole('button');
+    fireEvent.click(trigger);
+
+    expect(root?.className).toContain('base-root');
+    expect(trigger.className).toContain('custom-trigger');
+    expect(trigger.getAttribute('style')).toContain('color: red');
+    expect(elementClick).toHaveBeenCalled();
+    expect(rootClick).toHaveBeenCalled();
+  });
+
+  it('handles disabled, readOnly, required, and modal body scroll lock states', () => {
+    const { rerender } = render(
+      <Combobox.Root items={fruitItems} disabled required name="fruit">
+        <Combobox.Trigger>Disabled</Combobox.Trigger>
+      </Combobox.Root>
+    );
+
+    const disabledButton = screen.getByRole('button', {
+      name: /disabled/i,
+    }) as HTMLButtonElement;
+    expect(disabledButton.disabled).toBe(true);
+    expect(
+      document.querySelector('input[name="fruit"]')?.hasAttribute('required')
+    ).toBe(true);
+
+    rerender(
+      <Combobox.Root key="readonly" items={fruitItems} readOnly defaultOpen>
+        <Combobox.Trigger>Read only</Combobox.Trigger>
+        <Combobox.Portal>
+          <Combobox.Positioner>
+            <Combobox.Popup>
+              <Combobox.List />
+            </Combobox.Popup>
+          </Combobox.Positioner>
+        </Combobox.Portal>
+      </Combobox.Root>
+    );
+    fireEvent.click(screen.getByRole('option', { name: /banana/i }));
+    expect(screen.getByRole('button', { name: /read only/i })).toBeTruthy();
+
+    rerender(
+      <Combobox.Root key="modal" items={fruitItems} defaultOpen modal>
+        <Combobox.Trigger>Modal</Combobox.Trigger>
+        <Combobox.Portal>
+          <Combobox.Positioner>
+            <Combobox.Popup>
+              <Combobox.List />
+            </Combobox.Popup>
+          </Combobox.Positioner>
+        </Combobox.Portal>
+      </Combobox.Root>
+    );
+    expect(document.body.style.overflow).toBe('hidden');
+  });
+});
+
+describe('Combobox app presets', () => {
+  it('covers an entity field with validation and add-new action', () => {
+    const onCreate = vi.fn();
+    render(
+      <PharmaComboboxSelect<EntityItem>
+        name="category_id"
+        items={[]}
+        value={null}
+        onValueChange={() => {}}
+        itemToStringLabel={item => item.name}
+        itemToStringValue={item => item.id}
+        placeholder="Pilih kategori"
+        required
+        validation={{ enabled: true, autoHide: false }}
+        createAction={{ onCreate, label: 'Tambah kategori' }}
       />
     );
 
-    const trigger = screen.getByRole('combobox', {
-      name: /Alpha/,
+    const trigger = screen.getByRole('button', { name: /pilih kategori/i });
+    fireEvent.blur(trigger);
+    fireEvent.click(trigger);
+    fireEvent.change(screen.getByPlaceholderText('Cari...'), {
+      target: { value: 'Analgesik' },
     });
+    fireEvent.click(screen.getByRole('button', { name: /tambah kategori/i }));
 
-    act(() => {
-      fireEvent.click(screen.getByText('Alpha'));
-      vi.advanceTimersByTime(200);
-    });
-
-    expect(onOpenChange).toHaveBeenCalledWith(
-      true,
-      expect.objectContaining({
-        reason: 'trigger-press',
-        trigger,
-      })
-    );
+    expect(onCreate).toHaveBeenCalledWith('Analgesik');
+    expect(screen.getByText('Field ini wajib diisi')).toBeTruthy();
   });
 
-  it('stops Escape key propagation unless the event details allow it', () => {
-    const onParentKeyDown = vi.fn();
+  it('covers enum radio-style, calendar text, and purchase object selects', () => {
+    const onEnumChange = vi.fn();
+    const onMonthChange = vi.fn();
+    const onSupplierChange = vi.fn();
+    const suppliers = [
+      { id: 'supplier-a', name: 'Supplier A' },
+      { id: 'supplier-b', name: 'Supplier B' },
+    ];
 
     render(
-      <div role="presentation" onKeyDown={onParentKeyDown}>
-        <Combobox
-          name="escape_dropdown"
-          value="alpha"
-          options={[
-            { id: 'alpha', name: 'Alpha' },
-            { id: 'beta', name: 'Beta' },
-          ]}
-          placeholder="Pilih Escape"
-          onChange={() => {}}
+      <>
+        <PharmaComboboxSelect
+          name="payment_status"
+          items={['unpaid', 'paid']}
+          value="unpaid"
+          onValueChange={value => onEnumChange(value)}
+          itemToStringLabel={value =>
+            value === 'unpaid' ? 'Belum Dibayar' : 'Lunas'
+          }
+          itemToStringValue={value => value}
+          searchable={false}
+          indicator="radio"
         />
-      </div>
+        <PharmaComboboxSelect
+          name="month-selector"
+          items={[0, 1]}
+          value={0}
+          onValueChange={value => onMonthChange(value)}
+          itemToStringLabel={value => (value === 0 ? 'Januari' : 'Februari')}
+          itemToStringValue={value => value.toString()}
+          searchable={false}
+          indicator="none"
+        />
+        <PharmaComboboxSelect
+          name="supplier_id"
+          items={suppliers}
+          value={findComboboxItemByValue(
+            suppliers,
+            'supplier-a',
+            item => item.id
+          )}
+          onValueChange={supplier => onSupplierChange(supplier?.id ?? '')}
+          itemToStringLabel={supplier => supplier.name}
+          itemToStringValue={supplier => supplier.id}
+        />
+      </>
     );
 
-    const trigger = screen.getByRole('combobox', { name: /Alpha/ });
-    act(() => {
-      fireEvent.click(trigger);
-      vi.advanceTimersByTime(200);
-    });
+    fireEvent.click(screen.getByRole('button', { name: /belum dibayar/i }));
+    fireEvent.click(screen.getByRole('option', { name: /lunas/i }));
+    expect(onEnumChange).toHaveBeenCalledWith('paid');
 
-    fireEvent.keyDown(trigger, { key: 'Escape', code: 'Escape' });
+    fireEvent.click(screen.getByRole('button', { name: /januari/i }));
+    fireEvent.click(screen.getByRole('option', { name: /februari/i }));
+    expect(onMonthChange).toHaveBeenCalledWith(1);
 
-    expect(onParentKeyDown).not.toHaveBeenCalled();
-  });
-
-  it('allows Escape key propagation when requested from open-change details', () => {
-    const onParentKeyDown = vi.fn();
-
-    render(
-      <div role="presentation" onKeyDown={onParentKeyDown}>
-        <Combobox
-          name="escape_allow_dropdown"
-          value="alpha"
-          options={[
-            { id: 'alpha', name: 'Alpha' },
-            { id: 'beta', name: 'Beta' },
-          ]}
-          placeholder="Pilih Escape Allow"
-          onChange={() => {}}
-          onOpenChange={(
-            _nextOpen: boolean,
-            details: ComboboxOpenChangeDetails
-          ) => {
-            if (details.reason === 'escape-key') {
-              details.allowPropagation();
-            }
-          }}
-        />
-      </div>
+    fireEvent.click(screen.getByRole('button', { name: /supplier a/i }));
+    const supplierList = screen.getAllByRole('listbox').at(-1);
+    expect(supplierList).toBeTruthy();
+    fireEvent.click(
+      within(supplierList as HTMLElement).getByText('Supplier B')
     );
-
-    const trigger = screen.getByRole('combobox', { name: /Alpha/ });
-    act(() => {
-      fireEvent.click(trigger);
-      vi.advanceTimersByTime(200);
-    });
-
-    fireEvent.keyDown(trigger, { key: 'Escape', code: 'Escape' });
-
-    expect(onParentKeyDown).toHaveBeenCalledTimes(1);
-  });
-
-  it('closes on Tab without blocking browser focus navigation', () => {
-    render(<KeyboardComboboxHarness />);
-
-    const trigger = screen.getByRole('combobox', { name: /Alpha/ });
-    act(() => {
-      fireEvent.click(trigger);
-      trigger.focus();
-      vi.advanceTimersByTime(200);
-    });
-
-    const wasNotPrevented = fireEvent.keyDown(trigger, {
-      key: 'Tab',
-      code: 'Tab',
-    });
-
-    act(() => {
-      vi.advanceTimersByTime(150);
-    });
-
-    expect(wasNotPrevented).toBe(true);
-    expect(screen.queryByRole('listbox')).toBeNull();
-  });
-
-  it('restores the previous body overflow style after closing', () => {
-    document.body.style.overflow = 'clip';
-    render(<KeyboardComboboxHarness />);
-
-    const trigger = screen.getByRole('combobox', { name: /Alpha/ });
-    act(() => {
-      fireEvent.click(trigger);
-      vi.advanceTimersByTime(200);
-    });
-
-    expect(document.body.style.overflow).toBe('hidden');
-
-    act(() => {
-      fireEvent.keyDown(trigger, { key: 'Escape', code: 'Escape' });
-      vi.advanceTimersByTime(200);
-    });
-
-    expect(document.body.style.overflow).toBe('clip');
-  });
-
-  it('routes printable trigger key presses to the search input when open', () => {
-    render(<ComboboxHarness />);
-
-    const trigger = screen.getByRole('combobox', { name: 'Pilih Pertama' });
-    act(() => {
-      fireEvent.click(trigger);
-      trigger.focus();
-      vi.advanceTimersByTime(200);
-    });
-
-    act(() => {
-      fireEvent.keyDown(trigger, { key: 'b', code: 'KeyB' });
-    });
-
-    const searchInput = screen.getByPlaceholderText('Cari...');
-    expect((searchInput as HTMLInputElement).value).toBe('b');
-    expect(document.activeElement).toBe(searchInput);
-  });
-
-  it('virtualizes large option lists instead of rendering every option', () => {
-    render(<LargeComboboxHarness />);
-
-    act(() => {
-      fireEvent.click(screen.getByRole('combobox', { name: 'Pilih Banyak' }));
-      vi.advanceTimersByTime(200);
-    });
-
-    const renderedOptions = screen.queryAllByRole('option');
-    expect(renderedOptions.length).toBeGreaterThan(0);
-    expect(renderedOptions.length).toBeLessThan(250);
-    expect(screen.queryByRole('option', { name: 'Item 250' })).toBeNull();
-  });
-
-  it('opens add-new modal when the empty-search plus button is clicked', () => {
-    render(<ComboboxHarness />);
-
-    act(() => {
-      fireEvent.click(screen.getByRole('combobox', { name: 'Pilih Pertama' }));
-    });
-
-    const searchInput = screen.getByPlaceholderText('Cari...');
-    act(() => {
-      fireEvent.change(searchInput, {
-        target: { value: 'Item yang tidak ada' },
-      });
-      vi.advanceTimersByTime(200);
-    });
-
-    act(() => {
-      fireEvent.mouseDown(
-        screen.getByRole('button', { name: 'Tambah data baru' })
-      );
-      fireEvent.click(screen.getByRole('button', { name: 'Tambah data baru' }));
-    });
-
-    expect(
-      screen.getByRole('dialog', { name: 'Add new modal' })
-    ).not.toBeNull();
+    expect(onSupplierChange).toHaveBeenCalledWith('supplier-b');
   });
 });

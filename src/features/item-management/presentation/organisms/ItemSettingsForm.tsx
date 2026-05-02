@@ -1,7 +1,7 @@
 import { forwardRef, useRef, type CSSProperties } from 'react';
 import { TbChevronDown } from 'react-icons/tb';
 import { AnimatePresence, motion } from 'motion/react';
-import Combobox from '@/components/combobox';
+import { PharmaComboboxSelect } from '@/components/combobox/presets';
 import Checkbox from '@/components/checkbox';
 import FormField from '@/components/form-field';
 import {
@@ -134,19 +134,22 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
                 data-section-content="true"
               >
                 <FormField label="Status" required={true}>
-                  <Combobox
+                  <PharmaComboboxSelect
                     name="is_active"
                     tabIndex={18}
+                    items={['true', 'false']}
                     value={formData.is_active ? 'true' : 'false'}
-                    onChange={value => {
-                      onFieldChange('is_active', value === 'true');
+                    onValueChange={value => {
+                      if (value !== null) {
+                        onFieldChange('is_active', value === 'true');
+                      }
                     }}
-                    options={[
-                      { id: 'true', name: 'Masih dijual' },
-                      { id: 'false', name: 'Tidak Dijual' },
-                    ]}
-                    withRadio
-                    searchList={false}
+                    itemToStringLabel={value =>
+                      value === 'true' ? 'Masih dijual' : 'Tidak Dijual'
+                    }
+                    itemToStringValue={value => value}
+                    indicator="radio"
+                    searchable={false}
                     disabled={disabled}
                   />
                 </FormField>

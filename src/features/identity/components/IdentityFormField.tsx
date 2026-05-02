@@ -1,6 +1,6 @@
 import React from 'react';
 import Input from '@/components/input';
-import Combobox from '@/components/combobox';
+import { PharmaComboboxSelect } from '@/components/combobox/presets';
 import Calendar from '@/components/calendar';
 import Button from '@/components/button';
 import { TbBan, TbDeviceFloppy, TbPencil } from 'react-icons/tb';
@@ -84,15 +84,24 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
 
   const renderEditableField = () => {
     if (field.isRadioDropdown && field.options) {
+      const optionValues = field.options.map(option => option.id);
+      const optionLabelByValue = new Map(
+        field.options.map(option => [option.id, option.name])
+      );
+
       return (
-        <Combobox
+        <PharmaComboboxSelect
           name={field.key}
-          options={field.options}
+          items={optionValues}
           value={String(fieldValue ?? '')}
-          onChange={selectedValue => handleChange(field.key, selectedValue)}
+          onValueChange={selectedValue => {
+            if (selectedValue !== null) handleChange(field.key, selectedValue);
+          }}
+          itemToStringLabel={value => optionLabelByValue.get(value) ?? value}
+          itemToStringValue={value => value}
           placeholder={`Pilih ${field.label.toLowerCase()}`}
-          withRadio={true}
-          searchList={false}
+          indicator="radio"
+          searchable={false}
         />
       );
     }

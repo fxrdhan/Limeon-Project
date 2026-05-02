@@ -1,38 +1,21 @@
-export { default as ComboboxRoot } from './index';
-export { default as ComboboxTrigger } from './components/parts/ComboboxTrigger';
-export { default as ComboboxPopup } from './components/parts/ComboboxPopup';
-export { default as ComboboxList } from './components/parts/ComboboxList';
-export { default as ComboboxListItem } from './components/parts/ComboboxListItem';
-export { default as ComboboxSearch } from './components/parts/ComboboxSearch';
-export { default as ComboboxSearchInput } from './components/parts/ComboboxSearchInput';
-export { default as ComboboxHoverDetail } from './components/parts/ComboboxHoverDetail';
-export { ComboboxProvider } from './providers/ComboboxContext';
-export { useComboboxContext } from './hooks/useComboboxContext';
+export { Combobox, default } from './index';
 export type {
-  ComboboxContextType,
-  ComboboxListItemProps,
-  ComboboxListItemState,
-  ComboboxListProps,
-  ComboboxListRenderProps,
+  ComboboxHighlightChangeDetails,
+  ComboboxInputValueChangeDetails,
+  ComboboxItemState,
   ComboboxListState,
-  ComboboxMenuProps,
-  ComboboxPopupProps,
-  ComboboxPopupRenderProps,
+  ComboboxOpenChangeDetails,
   ComboboxPopupState,
   ComboboxRenderProp,
+  ComboboxRootProps,
   ComboboxRootRenderProps,
   ComboboxRootState,
-  ComboboxSearchProps,
-  ComboboxSearchInputProps,
-  ComboboxSearchInputRenderProps,
   ComboboxSearchInputState,
-  ComboboxSearchState,
-  ComboboxTriggerProps,
-  ComboboxTriggerRenderProps,
   ComboboxTriggerState,
-  OptionItemProps,
-  SearchBarProps,
-  UseComboboxEffectsProps,
-  UseFocusManagementProps,
-  UseScrollManagementProps,
-} from './types';
+  ComboboxValueChangeDetails,
+} from './index';
+export { findComboboxItemByValue } from './helpers';
+export {
+  PharmaComboboxSelect,
+  type PharmaComboboxSelectProps,
+} from './presets';

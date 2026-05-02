@@ -1,6 +1,7 @@
-import { forwardRef, useMemo, useEffect, useRef, useState } from 'react';
+import { forwardRef, useEffect, useRef, useState } from 'react';
 import Input from '@/components/input';
-import Combobox from '@/components/combobox';
+import { PharmaComboboxSelect } from '@/components/combobox/presets';
+import { findComboboxItemByValue } from '@/components/combobox/helpers';
 import FormField from '@/components/form-field';
 import { itemNameSchema } from '@/schemas/manual/itemValidation';
 import type { ComboboxOption } from '@/types/components';
@@ -10,13 +11,6 @@ import {
 } from '@/styles/uiPrimitives';
 import { useItemCodeGenerator } from '../../application/hooks/utils';
 import { useItemRealtime } from '../../shared/contexts/useItemFormContext';
-import {
-  createOptimizedCategoryDetailFetcher,
-  createOptimizedTypeDetailFetcher,
-  createOptimizedUnitDetailFetcher,
-  createOptimizedDosageDetailFetcher,
-  createOptimizedManufacturerDetailFetcher,
-} from '@/utils/optimizedCategoryDetailFetcher';
 import { inferDosageFromDisplayName } from '@/lib/item-dosage-inference';
 
 interface ItemBasicInfoFormProps {
@@ -69,7 +63,6 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
       onDropdownChange,
       persistedDropdownName,
       onPersistedDropdownClear,
-      freezePersistedDropdown = false,
       onAddNewCategory,
       onAddNewType,
       onAddNewUnit,
@@ -138,27 +131,6 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
       manufacturers,
     });
 
-    // Create optimized detail fetchers using cached data
-    const optimizedCategoryDetailFetcher = useMemo(() => {
-      return createOptimizedCategoryDetailFetcher(categories);
-    }, [categories]);
-
-    const optimizedTypeDetailFetcher = useMemo(() => {
-      return createOptimizedTypeDetailFetcher(types);
-    }, [types]);
-
-    const optimizedPackageDetailFetcher = useMemo(() => {
-      return createOptimizedUnitDetailFetcher(packages);
-    }, [packages]);
-
-    const optimizedDosageDetailFetcher = useMemo(() => {
-      return createOptimizedDosageDetailFetcher(dosages);
-    }, [dosages]);
-
-    const optimizedManufacturerDetailFetcher = useMemo(() => {
-      return createOptimizedManufacturerDetailFetcher(manufacturers);
-    }, [manufacturers]);
-
     // Update formData.code whenever the generated code changes
     useEffect(() => {
       if (!codeGeneration.generatedCode) return;
@@ -186,6 +158,45 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
       !formData.code.includes('-...')
         ? formData.code
         : codeGeneration.generatedCode || formData.code || 'Auto-generated';
+    const productTypeItems = ['obat', 'non-obat'];
+    const productTypeLabels = new Map([
+      ['obat', 'Obat'],
+      ['non-obat', 'Non-Obat'],
+    ]);
+    const renderEntityCombobox = (
+      name: keyof typeof formData,
+      tabIndex: number,
+      value: string,
+      items: ComboboxOption[],
+      placeholder: string,
+      onCreate: (searchTerm?: string) => void
+    ) => (
+      <PharmaComboboxSelect
+        name={name}
+        tabIndex={tabIndex}
+        items={items}
+        value={findComboboxItemByValue(items, value, item => item.id)}
+        onValueChange={item => onDropdownChange(name, item?.id ?? '')}
+        itemToStringLabel={item => item.name}
+        itemToStringValue={item => item.id}
+        placeholder={placeholder}
+        required
+        validation={{ enabled: true, autoHide: true, autoHideDelay: 3000 }}
+        createAction={
+          disabled
+            ? undefined
+            : {
+                onCreate,
+                label: 'Tambah baru',
+              }
+        }
+        open={persistedDropdownName === name ? true : undefined}
+        onOpenChange={nextOpen => {
+          if (!nextOpen) onPersistedDropdownClear?.();
+        }}
+        disabled={disabled}
+      />
+    );
 
     return (
       <div className={`${SURFACE_CARD_CLASS} mb-6`}>
@@ -220,11 +231,13 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
             </FormField>
 
             <FormField label="Tipe Produk" required={true}>
-              <Combobox
+              <PharmaComboboxSelect
                 name="is_medicine"
                 tabIndex={2}
+                items={productTypeItems}
                 value={formData.is_medicine ? 'obat' : 'non-obat'}
-                onChange={value => {
+                onValueChange={value => {
+                  if (value === null) return;
                   if (value === 'obat') {
                     onFieldChange('is_medicine', true);
                   } else {
@@ -232,12 +245,12 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                     onFieldChange('has_expiry_date', false);
                   }
                 }}
-                options={[
-                  { id: 'obat', name: 'Obat' },
-                  { id: 'non-obat', name: 'Non-Obat' },
-                ]}
-                withRadio
-                searchList={false}
+                itemToStringLabel={value =>
+                  productTypeLabels.get(value) ?? value
+                }
+                itemToStringValue={value => value}
+                indicator="radio"
+                searchable={false}
                 disabled={disabled}
               />
             </FormField>
@@ -246,30 +259,14 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
               {loading && manufacturers.length === 0 ? (
                 <Input value="Memuat produsen..." readOnly disabled />
               ) : (
-                <Combobox
-                  name="manufacturer_id"
-                  tabIndex={3}
-                  value={formData.manufacturer_id}
-                  onChange={value => onDropdownChange('manufacturer_id', value)}
-                  options={manufacturers}
-                  placeholder="Pilih Produsen"
-                  onAddNew={disabled ? undefined : onAddNewManufacturer}
-                  persistOpen={persistedDropdownName === 'manufacturer_id'}
-                  freezePersistedMenu={
-                    freezePersistedDropdown &&
-                    persistedDropdownName === 'manufacturer_id'
-                  }
-                  onPersistOpenClear={onPersistedDropdownClear}
-                  enableHoverDetail={true}
-                  hoverDetailDelay={400}
-                  onFetchHoverDetail={optimizedManufacturerDetailFetcher}
-                  disabled={disabled}
-                  required
-                  validate={true}
-                  showValidationOnBlur={true}
-                  validationAutoHide={true}
-                  validationAutoHideDelay={3000}
-                />
+                renderEntityCombobox(
+                  'manufacturer_id',
+                  3,
+                  formData.manufacturer_id,
+                  manufacturers,
+                  'Pilih Produsen',
+                  onAddNewManufacturer
+                )
               )}
             </FormField>
 
@@ -277,30 +274,14 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
               {loading && categories.length === 0 ? (
                 <Input value="Memuat kategori..." readOnly disabled />
               ) : (
-                <Combobox
-                  name="category_id"
-                  tabIndex={4}
-                  value={formData.category_id}
-                  onChange={value => onDropdownChange('category_id', value)}
-                  options={categories}
-                  placeholder="Pilih Kategori"
-                  required
-                  validate={true}
-                  showValidationOnBlur={true}
-                  validationAutoHide={true}
-                  validationAutoHideDelay={3000}
-                  onAddNew={disabled ? undefined : onAddNewCategory}
-                  persistOpen={persistedDropdownName === 'category_id'}
-                  freezePersistedMenu={
-                    freezePersistedDropdown &&
-                    persistedDropdownName === 'category_id'
-                  }
-                  onPersistOpenClear={onPersistedDropdownClear}
-                  enableHoverDetail={true}
-                  hoverDetailDelay={400}
-                  onFetchHoverDetail={optimizedCategoryDetailFetcher}
-                  disabled={disabled}
-                />
+                renderEntityCombobox(
+                  'category_id',
+                  4,
+                  formData.category_id,
+                  categories,
+                  'Pilih Kategori',
+                  onAddNewCategory
+                )
               )}
             </FormField>
 
@@ -308,30 +289,14 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
               {loading && types.length === 0 ? (
                 <Input value="Memuat jenis..." readOnly disabled />
               ) : (
-                <Combobox
-                  name="type_id"
-                  tabIndex={5}
-                  value={formData.type_id}
-                  onChange={value => onDropdownChange('type_id', value)}
-                  options={types}
-                  placeholder="Pilih Jenis"
-                  required
-                  validate={true}
-                  showValidationOnBlur={true}
-                  validationAutoHide={true}
-                  validationAutoHideDelay={3000}
-                  onAddNew={disabled ? undefined : onAddNewType}
-                  persistOpen={persistedDropdownName === 'type_id'}
-                  freezePersistedMenu={
-                    freezePersistedDropdown &&
-                    persistedDropdownName === 'type_id'
-                  }
-                  onPersistOpenClear={onPersistedDropdownClear}
-                  enableHoverDetail={true}
-                  hoverDetailDelay={400}
-                  onFetchHoverDetail={optimizedTypeDetailFetcher}
-                  disabled={disabled}
-                />
+                renderEntityCombobox(
+                  'type_id',
+                  5,
+                  formData.type_id,
+                  types,
+                  'Pilih Jenis',
+                  onAddNewType
+                )
               )}
             </FormField>
 
@@ -339,30 +304,14 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
               {loading && packages.length === 0 ? (
                 <Input value="Memuat kemasan..." readOnly disabled />
               ) : (
-                <Combobox
-                  name="package_id"
-                  tabIndex={6}
-                  value={formData.package_id}
-                  onChange={value => onDropdownChange('package_id', value)}
-                  options={packages}
-                  placeholder="Pilih Kemasan"
-                  required
-                  validate={true}
-                  showValidationOnBlur={true}
-                  validationAutoHide={true}
-                  validationAutoHideDelay={3000}
-                  onAddNew={disabled ? undefined : onAddNewUnit}
-                  persistOpen={persistedDropdownName === 'package_id'}
-                  freezePersistedMenu={
-                    freezePersistedDropdown &&
-                    persistedDropdownName === 'package_id'
-                  }
-                  onPersistOpenClear={onPersistedDropdownClear}
-                  enableHoverDetail={true}
-                  hoverDetailDelay={400}
-                  onFetchHoverDetail={optimizedPackageDetailFetcher}
-                  disabled={disabled}
-                />
+                renderEntityCombobox(
+                  'package_id',
+                  6,
+                  formData.package_id,
+                  packages,
+                  'Pilih Kemasan',
+                  onAddNewUnit
+                )
               )}
             </FormField>
 
@@ -370,30 +319,14 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
               {loading && dosages.length === 0 ? (
                 <Input value="Memuat sediaan..." readOnly disabled />
               ) : (
-                <Combobox
-                  name="dosage_id"
-                  tabIndex={7}
-                  value={formData.dosage_id}
-                  onChange={value => onDropdownChange('dosage_id', value)}
-                  options={dosages}
-                  placeholder="Pilih Sediaan"
-                  required
-                  validate={true}
-                  showValidationOnBlur={true}
-                  validationAutoHide={true}
-                  validationAutoHideDelay={3000}
-                  onAddNew={disabled ? undefined : onAddNewDosage}
-                  persistOpen={persistedDropdownName === 'dosage_id'}
-                  freezePersistedMenu={
-                    freezePersistedDropdown &&
-                    persistedDropdownName === 'dosage_id'
-                  }
-                  onPersistOpenClear={onPersistedDropdownClear}
-                  enableHoverDetail={true}
-                  hoverDetailDelay={400}
-                  onFetchHoverDetail={optimizedDosageDetailFetcher}
-                  disabled={disabled}
-                />
+                renderEntityCombobox(
+                  'dosage_id',
+                  7,
+                  formData.dosage_id,
+                  dosages,
+                  'Pilih Sediaan',
+                  onAddNewDosage
+                )
               )}
             </FormField>
           </div>

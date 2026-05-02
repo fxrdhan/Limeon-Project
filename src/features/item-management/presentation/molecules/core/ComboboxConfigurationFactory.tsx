@@ -17,14 +17,14 @@
  * - Centralized combobox patterns
  */
 
-import React from 'react';
-import Combobox from '@/components/combobox';
+import {
+  PharmaComboboxSelect,
+  type PharmaComboboxSelectProps,
+} from '@/components/combobox/presets';
+import { findComboboxItemByValue } from '@/components/combobox/helpers';
 import Input from '@/components/input';
 import FormField from '@/components/form-field';
 import type { ComboboxOption, HoverDetailData } from '@/types/components';
-
-// Type-safe combobox props
-type ComboboxProps = React.ComponentProps<typeof Combobox>;
 
 // ============================================================================
 // CONFIGURATION TYPES
@@ -74,7 +74,15 @@ export interface ComboboxFieldConfig {
 
   /** Additional combobox props */
   comboboxProps?: Partial<
-    Omit<ComboboxProps, 'name' | 'value' | 'onChange' | 'options'>
+    Omit<
+      PharmaComboboxSelectProps<ComboboxOption>,
+      | 'name'
+      | 'value'
+      | 'onValueChange'
+      | 'items'
+      | 'itemToStringLabel'
+      | 'itemToStringValue'
+    >
   >;
 }
 
@@ -86,16 +94,16 @@ export interface SmartComboboxProps extends ComboboxFieldConfig {
   value: string;
 
   /** Available options */
-  options: ComboboxOption[];
+  items: ComboboxOption[];
 
   /** Loading state */
   loading: boolean;
 
   /** Change handler */
-  onChange: (value: string) => void;
+  onValueChange: (value: string) => void;
 
   /** Add new item handler */
-  onAddNew?: (searchTerm?: string) => void;
+  onCreate?: (searchTerm?: string) => void;
 
   /** Hover detail fetcher */
   onFetchHoverDetail?: (id: string) => Promise<HoverDetailData | null>;
@@ -115,7 +123,7 @@ export function SmartCombobox({
   name,
   label,
   value,
-  options,
+  items,
   loading,
   tabIndex,
   placeholder,
@@ -126,9 +134,8 @@ export function SmartCombobox({
   loadingMessage,
   className,
   comboboxProps = {},
-  onChange,
-  onAddNew,
-  onFetchHoverDetail,
+  onValueChange,
+  onCreate,
 }: SmartComboboxProps) {
   // Default validation configuration
   const validationConfig = {
@@ -139,41 +146,43 @@ export function SmartCombobox({
     ...validation,
   };
 
-  // Default hover detail configuration
-  const hoverDetailConfig = {
-    enabled: true,
-    delay: 400,
-    ...hoverDetail,
-  };
+  void hoverDetail;
 
   // Generate loading message
   const finalLoadingMessage =
     loadingMessage || `Memuat ${label.toLowerCase()}...`;
 
   // Show loading state when data is loading and no options available
-  const shouldShowLoading = showLoading && loading && options.length === 0;
+  const shouldShowLoading = showLoading && loading && items.length === 0;
 
   return (
     <FormField label={label} className={className} required={required}>
       {shouldShowLoading ? (
         <Input value={finalLoadingMessage} readOnly disabled />
       ) : (
-        <Combobox
+        <PharmaComboboxSelect
           name={name}
           tabIndex={tabIndex}
-          value={value}
-          onChange={onChange}
-          options={options}
+          value={findComboboxItemByValue(items, value, item => item.id)}
+          onValueChange={item => onValueChange(item?.id ?? '')}
+          items={items}
+          itemToStringLabel={item => item.name}
+          itemToStringValue={item => item.id}
           placeholder={placeholder}
           required={required}
-          validate={validationConfig.enabled}
-          showValidationOnBlur={validationConfig.showOnBlur}
-          validationAutoHide={validationConfig.autoHide}
-          validationAutoHideDelay={validationConfig.autoHideDelay}
-          onAddNew={onAddNew}
-          enableHoverDetail={hoverDetailConfig.enabled}
-          hoverDetailDelay={hoverDetailConfig.delay}
-          onFetchHoverDetail={onFetchHoverDetail}
+          validation={{
+            enabled: validationConfig.enabled,
+            autoHide: validationConfig.autoHide,
+            autoHideDelay: validationConfig.autoHideDelay,
+          }}
+          createAction={
+            onCreate
+              ? {
+                  onCreate,
+                  label: 'Tambah baru',
+                }
+              : undefined
+          }
           {...comboboxProps}
         />
       )}
@@ -228,12 +237,12 @@ export interface EntityComboboxProps {
     | 'dosages'
     | 'manufacturers';
   value: string;
-  options: ComboboxOption[];
+  items: ComboboxOption[];
   loading: boolean;
   tabIndex?: number;
   required?: boolean;
-  onChange: (value: string) => void;
-  onAddNew?: (searchTerm?: string) => void;
+  onValueChange: (value: string) => void;
+  onCreate?: (searchTerm?: string) => void;
   onFetchHoverDetail?: (id: string) => Promise<HoverDetailData | null>;
   className?: string;
 }
@@ -282,12 +291,12 @@ const ENTITY_COMBOBOX_CONFIGS = {
 export function EntityCombobox({
   entityType,
   value,
-  options,
+  items,
   loading,
   tabIndex,
   required = false,
-  onChange,
-  onAddNew,
+  onValueChange,
+  onCreate,
   onFetchHoverDetail,
   className,
 }: EntityComboboxProps) {
@@ -298,13 +307,13 @@ export function EntityCombobox({
       {...config}
       {...ENTITY_COMBOBOX_CONFIG}
       value={value}
-      options={options}
+      items={items}
       loading={loading}
       tabIndex={tabIndex}
       required={required}
       className={className}
-      onChange={onChange}
-      onAddNew={onAddNew}
+      onValueChange={onValueChange}
+      onCreate={onCreate}
       onFetchHoverDetail={onFetchHoverDetail}
     />
   );
@@ -322,7 +331,7 @@ export interface BatchComboboxProps {
   formData: Record<string, string>;
 
   /** All combobox options */
-  options: {
+  items: {
     categories: ComboboxOption[];
     types: ComboboxOption[];
     packages: ComboboxOption[];
@@ -338,7 +347,7 @@ export interface BatchComboboxProps {
   onComboboxChange: (field: string, value: string) => void;
 
   /** Add new handlers */
-  onAddNew: {
+  onCreate: {
     categories?: (searchTerm?: string) => void;
     types?: (searchTerm?: string) => void;
     packages?: (searchTerm?: string) => void;
@@ -369,10 +378,10 @@ export interface BatchComboboxProps {
  */
 export function BatchEntityComboboxes({
   formData,
-  options,
+  items,
   loading,
   onComboboxChange,
-  onAddNew,
+  onCreate,
   hoverDetailFetchers,
   startingTabIndex = 1,
 }: BatchComboboxProps) {
@@ -396,12 +405,12 @@ export function BatchEntityComboboxes({
             key={entityType}
             entityType={entityType}
             value={formData[fieldName] || ''}
-            options={options[entityType]}
+            items={items[entityType]}
             loading={loading}
             tabIndex={startingTabIndex + index}
             required={true}
-            onChange={value => onComboboxChange(fieldName, value)}
-            onAddNew={onAddNew[entityType]}
+            onValueChange={value => onComboboxChange(fieldName, value)}
+            onCreate={onCreate[entityType]}
             onFetchHoverDetail={hoverDetailFetchers[entityType]}
           />
         );

@@ -1,7 +1,8 @@
 import React from 'react';
 import FormSection from '@/components/form-section';
 import Input from '@/components/input';
-import Combobox from '@/components/combobox';
+import { PharmaComboboxSelect } from '@/components/combobox/presets';
+import { findComboboxItemByValue } from '@/components/combobox/helpers';
 import Calendar from '@/components/calendar';
 import DescriptiveTextarea from '@/components/descriptive-textarea';
 import type { CustomDateValueType } from '@/components/calendar/types';
@@ -49,6 +50,18 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
       target: { name: fieldName, value },
     } as React.ChangeEvent<HTMLSelectElement>);
   };
+  const paymentStatusItems = ['unpaid', 'partial', 'paid'];
+  const paymentStatusLabels = new Map([
+    ['unpaid', 'Belum Dibayar'],
+    ['partial', 'Sebagian'],
+    ['paid', 'Lunas'],
+  ]);
+  const paymentMethodItems = ['cash', 'transfer', 'credit'];
+  const paymentMethodLabels = new Map([
+    ['cash', 'Tunai'],
+    ['transfer', 'Transfer'],
+    ['credit', 'Kredit'],
+  ]);
 
   return (
     <FormSection title="Informasi Pembelian">
@@ -70,14 +83,19 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
           <label className="block text-sm font-medium text-slate-700 mb-1">
             Supplier
           </label>
-          <Combobox
+          <PharmaComboboxSelect
             name="supplier_id"
-            value={formData.supplier_id}
-            onChange={value => handleDropdownChange('supplier_id', value)}
-            options={suppliers.map(supplier => ({
-              id: supplier.id,
-              name: supplier.name,
-            }))}
+            items={suppliers}
+            value={findComboboxItemByValue(
+              suppliers,
+              formData.supplier_id,
+              supplier => supplier.id
+            )}
+            onValueChange={supplier =>
+              handleDropdownChange('supplier_id', supplier?.id ?? '')
+            }
+            itemToStringLabel={supplier => supplier.name}
+            itemToStringValue={supplier => supplier.id}
             placeholder="-- Pilih Supplier --"
           />
         </div>
@@ -113,16 +131,18 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
           <label className="block text-sm font-medium text-slate-700 mb-1">
             Status Pembayaran
           </label>
-          <Combobox
+          <PharmaComboboxSelect
             name="payment_status"
+            items={paymentStatusItems}
             value={formData.payment_status}
-            onChange={value => handleDropdownChange('payment_status', value)}
-            options={[
-              { id: 'unpaid', name: 'Belum Dibayar' },
-              { id: 'partial', name: 'Sebagian' },
-              { id: 'paid', name: 'Lunas' },
-            ]}
+            onValueChange={value => {
+              if (value !== null) handleDropdownChange('payment_status', value);
+            }}
+            itemToStringLabel={value => paymentStatusLabels.get(value) ?? value}
+            itemToStringValue={value => value}
             placeholder="-- Pilih Status --"
+            searchable={false}
+            indicator="radio"
           />
         </div>
 
@@ -130,16 +150,18 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
           <label className="block text-sm font-medium text-slate-700 mb-1">
             Metode Pembayaran
           </label>
-          <Combobox
+          <PharmaComboboxSelect
             name="payment_method"
+            items={paymentMethodItems}
             value={formData.payment_method}
-            onChange={value => handleDropdownChange('payment_method', value)}
-            options={[
-              { id: 'cash', name: 'Tunai' },
-              { id: 'transfer', name: 'Transfer' },
-              { id: 'credit', name: 'Kredit' },
-            ]}
+            onValueChange={value => {
+              if (value !== null) handleDropdownChange('payment_method', value);
+            }}
+            itemToStringLabel={value => paymentMethodLabels.get(value) ?? value}
+            itemToStringValue={value => value}
             placeholder="-- Pilih Metode --"
+            searchable={false}
+            indicator="radio"
           />
         </div>
       </div>

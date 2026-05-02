@@ -1,6 +1,6 @@
 import React from 'react';
 import { TbChevronLeft, TbChevronRight } from 'react-icons/tb';
-import Combobox from '@/components/combobox';
+import { PharmaComboboxSelect } from '@/components/combobox/presets';
 import { MONTH_NAMES_ID } from '../constants';
 import type { CalendarHeaderProps } from '../types';
 
@@ -12,48 +12,46 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   onYearChange,
 }) => {
   // Generate month options
-  const monthOptions = MONTH_NAMES_ID.map((name, index) => ({
-    id: index.toString(),
-    name,
-  }));
+  const monthOptions = MONTH_NAMES_ID.map((_, index) => index);
 
   // Generate year options (current year ± 50 years)
   const currentYear = displayDate.getFullYear();
   const yearOptions = Array.from({ length: 101 }, (_, i) => {
     const year = currentYear - 50 + i;
-    return {
-      id: year.toString(),
-      name: year.toString(),
-    };
+    return year;
   });
 
   return (
     <div className="calendar__header">
       <div className="calendar__header-controls">
-        <Combobox
-          mode="text"
-          portalWidth="120px"
-          position="bottom"
-          align="left"
-          options={monthOptions}
-          value={displayDate.getMonth().toString()}
-          onChange={value => onMonthChange(parseInt(value))}
-          placeholder="Bulan"
+        <PharmaComboboxSelect
           name="month-selector"
-          searchList={false}
+          items={monthOptions}
+          value={displayDate.getMonth()}
+          onValueChange={value => {
+            if (value !== null) onMonthChange(value);
+          }}
+          itemToStringLabel={value => MONTH_NAMES_ID[value] ?? ''}
+          itemToStringValue={value => value.toString()}
+          placeholder="Bulan"
+          searchable={false}
+          indicator="none"
+          popupClassName="w-[120px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl"
         />
 
-        <Combobox
-          mode="text"
-          portalWidth="100px"
-          position="bottom"
-          align="left"
-          options={yearOptions}
-          value={displayDate.getFullYear().toString()}
-          onChange={value => onYearChange(parseInt(value))}
-          placeholder="Tahun"
+        <PharmaComboboxSelect
           name="year-selector"
-          searchList={false}
+          items={yearOptions}
+          value={displayDate.getFullYear()}
+          onValueChange={value => {
+            if (value !== null) onYearChange(value);
+          }}
+          itemToStringLabel={value => value.toString()}
+          itemToStringValue={value => value.toString()}
+          placeholder="Tahun"
+          searchable={false}
+          indicator="none"
+          popupClassName="w-[100px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl"
         />
       </div>
 
