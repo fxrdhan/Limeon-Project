@@ -6,7 +6,7 @@
 import { Combobox } from '@/components/combobox';
 ```
 
-The primitive is value-model agnostic. Items can be strings, numbers, or objects. App styling, validation overlays, add-new actions, and other PharmaSys-specific behavior live outside the primitive, usually through `PharmaComboboxSelect` from `./presets`.
+The primitive is value-model agnostic and intentionally headless. Items can be strings, numbers, or objects. Visual styling, localized copy, validation overlays, add-new actions, and other PharmaSys-specific behavior live outside the primitive, usually through `PharmaComboboxSelect` from `./presets`.
 
 ## Primitive Parts
 
@@ -25,7 +25,10 @@ The primitive is value-model agnostic. Items can be strings, numbers, or objects
     <Combobox.Positioner>
       <Combobox.Popup>
         <Combobox.SearchInput placeholder="Cari..." />
-        <Combobox.List />
+        <Combobox.List>
+          <Combobox.Collection />
+          <Combobox.Empty>Tidak ada data</Combobox.Empty>
+        </Combobox.List>
       </Combobox.Popup>
     </Combobox.Positioner>
   </Combobox.Portal>

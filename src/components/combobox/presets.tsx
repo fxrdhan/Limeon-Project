@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import {
   TbCheck,
+  TbChevronDown,
   TbCircle,
   TbCircleCheck,
   TbPlus,
@@ -165,7 +166,19 @@ export function PharmaComboboxSelect<Item>({
                     : 'border-slate-300'
               }`}
             >
-              {props.children}
+              <span
+                className={
+                  state.selectedLabel ? 'truncate' : 'truncate text-slate-400'
+                }
+              >
+                {state.selectedLabel || placeholder}
+              </span>
+              <TbChevronDown
+                aria-hidden="true"
+                className={`h-4 w-4 shrink-0 text-slate-500 transition-transform ${
+                  state.open ? 'rotate-180' : ''
+                }`}
+              />
             </button>
           )}
         />
@@ -178,15 +191,30 @@ export function PharmaComboboxSelect<Item>({
               }
             >
               {searchable ? (
-                <Combobox.SearchInput placeholder="Cari..." />
+                <Combobox.SearchInput
+                  className="w-full border-0 border-b border-slate-100 px-3 py-2 text-sm outline-hidden focus:ring-0"
+                  placeholder="Cari..."
+                />
               ) : null}
-              <Combobox.List>
+              <Combobox.List className="max-h-60 overflow-y-auto p-1 outline-hidden">
                 <Combobox.Collection>
                   {(item: Item, index) => (
                     <Combobox.Item
                       key={itemToStringValue(item)}
                       item={item}
                       index={index}
+                      render={(props, state) => (
+                        <div
+                          {...props}
+                          className={`flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-800 outline-hidden ${
+                            state.highlighted ? 'bg-primary/10' : ''
+                          } ${state.selected ? 'font-semibold text-primary' : ''} ${
+                            state.disabled
+                              ? 'cursor-not-allowed opacity-50'
+                              : ''
+                          }`}
+                        />
+                      )}
                     >
                       {state => (
                         <>
@@ -199,7 +227,9 @@ export function PharmaComboboxSelect<Item>({
                     </Combobox.Item>
                   )}
                 </Combobox.Collection>
-                <Combobox.Empty />
+                <Combobox.Empty className="px-3 py-4 text-center text-sm text-slate-500">
+                  Tidak ada data
+                </Combobox.Empty>
                 {canCreate ? (
                   <button
                     type="button"

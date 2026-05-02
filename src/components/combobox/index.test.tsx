@@ -77,6 +77,7 @@ describe('Combobox primitive', () => {
         <Combobox.Portal>
           <Combobox.Positioner>
             <Combobox.Popup>
+              <Combobox.SearchInput placeholder="Search fruit" />
               <Combobox.List />
             </Combobox.Popup>
           </Combobox.Positioner>
@@ -111,6 +112,7 @@ describe('Combobox primitive', () => {
           <Combobox.Portal>
             <Combobox.Positioner>
               <Combobox.Popup>
+                <Combobox.SearchInput placeholder="Search fruit" />
                 <Combobox.List />
               </Combobox.Popup>
             </Combobox.Positioner>
@@ -123,6 +125,9 @@ describe('Combobox primitive', () => {
 
       await waitFor(() => {
         expect(cherryOption.hasAttribute('data-highlighted')).toBe(true);
+        expect(
+          screen.getByRole('combobox').getAttribute('aria-activedescendant')
+        ).toBe(cherryOption.id);
         expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' });
       });
     } finally {
@@ -206,9 +211,41 @@ describe('Combobox primitive', () => {
         </Combobox.Portal>
       </Combobox.Root>
     );
-    fireEvent.click(screen.getByRole('button', { name: /pilih/i }));
+    fireEvent.click(screen.getByRole('button'));
     expect(screen.getByRole('option', { name: /banana/i })).toBeTruthy();
     expect(screen.queryByRole('option', { name: /apple/i })).toBeNull();
+  });
+
+  it('does not select a stale highlighted item after filtering changes the visible list', () => {
+    const onValueChange = vi.fn();
+    render(
+      <Combobox.Root
+        items={fruitItems}
+        highlightedItem="Banana"
+        onValueChange={onValueChange}
+      >
+        <Combobox.Trigger>Open</Combobox.Trigger>
+        <Combobox.Portal>
+          <Combobox.Positioner>
+            <Combobox.Popup>
+              <Combobox.SearchInput placeholder="Search fruit" />
+              <Combobox.List />
+            </Combobox.Popup>
+          </Combobox.Positioner>
+        </Combobox.Portal>
+      </Combobox.Root>
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /open/i }));
+    fireEvent.change(screen.getByPlaceholderText('Search fruit'), {
+      target: { value: 'cher' },
+    });
+    fireEvent.keyDown(screen.getByPlaceholderText('Search fruit'), {
+      key: 'Enter',
+    });
+
+    expect(screen.queryByRole('option', { name: /banana/i })).toBeNull();
+    expect(onValueChange).not.toHaveBeenCalled();
   });
 
   it('supports collection grouping and list-only popup composition', () => {
@@ -234,8 +271,11 @@ describe('Combobox primitive', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /open list/i }));
     expect(screen.getByText('Group A')).toBeTruthy();
-    expect(screen.getByRole('option', { name: /apple/i })).toBeTruthy();
-    expect(screen.getByRole('option', { name: /banana/i })).toBeTruthy();
+    const appleOption = screen.getByRole('option', { name: /apple/i });
+    const bananaOption = screen.getByRole('option', { name: /banana/i });
+    expect(appleOption).toBeTruthy();
+    expect(bananaOption).toBeTruthy();
+    expect(appleOption.id).not.toBe(bananaOption.id);
     expect(screen.queryByPlaceholderText(/search/i)).toBeNull();
   });
 
@@ -254,7 +294,10 @@ describe('Combobox primitive', () => {
     );
 
     const trigger = screen.getByRole('button', { name: /open/i });
-    const popup = screen.getByRole('dialog');
+    const popup = document.querySelector('[id$="-popup"]');
+    if (!(popup instanceof HTMLElement)) {
+      throw new Error('Expected combobox popup to render');
+    }
     Object.defineProperty(window, 'innerHeight', {
       configurable: true,
       value: 120,

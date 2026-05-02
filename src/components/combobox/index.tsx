@@ -20,7 +20,6 @@ import React, {
   type SyntheticEvent,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { TbCheck, TbChevronDown } from 'react-icons/tb';
 import type { BaseUIChangeEventDetails } from '@/types';
 import { createComboboxChangeDetails } from './utils/eventDetails';
 
@@ -179,6 +178,7 @@ type RenderPartProps = {
 type ComboboxContextValue<Item> = {
   rootId: string;
   labelId: string;
+  labelMounted: boolean;
   triggerId: string;
   popupId: string;
   listId: string;
@@ -210,7 +210,7 @@ type ComboboxContextValue<Item> = {
     open: boolean,
     reason: ComboboxOpenChangeReason,
     event?: EventLike
-  ) => void;
+  ) => ComboboxOpenChangeDetails | null;
   setInputValue: (
     value: string,
     reason: ComboboxInputValueChangeReason,
@@ -222,6 +222,8 @@ type ComboboxContextValue<Item> = {
     event?: EventLike
   ) => void;
   selectItem: (item: Item, event?: EventLike) => void;
+  getItemId: (item: Item, fallbackIndex?: number) => string;
+  registerLabel: () => () => void;
 };
 
 const ComboboxContext = createContext<ComboboxContextValue<unknown> | null>(
@@ -367,6 +369,9 @@ const findNextEnabledIndex = <Item,>(
   return -1;
 };
 
+const getSafeIdPart = (value: string) =>
+  value.replace(/[^a-zA-Z0-9_-]/g, '_') || 'item';
+
 function Root<Item, Multiple extends boolean | undefined = false>({
   children,
   items,
@@ -433,6 +438,7 @@ function Root<Item, Multiple extends boolean | undefined = false>({
   );
   const [uncontrolledHighlightedItem, setUncontrolledHighlightedItem] =
     useState<Item | null>(null);
+  const [labelMounted, setLabelMounted] = useState(false);
   const actualOpen = isOpenControlled ? open : uncontrolledOpen;
   const actualInputValue = isInputControlled
     ? inputValue
@@ -485,12 +491,13 @@ function Root<Item, Multiple extends boolean | undefined = false>({
       reason: ComboboxOpenChangeReason,
       event?: EventLike
     ) => {
-      if (disabled || readOnly) return;
+      if (disabled || readOnly) return null;
 
       const details = createComboboxChangeDetails(reason, event);
       onOpenChange?.(nextOpen, details);
-      if (details.isCanceled) return;
+      if (details.isCanceled) return details;
       if (!isOpenControlled) setUncontrolledOpen(nextOpen);
+      return details;
     },
     [disabled, isOpenControlled, onOpenChange, readOnly]
   );
@@ -567,22 +574,31 @@ function Root<Item, Multiple extends boolean | undefined = false>({
     [commitOpen, commitValue, isItemEqualToValue, isMultiple, selectedItems]
   );
 
-  const wasOpenForAutoHighlightRef = useRef(false);
   useEffect(() => {
-    if (!actualOpen) {
-      wasOpenForAutoHighlightRef.current = false;
+    if (!actualOpen) return;
+
+    if (visibleItems.length === 0) {
+      if (actualHighlightedItem !== null) {
+        commitHighlightedItem(null, 'none');
+      }
       return;
     }
 
-    if (
-      wasOpenForAutoHighlightRef.current ||
-      !autoHighlight ||
-      visibleItems.length === 0
-    ) {
+    const highlightedItemVisible =
+      actualHighlightedItem !== null &&
+      visibleItems.some(item =>
+        isItemEqualToValue(item, actualHighlightedItem)
+      );
+
+    if (highlightedItemVisible) return;
+
+    if (!autoHighlight) {
+      if (actualHighlightedItem !== null) {
+        commitHighlightedItem(null, 'none');
+      }
       return;
     }
 
-    wasOpenForAutoHighlightRef.current = true;
     const lastSelectedItem =
       selectedItems.length > 0 ? selectedItems[selectedItems.length - 1] : null;
     const selectedVisibleItem = lastSelectedItem
@@ -594,6 +610,7 @@ function Root<Item, Multiple extends boolean | undefined = false>({
       'none'
     );
   }, [
+    actualHighlightedItem,
     actualOpen,
     autoHighlight,
     commitHighlightedItem,
@@ -601,6 +618,23 @@ function Root<Item, Multiple extends boolean | undefined = false>({
     selectedItems,
     visibleItems,
   ]);
+
+  const getItemId = useCallback(
+    (item: Item, fallbackIndex = -1) => {
+      const itemIndex = visibleItems.findIndex(visibleItem =>
+        isItemEqualToValue(item, visibleItem)
+      );
+      const resolvedIndex = itemIndex >= 0 ? itemIndex : fallbackIndex;
+      return `${listId}-item-${resolvedIndex}-${getSafeIdPart(
+        itemToStringValue(item)
+      )}`;
+    },
+    [isItemEqualToValue, itemToStringValue, listId, visibleItems]
+  );
+  const registerLabel = useCallback(() => {
+    setLabelMounted(true);
+    return () => setLabelMounted(false);
+  }, []);
 
   useEffect(() => {
     if (!actualOpen) return;
@@ -628,6 +662,7 @@ function Root<Item, Multiple extends boolean | undefined = false>({
     () => ({
       rootId,
       labelId,
+      labelMounted,
       triggerId,
       popupId,
       listId,
@@ -659,6 +694,8 @@ function Root<Item, Multiple extends boolean | undefined = false>({
       setInputValue: commitInputValue,
       highlightItem: commitHighlightedItem,
       selectItem,
+      getItemId,
+      registerLabel,
     }),
     [
       actualHighlightedItem,
@@ -670,6 +707,7 @@ function Root<Item, Multiple extends boolean | undefined = false>({
       commitOpen,
       disabled,
       form,
+      getItemId,
       highlightedIndex,
       highlightItemOnHover,
       inputId,
@@ -679,6 +717,7 @@ function Root<Item, Multiple extends boolean | undefined = false>({
       itemToStringValue,
       items,
       labelId,
+      labelMounted,
       listId,
       loopFocus,
       name,
@@ -687,6 +726,7 @@ function Root<Item, Multiple extends boolean | undefined = false>({
       readOnly,
       required,
       rootId,
+      registerLabel,
       selectItem,
       selectedItem,
       selectedItems,
@@ -761,6 +801,9 @@ type LabelProps = ComponentPropsWithoutRef<'label'> & {
 
 function Label({ children, render, className, ...props }: LabelProps) {
   const context = useComboboxInternal<unknown>();
+  const { registerLabel } = context;
+  useEffect(() => registerLabel(), [registerLabel]);
+
   const labelProps = {
     ...props,
     id: props.id ?? context.labelId,
@@ -791,7 +834,7 @@ const Trigger = forwardRef<HTMLButtonElement, TriggerProps>(
   (
     {
       children,
-      placeholder = '-- Pilih --',
+      placeholder = '',
       render,
       className,
       onClick,
@@ -852,7 +895,10 @@ const Trigger = forwardRef<HTMLButtonElement, TriggerProps>(
 
       if (event.key === 'Escape' && context.open) {
         event.preventDefault();
-        context.setOpen(false, 'escape-key', event);
+        const details = context.setOpen(false, 'escape-key', event);
+        if (!details?.isPropagationAllowed) {
+          event.stopPropagation();
+        }
       }
     };
     const triggerProps = {
@@ -863,36 +909,22 @@ const Trigger = forwardRef<HTMLButtonElement, TriggerProps>(
       disabled: context.disabled || props.disabled,
       'aria-haspopup': 'listbox',
       'aria-expanded': context.open,
-      'aria-controls': context.popupId,
-      'aria-labelledby': props['aria-labelledby'] ?? context.labelId,
+      'aria-controls': context.listId,
+      'aria-labelledby':
+        props['aria-labelledby'] ??
+        (context.labelMounted ? context.labelId : undefined),
       'data-state': context.open ? 'open' : 'closed',
       'data-placeholder': selectedLabel ? undefined : '',
       'data-disabled': context.disabled ? '' : undefined,
       'data-readonly': context.readOnly ? '' : undefined,
-      className:
-        className ??
-        'flex min-h-10 w-full items-center justify-between gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-left text-sm text-slate-800 shadow-sm transition focus:border-primary focus:outline-hidden focus:ring-3 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400',
+      className,
       onClick: (event: React.MouseEvent<HTMLButtonElement>) => {
         onClick?.(event);
         if (event.defaultPrevented) return;
         context.setOpen(!context.open, 'trigger-press', event);
       },
       onKeyDown: handleKeyDown,
-      children: children ?? (
-        <>
-          <span
-            className={selectedLabel ? 'truncate' : 'truncate text-slate-400'}
-          >
-            {selectedLabel || placeholder}
-          </span>
-          <TbChevronDown
-            aria-hidden="true"
-            className={`h-4 w-4 shrink-0 text-slate-500 transition-transform ${
-              context.open ? 'rotate-180' : ''
-            }`}
-          />
-        </>
-      ),
+      children: children ?? (selectedLabel || placeholder),
     };
 
     const { ref, ...buttonProps } = triggerProps;
@@ -1117,14 +1149,14 @@ function Popup({ children, render, className, ...props }: PopupProps) {
     ...props,
     id: props.id ?? context.popupId,
     ref: context.popupRef,
-    role: props.role ?? 'dialog',
-    'aria-labelledby': props['aria-labelledby'] ?? context.labelId,
+    role: props.role,
+    'aria-labelledby':
+      props['aria-labelledby'] ??
+      (context.labelMounted ? context.labelId : undefined),
     'data-state': 'open',
     'data-side': positionerLayout.side,
     'data-positioned': positionerLayout.positioned ? '' : undefined,
-    className:
-      className ??
-      'overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl',
+    className,
     style: {
       maxHeight:
         positionerLayout.maxHeight == null
@@ -1183,11 +1215,16 @@ const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
       'aria-autocomplete': 'list',
       'aria-controls': context.listId,
       'aria-expanded': context.open,
+      'aria-labelledby':
+        props['aria-labelledby'] ??
+        (context.labelMounted ? context.labelId : undefined),
+      'aria-activedescendant':
+        context.highlightedItem && context.highlightedIndex >= 0
+          ? context.getItemId(context.highlightedItem)
+          : undefined,
       'data-state': context.open ? 'open' : 'closed',
       'data-empty': context.visibleItems.length === 0 ? '' : undefined,
-      className:
-        className ??
-        'w-full border-0 border-b border-slate-100 px-3 py-2 text-sm outline-hidden focus:ring-0',
+      className,
       onFocus: (event: React.FocusEvent<HTMLInputElement>) => {
         onFocus?.(event);
         if (!event.defaultPrevented)
@@ -1205,12 +1242,19 @@ const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
         if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
           event.preventDefault();
           moveHighlight(event.key === 'ArrowDown' ? 1 : -1, event);
-        } else if (event.key === 'Enter' && context.highlightedItem) {
+        } else if (
+          event.key === 'Enter' &&
+          context.highlightedItem &&
+          context.highlightedIndex >= 0
+        ) {
           event.preventDefault();
           context.selectItem(context.highlightedItem, event);
         } else if (event.key === 'Escape') {
           event.preventDefault();
-          context.setOpen(false, 'escape-key', event);
+          const details = context.setOpen(false, 'escape-key', event);
+          if (!details?.isPropagationAllowed) {
+            event.stopPropagation();
+          }
         }
       },
     };
@@ -1245,28 +1289,20 @@ type ListProps = ComponentPropsWithoutRef<'div'> & {
 
 function List({ children, render, className, onKeyDown, ...props }: ListProps) {
   const context = useComboboxInternal<unknown>();
-  const { highlightedItem, itemToStringValue, listId, open } = context;
+  const { getItemId, highlightedItem, open } = context;
   useEffect(() => {
     if (!open || !highlightedItem) return;
 
-    const highlightedValue = itemToStringValue(highlightedItem);
+    const highlightedId = getItemId(highlightedItem);
     const frame = window.requestAnimationFrame(() => {
-      const listElement = document.getElementById(listId);
-      if (!listElement) return;
-
-      const highlightedElement = Array.from(
-        listElement.querySelectorAll<HTMLElement>('[data-combobox-item]')
-      ).find(
-        element => element.getAttribute('data-value') === highlightedValue
-      );
-
+      const highlightedElement = document.getElementById(highlightedId);
       highlightedElement?.scrollIntoView({ block: 'nearest' });
     });
 
     return () => {
       window.cancelAnimationFrame(frame);
     };
-  }, [highlightedItem, itemToStringValue, listId, open]);
+  }, [getItemId, highlightedItem, open]);
 
   const moveHighlight = (
     direction: 1 | -1,
@@ -1290,23 +1326,33 @@ function List({ children, render, className, onKeyDown, ...props }: ListProps) {
     ...props,
     id: props.id ?? context.listId,
     role: props.role ?? 'listbox',
+    'aria-labelledby':
+      props['aria-labelledby'] ??
+      (context.labelMounted ? context.labelId : undefined),
     'aria-multiselectable': context.multiple ? true : undefined,
     'data-state': context.open ? 'open' : 'closed',
     'data-empty': context.visibleItems.length === 0 ? '' : undefined,
     tabIndex: props.tabIndex ?? -1,
-    className: className ?? 'max-h-60 overflow-y-auto p-1 outline-hidden',
+    className,
     onKeyDown: (event: KeyboardEvent<HTMLDivElement>) => {
       onKeyDown?.(event);
       if (event.defaultPrevented) return;
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
         event.preventDefault();
         moveHighlight(event.key === 'ArrowDown' ? 1 : -1, event);
-      } else if (event.key === 'Enter' && context.highlightedItem) {
+      } else if (
+        event.key === 'Enter' &&
+        context.highlightedItem &&
+        context.highlightedIndex >= 0
+      ) {
         event.preventDefault();
         context.selectItem(context.highlightedItem, event);
       } else if (event.key === 'Escape') {
         event.preventDefault();
-        context.setOpen(false, 'escape-key', event);
+        const details = context.setOpen(false, 'escape-key', event);
+        if (!details?.isPropagationAllowed) {
+          event.stopPropagation();
+        }
       }
     },
     children:
@@ -1344,11 +1390,7 @@ function Collection<ItemValue>({
 
   return (
     <>
-      {label ? (
-        <div className="px-3 py-1 text-xs font-semibold uppercase text-slate-500">
-          {label}
-        </div>
-      ) : null}
+      {label ? <div>{label}</div> : null}
       {collectionItems.map((item, index) =>
         typeof children === 'function' ? (
           children(item, index)
@@ -1391,11 +1433,10 @@ function ItemPart<Item>({
   ...props
 }: ItemProps<Item>) {
   const context = useComboboxInternal<Item>();
-  const resolvedIndex =
-    index ??
-    context.visibleItems.findIndex(visibleItem =>
-      context.isItemEqualToValue(item, visibleItem)
-    );
+  const resolvedIndex = context.visibleItems.findIndex(visibleItem =>
+    context.isItemEqualToValue(item, visibleItem)
+  );
+  const itemIndex = resolvedIndex >= 0 ? resolvedIndex : (index ?? -1);
   const isDisabled =
     disabled ??
     (typeof item === 'object' && item && 'disabled' in item
@@ -1415,7 +1456,7 @@ function ItemPart<Item>({
   };
   const itemProps = {
     ...props,
-    id: props.id ?? `${context.listId}-item-${resolvedIndex}`,
+    id: props.id ?? context.getItemId(item, itemIndex),
     role: props.role ?? 'option',
     'aria-selected': selected,
     'aria-disabled': isDisabled || undefined,
@@ -1424,16 +1465,10 @@ function ItemPart<Item>({
     'data-selected': selected ? '' : undefined,
     'data-disabled': isDisabled ? '' : undefined,
     'data-combobox-item': '',
-    'data-combobox-item-index': resolvedIndex,
+    'data-combobox-item-index': itemIndex,
     'data-value': context.itemToStringValue(item),
     tabIndex: props.tabIndex ?? -1,
-    className:
-      className ??
-      `flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-800 outline-hidden ${
-        highlighted ? 'bg-primary/10' : ''
-      } ${selected ? 'font-semibold text-primary' : ''} ${
-        isDisabled ? 'cursor-not-allowed opacity-50' : ''
-      }`,
+    className,
     onMouseEnter: (event: React.MouseEvent<HTMLDivElement>) => {
       onMouseEnter?.(event);
       if (
@@ -1453,11 +1488,7 @@ function ItemPart<Item>({
     children:
       typeof children === 'function'
         ? children(state)
-        : (children ?? (
-            <span className="min-w-0 flex-1 truncate">
-              {context.itemToStringLabel(item)}
-            </span>
-          )),
+        : (children ?? context.itemToStringLabel(item)),
   };
 
   return renderPart(render, itemProps, state) ?? <div {...itemProps} />;
@@ -1482,10 +1513,8 @@ function ItemIndicator({
     ...props,
     'aria-hidden': true,
     'data-selected': selected ? '' : undefined,
-    className:
-      className ??
-      'flex h-4 w-4 shrink-0 items-center justify-center rounded border border-slate-300 text-white data-selected:border-primary data-selected:bg-primary',
-    children: children ?? (selected ? <TbCheck className="h-3 w-3" /> : null),
+    className,
+    children,
   };
   return (
     renderPart(render, indicatorProps, { selected }) ?? (
@@ -1519,15 +1548,13 @@ type EmptyProps = ComponentPropsWithoutRef<'div'> & {
   >;
 };
 
-function Empty({ children = 'Tidak ada data', render, ...props }: EmptyProps) {
+function Empty({ children, render, ...props }: EmptyProps) {
   const context = useComboboxInternal<unknown>();
   if (context.visibleItems.length > 0) return null;
   const emptyProps = {
     ...props,
     role: props.role ?? 'status',
     'data-empty': '',
-    className:
-      props.className ?? 'px-3 py-4 text-center text-sm text-slate-500',
     children,
   };
 
@@ -1548,7 +1575,7 @@ function Status({ render, children, ...props }: StatusProps) {
   const statusProps = {
     ...props,
     role: props.role ?? 'status',
-    children: children ?? `${context.visibleItems.length} opsi`,
+    children: children ?? String(context.visibleItems.length),
   };
   return (
     renderPart(render, statusProps, { count: context.visibleItems.length }) ?? (
