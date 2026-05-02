@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   TbCheck,
   TbChevronDown,
@@ -117,6 +117,15 @@ export function PharmaComboboxSelect<Item>({
     );
 
   const selectedValue = useMemo(() => value, [value]);
+  const isOpenControlled = open !== undefined;
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen && !isOpenControlled) setInputValue('');
+    onOpenChange?.(nextOpen);
+  };
+
+  useEffect(() => {
+    if (open === false) setInputValue('');
+  }, [open]);
 
   return (
     <div ref={rootRef} className={className}>
@@ -128,7 +137,7 @@ export function PharmaComboboxSelect<Item>({
           setInputValue('');
         }}
         open={open}
-        onOpenChange={nextOpen => onOpenChange?.(nextOpen)}
+        onOpenChange={handleOpenChange}
         inputValue={inputValue}
         onInputValueChange={setInputValue}
         itemToStringLabel={itemToStringLabel}
@@ -230,17 +239,17 @@ export function PharmaComboboxSelect<Item>({
                 <Combobox.Empty className="px-3 py-4 text-center text-sm text-slate-500">
                   Tidak ada data
                 </Combobox.Empty>
-                {canCreate ? (
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-2 border-t border-slate-100 px-3 py-2 text-left text-sm font-medium text-primary hover:bg-emerald-50"
-                    onClick={() => createAction.onCreate(inputValue.trim())}
-                  >
-                    <TbPlus className="h-4 w-4" />
-                    {createAction.label ?? 'Tambah baru'}
-                  </button>
-                ) : null}
               </Combobox.List>
+              {canCreate ? (
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-2 border-t border-slate-100 px-3 py-2 text-left text-sm font-medium text-primary hover:bg-emerald-50"
+                  onClick={() => createAction.onCreate(inputValue.trim())}
+                >
+                  <TbPlus className="h-4 w-4" />
+                  {createAction.label ?? 'Tambah baru'}
+                </button>
+              ) : null}
             </Combobox.Popup>
           </Combobox.Positioner>
         </Combobox.Portal>

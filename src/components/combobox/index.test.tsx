@@ -13,6 +13,7 @@ import { PharmaComboboxSelect } from './presets';
 
 const fruitItems = ['Apple', 'Banana', 'Cherry'];
 type EntityItem = { id: string; name: string };
+type FruitOption = { id: string; name: string; disabled?: boolean };
 
 function BasicCombobox({
   onValueChange,
@@ -248,6 +249,149 @@ describe('Combobox primitive', () => {
     expect(onValueChange).not.toHaveBeenCalled();
   });
 
+  it('selects the highlighted option from trigger keyboard interaction', () => {
+    const onValueChange = vi.fn();
+    render(
+      <Combobox.Root
+        items={fruitItems}
+        defaultValue="Apple"
+        onValueChange={onValueChange}
+      >
+        <Combobox.Trigger />
+        <Combobox.Portal>
+          <Combobox.Positioner>
+            <Combobox.Popup>
+              <Combobox.List />
+            </Combobox.Popup>
+          </Combobox.Positioner>
+        </Combobox.Portal>
+      </Combobox.Root>
+    );
+
+    const trigger = screen.getByRole('button', { name: /apple/i });
+    fireEvent.click(trigger);
+    fireEvent.keyDown(trigger, { key: 'ArrowDown' });
+    fireEvent.keyDown(trigger, { key: 'Enter' });
+
+    expect(onValueChange).toHaveBeenCalledWith(
+      'Banana',
+      expect.objectContaining({ reason: 'item-press' })
+    );
+    expect(screen.queryByRole('listbox')).toBeNull();
+  });
+
+  it('skips disabled items during auto-highlight and keyboard selection', () => {
+    const onValueChange = vi.fn();
+    const disabledItems: FruitOption[] = [
+      { id: 'apple', name: 'Apple', disabled: true },
+      { id: 'banana', name: 'Banana' },
+    ];
+
+    render(
+      <Combobox.Root
+        items={disabledItems}
+        onValueChange={onValueChange}
+        itemToStringLabel={item => item.name}
+        itemToStringValue={item => item.id}
+      >
+        <Combobox.Trigger>Open</Combobox.Trigger>
+        <Combobox.Portal>
+          <Combobox.Positioner>
+            <Combobox.Popup>
+              <Combobox.List />
+            </Combobox.Popup>
+          </Combobox.Positioner>
+        </Combobox.Portal>
+      </Combobox.Root>
+    );
+
+    const trigger = screen.getByRole('button', { name: /open/i });
+    fireEvent.click(trigger);
+
+    expect(
+      screen
+        .getByRole('option', { name: /apple/i })
+        .hasAttribute('data-highlighted')
+    ).toBe(false);
+    expect(
+      screen
+        .getByRole('option', { name: /banana/i })
+        .hasAttribute('data-highlighted')
+    ).toBe(true);
+
+    fireEvent.keyDown(trigger, { key: 'Enter' });
+    expect(onValueChange).toHaveBeenCalledWith(
+      disabledItems[1],
+      expect.objectContaining({ reason: 'item-press' })
+    );
+  });
+
+  it('moves highlight away from an item that becomes disabled', () => {
+    const enabledItems: FruitOption[] = [
+      { id: 'apple', name: 'Apple' },
+      { id: 'banana', name: 'Banana' },
+    ];
+    const itemsWithDisabledApple: FruitOption[] = [
+      { id: 'apple', name: 'Apple', disabled: true },
+      { id: 'banana', name: 'Banana' },
+    ];
+
+    const { rerender } = render(
+      <Combobox.Root
+        items={enabledItems}
+        defaultOpen
+        itemToStringLabel={item => item.name}
+        itemToStringValue={item => item.id}
+        isItemEqualToValue={(item, value) => item.id === value.id}
+      >
+        <Combobox.Trigger>Open</Combobox.Trigger>
+        <Combobox.Portal>
+          <Combobox.Positioner>
+            <Combobox.Popup>
+              <Combobox.List />
+            </Combobox.Popup>
+          </Combobox.Positioner>
+        </Combobox.Portal>
+      </Combobox.Root>
+    );
+
+    expect(
+      screen
+        .getByRole('option', { name: /apple/i })
+        .hasAttribute('data-highlighted')
+    ).toBe(true);
+
+    rerender(
+      <Combobox.Root
+        items={itemsWithDisabledApple}
+        defaultOpen
+        itemToStringLabel={item => item.name}
+        itemToStringValue={item => item.id}
+        isItemEqualToValue={(item, value) => item.id === value.id}
+      >
+        <Combobox.Trigger>Open</Combobox.Trigger>
+        <Combobox.Portal>
+          <Combobox.Positioner>
+            <Combobox.Popup>
+              <Combobox.List />
+            </Combobox.Popup>
+          </Combobox.Positioner>
+        </Combobox.Portal>
+      </Combobox.Root>
+    );
+
+    expect(
+      screen
+        .getByRole('option', { name: /apple/i })
+        .hasAttribute('data-highlighted')
+    ).toBe(false);
+    expect(
+      screen
+        .getByRole('option', { name: /banana/i })
+        .hasAttribute('data-highlighted')
+    ).toBe(true);
+  });
+
   it('supports collection grouping and list-only popup composition', () => {
     render(
       <Combobox.Root items={fruitItems} filter={null}>
@@ -270,7 +414,7 @@ describe('Combobox primitive', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: /open list/i }));
-    expect(screen.getByText('Group A')).toBeTruthy();
+    expect(screen.getByRole('group', { name: /group a/i })).toBeTruthy();
     const appleOption = screen.getByRole('option', { name: /apple/i });
     const bananaOption = screen.getByRole('option', { name: /banana/i });
     expect(appleOption).toBeTruthy();
@@ -475,6 +619,8 @@ describe('Combobox primitive', () => {
     );
     fireEvent.click(screen.getByRole('option', { name: /banana/i }));
     expect(screen.getByRole('button', { name: /read only/i })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /read only/i }));
+    expect(screen.queryByRole('listbox')).toBeNull();
 
     rerender(
       <Combobox.Root key="modal" items={fruitItems} defaultOpen modal>
@@ -516,10 +662,76 @@ describe('Combobox app presets', () => {
     fireEvent.change(screen.getByPlaceholderText('Cari...'), {
       target: { value: 'Analgesik' },
     });
-    fireEvent.click(screen.getByRole('button', { name: /tambah kategori/i }));
+    const createButton = screen.getByRole('button', {
+      name: /tambah kategori/i,
+    });
+    expect(screen.getByRole('listbox').contains(createButton)).toBe(false);
+    fireEvent.click(createButton);
 
     expect(onCreate).toHaveBeenCalledWith('Analgesik');
     expect(screen.getByText('Field ini wajib diisi')).toBeTruthy();
+  });
+
+  it('resets searchable preset input when the popup closes without a selection', () => {
+    render(
+      <PharmaComboboxSelect
+        name="supplier_id"
+        items={[
+          { id: 'a', name: 'Supplier A' },
+          { id: 'b', name: 'Supplier B' },
+        ]}
+        value={null}
+        onValueChange={() => {}}
+        itemToStringLabel={supplier => supplier.name}
+        itemToStringValue={supplier => supplier.id}
+      />
+    );
+
+    const trigger = screen.getByRole('button', { name: /pilih/i });
+    fireEvent.click(trigger);
+    fireEvent.change(screen.getByPlaceholderText('Cari...'), {
+      target: { value: 'Supplier B' },
+    });
+    expect(screen.queryByRole('option', { name: /supplier a/i })).toBeNull();
+
+    fireEvent.keyDown(screen.getByPlaceholderText('Cari...'), {
+      key: 'Escape',
+    });
+    fireEvent.click(trigger);
+
+    expect(
+      (screen.getByPlaceholderText('Cari...') as HTMLInputElement).value
+    ).toBe('');
+    expect(screen.getByRole('option', { name: /supplier a/i })).toBeTruthy();
+  });
+
+  it('keeps searchable preset input when a controlled popup remains open', () => {
+    const onOpenChange = vi.fn();
+    render(
+      <PharmaComboboxSelect
+        name="supplier_id"
+        items={[
+          { id: 'a', name: 'Supplier A' },
+          { id: 'b', name: 'Supplier B' },
+        ]}
+        value={null}
+        onValueChange={() => {}}
+        itemToStringLabel={supplier => supplier.name}
+        itemToStringValue={supplier => supplier.id}
+        open
+        onOpenChange={onOpenChange}
+      />
+    );
+
+    const searchInput = screen.getByPlaceholderText('Cari...');
+    fireEvent.change(searchInput, {
+      target: { value: 'Supplier B' },
+    });
+    fireEvent.keyDown(searchInput, { key: 'Escape' });
+
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect((searchInput as HTMLInputElement).value).toBe('Supplier B');
+    expect(screen.queryByRole('option', { name: /supplier a/i })).toBeNull();
   });
 
   it('covers enum radio-style, calendar text, and purchase object selects', () => {

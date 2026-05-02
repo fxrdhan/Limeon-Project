@@ -331,6 +331,12 @@ const renderPart = <Props extends RenderPartProps, State>(
 const defaultItemToString = <Item,>(item: Item) =>
   item == null ? '' : String(item);
 
+const isComboboxItemDisabled = <Item,>(item: Item) =>
+  typeof item === 'object' &&
+  item !== null &&
+  'disabled' in item &&
+  Boolean(item.disabled);
+
 const isElementInside = (
   event: EventLike | MouseEvent,
   element: Element | null
@@ -358,12 +364,7 @@ const findNextEnabledIndex = <Item,>(
       nextIndex = 0;
     }
 
-    const item = items[nextIndex];
-    if (
-      !(typeof item === 'object' && item && 'disabled' in item && item.disabled)
-    ) {
-      return nextIndex;
-    }
+    if (!isComboboxItemDisabled(items[nextIndex])) return nextIndex;
   }
 
   return -1;
@@ -482,8 +483,12 @@ function Root<Item, Multiple extends boolean | undefined = false>({
   const highlightedIndex = actualHighlightedItem
     ? visibleItems.findIndex(item =>
         isItemEqualToValue(item, actualHighlightedItem)
+          ? !isComboboxItemDisabled(item)
+          : false
       )
     : -1;
+  const activeHighlightedItem =
+    highlightedIndex >= 0 ? (actualHighlightedItem ?? null) : null;
 
   const commitOpen = useCallback(
     (
@@ -491,7 +496,7 @@ function Root<Item, Multiple extends boolean | undefined = false>({
       reason: ComboboxOpenChangeReason,
       event?: EventLike
     ) => {
-      if (disabled || readOnly) return null;
+      if (disabled || (readOnly && nextOpen)) return null;
 
       const details = createComboboxChangeDetails(reason, event);
       onOpenChange?.(nextOpen, details);
@@ -525,16 +530,20 @@ function Root<Item, Multiple extends boolean | undefined = false>({
       const nextIndex = nextHighlightedItem
         ? visibleItems.findIndex(item =>
             isItemEqualToValue(item, nextHighlightedItem)
+              ? !isComboboxItemDisabled(item)
+              : false
           )
         : -1;
+      const resolvedHighlightedItem =
+        nextIndex >= 0 ? nextHighlightedItem : null;
       const details = {
         ...createComboboxChangeDetails(reason, event),
         index: nextIndex,
       };
-      onItemHighlighted?.(nextHighlightedItem, details);
+      onItemHighlighted?.(resolvedHighlightedItem, details);
       if (details.isCanceled) return;
       if (!isHighlightControlled)
-        setUncontrolledHighlightedItem(nextHighlightedItem);
+        setUncontrolledHighlightedItem(resolvedHighlightedItem);
     },
     [isHighlightControlled, isItemEqualToValue, onItemHighlighted, visibleItems]
   );
@@ -553,6 +562,8 @@ function Root<Item, Multiple extends boolean | undefined = false>({
 
   const selectItem = useCallback(
     (item: Item, event?: EventLike) => {
+      if (isComboboxItemDisabled(item)) return;
+
       if (isMultiple) {
         const exists = selectedItems.some(selected =>
           isItemEqualToValue(item, selected)
@@ -577,7 +588,9 @@ function Root<Item, Multiple extends boolean | undefined = false>({
   useEffect(() => {
     if (!actualOpen) return;
 
-    if (visibleItems.length === 0) {
+    const firstEnabledIndex = findNextEnabledIndex(visibleItems, -1, 1, false);
+
+    if (firstEnabledIndex < 0) {
       if (actualHighlightedItem !== null) {
         commitHighlightedItem(null, 'none');
       }
@@ -588,6 +601,8 @@ function Root<Item, Multiple extends boolean | undefined = false>({
       actualHighlightedItem !== null &&
       visibleItems.some(item =>
         isItemEqualToValue(item, actualHighlightedItem)
+          ? !isComboboxItemDisabled(item)
+          : false
       );
 
     if (highlightedItemVisible) return;
@@ -606,7 +621,9 @@ function Root<Item, Multiple extends boolean | undefined = false>({
       : null;
 
     commitHighlightedItem(
-      selectedVisibleItem ?? visibleItems[0] ?? null,
+      selectedVisibleItem && !isComboboxItemDisabled(selectedVisibleItem)
+        ? selectedVisibleItem
+        : (visibleItems[firstEnabledIndex] ?? null),
       'none'
     );
   }, [
@@ -674,7 +691,7 @@ function Root<Item, Multiple extends boolean | undefined = false>({
       visibleItems,
       selectedItems,
       selectedItem,
-      highlightedItem: actualHighlightedItem ?? null,
+      highlightedItem: activeHighlightedItem,
       highlightedIndex,
       open: Boolean(actualOpen),
       inputValue: actualInputValue,
@@ -698,10 +715,10 @@ function Root<Item, Multiple extends boolean | undefined = false>({
       registerLabel,
     }),
     [
-      actualHighlightedItem,
       actualInputValue,
       actualOpen,
       autoHighlight,
+      activeHighlightedItem,
       commitHighlightedItem,
       commitInputValue,
       commitOpen,
@@ -754,7 +771,7 @@ function Root<Item, Multiple extends boolean | undefined = false>({
     required,
     multiple: isMultiple,
     inputValue: actualInputValue,
-    highlightedItem: actualHighlightedItem ?? null,
+    highlightedItem: activeHighlightedItem,
     selectedItems,
   };
   const renderedRoot = renderPart(render, rootProps, rootState);
@@ -889,6 +906,15 @@ const Trigger = forwardRef<HTMLButtonElement, TriggerProps>(
 
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
+        if (
+          context.open &&
+          context.highlightedItem &&
+          context.highlightedIndex >= 0
+        ) {
+          context.selectItem(context.highlightedItem, event);
+          return;
+        }
+
         context.setOpen(!context.open, 'trigger-press', event);
         return;
       }
@@ -1386,28 +1412,40 @@ function Collection<ItemValue>({
   children,
 }: CollectionProps<ItemValue>) {
   const context = useComboboxInternal<ItemValue>();
+  const generatedId = useId();
   const collectionItems = items ?? context.visibleItems;
-
-  return (
-    <>
-      {label ? <div>{label}</div> : null}
-      {collectionItems.map((item, index) =>
-        typeof children === 'function' ? (
-          children(item, index)
-        ) : children ? (
-          <React.Fragment key={context.itemToStringValue(item)}>
-            {children}
-          </React.Fragment>
-        ) : (
-          <ItemWithIndicatorContext
-            key={context.itemToStringValue(item)}
-            item={item}
-            index={index}
-          />
-        )
-      )}
-    </>
+  const hasChildren = children !== undefined && children !== null;
+  const hasLabel = label !== undefined && label !== null;
+  const labelId = `${context.rootId}-collection-${generatedId.replace(
+    /:/g,
+    ''
+  )}`;
+  const renderedItems = collectionItems.map((item, index) =>
+    typeof children === 'function' ? (
+      children(item, index)
+    ) : hasChildren ? (
+      <React.Fragment key={context.itemToStringValue(item)}>
+        {children}
+      </React.Fragment>
+    ) : (
+      <ItemWithIndicatorContext
+        key={context.itemToStringValue(item)}
+        item={item}
+        index={index}
+      />
+    )
   );
+
+  if (hasLabel) {
+    return (
+      <div role="group" aria-labelledby={labelId}>
+        <div id={labelId}>{label}</div>
+        {renderedItems}
+      </div>
+    );
+  }
+
+  return <>{renderedItems}</>;
 }
 
 type ItemProps<Item> = Omit<ComponentPropsWithoutRef<'div'>, 'children'> & {
@@ -1437,11 +1475,7 @@ function ItemPart<Item>({
     context.isItemEqualToValue(item, visibleItem)
   );
   const itemIndex = resolvedIndex >= 0 ? resolvedIndex : (index ?? -1);
-  const isDisabled =
-    disabled ??
-    (typeof item === 'object' && item && 'disabled' in item
-      ? Boolean(item.disabled)
-      : false);
+  const isDisabled = disabled ?? isComboboxItemDisabled(item);
   const selected = context.selectedItems.some(selectedItem =>
     context.isItemEqualToValue(item, selectedItem)
   );
