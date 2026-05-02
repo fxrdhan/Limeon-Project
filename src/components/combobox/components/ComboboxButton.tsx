@@ -19,7 +19,9 @@ interface ComboboxButtonProps {
   tabIndex?: number;
   required?: boolean;
   disabled?: boolean;
-  onClick: (e: React.MouseEvent) => void;
+  ariaLabel?: string;
+  ariaLabelledBy?: string;
+  onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
   onKeyDown?: (e: React.KeyboardEvent<HTMLButtonElement>) => void;
   onBlur: () => void;
 }
@@ -42,6 +44,8 @@ const ComboboxButton = forwardRef<HTMLButtonElement, ComboboxButtonProps>(
       tabIndex,
       required = false,
       disabled = false,
+      ariaLabel,
+      ariaLabelledBy,
       onClick,
       onKeyDown,
       onBlur,
@@ -89,6 +93,8 @@ const ComboboxButton = forwardRef<HTMLButtonElement, ComboboxButtonProps>(
         tabIndex={tabIndex}
         required={required}
         disabled={disabled}
+        ariaLabel={ariaLabel}
+        ariaLabelledBy={ariaLabelledBy}
         onClick={onClick}
         onKeyDown={onKeyDown}
         onMouseEnter={() => {}}

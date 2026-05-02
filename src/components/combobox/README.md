@@ -105,6 +105,7 @@ export interface HoverDetailData {
 ```ts
 export interface ComboboxProps {
   id?: string;
+  children?: React.ReactNode;
   mode?: 'input' | 'text';
   options: ComboboxOption[];
   value: string;
@@ -143,6 +144,8 @@ export interface ComboboxProps {
   enableHoverDetail?: boolean;
   hoverDetailDelay?: number;
   onFetchHoverDetail?: (optionId: string) => Promise<HoverDetailData | null>;
+  'aria-label'?: string;
+  'aria-labelledby'?: string;
 }
 ```
 
@@ -161,7 +164,7 @@ export interface CheckboxComboboxProps extends Omit<
 
 `withCheckbox` changes the `value` and `onChange` contract to arrays. `withRadio` only changes the visual affordance of single-select mode and does not change the value type.
 
-The `name` prop is mirrored to visually hidden native form input(s). Single-select mode renders one input with the selected id, while checkbox mode renders one input per selected id. Empty required checkbox mode renders one empty required input so native form validation can catch the missing selection.
+The `name` prop is mirrored to visually hidden native form input(s). Single-select mode renders one input with the selected id, while checkbox mode renders one input per selected id. Empty required checkbox mode renders one empty required input that remains eligible for native constraint validation.
 
 ### Compound Exports
 
@@ -180,7 +183,19 @@ import {
 } from '@/components/combobox/exports';
 ```
 
-These parts are low-level and expect the same provider/context contract used internally by `ComboboxRoot`.
+These parts consume `ComboboxRoot` context and can be used as children when the default trigger/popup layout is not enough:
+
+```tsx
+<ComboboxRoot
+  name="supplier_id"
+  value={supplierId}
+  onChange={setSupplierId}
+  options={suppliers}
+>
+  <ComboboxTrigger />
+  <ComboboxPopup />
+</ComboboxRoot>
+```
 
 ## Defaults
 
@@ -520,9 +535,10 @@ The state needed by child components is shared through `ComboboxContext`. The ro
 
 ## Accessibility Notes
 
-- The trigger is exposed as a select-only `role="combobox"` with `aria-haspopup="listbox"`, `aria-expanded`, `aria-controls`, and `aria-activedescendant` when an option is highlighted.
-- The popup wrapper is presentational and marks itself with `data-combobox-popup`; the options container owns the `role="listbox"` semantics.
+- The trigger is exposed as a select-only `role="combobox"` with `aria-expanded`, `aria-controls`, and `aria-activedescendant` when an option is highlighted.
+- The popup wrapper uses `role="dialog"` only for the input-inside-popup pattern. Without the search input, the wrapper is presentational and the options container owns the `role="listbox"` semantics.
 - The search input inside the popup is also exposed as an editable `role="combobox"` with `aria-autocomplete="list"` and points at the same listbox.
+- When a parent label is available, pass `aria-labelledby` or use `FormField`; the trigger combines the field label with the current visible value for a stable accessible name.
 - Listbox and option IDs are generated per combobox instance so multiple comboboxes do not share ARIA targets.
 - Options use `role="option"`, `aria-selected`, `aria-posinset`, `aria-setsize`, and Base UI-like data attributes such as `data-selected` and `data-highlighted`.
 - Option buttons are removed from the tab order with `tabIndex={-1}` so keyboard focus stays on the trigger, search input, or listbox container.

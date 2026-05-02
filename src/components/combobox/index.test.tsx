@@ -9,7 +9,9 @@ import {
   vi,
 } from 'vite-plus/test';
 import type { ComboboxOpenChangeDetails } from '../../types';
+import FormField from '../form-field';
 import Combobox from './index';
+import { ComboboxPopup, ComboboxTrigger } from './exports';
 
 function ComboboxHarness() {
   const [persistedComboboxName, setPersistedComboboxName] = useState<
@@ -156,6 +158,43 @@ function RequiredCheckboxComboboxHarness() {
   );
 }
 
+function LabelledComboboxHarness() {
+  return (
+    <FormField label="Supplier">
+      <Combobox
+        name="supplier_id"
+        value=""
+        options={[
+          { id: 'alpha', name: 'Alpha' },
+          { id: 'beta', name: 'Beta' },
+        ]}
+        placeholder="-- Pilih Supplier --"
+        onChange={() => {}}
+      />
+    </FormField>
+  );
+}
+
+function CompoundComboboxHarness() {
+  const [value, setValue] = useState('');
+
+  return (
+    <Combobox
+      name="compound_dropdown"
+      value={value}
+      options={[
+        { id: 'alpha', name: 'Alpha' },
+        { id: 'beta', name: 'Beta' },
+      ]}
+      placeholder="Pilih Compound"
+      onChange={setValue}
+    >
+      <ComboboxTrigger />
+      <ComboboxPopup />
+    </Combobox>
+  );
+}
+
 describe('Combobox', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -245,7 +284,6 @@ describe('Combobox', () => {
     const betaOption = screen.getByRole('option', { name: 'Beta' });
 
     expect(document.querySelector('[role="menu"]')).toBeNull();
-    expect(trigger.getAttribute('aria-haspopup')).toBe('dialog');
     expect(trigger.getAttribute('aria-controls')).toBe(popup.id);
     expect(searchInput.getAttribute('aria-controls')).toBe(listbox.id);
     expect(trigger.getAttribute('aria-activedescendant')).toBe(betaOption.id);
@@ -254,6 +292,32 @@ describe('Combobox', () => {
     );
     expect(betaOption.tabIndex).toBe(-1);
     expect(betaOption.getAttribute('data-highlighted')).toBe('');
+  });
+
+  it('uses listbox popup semantics when no search input is rendered', () => {
+    render(
+      <Combobox
+        name="enum_dropdown"
+        value="alpha"
+        options={[
+          { id: 'alpha', name: 'Alpha' },
+          { id: 'beta', name: 'Beta' },
+        ]}
+        placeholder="Pilih Enum"
+        onChange={() => {}}
+        searchList={false}
+      />
+    );
+
+    const trigger = screen.getByRole('combobox', { name: /Alpha/ });
+    act(() => {
+      fireEvent.click(trigger);
+      vi.advanceTimersByTime(200);
+    });
+
+    const listbox = screen.getByRole('listbox', { name: 'Daftar pilihan' });
+    expect(trigger.getAttribute('aria-controls')).toBe(listbox.id);
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('opens from the collapsed trigger with ArrowDown', () => {
@@ -395,7 +459,36 @@ describe('Combobox', () => {
 
     expect(nativeInput?.type).toBe('text');
     expect(nativeInput?.required).toBe(true);
+    expect(nativeInput?.readOnly).toBe(false);
+    expect(nativeInput?.willValidate).toBe(true);
+    expect(nativeInput?.validity.valueMissing).toBe(true);
+    expect(nativeInput?.checkValidity()).toBe(false);
     expect(nativeInput?.value).toBe('');
+  });
+
+  it('uses the field label as the stable accessible combobox name', () => {
+    render(<LabelledComboboxHarness />);
+
+    const trigger = screen.getByRole('combobox', {
+      name: /Supplier/,
+    });
+
+    expect(trigger.getAttribute('aria-labelledby')).toBeTruthy();
+    expect(trigger.getAttribute('aria-label')).toBeNull();
+  });
+
+  it('supports Base UI-like compound trigger and popup parts', () => {
+    render(<CompoundComboboxHarness />);
+
+    const trigger = screen.getByRole('combobox', { name: 'Pilih Compound' });
+    act(() => {
+      fireEvent.click(trigger);
+      vi.advanceTimersByTime(200);
+    });
+
+    expect(
+      screen.getByRole('dialog', { name: 'Pilih Compound pilihan' })
+    ).toBeTruthy();
   });
 
   it('closes on Tab without blocking browser focus navigation', () => {

@@ -28,7 +28,9 @@ interface ButtonProps {
   tabIndex?: number;
   required?: boolean;
   disabled?: boolean;
-  onClick: (e: React.MouseEvent) => void;
+  ariaLabel?: string;
+  ariaLabelledBy?: string;
+  onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
   onKeyDown?: (e: React.KeyboardEvent<HTMLButtonElement>) => void;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
@@ -57,6 +59,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       tabIndex,
       required = false,
       disabled = false,
+      ariaLabel,
+      ariaLabelledBy,
       onClick,
       onKeyDown,
       onMouseEnter,
@@ -67,6 +71,11 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const popupControlId = searchList ? popupId : listboxId;
+    const valueTextId = `${id}-value`;
+    const labelledBy = ariaLabelledBy
+      ? `${ariaLabelledBy} ${valueTextId}`
+      : undefined;
+    const triggerLabel = labelledBy ? undefined : (ariaLabel ?? titleText);
 
     // For text mode, render as plain text appearance
     if (mode === 'text') {
@@ -93,7 +102,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           onFocus={disabled ? undefined : onFocus}
           onBlur={disabled ? undefined : onBlur}
           role="combobox"
-          aria-label={titleText}
+          aria-label={triggerLabel}
+          aria-labelledby={labelledBy}
           aria-controls={isOpen || isClosing ? popupControlId : undefined}
           aria-activedescendant={
             isOpen && activeDescendantId ? activeDescendantId : undefined
@@ -107,6 +117,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           data-placeholder={isPlaceholder ? '' : undefined}
         >
           <ButtonText
+            valueTextId={valueTextId}
             displayText={displayText}
             titleText={titleText}
             metaLabel={metaLabel}
@@ -144,7 +155,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         onFocus={onFocus}
         onBlur={onBlur}
         role="combobox"
-        aria-label={titleText}
+        aria-label={triggerLabel}
+        aria-labelledby={labelledBy}
         aria-controls={isOpen || isClosing ? popupControlId : undefined}
         aria-activedescendant={
           isOpen && activeDescendantId ? activeDescendantId : undefined
@@ -158,6 +170,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         data-placeholder={isPlaceholder ? '' : undefined}
       >
         <ButtonText
+          valueTextId={valueTextId}
           displayText={displayText}
           titleText={titleText}
           metaLabel={metaLabel}

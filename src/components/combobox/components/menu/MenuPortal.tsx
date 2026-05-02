@@ -41,15 +41,14 @@ const MenuPortal = forwardRef<HTMLDivElement, MenuPortalProps>(
   ) => {
     // Always render portal when open or closing to ensure DOM element exists for positioning
     if (!isOpen && !isClosing) return null;
-    const portalRole = role ?? 'dialog';
 
     return typeof document !== 'undefined'
       ? createPortal(
           <div
             ref={ref}
             id={id}
-            role={portalRole}
-            aria-label={ariaLabel}
+            role={role}
+            aria-label={role ? ariaLabel : undefined}
             style={portalStyle}
             data-combobox-popup=""
             data-state={isOpen && !isClosing ? 'open' : 'closed'}

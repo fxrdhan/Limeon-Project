@@ -48,6 +48,7 @@ export interface ComboboxHighlightChangeDetails {
 
 export interface ComboboxProps {
   id?: string;
+  children?: React.ReactNode;
   mode?: ComboboxMode;
   options: ComboboxOption[];
   value: string;
@@ -90,6 +91,8 @@ export interface ComboboxProps {
   enableHoverDetail?: boolean;
   hoverDetailDelay?: number;
   onFetchHoverDetail?: (optionId: string) => Promise<HoverDetailData | null>;
+  'aria-label'?: string;
+  'aria-labelledby'?: string;
 }
 
 export interface CheckboxComboboxProps extends Omit<

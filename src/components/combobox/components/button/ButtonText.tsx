@@ -1,6 +1,7 @@
 import React from 'react';
 
 interface ButtonTextProps {
+  valueTextId?: string;
   displayText: string;
   titleText?: string;
   metaLabel?: string;
@@ -9,6 +10,7 @@ interface ButtonTextProps {
 }
 
 const ButtonText: React.FC<ButtonTextProps> = ({
+  valueTextId,
   displayText,
   titleText,
   metaLabel,
@@ -18,6 +20,7 @@ const ButtonText: React.FC<ButtonTextProps> = ({
   return (
     <span className="flex flex-1 min-w-0 items-center gap-2">
       <span
+        id={valueTextId}
         className={`${
           isExpanded
             ? 'whitespace-normal break-words leading-relaxed'

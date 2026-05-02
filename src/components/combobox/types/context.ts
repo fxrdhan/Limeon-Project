@@ -1,6 +1,13 @@
 import { RefObject } from 'react';
 import { DropDirection } from '../constants';
-import type { ComboboxOption } from '@/types';
+import type { ComboboxMode, ComboboxOption, HoverDetailData } from '@/types';
+
+interface HoverDetailPosition {
+  top: number;
+  left: number;
+  direction: 'right' | 'left';
+  anchorCenterY: number;
+}
 
 export interface ComboboxContextType {
   // State
@@ -8,6 +15,9 @@ export interface ComboboxContextType {
   isClosing: boolean;
   applyOpenStyles: boolean;
   value?: string | string[];
+  mode: ComboboxMode;
+  selectedOption?: ComboboxOption | null;
+  placeholder: string;
   withRadio?: boolean;
   withCheckbox?: boolean;
   searchList: boolean;
@@ -41,6 +51,7 @@ export interface ComboboxContextType {
   dropDirection: DropDirection;
   portalStyle: React.CSSProperties;
   isPositionReady: boolean;
+  buttonId: string;
   popupId: string;
   listboxId: string;
   searchInputId: string;
@@ -51,6 +62,7 @@ export interface ComboboxContextType {
   dropdownMenuRef: RefObject<HTMLDivElement>;
   searchInputRef: RefObject<HTMLInputElement>;
   optionsContainerRef: RefObject<HTMLDivElement>;
+  leaveTimeoutRef: RefObject<NodeJS.Timeout | null>;
 
   // Handlers
   onSelect: (optionId: string) => void;
@@ -62,6 +74,16 @@ export interface ComboboxContextType {
   onMenuEnter: () => void;
   onMenuLeave: () => void;
   onScroll: () => void;
+  onTriggerClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  onTriggerKeyDown: (e: React.KeyboardEvent<HTMLButtonElement>) => void;
+  onTriggerBlur: () => void;
+  onSearchKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  tabIndex?: number;
+  name?: string;
+  popupLabel: string;
+  isPortalFrozen: boolean;
+  ariaLabel?: string;
+  ariaLabelledBy?: string;
   // Hover detail handlers
   onHoverDetailShow?: (
     optionId: string,
@@ -71,4 +93,10 @@ export interface ComboboxContextType {
   ) => Promise<void>;
   onHoverDetailHide?: () => void;
   onHoverDetailSuppress?: () => boolean;
+  hoverDetail: {
+    enabled: boolean;
+    isVisible: boolean;
+    position: HoverDetailPosition;
+    data: HoverDetailData | null;
+  };
 }

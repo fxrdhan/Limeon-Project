@@ -58,6 +58,7 @@ function Combobox(props: CheckboxComboboxProps): React.JSX.Element;
 function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
   const {
     id,
+    children,
     mode = 'input',
     options,
     value,
@@ -95,6 +96,8 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
     enableHoverDetail = false,
     hoverDetailDelay = 800,
     onFetchHoverDetail,
+    'aria-label': ariaLabel,
+    'aria-labelledby': ariaLabelledBy,
   } = allProps;
 
   const withCheckbox = 'withCheckbox' in allProps && allProps.withCheckbox;
@@ -776,6 +779,8 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
     applyOpenStyles,
     value: withCheckbox && isCheckboxMode(allProps) ? allProps.value : value,
     mode,
+    selectedOption,
+    placeholder,
     withRadio,
     withCheckbox,
     searchList,
@@ -805,6 +810,7 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
     dropDirection,
     portalStyle,
     isPositionReady,
+    buttonId,
     popupId,
     listboxId,
     searchInputId,
@@ -815,6 +821,7 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
     dropdownMenuRef: dropdownMenuRef as RefObject<HTMLDivElement>,
     searchInputRef: searchInputRef as RefObject<HTMLInputElement>,
     optionsContainerRef: optionsContainerRef as RefObject<HTMLDivElement>,
+    leaveTimeoutRef,
 
     // Handlers
     onSelect: handleSelect,
@@ -829,11 +836,28 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
     onMenuEnter: handleMenuEnter,
     onMenuLeave: handleMouseLeaveWithCloseIntent,
     onScroll: checkScroll,
+    onTriggerClick: handleToggleCombobox,
+    onTriggerKeyDown: handleButtonKeyDown,
+    onTriggerBlur: handleButtonBlur,
+    onSearchKeyDown: handleSearchBarKeyDown,
+    tabIndex,
+    name,
+    popupLabel: `${selectedOption?.name || placeholder} pilihan`,
+    isPortalFrozen,
+    ariaLabel,
+    ariaLabelledBy,
     // Hover detail handlers
     onHoverDetailShow: enableHoverDetail ? handleOptionHover : undefined,
     onHoverDetailHide: enableHoverDetail ? handleOptionLeave : undefined,
     onHoverDetailSuppress: enableHoverDetail ? suppressHoverDetail : undefined,
+    hoverDetail: {
+      enabled: enableHoverDetail,
+      isVisible: isHoverDetailVisible,
+      position: hoverDetailPosition,
+      data: hoverDetailData,
+    },
   };
+  const handleNativeFormInputChange = useCallback(() => {}, []);
   const nativeFormInputClassName =
     'sr-only absolute h-px w-px overflow-hidden whitespace-nowrap border-0 p-0';
   const formValueInputs =
@@ -848,7 +872,7 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
             value={selectedValue}
             required={required}
             disabled={disabled}
-            readOnly
+            onChange={handleNativeFormInputChange}
             tabIndex={-1}
             aria-hidden="true"
           />
@@ -861,7 +885,7 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
           value=""
           required={required}
           disabled={disabled}
-          readOnly
+          onChange={handleNativeFormInputChange}
           tabIndex={-1}
           aria-hidden="true"
         />
@@ -874,7 +898,7 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
         value={typeof value === 'string' ? value : ''}
         required={required}
         disabled={disabled}
-        readOnly
+        onChange={handleNativeFormInputChange}
         tabIndex={-1}
         aria-hidden="true"
       />
@@ -897,38 +921,44 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
         <div className="w-full flex">
           <div className="hs-dropdown relative inline-flex w-full">
             <div className="relative w-full">
-              <ComboboxButton
-                ref={buttonRef}
-                id={buttonId}
-                mode={mode}
-                selectedOption={selectedOption || undefined}
-                placeholder={placeholder}
-                isOpen={effectiveIsOpen}
-                isClosing={effectiveIsClosing}
-                hasError={hasError}
-                name={name}
-                popupId={popupId}
-                listboxId={listboxId}
-                searchList={searchList}
-                activeDescendantId={activeDescendantId}
-                tabIndex={tabIndex}
-                required={required}
-                disabled={disabled}
-                onClick={handleToggleCombobox}
-                onKeyDown={handleButtonKeyDown}
-                onBlur={handleButtonBlur}
-              />
+              {children ?? (
+                <ComboboxButton
+                  ref={buttonRef}
+                  id={buttonId}
+                  mode={mode}
+                  selectedOption={selectedOption || undefined}
+                  placeholder={placeholder}
+                  isOpen={effectiveIsOpen}
+                  isClosing={effectiveIsClosing}
+                  hasError={hasError}
+                  name={name}
+                  popupId={popupId}
+                  listboxId={listboxId}
+                  searchList={searchList}
+                  activeDescendantId={activeDescendantId}
+                  tabIndex={tabIndex}
+                  required={required}
+                  disabled={disabled}
+                  ariaLabel={ariaLabel}
+                  ariaLabelledBy={ariaLabelledBy}
+                  onClick={handleToggleCombobox}
+                  onKeyDown={handleButtonKeyDown}
+                  onBlur={handleButtonBlur}
+                />
+              )}
               {formValueInputs}
             </div>
 
-            <ComboboxMenu
-              ref={dropdownMenuRef}
-              popupId={popupId}
-              popupLabel={`${selectedOption?.name || placeholder} pilihan`}
-              isFrozen={isPortalFrozen}
-              leaveTimeoutRef={leaveTimeoutRef}
-              onSearchKeyDown={handleSearchBarKeyDown}
-            />
+            {children ? null : (
+              <ComboboxMenu
+                ref={dropdownMenuRef}
+                popupId={popupId}
+                popupLabel={`${selectedOption?.name || placeholder} pilihan`}
+                isFrozen={isPortalFrozen}
+                leaveTimeoutRef={leaveTimeoutRef}
+                onSearchKeyDown={handleSearchBarKeyDown}
+              />
+            )}
           </div>
         </div>
         {validate && (
@@ -944,7 +974,7 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
             isOpen={effectiveIsOpen}
           />
         )}
-        {enableHoverDetail && (
+        {!children && enableHoverDetail && (
           <HoverDetailPortal
             isVisible={isHoverDetailVisible}
             position={hoverDetailPosition}
