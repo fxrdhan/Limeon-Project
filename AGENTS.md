@@ -65,6 +65,8 @@ These instructions apply to `/home/fxrdhan/Documents/PharmaSys`.
 - Run `vp check --fix [filenames path]` after editing or adding code that can affect behavior, typing, lint rules, imports/exports, data flow, or build output.
 - Run `vp check --fix [filenames path]` after complex code edits, shared module changes, type changes, hook/state changes, conditional rendering changes, API contract changes, config changes with runtime effect, or changes that touch multiple files in a connected flow.
 - Use this repo's canonical validation entrypoint: `vp check`.
+- Treat the pre-commit hook as stricter than a successful targeted `vp check`. Before retrying a failed commit, fix every hook issue it reports, restage any formatter/linter changes, and commit again.
+- If a commit hook reports `oxlint --fix --deny-warnings` failures, address the reported lint and TypeScript diagnostics in the changed files instead of bypassing the hook.
 
 ## When to Skip `vp check`
 
@@ -85,11 +87,15 @@ These instructions apply to `/home/fxrdhan/Documents/PharmaSys`.
 - In files that export React components, do not also export shared hooks, constants, helpers, or other non-component values.
 - Move shared exports into a sibling module instead of mixing them into the component file.
 - Only use an inline disable when the file already follows an established repo pattern and separating the exports would be disproportionate.
+- Keep app component modules free of exported lookup helpers, constants, and utility functions. Put those exports in sibling non-component modules such as `helpers.ts`, `constants.ts`, or `utils.ts`.
+- Avoid `autoFocus` in React components. Prefer explicit focus management in an effect only when the user workflow requires it and accessibility implications have been considered.
 
 ## React Prop and Ref Typing
 
 - When a component supports a `render` prop and also renders a native DOM element, do not reuse one props object for both `render(props, state)` and `<element {...props} />` if that object includes `ref`.
 - Keep render-prop props and intrinsic DOM props separate when `ref` is involved. Pass `ref={ref}` explicitly to the native element, and type DOM spreads with `React.ComponentPropsWithoutRef<'element'>` or the exact intrinsic prop type.
+- If render-prop props include `data-*` attributes, type them explicitly with a `DataAttributes` index signature or another exact type accepted by the rendered intrinsic element.
+- When a hook effect uses values from an object such as context, destructure the exact values used before the effect and include those values in the dependency array.
 - After changing render-prop, forwarded-ref, or intrinsic element prop shapes, run `vp check --fix [changed files]` before committing even if the edit looks small.
 
 # Git
@@ -118,7 +124,9 @@ These instructions apply to `/home/fxrdhan/Documents/PharmaSys`.
 # Test Maintenance
 
 - If a pre-commit hook fails in a test file, check whether it is a static type or lint error in the test itself rather than a failing runtime test.
+- Do not use jest-dom custom matchers such as `toHaveTextContent`, `toHaveAttribute`, `toHaveStyle`, or `toBeDisabled` unless their types are already configured for the test environment. Prefer plain DOM assertions such as `textContent`, `getAttribute`, `hasAttribute`, `style`, and narrowed element properties.
 - When a DOM matcher depends on a specific element type, narrow the element first instead of asserting against a generic `HTMLElement`.
+- Avoid unbound prototype method references in tests. If mocking DOM prototype methods such as `scrollIntoView`, save and restore the property descriptor with `Object.getOwnPropertyDescriptor` and `Object.defineProperty`; use `Reflect.deleteProperty` when cleanup needs to remove an optional property.
 - When touching existing tests, remove or rewrite low-value tests in the edited area instead of preserving them by default.
 - If a test would fail after harmless markup or styling refactors, it is probably too brittle for this project.
 - Keep test helpers local unless they remove real duplication across meaningful behavior tests.
