@@ -86,6 +86,12 @@ These instructions apply to `/home/fxrdhan/Documents/PharmaSys`.
 - Move shared exports into a sibling module instead of mixing them into the component file.
 - Only use an inline disable when the file already follows an established repo pattern and separating the exports would be disproportionate.
 
+## React Prop and Ref Typing
+
+- When a component supports a `render` prop and also renders a native DOM element, do not reuse one props object for both `render(props, state)` and `<element {...props} />` if that object includes `ref`.
+- Keep render-prop props and intrinsic DOM props separate when `ref` is involved. Pass `ref={ref}` explicitly to the native element, and type DOM spreads with `React.ComponentPropsWithoutRef<'element'>` or the exact intrinsic prop type.
+- After changing render-prop, forwarded-ref, or intrinsic element prop shapes, run `vp check --fix [changed files]` before committing even if the edit looks small.
+
 # Git
 
 - When creating Git commits, use the `git-commit` skill.
