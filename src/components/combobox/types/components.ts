@@ -1,25 +1,103 @@
-import { RefObject } from 'react';
+import type {
+  ButtonHTMLAttributes,
+  CSSProperties,
+  ForwardedRef,
+  HTMLAttributes,
+  KeyboardEvent,
+  ReactElement,
+  ReactNode,
+  RefObject,
+  SyntheticEvent,
+} from 'react';
 import type { ComboboxOption } from '@/types';
+
+export interface ComboboxTriggerState {
+  open: boolean;
+  disabled: boolean;
+  invalid: boolean;
+  placeholder: boolean;
+}
+
+export interface ComboboxTriggerProps {
+  className?: string;
+  style?: CSSProperties;
+  render?: (
+    props: ButtonHTMLAttributes<HTMLButtonElement> & {
+      ref: ForwardedRef<HTMLButtonElement>;
+    },
+    state: ComboboxTriggerState
+  ) => ReactElement;
+}
+
+export interface ComboboxPopupState {
+  open: boolean;
+  closed: boolean;
+  frozen: boolean;
+  side: 'top' | 'bottom';
+}
+
+export interface ComboboxPopupProps {
+  children?: ReactNode;
+  className?: string;
+  style?: CSSProperties;
+  render?: (
+    props: HTMLAttributes<HTMLDivElement> & {
+      ref: ForwardedRef<HTMLDivElement>;
+    },
+    state: ComboboxPopupState
+  ) => ReactElement;
+}
+
+export interface ComboboxListState {
+  open: boolean;
+  empty: boolean;
+  highlightedIndex: number;
+}
+
+export interface ComboboxListProps {
+  children?: ReactNode;
+  className?: string;
+  style?: CSSProperties;
+  render?: (
+    props: HTMLAttributes<HTMLDivElement> & {
+      ref: RefObject<HTMLDivElement>;
+    },
+    state: ComboboxListState
+  ) => ReactElement;
+}
+
+export interface ComboboxListItemState {
+  selected: boolean;
+  highlighted: boolean;
+  disabled: boolean;
+}
+
+export interface ComboboxListItemProps {
+  option: ComboboxOption;
+  index?: number;
+  className?: string;
+  style?: CSSProperties;
+  render?: (
+    props: HTMLAttributes<HTMLDivElement>,
+    state: ComboboxListItemState
+  ) => ReactElement;
+}
 
 export interface ComboboxMenuProps {
   popupId: string;
   popupLabel: string;
+  children?: ReactNode;
   isFrozen?: boolean;
   leaveTimeoutRef: RefObject<NodeJS.Timeout | null>;
-  onSearchKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  onSearchKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void;
   className?: string;
-  style?: React.CSSProperties;
+  style?: CSSProperties;
   render?: (
-    props: React.HTMLAttributes<HTMLDivElement> & {
-      ref: React.ForwardedRef<HTMLDivElement>;
+    props: HTMLAttributes<HTMLDivElement> & {
+      ref: ForwardedRef<HTMLDivElement>;
     },
-    state: {
-      open: boolean;
-      closed: boolean;
-      frozen: boolean;
-      side: 'top' | 'bottom';
-    }
-  ) => React.ReactElement;
+    state: ComboboxPopupState
+  ) => ReactElement;
 }
 
 export interface OptionItemProps {
@@ -34,23 +112,19 @@ export interface OptionItemProps {
   isExpanded: boolean;
   onHighlight: (
     index: number,
-    event?: Event | React.SyntheticEvent<HTMLElement>
+    event?: Event | SyntheticEvent<HTMLElement>
   ) => void;
   dropdownMenuRef: RefObject<HTMLDivElement | null>;
   className?: string;
-  style?: React.CSSProperties;
+  style?: CSSProperties;
   render?: (
-    props: React.HTMLAttributes<HTMLDivElement>,
-    state: {
-      selected: boolean;
-      highlighted: boolean;
-      disabled: boolean;
-    }
-  ) => React.ReactElement;
+    props: HTMLAttributes<HTMLDivElement>,
+    state: ComboboxListItemState
+  ) => ReactElement;
 }
 
 export interface SearchBarProps {
-  onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  onKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void;
   onFocus: () => void;
   leaveTimeoutRef: RefObject<NodeJS.Timeout | null>;
 }

@@ -1,27 +1,6 @@
-import type {
-  ButtonHTMLAttributes,
-  CSSProperties,
-  ForwardedRef,
-  ReactElement,
-} from 'react';
 import ComboboxButton from '../ComboboxButton';
 import { useComboboxContext } from '../../hooks/useComboboxContext';
-
-interface ComboboxTriggerProps {
-  className?: string;
-  style?: CSSProperties;
-  render?: (
-    props: ButtonHTMLAttributes<HTMLButtonElement> & {
-      ref: ForwardedRef<HTMLButtonElement>;
-    },
-    state: {
-      open: boolean;
-      disabled: boolean;
-      invalid: boolean;
-      placeholder: boolean;
-    }
-  ) => ReactElement;
-}
+import type { ComboboxTriggerProps } from '../../types';
 
 const ComboboxTrigger = ({
   className,

@@ -1,29 +1,13 @@
-import type {
-  CSSProperties,
-  ForwardedRef,
-  HTMLAttributes,
-  ReactElement,
-} from 'react';
 import ComboboxMenu from '../ComboboxMenu';
 import { useComboboxContext } from '../../hooks/useComboboxContext';
+import type { ComboboxPopupProps } from '../../types';
 
-interface ComboboxPopupProps {
-  className?: string;
-  style?: CSSProperties;
-  render?: (
-    props: HTMLAttributes<HTMLDivElement> & {
-      ref: ForwardedRef<HTMLDivElement>;
-    },
-    state: {
-      open: boolean;
-      closed: boolean;
-      frozen: boolean;
-      side: 'top' | 'bottom';
-    }
-  ) => ReactElement;
-}
-
-const ComboboxPopup = ({ className, style, render }: ComboboxPopupProps) => {
+const ComboboxPopup = ({
+  children,
+  className,
+  style,
+  render,
+}: ComboboxPopupProps) => {
   const {
     popupId,
     popupLabel,
@@ -44,7 +28,9 @@ const ComboboxPopup = ({ className, style, render }: ComboboxPopupProps) => {
       className={className}
       style={style}
       render={render}
-    />
+    >
+      {children}
+    </ComboboxMenu>
   );
 };
 

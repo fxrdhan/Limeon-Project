@@ -15,7 +15,14 @@ import type {
 } from '../../types';
 import FormField from '../form-field';
 import Combobox from './index';
-import { ComboboxPopup, ComboboxTrigger } from './exports';
+import {
+  ComboboxList,
+  ComboboxListItem,
+  ComboboxPopup,
+  ComboboxSearch,
+  ComboboxTrigger,
+  useComboboxContext,
+} from './exports';
 
 function ComboboxHarness() {
   const [persistedComboboxName, setPersistedComboboxName] = useState<
@@ -238,6 +245,62 @@ function RenderPartComboboxHarness() {
   );
 }
 
+function CustomCompoundContent() {
+  const { filteredOptions } = useComboboxContext();
+
+  return (
+    <>
+      <ComboboxSearch />
+      <ComboboxList
+        render={(props, state) => (
+          <div
+            {...props}
+            data-rendered-list=""
+            data-list-state={state.empty ? 'empty' : 'filled'}
+          />
+        )}
+      >
+        {filteredOptions.map((option, index) => (
+          <ComboboxListItem
+            key={option.id}
+            option={option}
+            index={index}
+            render={(props, state) => (
+              <div
+                {...props}
+                data-rendered-option=""
+                data-selected-state={state.selected ? 'selected' : 'idle'}
+              />
+            )}
+          />
+        ))}
+      </ComboboxList>
+    </>
+  );
+}
+
+function CustomCompoundComboboxHarness() {
+  const [value, setValue] = useState('');
+
+  return (
+    <Combobox
+      name="custom_compound_dropdown"
+      value={value}
+      options={[
+        { id: 'alpha', name: 'Alpha' },
+        { id: 'beta', name: 'Beta' },
+      ]}
+      placeholder="Pilih Custom Compound"
+      onChange={setValue}
+    >
+      <ComboboxTrigger />
+      <ComboboxPopup>
+        <CustomCompoundContent />
+      </ComboboxPopup>
+    </Combobox>
+  );
+}
+
 describe('Combobox', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -250,6 +313,7 @@ describe('Combobox', () => {
     vi.runOnlyPendingTimers();
     vi.useRealTimers();
     vi.restoreAllMocks();
+    document.body.style.overflow = '';
   });
 
   it('closes a pinned dropdown when another dropdown opens', () => {
@@ -321,13 +385,14 @@ describe('Combobox', () => {
 
     const popup = screen.getByRole('dialog');
     const listbox = screen.getByRole('listbox', { name: 'Daftar pilihan' });
-    const searchInput = screen.getByRole('combobox', {
+    const searchInput = screen.getByRole('textbox', {
       name: 'Cari pilihan',
     });
     const betaOption = screen.getByRole('option', { name: 'Beta' });
 
     expect(document.querySelector('[role="menu"]')).toBeNull();
     expect(trigger.getAttribute('aria-controls')).toBe(popup.id);
+    expect(trigger.getAttribute('aria-haspopup')).toBe('dialog');
     expect(searchInput.getAttribute('aria-controls')).toBe(listbox.id);
     expect(trigger.getAttribute('aria-activedescendant')).toBe(betaOption.id);
     expect(searchInput.getAttribute('aria-activedescendant')).toBe(
@@ -360,6 +425,7 @@ describe('Combobox', () => {
 
     const listbox = screen.getByRole('listbox', { name: 'Daftar pilihan' });
     expect(trigger.getAttribute('aria-controls')).toBe(listbox.id);
+    expect(trigger.getAttribute('aria-haspopup')).toBe('listbox');
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
@@ -490,7 +556,7 @@ describe('Combobox', () => {
         .getAttribute('data-highlighted')
     ).toBe('');
 
-    const searchInput = screen.getByRole('combobox', {
+    const searchInput = screen.getByRole('textbox', {
       name: 'Cari pilihan',
     });
     act(() => {
@@ -641,6 +707,30 @@ describe('Combobox', () => {
     expect(document.querySelector('[data-rendered-popup]')).toBeTruthy();
   });
 
+  it('supports composed search, list, and list item parts inside the popup', () => {
+    render(<CustomCompoundComboboxHarness />);
+
+    const trigger = screen.getByRole('combobox', {
+      name: 'Pilih Custom Compound',
+    });
+
+    act(() => {
+      fireEvent.click(trigger);
+      vi.advanceTimersByTime(200);
+    });
+
+    expect(screen.getByRole('textbox', { name: 'Cari pilihan' })).toBeTruthy();
+    expect(document.querySelector('[data-rendered-list]')).toBeTruthy();
+    expect(document.querySelectorAll('[data-rendered-option]')).toHaveLength(2);
+
+    act(() => {
+      fireEvent.click(screen.getByRole('option', { name: 'Beta' }));
+      vi.advanceTimersByTime(200);
+    });
+
+    expect(screen.getByRole('combobox', { name: /Beta/ })).toBeTruthy();
+  });
+
   it('stops Escape key propagation unless the event details allow it', () => {
     const onParentKeyDown = vi.fn();
 
@@ -728,6 +818,26 @@ describe('Combobox', () => {
 
     expect(wasNotPrevented).toBe(true);
     expect(screen.queryByRole('listbox')).toBeNull();
+  });
+
+  it('restores the previous body overflow style after closing', () => {
+    document.body.style.overflow = 'clip';
+    render(<KeyboardComboboxHarness />);
+
+    const trigger = screen.getByRole('combobox', { name: /Alpha/ });
+    act(() => {
+      fireEvent.click(trigger);
+      vi.advanceTimersByTime(200);
+    });
+
+    expect(document.body.style.overflow).toBe('hidden');
+
+    act(() => {
+      fireEvent.keyDown(trigger, { key: 'Escape', code: 'Escape' });
+      vi.advanceTimersByTime(200);
+    });
+
+    expect(document.body.style.overflow).toBe('clip');
   });
 
   it('routes printable trigger key presses to the search input when open', () => {

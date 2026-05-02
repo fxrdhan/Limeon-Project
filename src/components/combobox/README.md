@@ -185,6 +185,7 @@ import {
   ComboboxRoot,
   ComboboxTrigger,
   ComboboxPopup,
+  ComboboxList,
   ComboboxListItem,
   ComboboxSearch,
   ComboboxHoverDetail,
@@ -205,11 +206,14 @@ These parts consume `ComboboxRoot` context and can be used as children when the 
   <ComboboxTrigger
     render={(props, state) => <button {...props} data-open={state.open} />}
   />
-  <ComboboxPopup />
+  <ComboboxPopup>
+    <ComboboxSearch />
+    <ComboboxList />
+  </ComboboxPopup>
 </ComboboxRoot>
 ```
 
-`ComboboxTrigger`, `ComboboxPopup`, and `ComboboxListItem` accept `className`, `style`, and `render` props for Base UI-like root element composition.
+`ComboboxTrigger`, `ComboboxPopup`, `ComboboxList`, and `ComboboxListItem` accept `className`, `style`, and `render` props for Base UI-like root element composition.
 
 ## Defaults
 
@@ -501,7 +505,7 @@ Close occurs in these cases:
 - pointer down outside the combobox while it is persisted but not frozen,
 - another combobox opening.
 
-When the menu is open, `useComboboxEffects` temporarily sets `document.body.style.overflow = 'hidden'` and registers `scroll`, `resize`, and `focusout` listeners to keep positioning and close behavior stable.
+When the menu is open, `useComboboxEffects` temporarily sets `document.body.style.overflow = 'hidden'`, restores the previous inline overflow value on close, and registers `scroll`, `resize`, and `focusout` listeners to keep positioning and close behavior stable.
 
 ## Scroll and Virtualization
 
@@ -549,9 +553,9 @@ The state needed by child components is shared through `ComboboxContext`. The ro
 
 ## Accessibility Notes
 
-- The trigger is exposed as a select-only `role="combobox"` with `aria-expanded`, `aria-controls`, and `aria-activedescendant` when an option is highlighted.
+- The trigger is exposed as the single field-level `role="combobox"` with `aria-expanded`, `aria-haspopup`, `aria-controls`, and `aria-activedescendant` when an option is highlighted.
 - The popup wrapper uses `role="dialog"` only for the input-inside-popup pattern. Without the search input, the wrapper is presentational and the options container owns the `role="listbox"` semantics.
-- The search input inside the popup is also exposed as an editable `role="combobox"` with `aria-autocomplete="list"` and points at the same listbox.
+- The search input inside the popup remains a labelled text filter with `aria-autocomplete="list"` and points at the listbox without creating a second combobox role.
 - When a parent label is available, pass `aria-labelledby` or use `FormField`; the trigger combines the field label with the current visible value for a stable accessible name.
 - Listbox and option IDs are generated per combobox instance so multiple comboboxes do not share ARIA targets.
 - Options use `role="option"`, `aria-selected`, `aria-posinset`, `aria-setsize`, and Base UI-like data attributes such as `data-selected` and `data-highlighted`.

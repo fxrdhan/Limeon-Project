@@ -29,6 +29,8 @@ export const useComboboxEffects = ({
   const openStyleTimerRef = useRef<NodeJS.Timeout | null>(null);
   const positionRafRef = useRef<number | null>(null);
   const focusRafRef = useRef<number | null>(null);
+  const previousBodyOverflowRef = useRef<string | null>(null);
+  const hasLockedBodyOverflowRef = useRef(false);
 
   const clearTimeouts = useCallback(() => {
     if (hoverTimeoutRef.current) {
@@ -54,6 +56,26 @@ export const useComboboxEffects = ({
       cancelAnimationFrame(focusRafRef.current);
       focusRafRef.current = null;
     }
+  }, []);
+
+  const lockBodyOverflow = useCallback(() => {
+    if (typeof document === 'undefined' || hasLockedBodyOverflowRef.current) {
+      return;
+    }
+
+    previousBodyOverflowRef.current = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    hasLockedBodyOverflowRef.current = true;
+  }, []);
+
+  const unlockBodyOverflow = useCallback(() => {
+    if (typeof document === 'undefined' || !hasLockedBodyOverflowRef.current) {
+      return;
+    }
+
+    document.body.style.overflow = previousBodyOverflowRef.current ?? '';
+    previousBodyOverflowRef.current = null;
+    hasLockedBodyOverflowRef.current = false;
   }, []);
 
   const handleTriggerAreaEnter = useCallback(() => {
@@ -124,13 +146,21 @@ export const useComboboxEffects = ({
     }
   }, [filteredOptions, isOpen, value, setExpandedId, buttonRef]);
 
+  useEffect(() => {
+    if (!isOpen) {
+      unlockBodyOverflow();
+      return;
+    }
+
+    lockBodyOverflow();
+    return unlockBodyOverflow;
+  }, [isOpen, lockBodyOverflow, unlockBodyOverflow]);
+
   // Manage open/close states and event listeners
   useEffect(() => {
     if (isOpen) {
       clearTimeouts();
       clearOpenScheduling();
-
-      document.body.style.overflow = 'hidden';
 
       positionRafRef.current = requestAnimationFrame(() => {
         positionRafRef.current = null;
@@ -164,14 +194,12 @@ export const useComboboxEffects = ({
       );
 
       return () => {
-        document.body.style.overflow = '';
         clearOpenScheduling();
         events.forEach(([event, handler, capture]) =>
           window.removeEventListener(event, handler as EventListener, capture)
         );
       };
     } else {
-      document.body.style.overflow = '';
       clearOpenScheduling();
       setApplyOpenStyles(false);
       resetPosition();

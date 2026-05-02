@@ -72,6 +72,7 @@ const ComboboxMenu = forwardRef<HTMLDivElement, ComboboxMenuProps>(
     {
       popupId,
       popupLabel,
+      children,
       isFrozen = false,
       leaveTimeoutRef,
       onSearchKeyDown,
@@ -157,7 +158,9 @@ const ComboboxMenu = forwardRef<HTMLDivElement, ComboboxMenuProps>(
 
     const activeBackgroundLayoutId = `dropdown-active-background-${highlightInstanceId}-${openCycleRef.current}-${searchTerm}-${filteredOptions[0]?.id ?? 'empty'}`;
     const shouldAnimateListItems = searchTerm.trim() !== '' && !isVirtualized;
+    const hasCustomContent = children !== undefined;
     const shouldPinSearchHighlight =
+      !hasCustomContent &&
       shouldAnimateListItems &&
       highlightedIndex >= 0 &&
       !heldHighlightFrame &&
@@ -645,107 +648,111 @@ const ComboboxMenu = forwardRef<HTMLDivElement, ComboboxMenuProps>(
         onMouseEnter={onMenuEnter}
         onMouseLeave={onMenuLeave}
       >
-        <div className="relative">
-          {heldHighlightFrame && (
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute z-0 rounded-lg bg-primary/10"
-              style={heldHighlightFrame}
-            />
-          )}
-          {searchList && (
-            <SearchBar
-              ref={searchInputRef}
-              onKeyDown={onSearchKeyDown}
-              onFocus={() => {}}
-              leaveTimeoutRef={leaveTimeoutRef}
-            />
-          )}
-          <MenuContent scrollState={scrollState}>
-            <div
-              id={listboxId}
-              ref={optionsContainerRef}
-              role="listbox"
-              aria-label="Daftar pilihan"
-              aria-multiselectable={withCheckbox ? true : undefined}
-              aria-activedescendant={activeDescendantId}
-              data-list-empty={filteredOptions.length === 0 ? '' : undefined}
-              data-popup-open={isOpen ? '' : undefined}
-              tabIndex={-1}
-              className="relative p-1 max-h-60 overflow-y-auto focus:outline-hidden"
-              onScroll={handleOptionsScroll}
-              onWheel={setLastPointerPosition}
-              onMouseMove={setLastPointerPosition}
-              onMouseLeave={() => {
-                lastPointerPositionRef.current = null;
-              }}
-              onKeyDown={!searchList ? onKeyDown : undefined}
-            >
-              {searchHighlightFrame && (
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute z-0 rounded-lg bg-primary/10"
-                  style={searchHighlightFrame}
-                />
-              )}
-              {isVirtualized ? (
-                <div className="relative" style={{ height: totalSize }}>
-                  {virtualItems.map(virtualItem => {
-                    const option = filteredOptions[virtualItem.index];
-                    if (!option) return null;
+        {hasCustomContent ? (
+          <div className="relative">{children}</div>
+        ) : (
+          <div className="relative">
+            {heldHighlightFrame && (
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute z-0 rounded-lg bg-primary/10"
+                style={heldHighlightFrame}
+              />
+            )}
+            {searchList && (
+              <SearchBar
+                ref={searchInputRef}
+                onKeyDown={onSearchKeyDown}
+                onFocus={() => {}}
+                leaveTimeoutRef={leaveTimeoutRef}
+              />
+            )}
+            <MenuContent scrollState={scrollState}>
+              <div
+                id={listboxId}
+                ref={optionsContainerRef}
+                role="listbox"
+                aria-label="Daftar pilihan"
+                aria-multiselectable={withCheckbox ? true : undefined}
+                aria-activedescendant={activeDescendantId}
+                data-list-empty={filteredOptions.length === 0 ? '' : undefined}
+                data-popup-open={isOpen ? '' : undefined}
+                tabIndex={-1}
+                className="relative p-1 max-h-60 overflow-y-auto focus:outline-hidden"
+                onScroll={handleOptionsScroll}
+                onWheel={setLastPointerPosition}
+                onMouseMove={setLastPointerPosition}
+                onMouseLeave={() => {
+                  lastPointerPositionRef.current = null;
+                }}
+                onKeyDown={!searchList ? onKeyDown : undefined}
+              >
+                {searchHighlightFrame && (
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute z-0 rounded-lg bg-primary/10"
+                    style={searchHighlightFrame}
+                  />
+                )}
+                {isVirtualized ? (
+                  <div className="relative" style={{ height: totalSize }}>
+                    {virtualItems.map(virtualItem => {
+                      const option = filteredOptions[virtualItem.index];
+                      if (!option) return null;
 
-                    return (
-                      <div
+                      return (
+                        <div
+                          key={option.id}
+                          ref={element => {
+                            if (element) {
+                              measureElement(virtualItem.index, element);
+                            }
+                          }}
+                          data-dropdown-option-frame
+                          data-dropdown-option-index={virtualItem.index}
+                          className="absolute left-0 right-0"
+                          style={{ top: virtualItem.start }}
+                        >
+                          {renderOptionItem(option, virtualItem.index)}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <AnimatePresence initial={false} mode="popLayout">
+                    {filteredOptions.map((option, index) => (
+                      <motion.div
                         key={option.id}
-                        ref={element => {
-                          if (element) {
-                            measureElement(virtualItem.index, element);
-                          }
-                        }}
                         data-dropdown-option-frame
-                        data-dropdown-option-index={virtualItem.index}
-                        className="absolute left-0 right-0"
-                        style={{ top: virtualItem.start }}
+                        data-dropdown-option-index={index}
+                        layout={shouldAnimateListItems ? 'position' : false}
+                        initial={
+                          shouldAnimateListItems ? { opacity: 0, y: 6 } : false
+                        }
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={
+                          shouldAnimateListItems
+                            ? { opacity: 0, y: -6 }
+                            : undefined
+                        }
+                        transition={listOptionTransition}
                       >
-                        {renderOptionItem(option, virtualItem.index)}
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <AnimatePresence initial={false} mode="popLayout">
-                  {filteredOptions.map((option, index) => (
-                    <motion.div
-                      key={option.id}
-                      data-dropdown-option-frame
-                      data-dropdown-option-index={index}
-                      layout={shouldAnimateListItems ? 'position' : false}
-                      initial={
-                        shouldAnimateListItems ? { opacity: 0, y: 6 } : false
-                      }
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={
-                        shouldAnimateListItems
-                          ? { opacity: 0, y: -6 }
-                          : undefined
-                      }
-                      transition={listOptionTransition}
-                    >
-                      {renderOptionItem(option, index)}
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              )}
-              {filteredOptions.length === 0 && (
-                <EmptyState
-                  searchState={searchState}
-                  searchTerm={searchTerm}
-                  hasAddNew={!!onAddNew}
-                />
-              )}
-            </div>
-          </MenuContent>
-        </div>
+                        {renderOptionItem(option, index)}
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                )}
+                {filteredOptions.length === 0 && (
+                  <EmptyState
+                    searchState={searchState}
+                    searchTerm={searchTerm}
+                    hasAddNew={!!onAddNew}
+                  />
+                )}
+              </div>
+            </MenuContent>
+          </div>
+        )}
       </MenuPortal>
     );
   }
