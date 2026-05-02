@@ -1,6 +1,11 @@
 import { RefObject } from 'react';
 import { DropDirection } from '../constants';
-import type { ComboboxMode, ComboboxOption, HoverDetailData } from '@/types';
+import type {
+  ComboboxMode,
+  ComboboxOption,
+  HoverDetailData,
+  ResolvedComboboxLabels,
+} from '@/types';
 
 interface HoverDetailPosition {
   top: number;
@@ -18,6 +23,7 @@ export interface ComboboxContextType {
   mode: ComboboxMode;
   selectedOption?: ComboboxOption | null;
   placeholder: string;
+  labels: ResolvedComboboxLabels;
   withRadio?: boolean;
   withCheckbox?: boolean;
   searchList: boolean;

@@ -62,7 +62,8 @@ combobox/
 |   |-- hooks.ts
 |   `-- index.ts
 `-- utils/
-    `-- comboboxUtils.ts              # Search scoring, sorting, match ranges, icon color
+    |-- comboboxUtils.ts              # Search scoring, sorting, match ranges, icon color
+    `-- optionDisplay.ts              # Normalizes primitive display metadata
 ```
 
 ## Data Model
@@ -73,29 +74,33 @@ combobox/
 export interface ComboboxItem {
   id: string;
   name: string;
+  disabled?: boolean;
+}
+
+export interface ComboboxOptionDisplay {
+  code?: string;
+  description?: string;
+  badgeLabel?: string;
+  badgeTone?: 'default' | 'info' | 'success' | 'warning';
+  updatedAt?: string | null;
 }
 
 export interface ComboboxOption extends ComboboxItem {
-  code?: string;
-  description?: string;
-  metaLabel?: string;
-  metaTone?: 'default' | 'info' | 'success' | 'warning';
-  updated_at?: string | null;
+  display?: ComboboxOptionDisplay;
+  data?: unknown;
 }
 ```
 
-`ComboboxItem` is the primitive identity contract: `id` is the value passed to `onChange`, and `name` is the primary label. `ComboboxOption` extends that core shape with optional display/detail metadata used by search display, the small badge on the trigger, hover detail, and the base payload before `onFetchHoverDetail` resolves.
+`ComboboxItem` is the primitive identity contract: `id` is the value passed to `onChange`, and `name` is the primary label. `disabled` makes an option non-interactive for pointer and keyboard selection. Presentation metadata belongs under `display`, while domain payloads can be carried in `data` by the consumer. Legacy direct metadata fields such as `code`, `description`, `metaLabel`, `metaTone`, and `updated_at` are still normalized for existing call sites, but new code should use `display`.
 
 ### HoverDetailData
 
 ```ts
 export interface HoverDetailData extends ComboboxItem {
-  code?: string;
-  description?: string;
-  metaLabel?: string;
-  metaTone?: 'default' | 'info' | 'success' | 'warning';
+  display?: ComboboxOptionDisplay;
+  data?: unknown;
   created_at?: string;
-  updated_at?: string | null;
+  createdAt?: string;
 }
 ```
 
@@ -126,6 +131,7 @@ export interface ComboboxProps {
   tabIndex?: number;
   onChange: (value: string, details: ComboboxValueChangeDetails) => void;
   onValueChange?: (value: string, details: ComboboxValueChangeDetails) => void;
+  labels?: ComboboxLabels;
   placeholder?: string;
   name: string;
   form?: string;
@@ -177,6 +183,25 @@ The `name` prop is mirrored to visually hidden native form input(s). Single-sele
 
 Change handlers receive Base UI-like `details` objects with `reason`, `event`, `trigger`, `cancel()`, `allowPropagation()`, `isCanceled`, and `isPropagationAllowed`. `cancel()` prevents the combobox from applying follow-up internal behavior for cancelable open, input, and value changes. Escape key propagation is stopped by default; call `details.allowPropagation()` in `onOpenChange` for `reason === 'escape-key'` when parent popups should also handle Escape.
 
+### Labels
+
+Primitive-facing copy is configurable through `labels`:
+
+```ts
+export interface ComboboxLabels {
+  listbox?: string;
+  search?: string;
+  searchPlaceholder?: string;
+  addNew?: string;
+  noOptions?: string;
+  addNewHint?: string;
+  required?: string;
+  popup?: (triggerLabel: string) => string;
+}
+```
+
+These labels control accessible names, search placeholder text, empty state copy, the add-new button label, the required validation message, and the popup accessible label.
+
 ### Compound Exports
 
 The default export remains the recommended app-level API. Advanced consumers can import Base UI-like parts from `@/components/combobox/exports`:
@@ -214,7 +239,7 @@ These parts consume `ComboboxRoot` context and can be used as children when the 
 </ComboboxRoot>
 ```
 
-`ComboboxTrigger`, `ComboboxPopup`, `ComboboxSearch`, `ComboboxList`, and `ComboboxListItem` accept `className`, `style`, and `render` props for Base UI-like root element composition. `render` may be a function or a React element; element render overrides are cloned with the internal ARIA, data attributes, handlers, and children merged in. Element render handlers run before internal handlers, and calling `event.preventDefault()` skips the matching internal handler.
+`ComboboxTrigger`, `ComboboxPopup`, `ComboboxSearch`, `ComboboxList`, and `ComboboxListItem` accept `className`, `style`, and `render` props for Base UI-like root element composition. `render` may be a function or a React element; element render overrides are cloned with the internal ARIA, data attributes, handlers, and children merged in. Element render handlers run before internal handlers, and calling `event.preventDefault()` skips the matching internal handler. Native element overrides are typed per part: trigger renders as a `button`, while popup, search, list, and item roots render as `div` elements.
 
 ## Defaults
 
@@ -222,6 +247,7 @@ These parts consume `ComboboxRoot` context and can be used as children when the 
 | ---------------------- | --------------- | ------------------------------------------------------------------------------------- |
 | `mode`                 | `'input'`       | Trigger renders like a form control.                                                  |
 | `placeholder`          | `'-- Pilih --'` | Displayed when no option is selected.                                                 |
+| `labels`               | Indonesian copy | Controls primitive accessible names and empty/add-new/validation messages.            |
 | `persistOpen`          | `false`         | The menu normally closes after a single option is selected or on outside interaction. |
 | `freezePersistedMenu`  | `false`         | When `true`, the portal remains visible but becomes non-interactive.                  |
 | `searchList`           | `true`          | Shows the search input at the top of the menu.                                        |
@@ -257,6 +283,22 @@ const suppliers: ComboboxOption[] = [
   placeholder="-- Select Supplier --"
 />;
 ```
+
+### Disabled Options
+
+```tsx
+<Combobox
+  name="supplier_id"
+  value={supplierId}
+  onChange={setSupplierId}
+  options={[
+    { id: 'supplier-a', name: 'Supplier A', disabled: true },
+    { id: 'supplier-b', name: 'Supplier B' },
+  ]}
+/>
+```
+
+Disabled options render with `aria-disabled`, are skipped by keyboard navigation, and do not fire selection changes from pointer or keyboard interaction.
 
 ### Radio Style Single Select
 
@@ -430,11 +472,13 @@ Hover detail shows an information panel beside the option. The initial data come
     return unit
       ? {
           id: unit.id,
-          code: unit.code,
           name: unit.name,
-          description: unit.description,
-          metaLabel: unit.statusLabel,
-          metaTone: 'info',
+          display: {
+            code: unit.code,
+            description: unit.description,
+            badgeLabel: unit.statusLabel,
+            badgeTone: 'info',
+          },
         }
       : null;
   }}
@@ -614,6 +658,8 @@ Documentation-only changes do not require `vp check`.
 
 - Treat `Combobox` as a controlled component. The parent must own `value` and update it through `onChange`.
 - Use `ComboboxOption.id` as the stable value. Do not use the label as the id if the label can change.
+- Put display metadata in `option.display` and domain-specific payloads in `option.data`.
+- Use `option.disabled` for choices that must remain visible but unavailable.
 - Use `searchList={false}` for small enum-like options such as statuses or month/year selectors.
 - Use `withRadio` for single-select controls that need to show the active choice visually.
 - Use `withCheckbox` only when the parent actually stores an array of ids.

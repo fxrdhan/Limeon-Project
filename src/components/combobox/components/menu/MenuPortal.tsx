@@ -27,7 +27,11 @@ interface MenuPortalProps {
   isPositionReady: boolean;
   isKeyboardNavigation?: boolean;
   className?: string;
-  render?: ComboboxRenderProp<ComboboxPopupRenderProps, ComboboxPopupState>;
+  render?: ComboboxRenderProp<
+    ComboboxPopupRenderProps,
+    ComboboxPopupState,
+    'div'
+  >;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
   children: ReactNode;

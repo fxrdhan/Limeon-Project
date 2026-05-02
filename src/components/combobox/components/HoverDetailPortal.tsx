@@ -10,6 +10,7 @@ import { motion, AnimatePresence, useAnimationControls } from 'motion/react';
 import Badge from '@/components/badge';
 import { cn } from '@/lib/utils';
 import type { HoverDetailData } from '@/types';
+import { getComboboxOptionDisplay } from '../utils/optionDisplay';
 
 interface HoverDetailPortalProps {
   isVisible: boolean;
@@ -102,51 +103,55 @@ const getHoverDetailGeometry = (
   };
 };
 
-const getMetaBadgeVariant = (data?: HoverDetailData | null) =>
-  data?.metaTone === 'success'
+const getMetaBadgeVariant = (data?: HoverDetailData | null) => {
+  const display = data ? getComboboxOptionDisplay(data) : null;
+
+  return display?.badgeTone === 'success'
     ? 'success'
-    : data?.metaTone === 'warning'
+    : display?.badgeTone === 'warning'
       ? 'warning'
-      : data?.metaTone === 'info'
+      : display?.badgeTone === 'info'
         ? 'info'
         : 'default';
+};
 
 const HoverDetailContent = ({ data }: { data: HoverDetailData }) => {
   const metaBadgeVariant = getMetaBadgeVariant(data);
+  const display = getComboboxOptionDisplay(data);
 
   return (
     <div className="pointer-events-auto max-h-[calc(100vh-24px)] overflow-y-auto">
       <div
         className={cn(
           'flex items-start justify-between gap-3',
-          data.description && 'mb-3'
+          display.description && 'mb-3'
         )}
       >
         <div className="flex min-w-0 items-center gap-2">
-          {data.code && (
+          {display.code && (
             <Badge variant="success" size="sm" className="rounded-md">
-              {data.code}
+              {display.code}
             </Badge>
           )}
           <h3 className="min-w-0 whitespace-normal break-words font-semibold text-slate-900">
             {data.name}
           </h3>
         </div>
-        {data.metaLabel ? (
+        {display.badgeLabel ? (
           <Badge
             variant={metaBadgeVariant}
             size="sm"
             className="shrink-0 rounded-md uppercase tracking-wide"
           >
-            {data.metaLabel}
+            {display.badgeLabel}
           </Badge>
         ) : null}
       </div>
 
-      {data.description && (
+      {display.description && (
         <div>
           <p className="whitespace-normal break-words text-sm text-slate-600 leading-relaxed">
-            {data.description}
+            {display.description}
           </p>
         </div>
       )}

@@ -1,7 +1,8 @@
 import React, { forwardRef } from 'react';
 import Button from './button/Button';
 import { useTextExpansion } from '../hooks/useTextExpansion';
-import type { ComboboxMode } from '@/types';
+import { getComboboxOptionDisplay } from '../utils/optionDisplay';
+import type { ComboboxMode, ComboboxOption } from '@/types';
 import type {
   ComboboxRenderProp,
   ComboboxTriggerRenderProps,
@@ -11,7 +12,7 @@ import type {
 interface ComboboxButtonProps {
   id: string;
   mode?: ComboboxMode;
-  selectedOption?: { id: string; name: string; metaLabel?: string };
+  selectedOption?: ComboboxOption;
   placeholder?: string;
   isOpen: boolean;
   isClosing: boolean;
@@ -28,7 +29,11 @@ interface ComboboxButtonProps {
   ariaLabelledBy?: string;
   className?: string;
   style?: React.CSSProperties;
-  render?: ComboboxRenderProp<ComboboxTriggerRenderProps, ComboboxTriggerState>;
+  render?: ComboboxRenderProp<
+    ComboboxTriggerRenderProps,
+    ComboboxTriggerState,
+    'button'
+  >;
   onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
   onKeyDown?: (e: React.KeyboardEvent<HTMLButtonElement>) => void;
   onBlur: () => void;
@@ -82,6 +87,9 @@ const ComboboxButton = forwardRef<HTMLButtonElement, ComboboxButtonProps>(
 
     const titleText = selectedOption?.name || placeholder;
     const isPlaceholder = !selectedOption;
+    const selectedDisplay = selectedOption
+      ? getComboboxOptionDisplay(selectedOption)
+      : null;
 
     return (
       <Button
@@ -90,7 +98,7 @@ const ComboboxButton = forwardRef<HTMLButtonElement, ComboboxButtonProps>(
         mode={mode}
         displayText={displayText}
         titleText={titleText}
-        metaLabel={selectedOption?.metaLabel}
+        badgeLabel={selectedDisplay?.badgeLabel}
         isPlaceholder={isPlaceholder}
         isOpen={isOpen}
         isClosing={isClosing}

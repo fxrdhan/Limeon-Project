@@ -5,6 +5,7 @@ import React, {
   useEffect,
   useState,
   useId,
+  useMemo,
   SyntheticEvent,
 } from 'react';
 import type {
@@ -32,7 +33,7 @@ import { useFocusManagement } from './hooks/useFocusManagement';
 import { useScrollManagement } from './hooks/useScrollManagement';
 import { useComboboxEffects } from './hooks/useComboboxEffects';
 import { useHoverDetail } from './hooks/useHoverDetail';
-import { KEYBOARD_KEYS } from './constants';
+import { DEFAULT_COMBOBOX_LABELS, KEYBOARD_KEYS } from './constants';
 import { createComboboxChangeDetails } from './utils/eventDetails';
 
 const COMBOBOX_OPEN_EVENT = 'pharmasys:combobox-open';
@@ -56,6 +57,17 @@ const sanitizeDomId = (value: string) => {
   return sanitizedValue || 'value';
 };
 
+const getFirstEnabledOptionIndex = (options: Array<{ disabled?: boolean }>) =>
+  options.findIndex(option => !option.disabled);
+
+const getLastEnabledOptionIndex = (options: Array<{ disabled?: boolean }>) => {
+  for (let index = options.length - 1; index >= 0; index -= 1) {
+    if (!options[index]?.disabled) return index;
+  }
+
+  return -1;
+};
+
 // Function overloads for different modes
 function Combobox(props: ComboboxProps): React.JSX.Element;
 function Combobox(props: CheckboxComboboxProps): React.JSX.Element;
@@ -73,6 +85,7 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
     onInputValueChange,
     highlightedValue,
     onHighlightedValueChange,
+    labels,
     placeholder = '-- Pilih --',
     onAddNew,
     persistOpen = false,
@@ -118,6 +131,13 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
   const getOptionId = useCallback(
     (optionId: string) => `${idBase}-option-${sanitizeDomId(optionId)}`,
     [idBase]
+  );
+  const resolvedLabels = useMemo(
+    () => ({
+      ...DEFAULT_COMBOBOX_LABELS,
+      ...labels,
+    }),
+    [labels]
   );
 
   // Type guard for checkbox mode - memoized to prevent useCallback dependency changes
@@ -277,6 +297,7 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
     showValidationOnBlur,
     validationAutoHide,
     validationAutoHideDelay,
+    requiredMessage: resolvedLabels.required,
   });
 
   const { clearPendingFocus, manageFocusOnOpen, handleFocusOut } =
@@ -368,6 +389,10 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
 
   const handleSelect = useCallback(
     (optionId: string, event?: Event | SyntheticEvent<any>) => {
+      if (options.find(option => option.id === optionId)?.disabled) {
+        return;
+      }
+
       const details: ComboboxValueChangeDetails = createComboboxChangeDetails(
         'item-press',
         event
@@ -405,6 +430,7 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
       allProps,
       closeComboboxAndReleasePin,
       handleCloseValidation,
+      options,
       resetSearch,
       isCheckboxMode,
     ]
@@ -475,7 +501,9 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
     const nextHighlightedIndex =
       highlightedValue === undefined
         ? -1
-        : filteredOptions.findIndex(option => option.id === highlightedValue);
+        : filteredOptions.findIndex(
+            option => option.id === highlightedValue && !option.disabled
+          );
 
     setHighlightedIndex(nextHighlightedIndex);
     setExpandedId(
@@ -740,12 +768,22 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
 
       const selectedIndex =
         typeof value === 'string'
-          ? filteredOptions.findIndex(option => option.id === value)
+          ? filteredOptions.findIndex(
+              option => option.id === value && !option.disabled
+            )
           : -1;
       const fallbackIndex =
-        e.key === KEYBOARD_KEYS.ARROW_UP ? filteredOptions.length - 1 : 0;
+        e.key === KEYBOARD_KEYS.ARROW_UP
+          ? getLastEnabledOptionIndex(filteredOptions)
+          : getFirstEnabledOptionIndex(filteredOptions);
       const nextHighlightedIndex =
         selectedIndex >= 0 ? selectedIndex : fallbackIndex;
+
+      if (nextHighlightedIndex < 0) {
+        setHighlightedIndex(-1);
+        setExpandedId(null);
+        return true;
+      }
 
       setHighlightedIndex(nextHighlightedIndex);
       setExpandedId(filteredOptions[nextHighlightedIndex].id);
@@ -808,6 +846,7 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
     mode,
     selectedOption,
     placeholder,
+    labels: resolvedLabels,
     withRadio,
     withCheckbox,
     searchList,
@@ -872,7 +911,7 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
     onSearchKeyDown: handleSearchBarKeyDown,
     tabIndex,
     name,
-    popupLabel: `${selectedOption?.name || placeholder} pilihan`,
+    popupLabel: resolvedLabels.popup(selectedOption?.name || placeholder),
     isPortalFrozen,
     ariaLabel,
     ariaLabelledBy,
@@ -983,7 +1022,9 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
               <ComboboxMenu
                 ref={dropdownMenuRef}
                 popupId={popupId}
-                popupLabel={`${selectedOption?.name || placeholder} pilihan`}
+                popupLabel={resolvedLabels.popup(
+                  selectedOption?.name || placeholder
+                )}
                 isFrozen={isPortalFrozen}
                 leaveTimeoutRef={leaveTimeoutRef}
                 onSearchKeyDown={handleSearchBarKeyDown}

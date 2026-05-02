@@ -3,11 +3,13 @@ import { TbPlus } from 'react-icons/tb';
 
 interface AddNewButtonProps {
   searchTerm: string;
+  ariaLabel: string;
   onAddNew: (term: string) => void;
 }
 
 const AddNewButton: React.FC<AddNewButtonProps> = ({
   searchTerm,
+  ariaLabel,
   onAddNew,
 }) => {
   const handleMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -24,7 +26,7 @@ const AddNewButton: React.FC<AddNewButtonProps> = ({
   return (
     <button
       type="button"
-      aria-label="Tambah data baru"
+      aria-label={ariaLabel}
       className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md transition-colors duration-150 hover:bg-slate-100 focus:outline-hidden focus:ring-2 focus:ring-primary/30"
       onMouseDown={handleMouseDown}
       onClick={handleClick}

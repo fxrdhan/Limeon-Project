@@ -1,6 +1,7 @@
 import type {
   ButtonHTMLAttributes,
   CSSProperties,
+  ElementType,
   ForwardedRef,
   HTMLAttributes,
   KeyboardEvent,
@@ -11,9 +12,13 @@ import type {
 } from 'react';
 import type { ComboboxOption } from '@/types';
 
-export type ComboboxRenderProp<Props, State> =
-  | ReactElement
-  | ((props: Props, state: State) => ReactElement);
+export type ComboboxRenderProp<
+  Props,
+  State,
+  RootElement extends ElementType = ElementType,
+> =
+  | ReactElement<Partial<Props>, RootElement>
+  | ((props: Props, state: State) => ReactElement<Partial<Props>, RootElement>);
 
 export interface ComboboxTriggerState {
   open: boolean;
@@ -30,7 +35,11 @@ export type ComboboxTriggerRenderProps =
 export interface ComboboxTriggerProps {
   className?: string;
   style?: CSSProperties;
-  render?: ComboboxRenderProp<ComboboxTriggerRenderProps, ComboboxTriggerState>;
+  render?: ComboboxRenderProp<
+    ComboboxTriggerRenderProps,
+    ComboboxTriggerState,
+    'button'
+  >;
 }
 
 export interface ComboboxPopupState {
@@ -48,7 +57,11 @@ export interface ComboboxPopupProps {
   children?: ReactNode;
   className?: string;
   style?: CSSProperties;
-  render?: ComboboxRenderProp<ComboboxPopupRenderProps, ComboboxPopupState>;
+  render?: ComboboxRenderProp<
+    ComboboxPopupRenderProps,
+    ComboboxPopupState,
+    'div'
+  >;
 }
 
 export interface ComboboxListState {
@@ -65,7 +78,11 @@ export interface ComboboxListProps {
   children?: ReactNode;
   className?: string;
   style?: CSSProperties;
-  render?: ComboboxRenderProp<ComboboxListRenderProps, ComboboxListState>;
+  render?: ComboboxRenderProp<
+    ComboboxListRenderProps,
+    ComboboxListState,
+    'div'
+  >;
 }
 
 export interface ComboboxListItemState {
@@ -81,7 +98,8 @@ export interface ComboboxListItemProps {
   style?: CSSProperties;
   render?: ComboboxRenderProp<
     HTMLAttributes<HTMLDivElement>,
-    ComboboxListItemState
+    ComboboxListItemState,
+    'div'
   >;
 }
 
@@ -94,7 +112,11 @@ export interface ComboboxMenuProps {
   onSearchKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void;
   className?: string;
   style?: CSSProperties;
-  render?: ComboboxRenderProp<ComboboxPopupRenderProps, ComboboxPopupState>;
+  render?: ComboboxRenderProp<
+    ComboboxPopupRenderProps,
+    ComboboxPopupState,
+    'div'
+  >;
 }
 
 export interface OptionItemProps {
@@ -116,7 +138,8 @@ export interface OptionItemProps {
   style?: CSSProperties;
   render?: ComboboxRenderProp<
     HTMLAttributes<HTMLDivElement>,
-    ComboboxListItemState
+    ComboboxListItemState,
+    'div'
   >;
 }
 
@@ -128,7 +151,8 @@ export interface SearchBarProps {
   style?: CSSProperties;
   render?: ComboboxRenderProp<
     HTMLAttributes<HTMLDivElement>,
-    ComboboxSearchState
+    ComboboxSearchState,
+    'div'
   >;
 }
 
@@ -143,6 +167,7 @@ export interface ComboboxSearchProps {
   style?: CSSProperties;
   render?: ComboboxRenderProp<
     HTMLAttributes<HTMLDivElement>,
-    ComboboxSearchState
+    ComboboxSearchState,
+    'div'
   >;
 }

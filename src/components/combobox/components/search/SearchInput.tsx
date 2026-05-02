@@ -15,6 +15,8 @@ interface SearchInputProps {
   searchState: string;
   isOpen: boolean;
   isListEmpty: boolean;
+  placeholder: string;
+  ariaLabel: string;
   onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   onFocus: () => void;
@@ -31,6 +33,8 @@ const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
       searchState,
       isOpen,
       isListEmpty,
+      placeholder,
+      ariaLabel,
       onSearchChange,
       onKeyDown,
       onFocus,
@@ -48,7 +52,7 @@ const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
             ? `${FORM_CONTROL_BORDER_ERROR_CLASS} ${FORM_CONTROL_FOCUS_ERROR_CLASS}`
             : `${FORM_CONTROL_BORDER_DEFAULT_CLASS} ${FORM_CONTROL_FOCUS_CLASS}`
         }`}
-        placeholder="Cari..."
+        placeholder={placeholder}
         value={searchTerm}
         onChange={onSearchChange}
         onKeyDown={onKeyDown}
@@ -63,7 +67,7 @@ const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
         data-open={isOpen ? 'true' : 'false'}
         data-popup-open={isOpen ? '' : undefined}
         data-list-empty={isListEmpty ? '' : undefined}
-        aria-label="Cari pilihan"
+        aria-label={ariaLabel}
         aria-autocomplete="list"
         aria-controls={isOpen ? listboxId : undefined}
         aria-activedescendant={isOpen ? activeDescendantId : undefined}

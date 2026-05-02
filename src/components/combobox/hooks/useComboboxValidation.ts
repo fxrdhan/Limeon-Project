@@ -8,6 +8,7 @@ interface UseComboboxValidationProps {
   showValidationOnBlur?: boolean;
   validationAutoHide?: boolean;
   validationAutoHideDelay?: number;
+  requiredMessage?: string;
 }
 
 export const useComboboxValidation = ({
@@ -17,6 +18,7 @@ export const useComboboxValidation = ({
   showValidationOnBlur = true,
   validationAutoHide = true,
   validationAutoHideDelay,
+  requiredMessage = VALIDATION_MESSAGES.REQUIRED,
 }: UseComboboxValidationProps) => {
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -30,14 +32,14 @@ export const useComboboxValidation = ({
 
     if (required && (!value || value.trim() === '')) {
       setHasError(true);
-      setErrorMessage(VALIDATION_MESSAGES.REQUIRED);
+      setErrorMessage(requiredMessage);
       return false;
     }
 
     setHasError(false);
     setErrorMessage(null);
     return true;
-  }, [validate, required, value]);
+  }, [validate, required, value, requiredMessage]);
 
   const handleCloseValidation = useCallback(() => {
     setShowValidationOverlay(false);

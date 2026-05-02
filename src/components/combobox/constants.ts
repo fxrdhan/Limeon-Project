@@ -1,3 +1,5 @@
+import type { ResolvedComboboxLabels } from '@/types';
+
 export const COMBOBOX_CONSTANTS = {
   ANIMATION_DURATION: 100,
   CLOSE_TIMEOUT: 200,
@@ -47,6 +49,17 @@ export const VALIDATION_MESSAGES = {
   NO_OPTIONS: 'Tidak ada pilihan yang sesuai',
   ADD_NEW_HINT: 'Tekan Enter untuk menambahkan data baru',
 } as const;
+
+export const DEFAULT_COMBOBOX_LABELS: ResolvedComboboxLabels = {
+  listbox: 'Daftar pilihan',
+  search: 'Cari pilihan',
+  searchPlaceholder: 'Cari...',
+  addNew: 'Tambah data baru',
+  noOptions: VALIDATION_MESSAGES.NO_OPTIONS,
+  addNewHint: VALIDATION_MESSAGES.ADD_NEW_HINT,
+  required: VALIDATION_MESSAGES.REQUIRED,
+  popup: triggerLabel => `${triggerLabel} pilihan`,
+};
 
 export type SearchState = (typeof SEARCH_STATES)[keyof typeof SEARCH_STATES];
 export type DropDirection = 'up' | 'down';

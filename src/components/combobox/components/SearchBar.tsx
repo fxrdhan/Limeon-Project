@@ -62,6 +62,7 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
       searchInputId,
       activeDescendantId,
       filteredOptions,
+      labels,
       onAddNew,
       onSearchChange,
     } = useComboboxContext();
@@ -91,6 +92,8 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
               searchState={searchState}
               isOpen={isOpen}
               isListEmpty={filteredOptions.length === 0}
+              placeholder={labels.searchPlaceholder}
+              ariaLabel={labels.search}
               onSearchChange={onSearchChange}
               onKeyDown={onKeyDown}
               onFocus={onFocus}
@@ -127,6 +130,7 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
                 >
                   <AddNewButton
                     searchTerm={searchTerm}
+                    ariaLabel={labels.addNew}
                     onAddNew={handleAddNewFromSearch}
                   />
                 </motion.div>

@@ -20,7 +20,7 @@ interface ButtonProps {
   mode?: ComboboxMode;
   displayText: string;
   titleText?: string;
-  metaLabel?: string;
+  badgeLabel?: string;
   isPlaceholder: boolean;
   isOpen: boolean;
   isClosing: boolean;
@@ -38,7 +38,11 @@ interface ButtonProps {
   ariaLabelledBy?: string;
   className?: string;
   style?: React.CSSProperties;
-  render?: ComboboxRenderProp<ComboboxTriggerRenderProps, ComboboxTriggerState>;
+  render?: ComboboxRenderProp<
+    ComboboxTriggerRenderProps,
+    ComboboxTriggerState,
+    'button'
+  >;
   onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
   onKeyDown?: (e: React.KeyboardEvent<HTMLButtonElement>) => void;
   onMouseEnter: () => void;
@@ -54,7 +58,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       mode = 'input',
       displayText,
       titleText,
-      metaLabel,
+      badgeLabel,
       isPlaceholder,
       isOpen,
       isClosing,
@@ -153,7 +157,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
               valueTextId={valueTextId}
               displayText={displayText}
               titleText={titleText}
-              metaLabel={metaLabel}
+              badgeLabel={badgeLabel}
               isPlaceholder={isPlaceholder}
               isExpanded={false}
             />
@@ -188,7 +192,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             valueTextId={valueTextId}
             displayText={displayText}
             titleText={titleText}
-            metaLabel={metaLabel}
+            badgeLabel={badgeLabel}
             isPlaceholder={isPlaceholder}
             isExpanded={isExpanded}
           />

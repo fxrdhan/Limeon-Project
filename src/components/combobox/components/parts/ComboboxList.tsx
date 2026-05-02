@@ -19,6 +19,7 @@ const ComboboxList = ({
     withCheckbox,
     listboxId,
     activeDescendantId,
+    labels,
     searchState,
     searchTerm,
     onAddNew,
@@ -40,7 +41,7 @@ const ComboboxList = ({
     id: listboxId,
     ref: optionsContainerRef,
     role: 'listbox',
-    'aria-label': 'Daftar pilihan',
+    'aria-label': labels.listbox,
     'aria-multiselectable': withCheckbox ? true : undefined,
     'aria-activedescendant': activeDescendantId,
     'data-list-empty': filteredOptions.length === 0 ? '' : undefined,
@@ -58,6 +59,7 @@ const ComboboxList = ({
             searchState={searchState}
             searchTerm={searchTerm}
             hasAddNew={!!onAddNew}
+            labels={labels}
           />
         )}
       </>

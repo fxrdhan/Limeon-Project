@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { HoverDetailData } from '@/types';
+import { createHoverDetailData } from '../utils/optionDisplay';
 
 interface HoverDetailPosition {
   top: number;
@@ -138,16 +139,7 @@ export const useHoverDetail = ({
 
         // Update with basic data first for immediate response
         if (optionData) {
-          setData({
-            id: optionId,
-            name: optionData.name || 'Unknown',
-            code: optionData.code,
-            description: optionData.description,
-            metaLabel: optionData.metaLabel,
-            metaTone: optionData.metaTone,
-            created_at: optionData.created_at,
-            updated_at: optionData.updated_at,
-          });
+          setData(createHoverDetailData(optionId, optionData));
         }
 
         // Fetch detailed data if fetch function is provided
@@ -172,16 +164,7 @@ export const useHoverDetail = ({
 
       // First time showing portal - set initial data
       if (optionData) {
-        setData({
-          id: optionId,
-          name: optionData.name || 'Unknown',
-          code: optionData.code,
-          description: optionData.description,
-          metaLabel: optionData.metaLabel,
-          metaTone: optionData.metaTone,
-          created_at: optionData.created_at,
-          updated_at: optionData.updated_at,
-        });
+        setData(createHoverDetailData(optionId, optionData));
       }
 
       // Wait for delay before showing portal for the first time

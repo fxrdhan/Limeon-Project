@@ -6,23 +6,50 @@ import { Category, Item } from './database';
 export interface ComboboxItem {
   id: string;
   name: string;
+  disabled?: boolean;
+}
+
+export type ComboboxMetaTone = 'default' | 'info' | 'success' | 'warning';
+
+export interface ComboboxOptionDisplay {
+  code?: string;
+  description?: string;
+  badgeLabel?: string;
+  badgeTone?: ComboboxMetaTone;
+  updatedAt?: string | null;
 }
 
 export interface ComboboxOption extends ComboboxItem {
+  display?: ComboboxOptionDisplay;
+  data?: unknown;
+  /** @deprecated Use display.code for visual metadata. */
   code?: string;
+  /** @deprecated Use display.description for visual metadata. */
   description?: string;
+  /** @deprecated Use display.badgeLabel for visual metadata. */
   metaLabel?: string;
-  metaTone?: 'default' | 'info' | 'success' | 'warning';
+  /** @deprecated Use display.badgeTone for visual metadata. */
+  metaTone?: ComboboxMetaTone;
+  /** @deprecated Use display.updatedAt for visual metadata. */
   updated_at?: string | null;
 }
 
 export interface HoverDetailData extends ComboboxItem {
+  display?: ComboboxOptionDisplay;
+  data?: unknown;
+  /** @deprecated Use display.code for visual metadata. */
   code?: string;
+  /** @deprecated Use display.description for visual metadata. */
   description?: string;
+  /** @deprecated Use display.badgeLabel for visual metadata. */
   metaLabel?: string;
-  metaTone?: 'default' | 'info' | 'success' | 'warning';
+  /** @deprecated Use display.badgeTone for visual metadata. */
+  metaTone?: ComboboxMetaTone;
   created_at?: string;
+  createdAt?: string;
+  /** @deprecated Use display.updatedAt for visual metadata. */
   updated_at?: string | null;
+  updatedAt?: string | null;
 }
 
 export type ComboboxMode = 'input' | 'text';
@@ -67,6 +94,19 @@ export interface ComboboxHighlightChangeDetails extends BaseUIChangeEventDetails
   index: number;
 }
 
+export interface ComboboxLabels {
+  listbox?: string;
+  search?: string;
+  searchPlaceholder?: string;
+  addNew?: string;
+  noOptions?: string;
+  addNewHint?: string;
+  required?: string;
+  popup?: (triggerLabel: string) => string;
+}
+
+export type ResolvedComboboxLabels = Required<ComboboxLabels>;
+
 export interface ComboboxProps {
   id?: string;
   children?: React.ReactNode;
@@ -89,6 +129,7 @@ export interface ComboboxProps {
   tabIndex?: number;
   onChange: (value: string, details: ComboboxValueChangeDetails) => void;
   onValueChange?: (value: string, details: ComboboxValueChangeDetails) => void;
+  labels?: ComboboxLabels;
   placeholder?: string;
   name: string;
   form?: string;

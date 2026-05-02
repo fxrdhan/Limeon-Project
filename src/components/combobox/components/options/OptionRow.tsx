@@ -4,6 +4,7 @@ import type { ComboboxOption } from '@/types';
 import { truncateText, shouldTruncateText } from '@/utils/text';
 import { COMBOBOX_CONSTANTS } from '../../constants';
 import { getComboboxOptionMatchRanges } from '../../utils/comboboxUtils';
+import { getComboboxOptionDisplay } from '../../utils/optionDisplay';
 import { renderComboboxElement } from '../../utils/renderPart';
 import RadioIndicator from './RadioIndicator';
 import CheckboxIndicator from './CheckboxIndicator';
@@ -45,7 +46,8 @@ interface OptionRowProps {
   style?: React.CSSProperties;
   render?: ComboboxRenderProp<
     React.HTMLAttributes<HTMLDivElement>,
-    ComboboxListItemState
+    ComboboxListItemState,
+    'div'
   >;
 
   // Hover detail (opsional)
@@ -82,6 +84,8 @@ const OptionRow: React.FC<OptionRowProps> = ({
   onHoverDetailShow,
   onHoverDetailHide,
 }) => {
+  const isDisabled = option.disabled === true;
+  const optionDisplay = getComboboxOptionDisplay(option);
   const DEFAULT_WIDTH = 200;
   const numericPortalWidth = (() => {
     if (portalWidth == null) return DEFAULT_WIDTH;
@@ -105,45 +109,38 @@ const OptionRow: React.FC<OptionRowProps> = ({
       : option.name;
 
   const handleMouseEnter = async (e: React.MouseEvent<HTMLElement>) => {
-    if (isKeyboardNavigation) return;
+    if (isDisabled || isKeyboardNavigation) return;
     onHighlight(index, e);
 
     if (onHoverDetailShow) {
       await onHoverDetailShow(option.id, e.currentTarget, {
         id: option.id,
         name: option.name,
-        code: option.code,
-        description: option.description,
-        metaLabel: option.metaLabel,
-        metaTone: option.metaTone,
-        updated_at: option.updated_at,
+        display: optionDisplay,
       });
     }
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
-    if (!isKeyboardNavigation) return;
+    if (isDisabled || !isKeyboardNavigation) return;
     onHighlight(index, e);
 
     if (onHoverDetailShow) {
       void onHoverDetailShow(option.id, e.currentTarget, {
         id: option.id,
         name: option.name,
-        code: option.code,
-        description: option.description,
-        metaLabel: option.metaLabel,
-        metaTone: option.metaTone,
-        updated_at: option.updated_at,
+        display: optionDisplay,
       });
     }
   };
 
   const handleMouseLeave = () => {
-    if (isKeyboardNavigation) return;
+    if (isDisabled || isKeyboardNavigation) return;
     if (onHoverDetailHide) onHoverDetailHide();
   };
 
   const handleFocus = (e: React.FocusEvent<HTMLElement>) => {
+    if (isDisabled) return;
     onHighlight(index, e);
   };
 
@@ -161,7 +158,9 @@ const OptionRow: React.FC<OptionRowProps> = ({
 
   const textStateClass = isSelected
     ? 'text-primary font-semibold'
-    : 'text-slate-800';
+    : isDisabled
+      ? 'text-slate-400'
+      : 'text-slate-800';
   const matchRanges = getComboboxOptionMatchRanges(displayText, searchTerm);
   const shouldHighlightMatches = matchRanges.length > 0;
   const renderDisplayText = () => {
@@ -197,6 +196,7 @@ const OptionRow: React.FC<OptionRowProps> = ({
     id: optionId,
     role: 'option',
     'aria-selected': Boolean(isSelected),
+    'aria-disabled': isDisabled || undefined,
     'aria-posinset': index + 1,
     'aria-setsize': optionCount,
     'data-dropdown-option-frame': '',
@@ -204,11 +204,23 @@ const OptionRow: React.FC<OptionRowProps> = ({
     'data-combobox-item': '',
     'data-selected': isSelected ? '' : undefined,
     'data-highlighted': isHighlighted ? '' : undefined,
+    'data-disabled': isDisabled ? '' : undefined,
     'data-value': option.id,
     tabIndex: -1,
-    className: `relative z-10 flex ${shouldExpand ? 'items-start' : 'items-center'} w-full py-2 px-3 rounded-lg text-sm text-slate-800 cursor-pointer focus:outline-hidden transition-colors duration-150 ${className ?? ''}`,
+    className: `relative z-10 flex ${shouldExpand ? 'items-start' : 'items-center'} w-full py-2 px-3 rounded-lg text-sm focus:outline-hidden transition-colors duration-150 ${
+      isDisabled
+        ? 'cursor-not-allowed text-slate-400 opacity-60'
+        : 'cursor-pointer text-slate-800'
+    } ${className ?? ''}`,
     style,
-    onClick: (e: React.MouseEvent<HTMLDivElement>) => onSelect(option.id, e),
+    onClick: (e: React.MouseEvent<HTMLDivElement>) => {
+      if (isDisabled) {
+        e.preventDefault();
+        return;
+      }
+
+      onSelect(option.id, e);
+    },
     onMouseEnter: handleMouseEnter,
     onMouseMove: handleMouseMove,
     onMouseLeave: handleMouseLeave,
@@ -254,7 +266,7 @@ const OptionRow: React.FC<OptionRowProps> = ({
   const state = {
     selected: isSelected,
     highlighted: isHighlighted,
-    disabled: false,
+    disabled: isDisabled,
   } satisfies ComboboxListItemState;
   const renderedElement = renderComboboxElement(render, optionProps, state);
 

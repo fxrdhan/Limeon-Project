@@ -189,6 +189,45 @@ function LabelledComboboxHarness() {
   );
 }
 
+function CustomLabelsComboboxHarness() {
+  return (
+    <Combobox
+      name="custom_labels_dropdown"
+      value=""
+      options={[]}
+      placeholder="Pick one"
+      labels={{
+        search: 'Search medicines',
+        searchPlaceholder: 'Type medicine',
+        addNew: 'Create medicine',
+        listbox: 'Medicine choices',
+        noOptions: 'No medicines',
+        addNewHint: 'Press Enter to create',
+        popup: (triggerLabel: string) => `Choices for ${triggerLabel}`,
+      }}
+      onAddNew={() => {}}
+      onChange={() => {}}
+    />
+  );
+}
+
+function DisabledOptionComboboxHarness() {
+  const [value, setValue] = useState('');
+
+  return (
+    <Combobox
+      name="disabled_option_dropdown"
+      value={value}
+      options={[
+        { id: 'alpha', name: 'Alpha', disabled: true },
+        { id: 'beta', name: 'Beta' },
+      ]}
+      placeholder="Pilih Disabled"
+      onChange={setValue}
+    />
+  );
+}
+
 function CompoundComboboxHarness() {
   const [value, setValue] = useState('');
 
@@ -306,8 +345,8 @@ function ElementRenderCompoundContent() {
 
   return (
     <>
-      <ComboboxSearch render={<section data-rendered-search-element="" />} />
-      <ComboboxList render={<section data-rendered-list-element="" />}>
+      <ComboboxSearch render={<div data-rendered-search-element="" />} />
+      <ComboboxList render={<div data-rendered-list-element="" />}>
         {filteredOptions.map((option, index) => (
           <ComboboxListItem
             key={option.id}
@@ -348,7 +387,7 @@ function ElementRenderComboboxHarness({
           />
         }
       />
-      <ComboboxPopup render={<section data-rendered-popup-element="" />}>
+      <ComboboxPopup render={<div data-rendered-popup-element="" />}>
         <ElementRenderCompoundContent />
       </ComboboxPopup>
     </Combobox>
@@ -727,6 +766,76 @@ describe('Combobox', () => {
 
     expect(trigger.getAttribute('aria-labelledby')).toBeTruthy();
     expect(trigger.getAttribute('aria-label')).toBeNull();
+  });
+
+  it('allows primitive labels to be supplied by the consumer', () => {
+    render(<CustomLabelsComboboxHarness />);
+
+    const trigger = screen.getByRole('combobox', { name: 'Pick one' });
+
+    act(() => {
+      fireEvent.click(trigger);
+      vi.advanceTimersByTime(200);
+    });
+
+    expect(
+      screen.getByRole('dialog', { name: 'Choices for Pick one' })
+    ).toBeTruthy();
+    const searchInput = screen.getByRole('textbox', {
+      name: 'Search medicines',
+    });
+    expect(searchInput.getAttribute('placeholder')).toBe('Type medicine');
+    expect(
+      screen.getByRole('listbox', { name: 'Medicine choices' })
+    ).toBeTruthy();
+
+    act(() => {
+      fireEvent.change(searchInput, { target: { value: 'zzz' } });
+      vi.advanceTimersByTime(200);
+    });
+
+    expect(screen.getByText('No medicines')).toBeTruthy();
+    expect(screen.getByText('Press Enter to create')).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Create medicine' })
+    ).toBeTruthy();
+  });
+
+  it('does not highlight or select disabled options', async () => {
+    render(<DisabledOptionComboboxHarness />);
+
+    const trigger = screen.getByRole('combobox', {
+      name: 'Pilih Disabled',
+    });
+
+    await act(async () => {
+      fireEvent.click(trigger);
+      vi.advanceTimersByTime(200);
+      await Promise.resolve();
+    });
+
+    const disabledOption = screen.getByRole('option', { name: 'Alpha' });
+    const enabledOption = screen.getByRole('option', { name: 'Beta' });
+
+    expect(disabledOption.getAttribute('aria-disabled')).toBe('true');
+    expect(enabledOption.getAttribute('data-highlighted')).toBe('');
+
+    act(() => {
+      fireEvent.click(disabledOption);
+      vi.advanceTimersByTime(200);
+    });
+
+    expect(
+      screen.getByRole('combobox', { name: 'Pilih Disabled' })
+    ).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.keyDown(trigger, { key: 'Enter', code: 'Enter' });
+      vi.advanceTimersByTime(200);
+      await Promise.resolve();
+    });
+
+    expect(screen.getByRole('combobox', { name: /Beta/ })).toBeTruthy();
   });
 
   it('supports Base UI-like compound trigger and popup parts', () => {

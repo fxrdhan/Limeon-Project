@@ -4,7 +4,7 @@ interface ButtonTextProps {
   valueTextId?: string;
   displayText: string;
   titleText?: string;
-  metaLabel?: string;
+  badgeLabel?: string;
   isPlaceholder: boolean;
   isExpanded: boolean;
 }
@@ -13,7 +13,7 @@ const ButtonText: React.FC<ButtonTextProps> = ({
   valueTextId,
   displayText,
   titleText,
-  metaLabel,
+  badgeLabel,
   isPlaceholder,
   isExpanded,
 }) => {
@@ -32,9 +32,9 @@ const ButtonText: React.FC<ButtonTextProps> = ({
       >
         {displayText}
       </span>
-      {metaLabel ? (
+      {badgeLabel ? (
         <span className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
-          {metaLabel}
+          {badgeLabel}
         </span>
       ) : null}
     </span>

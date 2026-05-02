@@ -17,7 +17,11 @@ import type { ComboboxOpenChangeDetails } from '@/types';
 interface UseKeyboardNavigationProps {
   isOpen: boolean;
   value?: string;
-  currentFilteredOptions: Array<{ id: string; name: string }>;
+  currentFilteredOptions: Array<{
+    id: string;
+    name: string;
+    disabled?: boolean;
+  }>;
   setExpandedId: (id: string | null) => void;
   searchState: string;
   searchTerm: string;
@@ -37,6 +41,63 @@ const getOptionFrameAtIndex = (container: HTMLDivElement, index: number) =>
   container.querySelector<HTMLElement>(
     `[data-dropdown-option-frame][data-dropdown-option-index="${index}"]`
   );
+
+const isEnabledOption = (option: { disabled?: boolean }) => !option.disabled;
+
+const getFirstEnabledIndex = (items: Array<{ disabled?: boolean }>) =>
+  items.findIndex(isEnabledOption);
+
+const getLastEnabledIndex = (items: Array<{ disabled?: boolean }>) => {
+  for (let index = items.length - 1; index >= 0; index -= 1) {
+    if (isEnabledOption(items[index])) return index;
+  }
+
+  return -1;
+};
+
+const getNextEnabledIndex = (
+  items: Array<{ disabled?: boolean }>,
+  currentIndex: number,
+  direction: 1 | -1
+) => {
+  if (!items.some(isEnabledOption)) return -1;
+
+  let nextIndex = currentIndex < 0 && direction === -1 ? 0 : currentIndex;
+  for (let offset = 0; offset < items.length; offset += 1) {
+    nextIndex =
+      direction === 1
+        ? (nextIndex + 1) % items.length
+        : (nextIndex - 1 + items.length) % items.length;
+
+    if (isEnabledOption(items[nextIndex])) return nextIndex;
+  }
+
+  return -1;
+};
+
+const getEnabledIndexAtPageOffset = (
+  items: Array<{ disabled?: boolean }>,
+  currentIndex: number,
+  offset: number
+) => {
+  const enabledIndexes = items
+    .map((item, index) => (isEnabledOption(item) ? index : -1))
+    .filter(index => index >= 0);
+
+  if (enabledIndexes.length === 0) return -1;
+
+  const currentEnabledPosition = enabledIndexes.findIndex(
+    index => index === currentIndex
+  );
+  const basePosition =
+    currentEnabledPosition >= 0 ? currentEnabledPosition : offset > 0 ? -1 : 0;
+  const nextPosition = Math.min(
+    Math.max(basePosition + offset, 0),
+    enabledIndexes.length - 1
+  );
+
+  return enabledIndexes[nextPosition];
+};
 
 const getEstimatedScrollTopForIndex = ({
   container,
@@ -165,20 +226,26 @@ export const useKeyboardNavigation = ({
       autoHighlightOnOpen
     ) {
       queueMicrotask(() => {
+        const firstEnabledIndex = getFirstEnabledIndex(currentFilteredOptions);
         if (value) {
           const selectedIndex = currentFilteredOptions.findIndex(
-            option => option.id === value
+            option => option.id === value && isEnabledOption(option)
           );
           if (selectedIndex >= 0) {
             if (selectedIndex !== highlightedIndex) {
               setHighlightedIndex(selectedIndex);
             }
             setExpandedId(currentFilteredOptions[selectedIndex].id);
+            return;
           }
-        } else {
-          setHighlightedIndex(0);
-          setExpandedId(currentFilteredOptions[0].id);
         }
+
+        setHighlightedIndex(firstEnabledIndex);
+        setExpandedId(
+          firstEnabledIndex >= 0
+            ? currentFilteredOptions[firstEnabledIndex].id
+            : null
+        );
       });
     }
   }, [
@@ -219,23 +286,28 @@ export const useKeyboardNavigation = ({
       return;
     }
 
+    const firstEnabledIndex = getFirstEnabledIndex(currentFilteredOptions);
+    const selectedHighlightedIndex = value
+      ? currentFilteredOptions.findIndex(
+          option => option.id === value && isEnabledOption(option)
+        )
+      : -1;
     const nextHighlightedIndex = hasVisibleSearchResults
-      ? 0
-      : value
-        ? currentFilteredOptions.findIndex(option => option.id === value)
-        : 0;
+      ? firstEnabledIndex
+      : selectedHighlightedIndex >= 0
+        ? selectedHighlightedIndex
+        : firstEnabledIndex;
 
-    if (!hasVisibleSearchResults && value && nextHighlightedIndex < 0) {
-      return;
-    }
-
-    const normalizedHighlightedIndex =
-      nextHighlightedIndex >= 0 ? nextHighlightedIndex : 0;
+    const normalizedHighlightedIndex = nextHighlightedIndex;
 
     if (highlightedIndex !== normalizedHighlightedIndex) {
       setHighlightedIndex(normalizedHighlightedIndex);
     }
-    setExpandedId(currentFilteredOptions[normalizedHighlightedIndex].id);
+    setExpandedId(
+      normalizedHighlightedIndex >= 0
+        ? currentFilteredOptions[normalizedHighlightedIndex].id
+        : null
+    );
 
     if (!hasVisibleSearchResults) {
       shouldRestoreHighlightAfterSearchClearRef.current = false;
@@ -299,8 +371,9 @@ export const useKeyboardNavigation = ({
       }
 
       const items = currentFilteredOptions;
+      const hasEnabledItems = items.some(isEnabledOption);
       if (
-        !items.length &&
+        !hasEnabledItems &&
         !([KEYBOARD_KEYS.ESCAPE, KEYBOARD_KEYS.ENTER] as string[]).includes(
           e.key
         )
@@ -310,53 +383,48 @@ export const useKeyboardNavigation = ({
       let newIndex = highlightedIndex;
       const selectedIndex =
         value && items.length
-          ? items.findIndex(option => option.id === value)
+          ? items.findIndex(
+              option => option.id === value && isEnabledOption(option)
+            )
           : -1;
       const navigationBaseIndex =
         keyboardHighlightIndexRef.current ??
         (highlightedIndex >= 0 ? highlightedIndex : selectedIndex);
       const keyActions: Record<string, () => void> = {
         [KEYBOARD_KEYS.ARROW_DOWN]: () => {
-          newIndex = items.length
-            ? (navigationBaseIndex + 1) % items.length
-            : -1;
+          newIndex = getNextEnabledIndex(items, navigationBaseIndex, 1);
         },
         [KEYBOARD_KEYS.ARROW_UP]: () => {
-          newIndex = items.length
-            ? (navigationBaseIndex - 1 + items.length) % items.length
-            : -1;
+          newIndex = getNextEnabledIndex(items, navigationBaseIndex, -1);
         },
         [KEYBOARD_KEYS.HOME]: () => {
-          newIndex = items.length ? 0 : -1;
+          newIndex = getFirstEnabledIndex(items);
         },
         [KEYBOARD_KEYS.END]: () => {
-          newIndex = items.length ? items.length - 1 : -1;
+          newIndex = getLastEnabledIndex(items);
         },
         [KEYBOARD_KEYS.PAGE_DOWN]: () => {
-          if (items.length) {
-            newIndex = Math.min(
-              navigationBaseIndex === -1
-                ? COMBOBOX_CONSTANTS.PAGE_SIZE - 1
-                : navigationBaseIndex + COMBOBOX_CONSTANTS.PAGE_SIZE,
-              items.length - 1
-            );
-          }
+          newIndex = getEnabledIndexAtPageOffset(
+            items,
+            navigationBaseIndex,
+            COMBOBOX_CONSTANTS.PAGE_SIZE
+          );
         },
         [KEYBOARD_KEYS.PAGE_UP]: () => {
-          if (items.length) {
-            newIndex =
-              navigationBaseIndex === -1
-                ? 0
-                : Math.max(
-                    navigationBaseIndex - COMBOBOX_CONSTANTS.PAGE_SIZE,
-                    0
-                  );
-          }
+          newIndex = getEnabledIndexAtPageOffset(
+            items,
+            navigationBaseIndex,
+            -COMBOBOX_CONSTANTS.PAGE_SIZE
+          );
         },
         [KEYBOARD_KEYS.ENTER]: () => {
           const activeIndex =
             keyboardHighlightIndexRef.current ?? highlightedIndex;
-          if (activeIndex >= 0 && activeIndex < items.length) {
+          if (
+            activeIndex >= 0 &&
+            activeIndex < items.length &&
+            isEnabledOption(items[activeIndex])
+          ) {
             onSelect(items[activeIndex].id, e);
           } else if (
             (searchState === SEARCH_STATES.NOT_FOUND ||
@@ -373,7 +441,11 @@ export const useKeyboardNavigation = ({
         [KEYBOARD_KEYS.SPACE]: () => {
           const activeIndex =
             keyboardHighlightIndexRef.current ?? highlightedIndex;
-          if (activeIndex >= 0 && activeIndex < items.length) {
+          if (
+            activeIndex >= 0 &&
+            activeIndex < items.length &&
+            isEnabledOption(items[activeIndex])
+          ) {
             onSelect(items[activeIndex].id, e);
           }
           return;

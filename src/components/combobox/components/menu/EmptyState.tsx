@@ -1,16 +1,19 @@
 import React from 'react';
-import { SEARCH_STATES, VALIDATION_MESSAGES } from '../../constants';
+import { SEARCH_STATES } from '../../constants';
+import type { ResolvedComboboxLabels } from '@/types';
 
 interface EmptyStateProps {
   searchState: string;
   searchTerm: string;
   hasAddNew: boolean;
+  labels: ResolvedComboboxLabels;
 }
 
 const EmptyState: React.FC<EmptyStateProps> = ({
   searchState,
   searchTerm,
   hasAddNew,
+  labels,
 }) => {
   const isSearchWithAddNew =
     (searchState === SEARCH_STATES.NOT_FOUND ||
@@ -27,13 +30,11 @@ const EmptyState: React.FC<EmptyStateProps> = ({
     >
       {isSearchWithAddNew ? (
         <div>
-          <div>{VALIDATION_MESSAGES.NO_OPTIONS}</div>
-          <div className="text-xs text-slate-400 mt-1">
-            {VALIDATION_MESSAGES.ADD_NEW_HINT}
-          </div>
+          <div>{labels.noOptions}</div>
+          <div className="text-xs text-slate-400 mt-1">{labels.addNewHint}</div>
         </div>
       ) : (
-        VALIDATION_MESSAGES.NO_OPTIONS
+        labels.noOptions
       )}
     </div>
   );

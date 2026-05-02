@@ -16,6 +16,7 @@ import OptionItem from './OptionItem';
 import EmptyState from './menu/EmptyState';
 import { useComboboxContext } from '../hooks/useComboboxContext';
 import { useComboboxVirtualization } from '../hooks/useComboboxVirtualization';
+import { getComboboxOptionDisplay } from '../utils/optionDisplay';
 import type { ComboboxMenuProps } from '../types';
 import { COMBOBOX_CONSTANTS } from '../constants';
 import {
@@ -94,6 +95,7 @@ const ComboboxMenu = forwardRef<HTMLDivElement, ComboboxMenuProps>(
       searchTerm,
       searchState,
       filteredOptions,
+      labels,
       highlightedIndex,
       pendingHighlightedIndex,
       pendingHighlightSourceIndex,
@@ -426,7 +428,12 @@ const ComboboxMenu = forwardRef<HTMLDivElement, ComboboxMenuProps>(
           ? getOptionFrameElementAtIndex(container, highlightedIndex)
           : null;
 
-        if (!container || !highlightedOption || !highlightedElement) {
+        if (
+          !container ||
+          !highlightedOption ||
+          highlightedOption.disabled ||
+          !highlightedElement
+        ) {
           onHoverDetailHide?.();
           return;
         }
@@ -448,11 +455,7 @@ const ComboboxMenu = forwardRef<HTMLDivElement, ComboboxMenuProps>(
           {
             id: highlightedOption.id,
             name: highlightedOption.name,
-            code: highlightedOption.code,
-            description: highlightedOption.description,
-            metaLabel: highlightedOption.metaLabel,
-            metaTone: highlightedOption.metaTone,
-            updated_at: highlightedOption.updated_at,
+            display: getComboboxOptionDisplay(highlightedOption),
           },
           { immediate: true }
         );
@@ -524,7 +527,7 @@ const ComboboxMenu = forwardRef<HTMLDivElement, ComboboxMenuProps>(
       if (!target) return;
 
       const option = filteredOptions[target.index];
-      if (!option) return;
+      if (!option || option.disabled) return;
 
       void onHoverDetailShow(
         option.id,
@@ -532,11 +535,7 @@ const ComboboxMenu = forwardRef<HTMLDivElement, ComboboxMenuProps>(
         {
           id: option.id,
           name: option.name,
-          code: option.code,
-          description: option.description,
-          metaLabel: option.metaLabel,
-          metaTone: option.metaTone,
-          updated_at: option.updated_at,
+          display: getComboboxOptionDisplay(option),
         },
         { immediate: true }
       );
@@ -672,7 +671,7 @@ const ComboboxMenu = forwardRef<HTMLDivElement, ComboboxMenuProps>(
                 id={listboxId}
                 ref={optionsContainerRef}
                 role="listbox"
-                aria-label="Daftar pilihan"
+                aria-label={labels.listbox}
                 aria-multiselectable={withCheckbox ? true : undefined}
                 aria-activedescendant={activeDescendantId}
                 data-list-empty={filteredOptions.length === 0 ? '' : undefined}
@@ -747,6 +746,7 @@ const ComboboxMenu = forwardRef<HTMLDivElement, ComboboxMenuProps>(
                     searchState={searchState}
                     searchTerm={searchTerm}
                     hasAddNew={!!onAddNew}
+                    labels={labels}
                   />
                 )}
               </div>
