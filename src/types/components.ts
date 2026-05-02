@@ -30,19 +30,38 @@ export type ComboboxPosition = 'auto' | 'top' | 'bottom' | 'left';
 export type ComboboxAlign = 'left' | 'right';
 export type ComboboxOpenChangeReason =
   | 'trigger-press'
+  | 'trigger-hover'
   | 'outside-press'
   | 'item-press'
   | 'escape-key'
   | 'focus-out'
   | 'none';
+export type ComboboxValueChangeReason = 'item-press' | 'none';
+export type ComboboxInputValueChangeReason =
+  | 'input-change'
+  | 'reset'
+  | 'typeahead';
 export type ComboboxHighlightChangeReason = 'keyboard' | 'pointer' | 'none';
 
-export interface ComboboxOpenChangeDetails {
-  reason: ComboboxOpenChangeReason;
+export interface BaseUIChangeEventDetails<Reason extends string = string> {
+  reason: Reason;
+  event: Event | null;
+  cancel: () => void;
+  allowPropagation: () => void;
+  readonly isCanceled: boolean;
+  readonly isPropagationAllowed: boolean;
 }
 
-export interface ComboboxHighlightChangeDetails {
-  reason: ComboboxHighlightChangeReason;
+export type ComboboxOpenChangeDetails =
+  BaseUIChangeEventDetails<ComboboxOpenChangeReason>;
+
+export type ComboboxValueChangeDetails =
+  BaseUIChangeEventDetails<ComboboxValueChangeReason>;
+
+export type ComboboxInputValueChangeDetails =
+  BaseUIChangeEventDetails<ComboboxInputValueChangeReason>;
+
+export interface ComboboxHighlightChangeDetails extends BaseUIChangeEventDetails<ComboboxHighlightChangeReason> {
   index: number;
 }
 
@@ -56,14 +75,18 @@ export interface ComboboxProps {
   defaultOpen?: boolean;
   onOpenChange?: (open: boolean, details: ComboboxOpenChangeDetails) => void;
   inputValue?: string;
-  onInputValueChange?: (value: string) => void;
+  onInputValueChange?: (
+    value: string,
+    details: ComboboxInputValueChangeDetails
+  ) => void;
   highlightedValue?: string;
   onHighlightedValueChange?: (
     value: string | undefined,
     details: ComboboxHighlightChangeDetails
   ) => void;
   tabIndex?: number;
-  onChange: (value: string) => void;
+  onChange: (value: string, details: ComboboxValueChangeDetails) => void;
+  onValueChange?: (value: string, details: ComboboxValueChangeDetails) => void;
   placeholder?: string;
   name: string;
   form?: string;
@@ -97,10 +120,14 @@ export interface ComboboxProps {
 
 export interface CheckboxComboboxProps extends Omit<
   ComboboxProps,
-  'value' | 'onChange' | 'withRadio'
+  'value' | 'onChange' | 'onValueChange' | 'withRadio'
 > {
   value: string[];
-  onChange: (value: string[]) => void;
+  onChange: (value: string[], details: ComboboxValueChangeDetails) => void;
+  onValueChange?: (
+    value: string[],
+    details: ComboboxValueChangeDetails
+  ) => void;
   withCheckbox: true;
 }
 

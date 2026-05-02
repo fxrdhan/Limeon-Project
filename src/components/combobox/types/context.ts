@@ -65,11 +65,17 @@ export interface ComboboxContextType {
   leaveTimeoutRef: RefObject<NodeJS.Timeout | null>;
 
   // Handlers
-  onSelect: (optionId: string) => void;
+  onSelect: (
+    optionId: string,
+    event?: Event | React.SyntheticEvent<HTMLElement>
+  ) => void;
   onAddNew?: (term: string) => void;
   onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => void;
-  onSetHighlightedIndex: (index: number) => void;
+  onSetHighlightedIndex: (
+    index: number,
+    event?: Event | React.SyntheticEvent<HTMLElement>
+  ) => void;
   onSetIsKeyboardNavigation: (isKeyboard: boolean) => void;
   onMenuEnter: () => void;
   onMenuLeave: () => void;

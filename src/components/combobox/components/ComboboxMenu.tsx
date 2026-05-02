@@ -69,7 +69,16 @@ const listOptionTransition = {
 
 const ComboboxMenu = forwardRef<HTMLDivElement, ComboboxMenuProps>(
   (
-    { popupId, popupLabel, isFrozen = false, leaveTimeoutRef, onSearchKeyDown },
+    {
+      popupId,
+      popupLabel,
+      isFrozen = false,
+      leaveTimeoutRef,
+      onSearchKeyDown,
+      className,
+      style,
+      render,
+    },
     ref
   ) => {
     const {
@@ -608,9 +617,9 @@ const ComboboxMenu = forwardRef<HTMLDivElement, ComboboxMenuProps>(
           isActiveBackgroundReady ? activeBackgroundLayoutId : undefined
         }
         isExpanded={expandedId === option.id}
-        onHighlight={index => {
+        onHighlight={(index, event) => {
           onSetIsKeyboardNavigation(false);
-          onSetHighlightedIndex(index);
+          onSetHighlightedIndex(index, event);
         }}
         dropdownMenuRef={ref as RefObject<HTMLDivElement>}
       />
@@ -628,6 +637,9 @@ const ComboboxMenu = forwardRef<HTMLDivElement, ComboboxMenuProps>(
         applyOpenStyles={applyOpenStyles}
         dropDirection={dropDirection}
         portalStyle={portalStyle}
+        style={style}
+        className={className}
+        render={render}
         isPositionReady={isPositionReady}
         isKeyboardNavigation={isKeyboardNavigation}
         onMouseEnter={onMenuEnter}

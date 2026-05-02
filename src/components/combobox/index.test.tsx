@@ -8,7 +8,11 @@ import {
   it,
   vi,
 } from 'vite-plus/test';
-import type { ComboboxOpenChangeDetails } from '../../types';
+import type {
+  ComboboxInputValueChangeDetails,
+  ComboboxOpenChangeDetails,
+  ComboboxProps,
+} from '../../types';
 import FormField from '../form-field';
 import Combobox from './index';
 import { ComboboxPopup, ComboboxTrigger } from './exports';
@@ -126,8 +130,11 @@ function ControlledComboboxHarness({
         setOpen(nextOpen);
       }}
       inputValue={inputValue}
-      onInputValueChange={(nextInputValue: string) => {
-        onInputValueChange(nextInputValue);
+      onInputValueChange={(
+        nextInputValue: string,
+        details: ComboboxInputValueChangeDetails
+      ) => {
+        onInputValueChange(nextInputValue, details);
         setInputValue(nextInputValue);
       }}
       highlightedValue="beta"
@@ -191,6 +198,42 @@ function CompoundComboboxHarness() {
     >
       <ComboboxTrigger />
       <ComboboxPopup />
+    </Combobox>
+  );
+}
+
+function RenderPartComboboxHarness() {
+  const [value, setValue] = useState('');
+
+  return (
+    <Combobox
+      name="render_part_dropdown"
+      value={value}
+      options={[
+        { id: 'alpha', name: 'Alpha' },
+        { id: 'beta', name: 'Beta' },
+      ]}
+      placeholder="Pilih Render Part"
+      onChange={setValue}
+    >
+      <ComboboxTrigger
+        render={(props, state) => (
+          <button
+            {...props}
+            data-rendered-trigger=""
+            data-open-state={state.open ? 'open' : 'closed'}
+          />
+        )}
+      />
+      <ComboboxPopup
+        render={(props, state) => (
+          <div
+            {...props}
+            data-rendered-popup=""
+            data-open-state={state.open ? 'open' : 'closed'}
+          />
+        )}
+      />
     </Combobox>
   );
 }
@@ -430,9 +473,17 @@ describe('Combobox', () => {
       vi.advanceTimersByTime(200);
     });
 
-    expect(onOpenChange).toHaveBeenCalledWith(true, {
-      reason: 'trigger-press',
-    });
+    expect(onOpenChange).toHaveBeenCalledWith(
+      true,
+      expect.objectContaining({
+        reason: 'trigger-press',
+        event: expect.any(MouseEvent),
+        cancel: expect.any(Function),
+        allowPropagation: expect.any(Function),
+        isCanceled: false,
+        isPropagationAllowed: false,
+      })
+    );
     expect(
       screen
         .getByRole('option', { name: 'Beta' })
@@ -446,8 +497,88 @@ describe('Combobox', () => {
       fireEvent.change(searchInput, { target: { value: 'be' } });
     });
 
-    expect(onInputValueChange).toHaveBeenCalledWith('be');
+    expect(onInputValueChange).toHaveBeenCalledWith(
+      'be',
+      expect.objectContaining({
+        reason: 'input-change',
+        event: expect.any(Event),
+      })
+    );
     expect((searchInput as HTMLInputElement).value).toBe('be');
+  });
+
+  it('lets consumers cancel uncontrolled open changes', () => {
+    const onOpenChange = vi.fn(
+      (_nextOpen: boolean, details: ComboboxOpenChangeDetails) => {
+        details.cancel();
+      }
+    );
+
+    render(
+      <Combobox
+        name="cancel_open_dropdown"
+        value=""
+        options={[{ id: 'alpha', name: 'Alpha' }]}
+        placeholder="Pilih Cancel Open"
+        onChange={() => {}}
+        onOpenChange={onOpenChange}
+      />
+    );
+
+    act(() => {
+      fireEvent.click(
+        screen.getByRole('combobox', { name: 'Pilih Cancel Open' })
+      );
+      vi.advanceTimersByTime(200);
+    });
+
+    expect(onOpenChange).toHaveBeenCalledWith(
+      true,
+      expect.objectContaining({ reason: 'trigger-press', isCanceled: true })
+    );
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('passes cancelable value-change details and keeps the popup open when canceled', () => {
+    const onChange = vi.fn(
+      (
+        _nextValue: string,
+        details: Parameters<ComboboxProps['onChange']>[1]
+      ) => {
+        details.cancel();
+      }
+    );
+
+    render(
+      <Combobox
+        name="cancel_value_dropdown"
+        value="alpha"
+        options={[
+          { id: 'alpha', name: 'Alpha' },
+          { id: 'beta', name: 'Beta' },
+        ]}
+        placeholder="Pilih Cancel Value"
+        onChange={onChange}
+      />
+    );
+
+    const trigger = screen.getByRole('combobox', { name: /Alpha/ });
+    act(() => {
+      fireEvent.click(trigger);
+      vi.advanceTimersByTime(200);
+    });
+
+    act(() => {
+      fireEvent.click(screen.getByRole('option', { name: 'Beta' }));
+      vi.advanceTimersByTime(200);
+    });
+
+    expect(onChange).toHaveBeenCalledWith(
+      'beta',
+      expect.objectContaining({ reason: 'item-press', isCanceled: true })
+    );
+    expect(screen.getByRole('dialog')).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: /Alpha/ })).toBeTruthy();
   });
 
   it('uses a native required form control for empty required multi-selects', () => {
@@ -489,6 +620,91 @@ describe('Combobox', () => {
     expect(
       screen.getByRole('dialog', { name: 'Pilih Compound pilihan' })
     ).toBeTruthy();
+  });
+
+  it('supports render props on Base UI-like compound parts', () => {
+    render(<RenderPartComboboxHarness />);
+
+    const trigger = screen.getByRole('combobox', {
+      name: 'Pilih Render Part',
+    });
+
+    expect(trigger.getAttribute('data-rendered-trigger')).toBe('');
+    expect(trigger.getAttribute('data-open-state')).toBe('closed');
+
+    act(() => {
+      fireEvent.click(trigger);
+      vi.advanceTimersByTime(200);
+    });
+
+    expect(trigger.getAttribute('data-open-state')).toBe('open');
+    expect(document.querySelector('[data-rendered-popup]')).toBeTruthy();
+  });
+
+  it('stops Escape key propagation unless the event details allow it', () => {
+    const onParentKeyDown = vi.fn();
+
+    render(
+      <div role="presentation" onKeyDown={onParentKeyDown}>
+        <Combobox
+          name="escape_dropdown"
+          value="alpha"
+          options={[
+            { id: 'alpha', name: 'Alpha' },
+            { id: 'beta', name: 'Beta' },
+          ]}
+          placeholder="Pilih Escape"
+          onChange={() => {}}
+        />
+      </div>
+    );
+
+    const trigger = screen.getByRole('combobox', { name: /Alpha/ });
+    act(() => {
+      fireEvent.click(trigger);
+      vi.advanceTimersByTime(200);
+    });
+
+    fireEvent.keyDown(trigger, { key: 'Escape', code: 'Escape' });
+
+    expect(onParentKeyDown).not.toHaveBeenCalled();
+  });
+
+  it('allows Escape key propagation when requested from open-change details', () => {
+    const onParentKeyDown = vi.fn();
+
+    render(
+      <div role="presentation" onKeyDown={onParentKeyDown}>
+        <Combobox
+          name="escape_allow_dropdown"
+          value="alpha"
+          options={[
+            { id: 'alpha', name: 'Alpha' },
+            { id: 'beta', name: 'Beta' },
+          ]}
+          placeholder="Pilih Escape Allow"
+          onChange={() => {}}
+          onOpenChange={(
+            _nextOpen: boolean,
+            details: ComboboxOpenChangeDetails
+          ) => {
+            if (details.reason === 'escape-key') {
+              details.allowPropagation();
+            }
+          }}
+        />
+      </div>
+    );
+
+    const trigger = screen.getByRole('combobox', { name: /Alpha/ });
+    act(() => {
+      fireEvent.click(trigger);
+      vi.advanceTimersByTime(200);
+    });
+
+    fireEvent.keyDown(trigger, { key: 'Escape', code: 'Escape' });
+
+    expect(onParentKeyDown).toHaveBeenCalledTimes(1);
   });
 
   it('closes on Tab without blocking browser focus navigation', () => {

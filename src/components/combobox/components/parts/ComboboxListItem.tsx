@@ -1,3 +1,4 @@
+import type { CSSProperties, HTMLAttributes, ReactElement } from 'react';
 import OptionItem from '../OptionItem';
 import { useComboboxContext } from '../../hooks/useComboboxContext';
 import type { ComboboxOption } from '@/types';
@@ -5,9 +6,25 @@ import type { ComboboxOption } from '@/types';
 interface ComboboxListItemProps {
   option: ComboboxOption;
   index?: number;
+  className?: string;
+  style?: CSSProperties;
+  render?: (
+    props: HTMLAttributes<HTMLDivElement>,
+    state: {
+      selected: boolean;
+      highlighted: boolean;
+      disabled: boolean;
+    }
+  ) => ReactElement;
 }
 
-const ComboboxListItem = ({ option, index }: ComboboxListItemProps) => {
+const ComboboxListItem = ({
+  option,
+  index,
+  className,
+  style,
+  render,
+}: ComboboxListItemProps) => {
   const {
     filteredOptions,
     value,
@@ -40,11 +57,14 @@ const ComboboxListItem = ({ option, index }: ComboboxListItemProps) => {
       isHighlighted={highlightedIndex === resolvedIndex}
       suppressHighlightBackground={false}
       isExpanded={expandedId === option.id}
-      onHighlight={nextIndex => {
+      onHighlight={(nextIndex, event) => {
         onSetIsKeyboardNavigation(false);
-        onSetHighlightedIndex(nextIndex);
+        onSetHighlightedIndex(nextIndex, event);
       }}
       dropdownMenuRef={dropdownMenuRef}
+      className={className}
+      style={style}
+      render={render}
     />
   );
 };

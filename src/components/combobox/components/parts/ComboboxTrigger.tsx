@@ -1,7 +1,33 @@
+import type {
+  ButtonHTMLAttributes,
+  CSSProperties,
+  ForwardedRef,
+  ReactElement,
+} from 'react';
 import ComboboxButton from '../ComboboxButton';
 import { useComboboxContext } from '../../hooks/useComboboxContext';
 
-const ComboboxTrigger = () => {
+interface ComboboxTriggerProps {
+  className?: string;
+  style?: CSSProperties;
+  render?: (
+    props: ButtonHTMLAttributes<HTMLButtonElement> & {
+      ref: ForwardedRef<HTMLButtonElement>;
+    },
+    state: {
+      open: boolean;
+      disabled: boolean;
+      invalid: boolean;
+      placeholder: boolean;
+    }
+  ) => ReactElement;
+}
+
+const ComboboxTrigger = ({
+  className,
+  style,
+  render,
+}: ComboboxTriggerProps) => {
   const {
     buttonId,
     mode,
@@ -46,6 +72,9 @@ const ComboboxTrigger = () => {
       disabled={disabled}
       ariaLabel={ariaLabel}
       ariaLabelledBy={ariaLabelledBy}
+      className={className}
+      style={style}
+      render={render}
       onClick={onTriggerClick}
       onKeyDown={onTriggerKeyDown}
       onBlur={onTriggerBlur}

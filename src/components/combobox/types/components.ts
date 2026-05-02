@@ -7,6 +7,19 @@ export interface ComboboxMenuProps {
   isFrozen?: boolean;
   leaveTimeoutRef: RefObject<NodeJS.Timeout | null>;
   onSearchKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  className?: string;
+  style?: React.CSSProperties;
+  render?: (
+    props: React.HTMLAttributes<HTMLDivElement> & {
+      ref: React.ForwardedRef<HTMLDivElement>;
+    },
+    state: {
+      open: boolean;
+      closed: boolean;
+      frozen: boolean;
+      side: 'top' | 'bottom';
+    }
+  ) => React.ReactElement;
 }
 
 export interface OptionItemProps {
@@ -19,8 +32,21 @@ export interface OptionItemProps {
   suppressHighlightBackground: boolean;
   activeBackgroundLayoutId?: string;
   isExpanded: boolean;
-  onHighlight: (index: number) => void;
+  onHighlight: (
+    index: number,
+    event?: Event | React.SyntheticEvent<HTMLElement>
+  ) => void;
   dropdownMenuRef: RefObject<HTMLDivElement | null>;
+  className?: string;
+  style?: React.CSSProperties;
+  render?: (
+    props: React.HTMLAttributes<HTMLDivElement>,
+    state: {
+      selected: boolean;
+      highlighted: boolean;
+      disabled: boolean;
+    }
+  ) => React.ReactElement;
 }
 
 export interface SearchBarProps {

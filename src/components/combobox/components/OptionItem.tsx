@@ -15,6 +15,9 @@ const OptionItem: FC<OptionItemProps> = ({
   isExpanded,
   onHighlight,
   dropdownMenuRef,
+  className,
+  style,
+  render,
 }) => {
   const {
     withRadio = false,
@@ -46,6 +49,9 @@ const OptionItem: FC<OptionItemProps> = ({
       onSelect={onSelect}
       onHighlight={onHighlight}
       dropdownMenuRef={dropdownMenuRef}
+      className={className}
+      style={style}
+      render={render}
       onHoverDetailShow={onHoverDetailShow}
       onHoverDetailHide={onHoverDetailHide}
     />

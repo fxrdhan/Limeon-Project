@@ -1,5 +1,5 @@
 import { RefObject } from 'react';
-import type { ComboboxMode } from '@/types';
+import type { ComboboxMode, ComboboxOpenChangeDetails } from '@/types';
 
 export interface UseComboboxEffectsProps {
   isOpen: boolean;
@@ -10,7 +10,7 @@ export interface UseComboboxEffectsProps {
   setExpandedId: (id: string | null) => void;
   calculateComboboxPosition: () => void;
   manageFocusOnOpen: () => void;
-  handleFocusOut: () => void;
+  handleFocusOut: (event?: Event) => void;
   resetPosition: () => void;
   resetSearch: () => void;
   buttonRef: RefObject<HTMLButtonElement | null>;
@@ -18,8 +18,11 @@ export interface UseComboboxEffectsProps {
   // Hover-related props
   hoverToOpen: boolean;
   isClosing: boolean;
-  openThisCombobox: () => void;
-  actualCloseCombobox: () => void;
+  openThisCombobox: (details?: ComboboxOpenChangeDetails) => boolean;
+  actualCloseCombobox: (
+    force?: boolean,
+    details?: ComboboxOpenChangeDetails
+  ) => boolean;
 }
 
 export interface UseFocusManagementProps {
@@ -27,7 +30,7 @@ export interface UseFocusManagementProps {
   searchList: boolean;
   touched: boolean;
   setTouched: (touched: boolean) => void;
-  actualCloseCombobox: () => void;
+  actualCloseCombobox: (reasonOrDetails?: ComboboxOpenChangeDetails) => boolean;
   shouldKeepOpen?: () => boolean;
   shouldSkipOpenFocus?: () => boolean;
   dropdownRef: RefObject<HTMLDivElement | null>;

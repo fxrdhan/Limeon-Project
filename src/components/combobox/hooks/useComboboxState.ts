@@ -1,11 +1,13 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { COMBOBOX_CONSTANTS } from '../constants';
+import { createComboboxChangeDetails } from '../utils/eventDetails';
+import type { ComboboxOpenChangeDetails } from '@/types';
 
 interface UseComboboxStateOptions {
   shouldKeepOpen?: () => boolean;
   open?: boolean;
   defaultOpen?: boolean;
-  onOpenChange?: (open: boolean) => void;
+  onOpenChange?: (open: boolean, details: ComboboxOpenChangeDetails) => void;
 }
 
 export const useComboboxState = (options: UseComboboxStateOptions = {}) => {
@@ -18,19 +20,34 @@ export const useComboboxState = (options: UseComboboxStateOptions = {}) => {
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const setOpenState = useCallback(
-    (nextOpen: boolean) => {
+    (nextOpen: boolean, details?: ComboboxOpenChangeDetails) => {
+      const changeDetails =
+        details ?? createComboboxChangeDetails('none' as const);
+
+      onOpenChange?.(nextOpen, changeDetails);
+
+      if (changeDetails.isCanceled) {
+        return false;
+      }
+
       if (!isControlled) {
         setUncontrolledIsOpen(nextOpen);
       }
-      onOpenChange?.(nextOpen);
+
+      return true;
     },
     [isControlled, onOpenChange]
   );
 
   const actualCloseCombobox = useCallback(
-    (force = false) => {
+    (force = false, details?: ComboboxOpenChangeDetails) => {
       if (!force && shouldKeepOpen?.()) {
-        return;
+        return false;
+      }
+
+      const didChange = setOpenState(false, details);
+      if (!didChange) {
+        return false;
       }
 
       if (closeTimeoutRef.current) {
@@ -39,24 +56,33 @@ export const useComboboxState = (options: UseComboboxStateOptions = {}) => {
       }
 
       setIsClosing(true);
-      setOpenState(false);
       closeTimeoutRef.current = setTimeout(() => {
         setIsClosing(false);
         closeTimeoutRef.current = null;
       }, COMBOBOX_CONSTANTS.ANIMATION_DURATION);
+
+      return true;
     },
     [setOpenState, shouldKeepOpen]
   );
 
-  const openThisCombobox = useCallback(() => {
-    if (closeTimeoutRef.current) {
-      clearTimeout(closeTimeoutRef.current);
-      closeTimeoutRef.current = null;
-    }
+  const openThisCombobox = useCallback(
+    (details?: ComboboxOpenChangeDetails) => {
+      const didChange = setOpenState(true, details);
+      if (!didChange) {
+        return false;
+      }
 
-    setIsClosing(false);
-    setOpenState(true);
-  }, [setOpenState]);
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+        closeTimeoutRef.current = null;
+      }
+
+      setIsClosing(false);
+      return true;
+    },
+    [setOpenState]
+  );
 
   const toggleCombobox = useCallback(
     (e: React.MouseEvent) => {
@@ -66,9 +92,12 @@ export const useComboboxState = (options: UseComboboxStateOptions = {}) => {
         return;
       }
       if (isOpen) {
-        actualCloseCombobox(true);
+        actualCloseCombobox(
+          true,
+          createComboboxChangeDetails('trigger-press', e)
+        );
       } else {
-        openThisCombobox();
+        openThisCombobox(createComboboxChangeDetails('trigger-press', e));
       }
     },
     [isOpen, isClosing, actualCloseCombobox, openThisCombobox]

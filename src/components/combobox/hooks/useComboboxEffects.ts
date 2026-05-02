@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { COMBOBOX_CONSTANTS } from '../constants';
+import { createComboboxChangeDetails } from '../utils/eventDetails';
 import type { UseComboboxEffectsProps } from '../types';
 
 export const useComboboxEffects = ({
@@ -63,7 +64,7 @@ export const useComboboxEffects = ({
     // Only open on hover if explicitly enabled and not already open
     if (hoverToOpen && !isOpen && !isClosing) {
       hoverTimeoutRef.current = setTimeout(() => {
-        openThisCombobox();
+        openThisCombobox(createComboboxChangeDetails('trigger-hover' as const));
       }, COMBOBOX_CONSTANTS.HOVER_TIMEOUT);
     }
   }, [hoverToOpen, openThisCombobox, isOpen, isClosing]);

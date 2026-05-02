@@ -113,14 +113,18 @@ export interface ComboboxProps {
   defaultOpen?: boolean;
   onOpenChange?: (open: boolean, details: ComboboxOpenChangeDetails) => void;
   inputValue?: string;
-  onInputValueChange?: (value: string) => void;
+  onInputValueChange?: (
+    value: string,
+    details: ComboboxInputValueChangeDetails
+  ) => void;
   highlightedValue?: string;
   onHighlightedValueChange?: (
     value: string | undefined,
     details: ComboboxHighlightChangeDetails
   ) => void;
   tabIndex?: number;
-  onChange: (value: string) => void;
+  onChange: (value: string, details: ComboboxValueChangeDetails) => void;
+  onValueChange?: (value: string, details: ComboboxValueChangeDetails) => void;
   placeholder?: string;
   name: string;
   form?: string;
@@ -157,7 +161,11 @@ export interface CheckboxComboboxProps extends Omit<
   'value' | 'onChange' | 'withRadio'
 > {
   value: string[];
-  onChange: (value: string[]) => void;
+  onChange: (value: string[], details: ComboboxValueChangeDetails) => void;
+  onValueChange?: (
+    value: string[],
+    details: ComboboxValueChangeDetails
+  ) => void;
   withCheckbox: true;
 }
 ```
@@ -165,6 +173,8 @@ export interface CheckboxComboboxProps extends Omit<
 `withCheckbox` changes the `value` and `onChange` contract to arrays. `withRadio` only changes the visual affordance of single-select mode and does not change the value type.
 
 The `name` prop is mirrored to visually hidden native form input(s). Single-select mode renders one input with the selected id, while checkbox mode renders one input per selected id. Empty required checkbox mode renders one empty required input that remains eligible for native constraint validation.
+
+Change handlers receive Base UI-like `details` objects with `reason`, `event`, `cancel()`, `allowPropagation()`, `isCanceled`, and `isPropagationAllowed`. `cancel()` prevents the combobox from applying follow-up internal behavior for cancelable open, input, and value changes. Escape key propagation is stopped by default; call `details.allowPropagation()` in `onOpenChange` for `reason === 'escape-key'` when parent popups should also handle Escape.
 
 ### Compound Exports
 
@@ -192,10 +202,14 @@ These parts consume `ComboboxRoot` context and can be used as children when the 
   onChange={setSupplierId}
   options={suppliers}
 >
-  <ComboboxTrigger />
+  <ComboboxTrigger
+    render={(props, state) => <button {...props} data-open={state.open} />}
+  />
   <ComboboxPopup />
 </ComboboxRoot>
 ```
+
+`ComboboxTrigger`, `ComboboxPopup`, and `ComboboxListItem` accept `className`, `style`, and `render` props for Base UI-like root element composition.
 
 ## Defaults
 
@@ -464,7 +478,7 @@ Combobox handles keyboard input in the trigger, the search input, and the list c
 | `PageUp`      | Jump up by 5 items.                                                                                           |
 | `Enter`       | Select the highlighted option, or run `onAddNew(searchTerm)` when search returns no results.                  |
 | `Space`       | Select the highlighted option when the popup is open without a search input.                                  |
-| `Escape`      | Close the combobox and reset expanded text.                                                                   |
+| `Escape`      | Close the combobox, reset expanded text, and stop propagation unless `details.allowPropagation()` is called.  |
 | Printable key | If the menu is open and `searchList` is enabled, route the key to the search input.                           |
 
 When keyboard navigation is active, the cursor is hidden inside the combobox area and the list highlight uses a pinned frame so scroll animation does not make the highlight disappear.

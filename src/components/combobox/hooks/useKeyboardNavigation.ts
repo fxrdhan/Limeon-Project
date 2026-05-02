@@ -11,7 +11,8 @@ import {
   KEYBOARD_SCROLL_VISIBILITY_INSET,
 } from '@/components/shared/keyboard-pinned-highlight';
 import { KEYBOARD_KEYS, COMBOBOX_CONSTANTS, SEARCH_STATES } from '../constants';
-import type { ComboboxOpenChangeReason } from '@/types';
+import { createComboboxChangeDetails } from '../utils/eventDetails';
+import type { ComboboxOpenChangeDetails } from '@/types';
 
 interface UseKeyboardNavigationProps {
   isOpen: boolean;
@@ -21,9 +22,12 @@ interface UseKeyboardNavigationProps {
   searchState: string;
   searchTerm: string;
   debouncedSearchTerm: string;
-  onSelect: (optionId: string) => void;
+  onSelect: (
+    optionId: string,
+    event?: React.KeyboardEvent<HTMLElement>
+  ) => void;
   onAddNew?: (term: string) => void;
-  onCloseCombobox: (reason?: ComboboxOpenChangeReason) => void;
+  onCloseCombobox: (details?: ComboboxOpenChangeDetails) => boolean;
   onCloseValidation: () => void;
   autoHighlightOnOpen?: boolean;
   optionsContainerRef: RefObject<HTMLDivElement>;
@@ -288,7 +292,7 @@ export const useKeyboardNavigation = ({
 
       if (e.key === KEYBOARD_KEYS.TAB) {
         clearPendingHighlight();
-        onCloseCombobox('focus-out');
+        onCloseCombobox(createComboboxChangeDetails('focus-out' as const, e));
         setExpandedId(null);
         setIsKeyboardNavigation(false);
         return;
@@ -353,7 +357,7 @@ export const useKeyboardNavigation = ({
           const activeIndex =
             keyboardHighlightIndexRef.current ?? highlightedIndex;
           if (activeIndex >= 0 && activeIndex < items.length) {
-            onSelect(items[activeIndex].id);
+            onSelect(items[activeIndex].id, e);
           } else if (
             (searchState === SEARCH_STATES.NOT_FOUND ||
               (searchState === SEARCH_STATES.TYPING &&
@@ -370,13 +374,19 @@ export const useKeyboardNavigation = ({
           const activeIndex =
             keyboardHighlightIndexRef.current ?? highlightedIndex;
           if (activeIndex >= 0 && activeIndex < items.length) {
-            onSelect(items[activeIndex].id);
+            onSelect(items[activeIndex].id, e);
           }
           return;
         },
         [KEYBOARD_KEYS.ESCAPE]: () => {
-          onCloseCombobox('escape-key');
-          setExpandedId(null);
+          const details = createComboboxChangeDetails('escape-key' as const, e);
+          onCloseCombobox(details);
+          if (!details.isPropagationAllowed) {
+            (e as { stopPropagation?: () => void }).stopPropagation?.();
+          }
+          if (!details.isCanceled) {
+            setExpandedId(null);
+          }
           return;
         },
       };

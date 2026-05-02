@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { COMBOBOX_CONSTANTS } from '../constants';
+import { createComboboxChangeDetails } from '../utils/eventDetails';
 import type { UseFocusManagementProps } from '../types';
 
 export const useFocusManagement = ({
@@ -65,38 +66,43 @@ export const useFocusManagement = ({
     shouldSkipOpenFocus,
   ]);
 
-  const handleFocusOut = useCallback(() => {
-    setTimeout(() => {
-      const activeElement = document.activeElement;
-      const isFocusInCombobox =
-        dropdownRef.current?.contains(activeElement) ||
-        dropdownMenuRef.current?.contains(activeElement);
+  const handleFocusOut = useCallback(
+    (event?: Event) => {
+      setTimeout(() => {
+        const activeElement = document.activeElement;
+        const isFocusInCombobox =
+          dropdownRef.current?.contains(activeElement) ||
+          dropdownMenuRef.current?.contains(activeElement);
 
-      if (shouldKeepOpen?.()) {
-        if (!touched) {
-          setTouched(true);
+        if (shouldKeepOpen?.()) {
+          if (!touched) {
+            setTouched(true);
+          }
+          return;
         }
-        return;
-      }
 
-      if (!isFocusInCombobox) {
-        if (isOpen) {
-          actualCloseCombobox();
+        if (!isFocusInCombobox) {
+          if (isOpen) {
+            actualCloseCombobox(
+              createComboboxChangeDetails('focus-out' as const, event)
+            );
+          }
+          if (!touched) {
+            setTouched(true);
+          }
         }
-        if (!touched) {
-          setTouched(true);
-        }
-      }
-    }, 0);
-  }, [
-    isOpen,
-    actualCloseCombobox,
-    shouldKeepOpen,
-    touched,
-    setTouched,
-    dropdownRef,
-    dropdownMenuRef,
-  ]);
+      }, 0);
+    },
+    [
+      isOpen,
+      actualCloseCombobox,
+      shouldKeepOpen,
+      touched,
+      setTouched,
+      dropdownRef,
+      dropdownMenuRef,
+    ]
+  );
 
   useEffect(() => clearPendingFocus, [clearPendingFocus]);
 

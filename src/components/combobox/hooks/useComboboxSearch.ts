@@ -1,13 +1,22 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import type { SyntheticEvent } from 'react';
 import { COMBOBOX_CONSTANTS, SEARCH_STATES, SearchState } from '../constants';
 import { filterAndSortOptions } from '../utils/comboboxUtils';
-import type { ComboboxOption } from '@/types';
+import { createComboboxChangeDetails } from '../utils/eventDetails';
+import type {
+  ComboboxInputValueChangeDetails,
+  ComboboxInputValueChangeReason,
+  ComboboxOption,
+} from '@/types';
 
 export const useComboboxSearch = (
   options: ComboboxOption[],
   searchList: boolean,
   inputValue?: string,
-  onInputValueChange?: (value: string) => void
+  onInputValueChange?: (
+    value: string,
+    details: ComboboxInputValueChangeDetails
+  ) => void
 ) => {
   const isControlled = inputValue !== undefined;
   const [uncontrolledSearchTerm, setUncontrolledSearchTerm] = useState('');
@@ -56,11 +65,21 @@ export const useComboboxSearch = (
   }, [derivedSearchState]);
 
   const updateSearchTerm = useCallback(
-    (newValue: string) => {
+    (
+      newValue: string,
+      reason: ComboboxInputValueChangeReason = 'input-change',
+      event?: Event | SyntheticEvent<any>
+    ) => {
+      const details = createComboboxChangeDetails(reason, event);
+      onInputValueChange?.(newValue, details);
+
+      if (details.isCanceled) {
+        return false;
+      }
+
       if (!isControlled) {
         setUncontrolledSearchTerm(newValue);
       }
-      onInputValueChange?.(newValue);
       setSearchState(
         newValue.trim() === ''
           ? SEARCH_STATES.IDLE
@@ -68,24 +87,36 @@ export const useComboboxSearch = (
             ? SEARCH_STATES.TYPING
             : searchState
       );
+
+      return true;
     },
     [isControlled, onInputValueChange, searchState]
   );
 
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      updateSearchTerm(e.target.value);
+      updateSearchTerm(e.target.value, 'input-change', e);
     },
     [updateSearchTerm]
   );
 
-  const resetSearch = useCallback(() => {
-    if (!isControlled) {
-      setUncontrolledSearchTerm('');
-    }
-    onInputValueChange?.('');
-    setSearchState(SEARCH_STATES.IDLE);
-  }, [isControlled, onInputValueChange]);
+  const resetSearch = useCallback(
+    (event?: Event | SyntheticEvent<any>) => {
+      const details = createComboboxChangeDetails('reset' as const, event);
+      onInputValueChange?.('', details);
+
+      if (details.isCanceled) {
+        return false;
+      }
+
+      if (!isControlled) {
+        setUncontrolledSearchTerm('');
+      }
+      setSearchState(SEARCH_STATES.IDLE);
+      return true;
+    },
+    [isControlled, onInputValueChange]
+  );
 
   const updateSearchState = useCallback((state: SearchState) => {
     setSearchState(state);

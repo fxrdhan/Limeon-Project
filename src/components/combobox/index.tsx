@@ -5,12 +5,15 @@ import React, {
   useEffect,
   useState,
   useId,
+  SyntheticEvent,
 } from 'react';
 import type {
   ComboboxProps,
   CheckboxComboboxProps,
   ComboboxHighlightChangeReason,
   ComboboxOpenChangeReason,
+  ComboboxOpenChangeDetails,
+  ComboboxValueChangeDetails,
 } from '@/types';
 import ValidationOverlay from '@/components/validation-overlay';
 import ComboboxButton from './components/ComboboxButton';
@@ -30,6 +33,7 @@ import { useScrollManagement } from './hooks/useScrollManagement';
 import { useComboboxEffects } from './hooks/useComboboxEffects';
 import { useHoverDetail } from './hooks/useHoverDetail';
 import { KEYBOARD_KEYS } from './constants';
+import { createComboboxChangeDetails } from './utils/eventDetails';
 
 const COMBOBOX_OPEN_EVENT = 'pharmasys:combobox-open';
 
@@ -141,19 +145,10 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
   const suppressFocusOnNextOpenRef = useRef(false);
   const previousMenuFrozenRef = useRef(false);
   const frozenValueRef = useRef<string | null>(null);
-  const openChangeReasonRef = useRef<ComboboxOpenChangeReason>('none');
   const notifiedHighlightedValueRef = useRef<string | undefined>(undefined);
   const [isLocallyFrozen, setIsLocallyFrozen] = useState(false);
 
   // Hooks
-  const handleOpenChange = useCallback(
-    (nextOpen: boolean) => {
-      onOpenChange?.(nextOpen, { reason: openChangeReasonRef.current });
-      openChangeReasonRef.current = 'none';
-    },
-    [onOpenChange]
-  );
-
   const shouldKeepComboboxOpen = useCallback(
     () => persistOpen || pinnedOpenRef.current,
     [persistOpen]
@@ -171,12 +166,11 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
     setApplyOpenStyles,
     openThisCombobox,
     actualCloseCombobox,
-    toggleCombobox,
   } = useComboboxState({
     shouldKeepOpen: shouldKeepComboboxOpen,
     open,
     defaultOpen,
-    onOpenChange: handleOpenChange,
+    onOpenChange,
   });
   const isMenuFrozen = freezePersistedMenu || isLocallyFrozen;
   const effectiveIsOpen = isOpen || shouldKeepComboboxOpen();
@@ -192,43 +186,62 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
   }, []);
 
   const closeComboboxAndReleasePin = useCallback(
-    (reason: ComboboxOpenChangeReason = 'none') => {
-      openChangeReasonRef.current = reason;
-      onPersistOpenClear?.();
-      releasePinnedOpen();
-      actualCloseCombobox(true);
+    (
+      reasonOrDetails:
+        | ComboboxOpenChangeReason
+        | ComboboxOpenChangeDetails = 'none',
+      event?: Event | SyntheticEvent<any>
+    ) => {
+      const details =
+        typeof reasonOrDetails === 'string'
+          ? createComboboxChangeDetails(reasonOrDetails, event)
+          : reasonOrDetails;
+      const didClose = actualCloseCombobox(true, details);
+
+      if (didClose) {
+        onPersistOpenClear?.();
+        releasePinnedOpen();
+      }
+
+      return didClose;
     },
     [actualCloseCombobox, onPersistOpenClear, releasePinnedOpen]
   );
 
-  const openComboboxExclusively = useCallback(() => {
-    openChangeReasonRef.current = 'trigger-press';
-    document.dispatchEvent(
-      new CustomEvent(COMBOBOX_OPEN_EVENT, { detail: { instanceId } })
-    );
-    openThisCombobox();
-  }, [instanceId, openThisCombobox]);
+  const openComboboxExclusively = useCallback(
+    (
+      reasonOrDetails:
+        | ComboboxOpenChangeReason
+        | ComboboxOpenChangeDetails = 'trigger-press',
+      event?: Event | SyntheticEvent<any>
+    ) => {
+      const details =
+        typeof reasonOrDetails === 'string'
+          ? createComboboxChangeDetails(reasonOrDetails, event)
+          : reasonOrDetails;
+      const didOpen = openThisCombobox(details);
 
-  const handleToggleCombobox = useCallback(
-    (e: React.MouseEvent) => {
-      if (effectiveIsOpen) {
-        onPersistOpenClear?.();
-        releasePinnedOpen();
-      } else {
+      if (didOpen) {
         document.dispatchEvent(
           new CustomEvent(COMBOBOX_OPEN_EVENT, { detail: { instanceId } })
         );
       }
-      openChangeReasonRef.current = 'trigger-press';
-      toggleCombobox(e);
+
+      return didOpen;
     },
-    [
-      effectiveIsOpen,
-      instanceId,
-      onPersistOpenClear,
-      releasePinnedOpen,
-      toggleCombobox,
-    ]
+    [instanceId, openThisCombobox]
+  );
+
+  const handleToggleCombobox = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      if (effectiveIsOpen) {
+        closeComboboxAndReleasePin('trigger-press', e);
+      } else {
+        openComboboxExclusively('trigger-press', e);
+      }
+    },
+    [closeComboboxAndReleasePin, effectiveIsOpen, openComboboxExclusively]
   );
 
   const {
@@ -354,14 +367,21 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
   // scrollState and checkScroll now handled by useScrollManagement
 
   const handleSelect = useCallback(
-    (optionId: string) => {
+    (optionId: string, event?: Event | SyntheticEvent<any>) => {
+      const details: ComboboxValueChangeDetails = createComboboxChangeDetails(
+        'item-press',
+        event
+      );
+
       if (withCheckbox && isCheckboxMode(allProps)) {
         // Multiple selection for checkbox mode
         const currentValues = allProps.value;
         const newValues = currentValues.includes(optionId)
           ? currentValues.filter(id => id !== optionId)
           : [...currentValues, optionId];
-        allProps.onChange(newValues);
+        allProps.onChange(newValues, details);
+        allProps.onValueChange?.(newValues, details);
+        if (details.isCanceled) return;
         if (newValues.length > 0) {
           handleCloseValidation();
         }
@@ -369,12 +389,14 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
       } else {
         // Single selection for radio/default mode
         const singleProps = allProps as ComboboxProps;
-        singleProps.onChange(optionId);
+        singleProps.onChange(optionId, details);
+        singleProps.onValueChange?.(optionId, details);
+        if (details.isCanceled) return;
         if (optionId && optionId.trim() !== '') {
           handleCloseValidation();
         }
-        closeComboboxAndReleasePin('item-press');
-        resetSearch();
+        closeComboboxAndReleasePin('item-press', event);
+        resetSearch(event);
         setTimeout(() => buttonRef.current?.focus(), 150);
       }
     },
@@ -417,7 +439,11 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
       : undefined;
 
   const notifyHighlightedValueChange = useCallback(
-    (index: number, reason: ComboboxHighlightChangeReason) => {
+    (
+      index: number,
+      reason: ComboboxHighlightChangeReason,
+      event?: Event | SyntheticEvent<any>
+    ) => {
       if (!onHighlightedValueChange) return;
 
       const highlightedOption = index >= 0 ? filteredOptions[index] : undefined;
@@ -428,10 +454,10 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
       }
 
       notifiedHighlightedValueRef.current = nextHighlightedValue;
-      onHighlightedValueChange(nextHighlightedValue, {
-        reason,
-        index,
-      });
+      onHighlightedValueChange(
+        nextHighlightedValue,
+        Object.assign(createComboboxChangeDetails(reason, event), { index })
+      );
     },
     [filteredOptions, onHighlightedValueChange]
   );
@@ -471,7 +497,7 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
         .detail?.instanceId;
 
       if (peerInstanceId === instanceId || !effectiveIsOpen) return;
-      closeComboboxAndReleasePin('none');
+      closeComboboxAndReleasePin('none', event);
     };
 
     document.addEventListener(COMBOBOX_OPEN_EVENT, handlePeerOpen);
@@ -486,7 +512,7 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
     if (isMenuFrozen) return;
 
     suppressFocusOnNextOpenRef.current = true;
-    openComboboxExclusively();
+    openComboboxExclusively('none');
   }, [
     isMenuFrozen,
     isClosing,
@@ -513,7 +539,7 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
         Boolean(target.closest('[role="dialog"][aria-modal="true"]'));
 
       if (!isInsideCombobox && !isInsideModal) {
-        closeComboboxAndReleasePin('outside-press');
+        closeComboboxAndReleasePin('outside-press', event);
       }
     };
 
@@ -702,7 +728,8 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
       if (!shouldOpen) return false;
 
       e.preventDefault();
-      openComboboxExclusively();
+      const didOpen = openComboboxExclusively('trigger-press', e);
+      if (!didOpen) return true;
       setIsKeyboardNavigation(true);
 
       if (filteredOptions.length === 0) {
@@ -749,7 +776,7 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
         if (enableHoverDetail) {
           hideHoverDetail();
         }
-        updateSearchTerm(`${searchTerm}${e.key}`);
+        updateSearchTerm(`${searchTerm}${e.key}`, 'typeahead', e);
         searchInputRef.current?.focus();
         queueMicrotask(() => {
           const input = searchInputRef.current;
@@ -828,9 +855,12 @@ function Combobox(allProps: ComboboxProps | CheckboxComboboxProps) {
     onAddNew: handleAddNewPreservingCombobox,
     onSearchChange: handleSearchChangeWithHoverReset,
     onKeyDown: handleComboboxKeyDown,
-    onSetHighlightedIndex: (index: number) => {
+    onSetHighlightedIndex: (
+      index: number,
+      event?: Event | SyntheticEvent<any>
+    ) => {
       setHighlightedIndex(index);
-      notifyHighlightedValueChange(index, 'pointer');
+      notifyHighlightedValueChange(index, 'pointer', event);
     },
     onSetIsKeyboardNavigation: setIsKeyboardNavigation,
     onMenuEnter: handleMenuEnter,
