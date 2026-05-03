@@ -11,6 +11,12 @@ These instructions apply to `/home/fxrdhan/Documents/PharmaSys`.
 - Legacy script names such as `dev:vite` are wrappers around `vp`, not plain Vite CLI usage.
 - Do not call raw `tsc`, `vite`, or `vitest` unless the user explicitly asks for it.
 
+# File Sync
+
+- Use `rsync` for local or remote file synchronization when copying directory trees, preserving metadata, or syncing only changed files is useful.
+- Prefer SSH-backed `rsync` for remote transfers.
+- Check available options with `rsync --help` when the exact flags are not already clear.
+
 # External Research
 
 - Always use Exa MCP for web search and page scraping.
