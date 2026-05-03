@@ -45,6 +45,7 @@ These instructions apply to `/home/fxrdhan/Documents/PharmaSys`.
 - Use `rg` first for fast text search and broad codebase discovery.
 - Use the `ts-lsp-goto-definition` skill when you need the real TypeScript definition for a symbol, especially across path aliases, re-exports, overloads, or same-name text matches.
 - Use the `ts-lsp-call-hierarchy` skill when you need semantic caller/callee answers such as "who calls this?" or "what does this call?" instead of search-based guesses.
+- Use the `ts-lsp-rename-symbol` skill when you need semantic TypeScript/JavaScript symbol rename edits instead of text replacement.
 - Prefer LSP results over text matches when refactoring, tracing imports, or reasoning about TypeScript symbol ownership.
 
 # Implementation Scope
