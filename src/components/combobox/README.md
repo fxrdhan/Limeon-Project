@@ -62,11 +62,13 @@ Available parts:
 - `inputValue`, `defaultInputValue`, `onInputValueChange`
 - `highlightedItem`, `onItemHighlighted`
 - `filter`, `limit`, `locale`
-- `itemToStringLabel`, `itemToStringValue`, `isItemEqualToValue`
+- `itemToStringLabel`, `itemToStringValue`, `isItemEqualToValue`, `isItemDisabled`
 - `name`, `form`, `disabled`, `readOnly`, `required`
 - `modal`, `autoHighlight`, `highlightItemOnHover`, `loopFocus`
 
 Change callbacks receive BaseUI-style details with `reason`, `event`, `trigger`, `cancel()`, and propagation state. Calling `cancel()` prevents the primitive from committing that state change.
+
+`autoHighlight` defaults to `false` in the primitive. Presets can opt into select-like behavior explicitly. Item values are not inspected for app-specific flags by default; pass `isItemDisabled` or use `Combobox.Item disabled` when an item should not be selectable.
 
 `Combobox.Positioner` defaults to collision-aware positioning. It opens below the trigger when there is room, flips above when the lower viewport space is constrained, and exposes `data-side="top | bottom"` on the positioner and popup. Use `side="top"` or `side="bottom"` only when a fixed side is required.
 
