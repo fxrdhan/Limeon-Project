@@ -1,7 +1,3 @@
-# Project Instructions
-
-These instructions apply to `/home/fxrdhan/Documents/PharmaSys`.
-
 # Runtime and Tooling
 
 - Use Bun as the runtime environment and package manager for this project.
