@@ -294,13 +294,18 @@ export function PharmaComboboxSelect<Item>({
     [itemToStringLabel, itemToStringValue]
   );
   const runItemHoverDetail = useCallback(
-    (item: Item, element: HTMLElement) => {
+    (
+      item: Item,
+      element: HTMLElement,
+      options: { immediate?: boolean } = {}
+    ) => {
       if (!hoverDetailEnabled) return;
 
       handleItemHover(
         itemToStringValue(item),
         element,
-        getItemHoverDetailData(item)
+        getItemHoverDetailData(item),
+        options
       );
     },
     [
@@ -363,7 +368,9 @@ export function PharmaComboboxSelect<Item>({
     if (!hoverTarget || isDisabledItem(hoverTarget.item)) return;
 
     setVisualHighlightedValue(hoverTarget.item);
-    runItemHoverDetail(hoverTarget.item, hoverTarget.element);
+    runItemHoverDetail(hoverTarget.item, hoverTarget.element, {
+      immediate: true,
+    });
   }, [getPointerHoverTarget, runItemHoverDetail]);
   const handleListScroll = useCallback(() => {
     if (!hoverDetailEnabled) return;

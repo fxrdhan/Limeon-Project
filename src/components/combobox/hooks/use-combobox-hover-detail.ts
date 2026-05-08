@@ -6,6 +6,7 @@ import type {
 } from '@/components/combobox/internal-types';
 
 const hoverDetailHideDelay = 300;
+const hoverDetailSwitchDelay = 80;
 
 const getHoverDetailPosition = (
   element: HTMLElement
@@ -103,6 +104,7 @@ export const useComboboxHoverDetail = ({
   const [data, setData] = useState<HoverDetailData | null>(null);
   const showTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const switchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const clearDataTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null
   );
@@ -117,6 +119,10 @@ export const useComboboxHoverDetail = ({
     if (hideTimeoutRef.current) {
       clearTimeout(hideTimeoutRef.current);
       hideTimeoutRef.current = null;
+    }
+    if (switchTimeoutRef.current) {
+      clearTimeout(switchTimeoutRef.current);
+      switchTimeoutRef.current = null;
     }
     if (clearDataTimeoutRef.current) {
       clearTimeout(clearDataTimeoutRef.current);
@@ -146,6 +152,25 @@ export const useComboboxHoverDetail = ({
     [onFetchData]
   );
 
+  const commitHoverDetail = useCallback(
+    (
+      itemId: string,
+      element: HTMLElement,
+      itemData?: ComboboxHoverDetailSourceData
+    ) => {
+      if (currentItemIdRef.current !== itemId) return;
+
+      isPortalShownRef.current = true;
+      setPosition(getHoverDetailPosition(element));
+      setIsVisible(true);
+      if (itemData) {
+        setData(getHoverDetailData(itemId, itemData));
+      }
+      void fetchHoverDetail(itemId);
+    },
+    [fetchHoverDetail]
+  );
+
   const handleItemHover = useCallback(
     (
       itemId: string,
@@ -157,18 +182,21 @@ export const useComboboxHoverDetail = ({
 
       clearHoverDetailTimeouts();
       currentItemIdRef.current = itemId;
-      setPosition(getHoverDetailPosition(element));
 
-      if (isPortalShownRef.current || options.immediate) {
-        isPortalShownRef.current = true;
-        setIsVisible(true);
-        if (itemData) {
-          setData(getHoverDetailData(itemId, itemData));
-        }
-        void fetchHoverDetail(itemId);
+      if (options.immediate) {
+        commitHoverDetail(itemId, element, itemData);
         return;
       }
 
+      if (isPortalShownRef.current) {
+        switchTimeoutRef.current = setTimeout(() => {
+          switchTimeoutRef.current = null;
+          commitHoverDetail(itemId, element, itemData);
+        }, hoverDetailSwitchDelay);
+        return;
+      }
+
+      setPosition(getHoverDetailPosition(element));
       if (itemData) {
         setData(getHoverDetailData(itemId, itemData));
       }
@@ -176,12 +204,10 @@ export const useComboboxHoverDetail = ({
       showTimeoutRef.current = setTimeout(() => {
         if (currentItemIdRef.current !== itemId) return;
 
-        isPortalShownRef.current = true;
-        setIsVisible(true);
-        void fetchHoverDetail(itemId);
+        commitHoverDetail(itemId, element, itemData);
       }, hoverDelay);
     },
-    [clearHoverDetailTimeouts, fetchHoverDetail, hoverDelay, isEnabled]
+    [clearHoverDetailTimeouts, commitHoverDetail, hoverDelay, isEnabled]
   );
 
   const handleItemLeave = useCallback(() => {

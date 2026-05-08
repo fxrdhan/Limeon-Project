@@ -392,6 +392,64 @@ describe('Combobox app presets', () => {
     });
   });
 
+  it('coalesces rapid hover detail switches to the final option', async () => {
+    vi.useFakeTimers();
+    const onFetchHoverDetail = vi.fn(async (id: string) => ({
+      id,
+      name: `Supplier ${id.toUpperCase()}`,
+      description: `Detail ${id}`,
+    }));
+
+    try {
+      render(
+        <PharmaComboboxSelect
+          name="supplier_id"
+          items={[
+            { id: 'a', name: 'Supplier A' },
+            { id: 'b', name: 'Supplier B' },
+            { id: 'c', name: 'Supplier C' },
+          ]}
+          value={null}
+          onValueChange={() => {}}
+          itemToStringLabel={item => item.name}
+          itemToStringValue={item => item.id}
+          hoverDetail={{ enabled: true, delay: 0 }}
+          onFetchHoverDetail={onFetchHoverDetail}
+        />
+      );
+
+      fireEvent.click(screen.getByRole('combobox', { name: /pilih/i }));
+      const supplierA = screen.getByRole('option', { name: /supplier a/i });
+      const supplierB = screen.getByRole('option', { name: /supplier b/i });
+      const supplierC = screen.getByRole('option', { name: /supplier c/i });
+
+      fireEvent.mouseEnter(supplierA);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0);
+      });
+      expect(onFetchHoverDetail).toHaveBeenCalledWith('a');
+
+      onFetchHoverDetail.mockClear();
+      fireEvent.mouseEnter(supplierB);
+      fireEvent.mouseEnter(supplierC);
+
+      expect(onFetchHoverDetail).not.toHaveBeenCalled();
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(79);
+      });
+      expect(onFetchHoverDetail).not.toHaveBeenCalled();
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1);
+      });
+      expect(onFetchHoverDetail).toHaveBeenCalledTimes(1);
+      expect(onFetchHoverDetail).toHaveBeenCalledWith('c');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('defers hover detail content changes until list scrolling settles', async () => {
     vi.useFakeTimers();
     const onFetchHoverDetail = vi.fn(async (id: string) => ({
