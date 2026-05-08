@@ -282,6 +282,52 @@ describe('Combobox app presets', () => {
     expect(screen.getByRole('option', { name: /supplier a/i })).toBeTruthy();
   });
 
+  it('moves and preserves the visual highlight while hovering options', async () => {
+    render(
+      <PharmaComboboxSelect
+        name="supplier_id"
+        items={[
+          { id: 'a', name: 'Supplier A' },
+          { id: 'b', name: 'Supplier B' },
+        ]}
+        value={null}
+        onValueChange={() => {}}
+        itemToStringLabel={supplier => supplier.name}
+        itemToStringValue={supplier => supplier.id}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: /pilih/i }));
+    const supplierA = screen.getByRole('option', { name: /supplier a/i });
+    const supplierB = screen.getByRole('option', { name: /supplier b/i });
+
+    await waitFor(() => {
+      expect(
+        supplierA.querySelector('[data-pharma-combobox-highlight]')
+      ).toBeTruthy();
+    });
+
+    fireEvent.mouseEnter(supplierB);
+    expect(
+      supplierA.querySelector('[data-pharma-combobox-highlight]')
+    ).toBeNull();
+    expect(
+      supplierB.querySelector('[data-pharma-combobox-highlight]')
+    ).toBeTruthy();
+
+    fireEvent.pointerLeave(screen.getByRole('listbox'));
+    fireEvent.mouseLeave(screen.getByRole('listbox'));
+
+    await waitFor(() => {
+      expect(
+        supplierA.querySelector('[data-pharma-combobox-highlight]')
+      ).toBeNull();
+      expect(
+        supplierB.querySelector('[data-pharma-combobox-highlight]')
+      ).toBeTruthy();
+    });
+  });
+
   it('keeps searchable preset input when a controlled popup remains open', () => {
     const onOpenChange = vi.fn();
     render(

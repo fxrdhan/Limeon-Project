@@ -5,6 +5,7 @@ export type ComboboxHoverDetailPosition = {
   left: number;
   direction: 'left' | 'right';
   anchorCenterY: number;
+  maxWidth: number;
 };
 
 export type ComboboxHoverDetailGeometry = {

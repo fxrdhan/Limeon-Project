@@ -7,6 +7,7 @@ import React, {
   useState,
 } from 'react';
 import { Combobox } from '@base-ui/react/combobox';
+import type { ComboboxRootProps } from '@base-ui/react/combobox';
 import { motion } from 'motion/react';
 import {
   TbCheck,
@@ -25,6 +26,17 @@ import ComboboxHoverDetailPopover from './components/combobox-hover-detail-popov
 import { useComboboxHoverDetail } from './hooks/use-combobox-hover-detail';
 
 type IndicatorKind = 'check' | 'radio' | 'checkbox' | 'none';
+
+type RootWithAutoHighlightProps<Item> = Omit<
+  ComboboxRootProps<Item>,
+  'autoHighlight'
+> & {
+  autoHighlight?: boolean | 'always';
+};
+
+const ComboboxRootWithAutoHighlight = Combobox.Root as <Item>(
+  props: RootWithAutoHighlightProps<Item>
+) => React.JSX.Element;
 
 export interface PharmaComboboxSelectProps<Item> {
   id?: string;
@@ -151,6 +163,8 @@ export function PharmaComboboxSelect<Item>({
   const [inputValue, setInputValue] = useState('');
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const [blurred, setBlurred] = useState(false);
+  const [visualHighlightedValue, setVisualHighlightedValue] =
+    useState<Item | null>(null);
   const actualOpen = open ?? uncontrolledOpen;
   const showValidation =
     validation?.enabled && required && blurred && value == null;
@@ -201,6 +215,24 @@ export function PharmaComboboxSelect<Item>({
         ? -1
         : visibleItems.findIndex(item => isSameItem(item, selectedValue)),
     [isSameItem, selectedValue, visibleItems]
+  );
+  const firstHighlightableVisibleItem = useMemo(
+    () => visibleItems.find(item => !isDisabledItem(item)) ?? null,
+    [visibleItems]
+  );
+  const isItemVisibleAndEnabled = useCallback(
+    (targetItem: Item) =>
+      visibleItems.some(
+        item => isSameItem(item, targetItem) && !isDisabledItem(item)
+      ),
+    [isSameItem, visibleItems]
+  );
+  const isItemVisuallyHighlighted = useCallback(
+    (item: Item, baseHighlighted: boolean) =>
+      visualHighlightedValue == null
+        ? baseHighlighted
+        : isSameItem(item, visualHighlightedValue),
+    [isSameItem, visualHighlightedValue]
   );
   const isOpenControlled = open !== undefined;
   const controlName =
@@ -256,6 +288,7 @@ export function PharmaComboboxSelect<Item>({
       setUncontrolledOpen(nextOpen);
       if (!nextOpen) {
         hideHoverDetail();
+        setVisualHighlightedValue(null);
         if (!isOpenControlled) setInputValue('');
       }
       onOpenChange?.(nextOpen);
@@ -266,6 +299,38 @@ export function PharmaComboboxSelect<Item>({
   useEffect(() => {
     if (open === false) setInputValue('');
   }, [open]);
+
+  useEffect(() => {
+    if (!actualOpen) {
+      setVisualHighlightedValue(null);
+      return;
+    }
+
+    if (
+      visualHighlightedValue &&
+      isItemVisibleAndEnabled(visualHighlightedValue)
+    ) {
+      return;
+    }
+
+    const selectedVisibleItem =
+      selectedVisibleIndex >= 0
+        ? (visibleItems[selectedVisibleIndex] ?? null)
+        : null;
+
+    setVisualHighlightedValue(
+      selectedVisibleItem && !isDisabledItem(selectedVisibleItem)
+        ? selectedVisibleItem
+        : firstHighlightableVisibleItem
+    );
+  }, [
+    actualOpen,
+    firstHighlightableVisibleItem,
+    isItemVisibleAndEnabled,
+    selectedVisibleIndex,
+    visibleItems,
+    visualHighlightedValue,
+  ]);
 
   useEffect(() => {
     if (!actualOpen || selectedVisibleIndex < 0) return undefined;
@@ -294,7 +359,7 @@ export function PharmaComboboxSelect<Item>({
           {controlName}
         </span>
       ) : null}
-      <Combobox.Root
+      <ComboboxRootWithAutoHighlight<Item>
         items={items}
         value={selectedValue}
         onValueChange={nextValue => {
@@ -309,6 +374,16 @@ export function PharmaComboboxSelect<Item>({
           setInputValue(nextValue);
           hideHoverDetail();
         }}
+        onItemHighlighted={(nextHighlighted, details) => {
+          if (
+            nextHighlighted !== undefined &&
+            (details.reason === 'keyboard' || details.reason === 'pointer')
+          ) {
+            setVisualHighlightedValue(nextHighlighted);
+          } else if (details.reason === 'keyboard') {
+            setVisualHighlightedValue(null);
+          }
+        }}
         itemToStringLabel={itemToStringLabel}
         itemToStringValue={itemToStringValue}
         isItemEqualToValue={isItemEqualToValue}
@@ -318,7 +393,7 @@ export function PharmaComboboxSelect<Item>({
         readOnly={readOnly}
         required={required}
         filter={matchesSearch}
-        autoHighlight
+        autoHighlight="always"
       >
         <Combobox.Trigger
           id={id}
@@ -363,13 +438,14 @@ export function PharmaComboboxSelect<Item>({
           )}
         />
         <Combobox.Portal>
-          <Combobox.Positioner>
+          <Combobox.Positioner className="z-[1000] w-[var(--anchor-width)]">
             <Combobox.Popup
               initialFocus={false}
-              className={
+              className={cn(
+                'w-full',
                 popupClassName ??
-                'overflow-hidden rounded-xl bg-white shadow-thin-md'
-              }
+                  'overflow-hidden rounded-xl bg-white shadow-thin-md'
+              )}
             >
               {searchable ? (
                 <div className="sticky top-0 z-10 border-b border-slate-200 bg-white p-2">
@@ -415,7 +491,11 @@ export function PharmaComboboxSelect<Item>({
                       disabled={isDisabledItem(item)}
                       data-pharma-combobox-index={index.toString()}
                       onMouseEnter={event => {
-                        if (!hoverDetailEnabled || isDisabledItem(item)) return;
+                        if (isDisabledItem(item)) return;
+
+                        setVisualHighlightedValue(item);
+
+                        if (!hoverDetailEnabled) return;
 
                         handleItemHover(
                           itemToStringValue(item),
@@ -424,43 +504,51 @@ export function PharmaComboboxSelect<Item>({
                         );
                       }}
                       onMouseLeave={handleItemLeave}
-                      render={(props, state) => (
-                        <div
-                          {...props}
-                          className={cn(
-                            'relative flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-800 outline-hidden',
-                            state.selected && 'font-semibold text-primary',
-                            state.disabled && 'cursor-not-allowed opacity-50'
-                          )}
-                        >
-                          {state.highlighted ? (
-                            <motion.div
-                              key={activeBackgroundLayoutId}
-                              layoutId={activeBackgroundLayoutId}
-                              initial={false}
-                              className="pointer-events-none absolute inset-0 z-0 rounded-lg bg-primary/10"
-                              transition={highlightBackgroundTransition}
-                            />
-                          ) : null}
-                          <span className="relative z-10 flex min-w-0 flex-1 items-center gap-2">
-                            {getIndicator(indicator, state.selected)}
-                            <span className="min-w-0 flex-1 truncate">
-                              {itemToStringLabel(item)}
+                      render={(props, state) => {
+                        const isVisuallyHighlighted = isItemVisuallyHighlighted(
+                          item,
+                          state.highlighted
+                        );
+
+                        return (
+                          <div
+                            {...props}
+                            className={cn(
+                              'relative flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-800 outline-hidden',
+                              state.selected && 'font-semibold text-primary',
+                              state.disabled && 'cursor-not-allowed opacity-50'
+                            )}
+                          >
+                            {isVisuallyHighlighted ? (
+                              <motion.div
+                                key={activeBackgroundLayoutId}
+                                layoutId={activeBackgroundLayoutId}
+                                initial={false}
+                                data-pharma-combobox-highlight=""
+                                className="pointer-events-none absolute inset-0 z-0 rounded-lg bg-primary/10"
+                                transition={highlightBackgroundTransition}
+                              />
+                            ) : null}
+                            <span className="relative z-10 flex min-w-0 flex-1 items-center gap-2">
+                              {getIndicator(indicator, state.selected)}
+                              <span className="min-w-0 flex-1 truncate">
+                                {itemToStringLabel(item)}
+                              </span>
                             </span>
-                          </span>
-                        </div>
-                      )}
+                          </div>
+                        );
+                      }}
                     />
                   )}
                 </Combobox.Collection>
               </Combobox.List>
-              <Combobox.Empty className="px-3 py-4 text-center text-sm text-slate-500">
+              <Combobox.Empty className="empty:hidden px-3 py-4 text-center text-sm text-slate-500">
                 Tidak ada data
               </Combobox.Empty>
             </Combobox.Popup>
           </Combobox.Positioner>
         </Combobox.Portal>
-      </Combobox.Root>
+      </ComboboxRootWithAutoHighlight>
       {validation?.enabled ? (
         <ValidationOverlay
           error="Field ini wajib diisi"

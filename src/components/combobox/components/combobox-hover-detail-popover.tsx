@@ -18,6 +18,8 @@ import type {
 
 const hoverDetailViewportPadding = 12;
 const hoverDetailHiddenOffset = 4;
+const hoverDetailMinWidth = 220;
+const hoverDetailSurfaceHorizontalPadding = 32;
 const hoverDetailAppearTransition = {
   type: 'spring' as const,
   stiffness: 520,
@@ -56,12 +58,19 @@ const getHoverDetailGeometry = (
     hoverDetailViewportPadding,
     viewportHeight - size.height - hoverDetailViewportPadding
   );
+  const width = Math.min(
+    size.width,
+    position.maxWidth,
+    viewportWidth - hoverDetailViewportPadding * 2
+  );
+  const preferredX =
+    position.direction === 'right' ? position.left : position.left - width;
   const x =
     typeof window === 'undefined'
-      ? position.left
+      ? preferredX
       : Math.min(
-          Math.max(position.left, hoverDetailViewportPadding),
-          viewportWidth - size.width - hoverDetailViewportPadding
+          Math.max(preferredX, hoverDetailViewportPadding),
+          viewportWidth - width - hoverDetailViewportPadding
         );
   const y = Math.min(
     Math.max(position.top, hoverDetailViewportPadding),
@@ -77,7 +86,7 @@ const getHoverDetailGeometry = (
     y,
     hiddenX,
     hiddenY: y,
-    width: size.width,
+    width,
     height: size.height,
   };
 };
@@ -102,27 +111,36 @@ const getHoverDetailMetaBadgeVariant = (data?: HoverDetailData | null) => {
   return 'default';
 };
 
-const HoverDetailContent = ({ data }: { data: HoverDetailData }) => {
+const HoverDetailContent = ({
+  data,
+  width,
+}: {
+  data: HoverDetailData;
+  width?: number;
+}) => {
   const code = getDisplayCode(data);
   const description = getDisplayDescription(data);
   const metaLabel = getDisplayBadgeLabel(data);
   const metaBadgeVariant = getHoverDetailMetaBadgeVariant(data);
 
   return (
-    <div className="pointer-events-auto max-h-[calc(100vh-24px)] overflow-y-auto">
+    <div
+      className="pointer-events-auto max-h-[calc(100vh-24px)] min-w-0 overflow-hidden"
+      style={width ? { width } : undefined}
+    >
       <div
         className={cn(
-          'flex items-start justify-between gap-3',
+          'flex min-w-0 items-center justify-between gap-3',
           description && 'mb-3'
         )}
       >
-        <div className="flex min-w-0 items-center gap-2">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
           {code ? (
-            <Badge variant="success" size="sm" className="rounded-md">
+            <Badge variant="success" size="sm" className="shrink-0 rounded-md">
               {code}
             </Badge>
           ) : null}
-          <h3 className="min-w-0 whitespace-normal break-words font-semibold text-slate-900">
+          <h3 className="min-w-0 flex-1 whitespace-normal break-words font-semibold text-slate-900">
             {data.name}
           </h3>
         </div>
@@ -146,7 +164,7 @@ const HoverDetailContent = ({ data }: { data: HoverDetailData }) => {
 };
 
 const hoverDetailSurfaceClassName =
-  'group pointer-events-auto rounded-xl p-4 min-w-[250px] max-w-[500px] w-max relative bg-white shadow-thin-md';
+  'group pointer-events-auto rounded-xl p-4 w-fit relative bg-white shadow-thin-md';
 
 const ComboboxHoverDetailPopover = ({
   data,
@@ -185,7 +203,7 @@ const ComboboxHoverDetailPopover = ({
 
     const rect = popupSizerRef.current.getBoundingClientRect();
     return {
-      width: rect.width,
+      width: Math.max(hoverDetailMinWidth, rect.width),
       height: rect.height,
     };
   }, []);
@@ -199,11 +217,11 @@ const ComboboxHoverDetailPopover = ({
       const shouldAppear = forceAppear || !visibleRef.current;
 
       geometryRef.current = nextGeometry;
-      setActiveGeometry(nextGeometry);
-      setRenderedData(data);
       controls.stop();
 
       if (shouldAppear) {
+        setActiveGeometry(nextGeometry);
+        setRenderedData(data);
         controls.set({
           x: nextGeometry.hiddenX,
           y: nextGeometry.hiddenY,
@@ -233,6 +251,8 @@ const ComboboxHoverDetailPopover = ({
         return;
       }
 
+      setActiveGeometry(nextGeometry);
+      setRenderedData(data);
       setIsPlacementReady(true);
       visibleRef.current = true;
       void controls.start({
@@ -305,6 +325,13 @@ const ComboboxHoverDetailPopover = ({
 
   if (typeof document === 'undefined') return null;
 
+  const shouldRenderPositionedPopup =
+    Boolean(renderedData && activeGeometry) &&
+    (!showContent || isPlacementReady);
+  const activeContentWidth = activeGeometry
+    ? Math.max(0, activeGeometry.width - hoverDetailSurfaceHorizontalPadding)
+    : undefined;
+
   return createPortal(
     <>
       {showContent ? (
@@ -314,6 +341,7 @@ const ComboboxHoverDetailPopover = ({
             hoverDetailSurfaceClassName,
             'pointer-events-none fixed left-0 top-0 -z-10 opacity-0'
           )}
+          style={{ maxWidth: position.maxWidth, minWidth: hoverDetailMinWidth }}
         >
           <HoverDetailContent data={data} />
         </div>
@@ -325,20 +353,30 @@ const ComboboxHoverDetailPopover = ({
             hoverDetailSurfaceClassName,
             'pointer-events-none fixed left-0 top-0 -z-10 opacity-0'
           )}
+          style={{ maxWidth: position.maxWidth, minWidth: hoverDetailMinWidth }}
         >
           <HoverDetailContent data={data} />
         </div>
       ) : null}
       <AnimatePresence>
-        {(showContent || renderedData) && activeGeometry ? (
+        {shouldRenderPositionedPopup && activeGeometry ? (
           <motion.div
             key="combobox-hover-detail-portal"
             className={cn(
               hoverDetailSurfaceClassName,
-              'fixed left-0 top-0 z-[1100]',
-              !isPlacementReady && 'pointer-events-none opacity-0'
+              'fixed left-0 top-0 z-[1100] overflow-hidden',
+              showContent &&
+                !isPlacementReady &&
+                'pointer-events-none opacity-0'
             )}
-            initial={false}
+            initial={{
+              x: activeGeometry.hiddenX,
+              y: activeGeometry.hiddenY,
+              width: activeGeometry.width,
+              height: activeGeometry.height,
+              opacity: 0,
+              scale: 0.95,
+            }}
             animate={controls}
             exit={{
               x: activeGeometry.hiddenX,
@@ -350,7 +388,12 @@ const ComboboxHoverDetailPopover = ({
               transition: hoverDetailExitTransition,
             }}
           >
-            {renderedData ? <HoverDetailContent data={renderedData} /> : null}
+            {renderedData ? (
+              <HoverDetailContent
+                data={renderedData}
+                width={activeContentWidth}
+              />
+            ) : null}
           </motion.div>
         ) : null}
       </AnimatePresence>

@@ -13,11 +13,16 @@ const getHoverDetailPosition = (
   const rect = element.getBoundingClientRect();
   const viewportWidth = window.innerWidth;
   const padding = 10;
-  const minPortalWidth = 280;
-  const maxPortalWidth = 580;
+  const minPortalWidth = 220;
+  const maxPortalWidth = 460;
   const spaceOnRight = viewportWidth - rect.right;
   const spaceOnLeft = rect.left;
   const anchorCenterY = rect.top + rect.height / 2;
+  const getMaxWidth = (availableSpace: number) =>
+    Math.min(
+      maxPortalWidth,
+      Math.max(minPortalWidth, availableSpace - padding * 2)
+    );
 
   if (spaceOnRight >= minPortalWidth + padding) {
     return {
@@ -25,15 +30,17 @@ const getHoverDetailPosition = (
       top: rect.top,
       direction: 'right',
       anchorCenterY,
+      maxWidth: getMaxWidth(spaceOnRight),
     };
   }
 
   if (spaceOnLeft >= minPortalWidth + padding) {
     return {
-      left: rect.left - minPortalWidth - padding,
+      left: rect.left - padding,
       top: rect.top,
       direction: 'left',
       anchorCenterY,
+      maxWidth: getMaxWidth(spaceOnLeft),
     };
   }
 
@@ -43,14 +50,16 @@ const getHoverDetailPosition = (
       top: rect.top,
       direction: 'right',
       anchorCenterY,
+      maxWidth: getMaxWidth(spaceOnRight),
     };
   }
 
   return {
-    left: Math.max(padding, rect.left - maxPortalWidth - padding),
+    left: rect.left - padding,
     top: rect.top,
     direction: 'left',
     anchorCenterY,
+    maxWidth: getMaxWidth(spaceOnLeft),
   };
 };
 
@@ -89,6 +98,7 @@ export const useComboboxHoverDetail = ({
     left: 0,
     direction: 'right',
     anchorCenterY: 0,
+    maxWidth: 460,
   });
   const [data, setData] = useState<HoverDetailData | null>(null);
   const showTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
