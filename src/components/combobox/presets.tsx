@@ -1,14 +1,27 @@
-import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { motion } from 'motion/react';
 import {
   TbCheck,
   TbChevronDown,
   TbCircle,
   TbCircleCheck,
   TbPlus,
+  TbSearch,
   TbSquare,
   TbSquareCheck,
 } from 'react-icons/tb';
 import ValidationOverlay from '@/components/validation-overlay';
+import { cn } from '@/lib/utils';
+import type { HoverDetailData } from '@/types/components';
+import ComboboxHoverDetailPopover from './components/combobox-hover-detail-popover';
+import { useComboboxHoverDetail } from './hooks/use-combobox-hover-detail';
 import { Combobox } from './index';
 
 type IndicatorKind = 'check' | 'radio' | 'checkbox' | 'none';
@@ -41,6 +54,11 @@ export interface PharmaComboboxSelectProps<Item> {
     label?: string;
     onCreate: (searchTerm?: string) => void;
   };
+  hoverDetail?: {
+    enabled?: boolean;
+    delay?: number;
+  };
+  onFetchHoverDetail?: (id: string) => Promise<HoverDetailData | null>;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   'aria-label'?: string;
@@ -83,6 +101,19 @@ const getIndicator = (kind: IndicatorKind, selected: boolean) => {
   );
 };
 
+const highlightBackgroundTransition = {
+  type: 'spring' as const,
+  stiffness: 400,
+  damping: 30,
+  mass: 0.8,
+};
+
+const isDisabledItem = <Item,>(item: Item) =>
+  typeof item === 'object' &&
+  item !== null &&
+  'disabled' in item &&
+  Boolean(item.disabled);
+
 export function PharmaComboboxSelect<Item>({
   id,
   name,
@@ -104,27 +135,56 @@ export function PharmaComboboxSelect<Item>({
   popupClassName,
   validation,
   createAction,
+  hoverDetail,
+  onFetchHoverDetail,
   open,
   onOpenChange,
   'aria-label': ariaLabel,
   'aria-labelledby': ariaLabelledBy,
   'aria-describedby': ariaDescribedBy,
 }: PharmaComboboxSelectProps<Item>) {
+  const instanceId = useId();
   const rootRef = useRef<HTMLDivElement | null>(null);
   const fallbackLabelId = useId();
   const valueId = useId();
   const [inputValue, setInputValue] = useState('');
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const [blurred, setBlurred] = useState(false);
+  const actualOpen = open ?? uncontrolledOpen;
   const showValidation =
     validation?.enabled && required && blurred && value == null;
-  const canCreate =
+  const normalizedInputValue = inputValue.trim();
+  const matchesSearch = useCallback(
+    (item: Item, search: string, locale: string) =>
+      itemToStringLabel(item)
+        .toLocaleLowerCase(locale)
+        .includes(search.toLocaleLowerCase(locale)),
+    [itemToStringLabel]
+  );
+  const visibleItems = useMemo(
+    () =>
+      normalizedInputValue
+        ? items.filter(item =>
+            matchesSearch(item, normalizedInputValue, 'id-ID')
+          )
+        : items,
+    [items, matchesSearch, normalizedInputValue]
+  );
+  const hasExactItem = useMemo(
+    () =>
+      items.some(
+        item =>
+          itemToStringLabel(item).toLocaleLowerCase('id-ID') ===
+          normalizedInputValue.toLocaleLowerCase('id-ID')
+      ),
+    [itemToStringLabel, items, normalizedInputValue]
+  );
+  const canCreate = Boolean(
     createAction &&
-    inputValue.trim().length > 0 &&
-    !items.some(
-      item =>
-        itemToStringLabel(item).toLocaleLowerCase('id-ID') ===
-        inputValue.trim().toLocaleLowerCase('id-ID')
-    );
+    normalizedInputValue.length > 0 &&
+    visibleItems.length === 0 &&
+    !hasExactItem
+  );
 
   const selectedValue = useMemo(() => value, [value]);
   const isOpenControlled = open !== undefined;
@@ -136,10 +196,57 @@ export function PharmaComboboxSelect<Item>({
     : ariaLabel
       ? undefined
       : `${fallbackLabelId} ${valueId}`;
-  const handleOpenChange = (nextOpen: boolean) => {
-    if (!nextOpen && !isOpenControlled) setInputValue('');
-    onOpenChange?.(nextOpen);
-  };
+  const hoverDetailEnabled =
+    hoverDetail?.enabled ?? Boolean(onFetchHoverDetail);
+  const {
+    data: hoverDetailData,
+    handleItemHover,
+    handleItemLeave,
+    hidePopover: hideHoverDetail,
+    isVisible: isHoverDetailVisible,
+    position: hoverDetailPosition,
+  } = useComboboxHoverDetail({
+    hoverDelay: hoverDetail?.delay ?? 800,
+    isComboboxOpen: actualOpen,
+    isEnabled: hoverDetailEnabled,
+    onFetchData: onFetchHoverDetail,
+  });
+  const getItemHoverDetailData = useCallback(
+    (item: Item): Partial<HoverDetailData> => {
+      const itemRecord =
+        typeof item === 'object' && item !== null
+          ? (item as Partial<HoverDetailData>)
+          : {};
+
+      return {
+        id: itemToStringValue(item),
+        name: itemToStringLabel(item),
+        display: itemRecord.display,
+        data: itemRecord.data,
+        code: itemRecord.code,
+        description: itemRecord.description,
+        metaLabel: itemRecord.metaLabel,
+        metaTone: itemRecord.metaTone,
+        created_at: itemRecord.created_at,
+        createdAt: itemRecord.createdAt,
+        updated_at: itemRecord.updated_at,
+        updatedAt: itemRecord.updatedAt,
+      };
+    },
+    [itemToStringLabel, itemToStringValue]
+  );
+  const activeBackgroundLayoutId = `combobox-active-background-${instanceId}-${inputValue}`;
+  const handleOpenChange = useCallback(
+    (nextOpen: boolean) => {
+      setUncontrolledOpen(nextOpen);
+      if (!nextOpen) {
+        hideHoverDetail();
+        if (!isOpenControlled) setInputValue('');
+      }
+      onOpenChange?.(nextOpen);
+    },
+    [hideHoverDetail, isOpenControlled, onOpenChange]
+  );
 
   useEffect(() => {
     if (open === false) setInputValue('');
@@ -158,11 +265,15 @@ export function PharmaComboboxSelect<Item>({
         onValueChange={nextValue => {
           onValueChange(nextValue);
           setInputValue('');
+          hideHoverDetail();
         }}
-        open={open}
+        open={actualOpen}
         onOpenChange={handleOpenChange}
         inputValue={inputValue}
-        onInputValueChange={setInputValue}
+        onInputValueChange={nextValue => {
+          setInputValue(nextValue);
+          hideHoverDetail();
+        }}
         itemToStringLabel={itemToStringLabel}
         itemToStringValue={itemToStringValue}
         isItemEqualToValue={isItemEqualToValue}
@@ -171,11 +282,7 @@ export function PharmaComboboxSelect<Item>({
         disabled={disabled}
         readOnly={readOnly}
         required={required}
-        filter={(item, search, locale) =>
-          itemToStringLabel(item)
-            .toLocaleLowerCase(locale)
-            .includes(search.toLocaleLowerCase(locale))
-        }
+        filter={matchesSearch}
       >
         <Combobox.Trigger
           id={id}
@@ -224,15 +331,39 @@ export function PharmaComboboxSelect<Item>({
             <Combobox.Popup
               className={
                 popupClassName ??
-                'overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl'
+                'overflow-hidden rounded-xl bg-white shadow-thin-md'
               }
             >
               {searchable ? (
-                <Combobox.SearchInput
-                  className="w-full border-0 border-b border-slate-100 px-3 py-2 text-sm outline-hidden focus:ring-0"
-                  aria-label={`Cari ${controlName}`}
-                  placeholder="Cari..."
-                />
+                <div className="sticky top-0 z-10 border-b border-slate-200 bg-white p-2">
+                  <div className="relative flex items-center">
+                    <TbSearch
+                      aria-hidden="true"
+                      className={cn(
+                        'pointer-events-none absolute left-3 h-4 w-4',
+                        normalizedInputValue ? 'text-primary' : 'text-slate-400'
+                      )}
+                    />
+                    <Combobox.SearchInput
+                      className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-10 text-sm text-slate-800 outline-hidden transition placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/15"
+                      aria-label={`Cari ${controlName}`}
+                      placeholder="Cari..."
+                    />
+                    {canCreate ? (
+                      <button
+                        type="button"
+                        aria-label={createAction?.label ?? 'Tambah baru'}
+                        className="absolute right-2 inline-flex h-6 w-6 items-center justify-center rounded-md text-primary transition hover:bg-primary/10"
+                        onMouseDown={event => event.preventDefault()}
+                        onClick={() =>
+                          createAction?.onCreate(normalizedInputValue)
+                        }
+                      >
+                        <TbPlus aria-hidden="true" className="h-4 w-4" />
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
               ) : null}
               <Combobox.List className="max-h-60 overflow-y-auto p-1 outline-hidden">
                 <Combobox.Collection>
@@ -241,17 +372,38 @@ export function PharmaComboboxSelect<Item>({
                       key={itemToStringValue(item)}
                       item={item}
                       index={index}
+                      onMouseEnter={event => {
+                        if (!hoverDetailEnabled || isDisabledItem(item)) return;
+
+                        handleItemHover(
+                          itemToStringValue(item),
+                          event.currentTarget,
+                          getItemHoverDetailData(item)
+                        );
+                      }}
+                      onMouseLeave={handleItemLeave}
                       render={(props, state) => (
                         <div
                           {...props}
-                          className={`flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-800 outline-hidden ${
-                            state.highlighted ? 'bg-primary/10' : ''
-                          } ${state.selected ? 'font-semibold text-primary' : ''} ${
-                            state.disabled
-                              ? 'cursor-not-allowed opacity-50'
-                              : ''
-                          }`}
-                        />
+                          className={cn(
+                            'relative flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-800 outline-hidden',
+                            state.selected && 'font-semibold text-primary',
+                            state.disabled && 'cursor-not-allowed opacity-50'
+                          )}
+                        >
+                          {state.highlighted ? (
+                            <motion.div
+                              key={activeBackgroundLayoutId}
+                              layoutId={activeBackgroundLayoutId}
+                              initial={false}
+                              className="pointer-events-none absolute inset-0 z-0 rounded-lg bg-primary/10"
+                              transition={highlightBackgroundTransition}
+                            />
+                          ) : null}
+                          <span className="relative z-10 flex min-w-0 flex-1 items-center gap-2">
+                            {props.children}
+                          </span>
+                        </div>
                       )}
                     >
                       {state => (
@@ -269,16 +421,6 @@ export function PharmaComboboxSelect<Item>({
               <Combobox.Empty className="px-3 py-4 text-center text-sm text-slate-500">
                 Tidak ada data
               </Combobox.Empty>
-              {canCreate ? (
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-2 border-t border-slate-100 px-3 py-2 text-left text-sm font-medium text-primary hover:bg-emerald-50"
-                  onClick={() => createAction.onCreate(inputValue.trim())}
-                >
-                  <TbPlus className="h-4 w-4" />
-                  {createAction.label ?? 'Tambah baru'}
-                </button>
-              ) : null}
             </Combobox.Popup>
           </Combobox.Positioner>
         </Combobox.Portal>
@@ -290,7 +432,14 @@ export function PharmaComboboxSelect<Item>({
           targetRef={rootRef}
           autoHide={validation.autoHide}
           autoHideDelay={validation.autoHideDelay}
-          isOpen={open}
+          isOpen={actualOpen}
+        />
+      ) : null}
+      {hoverDetailEnabled ? (
+        <ComboboxHoverDetailPopover
+          data={hoverDetailData}
+          isVisible={isHoverDetailVisible}
+          position={hoverDetailPosition}
         />
       ) : null}
     </div>

@@ -96,6 +96,37 @@ export const createOptimizedUnitDetailFetcher = (units: ComboboxOption[]) => {
 };
 
 /**
+ * Optimized package detail fetcher that uses cached realtime data
+ * instead of making database requests
+ */
+export const createOptimizedPackageDetailFetcher = (
+  packages: ComboboxOption[]
+) => {
+  return async (packageId: string): Promise<HoverDetailData | null> => {
+    try {
+      const packageOption = packages.find(pkg => pkg.id === packageId);
+
+      if (!packageOption) {
+        console.warn(`Package with ID ${packageId} not found in cached data`);
+        return null;
+      }
+
+      return {
+        id: packageOption.id,
+        code: packageOption.code,
+        name: packageOption.name,
+        description: packageOption.description,
+        created_at: undefined,
+        updated_at: packageOption.updated_at,
+      };
+    } catch (error) {
+      console.error('Error getting package detail from cache:', error);
+      return null;
+    }
+  };
+};
+
+/**
  * Optimized dosage detail fetcher that uses cached realtime data
  * instead of making database requests
  */

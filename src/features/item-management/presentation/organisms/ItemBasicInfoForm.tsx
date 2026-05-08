@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useRef, useState } from 'react';
+import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
 import Input from '@/components/input';
 import { PharmaComboboxSelect } from '@/components/combobox/presets';
 import { findComboboxItemByValue } from '@/components/combobox/helpers';
@@ -12,6 +12,14 @@ import {
 import { useItemCodeGenerator } from '../../application/hooks/utils';
 import { useItemRealtime } from '../../shared/contexts/useItemFormContext';
 import { inferDosageFromDisplayName } from '@/lib/item-dosage-inference';
+import {
+  createOptimizedCategoryDetailFetcher,
+  createOptimizedDosageDetailFetcher,
+  createOptimizedManufacturerDetailFetcher,
+  createOptimizedPackageDetailFetcher,
+  createOptimizedTypeDetailFetcher,
+} from '@/utils/optimizedCategoryDetailFetcher';
+import type { HoverDetailData } from '@/types/components';
 
 interface ItemBasicInfoFormProps {
   isEditMode: boolean;
@@ -163,13 +171,25 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
       ['obat', 'Obat'],
       ['non-obat', 'Non-Obat'],
     ]);
+    const hoverDetailFetchers = useMemo(
+      () => ({
+        category_id: createOptimizedCategoryDetailFetcher(categories),
+        type_id: createOptimizedTypeDetailFetcher(types),
+        package_id: createOptimizedPackageDetailFetcher(packages),
+        dosage_id: createOptimizedDosageDetailFetcher(dosages),
+        manufacturer_id:
+          createOptimizedManufacturerDetailFetcher(manufacturers),
+      }),
+      [categories, dosages, manufacturers, packages, types]
+    );
     const renderEntityCombobox = (
       name: keyof typeof formData,
       tabIndex: number,
       value: string,
       items: ComboboxOption[],
       placeholder: string,
-      onCreate: (searchTerm?: string) => void
+      onCreate: (searchTerm?: string) => void,
+      onFetchHoverDetail: (id: string) => Promise<HoverDetailData | null>
     ) => (
       <PharmaComboboxSelect
         name={name}
@@ -190,6 +210,8 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                 label: 'Tambah baru',
               }
         }
+        hoverDetail={{ enabled: true, delay: 400 }}
+        onFetchHoverDetail={onFetchHoverDetail}
         open={persistedDropdownName === name ? true : undefined}
         onOpenChange={nextOpen => {
           if (!nextOpen) onPersistedDropdownClear?.();
@@ -265,7 +287,8 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                   formData.manufacturer_id,
                   manufacturers,
                   'Pilih Produsen',
-                  onAddNewManufacturer
+                  onAddNewManufacturer,
+                  hoverDetailFetchers.manufacturer_id
                 )
               )}
             </FormField>
@@ -280,7 +303,8 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                   formData.category_id,
                   categories,
                   'Pilih Kategori',
-                  onAddNewCategory
+                  onAddNewCategory,
+                  hoverDetailFetchers.category_id
                 )
               )}
             </FormField>
@@ -295,7 +319,8 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                   formData.type_id,
                   types,
                   'Pilih Jenis',
-                  onAddNewType
+                  onAddNewType,
+                  hoverDetailFetchers.type_id
                 )
               )}
             </FormField>
@@ -310,7 +335,8 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                   formData.package_id,
                   packages,
                   'Pilih Kemasan',
-                  onAddNewUnit
+                  onAddNewUnit,
+                  hoverDetailFetchers.package_id
                 )
               )}
             </FormField>
@@ -325,7 +351,8 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                   formData.dosage_id,
                   dosages,
                   'Pilih Sediaan',
-                  onAddNewDosage
+                  onAddNewDosage,
+                  hoverDetailFetchers.dosage_id
                 )
               )}
             </FormField>
