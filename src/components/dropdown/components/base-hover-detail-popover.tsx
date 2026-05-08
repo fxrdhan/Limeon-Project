@@ -1,4 +1,4 @@
-import React, {
+import {
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -6,60 +6,36 @@ import React, {
   useState,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence, useAnimationControls } from 'motion/react';
+import { AnimatePresence, motion, useAnimationControls } from 'motion/react';
 import Badge from '@/components/badge';
 import { cn } from '@/lib/utils';
+import type {
+  HoverDetailGeometry,
+  HoverDetailPosition,
+  HoverDetailSize,
+} from '@/components/dropdown/internal-types';
 import type { HoverDetailData } from '@/types';
 
-interface HoverDetailPortalProps {
-  isVisible: boolean;
-  position: {
-    top: number;
-    left: number;
-    direction: 'right' | 'left';
-    anchorCenterY: number;
-  };
-  data: HoverDetailData | null;
-}
-
-interface HoverDetailGeometry {
-  x: number;
-  y: number;
-  hiddenX: number;
-  hiddenY: number;
-  width: number;
-  height: number;
-}
-
-interface HoverDetailSize {
-  width: number;
-  height: number;
-}
-
-const viewportPadding = 12;
-const hiddenOffset = 4;
-const surfaceHorizontalPadding = 32;
-
+const hoverDetailViewportPadding = 12;
+const hoverDetailHiddenOffset = 4;
+const hoverDetailSurfaceHorizontalPadding = 32;
 const hoverDetailAppearTransition = {
-  type: 'spring',
+  type: 'spring' as const,
   stiffness: 520,
   damping: 24,
   mass: 0.75,
-} as const;
-
+};
 const hoverDetailExitTransition = {
-  type: 'spring',
+  type: 'spring' as const,
   stiffness: 520,
   damping: 30,
   mass: 0.65,
-} as const;
-
+};
 const hoverDetailRepositionTransition = {
-  type: 'tween',
+  type: 'tween' as const,
   duration: 0.22,
-  ease: 'easeOut',
-} as const;
-
+  ease: 'easeOut' as const,
+};
 const defaultHoverDetailGeometry: HoverDetailGeometry = {
   x: 0,
   y: 0,
@@ -70,7 +46,7 @@ const defaultHoverDetailGeometry: HoverDetailGeometry = {
 };
 
 const getHoverDetailGeometry = (
-  position: HoverDetailPortalProps['position'],
+  position: HoverDetailPosition,
   size: HoverDetailSize
 ): HoverDetailGeometry => {
   const viewportWidth =
@@ -78,19 +54,24 @@ const getHoverDetailGeometry = (
   const viewportHeight =
     typeof window === 'undefined' ? 768 : window.innerHeight;
   const maxTop = Math.max(
-    viewportPadding,
-    viewportHeight - size.height - viewportPadding
+    hoverDetailViewportPadding,
+    viewportHeight - size.height - hoverDetailViewportPadding
   );
   const x =
     typeof window === 'undefined'
       ? position.left
       : Math.min(
-          Math.max(position.left, viewportPadding),
-          viewportWidth - size.width - viewportPadding
+          Math.max(position.left, hoverDetailViewportPadding),
+          viewportWidth - size.width - hoverDetailViewportPadding
         );
-  const y = Math.min(Math.max(position.top, viewportPadding), maxTop);
+  const y = Math.min(
+    Math.max(position.top, hoverDetailViewportPadding),
+    maxTop
+  );
   const hiddenX =
-    position.direction === 'right' ? x - hiddenOffset : x + hiddenOffset;
+    position.direction === 'right'
+      ? x - hoverDetailHiddenOffset
+      : x + hoverDetailHiddenOffset;
 
   return {
     x,
@@ -102,7 +83,7 @@ const getHoverDetailGeometry = (
   };
 };
 
-const getMetaBadgeVariant = (data?: HoverDetailData | null) =>
+const getHoverDetailMetaBadgeVariant = (data?: HoverDetailData | null) =>
   data?.metaTone === 'success'
     ? 'success'
     : data?.metaTone === 'warning'
@@ -112,7 +93,7 @@ const getMetaBadgeVariant = (data?: HoverDetailData | null) =>
         : 'default';
 
 const HoverDetailContent = ({ data }: { data: HoverDetailData }) => {
-  const metaBadgeVariant = getMetaBadgeVariant(data);
+  const metaBadgeVariant = getHoverDetailMetaBadgeVariant(data);
 
   return (
     <div className="pointer-events-auto max-h-[calc(100vh-24px)] overflow-y-auto">
@@ -123,11 +104,11 @@ const HoverDetailContent = ({ data }: { data: HoverDetailData }) => {
         )}
       >
         <div className="flex min-w-0 items-center gap-2">
-          {data.code && (
+          {data.code ? (
             <Badge variant="success" size="sm" className="rounded-md">
               {data.code}
             </Badge>
-          )}
+          ) : null}
           <h3 className="min-w-0 whitespace-normal break-words font-semibold text-slate-900">
             {data.name}
           </h3>
@@ -142,14 +123,11 @@ const HoverDetailContent = ({ data }: { data: HoverDetailData }) => {
           </Badge>
         ) : null}
       </div>
-
-      {data.description && (
-        <div>
-          <p className="whitespace-normal break-words text-sm text-slate-600 leading-relaxed">
-            {data.description}
-          </p>
-        </div>
-      )}
+      {data.description ? (
+        <p className="whitespace-normal break-words text-sm leading-relaxed text-slate-600">
+          {data.description}
+        </p>
+      ) : null}
     </div>
   );
 };
@@ -157,10 +135,14 @@ const HoverDetailContent = ({ data }: { data: HoverDetailData }) => {
 const hoverDetailSurfaceClassName =
   'group pointer-events-auto rounded-xl p-4 min-w-[250px] max-w-[500px] w-max relative bg-white shadow-thin-md';
 
-const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
+const BaseHoverDetailPopover = ({
+  data,
   isVisible,
   position,
-  data,
+}: {
+  data: HoverDetailData | null;
+  isVisible: boolean;
+  position: HoverDetailPosition;
 }) => {
   const showContent = isVisible && !!data;
   const popupSizerRef = useRef<HTMLDivElement | null>(null);
@@ -174,6 +156,7 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
   const [renderedData, setRenderedData] = useState<HoverDetailData | null>(
     data
   );
+  const shouldRenderSizer = showContent && data !== renderedData;
 
   const cancelPendingAnimationFrame = useCallback(() => {
     if (animationFrameRef.current === null) return;
@@ -257,7 +240,13 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
   }, [animateToMeasuredGeometry, showContent]);
 
   useEffect(() => {
-    if (!showContent || !popupSizerRef.current) return;
+    if (
+      !showContent ||
+      !popupSizerRef.current ||
+      typeof ResizeObserver === 'undefined'
+    ) {
+      return;
+    }
 
     const observer = new ResizeObserver(() => {
       animateToMeasuredGeometry();
@@ -270,9 +259,7 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
   }, [animateToMeasuredGeometry, showContent]);
 
   useEffect(() => {
-    if (isVisible) {
-      return;
-    }
+    if (isVisible) return;
 
     visibleRef.current = false;
     setActiveGeometry(null);
@@ -286,17 +273,19 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
     [cancelPendingAnimationFrame]
   );
 
+  if (typeof document === 'undefined') return null;
+
   return createPortal(
     <div className="pointer-events-none fixed inset-0 z-[9999] overflow-hidden">
-      {data && (
+      {shouldRenderSizer && data ? (
         <div
           ref={popupSizerRef}
-          aria-hidden
+          aria-hidden="true"
           className={`${hoverDetailSurfaceClassName} pointer-events-none absolute left-0 top-0 opacity-0`}
         >
           <HoverDetailContent data={data} />
         </div>
-      )}
+      ) : null}
       <AnimatePresence
         onExitComplete={() => {
           if (!isVisible) {
@@ -304,7 +293,7 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
           }
         }}
       >
-        {isVisible && renderedData && activeGeometry && (
+        {isVisible && renderedData && activeGeometry ? (
           <motion.div
             key="hover-detail-portal"
             className={hoverDetailSurfaceClassName}
@@ -338,18 +327,18 @@ const HoverDetailPortal: React.FC<HoverDetailPortalProps> = ({
               style={{
                 width: Math.max(
                   0,
-                  activeGeometry.width - surfaceHorizontalPadding
+                  activeGeometry.width - hoverDetailSurfaceHorizontalPadding
                 ),
               }}
             >
               <HoverDetailContent data={renderedData} />
             </div>
           </motion.div>
-        )}
+        ) : null}
       </AnimatePresence>
     </div>,
     document.body
   );
 };
 
-export default HoverDetailPortal;
+export default BaseHoverDetailPopover;

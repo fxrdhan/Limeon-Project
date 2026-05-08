@@ -101,6 +101,68 @@ function LargeDropdownHarness() {
   );
 }
 
+function SelectedLargeDropdownHarness() {
+  const [value, setValue] = useState('item-40');
+  const options = Array.from({ length: 250 }, (_, index) => ({
+    id: `item-${index + 1}`,
+    name: `Item ${index + 1}`,
+  }));
+
+  return (
+    <Dropdown
+      name="selected_large_dropdown"
+      value={value}
+      options={options}
+      placeholder="Pilih Banyak"
+      onChange={setValue}
+    />
+  );
+}
+
+function CheckboxDropdownHarness() {
+  const [value, setValue] = useState<string[]>([]);
+
+  return (
+    <Dropdown
+      name="checkbox_dropdown"
+      value={value}
+      options={[
+        { id: 'alpha', name: 'Alpha' },
+        { id: 'beta', name: 'Beta' },
+      ]}
+      placeholder="Pilih Checkbox"
+      onChange={setValue}
+      withCheckbox
+    />
+  );
+}
+
+function HoverDetailDropdownHarness({
+  onFetchHoverDetail,
+}: {
+  onFetchHoverDetail: (optionId: string) => Promise<{
+    id: string;
+    name: string;
+    description: string;
+  }>;
+}) {
+  return (
+    <Dropdown
+      name="hover_detail_dropdown"
+      value=""
+      options={[
+        { id: 'alpha', name: 'Alpha', description: 'Ringkasan awal' },
+        { id: 'beta', name: 'Beta' },
+      ]}
+      placeholder="Pilih Hover"
+      onChange={() => {}}
+      enableHoverDetail
+      hoverDetailDelay={800}
+      onFetchHoverDetail={onFetchHoverDetail}
+    />
+  );
+}
+
 describe('Dropdown', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -119,7 +181,7 @@ describe('Dropdown', () => {
     render(<DropdownHarness />);
 
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Pilih Pertama' }));
+      fireEvent.click(screen.getByRole('combobox', { name: 'Pilih Pertama' }));
     });
 
     const searchInput = screen.getByPlaceholderText('Cari...');
@@ -148,7 +210,7 @@ describe('Dropdown', () => {
     });
 
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Pilih Kedua' }));
+      fireEvent.click(screen.getByRole('combobox', { name: 'Pilih Kedua' }));
       vi.advanceTimersByTime(150);
     });
 
@@ -158,7 +220,7 @@ describe('Dropdown', () => {
   it('does not focus the dropdown search input when opened', () => {
     render(<DropdownHarness />);
 
-    const trigger = screen.getByRole('button', { name: 'Pilih Pertama' });
+    const trigger = screen.getByRole('combobox', { name: 'Pilih Pertama' });
     act(() => {
       fireEvent.click(trigger);
       vi.advanceTimersByTime(200);
@@ -171,7 +233,7 @@ describe('Dropdown', () => {
   it('keeps arrow key navigation on the trigger after opening', () => {
     render(<KeyboardDropdownHarness />);
 
-    const trigger = screen.getByRole('button', { name: /Alpha/ });
+    const trigger = screen.getByRole('combobox', { name: /Alpha/ });
     act(() => {
       fireEvent.click(trigger);
       trigger.focus();
@@ -183,13 +245,13 @@ describe('Dropdown', () => {
       fireEvent.keyDown(trigger, { key: 'Enter', code: 'Enter' });
     });
 
-    expect(screen.getByRole('button', { name: /Beta/ })).not.toBeNull();
+    expect(screen.getByRole('combobox', { name: /Beta/ })).not.toBeNull();
   });
 
   it('routes printable trigger key presses to the search input when open', () => {
     render(<DropdownHarness />);
 
-    const trigger = screen.getByRole('button', { name: 'Pilih Pertama' });
+    const trigger = screen.getByRole('combobox', { name: 'Pilih Pertama' });
     act(() => {
       fireEvent.click(trigger);
       trigger.focus();
@@ -209,7 +271,7 @@ describe('Dropdown', () => {
     render(<LargeDropdownHarness />);
 
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Pilih Banyak' }));
+      fireEvent.click(screen.getByRole('combobox', { name: 'Pilih Banyak' }));
       vi.advanceTimersByTime(200);
     });
 
@@ -219,11 +281,55 @@ describe('Dropdown', () => {
     expect(screen.queryByRole('option', { name: 'Item 250' })).toBeNull();
   });
 
+  it('does not force the list back to the selected option while scrolling', () => {
+    render(<SelectedLargeDropdownHarness />);
+
+    act(() => {
+      fireEvent.click(screen.getByRole('combobox', { name: 'Item 40' }));
+      vi.advanceTimersByTime(200);
+    });
+
+    const listbox = screen.getByRole('listbox');
+    expect(listbox.scrollTop).toBe(1404);
+    expect(
+      screen
+        .getByRole('option', { name: 'Item 40' })
+        .getAttribute('data-dropdown-option-highlighted')
+    ).not.toBeNull();
+
+    act(() => {
+      listbox.scrollTop = 720;
+      fireEvent.scroll(listbox);
+      vi.advanceTimersByTime(20);
+    });
+
+    expect(listbox.scrollTop).toBe(720);
+  });
+
+  it('keeps option highlight active after the pointer leaves an option', () => {
+    render(<DropdownHarness />);
+
+    act(() => {
+      fireEvent.click(screen.getByRole('combobox', { name: 'Pilih Pertama' }));
+      vi.advanceTimersByTime(200);
+    });
+
+    const betaOption = screen.getByRole('option', { name: 'Beta' });
+    act(() => {
+      fireEvent.mouseEnter(betaOption);
+      fireEvent.mouseLeave(betaOption);
+    });
+
+    expect(
+      betaOption.getAttribute('data-dropdown-option-highlighted')
+    ).not.toBeNull();
+  });
+
   it('opens add-new modal when the empty-search plus button is clicked', () => {
     render(<DropdownHarness />);
 
     act(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Pilih Pertama' }));
+      fireEvent.click(screen.getByRole('combobox', { name: 'Pilih Pertama' }));
     });
 
     const searchInput = screen.getByPlaceholderText('Cari...');
@@ -244,5 +350,85 @@ describe('Dropdown', () => {
     expect(
       screen.getByRole('dialog', { name: 'Add new modal' })
     ).not.toBeNull();
+  });
+
+  it('keeps checkbox dropdown open while accumulating multiple values', () => {
+    render(<CheckboxDropdownHarness />);
+
+    act(() => {
+      fireEvent.click(screen.getByRole('combobox', { name: 'Pilih Checkbox' }));
+      vi.advanceTimersByTime(200);
+    });
+
+    act(() => {
+      fireEvent.click(screen.getByRole('option', { name: 'Alpha' }));
+    });
+
+    act(() => {
+      fireEvent.click(screen.getByRole('option', { name: 'Beta' }));
+    });
+
+    expect(
+      screen.getByRole('combobox', { name: /Alpha, Beta/ })
+    ).not.toBeNull();
+    expect(screen.getByPlaceholderText('Cari...')).not.toBeNull();
+  });
+
+  it('shows fetched hover detail data for options', async () => {
+    const onFetchHoverDetail = vi.fn(async (optionId: string) => ({
+      id: optionId,
+      name: 'Alpha',
+      description: 'Detail hasil fetch',
+    }));
+
+    render(
+      <HoverDetailDropdownHarness onFetchHoverDetail={onFetchHoverDetail} />
+    );
+
+    act(() => {
+      fireEvent.click(screen.getByRole('combobox', { name: 'Pilih Hover' }));
+      vi.advanceTimersByTime(200);
+    });
+
+    await act(async () => {
+      fireEvent.mouseEnter(screen.getByRole('option', { name: 'Alpha' }));
+      vi.advanceTimersByTime(800);
+      await Promise.resolve();
+    });
+
+    expect(onFetchHoverDetail).toHaveBeenCalledWith('alpha');
+    expect(screen.getByText('Detail hasil fetch')).not.toBeNull();
+  });
+
+  it('updates hover detail immediately after the popup is visible', async () => {
+    const onFetchHoverDetail = vi.fn(async (optionId: string) => ({
+      id: optionId,
+      name: optionId === 'alpha' ? 'Alpha' : 'Beta',
+      description:
+        optionId === 'alpha' ? 'Detail Alpha fetched' : 'Detail Beta fetched',
+    }));
+
+    render(
+      <HoverDetailDropdownHarness onFetchHoverDetail={onFetchHoverDetail} />
+    );
+
+    act(() => {
+      fireEvent.click(screen.getByRole('combobox', { name: 'Pilih Hover' }));
+      vi.advanceTimersByTime(200);
+    });
+
+    await act(async () => {
+      fireEvent.mouseEnter(screen.getByRole('option', { name: 'Alpha' }));
+      vi.advanceTimersByTime(800);
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      fireEvent.mouseEnter(screen.getByRole('option', { name: 'Beta' }));
+      await Promise.resolve();
+    });
+
+    expect(onFetchHoverDetail).toHaveBeenCalledWith('beta');
+    expect(screen.getByText('Detail Beta fetched')).not.toBeNull();
   });
 });
