@@ -1,4 +1,4 @@
-import type { DropdownOption } from '@/types/components';
+import type { ComboboxOption } from '@/types/components';
 
 const ITEM_NAME_TOKEN_ALIASES: Record<string, string> = {
   injeksi: 'INJECTION',
@@ -45,13 +45,13 @@ const sanitizeDisplayName = (value: string) =>
     .trim();
 
 type DosageCandidate = {
-  dosage: DropdownOption;
+  dosage: ComboboxOption;
   matchedIndexes: number[];
 };
 
 const findDosageCandidate = (
   displayName: string,
-  dosages: DropdownOption[]
+  dosages: ComboboxOption[]
 ): DosageCandidate | null => {
   const inputTokenMatches = getTokenMatches(displayName);
   if (inputTokenMatches.length === 0) return null;
@@ -101,12 +101,12 @@ const findDosageCandidate = (
 
 export const inferDosageFromDisplayName = (
   displayName: string,
-  dosages: DropdownOption[]
+  dosages: ComboboxOption[]
 ) => findDosageCandidate(displayName, dosages)?.dosage || null;
 
 export const extractDosageFromDisplayName = (
   displayName: string,
-  dosages: DropdownOption[]
+  dosages: ComboboxOption[]
 ) => {
   const candidate = findDosageCandidate(displayName, dosages);
 

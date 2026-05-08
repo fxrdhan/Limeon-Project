@@ -224,7 +224,7 @@ const BasicInfoRequiredSection: React.FC<BasicInfoRequiredProps> = () => {
     isAddDosageModalOpen ||
     isAddManufacturerModalOpen;
 
-  // Transform database types to DropdownOption format
+  // Transform database types to ComboboxOption format
   const transformedCategories = categories.map(cat => ({
     id: cat.id,
     name: cat.name,

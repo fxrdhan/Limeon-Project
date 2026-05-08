@@ -1,11 +1,11 @@
-import type { HoverDetailData, DropdownOption } from '@/types';
+import type { ComboboxOption, HoverDetailData } from '@/types';
 
 /**
  * Optimized category detail fetcher that uses cached realtime data
  * instead of making database requests
  */
 export const createOptimizedCategoryDetailFetcher = (
-  categories: DropdownOption[]
+  categories: ComboboxOption[]
 ) => {
   return async (categoryId: string): Promise<HoverDetailData | null> => {
     try {
@@ -37,7 +37,7 @@ export const createOptimizedCategoryDetailFetcher = (
  * Optimized type detail fetcher that uses cached realtime data
  * instead of making database requests
  */
-export const createOptimizedTypeDetailFetcher = (types: DropdownOption[]) => {
+export const createOptimizedTypeDetailFetcher = (types: ComboboxOption[]) => {
   return async (typeId: string): Promise<HoverDetailData | null> => {
     try {
       // Find type in cached data (no database request needed!)
@@ -68,7 +68,7 @@ export const createOptimizedTypeDetailFetcher = (types: DropdownOption[]) => {
  * Optimized unit detail fetcher that uses cached realtime data
  * instead of making database requests
  */
-export const createOptimizedUnitDetailFetcher = (units: DropdownOption[]) => {
+export const createOptimizedUnitDetailFetcher = (units: ComboboxOption[]) => {
   return async (unitId: string): Promise<HoverDetailData | null> => {
     try {
       // Find unit in cached data (no database request needed!)
@@ -100,7 +100,7 @@ export const createOptimizedUnitDetailFetcher = (units: DropdownOption[]) => {
  * instead of making database requests
  */
 export const createOptimizedDosageDetailFetcher = (
-  dosages: DropdownOption[]
+  dosages: ComboboxOption[]
 ) => {
   return async (dosageId: string): Promise<HoverDetailData | null> => {
     try {
@@ -133,7 +133,7 @@ export const createOptimizedDosageDetailFetcher = (
  * instead of making database requests. Uses address field instead of description.
  */
 export const createOptimizedManufacturerDetailFetcher = (
-  manufacturers: DropdownOption[]
+  manufacturers: ComboboxOption[]
 ) => {
   return async (manufacturerId: string): Promise<HoverDetailData | null> => {
     try {

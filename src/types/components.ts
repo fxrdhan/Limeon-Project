@@ -3,75 +3,63 @@ import { z } from 'zod';
 import { Category, Item } from './database';
 
 // Component props and UI-related types
-export interface DropdownOption {
+export interface ComboboxItem {
   id: string;
   name: string;
-  code?: string;
-  description?: string;
-  metaLabel?: string;
-  metaTone?: 'default' | 'info' | 'success' | 'warning';
-  updated_at?: string | null;
-}
-
-export interface HoverDetailData {
-  id: string;
-  code?: string;
-  name: string;
-  description?: string;
-  metaLabel?: string;
-  metaTone?: 'default' | 'info' | 'success' | 'warning';
-  created_at?: string;
-  updated_at?: string | null;
-}
-
-export type DropdownMode = 'input' | 'text';
-export type DropdownPortalWidth = string | number;
-export type DropdownPosition = 'auto' | 'top' | 'bottom' | 'left';
-export type DropdownAlign = 'left' | 'right';
-
-// Base dropdown props for single selection
-export interface DropdownProps {
-  mode?: DropdownMode;
-  options: DropdownOption[];
-  value: string;
-  tabIndex?: number;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  name: string;
-  required?: boolean;
   disabled?: boolean;
-  onAddNew?: (searchTerm?: string) => void;
-  persistOpen?: boolean;
-  onPersistOpenClear?: () => void;
-  freezePersistedMenu?: boolean;
-  withRadio?: boolean;
-  searchList?: boolean;
-  autoScrollOnOpen?: boolean;
-  validate?: boolean;
-  showValidationOnBlur?: boolean;
-  validationAutoHide?: boolean;
-  validationAutoHideDelay?: number;
-  hoverToOpen?: boolean;
-  // Portal width control
-  portalWidth?: DropdownPortalWidth;
-  // Position control
-  position?: DropdownPosition;
-  // Alignment control
-  align?: DropdownAlign;
-  // Hover detail functionality
-  enableHoverDetail?: boolean;
-  hoverDetailDelay?: number;
-  onFetchHoverDetail?: (optionId: string) => Promise<HoverDetailData | null>;
 }
 
-// Extended dropdown props for checkbox mode (multiple selection)
-export interface CheckboxDropdownProps extends Omit<
-  DropdownProps,
-  'value' | 'onChange' | 'withRadio'
-> {
-  value: string[];
-  onChange: (value: string[]) => void;
-  withCheckbox: true;
+export type ComboboxMetaTone = 'default' | 'info' | 'success' | 'warning';
+
+export interface ComboboxOptionDisplay {
+  code?: string;
+  description?: string;
+  badgeLabel?: string;
+  badgeTone?: ComboboxMetaTone;
+  updatedAt?: string | null;
+}
+
+export interface ComboboxOption extends ComboboxItem {
+  display?: ComboboxOptionDisplay;
+  data?: unknown;
+  /** @deprecated Use display.code for visual metadata. */
+  code?: string;
+  /** @deprecated Use display.description for visual metadata. */
+  description?: string;
+  /** @deprecated Use display.badgeLabel for visual metadata. */
+  metaLabel?: string;
+  /** @deprecated Use display.badgeTone for visual metadata. */
+  metaTone?: ComboboxMetaTone;
+  /** @deprecated Use display.updatedAt for visual metadata. */
+  updated_at?: string | null;
+}
+
+export interface HoverDetailData extends ComboboxItem {
+  display?: ComboboxOptionDisplay;
+  data?: unknown;
+  /** @deprecated Use display.code for visual metadata. */
+  code?: string;
+  /** @deprecated Use display.description for visual metadata. */
+  description?: string;
+  /** @deprecated Use display.badgeLabel for visual metadata. */
+  metaLabel?: string;
+  /** @deprecated Use display.badgeTone for visual metadata. */
+  metaTone?: ComboboxMetaTone;
+  created_at?: string;
+  createdAt?: string;
+  /** @deprecated Use display.updatedAt for visual metadata. */
+  updated_at?: string | null;
+  updatedAt?: string | null;
+}
+
+export interface BaseUIChangeEventDetails<Reason extends string = string> {
+  reason: Reason;
+  event: Event | null;
+  trigger: Element | undefined;
+  cancel: () => void;
+  allowPropagation: () => void;
+  readonly isCanceled: boolean;
+  readonly isPropagationAllowed: boolean;
 }
 
 export type BadgeVariant =

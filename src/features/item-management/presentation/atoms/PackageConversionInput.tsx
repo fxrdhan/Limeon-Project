@@ -1,9 +1,10 @@
 import React from 'react';
 import { TbArrowBack } from 'react-icons/tb';
-import Dropdown from '@/components/dropdown';
+import { PharmaComboboxSelect } from '@/components/combobox/presets';
+import { findComboboxItemByValue } from '@/components/combobox/helpers';
 import FormField from '@/components/form-field';
 import Input from '@/components/input';
-import type { DropdownOption } from '@/types/components';
+import type { ComboboxOption } from '@/types/components';
 import type { PackageConversionLogicFormData } from '../../shared/types';
 import type { ItemInventoryUnit } from '@/types/database';
 import { getInventoryUnitMetaLabel } from '@/lib/item-units';
@@ -12,8 +13,8 @@ interface LocalPackageConversionInputProps {
   baseUnit: string;
   baseUnitId: string;
   availableUnits: ItemInventoryUnit[];
-  baseUnitOption?: DropdownOption | null;
-  existingUnits: DropdownOption[];
+  baseUnitOption?: ComboboxOption | null;
+  existingUnits: ComboboxOption[];
   formData: PackageConversionLogicFormData;
   onFormDataChange: (data: PackageConversionLogicFormData) => void;
   onAddConversion: () => void;
@@ -77,6 +78,14 @@ export default function PackageConversionInput({
     (formData.parent_inventory_unit_id === baseUnitId
       ? { id: baseUnitId, name: baseUnit }
       : null);
+  const availableUnitOptions = availableUnits.map(unit => ({
+    id: unit.id,
+    name: unit.name,
+    code: unit.code,
+    description: unit.description ?? undefined,
+    updated_at: unit.updated_at,
+    metaLabel: getInventoryUnitMetaLabel(unit),
+  }));
 
   const parentOptions = [
     ...(baseUnitId
@@ -88,7 +97,7 @@ export default function PackageConversionInput({
             description: baseUnitOption?.description,
             updated_at: baseUnitOption?.updated_at,
             metaLabel: 'Unit Dasar',
-          } satisfies DropdownOption,
+          } satisfies ComboboxOption,
         ]
       : []),
     ...existingUnits.filter(unit => unit.id !== formData.inventory_unit_id),
@@ -102,46 +111,41 @@ export default function PackageConversionInput({
       </p>
       <div className="grid gap-4 md:grid-cols-3 mb-3">
         <FormField label="Unit" className="flex-1" required={true}>
-          <Dropdown
+          <PharmaComboboxSelect
             name="inventory_unit_id"
             tabIndex={tabIndex}
-            value={formData.inventory_unit_id}
-            onChange={handleUnitChange}
-            options={availableUnits.map(unit => ({
-              id: unit.id,
-              name: unit.name,
-              code: unit.code,
-              description: unit.description ?? undefined,
-              updated_at: unit.updated_at,
-              metaLabel: getInventoryUnitMetaLabel(unit),
-            }))}
+            items={availableUnitOptions}
+            value={findComboboxItemByValue(
+              availableUnitOptions,
+              formData.inventory_unit_id,
+              item => item.id
+            )}
+            onValueChange={item => handleUnitChange(item?.id ?? '')}
+            itemToStringLabel={item => item.name}
+            itemToStringValue={item => item.id}
             placeholder="-- Pilih Unit --"
-            enableHoverDetail={true}
-            hoverDetailDelay={400}
             required
-            validate={true}
-            showValidationOnBlur={true}
-            validationAutoHide={true}
-            validationAutoHideDelay={3000}
+            validation={{ enabled: true, autoHide: true, autoHideDelay: 3000 }}
             disabled={disabled}
           />
         </FormField>
 
         <FormField label="Dalam" className="flex-1" required={true}>
-          <Dropdown
+          <PharmaComboboxSelect
             name="parent_inventory_unit_id"
             tabIndex={tabIndex + 1}
-            value={formData.parent_inventory_unit_id}
-            onChange={handleParentUnitChange}
-            options={parentOptions}
+            items={parentOptions}
+            value={findComboboxItemByValue(
+              parentOptions,
+              formData.parent_inventory_unit_id,
+              item => item.id
+            )}
+            onValueChange={item => handleParentUnitChange(item?.id ?? '')}
+            itemToStringLabel={item => item.name}
+            itemToStringValue={item => item.id}
             placeholder="-- Pilih Parent --"
-            enableHoverDetail={true}
-            hoverDetailDelay={400}
             required
-            validate={true}
-            showValidationOnBlur={true}
-            validationAutoHide={true}
-            validationAutoHideDelay={3000}
+            validation={{ enabled: true, autoHide: true, autoHideDelay: 3000 }}
             disabled={disabled}
           />
         </FormField>

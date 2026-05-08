@@ -10,13 +10,14 @@ import {
 } from 'react-icons/tb';
 import { AnimatePresence, motion } from 'motion/react';
 import Switch from '@/components/switch';
-import Dropdown from '@/components/dropdown';
+import { PharmaComboboxSelect } from '@/components/combobox/presets';
+import { findComboboxItemByValue } from '@/components/combobox/helpers';
 import Input from '@/components/input';
 import FormField from '@/components/form-field';
 import Button from '@/components/button';
 import { formatRupiah } from '@/lib/formatters';
 import type { CustomerLevel } from '@/types/database';
-import type { DropdownOption } from '@/types/components';
+import type { ComboboxOption } from '@/types/components';
 import {
   COLLAPSIBLE_SECTION_HEADER_CLASS,
   POPOVER_SURFACE_CLASS,
@@ -42,7 +43,7 @@ interface ItemPricingFormProps {
   displaySellPrice: string;
   baseUnitId: string;
   baseUnit: string;
-  baseUnitOptions: DropdownOption[];
+  baseUnitOptions: ComboboxOption[];
   marginEditing: {
     isEditing: boolean;
     percentage: string;
@@ -663,19 +664,24 @@ export default function ItemPricingForm({
                 <div className="grid grid-cols-2 gap-4">
                   <FormField label="Unit Dasar" required={true}>
                     <div className="space-y-2">
-                      <Dropdown
+                      <PharmaComboboxSelect
                         name="base_inventory_unit_id"
-                        value={baseUnitId}
-                        onChange={onBaseUnitChange}
-                        options={baseUnitOptions}
+                        items={baseUnitOptions}
+                        value={findComboboxItemByValue(
+                          baseUnitOptions,
+                          baseUnitId,
+                          item => item.id
+                        )}
+                        onValueChange={item => onBaseUnitChange(item?.id ?? '')}
+                        itemToStringLabel={item => item.name}
+                        itemToStringValue={item => item.id}
                         placeholder="Pilih Unit Dasar"
-                        enableHoverDetail={true}
-                        hoverDetailDelay={400}
                         required
-                        validate={true}
-                        showValidationOnBlur={true}
-                        validationAutoHide={true}
-                        validationAutoHideDelay={3000}
+                        validation={{
+                          enabled: true,
+                          autoHide: true,
+                          autoHideDelay: 3000,
+                        }}
                         disabled={disabled}
                       />
                       <p className="text-xs text-slate-500">
