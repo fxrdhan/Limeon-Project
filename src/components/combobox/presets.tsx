@@ -192,6 +192,8 @@ export function PharmaComboboxSelect<Item>({
   const [blurred, setBlurred] = useState(false);
   const [visualHighlightedValue, setVisualHighlightedValue] =
     useState<Item | null>(null);
+  const [shouldAnimateHighlightLayout, setShouldAnimateHighlightLayout] =
+    useState(true);
   const visualHighlightedValueRef = useRef<Item | null>(null);
   const actualOpen = open ?? uncontrolledOpen;
   const showValidation =
@@ -400,6 +402,7 @@ export function PharmaComboboxSelect<Item>({
 
     if (!hoverTarget || isDisabledItem(hoverTarget.item)) return;
 
+    setShouldAnimateHighlightLayout(true);
     visualHighlightedValueRef.current = hoverTarget.item;
     setVisualHighlightedValue(hoverTarget.item);
     runItemHoverDetail(hoverTarget.item, hoverTarget.element, {
@@ -426,6 +429,7 @@ export function PharmaComboboxSelect<Item>({
       if (isDisabledItem(item)) return;
       if (isKeyboardNavigatingRef.current) return;
 
+      setShouldAnimateHighlightLayout(true);
       visualHighlightedValueRef.current = item;
       setVisualHighlightedValue(item);
 
@@ -473,19 +477,33 @@ export function PharmaComboboxSelect<Item>({
     },
     [hideHoverDetail, isOpenControlled, onOpenChange]
   );
-  const scrollOptionIntoView = useCallback(
+  const pinOptionIntoView = useCallback(
     (item: Item) => {
       const itemIndex = visibleItems.findIndex(visibleItem =>
         isSameItem(visibleItem, item)
       );
-      if (itemIndex < 0) return;
+      if (itemIndex < 0) return false;
 
-      window.requestAnimationFrame(() => {
-        const option = listRef.current?.querySelector<HTMLElement>(
-          `[data-pharma-combobox-index="${itemIndex}"]`
-        );
-        option?.scrollIntoView?.({ block: 'nearest' });
-      });
+      const list = listRef.current;
+      const option = list?.querySelector<HTMLElement>(
+        `[data-pharma-combobox-index="${itemIndex}"]`
+      );
+      if (!list || !option) return false;
+
+      const listRect = list.getBoundingClientRect();
+      const optionRect = option.getBoundingClientRect();
+
+      if (optionRect.top < listRect.top) {
+        list.scrollTop += optionRect.top - listRect.top;
+        return true;
+      }
+
+      if (optionRect.bottom > listRect.bottom) {
+        list.scrollTop += optionRect.bottom - listRect.bottom;
+        return true;
+      }
+
+      return false;
     },
     [isSameItem, visibleItems]
   );
@@ -511,17 +529,13 @@ export function PharmaComboboxSelect<Item>({
       if (!nextItem) return false;
 
       isKeyboardNavigatingRef.current = true;
+      const didScroll = pinOptionIntoView(nextItem);
+      setShouldAnimateHighlightLayout(!didScroll);
       visualHighlightedValueRef.current = nextItem;
       setVisualHighlightedValue(nextItem);
-      scrollOptionIntoView(nextItem);
       return true;
     },
-    [
-      firstHighlightableVisibleItem,
-      isSameItem,
-      scrollOptionIntoView,
-      visibleItems,
-    ]
+    [firstHighlightableVisibleItem, isSameItem, pinOptionIntoView, visibleItems]
   );
   const selectVisualHighlightedItem = useCallback(() => {
     if (!visualHighlightedValue || isDisabledItem(visualHighlightedValue)) {
@@ -677,6 +691,7 @@ export function PharmaComboboxSelect<Item>({
             nextHighlighted !== undefined &&
             (details.reason === 'keyboard' || details.reason === 'pointer')
           ) {
+            setShouldAnimateHighlightLayout(details.reason === 'pointer');
             visualHighlightedValueRef.current = nextHighlighted;
             setVisualHighlightedValue(nextHighlighted);
           } else if (details.reason === 'keyboard') {
@@ -863,11 +878,28 @@ export function PharmaComboboxSelect<Item>({
                             {isVisuallyHighlighted ? (
                               <motion.div
                                 key={activeBackgroundLayoutId}
-                                layoutId={activeBackgroundLayoutId}
-                                initial={false}
+                                layoutId={
+                                  shouldAnimateHighlightLayout
+                                    ? activeBackgroundLayoutId
+                                    : undefined
+                                }
+                                initial={
+                                  shouldAnimateHighlightLayout
+                                    ? false
+                                    : { opacity: 0, scale: 0.96 }
+                                }
+                                animate={
+                                  shouldAnimateHighlightLayout
+                                    ? undefined
+                                    : { opacity: 1, scale: 1 }
+                                }
                                 data-pharma-combobox-highlight=""
                                 className="pointer-events-none absolute inset-0 z-0 rounded-lg bg-primary/10"
-                                transition={highlightBackgroundTransition}
+                                transition={
+                                  shouldAnimateHighlightLayout
+                                    ? highlightBackgroundTransition
+                                    : { duration: 0.12, ease: 'easeOut' }
+                                }
                               />
                             ) : null}
                             <span className="relative z-10 flex min-w-0 flex-1 items-center gap-2">
