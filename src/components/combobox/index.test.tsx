@@ -381,6 +381,47 @@ describe('Combobox app presets', () => {
     expect(screen.getByRole('option', { name: /branch b/i })).toBeTruthy();
   });
 
+  it('restores selected highlight when a search is cleared', async () => {
+    const suppliers = [
+      { id: 'a', name: 'Supplier A' },
+      { id: 'b', name: 'Branch B' },
+    ];
+
+    render(
+      <PharmaComboboxSelect
+        name="supplier_id"
+        items={suppliers}
+        value={suppliers[0]}
+        onValueChange={() => {}}
+        itemToStringLabel={supplier => supplier.name}
+        itemToStringValue={supplier => supplier.id}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: /supplier a/i }));
+    const searchInput = screen.getByPlaceholderText('Cari...');
+
+    fireEvent.change(searchInput, { target: { value: 'b' } });
+    await waitFor(() => {
+      expect(screen.queryByRole('option', { name: /supplier a/i })).toBeNull();
+    });
+
+    fireEvent.change(searchInput, { target: { value: '' } });
+
+    await waitFor(() => {
+      expect(
+        screen
+          .getByRole('option', { name: /supplier a/i })
+          .querySelector('[data-pharma-combobox-highlight]')
+      ).toBeTruthy();
+    });
+    expect(
+      screen
+        .getByRole('option', { name: /branch b/i })
+        .querySelector('[data-pharma-combobox-highlight]')
+    ).toBeNull();
+  });
+
   it('routes trigger arrow keys to option navigation', async () => {
     render(
       <PharmaComboboxSelect
