@@ -119,6 +119,7 @@ const highlightBackgroundTransition = {
   damping: 30,
   mass: 0.8,
 };
+const scrollHoverResumeDelay = 120;
 
 const isDisabledItem = <Item,>(item: Item) =>
   typeof item === 'object' &&
@@ -158,6 +159,15 @@ export function PharmaComboboxSelect<Item>({
   const instanceId = useId();
   const rootRef = useRef<HTMLDivElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
+  const listPointerPositionRef = useRef<{ x: number; y: number } | null>(null);
+  const listScrollEndTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const pendingScrollHoverRef = useRef<{
+    item: Item;
+    element: HTMLElement;
+  } | null>(null);
+  const isListScrollingRef = useRef(false);
   const fallbackLabelId = useId();
   const valueId = useId();
   const [inputValue, setInputValue] = useState('');
@@ -282,6 +292,109 @@ export function PharmaComboboxSelect<Item>({
     },
     [itemToStringLabel, itemToStringValue]
   );
+  const runItemHoverDetail = useCallback(
+    (item: Item, element: HTMLElement) => {
+      if (!hoverDetailEnabled) return;
+
+      handleItemHover(
+        itemToStringValue(item),
+        element,
+        getItemHoverDetailData(item)
+      );
+    },
+    [
+      getItemHoverDetailData,
+      handleItemHover,
+      hoverDetailEnabled,
+      itemToStringValue,
+    ]
+  );
+  const updateListPointerPosition = useCallback(
+    (
+      event:
+        | React.MouseEvent<HTMLDivElement>
+        | React.PointerEvent<HTMLDivElement>
+        | React.WheelEvent<HTMLDivElement>
+    ) => {
+      listPointerPositionRef.current = {
+        x: event.clientX,
+        y: event.clientY,
+      };
+    },
+    []
+  );
+  const getPointerHoverTarget = useCallback(() => {
+    const pointerPosition = listPointerPositionRef.current;
+    const list = listRef.current;
+    if (
+      !pointerPosition ||
+      !list ||
+      typeof document.elementFromPoint !== 'function'
+    ) {
+      return null;
+    }
+
+    const targetElement = document.elementFromPoint(
+      pointerPosition.x,
+      pointerPosition.y
+    );
+    const optionElement =
+      targetElement instanceof HTMLElement
+        ? targetElement.closest<HTMLElement>('[data-pharma-combobox-index]')
+        : null;
+    if (!optionElement || !list.contains(optionElement)) return null;
+
+    const itemIndex = Number(optionElement.dataset.pharmaComboboxIndex);
+    const item =
+      Number.isInteger(itemIndex) && itemIndex >= 0
+        ? visibleItems[itemIndex]
+        : undefined;
+
+    return item === undefined ? null : { item, element: optionElement };
+  }, [visibleItems]);
+  const flushScrollHover = useCallback(() => {
+    isListScrollingRef.current = false;
+
+    const hoverTarget =
+      getPointerHoverTarget() ?? pendingScrollHoverRef.current;
+    pendingScrollHoverRef.current = null;
+
+    if (!hoverTarget || isDisabledItem(hoverTarget.item)) return;
+
+    setVisualHighlightedValue(hoverTarget.item);
+    runItemHoverDetail(hoverTarget.item, hoverTarget.element);
+  }, [getPointerHoverTarget, runItemHoverDetail]);
+  const handleListScroll = useCallback(() => {
+    if (!hoverDetailEnabled) return;
+
+    isListScrollingRef.current = true;
+
+    if (listScrollEndTimeoutRef.current) {
+      clearTimeout(listScrollEndTimeoutRef.current);
+    }
+
+    listScrollEndTimeoutRef.current = setTimeout(() => {
+      listScrollEndTimeoutRef.current = null;
+      flushScrollHover();
+    }, scrollHoverResumeDelay);
+  }, [flushScrollHover, hoverDetailEnabled]);
+  const handleOptionHover = useCallback(
+    (item: Item, element: HTMLElement) => {
+      if (isDisabledItem(item)) return;
+
+      setVisualHighlightedValue(item);
+
+      if (!hoverDetailEnabled) return;
+
+      if (isListScrollingRef.current) {
+        pendingScrollHoverRef.current = { item, element };
+        return;
+      }
+
+      runItemHoverDetail(item, element);
+    },
+    [hoverDetailEnabled, runItemHoverDetail]
+  );
   const activeBackgroundLayoutId = `combobox-active-background-${instanceId}-${inputValue}`;
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
@@ -351,6 +464,27 @@ export function PharmaComboboxSelect<Item>({
 
     return () => window.cancelAnimationFrame(frame);
   }, [actualOpen, selectedVisibleIndex]);
+
+  useEffect(() => {
+    if (actualOpen) return;
+
+    isListScrollingRef.current = false;
+    pendingScrollHoverRef.current = null;
+    listPointerPositionRef.current = null;
+    if (listScrollEndTimeoutRef.current) {
+      clearTimeout(listScrollEndTimeoutRef.current);
+      listScrollEndTimeoutRef.current = null;
+    }
+  }, [actualOpen]);
+
+  useEffect(
+    () => () => {
+      if (listScrollEndTimeoutRef.current) {
+        clearTimeout(listScrollEndTimeoutRef.current);
+      }
+    },
+    []
+  );
 
   return (
     <div ref={rootRef} className={className}>
@@ -481,6 +615,10 @@ export function PharmaComboboxSelect<Item>({
               <Combobox.List
                 ref={listRef}
                 className="max-h-60 overflow-y-auto p-1 outline-hidden"
+                onMouseMove={updateListPointerPosition}
+                onPointerMove={updateListPointerPosition}
+                onWheel={updateListPointerPosition}
+                onScroll={handleListScroll}
               >
                 <Combobox.Collection>
                   {(item: Item, index) => (
@@ -491,19 +629,17 @@ export function PharmaComboboxSelect<Item>({
                       disabled={isDisabledItem(item)}
                       data-pharma-combobox-index={index.toString()}
                       onMouseEnter={event => {
-                        if (isDisabledItem(item)) return;
-
-                        setVisualHighlightedValue(item);
-
-                        if (!hoverDetailEnabled) return;
-
-                        handleItemHover(
-                          itemToStringValue(item),
-                          event.currentTarget,
-                          getItemHoverDetailData(item)
-                        );
+                        listPointerPositionRef.current = {
+                          x: event.clientX,
+                          y: event.clientY,
+                        };
+                        handleOptionHover(item, event.currentTarget);
                       }}
-                      onMouseLeave={handleItemLeave}
+                      onMouseLeave={() => {
+                        if (isListScrollingRef.current) return;
+
+                        handleItemLeave();
+                      }}
                       render={(props, state) => {
                         const isVisuallyHighlighted = isItemVisuallyHighlighted(
                           item,
@@ -513,6 +649,7 @@ export function PharmaComboboxSelect<Item>({
                         return (
                           <div
                             {...props}
+                            data-pharma-combobox-index={index.toString()}
                             className={cn(
                               'relative flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-800 outline-hidden',
                               state.selected && 'font-semibold text-primary',

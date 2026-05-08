@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -389,6 +390,65 @@ describe('Combobox app presets', () => {
         screen.getAllByText('Detail kategori obat').length
       ).toBeGreaterThan(0);
     });
+  });
+
+  it('defers hover detail content changes until list scrolling settles', async () => {
+    vi.useFakeTimers();
+    const onFetchHoverDetail = vi.fn(async (id: string) => ({
+      id,
+      name: id,
+      description: `Detail ${id}`,
+    }));
+
+    try {
+      render(
+        <PharmaComboboxSelect<EntityItem>
+          name="supplier_id"
+          items={[
+            { id: 'a', name: 'Supplier A' },
+            { id: 'b', name: 'Supplier B' },
+          ]}
+          value={null}
+          onValueChange={() => {}}
+          itemToStringLabel={item => item.name}
+          itemToStringValue={item => item.id}
+          hoverDetail={{ enabled: true, delay: 0 }}
+          onFetchHoverDetail={onFetchHoverDetail}
+        />
+      );
+
+      fireEvent.click(screen.getByRole('combobox', { name: /pilih/i }));
+      const listbox = screen.getByRole('listbox');
+      const supplierA = screen.getByRole('option', { name: /supplier a/i });
+      const supplierB = screen.getByRole('option', { name: /supplier b/i });
+
+      fireEvent.mouseEnter(supplierA);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0);
+      });
+      expect(onFetchHoverDetail).toHaveBeenCalledWith('a');
+
+      onFetchHoverDetail.mockClear();
+      fireEvent.scroll(listbox);
+      fireEvent.mouseEnter(supplierB);
+
+      expect(
+        supplierB.querySelector('[data-pharma-combobox-highlight]')
+      ).toBeTruthy();
+      expect(onFetchHoverDetail).not.toHaveBeenCalled();
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(119);
+      });
+      expect(onFetchHoverDetail).not.toHaveBeenCalled();
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1);
+      });
+      expect(onFetchHoverDetail).toHaveBeenCalledWith('b');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('covers enum radio-style, calendar text, and purchase object selects', () => {
