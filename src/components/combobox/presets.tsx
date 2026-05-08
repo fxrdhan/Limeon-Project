@@ -120,6 +120,7 @@ const highlightBackgroundTransition = {
   mass: 0.8,
 };
 const scrollHoverResumeDelay = 120;
+const selectedOptionScrollTopInset = 4;
 
 const isDisabledItem = <Item,>(item: Item) =>
   typeof item === 'object' &&
@@ -459,7 +460,7 @@ export function PharmaComboboxSelect<Item>({
 
       const listTop = list.getBoundingClientRect().top;
       const optionTop = option.getBoundingClientRect().top;
-      list.scrollTop += optionTop - listTop;
+      list.scrollTop += optionTop - listTop - selectedOptionScrollTopInset;
     });
 
     return () => window.cancelAnimationFrame(frame);
