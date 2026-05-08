@@ -267,7 +267,15 @@ describe('Combobox app presets', () => {
     fireEvent.click(createButton);
 
     expect(onCreate).toHaveBeenCalledWith('Analgesik');
-    expect(screen.getByText('Field ini wajib diisi')).toBeTruthy();
+    expect(trigger.getAttribute('aria-invalid')).toBe('true');
+    const validationDescriptionId = trigger.getAttribute('aria-describedby');
+    expect(validationDescriptionId).toBeTruthy();
+    expect(
+      document.getElementById(validationDescriptionId as string)?.textContent
+    ).toBe('Field ini wajib diisi');
+    expect(screen.getAllByText('Field ini wajib diisi').length).toBeGreaterThan(
+      0
+    );
   });
 
   it('creates a missing entity from the search input with Enter', () => {
@@ -323,12 +331,17 @@ describe('Combobox app presets', () => {
     const trigger = screen.getByRole('combobox', { name: /pilih status/i });
     fireEvent.blur(trigger);
 
-    expect(screen.getByText('Field ini wajib diisi')).toBeTruthy();
+    expect(screen.getAllByText('Field ini wajib diisi').length).toBeGreaterThan(
+      0
+    );
 
     fireEvent.click(trigger);
     fireEvent.click(screen.getByRole('option', { name: /^aktif$/i }));
 
-    expect(onValueChange).toHaveBeenCalledWith('active');
+    expect(onValueChange).toHaveBeenCalledWith(
+      'active',
+      expect.objectContaining({ reason: 'item-press' })
+    );
   });
 
   it('resets searchable preset input when the popup closes without a selection', () => {
@@ -477,7 +490,7 @@ describe('Combobox app presets', () => {
     ).toBeNull();
   });
 
-  it('routes trigger arrow keys to option navigation', async () => {
+  it('keeps trigger arrow navigation aligned with the active descendant', async () => {
     render(
       <PharmaComboboxSelect
         name="supplier_id"
@@ -498,14 +511,12 @@ describe('Combobox app presets', () => {
 
     fireEvent.keyDown(trigger, { key: 'ArrowDown' });
 
-    expect(document.activeElement).not.toBe(
-      screen.getByPlaceholderText('Cari...')
-    );
     await waitFor(() => {
       expect(
         supplierB.querySelector('[data-pharma-combobox-highlight]')
       ).toBeTruthy();
     });
+    expect(trigger.getAttribute('aria-activedescendant')).toBe(supplierB.id);
   });
 
   it('ignores stale option hover while navigating with arrow keys until the mouse moves', async () => {

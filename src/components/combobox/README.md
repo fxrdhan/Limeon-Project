@@ -101,10 +101,8 @@ Stable `data-*` states come from Base UI, including `data-selected`, `data-highl
 Use the app preset when a standard PharmaSys select is needed:
 
 ```tsx
-import {
-  findComboboxItemByValue,
-  PharmaComboboxSelect,
-} from '@/components/combobox/presets';
+import { PharmaComboboxSelect } from '@/components/combobox/presets';
+import { findComboboxItemByValue } from '@/components/combobox/helpers';
 
 <PharmaComboboxSelect
   label="Kategori"
