@@ -6,6 +6,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { Combobox } from '@base-ui/react/combobox';
 import { motion } from 'motion/react';
 import {
   TbCheck,
@@ -22,7 +23,6 @@ import { cn } from '@/lib/utils';
 import type { HoverDetailData } from '@/types/components';
 import ComboboxHoverDetailPopover from './components/combobox-hover-detail-popover';
 import { useComboboxHoverDetail } from './hooks/use-combobox-hover-detail';
-import { Combobox } from './index';
 
 type IndicatorKind = 'check' | 'radio' | 'checkbox' | 'none';
 
@@ -145,6 +145,7 @@ export function PharmaComboboxSelect<Item>({
 }: PharmaComboboxSelectProps<Item>) {
   const instanceId = useId();
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const listRef = useRef<HTMLDivElement | null>(null);
   const fallbackLabelId = useId();
   const valueId = useId();
   const [inputValue, setInputValue] = useState('');
@@ -155,18 +156,16 @@ export function PharmaComboboxSelect<Item>({
     validation?.enabled && required && blurred && value == null;
   const normalizedInputValue = inputValue.trim();
   const matchesSearch = useCallback(
-    (item: Item, search: string, locale: string) =>
+    (item: Item, search: string) =>
       itemToStringLabel(item)
-        .toLocaleLowerCase(locale)
-        .includes(search.toLocaleLowerCase(locale)),
+        .toLocaleLowerCase('id-ID')
+        .includes(search.toLocaleLowerCase('id-ID')),
     [itemToStringLabel]
   );
   const visibleItems = useMemo(
     () =>
       normalizedInputValue
-        ? items.filter(item =>
-            matchesSearch(item, normalizedInputValue, 'id-ID')
-          )
+        ? items.filter(item => matchesSearch(item, normalizedInputValue))
         : items,
     [items, matchesSearch, normalizedInputValue]
   );
@@ -187,6 +186,22 @@ export function PharmaComboboxSelect<Item>({
   );
 
   const selectedValue = useMemo(() => value, [value]);
+  const selectedLabel =
+    selectedValue == null ? '' : itemToStringLabel(selectedValue);
+  const isSameItem = useCallback(
+    (item: Item, itemValue: Item) =>
+      isItemEqualToValue
+        ? isItemEqualToValue(item, itemValue)
+        : Object.is(item, itemValue),
+    [isItemEqualToValue]
+  );
+  const selectedVisibleIndex = useMemo(
+    () =>
+      selectedValue == null
+        ? -1
+        : visibleItems.findIndex(item => isSameItem(item, selectedValue)),
+    [isSameItem, selectedValue, visibleItems]
+  );
   const isOpenControlled = open !== undefined;
   const controlName =
     placeholder.replace(/^-+\s*|\s*-+$/g, '').trim() ||
@@ -252,6 +267,26 @@ export function PharmaComboboxSelect<Item>({
     if (open === false) setInputValue('');
   }, [open]);
 
+  useEffect(() => {
+    if (!actualOpen || selectedVisibleIndex < 0) return undefined;
+
+    const frame = window.requestAnimationFrame(() => {
+      const list = listRef.current;
+      if (!list) return;
+
+      const option = list.querySelector<HTMLElement>(
+        `[data-pharma-combobox-index="${selectedVisibleIndex}"]`
+      );
+      if (!option) return;
+
+      const listTop = list.getBoundingClientRect().top;
+      const optionTop = option.getBoundingClientRect().top;
+      list.scrollTop += optionTop - listTop;
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [actualOpen, selectedVisibleIndex]);
+
   return (
     <div ref={rootRef} className={className}>
       {!ariaLabelledBy && !ariaLabel ? (
@@ -283,17 +318,18 @@ export function PharmaComboboxSelect<Item>({
         readOnly={readOnly}
         required={required}
         filter={matchesSearch}
+        autoHighlight
       >
         <Combobox.Trigger
           id={id}
           aria-label={ariaLabel}
           aria-labelledby={triggerLabelledBy}
           aria-describedby={ariaDescribedBy}
-          placeholder={placeholder}
           tabIndex={tabIndex}
           render={(props, state) => (
             <button
               {...props}
+              type="button"
               ref={node => {
                 setRef(props.ref, node);
               }}
@@ -312,10 +348,10 @@ export function PharmaComboboxSelect<Item>({
               <span
                 id={valueId}
                 className={
-                  state.selectedLabel ? 'truncate' : 'truncate text-slate-400'
+                  selectedLabel ? 'truncate' : 'truncate text-slate-400'
                 }
               >
-                {state.selectedLabel || placeholder}
+                {selectedLabel || placeholder}
               </span>
               <TbChevronDown
                 aria-hidden="true"
@@ -329,6 +365,7 @@ export function PharmaComboboxSelect<Item>({
         <Combobox.Portal>
           <Combobox.Positioner>
             <Combobox.Popup
+              initialFocus={false}
               className={
                 popupClassName ??
                 'overflow-hidden rounded-xl bg-white shadow-thin-md'
@@ -344,7 +381,7 @@ export function PharmaComboboxSelect<Item>({
                         normalizedInputValue ? 'text-primary' : 'text-slate-400'
                       )}
                     />
-                    <Combobox.SearchInput
+                    <Combobox.Input
                       className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-10 text-sm text-slate-800 outline-hidden transition placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/15"
                       aria-label={`Cari ${controlName}`}
                       placeholder="Cari..."
@@ -365,13 +402,18 @@ export function PharmaComboboxSelect<Item>({
                   </div>
                 </div>
               ) : null}
-              <Combobox.List className="max-h-60 overflow-y-auto p-1 outline-hidden">
+              <Combobox.List
+                ref={listRef}
+                className="max-h-60 overflow-y-auto p-1 outline-hidden"
+              >
                 <Combobox.Collection>
                   {(item: Item, index) => (
                     <Combobox.Item
                       key={itemToStringValue(item)}
-                      item={item}
+                      value={item}
                       index={index}
+                      disabled={isDisabledItem(item)}
+                      data-pharma-combobox-index={index.toString()}
                       onMouseEnter={event => {
                         if (!hoverDetailEnabled || isDisabledItem(item)) return;
 
@@ -401,20 +443,14 @@ export function PharmaComboboxSelect<Item>({
                             />
                           ) : null}
                           <span className="relative z-10 flex min-w-0 flex-1 items-center gap-2">
-                            {props.children}
+                            {getIndicator(indicator, state.selected)}
+                            <span className="min-w-0 flex-1 truncate">
+                              {itemToStringLabel(item)}
+                            </span>
                           </span>
                         </div>
                       )}
-                    >
-                      {state => (
-                        <>
-                          {getIndicator(indicator, state.selected)}
-                          <span className="min-w-0 flex-1 truncate">
-                            {itemToStringLabel(item)}
-                          </span>
-                        </>
-                      )}
-                    </Combobox.Item>
+                    />
                   )}
                 </Combobox.Collection>
               </Combobox.List>

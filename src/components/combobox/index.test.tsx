@@ -13,7 +13,6 @@ import { PharmaComboboxSelect } from './presets';
 
 const fruitItems = ['Apple', 'Banana', 'Cherry'];
 type EntityItem = { id: string; name: string };
-type FruitOption = { id: string; name: string; disabled?: boolean };
 
 function BasicCombobox({
   onValueChange,
@@ -31,15 +30,26 @@ function BasicCombobox({
         onValueChange?.(nextValue);
         expect(details.reason).toBe('item-press');
       }}
+      itemToStringLabel={item => item}
+      itemToStringValue={item => item}
       name="fruit"
+      autoHighlight
     >
       <Combobox.Label>Fruit</Combobox.Label>
-      <Combobox.Trigger placeholder="Choose fruit" />
+      <Combobox.Trigger>
+        <Combobox.Value placeholder="Choose fruit" />
+      </Combobox.Trigger>
       <Combobox.Portal>
         <Combobox.Positioner>
-          <Combobox.Popup>
-            <Combobox.SearchInput placeholder="Search fruit" />
-            <Combobox.List />
+          <Combobox.Popup initialFocus={false}>
+            <Combobox.Input placeholder="Search fruit" />
+            <Combobox.List>
+              {(item, index) => (
+                <Combobox.Item key={item} value={item} index={index}>
+                  {item}
+                </Combobox.Item>
+              )}
+            </Combobox.List>
           </Combobox.Popup>
         </Combobox.Positioner>
       </Combobox.Portal>
@@ -48,103 +58,22 @@ function BasicCombobox({
 }
 
 describe('Combobox primitive', () => {
-  it('supports controlled value and writes a hidden form value', () => {
+  it('uses the official Base UI value and item contract', () => {
     const onValueChange = vi.fn();
     render(<BasicCombobox onValueChange={onValueChange} />);
 
-    const trigger = screen.getByRole('button', { name: /fruit/i });
-    expect(trigger.textContent).toContain('Apple');
+    const trigger = screen.getByRole('combobox', { name: /fruit/i });
     fireEvent.click(trigger);
     fireEvent.click(screen.getByRole('option', { name: /banana/i }));
 
     expect(onValueChange).toHaveBeenCalledWith('Banana');
-    expect(
-      screen.getByRole('button', { name: /fruit/i }).textContent
-    ).toContain('Banana');
+    expect(trigger.textContent).toContain('Banana');
     expect(
       document.querySelector('input[name="fruit"]')?.getAttribute('value')
     ).toBe('Banana');
   });
 
-  it('supports defaultValue and multiple selection', () => {
-    render(
-      <Combobox.Root
-        items={fruitItems}
-        defaultValue={['Apple']}
-        multiple
-        name="fruit"
-      >
-        <Combobox.Trigger />
-        <Combobox.Portal>
-          <Combobox.Positioner>
-            <Combobox.Popup>
-              <Combobox.SearchInput placeholder="Search fruit" />
-              <Combobox.List />
-            </Combobox.Popup>
-          </Combobox.Positioner>
-        </Combobox.Portal>
-      </Combobox.Root>
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: /apple/i }));
-    fireEvent.click(screen.getByRole('option', { name: /banana/i }));
-
-    const hiddenValues = Array.from(
-      document.querySelectorAll('input[name="fruit"]')
-    ).map(input => input.getAttribute('value'));
-    expect(hiddenValues).toEqual(['Apple', 'Banana']);
-  });
-
-  it('highlights and scrolls the last selected option when the popup opens', async () => {
-    const scrollIntoView = vi.fn();
-    const scrollIntoViewDescriptor = Object.getOwnPropertyDescriptor(
-      HTMLElement.prototype,
-      'scrollIntoView'
-    );
-    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
-      configurable: true,
-      value: scrollIntoView,
-    });
-
-    try {
-      render(
-        <Combobox.Root items={fruitItems} defaultValue="Cherry">
-          <Combobox.Trigger />
-          <Combobox.Portal>
-            <Combobox.Positioner>
-              <Combobox.Popup>
-                <Combobox.SearchInput placeholder="Search fruit" />
-                <Combobox.List />
-              </Combobox.Popup>
-            </Combobox.Positioner>
-          </Combobox.Portal>
-        </Combobox.Root>
-      );
-
-      fireEvent.click(screen.getByRole('button', { name: /cherry/i }));
-      const cherryOption = screen.getByRole('option', { name: /cherry/i });
-
-      await waitFor(() => {
-        expect(cherryOption.hasAttribute('data-highlighted')).toBe(true);
-        expect(
-          screen.getByRole('combobox').getAttribute('aria-activedescendant')
-        ).toBe(cherryOption.id);
-        expect(scrollIntoView).toHaveBeenCalledWith({ block: 'start' });
-      });
-    } finally {
-      if (scrollIntoViewDescriptor) {
-        Object.defineProperty(
-          HTMLElement.prototype,
-          'scrollIntoView',
-          scrollIntoViewDescriptor
-        );
-      } else {
-        Reflect.deleteProperty(HTMLElement.prototype, 'scrollIntoView');
-      }
-    }
-  });
-
-  it('supports object-valued items with custom equality and stringification', () => {
+  it('keeps object values native while using custom equality and stringification', () => {
     const items = [
       { id: 'a', name: 'Alpha' },
       { id: 'b', name: 'Beta' },
@@ -162,18 +91,26 @@ describe('Combobox primitive', () => {
         isItemEqualToValue={(item, value) => item.id === value.id}
         name="entity_id"
       >
-        <Combobox.Trigger />
+        <Combobox.Trigger aria-label="Entity">
+          <Combobox.Value placeholder="Choose entity" />
+        </Combobox.Trigger>
         <Combobox.Portal>
           <Combobox.Positioner>
-            <Combobox.Popup>
-              <Combobox.List />
+            <Combobox.Popup initialFocus={false}>
+              <Combobox.List>
+                {(item, index) => (
+                  <Combobox.Item key={item.id} value={item} index={index}>
+                    {item.name}
+                  </Combobox.Item>
+                )}
+              </Combobox.List>
             </Combobox.Popup>
           </Combobox.Positioner>
         </Combobox.Portal>
       </Combobox.Root>
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /alpha copy/i }));
+    fireEvent.click(screen.getByRole('combobox', { name: /entity/i }));
     expect(
       screen
         .getByRole('option', { name: /alpha/i })
@@ -190,10 +127,10 @@ describe('Combobox primitive', () => {
     ).toBe('a');
   });
 
-  it('filters from input and accepts caller-supplied filteredItems', () => {
+  it('filters with the native input and accepts caller-supplied filteredItems', () => {
     const { rerender } = render(<BasicCombobox />);
 
-    fireEvent.click(screen.getByRole('button', { name: /fruit/i }));
+    fireEvent.click(screen.getByRole('combobox', { name: /fruit/i }));
     fireEvent.change(screen.getByPlaceholderText('Search fruit'), {
       target: { value: 'cher' },
     });
@@ -202,472 +139,29 @@ describe('Combobox primitive', () => {
 
     rerender(
       <Combobox.Root items={fruitItems} filteredItems={['Banana']}>
-        <Combobox.Trigger />
+        <Combobox.Trigger aria-label="Fruit">
+          <Combobox.Value placeholder="Choose fruit" />
+        </Combobox.Trigger>
         <Combobox.Portal>
           <Combobox.Positioner>
-            <Combobox.Popup>
-              <Combobox.List />
-            </Combobox.Popup>
-          </Combobox.Positioner>
-        </Combobox.Portal>
-      </Combobox.Root>
-    );
-    fireEvent.click(screen.getByRole('button'));
-    expect(screen.getByRole('option', { name: /banana/i })).toBeTruthy();
-    expect(screen.queryByRole('option', { name: /apple/i })).toBeNull();
-  });
-
-  it('does not select a stale highlighted item after filtering changes the visible list', () => {
-    const onValueChange = vi.fn();
-    render(
-      <Combobox.Root
-        items={fruitItems}
-        highlightedItem="Banana"
-        onValueChange={onValueChange}
-      >
-        <Combobox.Trigger>Open</Combobox.Trigger>
-        <Combobox.Portal>
-          <Combobox.Positioner>
-            <Combobox.Popup>
-              <Combobox.SearchInput placeholder="Search fruit" />
-              <Combobox.List />
-            </Combobox.Popup>
-          </Combobox.Positioner>
-        </Combobox.Portal>
-      </Combobox.Root>
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: /open/i }));
-    fireEvent.change(screen.getByPlaceholderText('Search fruit'), {
-      target: { value: 'cher' },
-    });
-    fireEvent.keyDown(screen.getByPlaceholderText('Search fruit'), {
-      key: 'Enter',
-    });
-
-    expect(screen.queryByRole('option', { name: /banana/i })).toBeNull();
-    expect(onValueChange).not.toHaveBeenCalled();
-  });
-
-  it('selects the highlighted option from trigger keyboard interaction', () => {
-    const onValueChange = vi.fn();
-    render(
-      <Combobox.Root
-        items={fruitItems}
-        defaultValue="Apple"
-        onValueChange={onValueChange}
-      >
-        <Combobox.Trigger />
-        <Combobox.Portal>
-          <Combobox.Positioner>
-            <Combobox.Popup>
-              <Combobox.List />
-            </Combobox.Popup>
-          </Combobox.Positioner>
-        </Combobox.Portal>
-      </Combobox.Root>
-    );
-
-    const trigger = screen.getByRole('button', { name: /apple/i });
-    fireEvent.click(trigger);
-    fireEvent.keyDown(trigger, { key: 'ArrowDown' });
-    fireEvent.keyDown(trigger, { key: 'Enter' });
-
-    expect(onValueChange).toHaveBeenCalledWith(
-      'Banana',
-      expect.objectContaining({ reason: 'item-press' })
-    );
-    expect(screen.queryByRole('listbox')).toBeNull();
-  });
-
-  it('includes the search input in the arrow-key highlight loop', async () => {
-    render(<BasicCombobox />);
-
-    fireEvent.click(screen.getByRole('button', { name: /fruit/i }));
-    const input = screen.getByRole('combobox');
-    const appleOption = screen.getByRole('option', { name: /apple/i });
-    const cherryOption = screen.getByRole('option', { name: /cherry/i });
-
-    await waitFor(() => {
-      expect(input.getAttribute('aria-activedescendant')).toBe(appleOption.id);
-    });
-
-    fireEvent.keyDown(input, { key: 'ArrowUp' });
-    expect(input.hasAttribute('aria-activedescendant')).toBe(false);
-
-    fireEvent.keyDown(input, { key: 'ArrowUp' });
-    expect(input.getAttribute('aria-activedescendant')).toBe(cherryOption.id);
-  });
-
-  it('returns focus to the trigger when the popup closes from the search input', async () => {
-    render(<BasicCombobox />);
-
-    const trigger = screen.getByRole('button', { name: /fruit/i });
-    fireEvent.click(trigger);
-    const input = screen.getByRole('combobox');
-    input.focus();
-    fireEvent.keyDown(input, { key: 'Escape' });
-
-    await waitFor(() => {
-      expect(document.activeElement).toBe(trigger);
-    });
-  });
-
-  it('skips disabled items during auto-highlight and keyboard selection', () => {
-    const onValueChange = vi.fn();
-    const disabledItems: FruitOption[] = [
-      { id: 'apple', name: 'Apple', disabled: true },
-      { id: 'banana', name: 'Banana' },
-    ];
-
-    render(
-      <Combobox.Root
-        items={disabledItems}
-        onValueChange={onValueChange}
-        itemToStringLabel={item => item.name}
-        itemToStringValue={item => item.id}
-      >
-        <Combobox.Trigger>Open</Combobox.Trigger>
-        <Combobox.Portal>
-          <Combobox.Positioner>
-            <Combobox.Popup>
-              <Combobox.List />
-            </Combobox.Popup>
-          </Combobox.Positioner>
-        </Combobox.Portal>
-      </Combobox.Root>
-    );
-
-    const trigger = screen.getByRole('button', { name: /open/i });
-    fireEvent.click(trigger);
-
-    expect(
-      screen
-        .getByRole('option', { name: /apple/i })
-        .hasAttribute('data-highlighted')
-    ).toBe(false);
-    expect(
-      screen
-        .getByRole('option', { name: /banana/i })
-        .hasAttribute('data-highlighted')
-    ).toBe(true);
-
-    fireEvent.keyDown(trigger, { key: 'Enter' });
-    expect(onValueChange).toHaveBeenCalledWith(
-      disabledItems[1],
-      expect.objectContaining({ reason: 'item-press' })
-    );
-  });
-
-  it('moves highlight away from an item that becomes disabled', () => {
-    const enabledItems: FruitOption[] = [
-      { id: 'apple', name: 'Apple' },
-      { id: 'banana', name: 'Banana' },
-    ];
-    const itemsWithDisabledApple: FruitOption[] = [
-      { id: 'apple', name: 'Apple', disabled: true },
-      { id: 'banana', name: 'Banana' },
-    ];
-
-    const { rerender } = render(
-      <Combobox.Root
-        items={enabledItems}
-        defaultOpen
-        itemToStringLabel={item => item.name}
-        itemToStringValue={item => item.id}
-        isItemEqualToValue={(item, value) => item.id === value.id}
-      >
-        <Combobox.Trigger>Open</Combobox.Trigger>
-        <Combobox.Portal>
-          <Combobox.Positioner>
-            <Combobox.Popup>
-              <Combobox.List />
-            </Combobox.Popup>
-          </Combobox.Positioner>
-        </Combobox.Portal>
-      </Combobox.Root>
-    );
-
-    expect(
-      screen
-        .getByRole('option', { name: /apple/i })
-        .hasAttribute('data-highlighted')
-    ).toBe(true);
-
-    rerender(
-      <Combobox.Root
-        items={itemsWithDisabledApple}
-        defaultOpen
-        itemToStringLabel={item => item.name}
-        itemToStringValue={item => item.id}
-        isItemEqualToValue={(item, value) => item.id === value.id}
-      >
-        <Combobox.Trigger>Open</Combobox.Trigger>
-        <Combobox.Portal>
-          <Combobox.Positioner>
-            <Combobox.Popup>
-              <Combobox.List />
-            </Combobox.Popup>
-          </Combobox.Positioner>
-        </Combobox.Portal>
-      </Combobox.Root>
-    );
-
-    expect(
-      screen
-        .getByRole('option', { name: /apple/i })
-        .hasAttribute('data-highlighted')
-    ).toBe(false);
-    expect(
-      screen
-        .getByRole('option', { name: /banana/i })
-        .hasAttribute('data-highlighted')
-    ).toBe(true);
-  });
-
-  it('supports collection grouping and list-only popup composition', () => {
-    render(
-      <Combobox.Root items={fruitItems} filter={null}>
-        <Combobox.Trigger>Open list</Combobox.Trigger>
-        <Combobox.Portal>
-          <Combobox.Positioner>
-            <Combobox.Popup>
+            <Combobox.Popup initialFocus={false}>
+              <Combobox.Input placeholder="Search fruit" />
               <Combobox.List>
-                <Combobox.Collection label="Group A" items={['Apple']}>
-                  {(item, index) => (
-                    <Combobox.Item key={item} item={item} index={index} />
-                  )}
-                </Combobox.Collection>
-                <Combobox.Collection label="Group B" items={['Banana']} />
+                {(item, index) => (
+                  <Combobox.Item key={item} value={item} index={index}>
+                    {item}
+                  </Combobox.Item>
+                )}
               </Combobox.List>
             </Combobox.Popup>
           </Combobox.Positioner>
         </Combobox.Portal>
       </Combobox.Root>
     );
-
-    fireEvent.click(screen.getByRole('button', { name: /open list/i }));
-    expect(screen.getByRole('group', { name: /group a/i })).toBeTruthy();
-    const appleOption = screen.getByRole('option', { name: /apple/i });
-    const bananaOption = screen.getByRole('option', { name: /banana/i });
-    expect(appleOption).toBeTruthy();
-    expect(bananaOption).toBeTruthy();
-    expect(appleOption.id).not.toBe(bananaOption.id);
-    expect(screen.queryByPlaceholderText(/search/i)).toBeNull();
-  });
-
-  it('flips the portal position above the trigger when bottom space is constrained', () => {
-    render(
-      <Combobox.Root items={fruitItems} defaultOpen>
-        <Combobox.Trigger>Open</Combobox.Trigger>
-        <Combobox.Portal>
-          <Combobox.Positioner>
-            <Combobox.Popup>
-              <Combobox.List />
-            </Combobox.Popup>
-          </Combobox.Positioner>
-        </Combobox.Portal>
-      </Combobox.Root>
-    );
-
-    const trigger = screen.getByRole('button', { name: /open/i });
-    const popup = document.querySelector('[id$="-popup"]');
-    if (!(popup instanceof HTMLElement)) {
-      throw new Error('Expected combobox popup to render');
-    }
-    Object.defineProperty(window, 'innerHeight', {
-      configurable: true,
-      value: 120,
-    });
-    Object.defineProperty(window, 'innerWidth', {
-      configurable: true,
-      value: 320,
-    });
-    Object.defineProperty(trigger, 'getBoundingClientRect', {
-      configurable: true,
-      value: () => ({
-        x: 16,
-        y: 90,
-        top: 90,
-        right: 136,
-        bottom: 110,
-        left: 16,
-        width: 120,
-        height: 20,
-        toJSON: () => ({}),
-      }),
-    });
-    Object.defineProperty(popup, 'getBoundingClientRect', {
-      configurable: true,
-      value: () => ({
-        x: 0,
-        y: 0,
-        top: 0,
-        right: 120,
-        bottom: 80,
-        left: 0,
-        width: 120,
-        height: 80,
-        toJSON: () => ({}),
-      }),
-    });
-
-    fireEvent(window, new Event('resize'));
-
-    expect(popup.parentElement?.getAttribute('data-side')).toBe('top');
-    expect(popup.parentElement?.hasAttribute('data-positioned')).toBe(true);
-    expect(popup.getAttribute('data-side')).toBe('top');
-    expect(popup.hasAttribute('data-positioned')).toBe(true);
-    expect(popup.style.maxHeight).toBe('78px');
-  });
-
-  it('reports highlight reasons and supports cancelable open and value events', () => {
-    const onItemHighlighted = vi.fn();
-    const onOpenChange = vi.fn((_: boolean, details) => details.cancel());
-    const onValueChange = vi.fn((_: string | null, details) =>
-      details.cancel()
-    );
-
-    const { rerender } = render(
-      <Combobox.Root
-        key="cancel-open"
-        items={fruitItems}
-        onOpenChange={onOpenChange}
-        onItemHighlighted={onItemHighlighted}
-      >
-        <Combobox.Trigger>Open</Combobox.Trigger>
-        <Combobox.Portal>
-          <Combobox.Positioner>
-            <Combobox.Popup>
-              <Combobox.List />
-            </Combobox.Popup>
-          </Combobox.Positioner>
-        </Combobox.Portal>
-      </Combobox.Root>
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: /open/i }));
-    expect(screen.queryByRole('listbox')).toBeNull();
-    expect(onOpenChange).toHaveBeenCalledWith(
-      true,
-      expect.objectContaining({ reason: 'trigger-press' })
-    );
-
-    rerender(
-      <Combobox.Root
-        key="cancel-value"
-        items={fruitItems}
-        defaultOpen
-        onValueChange={onValueChange}
-        onItemHighlighted={onItemHighlighted}
-      >
-        <Combobox.Trigger>Open</Combobox.Trigger>
-        <Combobox.Portal>
-          <Combobox.Positioner>
-            <Combobox.Popup>
-              <Combobox.List />
-            </Combobox.Popup>
-          </Combobox.Positioner>
-        </Combobox.Portal>
-      </Combobox.Root>
-    );
-
-    fireEvent.mouseEnter(screen.getByRole('option', { name: /banana/i }));
-    expect(onItemHighlighted).toHaveBeenCalledWith(
-      'Banana',
-      expect.objectContaining({ reason: 'pointer', index: 1 })
-    );
-    fireEvent.click(screen.getByRole('option', { name: /banana/i }));
-    expect(onValueChange).toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: /open/i })).toBeTruthy();
-  });
-
-  it('merges render props with refs, event handlers, classes, and styles', () => {
-    const elementClick = vi.fn();
-    const rootClick = vi.fn();
-
-    render(
-      <Combobox.Root
-        items={fruitItems}
-        render={(props, state) => (
-          <div
-            {...props}
-            data-root-open={state.open}
-            className={`${props.className ?? ''} custom-root`}
-          />
-        )}
-        className="base-root"
-        onClick={rootClick}
-      >
-        <Combobox.Trigger
-          render={
-            <button
-              type="button"
-              className="custom-trigger"
-              style={{ color: 'red' }}
-              onClick={elementClick}
-            />
-          }
-        />
-      </Combobox.Root>
-    );
-
-    const root = document.querySelector('.custom-root');
-    const trigger = screen.getByRole('button');
-    fireEvent.click(trigger);
-
-    expect(root?.className).toContain('base-root');
-    expect(trigger.className).toContain('custom-trigger');
-    expect(trigger.getAttribute('style')).toContain('color: red');
-    expect(elementClick).toHaveBeenCalled();
-    expect(rootClick).toHaveBeenCalled();
-  });
-
-  it('handles disabled, readOnly, required, and modal body scroll lock states', () => {
-    const { rerender } = render(
-      <Combobox.Root items={fruitItems} disabled required name="fruit">
-        <Combobox.Trigger>Disabled</Combobox.Trigger>
-      </Combobox.Root>
-    );
-
-    const disabledButton = screen.getByRole('button', {
-      name: /disabled/i,
-    }) as HTMLButtonElement;
-    expect(disabledButton.disabled).toBe(true);
-    expect(
-      document.querySelector('input[name="fruit"]')?.hasAttribute('required')
-    ).toBe(true);
-
-    rerender(
-      <Combobox.Root key="readonly" items={fruitItems} readOnly defaultOpen>
-        <Combobox.Trigger>Read only</Combobox.Trigger>
-        <Combobox.Portal>
-          <Combobox.Positioner>
-            <Combobox.Popup>
-              <Combobox.List />
-            </Combobox.Popup>
-          </Combobox.Positioner>
-        </Combobox.Portal>
-      </Combobox.Root>
-    );
-    fireEvent.click(screen.getByRole('option', { name: /banana/i }));
-    expect(screen.getByRole('button', { name: /read only/i })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: /read only/i }));
-    expect(screen.queryByRole('listbox')).toBeNull();
-
-    rerender(
-      <Combobox.Root key="modal" items={fruitItems} defaultOpen modal>
-        <Combobox.Trigger>Modal</Combobox.Trigger>
-        <Combobox.Portal>
-          <Combobox.Positioner>
-            <Combobox.Popup>
-              <Combobox.List />
-            </Combobox.Popup>
-          </Combobox.Positioner>
-        </Combobox.Portal>
-      </Combobox.Root>
-    );
-    expect(document.body.style.overflow).toBe('hidden');
+    fireEvent.click(screen.getByRole('combobox', { name: /fruit/i }));
+    expect(screen.getByPlaceholderText('Search fruit')).toBeTruthy();
+    expect(screen.getByRole('option', { name: /banana/i })).toBeTruthy();
+    expect(screen.queryByRole('option', { name: /apple/i })).toBeNull();
   });
 });
 
@@ -716,7 +210,7 @@ describe('Combobox app presets', () => {
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /pilih kategori/i }));
+    fireEvent.click(screen.getByRole('combobox', { name: /pilih kategori/i }));
     const listbox = screen.getByRole('listbox');
     const emptyStatus = screen.getByRole('status');
     expect(listbox.contains(emptyStatus)).toBe(false);
@@ -739,7 +233,7 @@ describe('Combobox app presets', () => {
       />
     );
 
-    const trigger = screen.getByRole('button', { name: /pilih kategori/i });
+    const trigger = screen.getByRole('combobox', { name: /pilih kategori/i });
     fireEvent.blur(trigger);
     fireEvent.click(trigger);
     fireEvent.change(screen.getByPlaceholderText('Cari...'), {
@@ -770,7 +264,7 @@ describe('Combobox app presets', () => {
       />
     );
 
-    const trigger = screen.getByRole('button', { name: /pilih/i });
+    const trigger = screen.getByRole('combobox', { name: /pilih/i });
     fireEvent.click(trigger);
     fireEvent.change(screen.getByPlaceholderText('Cari...'), {
       target: { value: 'Supplier B' },
@@ -838,7 +332,7 @@ describe('Combobox app presets', () => {
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /pilih kategori/i }));
+    fireEvent.click(screen.getByRole('combobox', { name: /pilih kategori/i }));
     fireEvent.mouseEnter(screen.getByRole('option', { name: /analgesik/i }));
 
     await waitFor(() => {
@@ -899,15 +393,15 @@ describe('Combobox app presets', () => {
       </>
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /belum dibayar/i }));
+    fireEvent.click(screen.getByRole('combobox', { name: /belum dibayar/i }));
     fireEvent.click(screen.getByRole('option', { name: /lunas/i }));
     expect(onEnumChange).toHaveBeenCalledWith('paid');
 
-    fireEvent.click(screen.getByRole('button', { name: /januari/i }));
+    fireEvent.click(screen.getByRole('combobox', { name: /januari/i }));
     fireEvent.click(screen.getByRole('option', { name: /februari/i }));
     expect(onMonthChange).toHaveBeenCalledWith(1);
 
-    fireEvent.click(screen.getByRole('button', { name: /supplier a/i }));
+    fireEvent.click(screen.getByRole('combobox', { name: /supplier a/i }));
     const supplierList = screen.getAllByRole('listbox').at(-1);
     expect(supplierList).toBeTruthy();
     fireEvent.click(

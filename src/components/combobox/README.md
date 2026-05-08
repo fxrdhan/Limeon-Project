@@ -1,6 +1,6 @@
 # Combobox
 
-`@/components/combobox` exports a BaseUI-like compound primitive:
+`@/components/combobox` exports the official Base UI combobox primitive:
 
 ```tsx
 import { Combobox } from '@/components/combobox';
@@ -20,13 +20,21 @@ The primitive is value-model agnostic and intentionally headless. Items can be s
   name="supplier_id"
 >
   <Combobox.Label>Supplier</Combobox.Label>
-  <Combobox.Trigger placeholder="-- Pilih Supplier --" />
+  <Combobox.Trigger>
+    <Combobox.Value placeholder="-- Pilih Supplier --" />
+  </Combobox.Trigger>
   <Combobox.Portal>
     <Combobox.Positioner>
       <Combobox.Popup>
-        <Combobox.SearchInput placeholder="Cari..." />
+        <Combobox.Input placeholder="Cari..." />
         <Combobox.List>
-          <Combobox.Collection />
+          <Combobox.Collection>
+            {(supplier, index) => (
+              <Combobox.Item key={supplier.id} value={supplier} index={index}>
+                {supplier.name}
+              </Combobox.Item>
+            )}
+          </Combobox.Collection>
         </Combobox.List>
         <Combobox.Empty>Tidak ada data</Combobox.Empty>
       </Combobox.Popup>
@@ -43,7 +51,7 @@ Available parts:
 - `Combobox.Portal`
 - `Combobox.Positioner`
 - `Combobox.Popup`
-- `Combobox.SearchInput`
+- `Combobox.Input`
 - `Combobox.List`
 - `Combobox.Collection`
 - `Combobox.Item`
@@ -60,17 +68,17 @@ Available parts:
 - `multiple`
 - `open`, `defaultOpen`, `onOpenChange`
 - `inputValue`, `defaultInputValue`, `onInputValueChange`
-- `highlightedItem`, `onItemHighlighted`
-- `filter`, `limit`, `locale`
-- `itemToStringLabel`, `itemToStringValue`, `isItemEqualToValue`, `isItemDisabled`
+- `onItemHighlighted`
+- `filter`
+- `itemToStringLabel`, `itemToStringValue`, `isItemEqualToValue`
 - `name`, `form`, `disabled`, `readOnly`, `required`
-- `modal`, `autoHighlight`, `highlightItemOnHover`, `loopFocus`
+- `modal`, `autoHighlight`, `highlightItemOnHover`
 
-Change callbacks receive BaseUI-style details with `reason`, `event`, `trigger`, `cancel()`, and propagation state. Calling `cancel()` prevents the primitive from committing that state change.
+Change callbacks receive Base UI event details with `reason` and `event`.
 
-`autoHighlight` defaults to `false` in the primitive. Presets can opt into select-like behavior explicitly. Item values are not inspected for app-specific flags by default; pass `isItemDisabled` or use `Combobox.Item disabled` when an item should not be selectable.
+`autoHighlight` defaults to `false` in the primitive. Presets can opt into select-like behavior explicitly. Item values are not inspected for app-specific flags by default; use `Combobox.Item disabled` when an item should not be selectable.
 
-`Combobox.Positioner` defaults to collision-aware positioning. It opens below the trigger when there is room, flips above when the lower viewport space is constrained, and exposes `data-side="top | bottom"` on the positioner and popup. Use `side="top"` or `side="bottom"` only when a fixed side is required.
+`Combobox.Positioner` is the official Base UI positioner and keeps collision-aware placement, sizing, and popup anchoring inside the primitive.
 
 ## Render Props
 
@@ -80,13 +88,13 @@ DOM-rendering parts accept `render={element}` or `render={(props, state) => elem
 <Combobox.Trigger
   render={(props, state) => (
     <button {...props} data-open={state.open}>
-      {state.selectedLabel || 'Choose'}
+      <Combobox.Value placeholder="Choose" />
     </button>
   )}
 />
 ```
 
-Stable `data-*` states include `data-state`, `data-selected`, `data-highlighted`, `data-disabled`, `data-readonly`, `data-required`, `data-placeholder`, and `data-empty` where relevant.
+Stable `data-*` states come from Base UI, including `data-selected`, `data-highlighted`, `data-disabled`, `data-readonly`, `data-required`, `data-placeholder`, and `data-empty` where relevant.
 
 ## App Preset
 

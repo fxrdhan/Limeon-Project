@@ -1,19 +1,5 @@
 export { Combobox, default } from './index';
-export type {
-  ComboboxHighlightChangeDetails,
-  ComboboxInputValueChangeDetails,
-  ComboboxItemState,
-  ComboboxListState,
-  ComboboxOpenChangeDetails,
-  ComboboxPopupState,
-  ComboboxRenderProp,
-  ComboboxRootProps,
-  ComboboxRootRenderProps,
-  ComboboxRootState,
-  ComboboxSearchInputState,
-  ComboboxTriggerState,
-  ComboboxValueChangeDetails,
-} from './index';
+export type * from '@base-ui/react/combobox';
 export { findComboboxItemByValue } from './helpers';
 export {
   PharmaComboboxSelect,
