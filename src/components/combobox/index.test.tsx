@@ -128,7 +128,7 @@ describe('Combobox primitive', () => {
         expect(
           screen.getByRole('combobox').getAttribute('aria-activedescendant')
         ).toBe(cherryOption.id);
-        expect(scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' });
+        expect(scrollIntoView).toHaveBeenCalledWith({ block: 'start' });
       });
     } finally {
       if (scrollIntoViewDescriptor) {
@@ -520,6 +520,40 @@ describe('Combobox app presets', () => {
 
     expect(onCreate).toHaveBeenCalledWith('Analgesik');
     expect(screen.getByText('Field ini wajib diisi')).toBeTruthy();
+  });
+
+  it('shows hover detail data for preset entity options', async () => {
+    const onFetchHoverDetail = vi.fn(async (id: string) => ({
+      id,
+      name: 'Analgesik',
+      description: 'Detail kategori obat',
+    }));
+
+    render(
+      <PharmaComboboxSelect<EntityItem>
+        name="category_id"
+        items={[{ id: 'analgesik', name: 'Analgesik' }]}
+        value={null}
+        onValueChange={() => {}}
+        itemToStringLabel={item => item.name}
+        itemToStringValue={item => item.id}
+        placeholder="Pilih kategori"
+        hoverDetail={{ enabled: true, delay: 0 }}
+        onFetchHoverDetail={onFetchHoverDetail}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /pilih kategori/i }));
+    fireEvent.mouseEnter(screen.getByRole('option', { name: /analgesik/i }));
+
+    await waitFor(() => {
+      expect(onFetchHoverDetail).toHaveBeenCalledWith('analgesik');
+    });
+    await waitFor(() => {
+      expect(
+        screen.getAllByText('Detail kategori obat').length
+      ).toBeGreaterThan(0);
+    });
   });
 
   it('covers enum radio-style, calendar text, and purchase object selects', () => {

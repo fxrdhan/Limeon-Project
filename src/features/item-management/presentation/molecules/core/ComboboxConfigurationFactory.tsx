@@ -136,6 +136,7 @@ export function SmartCombobox({
   comboboxProps = {},
   onValueChange,
   onCreate,
+  onFetchHoverDetail,
 }: SmartComboboxProps) {
   // Default validation configuration
   const validationConfig = {
@@ -145,8 +146,6 @@ export function SmartCombobox({
     autoHideDelay: 3000,
     ...validation,
   };
-
-  void hoverDetail;
 
   // Generate loading message
   const finalLoadingMessage =
@@ -183,6 +182,11 @@ export function SmartCombobox({
                 }
               : undefined
           }
+          hoverDetail={{
+            enabled: hoverDetail.enabled ?? Boolean(onFetchHoverDetail),
+            delay: hoverDetail.delay,
+          }}
+          onFetchHoverDetail={onFetchHoverDetail}
           {...comboboxProps}
         />
       )}

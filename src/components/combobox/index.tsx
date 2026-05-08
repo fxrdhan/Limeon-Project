@@ -1290,13 +1290,42 @@ type ListProps = ComponentPropsWithoutRef<'div'> & {
 function List({ children, render, className, onKeyDown, ...props }: ListProps) {
   const context = useComboboxInternal<unknown>();
   const { getItemId, highlightedItem, open } = context;
+  const openCycleRef = useRef(0);
+  const wasOpenRef = useRef(false);
+  const alignedOpenCycleRef = useRef(0);
+
+  useEffect(() => {
+    if (open && !wasOpenRef.current) {
+      openCycleRef.current += 1;
+    }
+    wasOpenRef.current = open;
+  }, [open]);
+
   useEffect(() => {
     if (!open || !highlightedItem) return;
 
     const highlightedId = getItemId(highlightedItem);
+    const currentOpenCycle = openCycleRef.current;
     const frame = window.requestAnimationFrame(() => {
       const highlightedElement = document.getElementById(highlightedId);
-      highlightedElement?.scrollIntoView({ block: 'nearest' });
+      if (!highlightedElement) return;
+
+      const shouldAlignToTop = alignedOpenCycleRef.current !== currentOpenCycle;
+      alignedOpenCycleRef.current = currentOpenCycle;
+
+      if (typeof highlightedElement.scrollIntoView === 'function') {
+        highlightedElement.scrollIntoView({
+          block: shouldAlignToTop ? 'start' : 'nearest',
+        });
+        return;
+      }
+
+      if (shouldAlignToTop) {
+        const listElement = highlightedElement.closest('[role="listbox"]');
+        if (listElement instanceof HTMLElement) {
+          listElement.scrollTop = highlightedElement.offsetTop;
+        }
+      }
     });
 
     return () => {
