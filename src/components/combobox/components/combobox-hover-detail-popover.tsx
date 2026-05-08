@@ -20,6 +20,7 @@ const hoverDetailViewportPadding = 12;
 const hoverDetailHiddenOffset = 4;
 const hoverDetailMinWidth = 220;
 const hoverDetailSurfaceHorizontalPadding = 32;
+const hoverDetailLineWidthBuffer = 8;
 const hoverDetailAppearTransition = {
   type: 'spring' as const,
   stiffness: 520,
@@ -111,6 +112,54 @@ const getHoverDetailMetaBadgeVariant = (data?: HoverDetailData | null) => {
   return 'default';
 };
 
+const getNaturalTextWidth = (element: HTMLElement) => {
+  const previousDisplay = element.style.display;
+  const previousWhiteSpace = element.style.whiteSpace;
+
+  element.style.display = 'inline-block';
+  element.style.whiteSpace = 'nowrap';
+
+  const width = element.getBoundingClientRect().width;
+  element.style.display = previousDisplay;
+  element.style.whiteSpace = previousWhiteSpace;
+
+  return width;
+};
+
+const getMeasuredInlineWidth = (element: HTMLElement) => {
+  const lineRects = element.querySelectorAll<HTMLElement>(
+    '[data-hover-detail-line]'
+  );
+  const titleLine = element.querySelector<HTMLElement>(
+    '[data-hover-detail-title-line]'
+  );
+  const codeBadge = element.querySelector<HTMLElement>(
+    '[data-hover-detail-code-badge]'
+  );
+  let maxLineWidth = 0;
+
+  lineRects.forEach(lineElement => {
+    Array.from(lineElement.getClientRects()).forEach(rect => {
+      maxLineWidth = Math.max(maxLineWidth, rect.width);
+    });
+  });
+
+  if (titleLine) {
+    const codeWidth = codeBadge ? codeBadge.getBoundingClientRect().width : 0;
+    const headerGapWidth = codeWidth > 0 ? 8 : 0;
+    maxLineWidth = Math.max(
+      maxLineWidth,
+      codeWidth + headerGapWidth + getNaturalTextWidth(titleLine)
+    );
+  }
+
+  return maxLineWidth > 0
+    ? maxLineWidth +
+        hoverDetailSurfaceHorizontalPadding +
+        hoverDetailLineWidthBuffer
+    : null;
+};
+
 const HoverDetailContent = ({
   data,
   width,
@@ -134,14 +183,22 @@ const HoverDetailContent = ({
           description && 'mb-3'
         )}
       >
-        <div className="flex min-w-0 flex-1 items-center gap-2">
+        <div className="flex min-w-0 flex-1 items-start gap-2">
           {code ? (
-            <Badge variant="success" size="sm" className="shrink-0 rounded-md">
-              {code}
-            </Badge>
+            <span data-hover-detail-code-badge="" className="shrink-0">
+              <Badge
+                variant="success"
+                size="sm"
+                className="shrink-0 rounded-md"
+              >
+                {code}
+              </Badge>
+            </span>
           ) : null}
           <h3 className="min-w-0 flex-1 whitespace-normal break-words font-semibold text-slate-900">
-            {data.name}
+            <span data-hover-detail-line="" data-hover-detail-title-line="">
+              {data.name}
+            </span>
           </h3>
         </div>
         {metaLabel ? (
@@ -156,7 +213,7 @@ const HoverDetailContent = ({
       </div>
       {description ? (
         <p className="whitespace-normal break-words text-sm leading-relaxed text-slate-600">
-          {description}
+          <span data-hover-detail-line="">{description}</span>
         </p>
       ) : null}
     </div>
@@ -202,8 +259,13 @@ const ComboboxHoverDetailPopover = ({
     if (!popupSizerRef.current) return null;
 
     const rect = popupSizerRef.current.getBoundingClientRect();
+    const measuredInlineWidth = getMeasuredInlineWidth(popupSizerRef.current);
+    const width = measuredInlineWidth
+      ? Math.min(rect.width, measuredInlineWidth)
+      : rect.width;
+
     return {
-      width: Math.max(hoverDetailMinWidth, rect.width),
+      width: Math.max(hoverDetailMinWidth, width),
       height: rect.height,
     };
   }, []);

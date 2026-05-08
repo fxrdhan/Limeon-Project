@@ -128,6 +128,20 @@ const isDisabledItem = <Item,>(item: Item) =>
   'disabled' in item &&
   Boolean(item.disabled);
 
+const isElementVisibleInList = (element: HTMLElement, list: HTMLElement) => {
+  const elementRect = element.getBoundingClientRect();
+  const listRect = list.getBoundingClientRect();
+
+  if (elementRect.height === 0 && listRect.height === 0) return true;
+
+  return (
+    elementRect.bottom > listRect.top &&
+    elementRect.top < listRect.bottom &&
+    elementRect.right > listRect.left &&
+    elementRect.left < listRect.right
+  );
+};
+
 export function PharmaComboboxSelect<Item>({
   id,
   name,
@@ -349,6 +363,7 @@ export function PharmaComboboxSelect<Item>({
         ? targetElement.closest<HTMLElement>('[data-pharma-combobox-index]')
         : null;
     if (!optionElement || !list.contains(optionElement)) return null;
+    if (!isElementVisibleInList(optionElement, list)) return null;
 
     const itemIndex = Number(optionElement.dataset.pharmaComboboxIndex);
     const item =
@@ -361,8 +376,14 @@ export function PharmaComboboxSelect<Item>({
   const flushScrollHover = useCallback(() => {
     isListScrollingRef.current = false;
 
+    const pendingScrollHover = pendingScrollHoverRef.current;
     const hoverTarget =
-      getPointerHoverTarget() ?? pendingScrollHoverRef.current;
+      getPointerHoverTarget() ??
+      (pendingScrollHover &&
+      listRef.current &&
+      isElementVisibleInList(pendingScrollHover.element, listRef.current)
+        ? pendingScrollHover
+        : null);
     pendingScrollHoverRef.current = null;
 
     if (!hoverTarget || isDisabledItem(hoverTarget.item)) return;
@@ -376,6 +397,7 @@ export function PharmaComboboxSelect<Item>({
     if (!hoverDetailEnabled) return;
 
     isListScrollingRef.current = true;
+    hideHoverDetail();
 
     if (listScrollEndTimeoutRef.current) {
       clearTimeout(listScrollEndTimeoutRef.current);
@@ -385,7 +407,7 @@ export function PharmaComboboxSelect<Item>({
       listScrollEndTimeoutRef.current = null;
       flushScrollHover();
     }, scrollHoverResumeDelay);
-  }, [flushScrollHover, hoverDetailEnabled]);
+  }, [flushScrollHover, hideHoverDetail, hoverDetailEnabled]);
   const handleOptionHover = useCallback(
     (item: Item, element: HTMLElement) => {
       if (isDisabledItem(item)) return;

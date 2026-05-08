@@ -509,6 +509,141 @@ describe('Combobox app presets', () => {
     }
   });
 
+  it('ignores stale pending hover targets after fast list scroll', async () => {
+    vi.useFakeTimers();
+    const onFetchHoverDetail = vi.fn(async (id: string) => ({
+      id,
+      name: id,
+      description: `Detail ${id}`,
+    }));
+    const restoreCallbacks: Array<() => void> = [];
+    const createRect = ({
+      bottom,
+      height,
+      left,
+      right,
+      top,
+      width,
+    }: {
+      bottom: number;
+      height: number;
+      left: number;
+      right: number;
+      top: number;
+      width: number;
+    }): DOMRect =>
+      ({
+        bottom,
+        height,
+        left,
+        right,
+        top,
+        width,
+        x: left,
+        y: top,
+        toJSON: () => ({}),
+      }) as DOMRect;
+    const setElementRect = (
+      element: HTMLElement,
+      rect: ReturnType<typeof createRect>
+    ) => {
+      const descriptor = Object.getOwnPropertyDescriptor(
+        element,
+        'getBoundingClientRect'
+      );
+
+      Object.defineProperty(element, 'getBoundingClientRect', {
+        configurable: true,
+        value: () => rect,
+      });
+
+      restoreCallbacks.push(() => {
+        if (descriptor) {
+          Object.defineProperty(element, 'getBoundingClientRect', descriptor);
+          return;
+        }
+
+        Reflect.deleteProperty(element, 'getBoundingClientRect');
+      });
+    };
+
+    try {
+      render(
+        <PharmaComboboxSelect<EntityItem>
+          name="supplier_id"
+          items={[
+            { id: 'a', name: 'Supplier A' },
+            { id: 'b', name: 'Supplier B' },
+          ]}
+          value={null}
+          onValueChange={() => {}}
+          itemToStringLabel={item => item.name}
+          itemToStringValue={item => item.id}
+          hoverDetail={{ enabled: true, delay: 0 }}
+          onFetchHoverDetail={onFetchHoverDetail}
+        />
+      );
+
+      fireEvent.click(screen.getByRole('combobox', { name: /pilih/i }));
+      const listbox = screen.getByRole('listbox');
+      const supplierB = screen.getByRole('option', { name: /supplier b/i });
+      const elementFromPointDescriptor = Object.getOwnPropertyDescriptor(
+        document,
+        'elementFromPoint'
+      );
+      Object.defineProperty(document, 'elementFromPoint', {
+        configurable: true,
+        value: () => null,
+      });
+      restoreCallbacks.push(() => {
+        if (elementFromPointDescriptor) {
+          Object.defineProperty(
+            document,
+            'elementFromPoint',
+            elementFromPointDescriptor
+          );
+          return;
+        }
+
+        Reflect.deleteProperty(document, 'elementFromPoint');
+      });
+      setElementRect(
+        listbox,
+        createRect({
+          bottom: 200,
+          height: 100,
+          left: 0,
+          right: 260,
+          top: 100,
+          width: 260,
+        })
+      );
+      setElementRect(
+        supplierB,
+        createRect({
+          bottom: 280,
+          height: 40,
+          left: 0,
+          right: 260,
+          top: 240,
+          width: 260,
+        })
+      );
+
+      fireEvent.scroll(listbox);
+      fireEvent.mouseEnter(supplierB);
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(120);
+      });
+
+      expect(onFetchHoverDetail).not.toHaveBeenCalled();
+    } finally {
+      restoreCallbacks.reverse().forEach(restore => restore());
+      vi.useRealTimers();
+    }
+  });
+
   it('covers enum radio-style, calendar text, and purchase object selects', () => {
     const onEnumChange = vi.fn();
     const onMonthChange = vi.fn();
