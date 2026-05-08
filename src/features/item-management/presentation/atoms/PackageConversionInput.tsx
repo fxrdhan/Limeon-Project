@@ -102,6 +102,9 @@ export default function PackageConversionInput({
       : []),
     ...existingUnits.filter(unit => unit.id !== formData.inventory_unit_id),
   ];
+  const unitHoverDetailOptions = [...availableUnitOptions, ...parentOptions];
+  const fetchUnitHoverDetail = async (unitId: string) =>
+    unitHoverDetailOptions.find(unit => unit.id === unitId) ?? null;
 
   return (
     <div>
@@ -127,6 +130,8 @@ export default function PackageConversionInput({
             required
             validation={{ enabled: true, autoHide: true, autoHideDelay: 3000 }}
             disabled={disabled}
+            hoverDetail={{ enabled: true, delay: 400 }}
+            onFetchHoverDetail={fetchUnitHoverDetail}
           />
         </FormField>
 
@@ -147,6 +152,8 @@ export default function PackageConversionInput({
             required
             validation={{ enabled: true, autoHide: true, autoHideDelay: 3000 }}
             disabled={disabled}
+            hoverDetail={{ enabled: true, delay: 400 }}
+            onFetchHoverDetail={fetchUnitHoverDetail}
           />
         </FormField>
 

@@ -179,7 +179,7 @@ const HoverDetailContent = ({
     >
       <div
         className={cn(
-          'flex min-w-0 items-center justify-between gap-3',
+          'flex min-w-0 items-start justify-between gap-3',
           description && 'mb-3'
         )}
       >
