@@ -250,6 +250,32 @@ describe('Combobox app presets', () => {
     expect(screen.getByText('Field ini wajib diisi')).toBeTruthy();
   });
 
+  it('creates a missing entity from the search input with Enter', () => {
+    const onCreate = vi.fn();
+    render(
+      <PharmaComboboxSelect<EntityItem>
+        name="category_id"
+        items={[]}
+        value={null}
+        onValueChange={() => {}}
+        itemToStringLabel={item => item.name}
+        itemToStringValue={item => item.id}
+        placeholder="Pilih kategori"
+        createAction={{ onCreate, label: 'Tambah kategori' }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: /pilih kategori/i }));
+    const searchInput = screen.getByPlaceholderText('Cari...');
+    fireEvent.change(searchInput, {
+      target: { value: 'Antibiotik' },
+    });
+    fireEvent.keyDown(searchInput, { key: 'Enter' });
+
+    expect(onCreate).toHaveBeenCalledTimes(1);
+    expect(onCreate).toHaveBeenCalledWith('Antibiotik');
+  });
+
   it('resets searchable preset input when the popup closes without a selection', () => {
     render(
       <PharmaComboboxSelect
@@ -327,6 +353,108 @@ describe('Combobox app presets', () => {
         supplierB.querySelector('[data-pharma-combobox-highlight]')
       ).toBeTruthy();
     });
+  });
+
+  it('routes trigger typing into the open searchable input', () => {
+    render(
+      <PharmaComboboxSelect
+        name="supplier_id"
+        items={[
+          { id: 'a', name: 'Supplier A' },
+          { id: 'b', name: 'Branch B' },
+        ]}
+        value={null}
+        onValueChange={() => {}}
+        itemToStringLabel={supplier => supplier.name}
+        itemToStringValue={supplier => supplier.id}
+      />
+    );
+
+    const trigger = screen.getByRole('combobox', { name: /pilih/i });
+    fireEvent.click(trigger);
+    fireEvent.keyDown(trigger, { key: 'b' });
+
+    const searchInput = screen.getByPlaceholderText('Cari...');
+    expect((searchInput as HTMLInputElement).value).toBe('b');
+    expect(document.activeElement).toBe(searchInput);
+    expect(screen.queryByRole('option', { name: /supplier a/i })).toBeNull();
+    expect(screen.getByRole('option', { name: /branch b/i })).toBeTruthy();
+  });
+
+  it('routes trigger arrow keys to option navigation', async () => {
+    render(
+      <PharmaComboboxSelect
+        name="supplier_id"
+        items={[
+          { id: 'a', name: 'Supplier A' },
+          { id: 'b', name: 'Supplier B' },
+        ]}
+        value={null}
+        onValueChange={() => {}}
+        itemToStringLabel={supplier => supplier.name}
+        itemToStringValue={supplier => supplier.id}
+      />
+    );
+
+    const trigger = screen.getByRole('combobox', { name: /pilih/i });
+    fireEvent.click(trigger);
+    const supplierB = screen.getByRole('option', { name: /supplier b/i });
+
+    fireEvent.keyDown(trigger, { key: 'ArrowDown' });
+
+    expect(document.activeElement).not.toBe(
+      screen.getByPlaceholderText('Cari...')
+    );
+    await waitFor(() => {
+      expect(
+        supplierB.querySelector('[data-pharma-combobox-highlight]')
+      ).toBeTruthy();
+    });
+  });
+
+  it('ignores stale option hover while navigating with arrow keys until the mouse moves', async () => {
+    render(
+      <PharmaComboboxSelect
+        name="supplier_id"
+        items={[
+          { id: 'a', name: 'Supplier A' },
+          { id: 'b', name: 'Supplier B' },
+        ]}
+        value={null}
+        onValueChange={() => {}}
+        itemToStringLabel={supplier => supplier.name}
+        itemToStringValue={supplier => supplier.id}
+      />
+    );
+
+    const trigger = screen.getByRole('combobox', { name: /pilih/i });
+    fireEvent.click(trigger);
+    const listbox = screen.getByRole('listbox');
+    const supplierA = screen.getByRole('option', { name: /supplier a/i });
+    const supplierB = screen.getByRole('option', { name: /supplier b/i });
+
+    fireEvent.keyDown(trigger, { key: 'ArrowDown' });
+
+    await waitFor(() => {
+      expect(
+        supplierB.querySelector('[data-pharma-combobox-highlight]')
+      ).toBeTruthy();
+    });
+
+    fireEvent.mouseEnter(supplierA);
+    expect(
+      supplierA.querySelector('[data-pharma-combobox-highlight]')
+    ).toBeNull();
+    expect(
+      supplierB.querySelector('[data-pharma-combobox-highlight]')
+    ).toBeTruthy();
+
+    fireEvent.mouseMove(listbox, { clientX: 1, clientY: 1 });
+    fireEvent.mouseEnter(supplierA);
+
+    expect(
+      supplierA.querySelector('[data-pharma-combobox-highlight]')
+    ).toBeTruthy();
   });
 
   it('keeps searchable preset input when a controlled popup remains open', () => {

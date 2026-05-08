@@ -174,6 +174,7 @@ export function PharmaComboboxSelect<Item>({
   const instanceId = useId();
   const rootRef = useRef<HTMLDivElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
   const listPointerPositionRef = useRef<{ x: number; y: number } | null>(null);
   const listScrollEndTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null
@@ -183,6 +184,7 @@ export function PharmaComboboxSelect<Item>({
     element: HTMLElement;
   } | null>(null);
   const isListScrollingRef = useRef(false);
+  const isKeyboardNavigatingRef = useRef(false);
   const fallbackLabelId = useId();
   const valueId = useId();
   const [inputValue, setInputValue] = useState('');
@@ -190,6 +192,7 @@ export function PharmaComboboxSelect<Item>({
   const [blurred, setBlurred] = useState(false);
   const [visualHighlightedValue, setVisualHighlightedValue] =
     useState<Item | null>(null);
+  const visualHighlightedValueRef = useRef<Item | null>(null);
   const actualOpen = open ?? uncontrolledOpen;
   const showValidation =
     validation?.enabled && required && blurred && value == null;
@@ -223,6 +226,11 @@ export function PharmaComboboxSelect<Item>({
     visibleItems.length === 0 &&
     !hasExactItem
   );
+  const handleCreate = useCallback(() => {
+    if (!canCreate) return;
+
+    createAction?.onCreate(normalizedInputValue);
+  }, [canCreate, createAction, normalizedInputValue]);
 
   const selectedValue = useMemo(() => value, [value]);
   const selectedLabel =
@@ -375,6 +383,10 @@ export function PharmaComboboxSelect<Item>({
   }, [visibleItems]);
   const flushScrollHover = useCallback(() => {
     isListScrollingRef.current = false;
+    if (isKeyboardNavigatingRef.current) {
+      pendingScrollHoverRef.current = null;
+      return;
+    }
 
     const pendingScrollHover = pendingScrollHoverRef.current;
     const hoverTarget =
@@ -388,6 +400,7 @@ export function PharmaComboboxSelect<Item>({
 
     if (!hoverTarget || isDisabledItem(hoverTarget.item)) return;
 
+    visualHighlightedValueRef.current = hoverTarget.item;
     setVisualHighlightedValue(hoverTarget.item);
     runItemHoverDetail(hoverTarget.item, hoverTarget.element, {
       immediate: true,
@@ -411,7 +424,9 @@ export function PharmaComboboxSelect<Item>({
   const handleOptionHover = useCallback(
     (item: Item, element: HTMLElement) => {
       if (isDisabledItem(item)) return;
+      if (isKeyboardNavigatingRef.current) return;
 
+      visualHighlightedValueRef.current = item;
       setVisualHighlightedValue(item);
 
       if (!hoverDetailEnabled) return;
@@ -425,18 +440,135 @@ export function PharmaComboboxSelect<Item>({
     },
     [hoverDetailEnabled, runItemHoverDetail]
   );
+  const handleListPointerMove = useCallback(
+    (
+      event:
+        | React.MouseEvent<HTMLDivElement>
+        | React.PointerEvent<HTMLDivElement>
+    ) => {
+      updateListPointerPosition(event);
+
+      if (!isKeyboardNavigatingRef.current) return;
+
+      isKeyboardNavigatingRef.current = false;
+      const hoverTarget = getPointerHoverTarget();
+      if (!hoverTarget || isDisabledItem(hoverTarget.item)) return;
+
+      handleOptionHover(hoverTarget.item, hoverTarget.element);
+    },
+    [getPointerHoverTarget, handleOptionHover, updateListPointerPosition]
+  );
   const activeBackgroundLayoutId = `combobox-active-background-${instanceId}-${inputValue}`;
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
       setUncontrolledOpen(nextOpen);
       if (!nextOpen) {
         hideHoverDetail();
+        isKeyboardNavigatingRef.current = false;
+        visualHighlightedValueRef.current = null;
         setVisualHighlightedValue(null);
         if (!isOpenControlled) setInputValue('');
       }
       onOpenChange?.(nextOpen);
     },
     [hideHoverDetail, isOpenControlled, onOpenChange]
+  );
+  const scrollOptionIntoView = useCallback(
+    (item: Item) => {
+      const itemIndex = visibleItems.findIndex(visibleItem =>
+        isSameItem(visibleItem, item)
+      );
+      if (itemIndex < 0) return;
+
+      window.requestAnimationFrame(() => {
+        const option = listRef.current?.querySelector<HTMLElement>(
+          `[data-pharma-combobox-index="${itemIndex}"]`
+        );
+        option?.scrollIntoView?.({ block: 'nearest' });
+      });
+    },
+    [isSameItem, visibleItems]
+  );
+  const navigateVisualHighlight = useCallback(
+    (direction: 'next' | 'previous') => {
+      const enabledItems = visibleItems.filter(item => !isDisabledItem(item));
+      if (enabledItems.length === 0) return false;
+
+      const currentItem =
+        visualHighlightedValueRef.current ?? firstHighlightableVisibleItem;
+      const currentIndex = currentItem
+        ? enabledItems.findIndex(item => isSameItem(item, currentItem))
+        : -1;
+      const nextIndex =
+        currentIndex < 0
+          ? direction === 'next'
+            ? 0
+            : enabledItems.length - 1
+          : direction === 'next'
+            ? (currentIndex + 1) % enabledItems.length
+            : (currentIndex - 1 + enabledItems.length) % enabledItems.length;
+      const nextItem = enabledItems[nextIndex];
+      if (!nextItem) return false;
+
+      isKeyboardNavigatingRef.current = true;
+      visualHighlightedValueRef.current = nextItem;
+      setVisualHighlightedValue(nextItem);
+      scrollOptionIntoView(nextItem);
+      return true;
+    },
+    [
+      firstHighlightableVisibleItem,
+      isSameItem,
+      scrollOptionIntoView,
+      visibleItems,
+    ]
+  );
+  const selectVisualHighlightedItem = useCallback(() => {
+    if (!visualHighlightedValue || isDisabledItem(visualHighlightedValue)) {
+      return false;
+    }
+
+    onValueChange(visualHighlightedValue);
+    setInputValue('');
+    hideHoverDetail();
+    handleOpenChange(false);
+    return true;
+  }, [
+    handleOpenChange,
+    hideHoverDetail,
+    onValueChange,
+    visualHighlightedValue,
+  ]);
+  const handleTriggerKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLButtonElement>) => {
+      if (!searchable || !actualOpen) return;
+
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        const didNavigate = navigateVisualHighlight(
+          event.key === 'ArrowDown' ? 'next' : 'previous'
+        );
+        if (!didNavigate) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+
+      if (
+        event.key.length !== 1 ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      setInputValue(currentValue => `${currentValue}${event.key}`);
+      searchInputRef.current?.focus({ preventScroll: true });
+    },
+    [actualOpen, navigateVisualHighlight, searchable]
   );
 
   useEffect(() => {
@@ -445,6 +577,7 @@ export function PharmaComboboxSelect<Item>({
 
   useEffect(() => {
     if (!actualOpen) {
+      visualHighlightedValueRef.current = null;
       setVisualHighlightedValue(null);
       return;
     }
@@ -461,11 +594,12 @@ export function PharmaComboboxSelect<Item>({
         ? (visibleItems[selectedVisibleIndex] ?? null)
         : null;
 
-    setVisualHighlightedValue(
+    const nextHighlightedValue =
       selectedVisibleItem && !isDisabledItem(selectedVisibleItem)
         ? selectedVisibleItem
-        : firstHighlightableVisibleItem
-    );
+        : firstHighlightableVisibleItem;
+    visualHighlightedValueRef.current = nextHighlightedValue;
+    setVisualHighlightedValue(nextHighlightedValue);
   }, [
     actualOpen,
     firstHighlightableVisibleItem,
@@ -543,8 +677,10 @@ export function PharmaComboboxSelect<Item>({
             nextHighlighted !== undefined &&
             (details.reason === 'keyboard' || details.reason === 'pointer')
           ) {
+            visualHighlightedValueRef.current = nextHighlighted;
             setVisualHighlightedValue(nextHighlighted);
           } else if (details.reason === 'keyboard') {
+            visualHighlightedValueRef.current = null;
             setVisualHighlightedValue(null);
           }
         }}
@@ -575,6 +711,12 @@ export function PharmaComboboxSelect<Item>({
               onBlur={event => {
                 props.onBlur?.(event);
                 setBlurred(true);
+              }}
+              onKeyDown={event => {
+                handleTriggerKeyDown(event);
+                if (event.defaultPrevented) return;
+
+                props.onKeyDown?.(event);
               }}
               className={`flex min-h-10 w-full items-center justify-between gap-2 rounded-xl border bg-white px-3 py-2 text-left text-sm transition focus:border-primary focus:outline-hidden focus:ring-3 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-slate-100 ${
                 showValidation
@@ -625,9 +767,40 @@ export function PharmaComboboxSelect<Item>({
                       )}
                     />
                     <Combobox.Input
+                      ref={searchInputRef}
                       className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-10 text-sm text-slate-800 outline-hidden transition placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/15"
                       aria-label={`Cari ${controlName}`}
                       placeholder="Cari..."
+                      onKeyDown={event => {
+                        if (
+                          event.key === 'ArrowDown' ||
+                          event.key === 'ArrowUp'
+                        ) {
+                          const didNavigate = navigateVisualHighlight(
+                            event.key === 'ArrowDown' ? 'next' : 'previous'
+                          );
+                          if (!didNavigate) return;
+
+                          event.preventDefault();
+                          event.stopPropagation();
+                          return;
+                        }
+
+                        if (event.key !== 'Enter') return;
+
+                        if (canCreate) {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          handleCreate();
+                          return;
+                        }
+
+                        const didSelect = selectVisualHighlightedItem();
+                        if (!didSelect) return;
+
+                        event.preventDefault();
+                        event.stopPropagation();
+                      }}
                     />
                     {canCreate ? (
                       <button
@@ -635,9 +808,7 @@ export function PharmaComboboxSelect<Item>({
                         aria-label={createAction?.label ?? 'Tambah baru'}
                         className="absolute right-2 inline-flex h-6 w-6 items-center justify-center rounded-md text-primary transition hover:bg-primary/10"
                         onMouseDown={event => event.preventDefault()}
-                        onClick={() =>
-                          createAction?.onCreate(normalizedInputValue)
-                        }
+                        onClick={handleCreate}
                       >
                         <TbPlus aria-hidden="true" className="h-4 w-4" />
                       </button>
@@ -648,8 +819,8 @@ export function PharmaComboboxSelect<Item>({
               <Combobox.List
                 ref={listRef}
                 className="max-h-60 overflow-y-auto p-1 outline-hidden"
-                onMouseMove={updateListPointerPosition}
-                onPointerMove={updateListPointerPosition}
+                onMouseMove={handleListPointerMove}
+                onPointerMove={handleListPointerMove}
                 onWheel={updateListPointerPosition}
                 onScroll={handleListScroll}
               >
