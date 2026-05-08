@@ -1,7 +1,6 @@
 import React from 'react';
 import { TbArrowBack } from 'react-icons/tb';
-import { PharmaComboboxSelect } from '@/components/combobox/presets';
-import { findComboboxItemByValue } from '@/components/combobox/helpers';
+import { PharmaEntityComboboxSelect } from '@/components/combobox/entity-select';
 import FormField from '@/components/form-field';
 import Input from '@/components/input';
 import type { ComboboxOption } from '@/types/components';
@@ -114,18 +113,12 @@ export default function PackageConversionInput({
       </p>
       <div className="grid gap-4 md:grid-cols-3 mb-3">
         <FormField label="Unit" className="flex-1" required={true}>
-          <PharmaComboboxSelect
+          <PharmaEntityComboboxSelect
             name="inventory_unit_id"
             tabIndex={tabIndex}
             items={availableUnitOptions}
-            value={findComboboxItemByValue(
-              availableUnitOptions,
-              formData.inventory_unit_id,
-              item => item.id
-            )}
-            onValueChange={item => handleUnitChange(item?.id ?? '')}
-            itemToStringLabel={item => item.name}
-            itemToStringValue={item => item.id}
+            valueId={formData.inventory_unit_id}
+            onValueIdChange={handleUnitChange}
             placeholder="-- Pilih Unit --"
             required
             validation={{ enabled: true, autoHide: true, autoHideDelay: 3000 }}
@@ -136,18 +129,12 @@ export default function PackageConversionInput({
         </FormField>
 
         <FormField label="Dalam" className="flex-1" required={true}>
-          <PharmaComboboxSelect
+          <PharmaEntityComboboxSelect
             name="parent_inventory_unit_id"
             tabIndex={tabIndex + 1}
             items={parentOptions}
-            value={findComboboxItemByValue(
-              parentOptions,
-              formData.parent_inventory_unit_id,
-              item => item.id
-            )}
-            onValueChange={item => handleParentUnitChange(item?.id ?? '')}
-            itemToStringLabel={item => item.name}
-            itemToStringValue={item => item.id}
+            valueId={formData.parent_inventory_unit_id}
+            onValueIdChange={handleParentUnitChange}
             placeholder="-- Pilih Parent --"
             required
             validation={{ enabled: true, autoHide: true, autoHideDelay: 3000 }}

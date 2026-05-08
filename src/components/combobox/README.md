@@ -98,30 +98,26 @@ Stable `data-*` states come from Base UI, including `data-selected`, `data-highl
 
 ## App Preset
 
-Use the app preset when a standard PharmaSys select is needed:
+Use the entity preset when a standard id-backed PharmaSys select is needed:
 
 ```tsx
-import { PharmaComboboxSelect } from '@/components/combobox/presets';
-import { findComboboxItemByValue } from '@/components/combobox/helpers';
+import { PharmaEntityComboboxSelect } from '@/components/combobox/entity-select';
 
-<PharmaComboboxSelect
+<PharmaEntityComboboxSelect
   label="Kategori"
   name="category_id"
   items={categories}
-  value={findComboboxItemByValue(
-    categories,
-    formData.category_id,
-    item => item.id
-  )}
-  onValueChange={item => updateField('category_id', item?.id ?? '')}
-  itemToStringLabel={item => item.name}
-  itemToStringValue={item => item.id}
+  valueId={formData.category_id}
+  onValueIdChange={value => updateField('category_id', value)}
   placeholder="Pilih Kategori"
   required
   validation={{ enabled: true, autoHide: true, autoHideDelay: 3000 }}
   createAction={{ onCreate: openCategoryModal, label: 'Tambah baru' }}
 />;
 ```
+
+Use the generic app preset directly when values are not `id`/`name` entities or
+when the caller needs full control over object stringification and equality.
 
 Enum/list-only selects should pass primitive values directly:
 

@@ -10,8 +10,7 @@ import {
 } from 'react-icons/tb';
 import { AnimatePresence, motion } from 'motion/react';
 import Switch from '@/components/switch';
-import { PharmaComboboxSelect } from '@/components/combobox/presets';
-import { findComboboxItemByValue } from '@/components/combobox/helpers';
+import { PharmaEntityComboboxSelect } from '@/components/combobox/entity-select';
 import Input from '@/components/input';
 import FormField from '@/components/form-field';
 import Button from '@/components/button';
@@ -664,17 +663,11 @@ export default function ItemPricingForm({
                 <div className="grid grid-cols-2 gap-4">
                   <FormField label="Unit Dasar" required={true}>
                     <div className="space-y-2">
-                      <PharmaComboboxSelect
+                      <PharmaEntityComboboxSelect
                         name="base_inventory_unit_id"
                         items={baseUnitOptions}
-                        value={findComboboxItemByValue(
-                          baseUnitOptions,
-                          baseUnitId,
-                          item => item.id
-                        )}
-                        onValueChange={item => onBaseUnitChange(item?.id ?? '')}
-                        itemToStringLabel={item => item.name}
-                        itemToStringValue={item => item.id}
+                        valueId={baseUnitId}
+                        onValueIdChange={onBaseUnitChange}
                         placeholder="Pilih Unit Dasar"
                         required
                         validation={{

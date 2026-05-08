@@ -7,17 +7,8 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { AnimatePresence, motion, useIsPresent } from 'motion/react';
-import {
-  TbCheck,
-  TbChevronDown,
-  TbCircle,
-  TbCircleCheck,
-  TbPlus,
-  TbSearch,
-  TbSquare,
-  TbSquareCheck,
-} from 'react-icons/tb';
+import { AnimatePresence, motion } from 'motion/react';
+import { TbChevronDown, TbPlus, TbSearch } from 'react-icons/tb';
 import ValidationOverlay from '@/components/validation-overlay';
 import { cn } from '@/lib/utils';
 import type { HoverDetailData } from '@/types/components';
@@ -28,8 +19,12 @@ import {
   isWrappedKeyboardScroll,
   type KeyboardPinnedHighlightFrame,
 } from '@/components/shared/keyboard-pinned-highlight';
-import { ComboboxRootWithAlwaysAutoHighlight } from './base-ui-compat';
 import ComboboxHoverDetailPopover from './components/combobox-hover-detail-popover';
+import { ComboboxOptionMotionFrame } from './components/combobox-option-motion-frame';
+import {
+  ComboboxSelectionIndicator,
+  type ComboboxIndicatorKind,
+} from './components/combobox-selection-indicator';
 import { useComboboxHoverDetail } from './hooks/use-combobox-hover-detail';
 import { Combobox, type ComboboxRootProps } from './index';
 import {
@@ -40,8 +35,7 @@ import {
   type ComboboxValueIsEmpty,
 } from './utils/preset-state';
 
-type IndicatorKind = 'check' | 'radio' | 'checkbox' | 'none';
-type PharmaComboboxChangeDetails<Item> = Parameters<
+export type PharmaComboboxChangeDetails<Item> = Parameters<
   NonNullable<ComboboxRootProps<Item>['onValueChange']>
 >[1];
 type BaseUIPreventableSyntheticEvent = React.SyntheticEvent & {
@@ -64,7 +58,7 @@ export interface PharmaComboboxSelectProps<Item> {
   isValueEmpty?: ComboboxValueIsEmpty<Item>;
   placeholder?: string;
   searchable?: boolean;
-  indicator?: IndicatorKind;
+  indicator?: ComboboxIndicatorKind;
   required?: boolean;
   disabled?: boolean;
   readOnly?: boolean;
@@ -86,6 +80,7 @@ export interface PharmaComboboxSelectProps<Item> {
     delay?: number;
   };
   onFetchHoverDetail?: (id: string) => Promise<HoverDetailData | null>;
+  onFetchHoverDetailError?: (error: unknown, id: string) => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   'aria-label'?: string;
@@ -109,49 +104,11 @@ const preventBaseUIHandler = (event: React.SyntheticEvent) => {
   (event as BaseUIPreventableSyntheticEvent).preventBaseUIHandler?.();
 };
 
-const getIndicator = (kind: IndicatorKind, selected: boolean) => {
-  if (kind === 'none') return null;
-  if (kind === 'radio') {
-    return selected ? (
-      <TbCircleCheck className="h-4 w-4 shrink-0 text-primary" />
-    ) : (
-      <TbCircle className="h-4 w-4 shrink-0 text-slate-300" />
-    );
-  }
-  if (kind === 'checkbox') {
-    return selected ? (
-      <TbSquareCheck className="h-4 w-4 shrink-0 text-primary" />
-    ) : (
-      <TbSquare className="h-4 w-4 shrink-0 text-slate-300" />
-    );
-  }
-  return (
-    <span className="flex h-4 w-4 shrink-0 items-center justify-center">
-      {selected ? <TbCheck className="h-4 w-4 text-primary" /> : null}
-    </span>
-  );
-};
-
 const highlightBackgroundTransition = {
   type: 'spring' as const,
   stiffness: 400,
   damping: 30,
   mass: 0.8,
-};
-const listOptionTransition = {
-  layout: {
-    type: 'spring' as const,
-    stiffness: 520,
-    damping: 38,
-    mass: 0.7,
-  },
-  opacity: {
-    duration: 0.1,
-  },
-  y: {
-    duration: 0.1,
-    ease: 'easeOut' as const,
-  },
 };
 const scrollHoverResumeDelay = 120;
 const selectedOptionScrollTopInset = 4;
@@ -187,29 +144,6 @@ const scrollElementTo = (element: HTMLElement, top: number) => {
   element.scrollTop = top;
 };
 
-function ComboboxOptionMotionFrame({
-  children,
-  shouldAnimate,
-}: {
-  children: React.ReactNode;
-  shouldAnimate: boolean;
-}) {
-  const isPresent = useIsPresent();
-
-  return (
-    <motion.div
-      aria-hidden={isPresent ? undefined : true}
-      layout={shouldAnimate ? 'position' : false}
-      initial={shouldAnimate ? { opacity: 0, y: 6 } : false}
-      animate={{ opacity: 1, y: 0 }}
-      exit={shouldAnimate ? { opacity: 0, y: -6 } : undefined}
-      transition={listOptionTransition}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
 export function PharmaComboboxSelect<Item>({
   id,
   label,
@@ -235,6 +169,7 @@ export function PharmaComboboxSelect<Item>({
   createAction,
   hoverDetail,
   onFetchHoverDetail,
+  onFetchHoverDetailError,
   open,
   onOpenChange,
   'aria-label': ariaLabel,
@@ -369,6 +304,7 @@ export function PharmaComboboxSelect<Item>({
     isComboboxOpen: actualOpen,
     isEnabled: hoverDetailEnabled,
     onFetchData: onFetchHoverDetail,
+    onFetchError: onFetchHoverDetailError,
   });
   const getItemHoverDetailData = useCallback(
     (item: Item): Partial<HoverDetailData> => {
@@ -961,7 +897,7 @@ export function PharmaComboboxSelect<Item>({
           {controlName}
         </span>
       ) : null}
-      <ComboboxRootWithAlwaysAutoHighlight<Item>
+      <Combobox.Root<Item>
         items={items}
         value={selectedValue}
         onValueChange={(nextValue, details) => {
@@ -1030,8 +966,7 @@ export function PharmaComboboxSelect<Item>({
         required={required}
         filteredItems={visibleItems}
         filter={null}
-        autoHighlight="always"
-        keepHighlight
+        autoHighlight={searchable}
       >
         <Combobox.Trigger
           id={id}
@@ -1250,7 +1185,10 @@ export function PharmaComboboxSelect<Item>({
                                   />
                                 ) : null}
                                 <span className="relative z-10 flex min-w-0 flex-1 items-center gap-2">
-                                  {getIndicator(indicator, state.selected)}
+                                  <ComboboxSelectionIndicator
+                                    kind={indicator}
+                                    selected={state.selected}
+                                  />
                                   <span className="min-w-0 flex-1 truncate">
                                     {itemToStringLabel(item)}
                                   </span>
@@ -1270,7 +1208,7 @@ export function PharmaComboboxSelect<Item>({
             </Combobox.Popup>
           </Combobox.Positioner>
         </Combobox.Portal>
-      </ComboboxRootWithAlwaysAutoHighlight>
+      </Combobox.Root>
       {validation?.enabled ? (
         <span id={validationMessageId} className="sr-only">
           {showValidation ? requiredValidationMessage : ''}

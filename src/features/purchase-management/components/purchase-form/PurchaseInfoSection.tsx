@@ -2,7 +2,7 @@ import React from 'react';
 import FormSection from '@/components/form-section';
 import Input from '@/components/input';
 import { PharmaComboboxSelect } from '@/components/combobox/presets';
-import { findComboboxItemByValue } from '@/components/combobox/helpers';
+import { PharmaEntityComboboxSelect } from '@/components/combobox/entity-select';
 import Calendar from '@/components/calendar';
 import DescriptiveTextarea from '@/components/descriptive-textarea';
 import type { CustomDateValueType } from '@/components/calendar/types';
@@ -83,20 +83,14 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
           <label className="block text-sm font-medium text-slate-700 mb-1">
             Supplier
           </label>
-          <PharmaComboboxSelect
+          <PharmaEntityComboboxSelect
             label="Supplier"
             name="supplier_id"
             items={suppliers}
-            value={findComboboxItemByValue(
-              suppliers,
-              formData.supplier_id,
-              supplier => supplier.id
-            )}
-            onValueChange={supplier =>
-              handleDropdownChange('supplier_id', supplier?.id ?? '')
+            valueId={formData.supplier_id}
+            onValueIdChange={value =>
+              handleDropdownChange('supplier_id', value)
             }
-            itemToStringLabel={supplier => supplier.name}
-            itemToStringValue={supplier => supplier.id}
             placeholder="-- Pilih Supplier --"
           />
         </div>

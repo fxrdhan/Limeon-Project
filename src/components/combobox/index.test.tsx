@@ -10,6 +10,7 @@ import {
 import { describe, expect, it, vi } from 'vite-plus/test';
 import { findComboboxItemByValue } from './helpers';
 import { Combobox } from './index';
+import { PharmaEntityComboboxSelect } from './entity-select';
 import { PharmaComboboxSelect } from './presets';
 
 const fruitItems = ['Apple', 'Banana', 'Cherry'];
@@ -344,6 +345,33 @@ describe('Combobox app presets', () => {
     );
   });
 
+  it('lets entity selects work with scalar form ids', () => {
+    const onValueIdChange = vi.fn();
+    const suppliers = [
+      { id: 'supplier-a', name: 'Supplier A' },
+      { id: 'supplier-b', name: 'Supplier B' },
+    ];
+
+    render(
+      <PharmaEntityComboboxSelect
+        name="supplier_id"
+        items={suppliers}
+        valueId="supplier-a"
+        onValueIdChange={onValueIdChange}
+        placeholder="Pilih supplier"
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: /supplier a/i }));
+    fireEvent.click(screen.getByRole('option', { name: /supplier b/i }));
+
+    expect(onValueIdChange).toHaveBeenCalledWith(
+      'supplier-b',
+      suppliers[1],
+      expect.objectContaining({ reason: 'item-press' })
+    );
+  });
+
   it('resets searchable preset input when the popup closes without a selection', () => {
     render(
       <PharmaComboboxSelect
@@ -625,6 +653,40 @@ describe('Combobox app presets', () => {
         screen.getAllByText('Detail kategori obat').length
       ).toBeGreaterThan(0);
     });
+  });
+
+  it('reports hover detail fetch failures without dropping base option data', async () => {
+    const fetchError = new Error('fetch failed');
+    const onFetchHoverDetail = vi.fn(async () => {
+      throw fetchError;
+    });
+    const onFetchHoverDetailError = vi.fn();
+
+    render(
+      <PharmaComboboxSelect<EntityItem>
+        name="category_id"
+        items={[{ id: 'analgesik', name: 'Analgesik' }]}
+        value={null}
+        onValueChange={() => {}}
+        itemToStringLabel={item => item.name}
+        itemToStringValue={item => item.id}
+        placeholder="Pilih kategori"
+        hoverDetail={{ enabled: true, delay: 0 }}
+        onFetchHoverDetail={onFetchHoverDetail}
+        onFetchHoverDetailError={onFetchHoverDetailError}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: /pilih kategori/i }));
+    fireEvent.mouseEnter(screen.getByRole('option', { name: /analgesik/i }));
+
+    await waitFor(() => {
+      expect(onFetchHoverDetailError).toHaveBeenCalledWith(
+        fetchError,
+        'analgesik'
+      );
+    });
+    expect(screen.getAllByText('Analgesik').length).toBeGreaterThan(0);
   });
 
   it('coalesces rapid hover detail switches to the final option', async () => {

@@ -18,10 +18,9 @@
  */
 
 import {
-  PharmaComboboxSelect,
-  type PharmaComboboxSelectProps,
-} from '@/components/combobox/presets';
-import { findComboboxItemByValue } from '@/components/combobox/helpers';
+  PharmaEntityComboboxSelect,
+  type PharmaEntityComboboxSelectProps,
+} from '@/components/combobox/entity-select';
 import Input from '@/components/input';
 import FormField from '@/components/form-field';
 import type { ComboboxOption, HoverDetailData } from '@/types/components';
@@ -75,13 +74,8 @@ export interface ComboboxFieldConfig {
   /** Additional combobox props */
   comboboxProps?: Partial<
     Omit<
-      PharmaComboboxSelectProps<ComboboxOption>,
-      | 'name'
-      | 'value'
-      | 'onValueChange'
-      | 'items'
-      | 'itemToStringLabel'
-      | 'itemToStringValue'
+      PharmaEntityComboboxSelectProps<ComboboxOption>,
+      'name' | 'valueId' | 'onValueIdChange' | 'items'
     >
   >;
 }
@@ -159,14 +153,12 @@ export function SmartCombobox({
       {shouldShowLoading ? (
         <Input value={finalLoadingMessage} readOnly disabled />
       ) : (
-        <PharmaComboboxSelect
+        <PharmaEntityComboboxSelect
           name={name}
           tabIndex={tabIndex}
-          value={findComboboxItemByValue(items, value, item => item.id)}
-          onValueChange={item => onValueChange(item?.id ?? '')}
+          valueId={value}
+          onValueIdChange={onValueChange}
           items={items}
-          itemToStringLabel={item => item.name}
-          itemToStringValue={item => item.id}
           placeholder={placeholder}
           required={required}
           validation={{

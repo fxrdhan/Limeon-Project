@@ -87,11 +87,13 @@ export const useComboboxHoverDetail = ({
   isComboboxOpen,
   isEnabled,
   onFetchData,
+  onFetchError,
 }: {
   hoverDelay: number;
   isComboboxOpen: boolean;
   isEnabled: boolean;
   onFetchData?: (itemId: string) => Promise<HoverDetailData | null>;
+  onFetchError?: (error: unknown, itemId: string) => void;
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [position, setPosition] = useState<ComboboxHoverDetailPosition>({
@@ -141,15 +143,21 @@ export const useComboboxHoverDetail = ({
     async (itemId: string) => {
       if (!onFetchData) return;
 
-      const detail = await onFetchData(itemId);
-      if (currentItemIdRef.current === itemId && detail) {
-        setData(previousData => ({
-          ...previousData,
-          ...detail,
-        }));
+      try {
+        const detail = await onFetchData(itemId);
+        if (currentItemIdRef.current === itemId && detail) {
+          setData(previousData => ({
+            ...previousData,
+            ...detail,
+          }));
+        }
+      } catch (error) {
+        if (currentItemIdRef.current === itemId) {
+          onFetchError?.(error, itemId);
+        }
       }
     },
-    [onFetchData]
+    [onFetchData, onFetchError]
   );
 
   const commitHoverDetail = useCallback(

@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
 import Input from '@/components/input';
 import { PharmaComboboxSelect } from '@/components/combobox/presets';
-import { findComboboxItemByValue } from '@/components/combobox/helpers';
+import { PharmaEntityComboboxSelect } from '@/components/combobox/entity-select';
 import FormField from '@/components/form-field';
 import { itemNameSchema } from '@/schemas/manual/itemValidation';
 import type { ComboboxOption } from '@/types/components';
@@ -191,14 +191,12 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
       onCreate: (searchTerm?: string) => void,
       onFetchHoverDetail: (id: string) => Promise<HoverDetailData | null>
     ) => (
-      <PharmaComboboxSelect
+      <PharmaEntityComboboxSelect
         name={name}
         tabIndex={tabIndex}
         items={items}
-        value={findComboboxItemByValue(items, value, item => item.id)}
-        onValueChange={item => onDropdownChange(name, item?.id ?? '')}
-        itemToStringLabel={item => item.name}
-        itemToStringValue={item => item.id}
+        valueId={value}
+        onValueIdChange={nextValue => onDropdownChange(name, nextValue)}
         placeholder={placeholder}
         required
         validation={{ enabled: true, autoHide: true, autoHideDelay: 3000 }}
