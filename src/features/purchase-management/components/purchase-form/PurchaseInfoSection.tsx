@@ -84,6 +84,7 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
             Supplier
           </label>
           <PharmaComboboxSelect
+            label="Supplier"
             name="supplier_id"
             items={suppliers}
             value={findComboboxItemByValue(
@@ -132,6 +133,7 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
             Status Pembayaran
           </label>
           <PharmaComboboxSelect
+            label="Status Pembayaran"
             name="payment_status"
             items={paymentStatusItems}
             value={formData.payment_status}
@@ -151,6 +153,7 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
             Metode Pembayaran
           </label>
           <PharmaComboboxSelect
+            label="Metode Pembayaran"
             name="payment_method"
             items={paymentMethodItems}
             value={formData.payment_method}

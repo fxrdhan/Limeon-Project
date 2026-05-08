@@ -246,7 +246,6 @@ const ComboboxHoverDetailPopover = ({
   const [renderedData, setRenderedData] = useState<HoverDetailData | null>(
     data
   );
-  const shouldRenderSizer = showContent && data !== renderedData;
 
   const cancelPendingAnimationFrame = useCallback(() => {
     if (animationFrameRef.current === null) return;
@@ -397,18 +396,6 @@ const ComboboxHoverDetailPopover = ({
   return createPortal(
     <>
       {showContent ? (
-        <div
-          ref={popupSizerRef}
-          className={cn(
-            hoverDetailSurfaceClassName,
-            'pointer-events-none fixed left-0 top-0 -z-10 opacity-0'
-          )}
-          style={{ maxWidth: position.maxWidth, minWidth: hoverDetailMinWidth }}
-        >
-          <HoverDetailContent data={data} />
-        </div>
-      ) : null}
-      {shouldRenderSizer && data ? (
         <div
           ref={popupSizerRef}
           className={cn(

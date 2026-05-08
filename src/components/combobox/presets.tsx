@@ -7,8 +7,6 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Combobox } from '@base-ui/react/combobox';
-import type { ComboboxRootProps } from '@base-ui/react/combobox';
 import { AnimatePresence, motion, useIsPresent } from 'motion/react';
 import {
   TbCheck,
@@ -30,24 +28,23 @@ import {
   isWrappedKeyboardScroll,
   type KeyboardPinnedHighlightFrame,
 } from '@/components/shared/keyboard-pinned-highlight';
+import { ComboboxRootWithAlwaysAutoHighlight } from './base-ui-compat';
 import ComboboxHoverDetailPopover from './components/combobox-hover-detail-popover';
 import { useComboboxHoverDetail } from './hooks/use-combobox-hover-detail';
+import { Combobox } from './index';
+import {
+  getComboboxControlName,
+  getComboboxSelectedValue,
+  getVisibleComboboxItems,
+  hasExactComboboxItem,
+  type ComboboxValueIsEmpty,
+} from './utils/preset-state';
 
 type IndicatorKind = 'check' | 'radio' | 'checkbox' | 'none';
 
-type RootWithAutoHighlightProps<Item> = Omit<
-  ComboboxRootProps<Item>,
-  'autoHighlight'
-> & {
-  autoHighlight?: boolean | 'always';
-};
-
-const ComboboxRootWithAutoHighlight = Combobox.Root as <Item>(
-  props: RootWithAutoHighlightProps<Item>
-) => React.JSX.Element;
-
 export interface PharmaComboboxSelectProps<Item> {
   id?: string;
+  label?: string;
   name: string;
   items: Item[];
   value: Item | null;
@@ -55,6 +52,7 @@ export interface PharmaComboboxSelectProps<Item> {
   itemToStringLabel: (item: Item) => string;
   itemToStringValue: (item: Item) => string;
   isItemEqualToValue?: (item: Item, value: Item) => boolean;
+  isValueEmpty?: ComboboxValueIsEmpty<Item>;
   placeholder?: string;
   searchable?: boolean;
   indicator?: IndicatorKind;
@@ -200,6 +198,7 @@ function ComboboxOptionMotionFrame({
 
 export function PharmaComboboxSelect<Item>({
   id,
+  label,
   name,
   items,
   value,
@@ -207,6 +206,7 @@ export function PharmaComboboxSelect<Item>({
   itemToStringLabel,
   itemToStringValue,
   isItemEqualToValue,
+  isValueEmpty,
   placeholder = '-- Pilih --',
   searchable = true,
   indicator = 'none',
@@ -263,30 +263,20 @@ export function PharmaComboboxSelect<Item>({
   const visualHighlightedValueRef = useRef<Item | null>(null);
   const previousNormalizedInputValueRef = useRef('');
   const actualOpen = open ?? uncontrolledOpen;
-  const showValidation =
-    validation?.enabled && required && blurred && value == null;
-  const normalizedInputValue = inputValue.trim();
-  const matchesSearch = useCallback(
-    (item: Item, search: string) =>
-      itemToStringLabel(item)
-        .toLocaleLowerCase('id-ID')
-        .includes(search.toLocaleLowerCase('id-ID')),
-    [itemToStringLabel]
+  const selectedValue = useMemo(
+    () => getComboboxSelectedValue(value, isValueEmpty),
+    [isValueEmpty, value]
   );
+  const showValidation =
+    validation?.enabled && required && blurred && selectedValue == null;
+  const normalizedInputValue = inputValue.trim();
   const visibleItems = useMemo(
     () =>
-      normalizedInputValue
-        ? items.filter(item => matchesSearch(item, normalizedInputValue))
-        : items,
-    [items, matchesSearch, normalizedInputValue]
+      getVisibleComboboxItems(items, normalizedInputValue, itemToStringLabel),
+    [itemToStringLabel, items, normalizedInputValue]
   );
   const hasExactItem = useMemo(
-    () =>
-      items.some(
-        item =>
-          itemToStringLabel(item).toLocaleLowerCase('id-ID') ===
-          normalizedInputValue.toLocaleLowerCase('id-ID')
-      ),
+    () => hasExactComboboxItem(items, normalizedInputValue, itemToStringLabel),
     [itemToStringLabel, items, normalizedInputValue]
   );
   const canCreate = Boolean(
@@ -302,7 +292,6 @@ export function PharmaComboboxSelect<Item>({
     createAction?.onCreate(normalizedInputValue);
   }, [canCreate, createAction, normalizedInputValue]);
 
-  const selectedValue = useMemo(() => value, [value]);
   const selectedLabel =
     selectedValue == null ? '' : itemToStringLabel(selectedValue);
   const isSameItem = useCallback(
@@ -338,9 +327,7 @@ export function PharmaComboboxSelect<Item>({
     [isSameItem, visualHighlightedValue]
   );
   const isOpenControlled = open !== undefined;
-  const controlName =
-    placeholder.replace(/^-+\s*|\s*-+$/g, '').trim() ||
-    name.replace(/[_-]+/g, ' ');
+  const controlName = getComboboxControlName({ label, name, placeholder });
   const triggerLabelledBy = ariaLabelledBy
     ? `${ariaLabelledBy} ${valueId}`
     : ariaLabel
@@ -902,7 +889,7 @@ export function PharmaComboboxSelect<Item>({
           {controlName}
         </span>
       ) : null}
-      <ComboboxRootWithAutoHighlight<Item>
+      <ComboboxRootWithAlwaysAutoHighlight<Item>
         items={items}
         value={selectedValue}
         onValueChange={nextValue => {
@@ -948,7 +935,8 @@ export function PharmaComboboxSelect<Item>({
         disabled={disabled}
         readOnly={readOnly}
         required={required}
-        filter={matchesSearch}
+        filteredItems={visibleItems}
+        filter={null}
         autoHighlight="always"
       >
         <Combobox.Trigger
@@ -957,47 +945,51 @@ export function PharmaComboboxSelect<Item>({
           aria-labelledby={triggerLabelledBy}
           aria-describedby={ariaDescribedBy}
           tabIndex={tabIndex}
-          render={(props, state) => (
-            <button
-              {...props}
-              type="button"
-              ref={node => {
-                setRef(props.ref, node);
-              }}
-              onBlur={event => {
-                props.onBlur?.(event);
-                setBlurred(true);
-              }}
-              onKeyDown={event => {
-                handleTriggerKeyDown(event);
-                if (event.defaultPrevented) return;
+          render={(props, state) => {
+            const { ref, ...triggerProps } = props;
 
-                props.onKeyDown?.(event);
-              }}
-              className={`flex min-h-10 w-full items-center justify-between gap-2 rounded-xl border bg-white px-3 py-2 text-left text-sm transition focus:border-primary focus:outline-hidden focus:ring-3 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-slate-100 ${
-                showValidation
-                  ? 'border-red-400'
-                  : state.open
-                    ? 'border-primary'
-                    : 'border-slate-300'
-              }`}
-            >
-              <span
-                id={valueId}
-                className={
-                  selectedLabel ? 'truncate' : 'truncate text-slate-400'
-                }
-              >
-                {selectedLabel || placeholder}
-              </span>
-              <TbChevronDown
-                aria-hidden="true"
-                className={`h-4 w-4 shrink-0 text-slate-500 transition-transform ${
-                  state.open ? 'rotate-180' : ''
+            return (
+              <button
+                {...triggerProps}
+                type="button"
+                ref={node => {
+                  setRef(ref, node);
+                }}
+                onBlur={event => {
+                  triggerProps.onBlur?.(event);
+                  setBlurred(true);
+                }}
+                onKeyDown={event => {
+                  handleTriggerKeyDown(event);
+                  if (event.defaultPrevented) return;
+
+                  triggerProps.onKeyDown?.(event);
+                }}
+                className={`flex min-h-10 w-full items-center justify-between gap-2 rounded-xl border bg-white px-3 py-2 text-left text-sm transition focus:border-primary focus:outline-hidden focus:ring-3 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-slate-100 ${
+                  showValidation
+                    ? 'border-red-400'
+                    : state.open
+                      ? 'border-primary'
+                      : 'border-slate-300'
                 }`}
-              />
-            </button>
-          )}
+              >
+                <span
+                  id={valueId}
+                  className={
+                    selectedLabel ? 'truncate' : 'truncate text-slate-400'
+                  }
+                >
+                  {selectedLabel || placeholder}
+                </span>
+                <TbChevronDown
+                  aria-hidden="true"
+                  className={`h-4 w-4 shrink-0 text-slate-500 transition-transform ${
+                    state.open ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+            );
+          }}
         />
         <Combobox.Portal>
           <Combobox.Positioner
@@ -1117,6 +1109,7 @@ export function PharmaComboboxSelect<Item>({
                             handleItemLeave();
                           }}
                           render={(props, state) => {
+                            const { ref, ...itemProps } = props;
                             const isVisuallyHighlighted =
                               isItemVisuallyHighlighted(
                                 item,
@@ -1125,7 +1118,10 @@ export function PharmaComboboxSelect<Item>({
 
                             return (
                               <div
-                                {...props}
+                                {...itemProps}
+                                ref={node => {
+                                  setRef(ref, node);
+                                }}
                                 data-pharma-combobox-index={index.toString()}
                                 className={cn(
                                   'relative flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-800 outline-hidden',
@@ -1167,7 +1163,7 @@ export function PharmaComboboxSelect<Item>({
             </Combobox.Popup>
           </Combobox.Positioner>
         </Combobox.Portal>
-      </ComboboxRootWithAutoHighlight>
+      </ComboboxRootWithAlwaysAutoHighlight>
       {validation?.enabled ? (
         <ValidationOverlay
           error="Field ini wajib diisi"

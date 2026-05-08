@@ -107,6 +107,7 @@ import {
 } from '@/components/combobox/presets';
 
 <PharmaComboboxSelect
+  label="Kategori"
   name="category_id"
   items={categories}
   value={findComboboxItemByValue(
@@ -136,6 +137,27 @@ Enum/list-only selects should pass primitive values directly:
   itemToStringValue={value => value}
   searchable={false}
   indicator="radio"
+/>
+```
+
+When the preset is not wrapped by `FormField` or another visible label, pass
+`label`. The trigger uses that label plus the current value for its accessible
+name while keeping the same visual output.
+
+If a scalar select uses a non-null empty sentinel such as `''`, pass
+`isValueEmpty` so required validation and Base UI selection state still treat it
+as empty:
+
+```tsx
+<PharmaComboboxSelect
+  name="status"
+  items={['active', 'inactive']}
+  value={status}
+  onValueChange={value => setStatus(value ?? '')}
+  itemToStringLabel={value => labels[value] ?? value}
+  itemToStringValue={value => value}
+  isValueEmpty={value => value === ''}
+  required
 />
 ```
 

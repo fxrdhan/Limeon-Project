@@ -217,6 +217,26 @@ describe('Combobox app presets', () => {
     expect(listbox.contains(emptyStatus)).toBe(false);
   });
 
+  it('uses an explicit preset label as the fallback accessible name', () => {
+    render(
+      <PharmaComboboxSelect
+        label="Bulan"
+        name="month-selector"
+        items={[0, 1]}
+        value={0}
+        onValueChange={() => {}}
+        itemToStringLabel={value => (value === 0 ? 'Januari' : 'Februari')}
+        itemToStringValue={value => value.toString()}
+        placeholder="Pilih bulan"
+        searchable={false}
+      />
+    );
+
+    expect(
+      screen.getByRole('combobox', { name: /bulan januari/i })
+    ).toBeTruthy();
+  });
+
   it('covers an entity field with validation and add-new action', () => {
     const onCreate = vi.fn();
     render(
@@ -274,6 +294,41 @@ describe('Combobox app presets', () => {
 
     expect(onCreate).toHaveBeenCalledTimes(1);
     expect(onCreate).toHaveBeenCalledWith('Antibiotik');
+  });
+
+  it('lets scalar selects declare a non-null empty sentinel', () => {
+    const onValueChange = vi.fn();
+
+    render(
+      <PharmaComboboxSelect
+        name="status"
+        items={['active', 'inactive']}
+        value=""
+        onValueChange={onValueChange}
+        itemToStringLabel={value =>
+          value === 'active'
+            ? 'Aktif'
+            : value === 'inactive'
+              ? 'Tidak aktif'
+              : ''
+        }
+        itemToStringValue={value => value}
+        placeholder="Pilih status"
+        required
+        validation={{ enabled: true, autoHide: false }}
+        isValueEmpty={value => value === ''}
+      />
+    );
+
+    const trigger = screen.getByRole('combobox', { name: /pilih status/i });
+    fireEvent.blur(trigger);
+
+    expect(screen.getByText('Field ini wajib diisi')).toBeTruthy();
+
+    fireEvent.click(trigger);
+    fireEvent.click(screen.getByRole('option', { name: /^aktif$/i }));
+
+    expect(onValueChange).toHaveBeenCalledWith('active');
   });
 
   it('resets searchable preset input when the popup closes without a selection', () => {

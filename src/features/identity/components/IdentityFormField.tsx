@@ -92,6 +92,7 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
       return (
         <PharmaComboboxSelect
           id={field.key}
+          label={field.label}
           name={field.key}
           items={optionValues}
           value={String(fieldValue ?? '')}
@@ -100,6 +101,7 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
           }}
           itemToStringLabel={value => optionLabelByValue.get(value) ?? value}
           itemToStringValue={value => value}
+          isValueEmpty={value => value === ''}
           placeholder={`Pilih ${field.label.toLowerCase()}`}
           indicator="radio"
           searchable={false}
