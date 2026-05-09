@@ -1,6 +1,5 @@
 import React, {
   createContext,
-  createElement,
   forwardRef,
   isValidElement,
   useCallback,
@@ -12,6 +11,14 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import {
+  autoUpdate,
+  flip,
+  offset,
+  shift,
+  size,
+  useFloating,
+} from '@floating-ui/react-dom';
 import { createPortal } from 'react-dom';
 
 type EventReason =
@@ -70,7 +77,6 @@ type ComboboxContextValue<Value> = {
   listboxId: string;
   name?: string;
   open: boolean;
-  popupPosition: React.CSSProperties;
   readOnly: boolean;
   registerItem: (index: number, meta: ItemMeta<Value>) => () => void;
   required: boolean;
@@ -95,6 +101,7 @@ type ComboboxContextValue<Value> = {
     reason: EventReason,
     event?: React.SyntheticEvent | Event
   ) => boolean;
+  setTriggerId: (id: string) => void;
   triggerId: string;
   triggerRef: React.RefObject<HTMLElement | null>;
 };
@@ -107,7 +114,9 @@ type RenderableProps<Props, State> = {
   render?: RenderProp<Props, State>;
 };
 
-type TriggerRenderProps = React.ComponentPropsWithoutRef<'button'> & {
+type TriggerElementProps = React.ComponentPropsWithoutRef<'button'>;
+
+type TriggerRenderProps = TriggerElementProps & {
   ref: React.Ref<HTMLButtonElement>;
 };
 
@@ -117,9 +126,12 @@ type TriggerState = {
   readOnly: boolean;
 };
 
-type ItemRenderProps = React.ComponentPropsWithoutRef<'div'> & {
-  ref: React.Ref<HTMLDivElement>;
+type ItemElementProps = React.ComponentPropsWithoutRef<'div'> & {
   [key: `data-${string}`]: string | undefined;
+};
+
+type ItemRenderProps = ItemElementProps & {
+  ref: React.Ref<HTMLDivElement>;
 };
 
 type ItemState = {
@@ -128,23 +140,13 @@ type ItemState = {
   selected: boolean;
 };
 
-type ModeFromMultiple<Multiple extends boolean | undefined> =
-  Multiple extends true ? 'multiple' : 'single';
-type ComboboxValueType<
-  Value,
-  Multiple extends boolean | undefined,
-> = Multiple extends true ? Value[] : Value;
-
-export type ComboboxRootProps<
-  Value,
-  Multiple extends boolean | undefined = false,
-> = {
+export type ComboboxRootProps<Value> = {
   autoComplete?: string;
   autoHighlight?: boolean;
   children?: React.ReactNode;
   defaultInputValue?: string;
   defaultOpen?: boolean;
-  defaultValue?: ComboboxValueType<Value, Multiple> | null;
+  defaultValue?: Value | null;
   disabled?: boolean;
   filter?:
     | null
@@ -161,7 +163,6 @@ export type ComboboxRootProps<
   itemToStringLabel?: (itemValue: Value) => string;
   itemToStringValue?: (itemValue: Value) => string;
   items?: readonly Value[];
-  multiple?: Multiple;
   name?: string;
   onInputValueChange?: (
     inputValue: string,
@@ -176,15 +177,13 @@ export type ComboboxRootProps<
     eventDetails: ComboboxChangeEventDetails
   ) => void;
   onValueChange?: (
-    value:
-      | ComboboxValueType<Value, Multiple>
-      | (Multiple extends true ? never : null),
+    value: Value | null,
     eventDetails: ComboboxChangeEventDetails
   ) => void;
   open?: boolean;
   readOnly?: boolean;
   required?: boolean;
-  value?: ComboboxValueType<Value, Multiple> | null;
+  value?: Value | null;
 };
 
 export namespace ComboboxRoot {
@@ -192,12 +191,7 @@ export namespace ComboboxRoot {
   export type HighlightEventDetails = ComboboxHighlightEventDetails;
   export type ChangeEventReason = EventReason;
   export type HighlightEventReason = EventReason;
-  export type Props<
-    Value,
-    Multiple extends boolean | undefined = false,
-  > = ComboboxRootProps<Value, Multiple>;
-  export type Mode<Multiple extends boolean | undefined = false> =
-    ModeFromMultiple<Multiple>;
+  export type Props<Value> = ComboboxRootProps<Value>;
 }
 
 type ComboboxLabelProps = React.ComponentPropsWithoutRef<'label'>;
@@ -228,15 +222,17 @@ type ComboboxPopupProps = React.ComponentPropsWithoutRef<'div'> & {
 
 type ComboboxInputProps = React.ComponentPropsWithoutRef<'input'>;
 
-type ComboboxListProps = Omit<
+type ComboboxListProps<Value = React.ReactNode> = Omit<
   React.ComponentPropsWithoutRef<'div'>,
   'children'
 > & {
-  children?: React.ReactNode | ((item: any, index: number) => React.ReactNode);
+  children?:
+    | React.ReactNode
+    | ((item: Value, index: number) => React.ReactNode);
 };
 
-type ComboboxCollectionProps = {
-  children: (item: any, index: number) => React.ReactNode;
+type ComboboxCollectionProps<Value = React.ReactNode> = {
+  children: (item: Value, index: number) => React.ReactNode;
 };
 
 type ComboboxItemProps<Value> = Omit<
@@ -307,10 +303,8 @@ const createHighlightEventDetails = (
   reason: EventReason,
   index: number,
   event?: React.SyntheticEvent | Event
-): ComboboxHighlightEventDetails => ({
-  ...createEventDetails(reason, event),
-  index,
-});
+): ComboboxHighlightEventDetails =>
+  Object.assign(createEventDetails(reason, event), { index });
 
 const getPreventableEvent = (
   event: React.SyntheticEvent
@@ -325,41 +319,19 @@ const getPreventableEvent = (
 const isComboboxHandlerPrevented = (event: React.SyntheticEvent) =>
   Boolean((event as PreventableReactEvent).comboboxHandlerPrevented);
 
+const popupViewportPadding = 8;
+const popupMinimumAvailableHeight = 96;
+
+const floatingSizeVariables = {
+  '--anchor-width': '0px',
+  '--available-height': `${popupMinimumAvailableHeight}px`,
+} as React.CSSProperties;
+
 const callIfFunction = <EventType extends React.SyntheticEvent>(
   handler: ((event: EventType) => void) | undefined,
   event: EventType
 ) => {
   handler?.(event);
-};
-
-const renderElement = <
-  Props extends { children?: React.ReactNode; className?: string },
-  State,
->({
-  children,
-  defaultElement,
-  props,
-  render,
-  state,
-}: {
-  children?: React.ReactNode;
-  defaultElement: keyof React.JSX.IntrinsicElements;
-  props: Props;
-  render?: RenderProp<Props, State>;
-  state: State;
-}) => {
-  if (typeof render === 'function') return render(props, state);
-
-  if (isValidElement<Record<string, unknown>>(render)) {
-    return React.cloneElement(render, {
-      ...props,
-      className: [render.props.className, props.className]
-        .filter(Boolean)
-        .join(' '),
-    } satisfies Record<string, unknown>);
-  }
-
-  return createElement(defaultElement, props, children);
 };
 
 const getNextEnabledIndex = <Value,>({
@@ -393,10 +365,7 @@ const useComboboxContext = <Value,>() => {
   return context as ComboboxContextValue<Value>;
 };
 
-function ComboboxRootComponent<
-  Value,
-  Multiple extends boolean | undefined = false,
->({
+function ComboboxRootComponent<Value>({
   autoHighlight = false,
   children,
   defaultInputValue = '',
@@ -421,7 +390,7 @@ function ComboboxRootComponent<
   readOnly = false,
   required = false,
   value: valueProp,
-}: ComboboxRootProps<Value, Multiple>) {
+}: ComboboxRootProps<Value>) {
   const generatedId = useId();
   const triggerRef = useRef<HTMLElement | null>(null);
   const itemMetaRef = useRef(new Map<number, ItemMeta<Value>>());
@@ -434,12 +403,11 @@ function ComboboxRootComponent<
   const [uncontrolledInputValue, setUncontrolledInputValue] =
     useState(defaultInputValue);
   const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen);
-  const [uncontrolledValue, setUncontrolledValue] = useState<ComboboxValueType<
-    Value,
-    Multiple
-  > | null>(defaultValue);
+  const [uncontrolledValue, setUncontrolledValue] = useState<Value | null>(
+    defaultValue
+  );
   const [activeIndexState, setActiveIndexState] = useState<number | null>(null);
-  const [popupPosition, setPopupPosition] = useState<React.CSSProperties>({});
+  const [triggerId, setTriggerIdState] = useState(`${generatedId}-trigger`);
 
   const itemToStringLabel = useCallback(
     (item: Value) =>
@@ -567,15 +535,10 @@ function ComboboxRootComponent<
       if (disabled || readOnly) return false;
 
       const details = createEventDetails(reason, event);
-      onValueChange?.(
-        item as
-          | ComboboxValueType<Value, Multiple>
-          | (Multiple extends true ? never : null),
-        details
-      );
+      onValueChange?.(item, details);
       if (details.isCanceled) return false;
       if (valueProp === undefined) {
-        setUncontrolledValue(item as ComboboxValueType<Value, Multiple>);
+        setUncontrolledValue(item);
       }
       setOpen(false, reason, event);
       return true;
@@ -605,33 +568,11 @@ function ComboboxRootComponent<
       }),
     []
   );
-
-  const updatePopupPosition = useCallback(() => {
-    const trigger = triggerRef.current;
-    if (!trigger) return;
-
-    const rect = trigger.getBoundingClientRect();
-    setPopupPosition({
-      '--anchor-width': `${rect.width}px`,
-      left: rect.left,
-      position: 'fixed',
-      top: rect.bottom,
-      width: rect.width,
-    } as React.CSSProperties);
+  const setTriggerId = useCallback((nextTriggerId: string) => {
+    setTriggerIdState(currentTriggerId =>
+      currentTriggerId === nextTriggerId ? currentTriggerId : nextTriggerId
+    );
   }, []);
-
-  useLayoutEffect(() => {
-    if (!open) return;
-
-    updatePopupPosition();
-    window.addEventListener('resize', updatePopupPosition);
-    window.addEventListener('scroll', updatePopupPosition, true);
-
-    return () => {
-      window.removeEventListener('resize', updatePopupPosition);
-      window.removeEventListener('scroll', updatePopupPosition, true);
-    };
-  }, [open, updatePopupPosition]);
 
   useEffect(() => {
     if (!open) {
@@ -694,7 +635,6 @@ function ComboboxRootComponent<
       listboxId: `${generatedId}-listbox`,
       name,
       open,
-      popupPosition,
       readOnly,
       registerItem,
       required,
@@ -702,8 +642,9 @@ function ComboboxRootComponent<
       setActiveIndex,
       setInputValue,
       setOpen,
+      setTriggerId,
       selectItem,
-      triggerId: `${generatedId}-trigger`,
+      triggerId,
       triggerRef,
     }),
     [
@@ -722,7 +663,6 @@ function ComboboxRootComponent<
       itemToStringValue,
       name,
       open,
-      popupPosition,
       readOnly,
       registerItem,
       required,
@@ -730,14 +670,14 @@ function ComboboxRootComponent<
       setActiveIndex,
       setInputValue,
       setOpen,
+      setTriggerId,
       selectItem,
+      triggerId,
     ]
   );
 
   const hiddenValue =
-    selectedValue === null || Array.isArray(selectedValue)
-      ? ''
-      : itemToStringValue(selectedValue);
+    selectedValue === null ? '' : itemToStringValue(selectedValue);
 
   return (
     <ComboboxContext.Provider value={context as ComboboxContextValue<unknown>}>
@@ -777,10 +717,16 @@ function ComboboxTrigger({
 }: ComboboxTriggerProps) {
   const context = useComboboxContext<unknown>();
   const disabled = context.disabled || Boolean(disabledProp);
+  const effectiveId = props.id ?? context.triggerId;
+  const { setTriggerId, triggerRef } = context;
   const activeDescendant =
     context.activeIndex === null
       ? undefined
       : context.getItemId(context.activeIndex);
+
+  useEffect(() => {
+    setTriggerId(effectiveId);
+  }, [effectiveId, setTriggerId]);
 
   const moveHighlight = useCallback(
     (direction: 1 | -1, event: React.KeyboardEvent<HTMLButtonElement>) => {
@@ -796,7 +742,20 @@ function ComboboxTrigger({
     [context]
   );
 
-  const triggerProps: TriggerRenderProps = {
+  const setTriggerRef = useCallback(
+    (node: HTMLButtonElement | null) => {
+      triggerRef.current = node;
+    },
+    [triggerRef]
+  );
+
+  const triggerState: TriggerState = {
+    disabled,
+    open: context.open,
+    readOnly: context.readOnly,
+  };
+
+  const triggerElementProps: TriggerElementProps = {
     ...props,
     'aria-activedescendant': activeDescendant,
     'aria-controls': context.open ? context.listboxId : undefined,
@@ -807,7 +766,7 @@ function ComboboxTrigger({
       props['aria-labelledby'] ??
       (props['aria-label'] ? undefined : context.labelId),
     disabled,
-    id: props.id ?? context.triggerId,
+    id: effectiveId,
     onClick: event => {
       const preventableEvent = getPreventableEvent(event);
       callIfFunction(onClick, event);
@@ -867,24 +826,33 @@ function ComboboxTrigger({
         context.setOpen(true, 'keyboard', event);
       }
     },
-    ref: node => {
-      context.triggerRef.current = node;
-    },
     role: 'combobox',
     type: props.type ?? 'button',
   };
 
-  return renderElement({
-    children,
-    defaultElement: 'button',
-    props: triggerProps,
-    render,
-    state: {
-      disabled,
-      open: context.open,
-      readOnly: context.readOnly,
-    },
-  });
+  const triggerRenderProps: TriggerRenderProps = {
+    ...triggerElementProps,
+    ref: setTriggerRef,
+  };
+
+  if (typeof render === 'function') {
+    return render(triggerRenderProps, triggerState);
+  }
+
+  if (isValidElement<Record<string, unknown>>(render)) {
+    return React.cloneElement(render, {
+      ...triggerRenderProps,
+      className: [render.props.className, triggerElementProps.className]
+        .filter(Boolean)
+        .join(' '),
+    } satisfies Record<string, unknown>);
+  }
+
+  return (
+    <button {...triggerElementProps} ref={setTriggerRef}>
+      {children}
+    </button>
+  );
 }
 
 function ComboboxValue({
@@ -920,20 +888,62 @@ function ComboboxPositioner({
   ...props
 }: ComboboxPositionerProps) {
   const context = useComboboxContext<unknown>();
-  if (!context.open) return null;
+  const floatingMiddleware = useMemo(
+    () => [
+      offset(sideOffset),
+      flip({ padding: popupViewportPadding }),
+      shift({ padding: popupViewportPadding }),
+      size({
+        padding: popupViewportPadding,
+        apply({ availableHeight, availableWidth, elements, rects }) {
+          const width = Math.min(
+            rects.reference.width,
+            Math.max(0, availableWidth)
+          );
+          const availablePopupHeight = Math.max(
+            popupMinimumAvailableHeight,
+            availableHeight
+          );
 
-  const top =
-    typeof context.popupPosition.top === 'number'
-      ? context.popupPosition.top + sideOffset
-      : context.popupPosition.top;
+          elements.floating.style.setProperty('--anchor-width', `${width}px`);
+          elements.floating.style.setProperty(
+            '--available-height',
+            `${availablePopupHeight}px`
+          );
+        },
+      }),
+    ],
+    [sideOffset]
+  );
+  const {
+    floatingStyles,
+    refs: { setFloating, setReference },
+  } = useFloating<HTMLElement>({
+    middleware: floatingMiddleware,
+    open: context.open,
+    placement: 'bottom-start',
+    strategy: 'fixed',
+    transform: false,
+    whileElementsMounted: autoUpdate,
+  });
+
+  useLayoutEffect(() => {
+    setReference(context.triggerRef.current);
+  }, [context.triggerRef, setReference]);
+
+  if (!context.open) return null;
 
   return (
     <div
       {...props}
+      ref={setFloating}
       style={{
-        ...context.popupPosition,
+        ...floatingSizeVariables,
+        ...floatingStyles,
+        maxHeight: 'var(--available-height)',
+        overflowY: 'auto',
+        width: 'var(--anchor-width)',
         ...style,
-        top,
       }}
     >
       {children}
@@ -1047,32 +1057,43 @@ const ComboboxInput = forwardRef<HTMLInputElement, ComboboxInputProps>(
   }
 );
 
-const ComboboxList = forwardRef<HTMLDivElement, ComboboxListProps>(
-  function ComboboxList({ children, ...props }, ref) {
-    const context = useComboboxContext<unknown>();
-    const renderedChildren =
-      typeof children === 'function'
-        ? context.filteredItems.map((item, index) => children(item, index))
-        : children;
+type ComboboxListComponent = <Value = React.ReactNode>(
+  props: ComboboxListProps<Value> & React.RefAttributes<HTMLDivElement>
+) => React.ReactElement | null;
 
-    return (
-      <div
-        {...props}
-        ref={ref}
-        id={props.id ?? context.listboxId}
-        role="listbox"
-        aria-labelledby={context.labelId}
-      >
-        {renderedChildren}
-      </div>
-    );
-  }
-);
+const ComboboxList = forwardRef(function ComboboxList<Value = React.ReactNode>(
+  { children, ...props }: ComboboxListProps<Value>,
+  ref: React.ForwardedRef<HTMLDivElement>
+) {
+  const context = useComboboxContext<unknown>();
+  const renderedChildren =
+    typeof children === 'function'
+      ? context.filteredItems.map((item, index) =>
+          children(item as Value, index)
+        )
+      : children;
 
-function ComboboxCollection({ children }: ComboboxCollectionProps) {
+  return (
+    <div
+      {...props}
+      ref={ref}
+      id={props.id ?? context.listboxId}
+      role="listbox"
+      aria-labelledby={context.labelId}
+    >
+      {renderedChildren}
+    </div>
+  );
+}) as ComboboxListComponent;
+
+function ComboboxCollection<Value = React.ReactNode>({
+  children,
+}: ComboboxCollectionProps<Value>) {
   const context = useComboboxContext<unknown>();
 
-  return context.filteredItems.map((item, index) => children(item, index));
+  return context.filteredItems.map((item, index) =>
+    children(item as Value, index)
+  );
 }
 
 function ComboboxItem<Value>({
@@ -1089,6 +1110,7 @@ function ComboboxItem<Value>({
 }: ComboboxItemProps<Value>) {
   const context = useComboboxContext<Value>();
   const itemRef = useRef<HTMLDivElement | null>(null);
+  const { registerItem } = context;
   const selected =
     context.selectedValue !== null &&
     context.isItemEqualToValue(value, context.selectedValue);
@@ -1097,14 +1119,24 @@ function ComboboxItem<Value>({
 
   useEffect(
     () =>
-      context.registerItem(index, {
+      registerItem(index, {
         disabled: itemDisabled,
         value,
       }),
-    [context, index, itemDisabled, value]
+    [index, itemDisabled, registerItem, value]
   );
 
-  const itemProps: ItemRenderProps = {
+  const setItemRef = useCallback((node: HTMLDivElement | null) => {
+    itemRef.current = node;
+  }, []);
+
+  const itemState: ItemState = {
+    disabled: itemDisabled,
+    highlighted,
+    selected,
+  };
+
+  const itemElementProps: ItemElementProps = {
     ...props,
     'aria-disabled': itemDisabled || undefined,
     'aria-selected': selected,
@@ -1157,22 +1189,33 @@ function ComboboxItem<Value>({
 
       context.setActiveIndex(index, 'pointer', event);
     },
-    ref: itemRef,
     role: 'option',
     tabIndex: -1,
   };
 
-  return renderElement({
-    children,
-    defaultElement: 'div',
-    props: itemProps,
-    render,
-    state: {
-      disabled: itemDisabled,
-      highlighted,
-      selected,
-    },
-  });
+  const itemRenderProps: ItemRenderProps = {
+    ...itemElementProps,
+    ref: setItemRef,
+  };
+
+  if (typeof render === 'function') {
+    return render(itemRenderProps, itemState);
+  }
+
+  if (isValidElement<Record<string, unknown>>(render)) {
+    return React.cloneElement(render, {
+      ...itemRenderProps,
+      className: [render.props.className, itemElementProps.className]
+        .filter(Boolean)
+        .join(' '),
+    } satisfies Record<string, unknown>);
+  }
+
+  return (
+    <div {...itemElementProps} ref={setItemRef}>
+      {children}
+    </div>
+  );
 }
 
 function ComboboxItemIndicator({

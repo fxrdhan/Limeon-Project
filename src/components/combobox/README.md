@@ -8,6 +8,8 @@ import { Combobox, PharmaEntityComboboxSelect } from '@/components/combobox';
 
 The primitive is a focused Base-UI-like engine owned by this repo. It covers the current PharmaSys needs: single-select values, controlled/uncontrolled open state, controlled search input, filtering, keyboard navigation, cancelable event details, hidden form values, and render-prop parts.
 
+Popup placement is delegated to Floating UI through `Combobox.Positioner`. The combobox still owns value state, item highlighting, search, keyboard behavior, form integration, and the app preset animations.
+
 ## Primitive Parts
 
 ```tsx
@@ -28,7 +30,7 @@ The primitive is a focused Base-UI-like engine owned by this repo. It covers the
     <Combobox.Positioner>
       <Combobox.Popup>
         <Combobox.Input placeholder="Cari..." />
-        <Combobox.List>
+        <Combobox.List<(typeof suppliers)[number]>>
           {(supplier, index) => (
             <Combobox.Item key={supplier.id} value={supplier} index={index}>
               {supplier.name}
@@ -61,7 +63,7 @@ Available parts:
 
 ## Root API
 
-`Combobox.Root<Value, Multiple>` supports the local subset used by PharmaSys:
+`Combobox.Root<Value>` supports the local subset used by PharmaSys:
 
 - `items`, `filteredItems`
 - `value`, `defaultValue`, `onValueChange`
@@ -198,3 +200,20 @@ Rules for maintaining this boundary:
 - Hover detail must never change selection, focus, or submitted value.
 
 Do not add app-specific props to `Combobox.Root`. Compose app behavior around the primitive parts or extend the preset.
+
+## Test Coverage
+
+Combobox regression coverage is intentionally split by what each runner can prove:
+
+- Vitest with Testing Library covers primitive and preset behavior in `src/components/combobox/index.test.tsx`: value changes, search/filtering, keyboard selection, disabled items, hidden form values, label/id wiring, cancelable event details, controlled open behavior, visual highlight state, and animation behavior contracts.
+- `@testing-library/user-event` is used for user-facing click/type flows where realistic event order matters. Lower-level `fireEvent` remains acceptable for targeted primitive and edge-case transitions.
+- Playwright covers browser-only layout behavior in `tests/playwright/combobox.spec.ts`: the combobox fixture renders the real components, verifies search/select still works in Chromium, and verifies Floating UI flips/clamps the portaled fixed popup near the viewport edge.
+
+Useful commands:
+
+```bash
+AI_AGENT=codex vp test run --passWithNoTests src/components/combobox/index.test.tsx
+PLAYWRIGHT_BASE_URL=http://127.0.0.1:5173 bun run test:e2e -- tests/playwright/combobox.spec.ts
+```
+
+The Playwright tests require an already-running VitePlus server. Install the browser binary once with `bunx playwright install chromium` if Playwright reports a missing executable.

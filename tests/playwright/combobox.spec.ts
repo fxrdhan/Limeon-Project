@@ -1,0 +1,86 @@
+import { expect, test, type Locator, type Page } from '@playwright/test';
+
+const harnessPath = '/tests/playwright/fixtures/combobox.html';
+
+const openComboboxHarness = async (page: Page) => {
+  await page.goto(harnessPath);
+  await expect(
+    page.getByRole('heading', { name: /combobox regression harness/i })
+  ).toBeVisible();
+};
+
+const getBoundingBox = async (locator: Locator, name: string) => {
+  const box = await locator.boundingBox();
+  if (!box) throw new Error(`${name} bounding box is unavailable`);
+
+  return box;
+};
+
+test.describe('combobox browser regressions', () => {
+  test('searches and commits a selection with keyboard input', async ({
+    page,
+  }) => {
+    await openComboboxHarness(page);
+
+    const trigger = page.getByRole('combobox', { name: /^Obat\b/i });
+    await trigger.click();
+
+    const searchInput = page.getByRole('combobox', { name: /^Cari obat$/i });
+    await searchInput.fill('para');
+
+    await expect(
+      page.getByRole('option', { name: /Paracetamol Tablet/i })
+    ).toBeVisible();
+    await expect(
+      page.getByRole('option', { name: /Amoxicillin/i })
+    ).toHaveCount(0);
+    await expect(
+      page.locator('[data-pharma-combobox-highlight]').first()
+    ).toBeVisible();
+
+    await page.keyboard.press('Enter');
+
+    await expect(trigger).toContainText('Paracetamol Tablet');
+    await expect(
+      page.locator('input[type="hidden"][name="medicine_id"]')
+    ).toHaveValue('med-paracetamol');
+    await expect(page.getByRole('listbox')).toHaveCount(0);
+  });
+
+  test('keeps primitive label connected to a custom trigger id', async ({
+    page,
+  }) => {
+    await openComboboxHarness(page);
+
+    await expect(
+      page.locator('label', { hasText: 'Primitive custom trigger' })
+    ).toHaveAttribute('for', 'primitive-custom-trigger');
+  });
+
+  test('flips the popup above a trigger near the viewport bottom', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ height: 560, width: 900 });
+    await openComboboxHarness(page);
+
+    await page.getByTestId('bottom-stage').scrollIntoViewIfNeeded();
+
+    const trigger = page.getByRole('combobox', {
+      name: /^Posisi bawah\b/i,
+    });
+    await trigger.click();
+
+    const popup = page.locator('[data-combobox-popup]');
+    await expect(popup).toBeVisible();
+
+    const triggerBox = await getBoundingBox(trigger, 'bottom trigger');
+    const popupBox = await getBoundingBox(popup, 'bottom popup');
+    const viewport = page.viewportSize();
+    if (!viewport) throw new Error('Viewport size is unavailable');
+
+    expect(popupBox.y + popupBox.height).toBeLessThanOrEqual(triggerBox.y + 1);
+    expect(popupBox.y).toBeGreaterThanOrEqual(0);
+    expect(popupBox.x).toBeGreaterThanOrEqual(0);
+    expect(popupBox.x + popupBox.width).toBeLessThanOrEqual(viewport.width + 1);
+  });
+});

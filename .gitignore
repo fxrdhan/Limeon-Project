@@ -25,6 +25,9 @@ coverage
 !scripts/coverage/
 !scripts/coverage/*.mjs
 !scripts/coverage/*.json
+playwright-report/
+test-results/
+blob-report/
 
 # Editor directories and files
 .vscode/*

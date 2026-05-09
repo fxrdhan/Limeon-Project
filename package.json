@@ -32,6 +32,7 @@
     "test:agent": "AI_AGENT=codex vp test run --passWithNoTests",
     "test:agent:watch": "AI_AGENT=codex vp test watch",
     "test:agent:run": "bun run test:agent",
+    "test:e2e": "PLAYWRIGHT_HTML_OPEN=never playwright test",
     "test:run:agent": "bun run test:agent",
     "coverage:non-runtime:refresh": "bun scripts/coverage/generate-non-runtime-files.ts",
     "test:coverage:open": "bun test:coverage && open coverage/index.html",
@@ -59,6 +60,7 @@
   },
   "dependencies": {
     "@ag-grid-community/locale": "35.2.1",
+    "@floating-ui/react-dom": "^2.1.8",
     "@headlessui/react": "^2.2.10",
     "@supabase/supabase-js": "^2.104.1",
     "@tanstack/react-query": "^5.100.9",
@@ -90,10 +92,12 @@
   "devDependencies": {
     "@commitlint/cli": "^20.5.3",
     "@commitlint/config-conventional": "^20.5.3",
+    "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "4.2.4",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^25.6.0",
     "@types/pg": "^8.20.0",
     "@types/react": "^19.2.14",

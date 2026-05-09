@@ -20,6 +20,7 @@ import {
   PharmaEntityComboboxSelect,
 } from './index';
 import { getComboboxKeyboardHighlightScrollTarget } from './hooks/use-combobox-keyboard-highlight-scroll';
+import { setupUserEvent } from '../../test/user-event';
 
 const fruitItems = ['Apple', 'Banana', 'Cherry'];
 type EntityItem = { id: string; name: string };
@@ -53,7 +54,7 @@ function BasicCombobox({
         <Combobox.Positioner>
           <Combobox.Popup initialFocus={false}>
             <Combobox.Input placeholder="Search fruit" />
-            <Combobox.List>
+            <Combobox.List<string>>
               {(item, index) => (
                 <Combobox.Item key={item} value={item} index={index}>
                   {item}
@@ -68,13 +69,14 @@ function BasicCombobox({
 }
 
 describe('Combobox primitive', () => {
-  it('uses the local primitive value and item contract', () => {
+  it('uses the local primitive value and item contract', async () => {
     const onValueChange = vi.fn();
+    const user = setupUserEvent();
     render(<BasicCombobox onValueChange={onValueChange} />);
 
     const trigger = screen.getByRole('combobox', { name: /fruit/i });
-    fireEvent.click(trigger);
-    fireEvent.click(screen.getByRole('option', { name: /banana/i }));
+    await user.click(trigger);
+    await user.click(screen.getByRole('option', { name: /banana/i }));
 
     expect(onValueChange).toHaveBeenCalledWith('Banana');
     expect(trigger.textContent).toContain('Banana');
@@ -107,7 +109,7 @@ describe('Combobox primitive', () => {
         <Combobox.Portal>
           <Combobox.Positioner>
             <Combobox.Popup initialFocus={false}>
-              <Combobox.List>
+              <Combobox.List<{ id: string; name: string }>>
                 {(item, index) => (
                   <Combobox.Item key={item.id} value={item} index={index}>
                     {item.name}
@@ -137,13 +139,71 @@ describe('Combobox primitive', () => {
     ).toBe('a');
   });
 
-  it('filters with the native input and accepts caller-supplied filteredItems', () => {
-    const { rerender } = render(<BasicCombobox />);
+  it('keeps label htmlFor aligned with a custom primitive trigger id', async () => {
+    render(
+      <Combobox.Root items={fruitItems}>
+        <Combobox.Label>Fruit</Combobox.Label>
+        <Combobox.Trigger id="fruit-trigger">
+          <Combobox.Value placeholder="Choose fruit" />
+        </Combobox.Trigger>
+      </Combobox.Root>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Fruit').getAttribute('for')).toBe(
+        'fruit-trigger'
+      );
+    });
+  });
+
+  it('keeps highlight event cancellation state observable', async () => {
+    const onHighlightCanceled = vi.fn();
+
+    render(
+      <Combobox.Root
+        items={fruitItems}
+        itemToStringLabel={item => item}
+        itemToStringValue={item => item}
+        onItemHighlighted={(item, details) => {
+          if (!item) return;
+
+          details.cancel();
+          onHighlightCanceled(details.isCanceled);
+        }}
+        autoHighlight
+      >
+        <Combobox.Trigger aria-label="Fruit">
+          <Combobox.Value placeholder="Choose fruit" />
+        </Combobox.Trigger>
+        <Combobox.Portal>
+          <Combobox.Positioner>
+            <Combobox.Popup initialFocus={false}>
+              <Combobox.List<string>>
+                {(item, index) => (
+                  <Combobox.Item key={item} value={item} index={index}>
+                    {item}
+                  </Combobox.Item>
+                )}
+              </Combobox.List>
+            </Combobox.Popup>
+          </Combobox.Positioner>
+        </Combobox.Portal>
+      </Combobox.Root>
+    );
 
     fireEvent.click(screen.getByRole('combobox', { name: /fruit/i }));
-    fireEvent.change(screen.getByPlaceholderText('Search fruit'), {
-      target: { value: 'cher' },
+
+    await waitFor(() => {
+      expect(onHighlightCanceled).toHaveBeenCalledWith(true);
     });
+  });
+
+  it('filters with the native input and accepts caller-supplied filteredItems', async () => {
+    const user = setupUserEvent();
+    const { rerender } = render(<BasicCombobox />);
+
+    await user.click(screen.getByRole('combobox', { name: /fruit/i }));
+    await user.type(screen.getByPlaceholderText('Search fruit'), 'cher');
     expect(screen.getByRole('option', { name: /cherry/i })).toBeTruthy();
     expect(screen.queryByRole('option', { name: /banana/i })).toBeNull();
 
@@ -156,7 +216,7 @@ describe('Combobox primitive', () => {
           <Combobox.Positioner>
             <Combobox.Popup initialFocus={false}>
               <Combobox.Input placeholder="Search fruit" />
-              <Combobox.List>
+              <Combobox.List<string>>
                 {(item, index) => (
                   <Combobox.Item key={item} value={item} index={index}>
                     {item}
@@ -172,6 +232,62 @@ describe('Combobox primitive', () => {
     expect(screen.getByPlaceholderText('Search fruit')).toBeTruthy();
     expect(screen.getByRole('option', { name: /banana/i })).toBeTruthy();
     expect(screen.queryByRole('option', { name: /apple/i })).toBeNull();
+  });
+
+  it('uses Floating UI sizing variables for the primitive popup', async () => {
+    const innerHeightDescriptor = Object.getOwnPropertyDescriptor(
+      window,
+      'innerHeight'
+    );
+    const innerWidthDescriptor = Object.getOwnPropertyDescriptor(
+      window,
+      'innerWidth'
+    );
+
+    Object.defineProperty(window, 'innerHeight', {
+      configurable: true,
+      value: 600,
+    });
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: 800,
+    });
+
+    try {
+      render(<BasicCombobox />);
+
+      const trigger = screen.getByRole('combobox', { name: /fruit/i });
+      Object.defineProperty(trigger, 'getBoundingClientRect', {
+        configurable: true,
+        value: () => ({
+          bottom: 590,
+          height: 30,
+          left: 16,
+          right: 216,
+          toJSON: () => {},
+          top: 560,
+          width: 200,
+          x: 16,
+          y: 560,
+        }),
+      });
+
+      fireEvent.click(trigger);
+
+      const listbox = await screen.findByRole('listbox');
+      const positioner = listbox.parentElement?.parentElement;
+      expect(positioner?.style.position).toBe('fixed');
+      expect(positioner?.style.width).toBe('var(--anchor-width)');
+      expect(positioner?.style.maxHeight).toBe('var(--available-height)');
+      expect(positioner?.style.overflowY).toBe('auto');
+    } finally {
+      if (innerHeightDescriptor) {
+        Object.defineProperty(window, 'innerHeight', innerHeightDescriptor);
+      }
+      if (innerWidthDescriptor) {
+        Object.defineProperty(window, 'innerWidth', innerWidthDescriptor);
+      }
+    }
   });
 });
 
