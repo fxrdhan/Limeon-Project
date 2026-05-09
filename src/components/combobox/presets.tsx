@@ -40,8 +40,8 @@ type PharmaComboboxHighlightDetails<Item> = Parameters<
   NonNullable<ComboboxRootProps<Item>['onItemHighlighted']>
 >[1];
 
-type BaseUIPreventableSyntheticEvent = React.SyntheticEvent & {
-  preventBaseUIHandler?: () => void;
+type ComboboxPreventableSyntheticEvent = React.SyntheticEvent & {
+  preventComboboxHandler?: () => void;
 };
 
 type PointerPosition = {
@@ -135,8 +135,8 @@ const setRef = <Node,>(
   ref.current = value;
 };
 
-const preventBaseUIHandler = (event: React.SyntheticEvent) => {
-  (event as BaseUIPreventableSyntheticEvent).preventBaseUIHandler?.();
+const preventComboboxHandler = (event: React.SyntheticEvent) => {
+  (event as ComboboxPreventableSyntheticEvent).preventComboboxHandler?.();
 };
 
 const highlightBackgroundTransition = {
@@ -433,7 +433,7 @@ export function PharmaComboboxSelect<Item>({
     },
     [isItemDisabled, isSameItem, selectedValue]
   );
-  const syncBaseUIHighlightToVisualValue = useCallback(() => {
+  const syncPrimitiveHighlightToVisualValue = useCallback(() => {
     if (
       !syncKeyboardFromPointerHighlightRef.current ||
       keyboardHoverSuppressedRef.current ||
@@ -669,7 +669,7 @@ export function PharmaComboboxSelect<Item>({
     (event: React.KeyboardEvent<HTMLInputElement>) => {
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
         setIsSearchNavigationFocus(true);
-        syncBaseUIHighlightToVisualValue();
+        syncPrimitiveHighlightToVisualValue();
         return;
       }
 
@@ -677,23 +677,23 @@ export function PharmaComboboxSelect<Item>({
       if (event.key !== 'Enter') return;
 
       if (!canCreate) {
-        syncBaseUIHighlightToVisualValue();
+        syncPrimitiveHighlightToVisualValue();
         return;
       }
 
       event.preventDefault();
       event.stopPropagation();
-      preventBaseUIHandler(event);
+      preventComboboxHandler(event);
       handleCreate();
     },
-    [canCreate, handleCreate, syncBaseUIHighlightToVisualValue]
+    [canCreate, handleCreate, syncPrimitiveHighlightToVisualValue]
   );
   const handleTriggerKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLButtonElement>) => {
       if (!searchable || !actualOpen) return;
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
         setIsSearchNavigationFocus(true);
-        syncBaseUIHighlightToVisualValue();
+        syncPrimitiveHighlightToVisualValue();
         return;
       }
 
@@ -708,7 +708,7 @@ export function PharmaComboboxSelect<Item>({
 
       event.preventDefault();
       event.stopPropagation();
-      preventBaseUIHandler(event);
+      preventComboboxHandler(event);
       setIsSearchNavigationFocus(false);
       setInputValue(currentValue => `${currentValue}${event.key}`);
       syncKeyboardFromPointerHighlightRef.current = false;
@@ -723,7 +723,7 @@ export function PharmaComboboxSelect<Item>({
       hideHoverDetail,
       resetKeyboardHoverSuppression,
       searchable,
-      syncBaseUIHighlightToVisualValue,
+      syncPrimitiveHighlightToVisualValue,
     ]
   );
   const isFocusWithinCombobox = useCallback((target: EventTarget | null) => {
@@ -1012,13 +1012,11 @@ export function PharmaComboboxSelect<Item>({
                           handleOptionMouseEnter(event, item);
                         }}
                         onMouseMove={event => {
-                          const shouldAllowBaseUIHover = handleOptionMouseMove(
-                            event,
-                            item
-                          );
+                          const shouldAllowPrimitiveHover =
+                            handleOptionMouseMove(event, item);
 
-                          if (!shouldAllowBaseUIHover) {
-                            preventBaseUIHandler(event);
+                          if (!shouldAllowPrimitiveHover) {
+                            preventComboboxHandler(event);
                           }
                         }}
                         onMouseLeave={handleItemLeave}

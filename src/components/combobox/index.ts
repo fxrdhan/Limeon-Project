@@ -1,5 +1,5 @@
 export { Combobox, default } from './primitive';
-export type * from '@base-ui/react/combobox';
+export type * from './primitive';
 export { findComboboxItemByValue } from './helpers';
 export {
   PharmaComboboxSelect,

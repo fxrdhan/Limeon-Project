@@ -68,7 +68,7 @@ function BasicCombobox({
 }
 
 describe('Combobox primitive', () => {
-  it('uses the official Base UI value and item contract', () => {
+  it('uses the local primitive value and item contract', () => {
     const onValueChange = vi.fn();
     render(<BasicCombobox onValueChange={onValueChange} />);
 
@@ -398,7 +398,7 @@ describe('Combobox app presets', () => {
     );
   });
 
-  it('preserves Base UI cancellation semantics for preset value changes', () => {
+  it('preserves cancelable details for preset value changes', () => {
     const onValueChange = vi.fn();
 
     render(
@@ -434,7 +434,7 @@ describe('Combobox app presets', () => {
     expect(screen.getByRole('listbox')).toBeTruthy();
   });
 
-  it('preserves Base UI cancellation semantics for preset open changes', () => {
+  it('preserves cancelable details for preset open changes', () => {
     const onOpenChange = vi.fn();
 
     render(
@@ -485,6 +485,44 @@ describe('Combobox app presets', () => {
     expect(disabledOption.hasAttribute('data-disabled')).toBe(true);
     fireEvent.click(disabledOption);
     expect(onValueChange).not.toHaveBeenCalled();
+  });
+
+  it('selects non-searchable preset options from trigger keyboard state', async () => {
+    const onValueChange = vi.fn();
+
+    render(
+      <PharmaComboboxSelect
+        name="status"
+        items={['active', 'inactive']}
+        value={null}
+        onValueChange={onValueChange}
+        itemToStringLabel={value =>
+          value === 'active' ? 'Aktif' : 'Tidak aktif'
+        }
+        itemToStringValue={value => value}
+        searchable={false}
+      />
+    );
+
+    const trigger = screen.getByRole('combobox', { name: /pilih/i });
+    fireEvent.click(trigger);
+    fireEvent.keyDown(trigger, { key: 'ArrowDown' });
+    fireEvent.keyDown(trigger, { key: 'ArrowDown' });
+
+    await waitFor(() => {
+      const activeDescendant = trigger.getAttribute('aria-activedescendant');
+      expect(activeDescendant).toBeTruthy();
+      expect(
+        document.getElementById(activeDescendant as string)?.textContent
+      ).toBe('Tidak aktif');
+    });
+
+    fireEvent.keyDown(trigger, { key: 'Enter' });
+
+    expect(onValueChange).toHaveBeenCalledWith(
+      'inactive',
+      expect.objectContaining({ reason: 'item-press' })
+    );
   });
 
   it('lets entity selects work with scalar form ids', () => {
@@ -757,7 +795,7 @@ describe('Combobox app presets', () => {
     expect(screen.getByRole('status').textContent).toBe('Tidak ada data');
   });
 
-  it('selects filtered options through Base UI keyboard handling', () => {
+  it('selects filtered options through primitive keyboard handling', () => {
     const onValueChange = vi.fn();
 
     render(
