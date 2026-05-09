@@ -20,6 +20,7 @@ import {
 } from './components/combobox-selection-indicator';
 import { useComboboxKeyboardHighlightScroll } from './hooks/use-combobox-keyboard-highlight-scroll';
 import { useComboboxHoverDetail } from './hooks/use-combobox-hover-detail';
+import { useComboboxVisualHighlight } from './hooks/use-combobox-visual-highlight';
 import { Combobox, type ComboboxRootProps } from './index';
 import {
   getComboboxControlName,
@@ -34,6 +35,9 @@ export type PharmaComboboxChangeDetails<Item> = Parameters<
 >[1];
 export type PharmaComboboxOpenChangeDetails<Item> = Parameters<
   NonNullable<ComboboxRootProps<Item>['onOpenChange']>
+>[1];
+type PharmaComboboxHighlightDetails<Item> = Parameters<
+  NonNullable<ComboboxRootProps<Item>['onItemHighlighted']>
 >[1];
 type BaseUIPreventableSyntheticEvent = React.SyntheticEvent & {
   preventBaseUIHandler?: () => void;
@@ -218,13 +222,6 @@ export function PharmaComboboxSelect<Item>({
   const [inputValue, setInputValue] = useState('');
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const [blurred, setBlurred] = useState(false);
-  const [visualHighlightedValue, setVisualHighlightedValue] =
-    useState<Item | null>(null);
-  const [visualHighlightedOptionId, setVisualHighlightedOptionId] = useState<
-    string | undefined
-  >(undefined);
-  const visualHighlightedValueRef = useRef<Item | null>(null);
-  const previousNormalizedInputValueRef = useRef('');
   const actualOpen = open ?? uncontrolledOpen;
   const selectedValue = useMemo(
     () => getComboboxSelectedValue(value, isValueEmpty),
@@ -287,13 +284,6 @@ export function PharmaComboboxSelect<Item>({
         item => isSameItem(item, targetItem) && !isItemDisabled(item)
       ),
     [isItemDisabled, isSameItem, visibleItems]
-  );
-  const isItemVisuallyHighlighted = useCallback(
-    (item: Item, baseHighlighted: boolean) =>
-      visualHighlightedValue == null
-        ? baseHighlighted
-        : isSameItem(item, visualHighlightedValue),
-    [isSameItem, visualHighlightedValue]
   );
   const isOpenControlled = open !== undefined;
   const controlName = getComboboxControlName({ label, name, placeholder });
@@ -393,6 +383,23 @@ export function PharmaComboboxSelect<Item>({
     popupContentRef,
     visibleItemCount: visibleItems.length,
   });
+  const {
+    clearVisualHighlight,
+    isItemVisuallyHighlighted,
+    setVisualHighlight,
+    visualHighlightedOptionId,
+    visualHighlightedValueRef,
+  } = useComboboxVisualHighlight({
+    actualOpen,
+    firstHighlightableVisibleItem,
+    getOptionElementAtIndex,
+    isItemDisabled,
+    isItemVisibleAndEnabled,
+    isSameItem,
+    normalizedInputValue,
+    selectedVisibleIndex,
+    visibleItems,
+  });
   const getPointerHoverTarget = useCallback(() => {
     const pointerPosition = listPointerPositionRef.current;
     const list = listRef.current;
@@ -443,9 +450,7 @@ export function PharmaComboboxSelect<Item>({
     if (!hoverTarget || isItemDisabled(hoverTarget.item)) return;
 
     clearKeyboardScrollHighlight();
-    visualHighlightedValueRef.current = hoverTarget.item;
-    setVisualHighlightedValue(hoverTarget.item);
-    setVisualHighlightedOptionId(hoverTarget.element.id);
+    setVisualHighlight(hoverTarget.item, hoverTarget.element.id);
     runItemHoverDetail(hoverTarget.item, hoverTarget.element, {
       immediate: true,
     });
@@ -454,6 +459,7 @@ export function PharmaComboboxSelect<Item>({
     getPointerHoverTarget,
     isItemDisabled,
     runItemHoverDetail,
+    setVisualHighlight,
   ]);
   const handleListScroll = useCallback(() => {
     if (!hoverDetailEnabled) return;
@@ -476,9 +482,7 @@ export function PharmaComboboxSelect<Item>({
       if (isKeyboardNavigatingRef.current) return;
 
       clearKeyboardScrollHighlight();
-      visualHighlightedValueRef.current = item;
-      setVisualHighlightedValue(item);
-      setVisualHighlightedOptionId(element.id);
+      setVisualHighlight(item, element.id);
 
       if (!hoverDetailEnabled) return;
 
@@ -494,6 +498,7 @@ export function PharmaComboboxSelect<Item>({
       hoverDetailEnabled,
       isItemDisabled,
       runItemHoverDetail,
+      setVisualHighlight,
     ]
   );
   const handleListPointerMove = useCallback(
@@ -587,9 +592,7 @@ export function PharmaComboboxSelect<Item>({
       const targetElement = getOptionElementAtIndex(targetVisibleIndex);
 
       scheduleKeyboardHighlightedScroll(targetVisibleIndex, sourceVisibleIndex);
-      visualHighlightedValueRef.current = nextItem;
-      setVisualHighlightedValue(nextItem);
-      setVisualHighlightedOptionId(targetElement?.id);
+      setVisualHighlight(nextItem, targetElement?.id);
       return true;
     },
     [
@@ -598,7 +601,9 @@ export function PharmaComboboxSelect<Item>({
       isItemDisabled,
       isSameItem,
       scheduleKeyboardHighlightedScroll,
+      setVisualHighlight,
       visibleItems,
+      visualHighlightedValueRef,
     ]
   );
   const selectVisualHighlightedItem = useCallback(() => {
@@ -614,7 +619,80 @@ export function PharmaComboboxSelect<Item>({
 
     targetElement.click();
     return true;
-  }, [getOptionElementAtIndex, isItemDisabled, isSameItem, visibleItems]);
+  }, [
+    getOptionElementAtIndex,
+    isItemDisabled,
+    isSameItem,
+    visibleItems,
+    visualHighlightedValueRef,
+  ]);
+  const handleValueChange = useCallback(
+    (nextValue: Item | null, details: PharmaComboboxChangeDetails<Item>) => {
+      onValueChange(nextValue, details);
+      if (details.isCanceled) return;
+
+      setInputValue('');
+      hideHoverDetail();
+    },
+    [hideHoverDetail, onValueChange]
+  );
+  const handleInputValueChange = useCallback(
+    (nextValue: string) => {
+      setInputValue(nextValue);
+      clearKeyboardScrollHighlight();
+      hideHoverDetail();
+    },
+    [clearKeyboardScrollHighlight, hideHoverDetail]
+  );
+  const handleItemHighlighted = useCallback(
+    (
+      nextHighlighted: Item | undefined,
+      details: PharmaComboboxHighlightDetails<Item>
+    ) => {
+      if (nextHighlighted === undefined) {
+        if (details.reason === 'pointer') return;
+
+        clearVisualHighlight();
+        clearKeyboardScrollHighlight();
+        return;
+      }
+
+      if (details.reason === 'pointer' && isKeyboardNavigatingRef.current) {
+        return;
+      }
+
+      if (details.reason === 'keyboard') {
+        const previousHighlightedValue = visualHighlightedValueRef.current;
+        const sourceVisibleIndex =
+          previousHighlightedValue == null
+            ? null
+            : visibleItems.findIndex(item =>
+                isSameItem(item, previousHighlightedValue)
+              );
+
+        scheduleKeyboardHighlightedScroll(details.index, sourceVisibleIndex);
+      } else {
+        if (details.reason === 'pointer') {
+          isKeyboardNavigatingRef.current = false;
+          keyboardHoverResumePointerPositionRef.current = null;
+        }
+        clearKeyboardScrollHighlight();
+      }
+
+      const highlightedOptionElement = getOptionElementAtIndex(details.index);
+      setVisualHighlight(nextHighlighted, highlightedOptionElement?.id);
+    },
+    [
+      clearKeyboardScrollHighlight,
+      clearVisualHighlight,
+      getOptionElementAtIndex,
+      isSameItem,
+      scheduleKeyboardHighlightedScroll,
+      setVisualHighlight,
+      visibleItems,
+      visualHighlightedValueRef,
+    ]
+  );
   const isFocusWithinCombobox = useCallback((target: EventTarget | null) => {
     if (typeof Node === 'undefined' || !(target instanceof Node)) return false;
 
@@ -704,75 +782,7 @@ export function PharmaComboboxSelect<Item>({
     hideHoverDetail();
     isKeyboardNavigatingRef.current = false;
     keyboardHoverResumePointerPositionRef.current = null;
-    previousNormalizedInputValueRef.current = '';
-    visualHighlightedValueRef.current = null;
-    setVisualHighlightedValue(null);
-    setVisualHighlightedOptionId(undefined);
   }, [actualOpen, hideHoverDetail]);
-
-  useEffect(() => {
-    if (!actualOpen) return;
-
-    const didClearSearch =
-      previousNormalizedInputValueRef.current.length > 0 &&
-      normalizedInputValue.length === 0;
-    previousNormalizedInputValueRef.current = normalizedInputValue;
-
-    const selectedVisibleItem =
-      selectedVisibleIndex >= 0
-        ? (visibleItems[selectedVisibleIndex] ?? null)
-        : null;
-
-    const nextHighlightedValue =
-      selectedVisibleItem && !isItemDisabled(selectedVisibleItem)
-        ? selectedVisibleItem
-        : firstHighlightableVisibleItem;
-    const nextHighlightedIndex =
-      nextHighlightedValue == null
-        ? -1
-        : visibleItems.findIndex(item =>
-            isSameItem(item, nextHighlightedValue)
-          );
-    const nextHighlightedOptionId =
-      getOptionElementAtIndex(nextHighlightedIndex)?.id;
-
-    if (didClearSearch) {
-      const alreadyHighlighted =
-        nextHighlightedValue === null
-          ? visualHighlightedValue === null
-          : visualHighlightedValue !== null &&
-            isSameItem(visualHighlightedValue, nextHighlightedValue);
-
-      if (alreadyHighlighted) return;
-
-      visualHighlightedValueRef.current = nextHighlightedValue;
-      setVisualHighlightedValue(nextHighlightedValue);
-      setVisualHighlightedOptionId(nextHighlightedOptionId);
-      return;
-    }
-
-    if (
-      visualHighlightedValue != null &&
-      isItemVisibleAndEnabled(visualHighlightedValue)
-    ) {
-      return;
-    }
-
-    visualHighlightedValueRef.current = nextHighlightedValue;
-    setVisualHighlightedValue(nextHighlightedValue);
-    setVisualHighlightedOptionId(nextHighlightedOptionId);
-  }, [
-    actualOpen,
-    firstHighlightableVisibleItem,
-    getOptionElementAtIndex,
-    isItemDisabled,
-    isItemVisibleAndEnabled,
-    isSameItem,
-    normalizedInputValue,
-    selectedVisibleIndex,
-    visibleItems,
-    visualHighlightedValue,
-  ]);
 
   useEffect(() => {
     if (!actualOpen || selectedVisibleIndex < 0) return undefined;
@@ -829,64 +839,12 @@ export function PharmaComboboxSelect<Item>({
       <Combobox.Root<Item>
         items={items}
         value={selectedValue}
-        onValueChange={(nextValue, details) => {
-          onValueChange(nextValue, details);
-          if (details.isCanceled) return;
-
-          setInputValue('');
-          hideHoverDetail();
-        }}
+        onValueChange={handleValueChange}
         open={actualOpen}
         onOpenChange={handleOpenChange}
         inputValue={inputValue}
-        onInputValueChange={nextValue => {
-          setInputValue(nextValue);
-          clearKeyboardScrollHighlight();
-          hideHoverDetail();
-        }}
-        onItemHighlighted={(nextHighlighted, details) => {
-          if (nextHighlighted === undefined) {
-            if (details.reason === 'pointer') return;
-
-            visualHighlightedValueRef.current = null;
-            setVisualHighlightedValue(null);
-            setVisualHighlightedOptionId(undefined);
-            clearKeyboardScrollHighlight();
-            return;
-          }
-
-          if (details.reason === 'pointer' && isKeyboardNavigatingRef.current) {
-            return;
-          }
-
-          if (details.reason === 'keyboard') {
-            const previousHighlightedValue = visualHighlightedValueRef.current;
-            const sourceVisibleIndex =
-              previousHighlightedValue == null
-                ? null
-                : visibleItems.findIndex(item =>
-                    isSameItem(item, previousHighlightedValue)
-                  );
-
-            scheduleKeyboardHighlightedScroll(
-              details.index,
-              sourceVisibleIndex
-            );
-          } else {
-            if (details.reason === 'pointer') {
-              isKeyboardNavigatingRef.current = false;
-              keyboardHoverResumePointerPositionRef.current = null;
-            }
-            clearKeyboardScrollHighlight();
-          }
-
-          const highlightedOptionElement = getOptionElementAtIndex(
-            details.index
-          );
-          visualHighlightedValueRef.current = nextHighlighted;
-          setVisualHighlightedValue(nextHighlighted);
-          setVisualHighlightedOptionId(highlightedOptionElement?.id);
-        }}
+        onInputValueChange={handleInputValueChange}
+        onItemHighlighted={handleItemHighlighted}
         itemToStringLabel={itemToStringLabel}
         itemToStringValue={itemToStringValue}
         isItemEqualToValue={isItemEqualToValue}
