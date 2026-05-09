@@ -21,6 +21,7 @@ export interface PharmaEntityComboboxSelectProps<
   | 'isItemEqualToValue'
 > {
   valueId: string;
+  selectedItem?: Item | null;
   onValueIdChange: (
     valueId: string,
     item: Item | null,
@@ -33,6 +34,7 @@ export interface PharmaEntityComboboxSelectProps<
 
 export function PharmaEntityComboboxSelect<Item extends EntityComboboxItem>({
   valueId,
+  selectedItem = null,
   onValueIdChange,
   itemToStringLabel = item => item.name,
   itemToStringValue = item => item.id,
@@ -41,11 +43,19 @@ export function PharmaEntityComboboxSelect<Item extends EntityComboboxItem>({
   items,
   ...props
 }: PharmaEntityComboboxSelectProps<Item>) {
+  const selectedItemValue =
+    selectedItem && itemToStringValue(selectedItem) === valueId
+      ? selectedItem
+      : null;
+  const value =
+    findComboboxItemByValue(items, valueId, itemToStringValue) ??
+    selectedItemValue;
+
   return (
     <PharmaComboboxSelect
       {...props}
       items={items}
-      value={findComboboxItemByValue(items, valueId, itemToStringValue)}
+      value={value}
       onValueChange={(item, details) => {
         onValueIdChange(item ? itemToStringValue(item) : '', item, details);
       }}

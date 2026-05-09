@@ -8,6 +8,7 @@ import {
   within,
 } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vite-plus/test';
+import FormField from '../form-field';
 import { findComboboxItemByValue } from './helpers';
 import { Combobox } from './index';
 import { PharmaEntityComboboxSelect } from './entity-select';
@@ -487,6 +488,48 @@ describe('Combobox app presets', () => {
     );
   });
 
+  it('keeps an entity value selected when the selected item is outside the option list', () => {
+    render(
+      <PharmaEntityComboboxSelect
+        name="supplier_id"
+        items={[]}
+        valueId="supplier-a"
+        selectedItem={{ id: 'supplier-a', name: 'Supplier A' }}
+        onValueIdChange={() => {}}
+        placeholder="Pilih supplier"
+        required
+        validation={{ enabled: true, autoHide: false }}
+      />
+    );
+
+    const trigger = screen.getByRole('combobox', { name: /supplier a/i });
+    expect(
+      document.querySelector('input[name="supplier_id"]')?.getAttribute('value')
+    ).toBe('supplier-a');
+
+    fireEvent.blur(trigger, { relatedTarget: document.body });
+    expect(trigger.getAttribute('aria-invalid')).toBeNull();
+  });
+
+  it('inherits FormField labels without requiring a duplicate label prop', () => {
+    render(
+      <FormField label="Supplier" required>
+        <PharmaEntityComboboxSelect
+          name="supplier_id"
+          items={[]}
+          valueId=""
+          onValueIdChange={() => {}}
+          placeholder="Pilih supplier"
+        />
+      </FormField>
+    );
+
+    const trigger = screen.getByRole('combobox', {
+      name: /supplier pilih supplier/i,
+    });
+    expect(trigger.getAttribute('aria-labelledby')).toBeTruthy();
+  });
+
   it('resets searchable preset input when the popup closes without a selection', () => {
     render(
       <PharmaComboboxSelect
@@ -590,6 +633,33 @@ describe('Combobox app presets', () => {
     expect(document.activeElement).toBe(searchInput);
     expect(screen.queryByRole('option', { name: /supplier a/i })).toBeNull();
     expect(screen.getByRole('option', { name: /branch b/i })).toBeTruthy();
+  });
+
+  it('removes stale options immediately when search has no results', () => {
+    render(
+      <PharmaComboboxSelect
+        name="supplier_id"
+        items={[
+          { id: 'a', name: 'Supplier A' },
+          { id: 'b', name: 'Supplier B' },
+        ]}
+        value={null}
+        onValueChange={() => {}}
+        itemToStringLabel={supplier => supplier.name}
+        itemToStringValue={supplier => supplier.id}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: /pilih/i }));
+    const listbox = screen.getByRole('listbox');
+    expect(listbox.querySelector('[data-pharma-combobox-index]')).toBeTruthy();
+
+    fireEvent.change(screen.getByPlaceholderText('Cari...'), {
+      target: { value: 'gada' },
+    });
+
+    expect(listbox.querySelector('[data-pharma-combobox-index]')).toBeNull();
+    expect(screen.getByRole('status').textContent).toBe('Tidak ada data');
   });
 
   it('restores selected highlight when a search is cleared', async () => {
@@ -737,6 +807,64 @@ describe('Combobox app presets', () => {
     );
     expect((searchInput as HTMLInputElement).value).toBe('Supplier B');
     expect(screen.queryByRole('option', { name: /supplier a/i })).toBeNull();
+  });
+
+  it('does not run close cleanup when a controlled popup stays open', async () => {
+    vi.useFakeTimers();
+    const onOpenChange = vi.fn();
+    const onFetchHoverDetail = vi.fn(async (id: string) => ({
+      id,
+      name: 'Supplier B',
+      description: 'Detail Supplier B',
+    }));
+
+    try {
+      render(
+        <PharmaComboboxSelect
+          name="supplier_id"
+          items={[
+            { id: 'a', name: 'Supplier A' },
+            { id: 'b', name: 'Supplier B' },
+          ]}
+          value={null}
+          onValueChange={() => {}}
+          itemToStringLabel={supplier => supplier.name}
+          itemToStringValue={supplier => supplier.id}
+          hoverDetail={{ enabled: true, delay: 0 }}
+          onFetchHoverDetail={onFetchHoverDetail}
+          open
+          onOpenChange={onOpenChange}
+        />
+      );
+
+      const supplierB = screen.getByRole('option', { name: /supplier b/i });
+      fireEvent.mouseEnter(supplierB);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0);
+      });
+
+      expect(onFetchHoverDetail).toHaveBeenCalledWith('b');
+      expect(screen.getAllByText('Detail Supplier B').length).toBeGreaterThan(
+        0
+      );
+
+      fireEvent.keyDown(screen.getByPlaceholderText('Cari...'), {
+        key: 'Escape',
+      });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(250);
+      });
+
+      expect(onOpenChange).toHaveBeenCalledWith(
+        false,
+        expect.objectContaining({ reason: 'escape-key' })
+      );
+      expect(screen.getAllByText('Detail Supplier B').length).toBeGreaterThan(
+        0
+      );
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('shows hover detail data for preset entity options', async () => {

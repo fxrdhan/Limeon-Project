@@ -36,7 +36,11 @@ const FormField: React.FC<FormFieldProps> = ({
         className="block text-sm font-medium text-slate-700 mb-1"
       >
         {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
+        {required && (
+          <span aria-hidden="true" className="text-red-500 ml-1">
+            *
+          </span>
+        )}
       </label>
       {content}
     </div>

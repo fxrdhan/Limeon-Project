@@ -117,6 +117,21 @@ import { PharmaEntityComboboxSelect } from '@/components/combobox/entity-select'
 />;
 ```
 
+If the selected id can outlive the current option list, pass `selectedItem`.
+This keeps the trigger label, hidden form value, and required validation tied to
+the selected entity while options are still loading or temporarily filtered by the
+caller.
+
+```tsx
+<PharmaEntityComboboxSelect
+  name="supplier_id"
+  items={supplierOptions}
+  valueId={supplierId}
+  selectedItem={selectedSupplier}
+  onValueIdChange={setSupplierId}
+/>
+```
+
 Use the generic app preset directly when values are not `id`/`name` entities or
 when the caller needs full control over object stringification and equality.
 The preset also exposes `isItemDisabled` and `itemToHoverDetailData` so item
@@ -162,5 +177,22 @@ as empty:
 `onOpenChange` receives the same Base UI event details as the primitive, so
 callers can inspect close reasons or cancel an open-state transition when they
 own the surrounding workflow.
+
+## Preset Behavior Contract
+
+- Base UI owns item selection, event details, ARIA roles, hidden form values,
+  and popup open requests.
+- The preset owns only app UX around Base UI: search query state, visual
+  highlight animation, validation overlay, create action, and hover detail.
+- `value`/`valueId` is the selected value source of truth. `inputValue` is only
+  the transient search query and is cleared when the popup actually closes.
+- Controlled `open` callers own whether a close request takes effect. The preset
+  must not run close cleanup when `onOpenChange(false)` fires but `open` remains
+  `true`.
+- `details.cancel()` from Base UI callbacks prevents preset side effects for
+  that transition.
+- Hover detail must never change selection, focus, or submitted value.
+- Keyboard and pointer highlight may use additional visual state, but selection
+  must still happen through Base UI item presses.
 
 Do not add app-specific props to `Combobox.Root`. Compose app behavior around the primitive parts or extend the preset.

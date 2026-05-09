@@ -12,19 +12,13 @@ import { TbChevronDown, TbPlus, TbSearch } from 'react-icons/tb';
 import ValidationOverlay from '@/components/validation-overlay';
 import { cn } from '@/lib/utils';
 import type { HoverDetailData } from '@/types/components';
-import {
-  getKeyboardPinnedHighlightFrame,
-  getKeyboardScrollTarget,
-  hasKeyboardScrollTargetSettled,
-  isWrappedKeyboardScroll,
-  type KeyboardPinnedHighlightFrame,
-} from '@/components/shared/keyboard-pinned-highlight';
 import ComboboxHoverDetailPopover from './components/combobox-hover-detail-popover';
 import { ComboboxOptionMotionFrame } from './components/combobox-option-motion-frame';
 import {
   ComboboxSelectionIndicator,
   type ComboboxIndicatorKind,
 } from './components/combobox-selection-indicator';
+import { useComboboxKeyboardHighlightScroll } from './hooks/use-combobox-keyboard-highlight-scroll';
 import { useComboboxHoverDetail } from './hooks/use-combobox-hover-detail';
 import { Combobox, type ComboboxRootProps } from './index';
 import {
@@ -123,7 +117,6 @@ const highlightBackgroundTransition = {
 };
 const scrollHoverResumeDelay = 120;
 const selectedOptionScrollTopInset = 4;
-const keyboardScrollHighlightMaxHold = 700;
 const requiredValidationMessage = 'Field ini wajib diisi';
 
 const getComboboxItemRecord = <Item,>(item: Item): ComboboxItemRecord =>
@@ -163,15 +156,6 @@ const isElementVisibleInList = (element: HTMLElement, list: HTMLElement) => {
     elementRect.right > listRect.left &&
     elementRect.left < listRect.right
   );
-};
-
-const scrollElementTo = (element: HTMLElement, top: number) => {
-  if (typeof element.scrollTo === 'function') {
-    element.scrollTo({ top, behavior: 'smooth' });
-    return;
-  }
-
-  element.scrollTop = top;
 };
 
 export function PharmaComboboxSelect<Item>({
@@ -214,7 +198,6 @@ export function PharmaComboboxSelect<Item>({
   const listRef = useRef<HTMLDivElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const blurValidationFrameRef = useRef<number | null>(null);
-  const releaseHeldHighlightFrameRef = useRef<number | null>(null);
   const listPointerPositionRef = useRef<{ x: number; y: number } | null>(null);
   const keyboardHoverResumePointerPositionRef = useRef<{
     x: number;
@@ -240,12 +223,6 @@ export function PharmaComboboxSelect<Item>({
   const [visualHighlightedOptionId, setVisualHighlightedOptionId] = useState<
     string | undefined
   >(undefined);
-  const [heldHighlightFrame, setHeldHighlightFrame] =
-    useState<KeyboardPinnedHighlightFrame | null>(null);
-  const [pendingKeyboardScroll, setPendingKeyboardScroll] = useState<{
-    sourceIndex: number | null;
-    targetIndex: number;
-  } | null>(null);
   const visualHighlightedValueRef = useRef<Item | null>(null);
   const previousNormalizedInputValueRef = useRef('');
   const actualOpen = open ?? uncontrolledOpen;
@@ -265,13 +242,15 @@ export function PharmaComboboxSelect<Item>({
     () => hasExactComboboxItem(items, normalizedInputValue, itemToStringLabel),
     [itemToStringLabel, items, normalizedInputValue]
   );
+  const hasVisibleItems = visibleItems.length > 0;
   const canCreate = Boolean(
     createAction &&
     normalizedInputValue.length > 0 &&
-    visibleItems.length === 0 &&
+    !hasVisibleItems &&
     !hasExactItem
   );
-  const shouldAnimateListItems = normalizedInputValue.length > 0;
+  const shouldAnimateListItems =
+    normalizedInputValue.length > 0 && hasVisibleItems;
   const handleCreate = useCallback(() => {
     if (!canCreate) return;
 
@@ -394,15 +373,6 @@ export function PharmaComboboxSelect<Item>({
     },
     []
   );
-  const clearKeyboardScrollHighlight = useCallback(() => {
-    if (releaseHeldHighlightFrameRef.current !== null) {
-      window.cancelAnimationFrame(releaseHeldHighlightFrameRef.current);
-      releaseHeldHighlightFrameRef.current = null;
-    }
-
-    setPendingKeyboardScroll(null);
-    setHeldHighlightFrame(null);
-  }, []);
   const getOptionElementAtIndex = useCallback((index: number) => {
     if (!Number.isInteger(index) || index < 0) return null;
 
@@ -412,6 +382,17 @@ export function PharmaComboboxSelect<Item>({
       ) ?? null
     );
   }, []);
+  const {
+    clearKeyboardScrollHighlight,
+    heldHighlightFrame,
+    scheduleKeyboardHighlightedScroll: schedulePinnedKeyboardHighlightedScroll,
+  } = useComboboxKeyboardHighlightScroll({
+    actualOpen,
+    getOptionElementAtIndex,
+    listRef,
+    popupContentRef,
+    visibleItemCount: visibleItems.length,
+  });
   const getPointerHoverTarget = useCallback(() => {
     const pointerPosition = listPointerPositionRef.current;
     const list = listRef.current;
@@ -554,46 +535,15 @@ export function PharmaComboboxSelect<Item>({
   );
   const scheduleKeyboardHighlightedScroll = useCallback(
     (targetVisibleIndex: number, sourceVisibleIndex: number | null) => {
-      if (
-        !Number.isInteger(targetVisibleIndex) ||
-        targetVisibleIndex < 0 ||
-        targetVisibleIndex >= visibleItems.length
-      ) {
-        clearKeyboardScrollHighlight();
-        return;
-      }
-
-      const list = listRef.current;
-      const targetElement = list?.querySelector<HTMLElement>(
-        `[data-pharma-combobox-index="${targetVisibleIndex}"]`
-      );
-      const scrollTarget =
-        list && targetElement
-          ? getKeyboardScrollTarget({
-              container: list,
-              itemCount: visibleItems.length,
-              targetElement,
-              targetIndex: targetVisibleIndex,
-            })
-          : null;
-
       isKeyboardNavigatingRef.current = true;
       keyboardHoverResumePointerPositionRef.current =
         listPointerPositionRef.current;
-      if (scrollTarget) {
-        setPendingKeyboardScroll({
-          sourceIndex:
-            sourceVisibleIndex === null || sourceVisibleIndex < 0
-              ? null
-              : sourceVisibleIndex,
-          targetIndex: targetVisibleIndex,
-        });
-        return;
-      }
-
-      clearKeyboardScrollHighlight();
+      schedulePinnedKeyboardHighlightedScroll(
+        targetVisibleIndex,
+        sourceVisibleIndex
+      );
     },
-    [clearKeyboardScrollHighlight, visibleItems.length]
+    [schedulePinnedKeyboardHighlightedScroll]
   );
   const activeBackgroundLayoutId = `combobox-active-background-${instanceId}-${inputValue}`;
   const handleOpenChange = useCallback(
@@ -601,24 +551,9 @@ export function PharmaComboboxSelect<Item>({
       onOpenChange?.(nextOpen, details);
       if (details.isCanceled) return;
 
-      setUncontrolledOpen(nextOpen);
-      if (!nextOpen) {
-        hideHoverDetail();
-        isKeyboardNavigatingRef.current = false;
-        keyboardHoverResumePointerPositionRef.current = null;
-        clearKeyboardScrollHighlight();
-        visualHighlightedValueRef.current = null;
-        setVisualHighlightedValue(null);
-        setVisualHighlightedOptionId(undefined);
-        if (!isOpenControlled) setInputValue('');
-      }
+      if (!isOpenControlled) setUncontrolledOpen(nextOpen);
     },
-    [
-      clearKeyboardScrollHighlight,
-      hideHoverDetail,
-      isOpenControlled,
-      onOpenChange,
-    ]
+    [isOpenControlled, onOpenChange]
   );
   const navigateVisualHighlight = useCallback(
     (direction: 'next' | 'previous') => {
@@ -760,112 +695,23 @@ export function PharmaComboboxSelect<Item>({
   );
 
   useLayoutEffect(() => {
-    if (open === false) setInputValue('');
-  }, [open]);
+    if (!actualOpen) setInputValue('');
+  }, [actualOpen]);
 
   useEffect(() => {
-    if (!actualOpen || pendingKeyboardScroll === null) return;
+    if (actualOpen) return;
 
-    const list = listRef.current;
-    const popupContent = popupContentRef.current;
-    const targetElement = list?.querySelector<HTMLElement>(
-      `[data-pharma-combobox-index="${pendingKeyboardScroll.targetIndex}"]`
-    );
-    const sourceElement =
-      pendingKeyboardScroll.sourceIndex === null
-        ? null
-        : list?.querySelector<HTMLElement>(
-            `[data-pharma-combobox-index="${pendingKeyboardScroll.sourceIndex}"]`
-          );
-
-    if (!list || !popupContent || !targetElement) {
-      clearKeyboardScrollHighlight();
-      return;
-    }
-
-    const scrollTarget = getKeyboardScrollTarget({
-      container: list,
-      itemCount: visibleItems.length,
-      targetElement,
-      targetIndex: pendingKeyboardScroll.targetIndex,
-    });
-
-    if (scrollTarget === null) {
-      clearKeyboardScrollHighlight();
-      return;
-    }
-
-    if (releaseHeldHighlightFrameRef.current !== null) {
-      window.cancelAnimationFrame(releaseHeldHighlightFrameRef.current);
-      releaseHeldHighlightFrameRef.current = null;
-    }
-
-    setHeldHighlightFrame(
-      getKeyboardPinnedHighlightFrame({
-        container: list,
-        forceTargetEdgeFrame: isWrappedKeyboardScroll({
-          itemCount: visibleItems.length,
-          sourceIndex: pendingKeyboardScroll.sourceIndex,
-          targetIndex: pendingKeyboardScroll.targetIndex,
-        }),
-        frameRootElement: popupContent,
-        scrollDirection: scrollTarget.direction,
-        sourceElement,
-        targetElement,
-      })
-    );
-    scrollElementTo(list, scrollTarget.scrollTop);
-
-    const startedAt = window.performance.now();
-    const releaseWhenSettled = () => {
-      const currentList = listRef.current;
-      const currentTargetElement = currentList?.querySelector<HTMLElement>(
-        `[data-pharma-combobox-index="${pendingKeyboardScroll.targetIndex}"]`
-      );
-
-      if (!currentList || !currentTargetElement) {
-        clearKeyboardScrollHighlight();
-        return;
-      }
-
-      const hasHeldLongEnough =
-        window.performance.now() - startedAt >= keyboardScrollHighlightMaxHold;
-
-      if (
-        hasKeyboardScrollTargetSettled({
-          container: currentList,
-          scrollTop: scrollTarget.scrollTop,
-          targetElement: currentTargetElement,
-        }) ||
-        hasHeldLongEnough
-      ) {
-        clearKeyboardScrollHighlight();
-        return;
-      }
-
-      releaseHeldHighlightFrameRef.current =
-        window.requestAnimationFrame(releaseWhenSettled);
-    };
-
-    releaseHeldHighlightFrameRef.current =
-      window.requestAnimationFrame(releaseWhenSettled);
-  }, [
-    actualOpen,
-    clearKeyboardScrollHighlight,
-    pendingKeyboardScroll,
-    visibleItems.length,
-  ]);
+    hideHoverDetail();
+    isKeyboardNavigatingRef.current = false;
+    keyboardHoverResumePointerPositionRef.current = null;
+    previousNormalizedInputValueRef.current = '';
+    visualHighlightedValueRef.current = null;
+    setVisualHighlightedValue(null);
+    setVisualHighlightedOptionId(undefined);
+  }, [actualOpen, hideHoverDetail]);
 
   useEffect(() => {
-    if (!actualOpen) {
-      clearKeyboardScrollHighlight();
-      keyboardHoverResumePointerPositionRef.current = null;
-      previousNormalizedInputValueRef.current = '';
-      visualHighlightedValueRef.current = null;
-      setVisualHighlightedValue(null);
-      setVisualHighlightedOptionId(undefined);
-      return;
-    }
+    if (!actualOpen) return;
 
     const didClearSearch =
       previousNormalizedInputValueRef.current.length > 0 &&
@@ -917,7 +763,6 @@ export function PharmaComboboxSelect<Item>({
     setVisualHighlightedOptionId(nextHighlightedOptionId);
   }, [
     actualOpen,
-    clearKeyboardScrollHighlight,
     firstHighlightableVisibleItem,
     getOptionElementAtIndex,
     isItemDisabled,
@@ -966,9 +811,6 @@ export function PharmaComboboxSelect<Item>({
     () => () => {
       if (listScrollEndTimeoutRef.current) {
         clearTimeout(listScrollEndTimeoutRef.current);
-      }
-      if (releaseHeldHighlightFrameRef.current !== null) {
-        window.cancelAnimationFrame(releaseHeldHighlightFrameRef.current);
       }
       if (blurValidationFrameRef.current !== null) {
         window.cancelAnimationFrame(blurValidationFrameRef.current);
@@ -1210,85 +1052,90 @@ export function PharmaComboboxSelect<Item>({
                 ) : null}
                 <Combobox.List
                   ref={listRef}
-                  className="relative z-10 max-h-60 overflow-y-auto p-1 outline-hidden"
+                  className={cn(
+                    'relative z-10 overflow-y-auto outline-hidden',
+                    hasVisibleItems ? 'max-h-60 p-1' : 'max-h-0 p-0'
+                  )}
                   onMouseMove={handleListPointerMove}
                   onPointerMove={handleListPointerMove}
                   onWheel={updateListPointerPosition}
                   onScroll={handleListScroll}
                 >
-                  <AnimatePresence initial={false} mode="popLayout">
-                    {visibleItems.map((item, index) => (
-                      <ComboboxOptionMotionFrame
-                        key={itemToStringValue(item)}
-                        shouldAnimate={shouldAnimateListItems}
-                      >
-                        <Combobox.Item
-                          value={item}
-                          index={index}
-                          disabled={isItemDisabled(item)}
-                          data-pharma-combobox-index={index.toString()}
-                          onMouseEnter={event => {
-                            listPointerPositionRef.current = {
-                              x: event.clientX,
-                              y: event.clientY,
-                            };
-                            handleOptionHover(item, event.currentTarget);
-                          }}
-                          onMouseLeave={() => {
-                            if (isListScrollingRef.current) return;
+                  {hasVisibleItems ? (
+                    <AnimatePresence initial={false} mode="popLayout">
+                      {visibleItems.map((item, index) => (
+                        <ComboboxOptionMotionFrame
+                          key={itemToStringValue(item)}
+                          shouldAnimate={shouldAnimateListItems}
+                        >
+                          <Combobox.Item
+                            value={item}
+                            index={index}
+                            disabled={isItemDisabled(item)}
+                            data-pharma-combobox-index={index.toString()}
+                            onMouseEnter={event => {
+                              listPointerPositionRef.current = {
+                                x: event.clientX,
+                                y: event.clientY,
+                              };
+                              handleOptionHover(item, event.currentTarget);
+                            }}
+                            onMouseLeave={() => {
+                              if (isListScrollingRef.current) return;
 
-                            handleItemLeave();
-                          }}
-                          render={(props, state) => {
-                            const { ref, ...itemProps } = props;
-                            const isVisuallyHighlighted =
-                              isItemVisuallyHighlighted(
-                                item,
-                                state.highlighted
-                              );
+                              handleItemLeave();
+                            }}
+                            render={(props, state) => {
+                              const { ref, ...itemProps } = props;
+                              const isVisuallyHighlighted =
+                                isItemVisuallyHighlighted(
+                                  item,
+                                  state.highlighted
+                                );
 
-                            return (
-                              <div
-                                {...itemProps}
-                                ref={node => {
-                                  setRef(ref, node);
-                                }}
-                                data-pharma-combobox-index={index.toString()}
-                                className={cn(
-                                  'relative flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-800 outline-hidden',
-                                  state.selected &&
-                                    'font-semibold text-primary',
-                                  state.disabled &&
-                                    'cursor-not-allowed opacity-50'
-                                )}
-                              >
-                                {isVisuallyHighlighted &&
-                                !heldHighlightFrame ? (
-                                  <motion.div
-                                    key={activeBackgroundLayoutId}
-                                    layoutId={activeBackgroundLayoutId}
-                                    initial={false}
-                                    data-pharma-combobox-highlight=""
-                                    className="pointer-events-none absolute inset-0 z-0 rounded-lg bg-primary/10"
-                                    transition={highlightBackgroundTransition}
-                                  />
-                                ) : null}
-                                <span className="relative z-10 flex min-w-0 flex-1 items-center gap-2">
-                                  <ComboboxSelectionIndicator
-                                    kind={indicator}
-                                    selected={state.selected}
-                                  />
-                                  <span className="min-w-0 flex-1 truncate">
-                                    {itemToStringLabel(item)}
+                              return (
+                                <div
+                                  {...itemProps}
+                                  ref={node => {
+                                    setRef(ref, node);
+                                  }}
+                                  data-pharma-combobox-index={index.toString()}
+                                  className={cn(
+                                    'relative flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-800 outline-hidden',
+                                    state.selected &&
+                                      'font-semibold text-primary',
+                                    state.disabled &&
+                                      'cursor-not-allowed opacity-50'
+                                  )}
+                                >
+                                  {isVisuallyHighlighted &&
+                                  !heldHighlightFrame ? (
+                                    <motion.div
+                                      key={activeBackgroundLayoutId}
+                                      layoutId={activeBackgroundLayoutId}
+                                      initial={false}
+                                      data-pharma-combobox-highlight=""
+                                      className="pointer-events-none absolute inset-0 z-0 rounded-lg bg-primary/10"
+                                      transition={highlightBackgroundTransition}
+                                    />
+                                  ) : null}
+                                  <span className="relative z-10 flex min-w-0 flex-1 items-center gap-2">
+                                    <ComboboxSelectionIndicator
+                                      kind={indicator}
+                                      selected={state.selected}
+                                    />
+                                    <span className="min-w-0 flex-1 truncate">
+                                      {itemToStringLabel(item)}
+                                    </span>
                                   </span>
-                                </span>
-                              </div>
-                            );
-                          }}
-                        />
-                      </ComboboxOptionMotionFrame>
-                    ))}
-                  </AnimatePresence>
+                                </div>
+                              );
+                            }}
+                          />
+                        </ComboboxOptionMotionFrame>
+                      ))}
+                    </AnimatePresence>
+                  ) : null}
                 </Combobox.List>
                 <Combobox.Empty className="empty:hidden relative z-10 px-3 py-4 text-center text-sm text-slate-500">
                   Tidak ada data
