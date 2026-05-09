@@ -1,5 +1,6 @@
 import React, { cloneElement, isValidElement, useId } from 'react';
 import type { FormFieldProps } from '@/types';
+import { FormFieldProvider } from './context';
 
 const FormField: React.FC<FormFieldProps> = ({
   label,
@@ -29,21 +30,25 @@ const FormField: React.FC<FormFieldProps> = ({
     : children;
 
   return (
-    <div className={className}>
-      <label
-        id={labelId}
-        htmlFor={canAssociateChild ? controlId : undefined}
-        className="block text-sm font-medium text-slate-700 mb-1"
-      >
-        {label}
-        {required && (
-          <span aria-hidden="true" className="text-red-500 ml-1">
-            *
-          </span>
-        )}
-      </label>
-      {content}
-    </div>
+    <FormFieldProvider
+      value={{ controlId, label, labelId, required: Boolean(required) }}
+    >
+      <div className={className}>
+        <label
+          id={labelId}
+          htmlFor={canAssociateChild ? controlId : undefined}
+          className="block text-sm font-medium text-slate-700 mb-1"
+        >
+          {label}
+          {required && (
+            <span aria-hidden="true" className="text-red-500 ml-1">
+              *
+            </span>
+          )}
+        </label>
+        {content}
+      </div>
+    </FormFieldProvider>
   );
 };
 

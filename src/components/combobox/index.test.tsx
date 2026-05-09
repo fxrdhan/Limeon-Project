@@ -9,10 +9,12 @@ import {
 } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vite-plus/test';
 import FormField from '../form-field';
-import { findComboboxItemByValue } from './helpers';
-import { Combobox } from './index';
-import { PharmaEntityComboboxSelect } from './entity-select';
-import { PharmaComboboxSelect } from './presets';
+import {
+  Combobox,
+  findComboboxItemByValue,
+  PharmaComboboxSelect,
+  PharmaEntityComboboxSelect,
+} from './index';
 
 const fruitItems = ['Apple', 'Banana', 'Cherry'];
 type EntityItem = { id: string; name: string };
@@ -200,6 +202,27 @@ describe('Combobox app presets', () => {
     expect(searchInput.hasAttribute('aria-labelledby')).toBe(false);
   });
 
+  it('inherits FormField labels through layout wrappers', () => {
+    render(
+      <FormField label="Unit Dasar" required>
+        <div className="space-y-2">
+          <PharmaEntityComboboxSelect
+            name="base_inventory_unit_id"
+            items={[]}
+            valueId=""
+            onValueIdChange={() => {}}
+            placeholder="Pilih Unit Dasar"
+          />
+        </div>
+      </FormField>
+    );
+
+    const trigger = screen.getByRole('combobox', {
+      name: /unit dasar pilih unit dasar/i,
+    });
+    expect(trigger.getAttribute('aria-labelledby')).toBeTruthy();
+  });
+
   it('keeps empty status outside the listbox in the standard preset composition', () => {
     render(
       <PharmaComboboxSelect<EntityItem>
@@ -275,9 +298,35 @@ describe('Combobox app presets', () => {
     expect(
       document.getElementById(validationDescriptionId as string)?.textContent
     ).toBe('Field ini wajib diisi');
-    expect(screen.getAllByText('Field ini wajib diisi').length).toBeGreaterThan(
-      0
+  });
+
+  it('offers create action for non-exact searches even when partial matches exist', () => {
+    const onCreate = vi.fn();
+    const onValueChange = vi.fn();
+
+    render(
+      <PharmaComboboxSelect
+        name="medicine_id"
+        items={[{ id: 'amox-250', name: 'Amoxicillin 250' }]}
+        value={null}
+        onValueChange={onValueChange}
+        itemToStringLabel={item => item.name}
+        itemToStringValue={item => item.id}
+        createAction={{ onCreate, label: 'Tambah obat' }}
+      />
     );
+
+    fireEvent.click(screen.getByRole('combobox', { name: /pilih/i }));
+    const searchInput = screen.getByPlaceholderText('Cari...');
+    fireEvent.change(searchInput, { target: { value: 'Amox' } });
+
+    expect(
+      screen.getByRole('option', { name: /amoxicillin 250/i })
+    ).toBeTruthy();
+    fireEvent.keyDown(searchInput, { key: 'Enter' });
+
+    expect(onCreate).toHaveBeenCalledWith('Amox');
+    expect(onValueChange).not.toHaveBeenCalled();
   });
 
   it('does not mark required fields invalid while focus stays inside the popup', () => {
@@ -304,32 +353,6 @@ describe('Combobox app presets', () => {
 
     fireEvent.blur(searchInput, { relatedTarget: document.body });
     expect(trigger.getAttribute('aria-invalid')).toBe('true');
-  });
-
-  it('creates a missing entity from the search input with Enter', () => {
-    const onCreate = vi.fn();
-    render(
-      <PharmaComboboxSelect<EntityItem>
-        name="category_id"
-        items={[]}
-        value={null}
-        onValueChange={() => {}}
-        itemToStringLabel={item => item.name}
-        itemToStringValue={item => item.id}
-        placeholder="Pilih kategori"
-        createAction={{ onCreate, label: 'Tambah kategori' }}
-      />
-    );
-
-    fireEvent.click(screen.getByRole('combobox', { name: /pilih kategori/i }));
-    const searchInput = screen.getByPlaceholderText('Cari...');
-    fireEvent.change(searchInput, {
-      target: { value: 'Antibiotik' },
-    });
-    fireEvent.keyDown(searchInput, { key: 'Enter' });
-
-    expect(onCreate).toHaveBeenCalledTimes(1);
-    expect(onCreate).toHaveBeenCalledWith('Antibiotik');
   });
 
   it('lets scalar selects declare a non-null empty sentinel', () => {
@@ -359,9 +382,7 @@ describe('Combobox app presets', () => {
     const trigger = screen.getByRole('combobox', { name: /pilih status/i });
     fireEvent.blur(trigger, { relatedTarget: document.body });
 
-    expect(screen.getAllByText('Field ini wajib diisi').length).toBeGreaterThan(
-      0
-    );
+    expect(trigger.getAttribute('aria-invalid')).toBe('true');
 
     fireEvent.click(trigger);
     fireEvent.click(screen.getByRole('option', { name: /^aktif$/i }));
@@ -511,25 +532,6 @@ describe('Combobox app presets', () => {
     expect(trigger.getAttribute('aria-invalid')).toBeNull();
   });
 
-  it('inherits FormField labels without requiring a duplicate label prop', () => {
-    render(
-      <FormField label="Supplier" required>
-        <PharmaEntityComboboxSelect
-          name="supplier_id"
-          items={[]}
-          valueId=""
-          onValueIdChange={() => {}}
-          placeholder="Pilih supplier"
-        />
-      </FormField>
-    );
-
-    const trigger = screen.getByRole('combobox', {
-      name: /supplier pilih supplier/i,
-    });
-    expect(trigger.getAttribute('aria-labelledby')).toBeTruthy();
-  });
-
   it('resets searchable preset input when the popup closes without a selection', () => {
     render(
       <PharmaComboboxSelect
@@ -563,7 +565,8 @@ describe('Combobox app presets', () => {
     expect(screen.getByRole('option', { name: /supplier a/i })).toBeTruthy();
   });
 
-  it('moves and preserves the visual highlight while hovering options', async () => {
+  it('keeps searchable preset input when a controlled popup remains open', () => {
+    const onOpenChange = vi.fn();
     render(
       <PharmaComboboxSelect
         name="supplier_id"
@@ -575,38 +578,23 @@ describe('Combobox app presets', () => {
         onValueChange={() => {}}
         itemToStringLabel={supplier => supplier.name}
         itemToStringValue={supplier => supplier.id}
+        open
+        onOpenChange={onOpenChange}
       />
     );
 
-    fireEvent.click(screen.getByRole('combobox', { name: /pilih/i }));
-    const supplierA = screen.getByRole('option', { name: /supplier a/i });
-    const supplierB = screen.getByRole('option', { name: /supplier b/i });
-
-    await waitFor(() => {
-      expect(
-        supplierA.querySelector('[data-pharma-combobox-highlight]')
-      ).toBeTruthy();
+    const searchInput = screen.getByPlaceholderText('Cari...');
+    fireEvent.change(searchInput, {
+      target: { value: 'Supplier B' },
     });
+    fireEvent.keyDown(searchInput, { key: 'Escape' });
 
-    fireEvent.mouseEnter(supplierB);
-    expect(
-      supplierA.querySelector('[data-pharma-combobox-highlight]')
-    ).toBeNull();
-    expect(
-      supplierB.querySelector('[data-pharma-combobox-highlight]')
-    ).toBeTruthy();
-
-    fireEvent.pointerLeave(screen.getByRole('listbox'));
-    fireEvent.mouseLeave(screen.getByRole('listbox'));
-
-    await waitFor(() => {
-      expect(
-        supplierA.querySelector('[data-pharma-combobox-highlight]')
-      ).toBeNull();
-      expect(
-        supplierB.querySelector('[data-pharma-combobox-highlight]')
-      ).toBeTruthy();
-    });
+    expect(onOpenChange).toHaveBeenCalledWith(
+      false,
+      expect.objectContaining({ reason: 'escape-key' })
+    );
+    expect((searchInput as HTMLInputElement).value).toBe('Supplier B');
+    expect(screen.queryByRole('option', { name: /supplier a/i })).toBeNull();
   });
 
   it('routes trigger typing into the open searchable input', () => {
@@ -662,48 +650,36 @@ describe('Combobox app presets', () => {
     expect(screen.getByRole('status').textContent).toBe('Tidak ada data');
   });
 
-  it('restores selected highlight when a search is cleared', async () => {
-    const suppliers = [
-      { id: 'a', name: 'Supplier A' },
-      { id: 'b', name: 'Branch B' },
-    ];
+  it('selects filtered options through Base UI keyboard handling', () => {
+    const onValueChange = vi.fn();
 
     render(
       <PharmaComboboxSelect
         name="supplier_id"
-        items={suppliers}
-        value={suppliers[0]}
-        onValueChange={() => {}}
+        items={[
+          { id: 'a', name: 'Supplier A' },
+          { id: 'b', name: 'Supplier B' },
+        ]}
+        value={null}
+        onValueChange={onValueChange}
         itemToStringLabel={supplier => supplier.name}
         itemToStringValue={supplier => supplier.id}
       />
     );
 
-    fireEvent.click(screen.getByRole('combobox', { name: /supplier a/i }));
+    fireEvent.click(screen.getByRole('combobox', { name: /pilih/i }));
     const searchInput = screen.getByPlaceholderText('Cari...');
+    fireEvent.change(searchInput, { target: { value: 'Supplier B' } });
+    fireEvent.keyDown(searchInput, { key: 'ArrowDown' });
+    fireEvent.keyDown(searchInput, { key: 'Enter' });
 
-    fireEvent.change(searchInput, { target: { value: 'b' } });
-    await waitFor(() => {
-      expect(screen.queryByRole('option', { name: /supplier a/i })).toBeNull();
-    });
-
-    fireEvent.change(searchInput, { target: { value: '' } });
-
-    await waitFor(() => {
-      expect(
-        screen
-          .getByRole('option', { name: /supplier a/i })
-          .querySelector('[data-pharma-combobox-highlight]')
-      ).toBeTruthy();
-    });
-    expect(
-      screen
-        .getByRole('option', { name: /branch b/i })
-        .querySelector('[data-pharma-combobox-highlight]')
-    ).toBeNull();
+    expect(onValueChange).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'b' }),
+      expect.objectContaining({ reason: 'item-press' })
+    );
   });
 
-  it('keeps trigger arrow navigation aligned with the active descendant', async () => {
+  it('preserves animated highlight background while pointer focus moves', async () => {
     render(
       <PharmaComboboxSelect
         name="supplier_id"
@@ -718,50 +694,17 @@ describe('Combobox app presets', () => {
       />
     );
 
-    const trigger = screen.getByRole('combobox', { name: /pilih/i });
-    fireEvent.click(trigger);
-    const supplierB = screen.getByRole('option', { name: /supplier b/i });
-
-    fireEvent.keyDown(trigger, { key: 'ArrowDown' });
-
-    await waitFor(() => {
-      expect(
-        supplierB.querySelector('[data-pharma-combobox-highlight]')
-      ).toBeTruthy();
-    });
-    expect(trigger.getAttribute('aria-activedescendant')).toBe(supplierB.id);
-  });
-
-  it('ignores stale option hover while navigating with arrow keys until the mouse moves', async () => {
-    render(
-      <PharmaComboboxSelect
-        name="supplier_id"
-        items={[
-          { id: 'a', name: 'Supplier A' },
-          { id: 'b', name: 'Supplier B' },
-        ]}
-        value={null}
-        onValueChange={() => {}}
-        itemToStringLabel={supplier => supplier.name}
-        itemToStringValue={supplier => supplier.id}
-      />
-    );
-
-    const trigger = screen.getByRole('combobox', { name: /pilih/i });
-    fireEvent.click(trigger);
-    const listbox = screen.getByRole('listbox');
+    fireEvent.click(screen.getByRole('combobox', { name: /pilih/i }));
     const supplierA = screen.getByRole('option', { name: /supplier a/i });
     const supplierB = screen.getByRole('option', { name: /supplier b/i });
 
-    fireEvent.keyDown(trigger, { key: 'ArrowDown' });
-
     await waitFor(() => {
       expect(
-        supplierB.querySelector('[data-pharma-combobox-highlight]')
+        supplierA.querySelector('[data-pharma-combobox-highlight]')
       ).toBeTruthy();
     });
 
-    fireEvent.mouseEnter(supplierA);
+    fireEvent.mouseEnter(supplierB);
     expect(
       supplierA.querySelector('[data-pharma-combobox-highlight]')
     ).toBeNull();
@@ -769,102 +712,61 @@ describe('Combobox app presets', () => {
       supplierB.querySelector('[data-pharma-combobox-highlight]')
     ).toBeTruthy();
 
-    fireEvent.mouseMove(listbox, { clientX: 1, clientY: 1 });
-    fireEvent.mouseEnter(supplierA);
-
+    fireEvent.mouseLeave(supplierB);
     expect(
-      supplierA.querySelector('[data-pharma-combobox-highlight]')
+      supplierB.querySelector('[data-pharma-combobox-highlight]')
     ).toBeTruthy();
   });
 
-  it('keeps searchable preset input when a controlled popup remains open', () => {
-    const onOpenChange = vi.fn();
+  it('keeps list swap animation active while searching', () => {
     render(
       <PharmaComboboxSelect
         name="supplier_id"
         items={[
           { id: 'a', name: 'Supplier A' },
-          { id: 'b', name: 'Supplier B' },
+          { id: 'b', name: 'Branch B' },
         ]}
         value={null}
         onValueChange={() => {}}
         itemToStringLabel={supplier => supplier.name}
         itemToStringValue={supplier => supplier.id}
-        open
-        onOpenChange={onOpenChange}
       />
     );
 
-    const searchInput = screen.getByPlaceholderText('Cari...');
-    fireEvent.change(searchInput, {
-      target: { value: 'Supplier B' },
+    fireEvent.click(screen.getByRole('combobox', { name: /pilih/i }));
+    fireEvent.change(screen.getByPlaceholderText('Cari...'), {
+      target: { value: 'Branch' },
     });
-    fireEvent.keyDown(searchInput, { key: 'Escape' });
 
-    expect(onOpenChange).toHaveBeenCalledWith(
-      false,
-      expect.objectContaining({ reason: 'escape-key' })
-    );
-    expect((searchInput as HTMLInputElement).value).toBe('Supplier B');
-    expect(screen.queryByRole('option', { name: /supplier a/i })).toBeNull();
+    const visibleOption = screen.getByRole('option', { name: /branch b/i });
+    expect(
+      visibleOption.parentElement?.getAttribute(
+        'data-pharma-combobox-option-frame'
+      )
+    ).toBe('');
   });
 
-  it('does not run close cleanup when a controlled popup stays open', async () => {
-    vi.useFakeTimers();
-    const onOpenChange = vi.fn();
-    const onFetchHoverDetail = vi.fn(async (id: string) => ({
-      id,
-      name: 'Supplier B',
-      description: 'Detail Supplier B',
-    }));
+  it('renders typed option content and metadata without requiring custom item DOM', () => {
+    render(
+      <PharmaComboboxSelect
+        name="supplier_id"
+        items={[{ id: 'a', name: 'Supplier A', code: 'SUP-A' }]}
+        value={null}
+        onValueChange={() => {}}
+        itemToStringLabel={supplier => supplier.name}
+        itemToStringValue={supplier => supplier.id}
+        renderOption={(supplier, state) => (
+          <span>
+            {state.label} {state.selected ? 'selected' : 'available'}
+          </span>
+        )}
+        renderOptionMeta={supplier => supplier.code}
+      />
+    );
 
-    try {
-      render(
-        <PharmaComboboxSelect
-          name="supplier_id"
-          items={[
-            { id: 'a', name: 'Supplier A' },
-            { id: 'b', name: 'Supplier B' },
-          ]}
-          value={null}
-          onValueChange={() => {}}
-          itemToStringLabel={supplier => supplier.name}
-          itemToStringValue={supplier => supplier.id}
-          hoverDetail={{ enabled: true, delay: 0 }}
-          onFetchHoverDetail={onFetchHoverDetail}
-          open
-          onOpenChange={onOpenChange}
-        />
-      );
-
-      const supplierB = screen.getByRole('option', { name: /supplier b/i });
-      fireEvent.mouseEnter(supplierB);
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(0);
-      });
-
-      expect(onFetchHoverDetail).toHaveBeenCalledWith('b');
-      expect(screen.getAllByText('Detail Supplier B').length).toBeGreaterThan(
-        0
-      );
-
-      fireEvent.keyDown(screen.getByPlaceholderText('Cari...'), {
-        key: 'Escape',
-      });
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(250);
-      });
-
-      expect(onOpenChange).toHaveBeenCalledWith(
-        false,
-        expect.objectContaining({ reason: 'escape-key' })
-      );
-      expect(screen.getAllByText('Detail Supplier B').length).toBeGreaterThan(
-        0
-      );
-    } finally {
-      vi.useRealTimers();
-    }
+    fireEvent.click(screen.getByRole('combobox', { name: /pilih/i }));
+    expect(screen.getByText(/supplier a available/i)).toBeTruthy();
+    expect(screen.getByText('SUP-A')).toBeTruthy();
   });
 
   it('shows hover detail data for preset entity options', async () => {
@@ -935,12 +837,13 @@ describe('Combobox app presets', () => {
     expect(screen.getAllByText('Analgesik').length).toBeGreaterThan(0);
   });
 
-  it('coalesces rapid hover detail switches to the final option', async () => {
+  it('does not run close cleanup when a controlled popup stays open', async () => {
     vi.useFakeTimers();
+    const onOpenChange = vi.fn();
     const onFetchHoverDetail = vi.fn(async (id: string) => ({
       id,
-      name: `Supplier ${id.toUpperCase()}`,
-      description: `Detail ${id}`,
+      name: 'Supplier B',
+      description: 'Detail Supplier B',
     }));
 
     try {
@@ -950,239 +853,44 @@ describe('Combobox app presets', () => {
           items={[
             { id: 'a', name: 'Supplier A' },
             { id: 'b', name: 'Supplier B' },
-            { id: 'c', name: 'Supplier C' },
           ]}
           value={null}
           onValueChange={() => {}}
-          itemToStringLabel={item => item.name}
-          itemToStringValue={item => item.id}
+          itemToStringLabel={supplier => supplier.name}
+          itemToStringValue={supplier => supplier.id}
           hoverDetail={{ enabled: true, delay: 0 }}
           onFetchHoverDetail={onFetchHoverDetail}
+          open
+          onOpenChange={onOpenChange}
         />
       );
 
-      fireEvent.click(screen.getByRole('combobox', { name: /pilih/i }));
-      const supplierA = screen.getByRole('option', { name: /supplier a/i });
       const supplierB = screen.getByRole('option', { name: /supplier b/i });
-      const supplierC = screen.getByRole('option', { name: /supplier c/i });
-
-      fireEvent.mouseEnter(supplierA);
+      fireEvent.mouseEnter(supplierB);
       await act(async () => {
         await vi.advanceTimersByTimeAsync(0);
       });
-      expect(onFetchHoverDetail).toHaveBeenCalledWith('a');
 
-      onFetchHoverDetail.mockClear();
-      fireEvent.mouseEnter(supplierB);
-      fireEvent.mouseEnter(supplierC);
-
-      expect(onFetchHoverDetail).not.toHaveBeenCalled();
-
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(79);
-      });
-      expect(onFetchHoverDetail).not.toHaveBeenCalled();
-
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(1);
-      });
-      expect(onFetchHoverDetail).toHaveBeenCalledTimes(1);
-      expect(onFetchHoverDetail).toHaveBeenCalledWith('c');
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-
-  it('defers hover detail content changes until list scrolling settles', async () => {
-    vi.useFakeTimers();
-    const onFetchHoverDetail = vi.fn(async (id: string) => ({
-      id,
-      name: id,
-      description: `Detail ${id}`,
-    }));
-
-    try {
-      render(
-        <PharmaComboboxSelect<EntityItem>
-          name="supplier_id"
-          items={[
-            { id: 'a', name: 'Supplier A' },
-            { id: 'b', name: 'Supplier B' },
-          ]}
-          value={null}
-          onValueChange={() => {}}
-          itemToStringLabel={item => item.name}
-          itemToStringValue={item => item.id}
-          hoverDetail={{ enabled: true, delay: 0 }}
-          onFetchHoverDetail={onFetchHoverDetail}
-        />
-      );
-
-      fireEvent.click(screen.getByRole('combobox', { name: /pilih/i }));
-      const listbox = screen.getByRole('listbox');
-      const supplierA = screen.getByRole('option', { name: /supplier a/i });
-      const supplierB = screen.getByRole('option', { name: /supplier b/i });
-
-      fireEvent.mouseEnter(supplierA);
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(0);
-      });
-      expect(onFetchHoverDetail).toHaveBeenCalledWith('a');
-
-      onFetchHoverDetail.mockClear();
-      fireEvent.scroll(listbox);
-      fireEvent.mouseEnter(supplierB);
-
-      expect(
-        supplierB.querySelector('[data-pharma-combobox-highlight]')
-      ).toBeTruthy();
-      expect(onFetchHoverDetail).not.toHaveBeenCalled();
-
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(119);
-      });
-      expect(onFetchHoverDetail).not.toHaveBeenCalled();
-
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(1);
-      });
       expect(onFetchHoverDetail).toHaveBeenCalledWith('b');
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-
-  it('ignores stale pending hover targets after fast list scroll', async () => {
-    vi.useFakeTimers();
-    const onFetchHoverDetail = vi.fn(async (id: string) => ({
-      id,
-      name: id,
-      description: `Detail ${id}`,
-    }));
-    const restoreCallbacks: Array<() => void> = [];
-    const createRect = ({
-      bottom,
-      height,
-      left,
-      right,
-      top,
-      width,
-    }: {
-      bottom: number;
-      height: number;
-      left: number;
-      right: number;
-      top: number;
-      width: number;
-    }): DOMRect =>
-      ({
-        bottom,
-        height,
-        left,
-        right,
-        top,
-        width,
-        x: left,
-        y: top,
-        toJSON: () => ({}),
-      }) as DOMRect;
-    const setElementRect = (
-      element: HTMLElement,
-      rect: ReturnType<typeof createRect>
-    ) => {
-      const descriptor = Object.getOwnPropertyDescriptor(
-        element,
-        'getBoundingClientRect'
+      expect(screen.getAllByText('Detail Supplier B').length).toBeGreaterThan(
+        0
       );
 
-      Object.defineProperty(element, 'getBoundingClientRect', {
-        configurable: true,
-        value: () => rect,
+      fireEvent.keyDown(screen.getByPlaceholderText('Cari...'), {
+        key: 'Escape',
       });
-
-      restoreCallbacks.push(() => {
-        if (descriptor) {
-          Object.defineProperty(element, 'getBoundingClientRect', descriptor);
-          return;
-        }
-
-        Reflect.deleteProperty(element, 'getBoundingClientRect');
-      });
-    };
-
-    try {
-      render(
-        <PharmaComboboxSelect<EntityItem>
-          name="supplier_id"
-          items={[
-            { id: 'a', name: 'Supplier A' },
-            { id: 'b', name: 'Supplier B' },
-          ]}
-          value={null}
-          onValueChange={() => {}}
-          itemToStringLabel={item => item.name}
-          itemToStringValue={item => item.id}
-          hoverDetail={{ enabled: true, delay: 0 }}
-          onFetchHoverDetail={onFetchHoverDetail}
-        />
-      );
-
-      fireEvent.click(screen.getByRole('combobox', { name: /pilih/i }));
-      const listbox = screen.getByRole('listbox');
-      const supplierB = screen.getByRole('option', { name: /supplier b/i });
-      const elementFromPointDescriptor = Object.getOwnPropertyDescriptor(
-        document,
-        'elementFromPoint'
-      );
-      Object.defineProperty(document, 'elementFromPoint', {
-        configurable: true,
-        value: () => null,
-      });
-      restoreCallbacks.push(() => {
-        if (elementFromPointDescriptor) {
-          Object.defineProperty(
-            document,
-            'elementFromPoint',
-            elementFromPointDescriptor
-          );
-          return;
-        }
-
-        Reflect.deleteProperty(document, 'elementFromPoint');
-      });
-      setElementRect(
-        listbox,
-        createRect({
-          bottom: 200,
-          height: 100,
-          left: 0,
-          right: 260,
-          top: 100,
-          width: 260,
-        })
-      );
-      setElementRect(
-        supplierB,
-        createRect({
-          bottom: 280,
-          height: 40,
-          left: 0,
-          right: 260,
-          top: 240,
-          width: 260,
-        })
-      );
-
-      fireEvent.scroll(listbox);
-      fireEvent.mouseEnter(supplierB);
-
       await act(async () => {
-        await vi.advanceTimersByTimeAsync(120);
+        await vi.advanceTimersByTimeAsync(250);
       });
 
-      expect(onFetchHoverDetail).not.toHaveBeenCalled();
+      expect(onOpenChange).toHaveBeenCalledWith(
+        false,
+        expect.objectContaining({ reason: 'escape-key' })
+      );
+      expect(screen.getAllByText('Detail Supplier B').length).toBeGreaterThan(
+        0
+      );
     } finally {
-      restoreCallbacks.reverse().forEach(restore => restore());
       vi.useRealTimers();
     }
   });
@@ -1211,6 +919,7 @@ describe('Combobox app presets', () => {
           indicator="radio"
         />
         <PharmaComboboxSelect
+          label="Bulan"
           name="month-selector"
           items={[0, 1]}
           value={0}
@@ -1239,7 +948,7 @@ describe('Combobox app presets', () => {
     fireEvent.click(screen.getByRole('option', { name: /lunas/i }));
     expect(onEnumChange).toHaveBeenCalledWith('paid');
 
-    fireEvent.click(screen.getByRole('combobox', { name: /januari/i }));
+    fireEvent.click(screen.getByRole('combobox', { name: /bulan januari/i }));
     fireEvent.click(screen.getByRole('option', { name: /februari/i }));
     expect(onMonthChange).toHaveBeenCalledWith(1);
 

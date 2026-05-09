@@ -1,13 +1,2 @@
-export { Combobox, default } from './index';
-export type * from '@base-ui/react/combobox';
-export { findComboboxItemByValue } from './helpers';
-export {
-  PharmaComboboxSelect,
-  type PharmaComboboxChangeDetails,
-  type PharmaComboboxOpenChangeDetails,
-  type PharmaComboboxSelectProps,
-} from './presets';
-export {
-  PharmaEntityComboboxSelect,
-  type PharmaEntityComboboxSelectProps,
-} from './entity-select';
+export { default } from './index';
+export * from './index';

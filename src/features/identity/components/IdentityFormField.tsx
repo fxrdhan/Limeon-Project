@@ -1,6 +1,6 @@
 import React from 'react';
 import Input from '@/components/input';
-import { PharmaComboboxSelect } from '@/components/combobox/presets';
+import { PharmaComboboxSelect } from '@/components/combobox';
 import Calendar from '@/components/calendar';
 import Button from '@/components/button';
 import { TbBan, TbDeviceFloppy, TbPencil } from 'react-icons/tb';

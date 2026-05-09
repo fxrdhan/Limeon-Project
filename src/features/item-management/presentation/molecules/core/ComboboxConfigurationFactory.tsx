@@ -20,7 +20,7 @@
 import {
   PharmaEntityComboboxSelect,
   type PharmaEntityComboboxSelectProps,
-} from '@/components/combobox/entity-select';
+} from '@/components/combobox';
 import Input from '@/components/input';
 import FormField from '@/components/form-field';
 import type { ComboboxOption, HoverDetailData } from '@/types/components';

@@ -1,6 +1,6 @@
 import React from 'react';
 import { TbArrowBack } from 'react-icons/tb';
-import { PharmaEntityComboboxSelect } from '@/components/combobox/entity-select';
+import { PharmaEntityComboboxSelect } from '@/components/combobox';
 import FormField from '@/components/form-field';
 import Input from '@/components/input';
 import type { ComboboxOption } from '@/types/components';

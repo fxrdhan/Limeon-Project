@@ -1,5 +1,5 @@
 import type React from 'react';
-import { motion, useIsPresent } from 'motion/react';
+import { motion } from 'motion/react';
 
 const listOptionTransition = {
   layout: {
@@ -24,15 +24,12 @@ export function ComboboxOptionMotionFrame({
   children: React.ReactNode;
   shouldAnimate: boolean;
 }) {
-  const isPresent = useIsPresent();
-
   return (
     <motion.div
-      aria-hidden={isPresent ? undefined : true}
+      data-pharma-combobox-option-frame={shouldAnimate ? '' : undefined}
       layout={shouldAnimate ? 'position' : false}
       initial={shouldAnimate ? { opacity: 0, y: 6 } : false}
       animate={{ opacity: 1, y: 0 }}
-      exit={shouldAnimate ? { opacity: 0, y: -6 } : undefined}
       transition={listOptionTransition}
     >
       {children}

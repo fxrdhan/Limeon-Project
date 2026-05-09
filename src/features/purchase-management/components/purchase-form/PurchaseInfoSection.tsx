@@ -1,8 +1,10 @@
 import React from 'react';
 import FormSection from '@/components/form-section';
 import Input from '@/components/input';
-import { PharmaComboboxSelect } from '@/components/combobox/presets';
-import { PharmaEntityComboboxSelect } from '@/components/combobox/entity-select';
+import {
+  PharmaComboboxSelect,
+  PharmaEntityComboboxSelect,
+} from '@/components/combobox';
 import Calendar from '@/components/calendar';
 import DescriptiveTextarea from '@/components/descriptive-textarea';
 import type { CustomDateValueType } from '@/components/calendar/types';

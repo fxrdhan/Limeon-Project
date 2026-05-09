@@ -1,7 +1,9 @@
 import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
 import Input from '@/components/input';
-import { PharmaComboboxSelect } from '@/components/combobox/presets';
-import { PharmaEntityComboboxSelect } from '@/components/combobox/entity-select';
+import {
+  PharmaComboboxSelect,
+  PharmaEntityComboboxSelect,
+} from '@/components/combobox';
 import FormField from '@/components/form-field';
 import { itemNameSchema } from '@/schemas/manual/itemValidation';
 import type { ComboboxOption } from '@/types/components';

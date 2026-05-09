@@ -10,7 +10,7 @@ import {
 } from 'react-icons/tb';
 import { AnimatePresence, motion } from 'motion/react';
 import Switch from '@/components/switch';
-import { PharmaEntityComboboxSelect } from '@/components/combobox/entity-select';
+import { PharmaEntityComboboxSelect } from '@/components/combobox';
 import Input from '@/components/input';
 import FormField from '@/components/form-field';
 import Button from '@/components/button';

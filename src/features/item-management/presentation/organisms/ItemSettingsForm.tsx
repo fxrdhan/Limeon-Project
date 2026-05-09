@@ -1,7 +1,7 @@
 import { forwardRef, useRef, type CSSProperties } from 'react';
 import { TbChevronDown } from 'react-icons/tb';
 import { AnimatePresence, motion } from 'motion/react';
-import { PharmaComboboxSelect } from '@/components/combobox/presets';
+import { PharmaComboboxSelect } from '@/components/combobox';
 import Checkbox from '@/components/checkbox';
 import FormField from '@/components/form-field';
 import {

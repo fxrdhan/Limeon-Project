@@ -6,7 +6,7 @@
 import { Combobox } from '@/components/combobox';
 ```
 
-The primitive is value-model agnostic and intentionally headless. Items can be strings, numbers, or objects. Visual styling, localized copy, validation overlays, add-new actions, and other PharmaSys-specific behavior live outside the primitive, usually through `PharmaComboboxSelect` from `./presets`.
+The primitive is value-model agnostic and intentionally headless. Items can be strings, numbers, or objects. Visual styling, localized copy, validation overlays, add-new actions, and other PharmaSys-specific behavior live outside the primitive, usually through `PharmaComboboxSelect` or `PharmaEntityComboboxSelect` from this public entrypoint.
 
 ## Primitive Parts
 
@@ -102,7 +102,7 @@ Stable `data-*` states come from Base UI, including `data-selected`, `data-highl
 Use the entity preset when a standard id-backed PharmaSys select is needed:
 
 ```tsx
-import { PharmaEntityComboboxSelect } from '@/components/combobox/entity-select';
+import { PharmaEntityComboboxSelect } from '@/components/combobox';
 
 <PharmaEntityComboboxSelect
   label="Kategori"
@@ -138,6 +138,22 @@ The preset also exposes `isItemDisabled` and `itemToHoverDetailData` so item
 availability and hover metadata stay explicit at the call site when the item
 shape is not `ComboboxOption`.
 
+The preset exposes typed rendering hooks for option content without requiring
+callers to replace the Base UI item DOM:
+
+```tsx
+<PharmaComboboxSelect
+  name="supplier_id"
+  items={suppliers}
+  value={selectedSupplier}
+  onValueChange={setSelectedSupplier}
+  itemToStringLabel={supplier => supplier.name}
+  itemToStringValue={supplier => supplier.id}
+  renderOption={(supplier, state) => <span>{state.label}</span>}
+  renderOptionMeta={supplier => supplier.code}
+/>
+```
+
 Enum/list-only selects should pass primitive values directly:
 
 ```tsx
@@ -156,6 +172,9 @@ Enum/list-only selects should pass primitive values directly:
 When the preset is not wrapped by `FormField` or another visible label, pass
 `label`. The trigger uses that label plus the current value for its accessible
 name while keeping the same visual output.
+
+When wrapped by `FormField`, including through layout wrappers, the preset
+inherits the field label automatically.
 
 If a scalar select uses a non-null empty sentinel such as `''`, pass
 `isValueEmpty` so required validation and Base UI selection state still treat it
@@ -181,9 +200,10 @@ own the surrounding workflow.
 ## Preset Behavior Contract
 
 - Base UI owns item selection, event details, ARIA roles, hidden form values,
-  and popup open requests.
-- The preset owns only app UX around Base UI: search query state, visual
-  highlight animation, validation overlay, create action, and hover detail.
+  interactive highlighted item state, keyboard navigation, and popup open
+  requests.
+- The preset owns only app UX around Base UI: search query state, visual styling,
+  validation overlay, create action, entity ID bridging, and hover detail.
 - `value`/`valueId` is the selected value source of truth. `inputValue` is only
   the transient search query and is cleared when the popup actually closes.
 - Controlled `open` callers own whether a close request takes effect. The preset
@@ -192,7 +212,8 @@ own the surrounding workflow.
 - `details.cancel()` from Base UI callbacks prevents preset side effects for
   that transition.
 - Hover detail must never change selection, focus, or submitted value.
-- Keyboard and pointer highlight may use additional visual state, but selection
-  must still happen through Base UI item presses.
+- The preset may preserve the visual active background for continuity, but that
+  background must not drive selection, focus, submitted value, keyboard
+  navigation, or ARIA attributes.
 
 Do not add app-specific props to `Combobox.Root`. Compose app behavior around the primitive parts or extend the preset.

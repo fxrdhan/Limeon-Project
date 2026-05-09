@@ -1,6 +1,6 @@
 import React from 'react';
 import { TbChevronLeft, TbChevronRight } from 'react-icons/tb';
-import { PharmaComboboxSelect } from '@/components/combobox/presets';
+import { PharmaComboboxSelect } from '@/components/combobox';
 import { MONTH_NAMES_ID } from '../constants';
 import type { CalendarHeaderProps } from '../types';
 
