@@ -329,6 +329,50 @@ describe('Combobox primitive', () => {
     expect(trigger.getAttribute('aria-activedescendant')).toBe(cherry.id);
   });
 
+  it('does not commit a disabled highlighted item from keyboard input', () => {
+    const onValueChange = vi.fn();
+    const statusItems = ['active', 'archived'];
+
+    render(
+      <Combobox.Root
+        items={statusItems}
+        defaultOpen
+        highlightedIndex={1}
+        onValueChange={onValueChange}
+        itemToStringLabel={item => (item === 'active' ? 'Aktif' : 'Diarsipkan')}
+        itemToStringValue={item => item}
+      >
+        <Combobox.Trigger aria-label="Status">
+          <Combobox.Value placeholder="Pilih status" />
+        </Combobox.Trigger>
+        <Combobox.Portal>
+          <Combobox.Positioner>
+            <Combobox.Popup initialFocus={false}>
+              <Combobox.List<string>>
+                {(item, index) => (
+                  <Combobox.Item
+                    key={item}
+                    value={item}
+                    index={index}
+                    disabled={item === 'archived'}
+                  >
+                    {item === 'active' ? 'Aktif' : 'Diarsipkan'}
+                  </Combobox.Item>
+                )}
+              </Combobox.List>
+            </Combobox.Popup>
+          </Combobox.Positioner>
+        </Combobox.Portal>
+      </Combobox.Root>
+    );
+
+    fireEvent.keyDown(screen.getByRole('combobox', { name: /status/i }), {
+      key: 'Enter',
+    });
+
+    expect(onValueChange).not.toHaveBeenCalled();
+  });
+
   it('closes the portaled popup on outside pointer down', async () => {
     const onOpenChange = vi.fn();
 
@@ -662,7 +706,7 @@ describe('Combobox app presets', () => {
     expect(trigger.getAttribute('aria-labelledby')).toContain('supplier-label');
 
     fireEvent.click(trigger);
-    const searchInput = screen.getByRole('combobox', {
+    const searchInput = screen.getByRole('searchbox', {
       name: /cari pilih supplier/i,
     });
     expect(searchInput.hasAttribute('aria-labelledby')).toBe(false);
@@ -828,6 +872,7 @@ describe('Combobox app presets', () => {
     );
 
     const trigger = screen.getByRole('combobox', { name: /pilih kategori/i });
+    expect(trigger.getAttribute('aria-required')).toBe('true');
     fireEvent.blur(trigger, { relatedTarget: document.body });
     fireEvent.click(trigger);
     fireEvent.change(screen.getByPlaceholderText('Cari...'), {
@@ -928,6 +973,7 @@ describe('Combobox app presets', () => {
     );
 
     const trigger = screen.getByRole('combobox', { name: /pilih status/i });
+    expect(trigger.getAttribute('aria-required')).toBe('true');
     fireEvent.blur(trigger, { relatedTarget: document.body });
 
     expect(trigger.getAttribute('aria-invalid')).toBe('true');

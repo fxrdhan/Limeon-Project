@@ -29,6 +29,11 @@ import {
   type ComboboxValueIsEmpty,
 } from './utils/preset-state';
 import { useComboboxHoverDetail } from './hooks/use-combobox-hover-detail';
+import { preventComboboxHandler, setRef } from './utils/preset-dom';
+import {
+  getDefaultHoverDetailData,
+  getDefaultItemDisabled,
+} from './utils/preset-item';
 
 export type PharmaComboboxChangeDetails<Item> = Parameters<
   NonNullable<ComboboxRootProps<Item>['onValueChange']>
@@ -40,17 +45,9 @@ type PharmaComboboxHighlightDetails<Item> = Parameters<
   NonNullable<ComboboxRootProps<Item>['onItemHighlighted']>
 >[1];
 
-type ComboboxPreventableSyntheticEvent = React.SyntheticEvent & {
-  preventComboboxHandler?: () => void;
-};
-
 type PointerPosition = {
   x: number;
   y: number;
-};
-
-type ComboboxItemRecord = Partial<HoverDetailData> & {
-  disabled?: boolean;
 };
 
 export interface PharmaComboboxOptionRenderState {
@@ -122,23 +119,6 @@ export interface PharmaComboboxSelectProps<Item> {
   'aria-describedby'?: string;
 }
 
-const setRef = <Node,>(
-  ref: React.Ref<Node> | undefined,
-  value: Node | null
-) => {
-  if (!ref) return;
-  if (typeof ref === 'function') {
-    ref(value);
-    return;
-  }
-
-  ref.current = value;
-};
-
-const preventComboboxHandler = (event: React.SyntheticEvent) => {
-  (event as ComboboxPreventableSyntheticEvent).preventComboboxHandler?.();
-};
-
 const highlightBackgroundTransition = {
   type: 'spring' as const,
   stiffness: 400,
@@ -149,31 +129,6 @@ const highlightBackgroundTransition = {
 const selectedOptionScrollTopInset = 4;
 const pointerHoverResumeThreshold = 1;
 const requiredValidationMessage = 'Field ini wajib diisi';
-
-const getComboboxItemRecord = <Item,>(item: Item): ComboboxItemRecord =>
-  typeof item === 'object' && item !== null ? (item as ComboboxItemRecord) : {};
-
-const getDefaultItemDisabled = <Item,>(item: Item) =>
-  Boolean(getComboboxItemRecord(item).disabled);
-
-const getDefaultHoverDetailData = <Item,>(
-  item: Item
-): Partial<HoverDetailData> => {
-  const itemRecord = getComboboxItemRecord(item);
-
-  return {
-    display: itemRecord.display,
-    data: itemRecord.data,
-    code: itemRecord.code,
-    description: itemRecord.description,
-    metaLabel: itemRecord.metaLabel,
-    metaTone: itemRecord.metaTone,
-    created_at: itemRecord.created_at,
-    createdAt: itemRecord.createdAt,
-    updated_at: itemRecord.updated_at,
-    updatedAt: itemRecord.updatedAt,
-  };
-};
 
 export function PharmaComboboxSelect<Item>({
   id,
@@ -786,6 +741,7 @@ export function PharmaComboboxSelect<Item>({
         onItemHighlighted={handleItemHighlighted}
         itemToStringLabel={itemToStringLabel}
         itemToStringValue={itemToStringValue}
+        isItemDisabled={isItemDisabled}
         isItemEqualToValue={isItemEqualToValue}
         labelId={listboxLabelId}
         name={name}
@@ -892,6 +848,7 @@ export function PharmaComboboxSelect<Item>({
                       />
                       <Combobox.Input
                         ref={searchInputRef}
+                        role="searchbox"
                         data-pharma-combobox-navigation-focus={
                           isSearchNavigationFocus ? '' : undefined
                         }
@@ -902,6 +859,7 @@ export function PharmaComboboxSelect<Item>({
                             : 'focus:border-primary focus:ring-2 focus:ring-primary/15'
                         )}
                         aria-label={`Cari ${controlName}`}
+                        aria-required={false}
                         placeholder={searchPlaceholder}
                         onKeyDown={handleSearchInputKeyDown}
                         onPointerDown={() => {

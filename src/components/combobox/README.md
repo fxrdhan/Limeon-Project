@@ -56,7 +56,6 @@ Available parts:
 - `Combobox.Input`
 - `Combobox.List`
 - `Combobox.Collection`
-- `Combobox.HighlightController`
 - `Combobox.Item`
 - `Combobox.ItemIndicator`
 - `Combobox.Empty`
@@ -73,7 +72,7 @@ Available parts:
 - `highlightedIndex`, `defaultHighlightedIndex`, `onHighlightedIndexChange`
 - `onItemHighlighted`
 - `filter`
-- `itemToStringLabel`, `itemToStringValue`, `isItemEqualToValue`
+- `itemToStringLabel`, `itemToStringValue`, `isItemEqualToValue`, `isItemDisabled`
 - `labelId`
 - `name`, `form`, `disabled`, `readOnly`, `required`
 - `autoHighlight`, `highlightItemOnHover`
@@ -106,7 +105,7 @@ Stable local `data-*` states include `data-selected`, `data-highlighted`, `data-
 
 `Combobox.Popup initialFocus` focuses the first focusable popup control only when explicitly enabled.
 
-`highlightedIndex` controls the primitive highlighted option declaratively. Prefer it over imperative highlight syncing for advanced compositions. `Combobox.HighlightController` remains available only for legacy advanced compositions that cannot use controlled highlighted state; it must not be used to change selection directly.
+`highlightedIndex` controls the primitive highlighted option declaratively. Use it for advanced compositions that need to synchronize visual and semantic highlight state.
 
 ## App Preset
 
@@ -199,7 +198,7 @@ The preset owns:
 - The animated visual highlight background, including hover continuity, keyboard scroll pinning, wrap-to-edge scroll behavior, stationary-pointer suppression, and the selected/default visual anchor after search is cleared.
 - The popup search input's visual active state. Arrow navigation may keep DOM focus on the input, but it must not make the search field look actively focused unless the user is typing or pointing at the input.
 
-The shared boundary is item highlighting. The primitive owns the semantic highlighted index. The preset controls that index declaratively through `highlightedIndex` and renders the existing animated visual background from it. Non-searchable selects preserve the legacy first-arrow keyboard behavior while still avoiding imperative highlight controller syncing in production.
+The shared boundary is item highlighting. The primitive owns the semantic highlighted index. The preset controls that index declaratively through `highlightedIndex` and renders the existing animated visual background from it. Non-searchable selects preserve the legacy first-arrow keyboard behavior while keeping highlight syncing declarative in production.
 
 Rules for maintaining this boundary:
 

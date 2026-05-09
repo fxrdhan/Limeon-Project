@@ -25,7 +25,7 @@ test.describe('combobox browser regressions', () => {
     const trigger = page.getByRole('combobox', { name: /^Obat\b/i });
     await trigger.click();
 
-    const searchInput = page.getByRole('combobox', { name: /^Cari obat$/i });
+    const searchInput = page.getByRole('searchbox', { name: /^Cari obat$/i });
     await searchInput.fill('para');
 
     await expect(
@@ -79,7 +79,7 @@ test.describe('combobox browser regressions', () => {
     const trigger = page.getByRole('combobox', { name: /^Obat\b/i });
     await trigger.click();
 
-    const searchInput = page.getByRole('combobox', { name: /^Cari obat$/i });
+    const searchInput = page.getByRole('searchbox', { name: /^Cari obat$/i });
     await searchInput.fill('para');
     await page.keyboard.press('Enter');
     await expect(trigger).toContainText('Paracetamol Tablet');
@@ -110,7 +110,7 @@ test.describe('combobox browser regressions', () => {
     const trigger = page.getByRole('combobox', { name: /^Kategori\b/i });
     await trigger.click();
 
-    const searchInput = page.getByRole('combobox', {
+    const searchInput = page.getByRole('searchbox', {
       name: /^Cari kategori$/i,
     });
     const selectedOption = page.getByRole('option', { name: /Mukolitik/i });
@@ -136,7 +136,7 @@ test.describe('combobox browser regressions', () => {
     const trigger = page.getByRole('combobox', { name: /^Kategori\b/i });
     await trigger.click();
 
-    const searchInput = page.getByRole('combobox', {
+    const searchInput = page.getByRole('searchbox', {
       name: /^Cari kategori$/i,
     });
     const selectedOption = page.getByRole('option', { name: /Mukolitik/i });
@@ -162,7 +162,7 @@ test.describe('combobox browser regressions', () => {
     const trigger = page.getByRole('combobox', { name: /^Kategori\b/i });
     await trigger.click();
 
-    const searchInput = page.getByRole('combobox', {
+    const searchInput = page.getByRole('searchbox', {
       name: /^Cari kategori$/i,
     });
     const listbox = page.getByRole('listbox');

@@ -71,6 +71,8 @@ type ComboboxContextValue<Value> = {
   highlightItemOnHover: boolean;
   inputId: string;
   inputValue: string;
+  isItemDisabled: (item: Value) => boolean;
+  isItemIndexDisabled: (index: number) => boolean;
   isItemEqualToValue: (item: Value, value: Value) => boolean;
   itemToStringLabel: (item: Value) => string;
   itemToStringValue: (item: Value) => string;
@@ -102,7 +104,8 @@ type ComboboxContextValue<Value> = {
   selectItem: (
     item: Value,
     reason: EventReason,
-    event?: React.SyntheticEvent | Event
+    event?: React.SyntheticEvent | Event,
+    index?: number
   ) => boolean;
   setTriggerId: (id: string) => void;
   triggerId: string;
@@ -164,6 +167,7 @@ export type ComboboxRootProps<Value> = {
   highlightItemOnHover?: boolean;
   highlightedIndex?: number | null;
   inputValue?: string;
+  isItemDisabled?: (itemValue: Value) => boolean;
   isItemEqualToValue?: (itemValue: Value, value: Value) => boolean;
   itemToStringLabel?: (itemValue: Value) => string;
   itemToStringValue?: (itemValue: Value) => string;
@@ -243,21 +247,6 @@ type ComboboxListProps<Value = React.ReactNode> = Omit<
 
 type ComboboxCollectionProps<Value = React.ReactNode> = {
   children: (item: Value, index: number) => React.ReactNode;
-};
-
-export type ComboboxHighlightControllerApi = {
-  getHighlightedIndex: () => number | null;
-  setHighlightedIndex: (
-    index: number | null,
-    reason?: EventReason,
-    event?: React.SyntheticEvent | Event
-  ) => void;
-};
-
-type ComboboxHighlightControllerProps = {
-  onControllerChange: (
-    controller: ComboboxHighlightControllerApi | null
-  ) => void;
 };
 
 type ComboboxItemProps<Value> = Omit<
@@ -372,23 +361,23 @@ const normalizeHighlightedIndex = (
     ? null
     : index;
 
-const getNextEnabledIndex = <Value,>({
+const getNextEnabledIndex = ({
   direction,
   fromIndex,
+  isIndexDisabled,
   itemCount,
-  itemMetaRef,
 }: {
   direction: 1 | -1;
   fromIndex: number | null;
+  isIndexDisabled: (index: number) => boolean;
   itemCount: number;
-  itemMetaRef: React.MutableRefObject<Map<number, ItemMeta<Value>>>;
 }) => {
   if (itemCount <= 0) return null;
 
   for (let offset = 1; offset <= itemCount; offset += 1) {
     const baseIndex = fromIndex ?? (direction === 1 ? -1 : itemCount);
     const nextIndex = (baseIndex + direction * offset + itemCount) % itemCount;
-    if (!itemMetaRef.current.get(nextIndex)?.disabled) return nextIndex;
+    if (!isIndexDisabled(nextIndex)) return nextIndex;
   }
 
   return null;
@@ -418,6 +407,7 @@ function ComboboxRootComponent<Value>({
   highlightItemOnHover = true,
   highlightedIndex: highlightedIndexProp,
   inputValue: inputValueProp,
+  isItemDisabled: isItemDisabledProp,
   isItemEqualToValue: isItemEqualToValueProp,
   itemToStringLabel: itemToStringLabelProp,
   itemToStringValue: itemToStringValueProp,
@@ -473,6 +463,25 @@ function ComboboxRootComponent<Value>({
         ? isItemEqualToValueProp(item, value)
         : Object.is(item, value),
     [isItemEqualToValueProp]
+  );
+  const isItemDisabled = useCallback(
+    (item: Value) => {
+      if (isItemDisabledProp) return isItemDisabledProp(item);
+      return false;
+    },
+    [isItemDisabledProp]
+  );
+  const isItemIndexDisabled = useCallback(
+    (index: number) => {
+      const item = filteredItemsRef.current[index];
+      if (item === undefined) return true;
+
+      const meta = itemMetaRef.current.get(index);
+      if (meta?.value === item) return meta.disabled || isItemDisabled(item);
+
+      return isItemDisabled(item);
+    },
+    [isItemDisabled]
   );
 
   const inputValue =
@@ -594,9 +603,18 @@ function ComboboxRootComponent<Value>({
     (
       item: Value,
       reason: EventReason,
-      event?: React.SyntheticEvent | Event
+      event?: React.SyntheticEvent | Event,
+      index?: number
     ) => {
-      if (disabled || readOnly) return false;
+      if (
+        disabled ||
+        readOnly ||
+        (index !== undefined
+          ? isItemIndexDisabled(index)
+          : isItemDisabled(item))
+      ) {
+        return false;
+      }
 
       const details = createEventDetails(reason, event);
       onValueChange?.(item, details);
@@ -607,7 +625,15 @@ function ComboboxRootComponent<Value>({
       setOpen(false, reason, event);
       return true;
     },
-    [disabled, onValueChange, readOnly, setOpen, valueProp]
+    [
+      disabled,
+      isItemDisabled,
+      isItemIndexDisabled,
+      onValueChange,
+      readOnly,
+      setOpen,
+      valueProp,
+    ]
   );
 
   const registerItem = useCallback((index: number, meta: ItemMeta<Value>) => {
@@ -627,10 +653,10 @@ function ComboboxRootComponent<Value>({
       getNextEnabledIndex({
         direction,
         fromIndex,
+        isIndexDisabled: isItemIndexDisabled,
         itemCount: filteredItemsRef.current.length,
-        itemMetaRef,
       }),
-    []
+    [isItemIndexDisabled]
   );
   const setTriggerId = useCallback((nextTriggerId: string) => {
     setTriggerIdState(currentTriggerId =>
@@ -691,7 +717,7 @@ function ComboboxRootComponent<Value>({
     if (
       activeIndexRef.current !== null &&
       activeIndexRef.current < filteredItems.length &&
-      !itemMetaRef.current.get(activeIndexRef.current)?.disabled
+      !isItemIndexDisabled(activeIndexRef.current)
     ) {
       setActiveIndex(activeIndexRef.current, 'none');
       return;
@@ -701,12 +727,12 @@ function ComboboxRootComponent<Value>({
       getNextEnabledIndex({
         direction: 1,
         fromIndex: null,
+        isIndexDisabled: isItemIndexDisabled,
         itemCount: filteredItems.length,
-        itemMetaRef,
       }),
       'none'
     );
-  }, [autoHighlight, filteredItems, open, setActiveIndex]);
+  }, [autoHighlight, filteredItems, isItemIndexDisabled, open, setActiveIndex]);
 
   const context = useMemo<ComboboxContextValue<Value>>(
     () => ({
@@ -723,6 +749,8 @@ function ComboboxRootComponent<Value>({
       highlightItemOnHover,
       inputId: `${generatedId}-input`,
       inputValue,
+      isItemDisabled,
+      isItemIndexDisabled,
       isItemEqualToValue,
       itemToStringLabel,
       itemToStringValue,
@@ -756,6 +784,8 @@ function ComboboxRootComponent<Value>({
       getNextEnabledComboboxIndex,
       highlightItemOnHover,
       inputValue,
+      isItemDisabled,
+      isItemIndexDisabled,
       isItemEqualToValue,
       itemToStringLabel,
       itemToStringValue,
@@ -874,6 +904,8 @@ function ComboboxTrigger({
     'aria-labelledby':
       props['aria-labelledby'] ??
       (props['aria-label'] ? undefined : context.labelId),
+    'aria-required':
+      props['aria-required'] ?? (context.required ? true : undefined),
     disabled,
     id: effectiveId,
     onClick: event => {
@@ -926,8 +958,17 @@ function ComboboxTrigger({
               ? undefined
               : context.filteredItems[highlightedIndex];
 
-          if (highlightedItem !== undefined) {
-            context.selectItem(highlightedItem, 'item-press', event);
+          if (
+            highlightedItem !== undefined &&
+            highlightedIndex !== null &&
+            !context.isItemIndexDisabled(highlightedIndex)
+          ) {
+            context.selectItem(
+              highlightedItem,
+              'item-press',
+              event,
+              highlightedIndex
+            );
           }
           return;
         }
@@ -1096,6 +1137,7 @@ function ComboboxPopup({
 const ComboboxInput = forwardRef<HTMLInputElement, ComboboxInputProps>(
   function ComboboxInput({ onChange, onKeyDown, ...props }, ref) {
     const context = useComboboxContext<unknown>();
+    const inputRole = props.role ?? 'combobox';
     const activeDescendant =
       context.activeIndex === null
         ? undefined
@@ -1120,11 +1162,14 @@ const ComboboxInput = forwardRef<HTMLInputElement, ComboboxInputProps>(
         {...props}
         ref={ref}
         id={props.id ?? context.inputId}
-        role="combobox"
+        role={inputRole}
         aria-activedescendant={activeDescendant}
         aria-autocomplete="list"
         aria-controls={context.open ? context.listboxId : undefined}
         aria-expanded={context.open}
+        aria-required={
+          props['aria-required'] ?? (context.required ? true : undefined)
+        }
         autoComplete={props.autoComplete ?? context.autoComplete}
         value={context.inputValue}
         disabled={context.disabled || props.disabled}
@@ -1174,9 +1219,18 @@ const ComboboxInput = forwardRef<HTMLInputElement, ComboboxInputProps>(
                 ? undefined
                 : context.filteredItems[highlightedIndex];
 
-            if (highlightedItem !== undefined) {
+            if (
+              highlightedItem !== undefined &&
+              highlightedIndex !== null &&
+              !context.isItemIndexDisabled(highlightedIndex)
+            ) {
               event.preventDefault();
-              context.selectItem(highlightedItem, 'item-press', event);
+              context.selectItem(
+                highlightedItem,
+                'item-press',
+                event,
+                highlightedIndex
+              );
             }
           }
         }}
@@ -1224,35 +1278,6 @@ function ComboboxCollection<Value = React.ReactNode>({
   );
 }
 
-function ComboboxHighlightController({
-  onControllerChange,
-}: ComboboxHighlightControllerProps) {
-  const context = useComboboxContext<unknown>();
-  const { highlightedIndexRef, setActiveIndex } = context;
-  const controller = useMemo<ComboboxHighlightControllerApi>(
-    () => ({
-      getHighlightedIndex: () => highlightedIndexRef.current,
-      setHighlightedIndex: (
-        index: number | null,
-        reason: EventReason = 'none',
-        event?: React.SyntheticEvent | Event
-      ) => {
-        setActiveIndex(index, reason, event);
-      },
-    }),
-    [highlightedIndexRef, setActiveIndex]
-  );
-
-  useLayoutEffect(() => {
-    onControllerChange(controller);
-    return () => {
-      onControllerChange(null);
-    };
-  }, [controller, onControllerChange]);
-
-  return null;
-}
-
 function ComboboxItem<Value>({
   children,
   disabled = false,
@@ -1272,7 +1297,8 @@ function ComboboxItem<Value>({
     context.selectedValue !== null &&
     context.isItemEqualToValue(value, context.selectedValue);
   const highlighted = context.activeIndex === index;
-  const itemDisabled = context.disabled || disabled;
+  const itemDisabled =
+    context.disabled || disabled || context.isItemDisabled(value);
 
   useEffect(
     () =>
@@ -1312,7 +1338,7 @@ function ComboboxItem<Value>({
         return;
       }
 
-      context.selectItem(value, 'item-press', event);
+      context.selectItem(value, 'item-press', event, index);
     },
     onMouseEnter: event => {
       const preventableEvent = getPreventableEvent(event);
@@ -1405,7 +1431,6 @@ function ComboboxStatus({ children, ...props }: ComboboxStatusProps) {
 export const Combobox = {
   Collection: ComboboxCollection,
   Empty: ComboboxEmpty,
-  HighlightController: ComboboxHighlightController,
   Input: ComboboxInput,
   Item: ComboboxItem,
   ItemIndicator: ComboboxItemIndicator,
