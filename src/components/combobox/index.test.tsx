@@ -156,6 +156,39 @@ describe('Combobox primitive', () => {
     });
   });
 
+  it('keeps custom primitive label ids connected to trigger and listbox aria', async () => {
+    render(
+      <Combobox.Root items={fruitItems}>
+        <Combobox.Label id="custom-fruit-label">Fruit</Combobox.Label>
+        <Combobox.Trigger>
+          <Combobox.Value placeholder="Choose fruit" />
+        </Combobox.Trigger>
+        <Combobox.Portal>
+          <Combobox.Positioner>
+            <Combobox.Popup initialFocus={false}>
+              <Combobox.List<string>>
+                {(item, index) => (
+                  <Combobox.Item key={item} value={item} index={index}>
+                    {item}
+                  </Combobox.Item>
+                )}
+              </Combobox.List>
+            </Combobox.Popup>
+          </Combobox.Positioner>
+        </Combobox.Portal>
+      </Combobox.Root>
+    );
+
+    const trigger = await screen.findByRole('combobox', { name: /^fruit$/i });
+    expect(trigger.getAttribute('aria-labelledby')).toBe('custom-fruit-label');
+
+    fireEvent.click(trigger);
+
+    expect(screen.getByRole('listbox').getAttribute('aria-labelledby')).toBe(
+      'custom-fruit-label'
+    );
+  });
+
   it('keeps highlight event cancellation state observable', async () => {
     const onHighlightCanceled = vi.fn();
 
@@ -196,6 +229,75 @@ describe('Combobox primitive', () => {
     await waitFor(() => {
       expect(onHighlightCanceled).toHaveBeenCalledWith(true);
     });
+  });
+
+  it('lets callers cancel highlight changes before state commits', async () => {
+    const onItemHighlighted = vi.fn(
+      (_item: string | undefined, details: { cancel: () => void }) => {
+        details.cancel();
+      }
+    );
+
+    render(
+      <Combobox.Root
+        items={fruitItems}
+        itemToStringLabel={item => item}
+        itemToStringValue={item => item}
+        onItemHighlighted={onItemHighlighted}
+        autoHighlight
+      >
+        <Combobox.Trigger aria-label="Fruit">
+          <Combobox.Value placeholder="Choose fruit" />
+        </Combobox.Trigger>
+        <Combobox.Portal>
+          <Combobox.Positioner>
+            <Combobox.Popup initialFocus={false}>
+              <Combobox.List<string>>
+                {(item, index) => (
+                  <Combobox.Item key={item} value={item} index={index}>
+                    {item}
+                  </Combobox.Item>
+                )}
+              </Combobox.List>
+            </Combobox.Popup>
+          </Combobox.Positioner>
+        </Combobox.Portal>
+      </Combobox.Root>
+    );
+
+    const trigger = screen.getByRole('combobox', { name: /fruit/i });
+    fireEvent.click(trigger);
+
+    await waitFor(() => {
+      expect(onItemHighlighted).toHaveBeenCalled();
+    });
+    expect(trigger.getAttribute('aria-activedescendant')).toBeNull();
+    expect(
+      screen
+        .getByRole('option', { name: /apple/i })
+        .hasAttribute('data-highlighted')
+    ).toBe(false);
+  });
+
+  it('keeps required semantics out of the hidden submitted value', () => {
+    render(
+      <Combobox.Root
+        items={fruitItems}
+        value="Apple"
+        itemToStringLabel={item => item}
+        itemToStringValue={item => item}
+        name="required_fruit"
+        required
+      >
+        <Combobox.Trigger aria-label="Fruit">
+          <Combobox.Value placeholder="Choose fruit" />
+        </Combobox.Trigger>
+      </Combobox.Root>
+    );
+
+    const hiddenInput = document.querySelector('input[name="required_fruit"]');
+    expect(hiddenInput?.getAttribute('value')).toBe('Apple');
+    expect(hiddenInput?.hasAttribute('required')).toBe(false);
   });
 
   it('filters with the native input and accepts caller-supplied filteredItems', async () => {
@@ -288,6 +390,77 @@ describe('Combobox primitive', () => {
         Object.defineProperty(window, 'innerWidth', innerWidthDescriptor);
       }
     }
+  });
+
+  it('uses root autocomplete as the primitive input default', () => {
+    const AutoCompleteCombobox = ({
+      inputAutoComplete,
+    }: {
+      inputAutoComplete?: string;
+    }) => (
+      <Combobox.Root items={fruitItems} defaultOpen autoComplete="off">
+        <Combobox.Trigger aria-label="Fruit">
+          <Combobox.Value placeholder="Choose fruit" />
+        </Combobox.Trigger>
+        <Combobox.Portal>
+          <Combobox.Positioner>
+            <Combobox.Popup initialFocus={false}>
+              <Combobox.Input
+                placeholder="Search fruit"
+                autoComplete={inputAutoComplete}
+              />
+              <Combobox.List<string>>
+                {(item, index) => (
+                  <Combobox.Item key={item} value={item} index={index}>
+                    {item}
+                  </Combobox.Item>
+                )}
+              </Combobox.List>
+            </Combobox.Popup>
+          </Combobox.Positioner>
+        </Combobox.Portal>
+      </Combobox.Root>
+    );
+    const { rerender } = render(<AutoCompleteCombobox />);
+
+    expect(
+      screen.getByPlaceholderText('Search fruit').getAttribute('autocomplete')
+    ).toBe('off');
+
+    rerender(<AutoCompleteCombobox inputAutoComplete="new-password" />);
+
+    expect(
+      screen.getByPlaceholderText('Search fruit').getAttribute('autocomplete')
+    ).toBe('new-password');
+  });
+
+  it('focuses the first popup control when primitive initialFocus is enabled', async () => {
+    render(
+      <Combobox.Root items={fruitItems} defaultOpen>
+        <Combobox.Trigger aria-label="Fruit">
+          <Combobox.Value placeholder="Choose fruit" />
+        </Combobox.Trigger>
+        <Combobox.Portal>
+          <Combobox.Positioner>
+            <Combobox.Popup initialFocus>
+              <Combobox.Input placeholder="Search fruit" />
+              <Combobox.List<string>>
+                {(item, index) => (
+                  <Combobox.Item key={item} value={item} index={index}>
+                    {item}
+                  </Combobox.Item>
+                )}
+              </Combobox.List>
+            </Combobox.Popup>
+          </Combobox.Positioner>
+        </Combobox.Portal>
+      </Combobox.Root>
+    );
+
+    const searchInput = screen.getByPlaceholderText('Search fruit');
+    await waitFor(() => {
+      expect(document.activeElement).toBe(searchInput);
+    });
   });
 });
 

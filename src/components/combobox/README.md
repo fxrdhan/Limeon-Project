@@ -68,7 +68,7 @@ Available parts:
 - `items`, `filteredItems`
 - `value`, `defaultValue`, `onValueChange`
 - `open`, `defaultOpen`, `onOpenChange`
-- `inputValue`, `defaultInputValue`, `onInputValueChange`
+- `inputValue`, `defaultInputValue`, `onInputValueChange`, `autoComplete`
 - `onItemHighlighted`
 - `filter`
 - `itemToStringLabel`, `itemToStringValue`, `isItemEqualToValue`
@@ -76,6 +76,10 @@ Available parts:
 - `autoHighlight`, `highlightItemOnHover`
 
 Change callbacks receive cancelable event details with `reason`, `event`, `cancel()`, `allowPropagation()`, `isCanceled`, and `isPropagationAllowed`.
+
+`autoComplete` sets the default native `autocomplete` attribute for `Combobox.Input`. A direct `autoComplete` prop on `Combobox.Input` wins over the root default.
+
+`name` and `form` render a hidden input for submission. `required` is primitive state consumed by the app preset and validation integrations; it is not implemented through native hidden-input constraint validation. Use `PharmaComboboxSelect` validation for required user feedback.
 
 The local primitive intentionally does not aim to mirror every upstream combobox feature. Add behavior only when a real PharmaSys call-site needs it.
 
@@ -94,6 +98,8 @@ DOM-rendering parts accept `render={element}` or `render={(props, state) => elem
 ```
 
 Stable local `data-*` states include `data-selected`, `data-highlighted`, `data-disabled`, and `data-placeholder` where relevant.
+
+`Combobox.Popup initialFocus` focuses the first focusable popup control only when explicitly enabled.
 
 ## App Preset
 

@@ -57,7 +57,9 @@ type ItemMeta<Value> = {
 
 type ComboboxContextValue<Value> = {
   activeIndex: number | null;
+  autoComplete?: string;
   autoHighlight: boolean;
+  defaultLabelId: string;
   disabled: boolean;
   filteredItems: Value[];
   form?: string;
@@ -73,7 +75,7 @@ type ComboboxContextValue<Value> = {
   isItemEqualToValue: (item: Value, value: Value) => boolean;
   itemToStringLabel: (item: Value) => string;
   itemToStringValue: (item: Value) => string;
-  labelId: string;
+  labelId?: string;
   listboxId: string;
   name?: string;
   open: boolean;
@@ -91,6 +93,7 @@ type ComboboxContextValue<Value> = {
     reason: EventReason,
     event?: React.SyntheticEvent | Event
   ) => boolean;
+  setLabelId: (id: string | undefined) => void;
   setOpen: (
     open: boolean,
     reason: EventReason,
@@ -321,6 +324,14 @@ const isComboboxHandlerPrevented = (event: React.SyntheticEvent) =>
 
 const popupViewportPadding = 8;
 const popupMinimumAvailableHeight = 96;
+const popupFocusableSelector = [
+  'button:not([disabled])',
+  '[href]',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',');
 
 const floatingSizeVariables = {
   '--anchor-width': '0px',
@@ -366,6 +377,7 @@ const useComboboxContext = <Value,>() => {
 };
 
 function ComboboxRootComponent<Value>({
+  autoComplete,
   autoHighlight = false,
   children,
   defaultInputValue = '',
@@ -407,6 +419,7 @@ function ComboboxRootComponent<Value>({
     defaultValue
   );
   const [activeIndexState, setActiveIndexState] = useState<number | null>(null);
+  const [labelId, setLabelIdState] = useState<string | undefined>(undefined);
   const [triggerId, setTriggerIdState] = useState(`${generatedId}-trigger`);
 
   const itemToStringLabel = useCallback(
@@ -509,19 +522,22 @@ function ComboboxRootComponent<Value>({
           ? previousHighlight.value === nextValue
           : isItemEqualToValue(previousHighlight.value, nextValue);
 
-      activeIndexRef.current = normalizedIndex;
-      setActiveIndexState(normalizedIndex);
-
       if (sameIndex && sameValue) return;
 
+      const details = createHighlightEventDetails(
+        reason,
+        normalizedIndex ?? -1,
+        event
+      );
+      onItemHighlighted?.(nextValue, details);
+      if (details.isCanceled) return;
+
+      activeIndexRef.current = normalizedIndex;
+      setActiveIndexState(normalizedIndex);
       lastHighlightedRef.current = {
         index: normalizedIndex ?? -1,
         value: nextValue,
       };
-      onItemHighlighted?.(
-        nextValue,
-        createHighlightEventDetails(reason, normalizedIndex ?? -1, event)
-      );
     },
     [isItemEqualToValue, onItemHighlighted]
   );
@@ -573,6 +589,11 @@ function ComboboxRootComponent<Value>({
       currentTriggerId === nextTriggerId ? currentTriggerId : nextTriggerId
     );
   }, []);
+  const setLabelId = useCallback((nextLabelId: string | undefined) => {
+    setLabelIdState(currentLabelId =>
+      currentLabelId === nextLabelId ? currentLabelId : nextLabelId
+    );
+  }, []);
 
   useEffect(() => {
     if (!open) {
@@ -618,7 +639,9 @@ function ComboboxRootComponent<Value>({
   const context = useMemo<ComboboxContextValue<Value>>(
     () => ({
       activeIndex: activeIndexState,
+      autoComplete,
       autoHighlight,
+      defaultLabelId: `${generatedId}-label`,
       disabled,
       filteredItems,
       form,
@@ -631,7 +654,7 @@ function ComboboxRootComponent<Value>({
       isItemEqualToValue,
       itemToStringLabel,
       itemToStringValue,
-      labelId: `${generatedId}-label`,
+      labelId,
       listboxId: `${generatedId}-listbox`,
       name,
       open,
@@ -641,6 +664,7 @@ function ComboboxRootComponent<Value>({
       selectedValue,
       setActiveIndex,
       setInputValue,
+      setLabelId,
       setOpen,
       setTriggerId,
       selectItem,
@@ -649,6 +673,7 @@ function ComboboxRootComponent<Value>({
     }),
     [
       activeIndexState,
+      autoComplete,
       autoHighlight,
       disabled,
       filteredItems,
@@ -661,6 +686,7 @@ function ComboboxRootComponent<Value>({
       isItemEqualToValue,
       itemToStringLabel,
       itemToStringValue,
+      labelId,
       name,
       open,
       readOnly,
@@ -669,6 +695,7 @@ function ComboboxRootComponent<Value>({
       selectedValue,
       setActiveIndex,
       setInputValue,
+      setLabelId,
       setOpen,
       setTriggerId,
       selectItem,
@@ -689,7 +716,6 @@ function ComboboxRootComponent<Value>({
           form={form}
           value={hiddenValue}
           disabled={disabled}
-          required={required}
           readOnly={readOnly}
         />
       ) : null}
@@ -699,9 +725,18 @@ function ComboboxRootComponent<Value>({
 
 function ComboboxLabel({ children, id, ...props }: ComboboxLabelProps) {
   const context = useComboboxContext<unknown>();
+  const { defaultLabelId, setLabelId, triggerId } = context;
+  const effectiveId = id ?? defaultLabelId;
+
+  useLayoutEffect(() => {
+    setLabelId(effectiveId);
+    return () => {
+      setLabelId(undefined);
+    };
+  }, [effectiveId, setLabelId]);
 
   return (
-    <label id={id ?? context.labelId} htmlFor={context.triggerId} {...props}>
+    <label id={effectiveId} htmlFor={triggerId} {...props}>
       {children}
     </label>
   );
@@ -953,14 +988,25 @@ function ComboboxPositioner({
 
 function ComboboxPopup({
   children,
-  initialFocus: _initialFocus,
+  initialFocus = false,
   ...props
 }: ComboboxPopupProps) {
   const context = useComboboxContext<unknown>();
+  const popupRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!context.open || !initialFocus) return;
+
+    const focusTarget =
+      popupRef.current?.querySelector<HTMLElement>(popupFocusableSelector) ??
+      null;
+    focusTarget?.focus({ preventScroll: true });
+  }, [context.open, initialFocus]);
+
   if (!context.open) return null;
 
   return (
-    <div data-combobox-popup="" {...props}>
+    <div data-combobox-popup="" {...props} ref={popupRef}>
       {children}
     </div>
   );
@@ -998,6 +1044,7 @@ const ComboboxInput = forwardRef<HTMLInputElement, ComboboxInputProps>(
         aria-autocomplete="list"
         aria-controls={context.open ? context.listboxId : undefined}
         aria-expanded={context.open}
+        autoComplete={props.autoComplete ?? context.autoComplete}
         value={context.inputValue}
         disabled={context.disabled || props.disabled}
         readOnly={context.readOnly || props.readOnly}
