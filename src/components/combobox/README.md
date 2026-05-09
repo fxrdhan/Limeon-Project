@@ -199,11 +199,55 @@ own the surrounding workflow.
 
 ## Preset Behavior Contract
 
-- Base UI owns item selection, event details, ARIA roles, hidden form values,
-  interactive highlighted item state, keyboard navigation, and popup open
-  requests.
-- The preset owns only app UX around Base UI: search query state, visual styling,
-  validation overlay, create action, entity ID bridging, and hover detail.
+`PharmaComboboxSelect` is not just a styled Base UI combobox. It is an adapter
+that keeps Base UI as the accessibility and selection engine while preserving the
+legacy PharmaSys interaction feel. The approximate ownership split is Base UI
+60% and custom preset code 40%, but the split is different by behavior area.
+
+Base UI owns:
+
+- ARIA roles, `aria-activedescendant`, focus/reference wiring, and item registry.
+- Selection state, hidden form values, item press handling, and callback event
+  details including `reason`, `cancel()`, and `allowPropagation()`.
+- Popup open/close requests, collision-aware positioning, and the base keyboard
+  navigation pipeline.
+
+The preset owns:
+
+- Search query state and filtered item lists passed into Base UI through
+  `filteredItems`.
+- Entity ID bridging, required validation overlay, create action, localized copy,
+  visual styling, and hover detail.
+- The animated visual highlight background, including hover continuity, keyboard
+  scroll pinning, wrap-to-edge scroll behavior, stationary-pointer suppression,
+  and the selected/default visual anchor after search is cleared.
+- The popup search input's visual active state. Arrow navigation may keep DOM
+  focus on the input because that is Base UI's combobox pattern, but it must not
+  make the search field look actively focused unless the user is typing or
+  pointing at the input.
+
+The shared boundary is item highlighting. Base UI still owns `activeIndex` and
+emits `onItemHighlighted`, but the preset owns the final visual background when
+`visualBackgroundValue` is set. This is intentional. Base UI's active index can
+point at a different item after filtering changes, while the legacy UX requires
+the visual background to restore to the selected item when the search query is
+cleared instead of falling back to index `0`.
+
+Rules for maintaining this boundary:
+
+- Do not treat Base UI `data-highlighted` as the only source for the preset's
+  animated background.
+- Do not let the visual background directly change submitted value or selection.
+  Selection must still happen through Base UI item press/keyboard handling.
+- It is valid for the preset to sync `visualBackgroundValue` back into Base UI
+  before Arrow/Enter handling so keyboard navigation starts from the visible
+  highlight anchor.
+- Clearing search must restore the visual highlight to the selected enabled item
+  when it is visible, otherwise to the first enabled visible item.
+- Keyboard scroll and pointer hover must remain arbitrated by the preset so a
+  stationary cursor does not steal highlight while Arrow navigation scrolls the
+  list.
+
 - `value`/`valueId` is the selected value source of truth. `inputValue` is only
   the transient search query and is cleared when the popup actually closes.
 - Controlled `open` callers own whether a close request takes effect. The preset
@@ -212,8 +256,5 @@ own the surrounding workflow.
 - `details.cancel()` from Base UI callbacks prevents preset side effects for
   that transition.
 - Hover detail must never change selection, focus, or submitted value.
-- The preset may preserve the visual active background for continuity, but that
-  background must not drive selection, focus, submitted value, keyboard
-  navigation, or ARIA attributes.
 
 Do not add app-specific props to `Combobox.Root`. Compose app behavior around the primitive parts or extend the preset.

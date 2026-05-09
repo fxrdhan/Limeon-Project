@@ -10,6 +10,7 @@ import {
   getKeyboardScrollTarget,
   hasKeyboardScrollTargetSettled,
   isWrappedKeyboardScroll,
+  type KeyboardScrollDirection,
   type KeyboardPinnedHighlightFrame,
 } from '@/components/shared/keyboard-pinned-highlight';
 
@@ -32,6 +33,52 @@ interface UseComboboxKeyboardHighlightScrollOptions {
   visibleItemCount: number;
 }
 
+export type ComboboxKeyboardHighlightScrollTarget = {
+  direction: KeyboardScrollDirection;
+  scrollTop: number;
+  wrapped: boolean;
+};
+
+export const getComboboxKeyboardHighlightScrollTarget = ({
+  container,
+  itemCount,
+  sourceIndex,
+  targetElement,
+  targetIndex,
+}: {
+  container: HTMLElement;
+  itemCount: number;
+  sourceIndex: number | null;
+  targetElement: HTMLElement;
+  targetIndex: number;
+}): ComboboxKeyboardHighlightScrollTarget | null => {
+  const wrapped = isWrappedKeyboardScroll({
+    itemCount,
+    sourceIndex,
+    targetIndex,
+  });
+
+  if (wrapped) {
+    return {
+      direction: targetIndex === 0 ? 'up' : 'down',
+      scrollTop:
+        targetIndex === 0
+          ? 0
+          : Math.max(0, container.scrollHeight - container.clientHeight),
+      wrapped: true,
+    };
+  }
+
+  const scrollTarget = getKeyboardScrollTarget({
+    container,
+    itemCount,
+    targetElement,
+    targetIndex,
+  });
+
+  return scrollTarget ? { ...scrollTarget, wrapped: false } : null;
+};
+
 export function useComboboxKeyboardHighlightScroll({
   actualOpen,
   getOptionElementAtIndex,
@@ -40,8 +87,10 @@ export function useComboboxKeyboardHighlightScroll({
   visibleItemCount,
 }: UseComboboxKeyboardHighlightScrollOptions) {
   const releaseHeldHighlightFrameRef = useRef<number | null>(null);
-  const [heldHighlightFrame, setHeldHighlightFrame] =
-    useState<KeyboardPinnedHighlightFrame | null>(null);
+  const [heldHighlightFrameState, setHeldHighlightFrameState] = useState<{
+    frame: KeyboardPinnedHighlightFrame;
+    key: string;
+  } | null>(null);
   const [pendingKeyboardScroll, setPendingKeyboardScroll] = useState<{
     sourceIndex: number | null;
     targetIndex: number;
@@ -54,7 +103,7 @@ export function useComboboxKeyboardHighlightScroll({
     }
 
     setPendingKeyboardScroll(null);
-    setHeldHighlightFrame(null);
+    setHeldHighlightFrameState(null);
   }, []);
 
   const scheduleKeyboardHighlightedScroll = useCallback(
@@ -70,11 +119,16 @@ export function useComboboxKeyboardHighlightScroll({
 
       const list = listRef.current;
       const targetElement = getOptionElementAtIndex(targetVisibleIndex);
+      const sourceIndex =
+        sourceVisibleIndex === null || sourceVisibleIndex < 0
+          ? null
+          : sourceVisibleIndex;
       const scrollTarget =
         list && targetElement
-          ? getKeyboardScrollTarget({
+          ? getComboboxKeyboardHighlightScrollTarget({
               container: list,
               itemCount: visibleItemCount,
+              sourceIndex,
               targetElement,
               targetIndex: targetVisibleIndex,
             })
@@ -82,10 +136,7 @@ export function useComboboxKeyboardHighlightScroll({
 
       if (scrollTarget) {
         setPendingKeyboardScroll({
-          sourceIndex:
-            sourceVisibleIndex === null || sourceVisibleIndex < 0
-              ? null
-              : sourceVisibleIndex,
+          sourceIndex,
           targetIndex: targetVisibleIndex,
         });
         return;
@@ -119,9 +170,10 @@ export function useComboboxKeyboardHighlightScroll({
       return;
     }
 
-    const scrollTarget = getKeyboardScrollTarget({
+    const scrollTarget = getComboboxKeyboardHighlightScrollTarget({
       container: list,
       itemCount: visibleItemCount,
+      sourceIndex: pendingKeyboardScroll.sourceIndex,
       targetElement,
       targetIndex: pendingKeyboardScroll.targetIndex,
     });
@@ -136,55 +188,71 @@ export function useComboboxKeyboardHighlightScroll({
       releaseHeldHighlightFrameRef.current = null;
     }
 
-    setHeldHighlightFrame(
-      getKeyboardPinnedHighlightFrame({
+    setHeldHighlightFrameState({
+      frame: getKeyboardPinnedHighlightFrame({
         container: list,
-        forceTargetEdgeFrame: isWrappedKeyboardScroll({
-          itemCount: visibleItemCount,
-          sourceIndex: pendingKeyboardScroll.sourceIndex,
-          targetIndex: pendingKeyboardScroll.targetIndex,
-        }),
+        forceTargetEdgeFrame: scrollTarget.wrapped,
         frameRootElement: popupContent,
         scrollDirection: scrollTarget.direction,
         sourceElement,
         targetElement,
-      })
-    );
-    scrollElementTo(list, scrollTarget.scrollTop);
+      }),
+      key: scrollTarget.wrapped
+        ? `wrapped-${pendingKeyboardScroll.targetIndex}`
+        : 'edge',
+    });
 
-    const startedAt = window.performance.now();
-    const releaseWhenSettled = () => {
-      const currentList = listRef.current;
-      const currentTargetElement = getOptionElementAtIndex(
-        pendingKeyboardScroll.targetIndex
-      );
+    let scrollCommandFrame: number | null = null;
+    const startScrollAndRelease = () => {
+      scrollElementTo(list, scrollTarget.scrollTop);
 
-      if (!currentList || !currentTargetElement) {
-        clearKeyboardScrollHighlight();
-        return;
-      }
+      const startedAt = window.performance.now();
+      const releaseWhenSettled = () => {
+        const currentList = listRef.current;
+        const currentTargetElement = getOptionElementAtIndex(
+          pendingKeyboardScroll.targetIndex
+        );
 
-      const hasHeldLongEnough =
-        window.performance.now() - startedAt >= keyboardScrollHighlightMaxHold;
+        if (!currentList || !currentTargetElement) {
+          clearKeyboardScrollHighlight();
+          return;
+        }
 
-      if (
-        hasKeyboardScrollTargetSettled({
-          container: currentList,
-          scrollTop: scrollTarget.scrollTop,
-          targetElement: currentTargetElement,
-        }) ||
-        hasHeldLongEnough
-      ) {
-        clearKeyboardScrollHighlight();
-        return;
-      }
+        const hasHeldLongEnough =
+          window.performance.now() - startedAt >=
+          keyboardScrollHighlightMaxHold;
+
+        if (
+          hasKeyboardScrollTargetSettled({
+            container: currentList,
+            scrollTop: scrollTarget.scrollTop,
+            targetElement: currentTargetElement,
+          }) ||
+          hasHeldLongEnough
+        ) {
+          clearKeyboardScrollHighlight();
+          return;
+        }
+
+        releaseHeldHighlightFrameRef.current =
+          window.requestAnimationFrame(releaseWhenSettled);
+      };
 
       releaseHeldHighlightFrameRef.current =
         window.requestAnimationFrame(releaseWhenSettled);
     };
 
-    releaseHeldHighlightFrameRef.current =
-      window.requestAnimationFrame(releaseWhenSettled);
+    if (scrollTarget.wrapped) {
+      scrollCommandFrame = window.requestAnimationFrame(startScrollAndRelease);
+    } else {
+      startScrollAndRelease();
+    }
+
+    return () => {
+      if (scrollCommandFrame !== null) {
+        window.cancelAnimationFrame(scrollCommandFrame);
+      }
+    };
   }, [
     actualOpen,
     clearKeyboardScrollHighlight,
@@ -210,7 +278,8 @@ export function useComboboxKeyboardHighlightScroll({
 
   return {
     clearKeyboardScrollHighlight,
-    heldHighlightFrame,
+    heldHighlightFrame: heldHighlightFrameState?.frame ?? null,
+    heldHighlightFrameKey: heldHighlightFrameState?.key,
     scheduleKeyboardHighlightedScroll,
   };
 }

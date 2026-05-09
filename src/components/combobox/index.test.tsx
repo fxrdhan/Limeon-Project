@@ -19,6 +19,7 @@ import {
   PharmaComboboxSelect,
   PharmaEntityComboboxSelect,
 } from './index';
+import { getComboboxKeyboardHighlightScrollTarget } from './hooks/use-combobox-keyboard-highlight-scroll';
 
 const fruitItems = ['Apple', 'Banana', 'Cherry'];
 type EntityItem = { id: string; name: string };
@@ -627,6 +628,108 @@ describe('Combobox app presets', () => {
     expect(screen.getByRole('option', { name: /branch b/i })).toBeTruthy();
   });
 
+  it('keeps arrow navigation from visually activating the popup search input', () => {
+    render(
+      <PharmaComboboxSelect
+        name="supplier_id"
+        items={[
+          { id: 'a', name: 'Supplier A' },
+          { id: 'b', name: 'Supplier B' },
+        ]}
+        value={null}
+        onValueChange={() => {}}
+        itemToStringLabel={supplier => supplier.name}
+        itemToStringValue={supplier => supplier.id}
+      />
+    );
+
+    const trigger = screen.getByRole('combobox', { name: /pilih/i });
+    fireEvent.click(trigger);
+    const searchInput = screen.getByPlaceholderText('Cari...');
+
+    fireEvent.keyDown(trigger, { key: 'ArrowDown' });
+    expect(
+      searchInput.hasAttribute('data-pharma-combobox-navigation-focus')
+    ).toBe(true);
+
+    fireEvent.keyDown(searchInput, { key: 'b' });
+    expect(
+      searchInput.hasAttribute('data-pharma-combobox-navigation-focus')
+    ).toBe(false);
+
+    fireEvent.keyDown(searchInput, { key: 'ArrowDown' });
+    expect(
+      searchInput.hasAttribute('data-pharma-combobox-navigation-focus')
+    ).toBe(true);
+
+    fireEvent.pointerDown(searchInput);
+    expect(
+      searchInput.hasAttribute('data-pharma-combobox-navigation-focus')
+    ).toBe(false);
+  });
+
+  it('restores the selected visual highlight when search is cleared', async () => {
+    const suppliers = [
+      { id: 'a', name: 'Supplier A' },
+      { id: 'b', name: 'Supplier B' },
+      { id: 'c', name: 'Supplier C' },
+    ];
+
+    render(
+      <PharmaComboboxSelect
+        name="supplier_id"
+        items={suppliers}
+        value={suppliers[1]}
+        onValueChange={() => {}}
+        itemToStringLabel={supplier => supplier.name}
+        itemToStringValue={supplier => supplier.id}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: /supplier b/i }));
+    const searchInput = screen.getByPlaceholderText('Cari...');
+    let supplierB = screen.getByRole('option', { name: /supplier b/i });
+
+    await waitFor(() => {
+      expect(
+        supplierB.querySelector('[data-pharma-combobox-highlight]')
+      ).toBeTruthy();
+    });
+
+    fireEvent.change(searchInput, { target: { value: 'Supplier C' } });
+    await waitFor(() => {
+      expect(
+        screen
+          .getByRole('option', { name: /supplier c/i })
+          .querySelector('[data-pharma-combobox-highlight]')
+      ).toBeTruthy();
+    });
+
+    fireEvent.change(searchInput, { target: { value: '' } });
+    const supplierA = screen.getByRole('option', { name: /supplier a/i });
+    supplierB = screen.getByRole('option', { name: /supplier b/i });
+    const supplierC = screen.getByRole('option', { name: /supplier c/i });
+
+    await waitFor(() => {
+      expect(
+        supplierB.querySelector('[data-pharma-combobox-highlight]')
+      ).toBeTruthy();
+    });
+    expect(
+      supplierA.querySelector('[data-pharma-combobox-highlight]')
+    ).toBeNull();
+    expect(
+      supplierC.querySelector('[data-pharma-combobox-highlight]')
+    ).toBeNull();
+
+    fireEvent.keyDown(searchInput, { key: 'ArrowDown' });
+    await waitFor(() => {
+      expect(
+        supplierC.querySelector('[data-pharma-combobox-highlight]')
+      ).toBeTruthy();
+    });
+  });
+
   it('removes stale options immediately when search has no results', () => {
     render(
       <PharmaComboboxSelect
@@ -722,6 +825,42 @@ describe('Combobox app presets', () => {
     ).toBeTruthy();
   });
 
+  it('continues keyboard navigation from the last pointer-highlighted option', async () => {
+    render(
+      <PharmaComboboxSelect
+        name="supplier_id"
+        items={[
+          { id: 'a', name: 'Supplier A' },
+          { id: 'b', name: 'Supplier B' },
+          { id: 'c', name: 'Supplier C' },
+        ]}
+        value={null}
+        onValueChange={() => {}}
+        itemToStringLabel={supplier => supplier.name}
+        itemToStringValue={supplier => supplier.id}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: /pilih/i }));
+    const supplierB = screen.getByRole('option', { name: /supplier b/i });
+    const supplierC = screen.getByRole('option', { name: /supplier c/i });
+
+    fireEvent.mouseEnter(supplierB);
+    expect(
+      supplierB.querySelector('[data-pharma-combobox-highlight]')
+    ).toBeTruthy();
+
+    fireEvent.keyDown(screen.getByPlaceholderText('Cari...'), {
+      key: 'ArrowDown',
+    });
+
+    await waitFor(() => {
+      expect(
+        supplierC.querySelector('[data-pharma-combobox-highlight]')
+      ).toBeTruthy();
+    });
+  });
+
   it('pins the visual highlight to the list edge during keyboard scroll', () => {
     const root = document.createElement('div');
     const listbox = document.createElement('div');
@@ -805,6 +944,40 @@ describe('Combobox app presets', () => {
       top: 40,
       width: 200,
     });
+  });
+
+  it('forces wrapped keyboard scroll to the exact list edges', () => {
+    const listbox = document.createElement('div');
+    const targetOption = document.createElement('div');
+
+    Object.defineProperties(listbox, {
+      clientHeight: { configurable: true, value: 32 },
+      scrollHeight: { configurable: true, value: 96 },
+      scrollTop: { configurable: true, value: 12 },
+    });
+    Object.defineProperties(targetOption, {
+      offsetTop: { configurable: true, value: 16 },
+      offsetHeight: { configurable: true, value: 12 },
+    });
+
+    expect(
+      getComboboxKeyboardHighlightScrollTarget({
+        container: listbox,
+        itemCount: 5,
+        sourceIndex: 4,
+        targetElement: targetOption,
+        targetIndex: 0,
+      })
+    ).toEqual({ direction: 'up', scrollTop: 0, wrapped: true });
+    expect(
+      getComboboxKeyboardHighlightScrollTarget({
+        container: listbox,
+        itemCount: 5,
+        sourceIndex: 0,
+        targetElement: targetOption,
+        targetIndex: 4,
+      })
+    ).toEqual({ direction: 'down', scrollTop: 64, wrapped: true });
   });
 
   it('keeps list swap animation active while searching', () => {

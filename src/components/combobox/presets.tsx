@@ -225,6 +225,7 @@ export function PharmaComboboxSelect<Item>({
     null
   );
   const keyboardHoverSuppressedRef = useRef(false);
+  const syncKeyboardFromPointerHighlightRef = useRef(false);
   const fallbackLabelId = useId();
   const valueId = useId();
   const validationMessageId = useId();
@@ -233,6 +234,7 @@ export function PharmaComboboxSelect<Item>({
   const [blurred, setBlurred] = useState(false);
   const [isKeyboardHoverSuppressed, setIsKeyboardHoverSuppressed] =
     useState(false);
+  const [isSearchNavigationFocus, setIsSearchNavigationFocus] = useState(false);
   const [visualBackgroundValue, setVisualBackgroundValue] =
     useState<Item | null>(null);
 
@@ -286,10 +288,6 @@ export function PharmaComboboxSelect<Item>({
         : visibleItems.findIndex(item => isSameItem(item, selectedValue)),
     [isSameItem, selectedValue, visibleItems]
   );
-  const firstHighlightableVisibleItem = useMemo(
-    () => visibleItems.find(item => !isItemDisabled(item)) ?? null,
-    [isItemDisabled, visibleItems]
-  );
   const controlName = getComboboxControlName({
     label: effectiveLabel,
     name,
@@ -335,6 +333,7 @@ export function PharmaComboboxSelect<Item>({
   const {
     clearKeyboardScrollHighlight,
     heldHighlightFrame,
+    heldHighlightFrameKey,
     scheduleKeyboardHighlightedScroll,
   } = useComboboxKeyboardHighlightScroll({
     actualOpen,
@@ -364,6 +363,46 @@ export function PharmaComboboxSelect<Item>({
     }),
     []
   );
+  const getElementPointerPosition = useCallback(
+    (element: HTMLElement): PointerPosition => {
+      const pointerPosition = lastPointerPositionRef.current;
+      if (pointerPosition) return pointerPosition;
+
+      const elementRect = element.getBoundingClientRect();
+      return {
+        x: elementRect.left + elementRect.width / 2,
+        y: elementRect.top + elementRect.height / 2,
+      };
+    },
+    []
+  );
+  const dispatchPointerMove = useCallback(
+    (element: HTMLElement, pointerPosition: PointerPosition) => {
+      if (typeof window === 'undefined') return;
+
+      if (typeof window.PointerEvent === 'function') {
+        element.dispatchEvent(
+          new window.PointerEvent('pointermove', {
+            bubbles: true,
+            cancelable: true,
+            clientX: pointerPosition.x,
+            clientY: pointerPosition.y,
+            pointerType: 'mouse',
+          })
+        );
+      }
+
+      element.dispatchEvent(
+        new window.MouseEvent('mousemove', {
+          bubbles: true,
+          cancelable: true,
+          clientX: pointerPosition.x,
+          clientY: pointerPosition.y,
+        })
+      );
+    },
+    []
+  );
   const hasPointerMovedFromKeyboardPosition = useCallback(
     (pointerPosition: PointerPosition) => {
       const resumePointerPosition =
@@ -379,6 +418,54 @@ export function PharmaComboboxSelect<Item>({
     },
     []
   );
+  const getDefaultVisualBackgroundValue = useCallback(
+    (candidateItems: Item[]) => {
+      if (
+        selectedValue !== null &&
+        candidateItems.some(
+          item => isSameItem(item, selectedValue) && !isItemDisabled(item)
+        )
+      ) {
+        return selectedValue;
+      }
+
+      return candidateItems.find(item => !isItemDisabled(item)) ?? null;
+    },
+    [isItemDisabled, isSameItem, selectedValue]
+  );
+  const syncBaseUIHighlightToVisualValue = useCallback(() => {
+    if (
+      !syncKeyboardFromPointerHighlightRef.current ||
+      keyboardHoverSuppressedRef.current ||
+      visualBackgroundValue === null
+    ) {
+      return;
+    }
+
+    const visualIndex = visibleItems.findIndex(item =>
+      isSameItem(item, visualBackgroundValue)
+    );
+    if (visualIndex < 0) return;
+
+    const visualItem = visibleItems[visualIndex];
+    if (visualItem === undefined || isItemDisabled(visualItem)) return;
+
+    const optionElement = getOptionElementAtIndex(visualIndex);
+    if (!optionElement) return;
+
+    dispatchPointerMove(
+      optionElement,
+      getElementPointerPosition(optionElement)
+    );
+  }, [
+    dispatchPointerMove,
+    getElementPointerPosition,
+    getOptionElementAtIndex,
+    isItemDisabled,
+    isSameItem,
+    visibleItems,
+    visualBackgroundValue,
+  ]);
 
   const getItemHoverDetailData = useCallback(
     (item: Item): Partial<HoverDetailData> => {
@@ -415,6 +502,8 @@ export function PharmaComboboxSelect<Item>({
       if (details.isCanceled) return;
 
       setInputValue('');
+      setIsSearchNavigationFocus(false);
+      syncKeyboardFromPointerHighlightRef.current = false;
       resetKeyboardHoverSuppression();
       hideHoverDetail();
     },
@@ -422,14 +511,28 @@ export function PharmaComboboxSelect<Item>({
   );
   const handleInputValueChange = useCallback(
     (nextValue: string) => {
+      const shouldRestoreDefaultHighlight = nextValue.trim().length === 0;
+      const nextVisualBackgroundValue = shouldRestoreDefaultHighlight
+        ? getDefaultVisualBackgroundValue(items)
+        : null;
+
       setInputValue(nextValue);
+      setIsSearchNavigationFocus(false);
+      syncKeyboardFromPointerHighlightRef.current =
+        nextVisualBackgroundValue !== null;
       resetKeyboardHoverSuppression();
       clearKeyboardScrollHighlight();
       hideHoverDetail();
+
+      if (shouldRestoreDefaultHighlight) {
+        setVisualBackgroundValue(nextVisualBackgroundValue);
+      }
     },
     [
       clearKeyboardScrollHighlight,
+      getDefaultVisualBackgroundValue,
       hideHoverDetail,
+      items,
       resetKeyboardHoverSuppression,
     ]
   );
@@ -441,14 +544,24 @@ export function PharmaComboboxSelect<Item>({
       if (nextHighlighted === undefined) {
         if (details.reason === 'pointer') return;
 
+        syncKeyboardFromPointerHighlightRef.current = false;
         resetKeyboardHoverSuppression();
         clearKeyboardScrollHighlight();
-        setVisualBackgroundValue(
-          selectedValue &&
-            visibleItems.some(item => isSameItem(item, selectedValue))
-            ? selectedValue
-            : firstHighlightableVisibleItem
-        );
+        setVisualBackgroundValue(getDefaultVisualBackgroundValue(visibleItems));
+        return;
+      }
+
+      if (
+        details.reason === 'none' &&
+        normalizedInputValue.length === 0 &&
+        selectedValue !== null &&
+        visibleItems.some(
+          item => isSameItem(item, selectedValue) && !isItemDisabled(item)
+        ) &&
+        !isSameItem(nextHighlighted, selectedValue)
+      ) {
+        syncKeyboardFromPointerHighlightRef.current = true;
+        setVisualBackgroundValue(selectedValue);
         return;
       }
 
@@ -457,6 +570,7 @@ export function PharmaComboboxSelect<Item>({
       }
 
       if (details.reason === 'keyboard') {
+        syncKeyboardFromPointerHighlightRef.current = false;
         suppressPointerHoverForKeyboard();
         const sourceVisibleIndex =
           visualBackgroundValue === null
@@ -468,6 +582,7 @@ export function PharmaComboboxSelect<Item>({
         scheduleKeyboardHighlightedScroll(details.index, sourceVisibleIndex);
       } else {
         if (details.reason === 'pointer') {
+          syncKeyboardFromPointerHighlightRef.current = true;
           resetKeyboardHoverSuppression();
         }
 
@@ -478,8 +593,10 @@ export function PharmaComboboxSelect<Item>({
     },
     [
       clearKeyboardScrollHighlight,
-      firstHighlightableVisibleItem,
+      getDefaultVisualBackgroundValue,
+      isItemDisabled,
       isSameItem,
+      normalizedInputValue.length,
       resetKeyboardHoverSuppression,
       scheduleKeyboardHighlightedScroll,
       selectedValue,
@@ -492,6 +609,7 @@ export function PharmaComboboxSelect<Item>({
     (item: Item, element: HTMLElement) => {
       if (isItemDisabled(item)) return;
 
+      syncKeyboardFromPointerHighlightRef.current = true;
       clearKeyboardScrollHighlight();
       setVisualBackgroundValue(item);
 
@@ -549,18 +667,36 @@ export function PharmaComboboxSelect<Item>({
   }, [handleItemLeave, resetKeyboardHoverSuppression]);
   const handleSearchInputKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLInputElement>) => {
-      if (event.key !== 'Enter' || !canCreate) return;
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        setIsSearchNavigationFocus(true);
+        syncBaseUIHighlightToVisualValue();
+        return;
+      }
+
+      setIsSearchNavigationFocus(false);
+      if (event.key !== 'Enter') return;
+
+      if (!canCreate) {
+        syncBaseUIHighlightToVisualValue();
+        return;
+      }
 
       event.preventDefault();
       event.stopPropagation();
       preventBaseUIHandler(event);
       handleCreate();
     },
-    [canCreate, handleCreate]
+    [canCreate, handleCreate, syncBaseUIHighlightToVisualValue]
   );
   const handleTriggerKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLButtonElement>) => {
       if (!searchable || !actualOpen) return;
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        setIsSearchNavigationFocus(true);
+        syncBaseUIHighlightToVisualValue();
+        return;
+      }
+
       if (
         event.key.length !== 1 ||
         event.altKey ||
@@ -573,7 +709,9 @@ export function PharmaComboboxSelect<Item>({
       event.preventDefault();
       event.stopPropagation();
       preventBaseUIHandler(event);
+      setIsSearchNavigationFocus(false);
       setInputValue(currentValue => `${currentValue}${event.key}`);
+      syncKeyboardFromPointerHighlightRef.current = false;
       resetKeyboardHoverSuppression();
       clearKeyboardScrollHighlight();
       hideHoverDetail();
@@ -585,6 +723,7 @@ export function PharmaComboboxSelect<Item>({
       hideHoverDetail,
       resetKeyboardHoverSuppression,
       searchable,
+      syncBaseUIHighlightToVisualValue,
     ]
   );
   const isFocusWithinCombobox = useCallback((target: EventTarget | null) => {
@@ -633,6 +772,8 @@ export function PharmaComboboxSelect<Item>({
     if (actualOpen) return;
 
     lastPointerPositionRef.current = null;
+    syncKeyboardFromPointerHighlightRef.current = false;
+    setIsSearchNavigationFocus(false);
     hideHoverDetail();
     resetKeyboardHoverSuppression();
     setVisualBackgroundValue(null);
@@ -651,20 +792,15 @@ export function PharmaComboboxSelect<Item>({
     }
 
     const nextVisualBackgroundValue =
-      selectedValue &&
-      visibleItems.some(
-        item => isSameItem(item, selectedValue) && !isItemDisabled(item)
-      )
-        ? selectedValue
-        : firstHighlightableVisibleItem;
+      getDefaultVisualBackgroundValue(visibleItems);
 
+    syncKeyboardFromPointerHighlightRef.current = false;
     setVisualBackgroundValue(nextVisualBackgroundValue);
   }, [
     actualOpen,
-    firstHighlightableVisibleItem,
+    getDefaultVisualBackgroundValue,
     isItemDisabled,
     isSameItem,
-    selectedValue,
     visibleItems,
     visualBackgroundValue,
   ]);
@@ -797,6 +933,7 @@ export function PharmaComboboxSelect<Item>({
               >
                 {heldHighlightFrame ? (
                   <motion.div
+                    key={heldHighlightFrameKey}
                     aria-hidden="true"
                     data-pharma-combobox-pinned-highlight=""
                     className="pointer-events-none absolute z-0 rounded-lg bg-primary/10"
@@ -820,10 +957,24 @@ export function PharmaComboboxSelect<Item>({
                       />
                       <Combobox.Input
                         ref={searchInputRef}
-                        className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-10 text-sm text-slate-800 outline-hidden transition placeholder:text-slate-400 focus:border-primary focus:ring-2 focus:ring-primary/15"
+                        data-pharma-combobox-navigation-focus={
+                          isSearchNavigationFocus ? '' : undefined
+                        }
+                        className={cn(
+                          'w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-10 text-sm text-slate-800 outline-hidden transition placeholder:text-slate-400',
+                          isSearchNavigationFocus
+                            ? 'focus:border-slate-200 focus:ring-0'
+                            : 'focus:border-primary focus:ring-2 focus:ring-primary/15'
+                        )}
                         aria-label={`Cari ${controlName}`}
                         placeholder={searchPlaceholder}
                         onKeyDown={handleSearchInputKeyDown}
+                        onPointerDown={() => {
+                          setIsSearchNavigationFocus(false);
+                        }}
+                        onBlur={() => {
+                          setIsSearchNavigationFocus(false);
+                        }}
                       />
                       {canCreate ? (
                         <button
@@ -875,9 +1026,9 @@ export function PharmaComboboxSelect<Item>({
                           const { ref, ...itemProps } = props;
                           const labelText = itemToStringLabel(item);
                           const isVisuallyHighlighted =
-                            (!isKeyboardHoverSuppressed && state.highlighted) ||
-                            (visualBackgroundValue != null &&
-                              isSameItem(item, visualBackgroundValue));
+                            visualBackgroundValue != null
+                              ? isSameItem(item, visualBackgroundValue)
+                              : !isKeyboardHoverSuppressed && state.highlighted;
                           const renderState: PharmaComboboxOptionRenderState = {
                             disabled: state.disabled,
                             highlighted: isVisuallyHighlighted,
