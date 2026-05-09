@@ -98,6 +98,7 @@ vp fmt --write [changed files]
 - Never start `dev` or `preview` servers yourself.
 - Before working with a local server, check whether the needed port is already active.
 - If the needed port is not active, tell the user to start the server and wait for them to do so.
+- If the needed dev or preview port is already active, you may run tests or browser checks that depend on that existing server.
 
 # React Modules
 
@@ -126,7 +127,8 @@ vp fmt --write [changed files]
 - Prefer `AI_AGENT=codex vp test run --passWithNoTests` when running agent tests.
 - Use `AI_AGENT=codex vp test watch` for agent test watch mode.
 - Use `vp test run --passWithNoTests` for regular local terminal output.
-- Do not use Playwright CLI or Playwright MCP for UI testing unless the user explicitly asks for it.
+- You may run repository Playwright E2E tests from the CLI when the required dev or preview port is already active. Do not start the server yourself.
+- Do not use Playwright MCP for UI testing unless the user explicitly asks for interactive browser debugging.
 
 # Test Quality
 
