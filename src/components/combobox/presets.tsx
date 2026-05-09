@@ -19,7 +19,11 @@ import {
   ComboboxSelectionIndicator,
   type ComboboxIndicatorKind,
 } from './components/combobox-selection-indicator';
-import { Combobox, type ComboboxRootProps } from './primitive';
+import {
+  Combobox,
+  type ComboboxHighlightControllerApi,
+  type ComboboxRootProps,
+} from './primitive';
 import { useComboboxKeyboardHighlightScroll } from './hooks/use-combobox-keyboard-highlight-scroll';
 import {
   getComboboxControlName,
@@ -219,6 +223,9 @@ export function PharmaComboboxSelect<Item>({
   const popupContentRef = useRef<HTMLDivElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const highlightControllerRef = useRef<ComboboxHighlightControllerApi | null>(
+    null
+  );
   const blurValidationFrameRef = useRef<number | null>(null);
   const lastPointerPositionRef = useRef<PointerPosition | null>(null);
   const keyboardHoverResumePointerPositionRef = useRef<PointerPosition | null>(
@@ -234,10 +241,12 @@ export function PharmaComboboxSelect<Item>({
   const [isKeyboardHoverSuppressed, setIsKeyboardHoverSuppressed] =
     useState(false);
   const [isSearchNavigationFocus, setIsSearchNavigationFocus] = useState(false);
+  const [selectedOptionScrollRevision, setSelectedOptionScrollRevision] =
+    useState(0);
   const [visualBackgroundValue, setVisualBackgroundValue] =
     useState<Item | null>(null);
 
-  const actualOpen = open ?? uncontrolledOpen;
+  const actualOpen = open !== undefined ? open : uncontrolledOpen;
   const isOpenControlled = open !== undefined;
   const effectiveId = id ?? formField?.controlId;
   const effectiveLabel = label ?? formField?.label;
@@ -299,6 +308,13 @@ export function PharmaComboboxSelect<Item>({
     : ariaLabel
       ? undefined
       : `${formField?.labelId ?? fallbackLabelId} ${valueId}`;
+  const listboxLabelId =
+    ariaLabelledBy ??
+    formField?.labelId ??
+    (shouldRenderFallbackLabel ? fallbackLabelId : undefined);
+  const listboxAriaLabel = listboxLabelId
+    ? undefined
+    : (ariaLabel ?? controlName);
   const triggerDescribedBy =
     [ariaDescribedBy, showValidation ? validationMessageId : undefined]
       .filter(Boolean)
@@ -375,30 +391,9 @@ export function PharmaComboboxSelect<Item>({
     },
     []
   );
-  const dispatchPointerMove = useCallback(
-    (element: HTMLElement, pointerPosition: PointerPosition) => {
-      if (typeof window === 'undefined') return;
-
-      if (typeof window.PointerEvent === 'function') {
-        element.dispatchEvent(
-          new window.PointerEvent('pointermove', {
-            bubbles: true,
-            cancelable: true,
-            clientX: pointerPosition.x,
-            clientY: pointerPosition.y,
-            pointerType: 'mouse',
-          })
-        );
-      }
-
-      element.dispatchEvent(
-        new window.MouseEvent('mousemove', {
-          bubbles: true,
-          cancelable: true,
-          clientX: pointerPosition.x,
-          clientY: pointerPosition.y,
-        })
-      );
+  const handleHighlightControllerChange = useCallback(
+    (controller: ComboboxHighlightControllerApi | null) => {
+      highlightControllerRef.current = controller;
     },
     []
   );
@@ -448,12 +443,9 @@ export function PharmaComboboxSelect<Item>({
     const optionElement = getOptionElementAtIndex(visualIndex);
     if (!optionElement) return;
 
-    dispatchPointerMove(
-      optionElement,
-      getElementPointerPosition(optionElement)
-    );
+    lastPointerPositionRef.current = getElementPointerPosition(optionElement);
+    highlightControllerRef.current?.setHighlightedIndex(visualIndex, 'pointer');
   }, [
-    dispatchPointerMove,
     getElementPointerPosition,
     getOptionElementAtIndex,
     isItemDisabled,
@@ -518,6 +510,7 @@ export function PharmaComboboxSelect<Item>({
 
       if (shouldRestoreDefaultHighlight) {
         setVisualBackgroundValue(nextVisualBackgroundValue);
+        setSelectedOptionScrollRevision(revision => revision + 1);
       }
     },
     [
@@ -807,7 +800,7 @@ export function PharmaComboboxSelect<Item>({
     });
 
     return () => window.cancelAnimationFrame(frame);
-  }, [actualOpen, selectedVisibleIndex]);
+  }, [actualOpen, selectedOptionScrollRevision, selectedVisibleIndex]);
 
   useEffect(
     () => () => {
@@ -837,6 +830,7 @@ export function PharmaComboboxSelect<Item>({
         itemToStringLabel={itemToStringLabel}
         itemToStringValue={itemToStringValue}
         isItemEqualToValue={isItemEqualToValue}
+        labelId={listboxLabelId}
         name={name}
         form={form}
         disabled={disabled}
@@ -846,6 +840,9 @@ export function PharmaComboboxSelect<Item>({
         filter={null}
         autoHighlight={searchable}
       >
+        <Combobox.HighlightController
+          onControllerChange={handleHighlightControllerChange}
+        />
         <Combobox.Trigger
           id={effectiveId}
           aria-label={ariaLabel}
@@ -976,6 +973,7 @@ export function PharmaComboboxSelect<Item>({
                 ) : null}
                 <Combobox.List
                   ref={listRef}
+                  aria-label={listboxAriaLabel}
                   onMouseLeave={handleListMouseLeave}
                   className={cn(
                     'relative z-10 overflow-y-auto outline-hidden',

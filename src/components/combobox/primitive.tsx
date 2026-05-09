@@ -165,6 +165,7 @@ export type ComboboxRootProps<Value> = {
   isItemEqualToValue?: (itemValue: Value, value: Value) => boolean;
   itemToStringLabel?: (itemValue: Value) => string;
   itemToStringValue?: (itemValue: Value) => string;
+  labelId?: string;
   items?: readonly Value[];
   name?: string;
   onInputValueChange?: (
@@ -236,6 +237,21 @@ type ComboboxListProps<Value = React.ReactNode> = Omit<
 
 type ComboboxCollectionProps<Value = React.ReactNode> = {
   children: (item: Value, index: number) => React.ReactNode;
+};
+
+export type ComboboxHighlightControllerApi = {
+  getHighlightedIndex: () => number | null;
+  setHighlightedIndex: (
+    index: number | null,
+    reason?: EventReason,
+    event?: React.SyntheticEvent | Event
+  ) => void;
+};
+
+type ComboboxHighlightControllerProps = {
+  onControllerChange: (
+    controller: ComboboxHighlightControllerApi | null
+  ) => void;
 };
 
 type ComboboxItemProps<Value> = Omit<
@@ -392,6 +408,7 @@ function ComboboxRootComponent<Value>({
   isItemEqualToValue: isItemEqualToValueProp,
   itemToStringLabel: itemToStringLabelProp,
   itemToStringValue: itemToStringValueProp,
+  labelId: labelIdProp,
   items = [],
   name,
   onInputValueChange,
@@ -419,7 +436,9 @@ function ComboboxRootComponent<Value>({
     defaultValue
   );
   const [activeIndexState, setActiveIndexState] = useState<number | null>(null);
-  const [labelId, setLabelIdState] = useState<string | undefined>(undefined);
+  const [registeredLabelId, setRegisteredLabelIdState] = useState<
+    string | undefined
+  >(undefined);
   const [triggerId, setTriggerIdState] = useState(`${generatedId}-trigger`);
 
   const itemToStringLabel = useCallback(
@@ -444,9 +463,12 @@ function ComboboxRootComponent<Value>({
     [isItemEqualToValueProp]
   );
 
-  const inputValue = inputValueProp ?? uncontrolledInputValue;
-  const open = openProp ?? uncontrolledOpen;
-  const selectedValue = (valueProp ?? uncontrolledValue) as Value | null;
+  const inputValue =
+    inputValueProp !== undefined ? inputValueProp : uncontrolledInputValue;
+  const open = openProp !== undefined ? openProp : uncontrolledOpen;
+  const selectedValue = (
+    valueProp !== undefined ? valueProp : uncontrolledValue
+  ) as Value | null;
 
   const filteredItems = useMemo(() => {
     if (filteredItemsProp !== undefined) return Array.from(filteredItemsProp);
@@ -590,7 +612,7 @@ function ComboboxRootComponent<Value>({
     );
   }, []);
   const setLabelId = useCallback((nextLabelId: string | undefined) => {
-    setLabelIdState(currentLabelId =>
+    setRegisteredLabelIdState(currentLabelId =>
       currentLabelId === nextLabelId ? currentLabelId : nextLabelId
     );
   }, []);
@@ -654,7 +676,7 @@ function ComboboxRootComponent<Value>({
       isItemEqualToValue,
       itemToStringLabel,
       itemToStringValue,
-      labelId,
+      labelId: labelIdProp ?? registeredLabelId,
       listboxId: `${generatedId}-listbox`,
       name,
       open,
@@ -686,10 +708,11 @@ function ComboboxRootComponent<Value>({
       isItemEqualToValue,
       itemToStringLabel,
       itemToStringValue,
-      labelId,
+      labelIdProp,
       name,
       open,
       readOnly,
+      registeredLabelId,
       registerItem,
       required,
       selectedValue,
@@ -1143,6 +1166,35 @@ function ComboboxCollection<Value = React.ReactNode>({
   );
 }
 
+function ComboboxHighlightController({
+  onControllerChange,
+}: ComboboxHighlightControllerProps) {
+  const context = useComboboxContext<unknown>();
+  const { highlightedIndexRef, setActiveIndex } = context;
+  const controller = useMemo<ComboboxHighlightControllerApi>(
+    () => ({
+      getHighlightedIndex: () => highlightedIndexRef.current,
+      setHighlightedIndex: (
+        index: number | null,
+        reason: EventReason = 'none',
+        event?: React.SyntheticEvent | Event
+      ) => {
+        setActiveIndex(index, reason, event);
+      },
+    }),
+    [highlightedIndexRef, setActiveIndex]
+  );
+
+  useLayoutEffect(() => {
+    onControllerChange(controller);
+    return () => {
+      onControllerChange(null);
+    };
+  }, [controller, onControllerChange]);
+
+  return null;
+}
+
 function ComboboxItem<Value>({
   children,
   disabled = false,
@@ -1295,6 +1347,7 @@ function ComboboxStatus({ children, ...props }: ComboboxStatusProps) {
 export const Combobox = {
   Collection: ComboboxCollection,
   Empty: ComboboxEmpty,
+  HighlightController: ComboboxHighlightController,
   Input: ComboboxInput,
   Item: ComboboxItem,
   ItemIndicator: ComboboxItemIndicator,

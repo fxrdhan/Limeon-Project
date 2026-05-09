@@ -56,6 +56,7 @@ Available parts:
 - `Combobox.Input`
 - `Combobox.List`
 - `Combobox.Collection`
+- `Combobox.HighlightController`
 - `Combobox.Item`
 - `Combobox.ItemIndicator`
 - `Combobox.Empty`
@@ -72,6 +73,7 @@ Available parts:
 - `onItemHighlighted`
 - `filter`
 - `itemToStringLabel`, `itemToStringValue`, `isItemEqualToValue`
+- `labelId`
 - `name`, `form`, `disabled`, `readOnly`, `required`
 - `autoHighlight`, `highlightItemOnHover`
 
@@ -100,6 +102,8 @@ DOM-rendering parts accept `render={element}` or `render={(props, state) => elem
 Stable local `data-*` states include `data-selected`, `data-highlighted`, `data-disabled`, and `data-placeholder` where relevant.
 
 `Combobox.Popup initialFocus` focuses the first focusable popup control only when explicitly enabled.
+
+`Combobox.HighlightController` exposes the current highlighted index and a typed `setHighlightedIndex` action to advanced compositions that need to align primitive highlight state with an existing visual anchor. It must not be used to change selection directly.
 
 ## App Preset
 

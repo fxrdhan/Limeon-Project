@@ -140,6 +140,59 @@ test.describe('combobox browser regressions', () => {
     ).toBeVisible();
   });
 
+  test('restores selected option scroll position after clearing search', async ({
+    page,
+  }) => {
+    await openComboboxHarness(page);
+
+    const trigger = page.getByRole('combobox', { name: /^Kategori\b/i });
+    await trigger.click();
+
+    const searchInput = page.getByRole('combobox', {
+      name: /^Cari kategori$/i,
+    });
+    const listbox = page.getByRole('listbox');
+    const selectedOption = page.getByRole('option', { name: /Mukolitik/i });
+    await expect(
+      selectedOption.locator('[data-pharma-combobox-highlight]')
+    ).toBeVisible();
+
+    const initialScrollTop = await listbox.evaluate(
+      element => element.scrollTop
+    );
+    const initialSelectedOffset = await selectedOption.evaluate(element => {
+      const list = element.closest('[role="listbox"]');
+      if (!list) throw new Error('Listbox ancestor is unavailable');
+
+      return (
+        element.getBoundingClientRect().top - list.getBoundingClientRect().top
+      );
+    });
+
+    await searchInput.fill('i');
+    await listbox.evaluate((element, scrollTop) => {
+      element.scrollTop = Math.max(0, scrollTop - 24);
+    }, initialScrollTop);
+    await searchInput.fill('');
+
+    await expect
+      .poll(() => listbox.evaluate(element => element.scrollTop))
+      .toBe(initialScrollTop);
+    await expect
+      .poll(() =>
+        selectedOption.evaluate(element => {
+          const list = element.closest('[role="listbox"]');
+          if (!list) throw new Error('Listbox ancestor is unavailable');
+
+          return (
+            element.getBoundingClientRect().top -
+            list.getBoundingClientRect().top
+          );
+        })
+      )
+      .toBe(initialSelectedOffset);
+  });
+
   test('keeps the positioner from clipping popup shadow', async ({ page }) => {
     await openComboboxHarness(page);
 

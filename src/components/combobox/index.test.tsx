@@ -300,6 +300,47 @@ describe('Combobox primitive', () => {
     expect(hiddenInput?.hasAttribute('required')).toBe(false);
   });
 
+  it('keeps controlled null values from falling back to defaultValue', () => {
+    function ControlledNullableCombobox() {
+      const [value, setValue] = useState<string | null>('Banana');
+
+      return (
+        <>
+          <button type="button" onClick={() => setValue(null)}>
+            Clear fruit
+          </button>
+          <Combobox.Root
+            items={fruitItems}
+            defaultValue="Apple"
+            value={value}
+            onValueChange={setValue}
+            itemToStringLabel={item => item}
+            itemToStringValue={item => item}
+            name="controlled_fruit"
+          >
+            <Combobox.Trigger aria-label="Fruit">
+              <Combobox.Value placeholder="Choose fruit" />
+            </Combobox.Trigger>
+          </Combobox.Root>
+        </>
+      );
+    }
+
+    render(<ControlledNullableCombobox />);
+
+    const trigger = screen.getByRole('combobox', { name: /fruit/i });
+    const hiddenInput = document.querySelector<HTMLInputElement>(
+      'input[name="controlled_fruit"]'
+    );
+    expect(trigger.textContent).toContain('Banana');
+    expect(hiddenInput?.value).toBe('Banana');
+
+    fireEvent.click(screen.getByRole('button', { name: /clear fruit/i }));
+
+    expect(trigger.textContent).toContain('Choose fruit');
+    expect(hiddenInput?.value).toBe('');
+  });
+
   it('filters with the native input and accepts caller-supplied filteredItems', async () => {
     const user = setupUserEvent();
     const { rerender } = render(<BasicCombobox />);
@@ -494,6 +535,88 @@ describe('Combobox app presets', () => {
       name: /cari pilih supplier/i,
     });
     expect(searchInput.hasAttribute('aria-labelledby')).toBe(false);
+  });
+
+  it('labels the preset listbox from the effective field label source', () => {
+    const baseProps = {
+      name: 'supplier_id',
+      items: [{ id: 'supplier-a', name: 'Supplier A' }],
+      value: null,
+      onValueChange: () => {},
+      itemToStringLabel: (item: EntityItem) => item.name,
+      itemToStringValue: (item: EntityItem) => item.id,
+      placeholder: 'Pilih Supplier',
+    };
+    const expectListboxLabelledByText = (labelText: string) => {
+      const listbox = screen.getByRole('listbox');
+      const labelId = listbox.getAttribute('aria-labelledby');
+
+      expect(labelId).toBeTruthy();
+      expect(document.getElementById(labelId as string)?.textContent).toBe(
+        labelText
+      );
+      expect(listbox.hasAttribute('aria-label')).toBe(false);
+    };
+
+    const standalone = render(
+      <PharmaComboboxSelect<EntityItem> {...baseProps} label="Supplier" />
+    );
+    fireEvent.click(
+      screen.getByRole('combobox', { name: /supplier pilih supplier/i })
+    );
+    expectListboxLabelledByText('Supplier');
+    standalone.unmount();
+
+    const externalLabel = render(
+      <>
+        <label id="supplier-external-label" htmlFor="supplier-external-trigger">
+          Supplier External
+        </label>
+        <PharmaComboboxSelect<EntityItem>
+          {...baseProps}
+          id="supplier-external-trigger"
+          aria-labelledby="supplier-external-label"
+        />
+      </>
+    );
+    fireEvent.click(
+      screen.getByRole('combobox', {
+        name: /supplier external pilih supplier/i,
+      })
+    );
+    expect(screen.getByRole('listbox').getAttribute('aria-labelledby')).toBe(
+      'supplier-external-label'
+    );
+    externalLabel.unmount();
+
+    const ariaLabel = render(
+      <PharmaComboboxSelect<EntityItem>
+        {...baseProps}
+        aria-label="Supplier picker"
+      />
+    );
+    fireEvent.click(
+      screen.getByRole('combobox', { name: /^supplier picker$/i })
+    );
+    expect(screen.getByRole('listbox').getAttribute('aria-label')).toBe(
+      'Supplier picker'
+    );
+    expect(screen.getByRole('listbox').hasAttribute('aria-labelledby')).toBe(
+      false
+    );
+    ariaLabel.unmount();
+
+    render(
+      <FormField label="Supplier Field">
+        <PharmaComboboxSelect<EntityItem> {...baseProps} />
+      </FormField>
+    );
+    fireEvent.click(
+      screen.getByRole('combobox', {
+        name: /supplier field pilih supplier/i,
+      })
+    );
+    expectListboxLabelledByText('Supplier Field');
   });
 
   it('inherits FormField labels through layout wrappers', () => {
@@ -1057,6 +1180,75 @@ describe('Combobox app presets', () => {
     });
   });
 
+  it('restores selected option scroll position when clearing search without index changes', async () => {
+    const suppliers = [
+      { id: 'a', name: 'Supplier A' },
+      { id: 'b', name: 'Supplier B' },
+      { id: 'c', name: 'Supplier C' },
+    ];
+
+    render(
+      <PharmaComboboxSelect
+        name="supplier_id"
+        items={suppliers}
+        value={suppliers[1]}
+        onValueChange={() => {}}
+        itemToStringLabel={supplier => supplier.name}
+        itemToStringValue={supplier => supplier.id}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: /supplier b/i }));
+    const searchInput = screen.getByPlaceholderText('Cari...');
+    const listbox = screen.getByRole('listbox');
+    const selectedOption = screen.getByRole('option', { name: /supplier b/i });
+    let scrollTop = 40;
+
+    Object.defineProperty(listbox, 'scrollTop', {
+      configurable: true,
+      get: () => scrollTop,
+      set: value => {
+        scrollTop = value;
+      },
+    });
+    Object.defineProperty(listbox, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => ({
+        bottom: 200,
+        height: 120,
+        left: 0,
+        right: 240,
+        toJSON: () => {},
+        top: 80,
+        width: 240,
+        x: 0,
+        y: 80,
+      }),
+    });
+    Object.defineProperty(selectedOption, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => ({
+        bottom: 130,
+        height: 28,
+        left: 0,
+        right: 240,
+        toJSON: () => {},
+        top: 102,
+        width: 240,
+        x: 0,
+        y: 102,
+      }),
+    });
+
+    fireEvent.change(searchInput, { target: { value: 'Supplier' } });
+    scrollTop = 99;
+    fireEvent.change(searchInput, { target: { value: '' } });
+
+    await waitFor(() => {
+      expect(scrollTop).toBe(117);
+    });
+  });
+
   it('continues keyboard navigation from the selected visual highlight on open', async () => {
     const suppliers = [
       { id: 'a', name: 'Supplier A' },
@@ -1237,6 +1429,44 @@ describe('Combobox app presets', () => {
 
     expect(listbox.querySelector('[data-pharma-combobox-index]')).toBeNull();
     expect(screen.getByRole('status').textContent).toBe('Tidak ada data');
+  });
+
+  it('keeps filtered option indices aligned with primitive active descendant', async () => {
+    const onValueChange = vi.fn();
+
+    render(
+      <PharmaComboboxSelect
+        name="supplier_id"
+        items={[
+          { id: 'a', name: 'Supplier A' },
+          { id: 'b', name: 'Supplier B' },
+          { id: 'c', name: 'Supplier C' },
+        ]}
+        value={null}
+        onValueChange={onValueChange}
+        itemToStringLabel={supplier => supplier.name}
+        itemToStringValue={supplier => supplier.id}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: /pilih/i }));
+    const searchInput = screen.getByPlaceholderText('Cari...');
+    fireEvent.change(searchInput, { target: { value: 'Supplier B' } });
+    const supplierB = screen.getByRole('option', { name: /supplier b/i });
+
+    expect(supplierB.getAttribute('data-pharma-combobox-index')).toBe('0');
+    await waitFor(() => {
+      expect(searchInput.getAttribute('aria-activedescendant')).toBe(
+        supplierB.id
+      );
+    });
+
+    fireEvent.keyDown(searchInput, { key: 'Enter' });
+
+    expect(onValueChange).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'b' }),
+      expect.objectContaining({ reason: 'item-press' })
+    );
   });
 
   it('selects filtered options through primitive keyboard handling', () => {
