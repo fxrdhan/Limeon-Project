@@ -30,6 +30,27 @@ const medicineOptions: MedicineOption[] = [
   { code: 'VIT', id: 'med-vitamin-c', name: 'Vitamin C 500 mg' },
 ];
 
+const categoryOptions: MedicineOption[] = [
+  { code: 'ATN', id: 'cat-antiaritmia', name: 'Antiaritmia' },
+  { code: 'ATS', id: 'cat-antitusif', name: 'Antitusif' },
+  { code: 'AKG', id: 'cat-antikoagulan', name: 'Antikoagulan' },
+  { code: 'ACD', id: 'cat-antiacne', name: 'Antiacne' },
+  { code: 'AKV', id: 'cat-antikonvulsan', name: 'Antikonvulsan' },
+  { code: 'ADB', id: 'cat-antidiabetes', name: 'Antidiabetes' },
+  { code: 'ADR', id: 'cat-antidiare', name: 'Antidiare' },
+  { code: 'ANL', id: 'cat-analgesik', name: 'Analgesik' },
+  { code: 'ANT', id: 'cat-antibiotik', name: 'Antibiotik' },
+  { code: 'HST', id: 'cat-antihistamin', name: 'Antihistamin' },
+  { code: 'MUK', id: 'cat-mukolitik', name: 'Mukolitik' },
+  { code: 'MYD', id: 'cat-mydriatic', name: 'Mydriatic' },
+  { code: 'NSA', id: 'cat-nsaid', name: 'NSAID' },
+  { code: 'NTP', id: 'cat-nootropik', name: 'Nootropik' },
+  { code: 'ONK', id: 'cat-onkologi', name: 'Onkologi' },
+  { code: 'OFT', id: 'cat-oftalmologi', name: 'Oftalmologi' },
+  { code: 'OST', id: 'cat-osteoporosis', name: 'Osteoporosis' },
+  { code: 'VIT', id: 'cat-vitamin', name: 'Vitamin' },
+];
+
 const optionLabel = (option: MedicineOption) => option.name;
 const optionValue = (option: MedicineOption) => option.id;
 
@@ -37,6 +58,8 @@ const optionValue = (option: MedicineOption) => option.id;
 function ComboboxRegressionHarness() {
   const [selectedMedicine, setSelectedMedicine] =
     useState<MedicineOption | null>(null);
+  const [selectedCategory, setSelectedCategory] =
+    useState<MedicineOption | null>(categoryOptions[10] ?? null);
   const [bottomMedicine, setBottomMedicine] = useState<MedicineOption | null>(
     null
   );
@@ -75,6 +98,29 @@ function ComboboxRegressionHarness() {
             label="Obat"
             placeholder="Pilih obat"
             searchPlaceholder="Cari obat"
+            indicator="check"
+            renderOptionMeta={(option: MedicineOption) => option.code}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label
+            className="block text-sm font-semibold"
+            htmlFor="category-combobox"
+          >
+            Kategori
+          </label>
+          <PharmaComboboxSelect<MedicineOption>
+            id="category-combobox"
+            name="category_id"
+            items={categoryOptions}
+            value={selectedCategory}
+            onValueChange={setSelectedCategory}
+            itemToStringLabel={optionLabel}
+            itemToStringValue={optionValue}
+            label="Kategori"
+            placeholder="Pilih kategori"
+            searchPlaceholder="Cari kategori"
             indicator="check"
             renderOptionMeta={(option: MedicineOption) => option.code}
           />

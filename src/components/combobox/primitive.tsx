@@ -976,7 +976,7 @@ function ComboboxPositioner({
         ...floatingSizeVariables,
         ...floatingStyles,
         maxHeight: 'var(--available-height)',
-        overflowY: 'auto',
+        overflow: 'visible',
         width: 'var(--anchor-width)',
         ...style,
       }}

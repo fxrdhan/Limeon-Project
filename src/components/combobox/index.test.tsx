@@ -381,7 +381,7 @@ describe('Combobox primitive', () => {
       expect(positioner?.style.position).toBe('fixed');
       expect(positioner?.style.width).toBe('var(--anchor-width)');
       expect(positioner?.style.maxHeight).toBe('var(--available-height)');
-      expect(positioner?.style.overflowY).toBe('auto');
+      expect(positioner?.style.overflow).toBe('visible');
     } finally {
       if (innerHeightDescriptor) {
         Object.defineProperty(window, 'innerHeight', innerHeightDescriptor);
@@ -1055,6 +1055,161 @@ describe('Combobox app presets', () => {
         supplierC.querySelector('[data-pharma-combobox-highlight]')
       ).toBeTruthy();
     });
+  });
+
+  it('continues keyboard navigation from the selected visual highlight on open', async () => {
+    const suppliers = [
+      { id: 'a', name: 'Supplier A' },
+      { id: 'b', name: 'Supplier B' },
+      { id: 'c', name: 'Supplier C' },
+    ];
+
+    render(
+      <PharmaComboboxSelect
+        name="supplier_id"
+        items={suppliers}
+        value={suppliers[1]}
+        onValueChange={() => {}}
+        itemToStringLabel={supplier => supplier.name}
+        itemToStringValue={supplier => supplier.id}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: /supplier b/i }));
+    const searchInput = screen.getByPlaceholderText('Cari...');
+    const supplierB = screen.getByRole('option', { name: /supplier b/i });
+    const supplierC = screen.getByRole('option', { name: /supplier c/i });
+
+    await waitFor(() => {
+      expect(
+        supplierB.querySelector('[data-pharma-combobox-highlight]')
+      ).toBeTruthy();
+    });
+
+    fireEvent.keyDown(searchInput, { key: 'ArrowDown' });
+
+    await waitFor(() => {
+      expect(
+        supplierC.querySelector('[data-pharma-combobox-highlight]')
+      ).toBeTruthy();
+    });
+  });
+
+  it('skips disabled items when navigating down from the selected visual highlight', async () => {
+    const suppliers = [
+      { id: 'a', name: 'Supplier A' },
+      { id: 'b', name: 'Supplier B' },
+      { disabled: true, id: 'c', name: 'Supplier C' },
+      { id: 'd', name: 'Supplier D' },
+    ];
+
+    render(
+      <PharmaComboboxSelect
+        name="supplier_id"
+        items={suppliers}
+        value={suppliers[1]}
+        onValueChange={() => {}}
+        itemToStringLabel={supplier => supplier.name}
+        itemToStringValue={supplier => supplier.id}
+        isItemDisabled={supplier => Boolean(supplier.disabled)}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: /supplier b/i }));
+    const searchInput = screen.getByPlaceholderText('Cari...');
+    const supplierB = screen.getByRole('option', { name: /supplier b/i });
+    const supplierD = screen.getByRole('option', { name: /supplier d/i });
+
+    await waitFor(() => {
+      expect(
+        supplierB.querySelector('[data-pharma-combobox-highlight]')
+      ).toBeTruthy();
+    });
+
+    fireEvent.keyDown(searchInput, { key: 'ArrowDown' });
+
+    await waitFor(() => {
+      expect(
+        supplierD.querySelector('[data-pharma-combobox-highlight]')
+      ).toBeTruthy();
+    });
+  });
+
+  it('skips disabled items when navigating up from the selected visual highlight', async () => {
+    const suppliers = [
+      { id: 'a', name: 'Supplier A' },
+      { disabled: true, id: 'b', name: 'Supplier B' },
+      { id: 'c', name: 'Supplier C' },
+      { id: 'd', name: 'Supplier D' },
+    ];
+
+    render(
+      <PharmaComboboxSelect
+        name="supplier_id"
+        items={suppliers}
+        value={suppliers[2]}
+        onValueChange={() => {}}
+        itemToStringLabel={supplier => supplier.name}
+        itemToStringValue={supplier => supplier.id}
+        isItemDisabled={supplier => Boolean(supplier.disabled)}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: /supplier c/i }));
+    const searchInput = screen.getByPlaceholderText('Cari...');
+    const supplierA = screen.getByRole('option', { name: /supplier a/i });
+    const supplierC = screen.getByRole('option', { name: /supplier c/i });
+
+    await waitFor(() => {
+      expect(
+        supplierC.querySelector('[data-pharma-combobox-highlight]')
+      ).toBeTruthy();
+    });
+
+    fireEvent.keyDown(searchInput, { key: 'ArrowUp' });
+
+    await waitFor(() => {
+      expect(
+        supplierA.querySelector('[data-pharma-combobox-highlight]')
+      ).toBeTruthy();
+    });
+  });
+
+  it('commits the current visual highlight with Enter from the search input', async () => {
+    const onValueChange = vi.fn();
+    const suppliers = [
+      { id: 'a', name: 'Supplier A' },
+      { id: 'b', name: 'Supplier B' },
+      { id: 'c', name: 'Supplier C' },
+    ];
+
+    render(
+      <PharmaComboboxSelect
+        name="supplier_id"
+        items={suppliers}
+        value={suppliers[1]}
+        onValueChange={onValueChange}
+        itemToStringLabel={supplier => supplier.name}
+        itemToStringValue={supplier => supplier.id}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: /supplier b/i }));
+    const searchInput = screen.getByPlaceholderText('Cari...');
+    const supplierB = screen.getByRole('option', { name: /supplier b/i });
+
+    await waitFor(() => {
+      expect(
+        supplierB.querySelector('[data-pharma-combobox-highlight]')
+      ).toBeTruthy();
+    });
+
+    fireEvent.keyDown(searchInput, { key: 'Enter' });
+
+    expect(onValueChange).toHaveBeenCalledWith(
+      suppliers[1],
+      expect.objectContaining({ reason: 'item-press' })
+    );
   });
 
   it('removes stale options immediately when search has no results', () => {

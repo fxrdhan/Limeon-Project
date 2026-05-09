@@ -57,6 +57,107 @@ test.describe('combobox browser regressions', () => {
     ).toHaveAttribute('for', 'primitive-custom-trigger');
   });
 
+  test('continues keyboard navigation from the selected visual highlight after reopening', async ({
+    page,
+  }) => {
+    await openComboboxHarness(page);
+
+    const trigger = page.getByRole('combobox', { name: /^Obat\b/i });
+    await trigger.click();
+
+    const searchInput = page.getByRole('combobox', { name: /^Cari obat$/i });
+    await searchInput.fill('para');
+    await page.keyboard.press('Enter');
+    await expect(trigger).toContainText('Paracetamol Tablet');
+
+    await trigger.click();
+    const paracetamolOption = page.getByRole('option', {
+      name: /Paracetamol Tablet/i,
+    });
+    await expect(
+      paracetamolOption.locator('[data-pharma-combobox-highlight]')
+    ).toBeVisible();
+
+    await searchInput.click();
+    await page.keyboard.press('ArrowDown');
+
+    await expect(
+      page
+        .getByRole('option', { name: /Vitamin C 500 mg/i })
+        .locator('[data-pharma-combobox-highlight]')
+    ).toBeVisible();
+  });
+
+  test('continues keyboard navigation from an auto-scrolled selected option', async ({
+    page,
+  }) => {
+    await openComboboxHarness(page);
+
+    const trigger = page.getByRole('combobox', { name: /^Kategori\b/i });
+    await trigger.click();
+
+    const searchInput = page.getByRole('combobox', {
+      name: /^Cari kategori$/i,
+    });
+    const selectedOption = page.getByRole('option', { name: /Mukolitik/i });
+    await expect(
+      selectedOption.locator('[data-pharma-combobox-highlight]')
+    ).toBeVisible();
+
+    await searchInput.click();
+    await page.keyboard.press('ArrowDown');
+
+    await expect(
+      page
+        .getByRole('option', { name: /Mydriatic/i })
+        .locator('[data-pharma-combobox-highlight]')
+    ).toBeVisible();
+  });
+
+  test('continues upward keyboard navigation from an auto-scrolled selected option', async ({
+    page,
+  }) => {
+    await openComboboxHarness(page);
+
+    const trigger = page.getByRole('combobox', { name: /^Kategori\b/i });
+    await trigger.click();
+
+    const searchInput = page.getByRole('combobox', {
+      name: /^Cari kategori$/i,
+    });
+    const selectedOption = page.getByRole('option', { name: /Mukolitik/i });
+    await expect(
+      selectedOption.locator('[data-pharma-combobox-highlight]')
+    ).toBeVisible();
+
+    await searchInput.click();
+    await page.keyboard.press('ArrowUp');
+
+    await expect(
+      page
+        .getByRole('option', { name: /Antihistamin/i })
+        .locator('[data-pharma-combobox-highlight]')
+    ).toBeVisible();
+  });
+
+  test('keeps the positioner from clipping popup shadow', async ({ page }) => {
+    await openComboboxHarness(page);
+
+    await page.getByRole('combobox', { name: /^Obat\b/i }).click();
+
+    const popup = page.locator('[data-combobox-popup]');
+    await expect(popup).toBeVisible();
+    await expect(popup).not.toHaveCSS('box-shadow', 'none');
+
+    const positionerOverflow = await popup.evaluate(element => {
+      const positioner = element.parentElement;
+      if (!positioner) return null;
+
+      return getComputedStyle(positioner).overflow;
+    });
+    expect(positionerOverflow).toBe('visible');
+  });
+
   test('flips the popup above a trigger near the viewport bottom', async ({
     page,
   }) => {
@@ -82,5 +183,41 @@ test.describe('combobox browser regressions', () => {
     expect(popupBox.y).toBeGreaterThanOrEqual(0);
     expect(popupBox.x).toBeGreaterThanOrEqual(0);
     expect(popupBox.x + popupBox.width).toBeLessThanOrEqual(viewport.width + 1);
+  });
+
+  test.describe('mobile viewport regressions', () => {
+    test.use({
+      hasTouch: true,
+      isMobile: true,
+      viewport: { height: 700, width: 390 },
+    });
+
+    test('opens and selects an option by touch without horizontal overflow', async ({
+      page,
+    }) => {
+      await openComboboxHarness(page);
+
+      const trigger = page.getByRole('combobox', { name: /^Kategori\b/i });
+      await trigger.tap();
+
+      const popup = page.locator('[data-combobox-popup]');
+      await expect(popup).toBeVisible();
+
+      const popupBox = await getBoundingBox(popup, 'mobile popup');
+      const viewport = page.viewportSize();
+      if (!viewport) throw new Error('Viewport size is unavailable');
+
+      expect(popupBox.x).toBeGreaterThanOrEqual(0);
+      expect(popupBox.x + popupBox.width).toBeLessThanOrEqual(
+        viewport.width + 1
+      );
+
+      await page.getByRole('option', { name: /Mydriatic/i }).tap();
+
+      await expect(trigger).toContainText('Mydriatic');
+      await expect(
+        page.locator('input[type="hidden"][name="category_id"]')
+      ).toHaveValue('cat-mydriatic');
+    });
   });
 });
