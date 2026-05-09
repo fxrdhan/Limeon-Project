@@ -43,13 +43,21 @@ export function PharmaEntityComboboxSelect<Item extends EntityComboboxItem>({
   items,
   ...props
 }: PharmaEntityComboboxSelectProps<Item>) {
+  const fallbackSelectedValue =
+    valueId === ''
+      ? null
+      : ({
+          id: valueId,
+          name: valueId,
+        } as Item);
   const selectedItemValue =
     selectedItem && itemToStringValue(selectedItem) === valueId
       ? selectedItem
       : null;
   const value =
     findComboboxItemByValue(items, valueId, itemToStringValue) ??
-    selectedItemValue;
+    selectedItemValue ??
+    fallbackSelectedValue;
 
   return (
     <PharmaComboboxSelect

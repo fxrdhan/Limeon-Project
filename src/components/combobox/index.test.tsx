@@ -1204,6 +1204,29 @@ describe('Combobox app presets', () => {
     expect(trigger.getAttribute('aria-invalid')).toBeNull();
   });
 
+  it('preserves an entity scalar value while the selected item is unavailable', () => {
+    render(
+      <PharmaEntityComboboxSelect
+        name="supplier_id"
+        items={[]}
+        valueId="supplier-a"
+        onValueIdChange={() => {}}
+        placeholder="Pilih supplier"
+        required
+        validation={{ enabled: true, autoHide: false }}
+      />
+    );
+
+    const trigger = screen.getByRole('combobox');
+    expect(trigger.textContent).toContain('supplier-a');
+    expect(
+      document.querySelector('input[name="supplier_id"]')?.getAttribute('value')
+    ).toBe('supplier-a');
+
+    fireEvent.blur(trigger, { relatedTarget: document.body });
+    expect(trigger.getAttribute('aria-invalid')).toBeNull();
+  });
+
   it('resets searchable preset input when the popup closes without a selection', () => {
     render(
       <PharmaComboboxSelect

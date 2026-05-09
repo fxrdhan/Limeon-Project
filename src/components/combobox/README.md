@@ -125,7 +125,7 @@ Use the entity preset when a standard id-backed PharmaSys select is needed:
 />
 ```
 
-If the selected id can outlive the current option list, pass `selectedItem`. This keeps the trigger label, hidden form value, and required validation tied to the selected entity while options are still loading or temporarily filtered by the caller.
+If the selected id can outlive the current option list, pass `selectedItem` when available. The scalar `valueId` is still preserved for hidden form submission and required validation while options are loading; `selectedItem` keeps the trigger label human-readable during that gap.
 
 ```tsx
 <PharmaEntityComboboxSelect
