@@ -70,6 +70,7 @@ Available parts:
 - `value`, `defaultValue`, `onValueChange`
 - `open`, `defaultOpen`, `onOpenChange`
 - `inputValue`, `defaultInputValue`, `onInputValueChange`, `autoComplete`
+- `highlightedIndex`, `defaultHighlightedIndex`, `onHighlightedIndexChange`
 - `onItemHighlighted`
 - `filter`
 - `itemToStringLabel`, `itemToStringValue`, `isItemEqualToValue`
@@ -77,7 +78,9 @@ Available parts:
 - `name`, `form`, `disabled`, `readOnly`, `required`
 - `autoHighlight`, `highlightItemOnHover`
 
-Change callbacks receive cancelable event details with `reason`, `event`, `cancel()`, `allowPropagation()`, `isCanceled`, and `isPropagationAllowed`.
+Change callbacks receive cancelable event details with `reason`, `event`, `cancel()`, and `isCanceled`.
+
+When a popup is open, pressing outside both the trigger and the portaled popup requests close with reason `outside-press`. Controlled `open` callers and `details.cancel()` still decide whether that close request takes effect.
 
 `autoComplete` sets the default native `autocomplete` attribute for `Combobox.Input`. A direct `autoComplete` prop on `Combobox.Input` wins over the root default.
 
@@ -103,7 +106,7 @@ Stable local `data-*` states include `data-selected`, `data-highlighted`, `data-
 
 `Combobox.Popup initialFocus` focuses the first focusable popup control only when explicitly enabled.
 
-`Combobox.HighlightController` exposes the current highlighted index and a typed `setHighlightedIndex` action to advanced compositions that need to align primitive highlight state with an existing visual anchor. It must not be used to change selection directly.
+`highlightedIndex` controls the primitive highlighted option declaratively. Prefer it over imperative highlight syncing for advanced compositions. `Combobox.HighlightController` remains available only for legacy advanced compositions that cannot use controlled highlighted state; it must not be used to change selection directly.
 
 ## App Preset
 
@@ -187,7 +190,7 @@ If a scalar select uses a non-null empty sentinel such as `''`, pass `isValueEmp
 
 ## Preset Behavior Contract
 
-`PharmaComboboxSelect` is the production app adapter. The local primitive owns ARIA roles, focus/reference wiring, option registry, keyboard navigation, selected value state, hidden form value, filtered item rendering, and cancelable callback details.
+`PharmaComboboxSelect` is the production app adapter. The local primitive owns ARIA roles, focus/reference wiring, option registry, keyboard navigation, highlighted option state, selected value state, hidden form value, filtered item rendering, and cancelable callback details.
 
 The preset owns:
 
@@ -196,15 +199,16 @@ The preset owns:
 - The animated visual highlight background, including hover continuity, keyboard scroll pinning, wrap-to-edge scroll behavior, stationary-pointer suppression, and the selected/default visual anchor after search is cleared.
 - The popup search input's visual active state. Arrow navigation may keep DOM focus on the input, but it must not make the search field look actively focused unless the user is typing or pointing at the input.
 
-The shared boundary is item highlighting. The primitive owns `activeIndex` and emits `onItemHighlighted`; the preset owns the final visual background when `visualBackgroundValue` is set.
+The shared boundary is item highlighting. The primitive owns the semantic highlighted index. The preset controls that index declaratively through `highlightedIndex` and renders the existing animated visual background from it. Non-searchable selects preserve the legacy first-arrow keyboard behavior while still avoiding imperative highlight controller syncing in production.
 
 Rules for maintaining this boundary:
 
 - Do not let the visual background directly change submitted value or selection. Selection must still happen through primitive item press or keyboard handling.
-- It is valid for the preset to sync `visualBackgroundValue` back into the primitive before Arrow/Enter handling so keyboard navigation starts from the visible highlight anchor.
+- Searchable preset keyboard navigation must continue from the visible highlight anchor through the primitive controlled highlighted index.
 - Clearing search must restore the visual highlight to the selected enabled item when it is visible, otherwise to the first enabled visible item.
 - Keyboard scroll and pointer hover must remain arbitrated by the preset so a stationary cursor does not steal highlight while Arrow navigation scrolls the list.
 - `value`/`valueId` is the selected value source of truth. `inputValue` is only the transient search query and is cleared when the popup actually closes.
+- Outside pointer dismissal is primitive-owned and must ignore presses inside the trigger or portaled popup.
 - Controlled `open` callers own whether a close request takes effect. The preset must not run close cleanup when `onOpenChange(false)` fires but `open` remains `true`.
 - `details.cancel()` from primitive callbacks prevents preset side effects for that transition.
 - Hover detail must never change selection, focus, or submitted value.

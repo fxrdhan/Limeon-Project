@@ -57,6 +57,20 @@ test.describe('combobox browser regressions', () => {
     ).toHaveAttribute('for', 'primitive-custom-trigger');
   });
 
+  test('closes the portaled popup after pressing outside', async ({ page }) => {
+    await openComboboxHarness(page);
+
+    const trigger = page.getByRole('combobox', { name: /^Obat\b/i });
+    await trigger.click();
+
+    await expect(page.getByRole('listbox')).toBeVisible();
+    await page
+      .getByRole('heading', { name: /combobox regression harness/i })
+      .click();
+
+    await expect(page.getByRole('listbox')).toHaveCount(0);
+  });
+
   test('continues keyboard navigation from the selected visual highlight after reopening', async ({
     page,
   }) => {

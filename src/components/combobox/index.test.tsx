@@ -279,6 +279,137 @@ describe('Combobox primitive', () => {
     ).toBe(false);
   });
 
+  it('lets callers control highlighted index declaratively', () => {
+    function ControlledHighlightedCombobox() {
+      const [highlightedIndex, setHighlightedIndex] = useState<number | null>(
+        1
+      );
+
+      return (
+        <Combobox.Root
+          items={fruitItems}
+          defaultOpen
+          highlightedIndex={highlightedIndex}
+          onHighlightedIndexChange={setHighlightedIndex}
+          itemToStringLabel={item => item}
+          itemToStringValue={item => item}
+        >
+          <Combobox.Trigger aria-label="Fruit">
+            <Combobox.Value placeholder="Choose fruit" />
+          </Combobox.Trigger>
+          <Combobox.Portal>
+            <Combobox.Positioner>
+              <Combobox.Popup initialFocus={false}>
+                <Combobox.List<string>>
+                  {(item, index) => (
+                    <Combobox.Item key={item} value={item} index={index}>
+                      {item}
+                    </Combobox.Item>
+                  )}
+                </Combobox.List>
+              </Combobox.Popup>
+            </Combobox.Positioner>
+          </Combobox.Portal>
+        </Combobox.Root>
+      );
+    }
+
+    render(<ControlledHighlightedCombobox />);
+
+    const trigger = screen.getByRole('combobox', { name: /fruit/i });
+    const banana = screen.getByRole('option', { name: /banana/i });
+    const cherry = screen.getByRole('option', { name: /cherry/i });
+
+    expect(banana.hasAttribute('data-highlighted')).toBe(true);
+    expect(trigger.getAttribute('aria-activedescendant')).toBe(banana.id);
+
+    fireEvent.keyDown(trigger, { key: 'ArrowDown' });
+
+    expect(cherry.hasAttribute('data-highlighted')).toBe(true);
+    expect(trigger.getAttribute('aria-activedescendant')).toBe(cherry.id);
+  });
+
+  it('closes the portaled popup on outside pointer down', async () => {
+    const onOpenChange = vi.fn();
+
+    render(
+      <Combobox.Root
+        items={fruitItems}
+        onOpenChange={onOpenChange}
+        itemToStringLabel={item => item}
+        itemToStringValue={item => item}
+      >
+        <Combobox.Trigger aria-label="Fruit">
+          <Combobox.Value placeholder="Choose fruit" />
+        </Combobox.Trigger>
+        <Combobox.Portal>
+          <Combobox.Positioner>
+            <Combobox.Popup initialFocus={false}>
+              <Combobox.List<string>>
+                {(item, index) => (
+                  <Combobox.Item key={item} value={item} index={index}>
+                    {item}
+                  </Combobox.Item>
+                )}
+              </Combobox.List>
+            </Combobox.Popup>
+          </Combobox.Positioner>
+        </Combobox.Portal>
+      </Combobox.Root>
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: /fruit/i }));
+    expect(screen.getByRole('listbox')).toBeTruthy();
+
+    fireEvent.pointerDown(screen.getByRole('option', { name: /apple/i }));
+    expect(screen.getByRole('listbox')).toBeTruthy();
+
+    fireEvent.pointerDown(document.body);
+
+    await waitFor(() => {
+      expect(screen.queryByRole('listbox')).toBeNull();
+    });
+    expect(onOpenChange).toHaveBeenLastCalledWith(
+      false,
+      expect.objectContaining({ reason: 'outside-press' })
+    );
+  });
+
+  it('lets callers cancel outside pointer dismissal', () => {
+    render(
+      <Combobox.Root
+        items={fruitItems}
+        defaultOpen
+        onOpenChange={(_open, details) => {
+          details.cancel();
+        }}
+        itemToStringLabel={item => item}
+        itemToStringValue={item => item}
+      >
+        <Combobox.Trigger aria-label="Fruit">
+          <Combobox.Value placeholder="Choose fruit" />
+        </Combobox.Trigger>
+        <Combobox.Portal>
+          <Combobox.Positioner>
+            <Combobox.Popup initialFocus={false}>
+              <Combobox.List<string>>
+                {(item, index) => (
+                  <Combobox.Item key={item} value={item} index={index}>
+                    {item}
+                  </Combobox.Item>
+                )}
+              </Combobox.List>
+            </Combobox.Popup>
+          </Combobox.Positioner>
+        </Combobox.Portal>
+      </Combobox.Root>
+    );
+
+    fireEvent.pointerDown(document.body);
+
+    expect(screen.getByRole('listbox')).toBeTruthy();
+  });
+
   it('keeps required semantics out of the hidden submitted value', () => {
     render(
       <Combobox.Root

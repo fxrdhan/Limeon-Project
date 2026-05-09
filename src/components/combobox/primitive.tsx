@@ -27,15 +27,14 @@ type EventReason =
   | 'item-press'
   | 'keyboard'
   | 'none'
+  | 'outside-press'
   | 'pointer'
   | 'trigger-press';
 
 export type ComboboxEventDetails = {
-  allowPropagation: () => void;
   cancel: () => void;
   event?: Event;
   isCanceled: boolean;
-  isPropagationAllowed: boolean;
   reason: EventReason;
 };
 
@@ -79,6 +78,7 @@ type ComboboxContextValue<Value> = {
   listboxId: string;
   name?: string;
   open: boolean;
+  popupRef: React.RefObject<HTMLElement | null>;
   readOnly: boolean;
   registerItem: (index: number, meta: ItemMeta<Value>) => () => void;
   required: boolean;
@@ -147,6 +147,7 @@ export type ComboboxRootProps<Value> = {
   autoComplete?: string;
   autoHighlight?: boolean;
   children?: React.ReactNode;
+  defaultHighlightedIndex?: number | null;
   defaultInputValue?: string;
   defaultOpen?: boolean;
   defaultValue?: Value | null;
@@ -161,6 +162,7 @@ export type ComboboxRootProps<Value> = {
   filteredItems?: readonly Value[];
   form?: string;
   highlightItemOnHover?: boolean;
+  highlightedIndex?: number | null;
   inputValue?: string;
   isItemEqualToValue?: (itemValue: Value, value: Value) => boolean;
   itemToStringLabel?: (itemValue: Value) => string;
@@ -171,6 +173,10 @@ export type ComboboxRootProps<Value> = {
   onInputValueChange?: (
     inputValue: string,
     eventDetails: ComboboxChangeEventDetails
+  ) => void;
+  onHighlightedIndexChange?: (
+    highlightedIndex: number | null,
+    eventDetails: ComboboxHighlightEventDetails
   ) => void;
   onItemHighlighted?: (
     itemValue: Value | undefined,
@@ -298,21 +304,14 @@ const createEventDetails = (
   event?: React.SyntheticEvent | Event
 ): ComboboxChangeEventDetails => {
   let canceled = false;
-  let propagationAllowed = false;
 
   return {
-    allowPropagation: () => {
-      propagationAllowed = true;
-    },
     cancel: () => {
       canceled = true;
     },
     event: getNativeEvent(event),
     get isCanceled() {
       return canceled;
-    },
-    get isPropagationAllowed() {
-      return propagationAllowed;
     },
     reason,
   };
@@ -361,6 +360,18 @@ const callIfFunction = <EventType extends React.SyntheticEvent>(
   handler?.(event);
 };
 
+const normalizeHighlightedIndex = (
+  index: number | null | undefined,
+  itemCount: number
+) =>
+  index === null ||
+  index === undefined ||
+  !Number.isInteger(index) ||
+  index < 0 ||
+  index >= itemCount
+    ? null
+    : index;
+
 const getNextEnabledIndex = <Value,>({
   direction,
   fromIndex,
@@ -397,6 +408,7 @@ function ComboboxRootComponent<Value>({
   autoHighlight = false,
   children,
   defaultInputValue = '',
+  defaultHighlightedIndex = null,
   defaultOpen = false,
   defaultValue = null,
   disabled = false,
@@ -404,6 +416,7 @@ function ComboboxRootComponent<Value>({
   filteredItems: filteredItemsProp,
   form,
   highlightItemOnHover = true,
+  highlightedIndex: highlightedIndexProp,
   inputValue: inputValueProp,
   isItemEqualToValue: isItemEqualToValueProp,
   itemToStringLabel: itemToStringLabelProp,
@@ -411,6 +424,7 @@ function ComboboxRootComponent<Value>({
   labelId: labelIdProp,
   items = [],
   name,
+  onHighlightedIndexChange,
   onInputValueChange,
   onItemHighlighted,
   onOpenChange,
@@ -422,20 +436,18 @@ function ComboboxRootComponent<Value>({
 }: ComboboxRootProps<Value>) {
   const generatedId = useId();
   const triggerRef = useRef<HTMLElement | null>(null);
+  const popupRef = useRef<HTMLElement | null>(null);
   const itemMetaRef = useRef(new Map<number, ItemMeta<Value>>());
   const filteredItemsRef = useRef<Value[]>([]);
   const activeIndexRef = useRef<number | null>(null);
-  const lastHighlightedRef = useRef<{
-    index: number;
-    value: Value | undefined;
-  }>({ index: -1, value: undefined });
   const [uncontrolledInputValue, setUncontrolledInputValue] =
     useState(defaultInputValue);
+  const [uncontrolledHighlightedIndex, setUncontrolledHighlightedIndex] =
+    useState<number | null>(defaultHighlightedIndex);
   const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen);
   const [uncontrolledValue, setUncontrolledValue] = useState<Value | null>(
     defaultValue
   );
-  const [activeIndexState, setActiveIndexState] = useState<number | null>(null);
   const [registeredLabelId, setRegisteredLabelIdState] = useState<
     string | undefined
   >(undefined);
@@ -484,6 +496,13 @@ function ComboboxRootComponent<Value>({
     );
   }, [filter, filteredItemsProp, inputValue, itemToStringLabel, items]);
 
+  const activeIndexState = normalizeHighlightedIndex(
+    highlightedIndexProp !== undefined
+      ? highlightedIndexProp
+      : uncontrolledHighlightedIndex,
+    filteredItems.length
+  );
+
   filteredItemsRef.current = filteredItems;
   activeIndexRef.current = activeIndexState;
 
@@ -527,22 +546,24 @@ function ComboboxRootComponent<Value>({
       reason: EventReason,
       event?: React.SyntheticEvent | Event
     ) => {
-      const normalizedIndex =
-        nextIndex === null ||
-        nextIndex < 0 ||
-        nextIndex >= filteredItemsRef.current.length
-          ? null
-          : nextIndex;
+      const normalizedIndex = normalizeHighlightedIndex(
+        nextIndex,
+        filteredItemsRef.current.length
+      );
       const nextValue =
         normalizedIndex === null
           ? undefined
           : filteredItemsRef.current[normalizedIndex];
-      const previousHighlight = lastHighlightedRef.current;
-      const sameIndex = previousHighlight.index === (normalizedIndex ?? -1);
+      const currentIndex = activeIndexRef.current;
+      const currentValue =
+        currentIndex === null
+          ? undefined
+          : filteredItemsRef.current[currentIndex];
+      const sameIndex = currentIndex === normalizedIndex;
       const sameValue =
-        previousHighlight.value === undefined || nextValue === undefined
-          ? previousHighlight.value === nextValue
-          : isItemEqualToValue(previousHighlight.value, nextValue);
+        currentValue === undefined || nextValue === undefined
+          ? currentValue === nextValue
+          : isItemEqualToValue(currentValue, nextValue);
 
       if (sameIndex && sameValue) return;
 
@@ -553,15 +574,20 @@ function ComboboxRootComponent<Value>({
       );
       onItemHighlighted?.(nextValue, details);
       if (details.isCanceled) return;
+      onHighlightedIndexChange?.(normalizedIndex, details);
+      if (details.isCanceled) return;
 
       activeIndexRef.current = normalizedIndex;
-      setActiveIndexState(normalizedIndex);
-      lastHighlightedRef.current = {
-        index: normalizedIndex ?? -1,
-        value: nextValue,
-      };
+      if (highlightedIndexProp === undefined) {
+        setUncontrolledHighlightedIndex(normalizedIndex);
+      }
     },
-    [isItemEqualToValue, onItemHighlighted]
+    [
+      highlightedIndexProp,
+      isItemEqualToValue,
+      onHighlightedIndexChange,
+      onItemHighlighted,
+    ]
   );
 
   const selectItem = useCallback(
@@ -616,6 +642,30 @@ function ComboboxRootComponent<Value>({
       currentLabelId === nextLabelId ? currentLabelId : nextLabelId
     );
   }, []);
+
+  useEffect(() => {
+    if (!open || typeof document === 'undefined') return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+
+      if (
+        triggerRef.current?.contains(target) ||
+        popupRef.current?.contains(target)
+      ) {
+        return;
+      }
+
+      setOpen(false, 'outside-press', event);
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+    };
+  }, [open, setOpen]);
 
   useEffect(() => {
     if (!open) {
@@ -680,6 +730,7 @@ function ComboboxRootComponent<Value>({
       listboxId: `${generatedId}-listbox`,
       name,
       open,
+      popupRef,
       readOnly,
       registerItem,
       required,
@@ -1015,21 +1066,28 @@ function ComboboxPopup({
   ...props
 }: ComboboxPopupProps) {
   const context = useComboboxContext<unknown>();
-  const popupRef = useRef<HTMLDivElement | null>(null);
+
+  const setPopupRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      context.popupRef.current = node;
+    },
+    [context.popupRef]
+  );
 
   useEffect(() => {
     if (!context.open || !initialFocus) return;
 
     const focusTarget =
-      popupRef.current?.querySelector<HTMLElement>(popupFocusableSelector) ??
-      null;
+      context.popupRef.current?.querySelector<HTMLElement>(
+        popupFocusableSelector
+      ) ?? null;
     focusTarget?.focus({ preventScroll: true });
-  }, [context.open, initialFocus]);
+  }, [context.open, context.popupRef, initialFocus]);
 
   if (!context.open) return null;
 
   return (
-    <div data-combobox-popup="" {...props} ref={popupRef}>
+    <div data-combobox-popup="" {...props} ref={setPopupRef}>
       {children}
     </div>
   );
