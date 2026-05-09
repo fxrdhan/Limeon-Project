@@ -74,7 +74,8 @@ Available parts:
 - `name`, `form`, `disabled`, `readOnly`, `required`
 - `modal`, `autoHighlight`, `highlightItemOnHover`
 
-Change callbacks receive Base UI event details with `reason` and `event`.
+Change callbacks receive the native Base UI event details, including `reason`,
+`event`, `cancel()`, and `allowPropagation()`.
 
 `autoHighlight` defaults to `false` in the primitive. Presets can opt into select-like behavior explicitly. Item values are not inspected for app-specific flags by default; use `Combobox.Item disabled` when an item should not be selectable.
 
@@ -118,6 +119,9 @@ import { PharmaEntityComboboxSelect } from '@/components/combobox/entity-select'
 
 Use the generic app preset directly when values are not `id`/`name` entities or
 when the caller needs full control over object stringification and equality.
+The preset also exposes `isItemDisabled` and `itemToHoverDetailData` so item
+availability and hover metadata stay explicit at the call site when the item
+shape is not `ComboboxOption`.
 
 Enum/list-only selects should pass primitive values directly:
 
@@ -154,5 +158,9 @@ as empty:
   required
 />
 ```
+
+`onOpenChange` receives the same Base UI event details as the primitive, so
+callers can inspect close reasons or cancel an open-state transition when they
+own the surrounding workflow.
 
 Do not add app-specific props to `Combobox.Root`. Compose app behavior around the primitive parts or extend the preset.

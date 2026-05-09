@@ -52,16 +52,6 @@ export interface HoverDetailData extends ComboboxItem {
   updatedAt?: string | null;
 }
 
-export interface BaseUIChangeEventDetails<Reason extends string = string> {
-  reason: Reason;
-  event: Event | null;
-  trigger: Element | undefined;
-  cancel: () => void;
-  allowPropagation: () => void;
-  readonly isCanceled: boolean;
-  readonly isPropagationAllowed: boolean;
-}
-
 export type BadgeVariant =
   | 'primary'
   | 'secondary'

@@ -256,7 +256,7 @@ describe('Combobox app presets', () => {
     );
 
     const trigger = screen.getByRole('combobox', { name: /pilih kategori/i });
-    fireEvent.blur(trigger);
+    fireEvent.blur(trigger, { relatedTarget: document.body });
     fireEvent.click(trigger);
     fireEvent.change(screen.getByPlaceholderText('Cari...'), {
       target: { value: 'Analgesik' },
@@ -277,6 +277,32 @@ describe('Combobox app presets', () => {
     expect(screen.getAllByText('Field ini wajib diisi').length).toBeGreaterThan(
       0
     );
+  });
+
+  it('does not mark required fields invalid while focus stays inside the popup', () => {
+    render(
+      <PharmaComboboxSelect<EntityItem>
+        name="category_id"
+        items={[{ id: 'category-a', name: 'Kategori A' }]}
+        value={null}
+        onValueChange={() => {}}
+        itemToStringLabel={item => item.name}
+        itemToStringValue={item => item.id}
+        placeholder="Pilih kategori"
+        required
+        validation={{ enabled: true, autoHide: false }}
+      />
+    );
+
+    const trigger = screen.getByRole('combobox', { name: /pilih kategori/i });
+    fireEvent.click(trigger);
+    const searchInput = screen.getByPlaceholderText('Cari...');
+
+    fireEvent.blur(trigger, { relatedTarget: searchInput });
+    expect(trigger.getAttribute('aria-invalid')).toBeNull();
+
+    fireEvent.blur(searchInput, { relatedTarget: document.body });
+    expect(trigger.getAttribute('aria-invalid')).toBe('true');
   });
 
   it('creates a missing entity from the search input with Enter', () => {
@@ -330,7 +356,7 @@ describe('Combobox app presets', () => {
     );
 
     const trigger = screen.getByRole('combobox', { name: /pilih status/i });
-    fireEvent.blur(trigger);
+    fireEvent.blur(trigger, { relatedTarget: document.body });
 
     expect(screen.getAllByText('Field ini wajib diisi').length).toBeGreaterThan(
       0
@@ -343,6 +369,95 @@ describe('Combobox app presets', () => {
       'active',
       expect.objectContaining({ reason: 'item-press' })
     );
+  });
+
+  it('preserves Base UI cancellation semantics for preset value changes', () => {
+    const onValueChange = vi.fn();
+
+    render(
+      <PharmaComboboxSelect
+        name="supplier_id"
+        items={[
+          { id: 'a', name: 'Supplier A' },
+          { id: 'b', name: 'Supplier B' },
+        ]}
+        value={null}
+        onValueChange={(item, details) => {
+          onValueChange(item, details);
+          details.cancel();
+        }}
+        itemToStringLabel={supplier => supplier.name}
+        itemToStringValue={supplier => supplier.id}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: /pilih/i }));
+    const searchInput = screen.getByPlaceholderText('Cari...');
+    fireEvent.change(searchInput, {
+      target: { value: 'Supplier B' },
+    });
+    fireEvent.click(screen.getByRole('option', { name: /supplier b/i }));
+
+    expect(onValueChange).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'b' }),
+      expect.objectContaining({ reason: 'item-press' })
+    );
+    expect((searchInput as HTMLInputElement).value).toBe('Supplier B');
+    expect(screen.queryByRole('option', { name: /supplier a/i })).toBeNull();
+    expect(screen.getByRole('listbox')).toBeTruthy();
+  });
+
+  it('preserves Base UI cancellation semantics for preset open changes', () => {
+    const onOpenChange = vi.fn();
+
+    render(
+      <PharmaComboboxSelect
+        name="supplier_id"
+        items={[{ id: 'a', name: 'Supplier A' }]}
+        value={null}
+        onValueChange={() => {}}
+        itemToStringLabel={supplier => supplier.name}
+        itemToStringValue={supplier => supplier.id}
+        onOpenChange={(nextOpen, details) => {
+          onOpenChange(nextOpen, details);
+          details.cancel();
+        }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: /pilih/i }));
+
+    expect(onOpenChange).toHaveBeenCalledWith(
+      true,
+      expect.objectContaining({ reason: expect.any(String) })
+    );
+    expect(screen.queryByRole('listbox')).toBeNull();
+  });
+
+  it('lets callers declare disabled items without relying on object shape', () => {
+    const onValueChange = vi.fn();
+
+    render(
+      <PharmaComboboxSelect
+        name="status"
+        items={['active', 'archived']}
+        value={null}
+        onValueChange={onValueChange}
+        itemToStringLabel={value =>
+          value === 'active' ? 'Aktif' : 'Diarsipkan'
+        }
+        itemToStringValue={value => value}
+        isItemDisabled={value => value === 'archived'}
+        searchable={false}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: /pilih/i }));
+    const disabledOption = screen.getByRole('option', { name: /diarsipkan/i });
+
+    expect(disabledOption.hasAttribute('data-disabled')).toBe(true);
+    fireEvent.click(disabledOption);
+    expect(onValueChange).not.toHaveBeenCalled();
   });
 
   it('lets entity selects work with scalar form ids', () => {
@@ -616,7 +731,10 @@ describe('Combobox app presets', () => {
     });
     fireEvent.keyDown(searchInput, { key: 'Escape' });
 
-    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(onOpenChange).toHaveBeenCalledWith(
+      false,
+      expect.objectContaining({ reason: 'escape-key' })
+    );
     expect((searchInput as HTMLInputElement).value).toBe('Supplier B');
     expect(screen.queryByRole('option', { name: /supplier a/i })).toBeNull();
   });

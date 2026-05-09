@@ -38,8 +38,14 @@ import {
 export type PharmaComboboxChangeDetails<Item> = Parameters<
   NonNullable<ComboboxRootProps<Item>['onValueChange']>
 >[1];
+export type PharmaComboboxOpenChangeDetails<Item> = Parameters<
+  NonNullable<ComboboxRootProps<Item>['onOpenChange']>
+>[1];
 type BaseUIPreventableSyntheticEvent = React.SyntheticEvent & {
   preventBaseUIHandler?: () => void;
+};
+type ComboboxItemRecord = Partial<HoverDetailData> & {
+  disabled?: boolean;
 };
 
 export interface PharmaComboboxSelectProps<Item> {
@@ -55,7 +61,9 @@ export interface PharmaComboboxSelectProps<Item> {
   itemToStringLabel: (item: Item) => string;
   itemToStringValue: (item: Item) => string;
   isItemEqualToValue?: (item: Item, value: Item) => boolean;
+  isItemDisabled?: (item: Item) => boolean;
   isValueEmpty?: ComboboxValueIsEmpty<Item>;
+  itemToHoverDetailData?: (item: Item) => Partial<HoverDetailData>;
   placeholder?: string;
   searchable?: boolean;
   indicator?: ComboboxIndicatorKind;
@@ -82,7 +90,10 @@ export interface PharmaComboboxSelectProps<Item> {
   onFetchHoverDetail?: (id: string) => Promise<HoverDetailData | null>;
   onFetchHoverDetailError?: (error: unknown, id: string) => void;
   open?: boolean;
-  onOpenChange?: (open: boolean) => void;
+  onOpenChange?: (
+    open: boolean,
+    details: PharmaComboboxOpenChangeDetails<Item>
+  ) => void;
   'aria-label'?: string;
   'aria-labelledby'?: string;
   'aria-describedby'?: string;
@@ -115,11 +126,30 @@ const selectedOptionScrollTopInset = 4;
 const keyboardScrollHighlightMaxHold = 700;
 const requiredValidationMessage = 'Field ini wajib diisi';
 
-const isDisabledItem = <Item,>(item: Item) =>
-  typeof item === 'object' &&
-  item !== null &&
-  'disabled' in item &&
-  Boolean(item.disabled);
+const getComboboxItemRecord = <Item,>(item: Item): ComboboxItemRecord =>
+  typeof item === 'object' && item !== null ? (item as ComboboxItemRecord) : {};
+
+const getDefaultItemDisabled = <Item,>(item: Item) =>
+  Boolean(getComboboxItemRecord(item).disabled);
+
+const getDefaultHoverDetailData = <Item,>(
+  item: Item
+): Partial<HoverDetailData> => {
+  const itemRecord = getComboboxItemRecord(item);
+
+  return {
+    display: itemRecord.display,
+    data: itemRecord.data,
+    code: itemRecord.code,
+    description: itemRecord.description,
+    metaLabel: itemRecord.metaLabel,
+    metaTone: itemRecord.metaTone,
+    created_at: itemRecord.created_at,
+    createdAt: itemRecord.createdAt,
+    updated_at: itemRecord.updated_at,
+    updatedAt: itemRecord.updatedAt,
+  };
+};
 
 const isElementVisibleInList = (element: HTMLElement, list: HTMLElement) => {
   const elementRect = element.getBoundingClientRect();
@@ -154,7 +184,9 @@ export function PharmaComboboxSelect<Item>({
   itemToStringLabel,
   itemToStringValue,
   isItemEqualToValue,
+  isItemDisabled: isItemDisabledProp = getDefaultItemDisabled,
   isValueEmpty,
+  itemToHoverDetailData,
   placeholder = '-- Pilih --',
   searchable = true,
   indicator = 'none',
@@ -181,6 +213,7 @@ export function PharmaComboboxSelect<Item>({
   const popupContentRef = useRef<HTMLDivElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const blurValidationFrameRef = useRef<number | null>(null);
   const releaseHeldHighlightFrameRef = useRef<number | null>(null);
   const listPointerPositionRef = useRef<{ x: number; y: number } | null>(null);
   const keyboardHoverResumePointerPositionRef = useRef<{
@@ -254,6 +287,10 @@ export function PharmaComboboxSelect<Item>({
         : Object.is(item, itemValue),
     [isItemEqualToValue]
   );
+  const isItemDisabled = useCallback(
+    (item: Item) => isItemDisabledProp(item),
+    [isItemDisabledProp]
+  );
   const selectedVisibleIndex = useMemo(
     () =>
       selectedValue == null
@@ -262,15 +299,15 @@ export function PharmaComboboxSelect<Item>({
     [isSameItem, selectedValue, visibleItems]
   );
   const firstHighlightableVisibleItem = useMemo(
-    () => visibleItems.find(item => !isDisabledItem(item)) ?? null,
-    [visibleItems]
+    () => visibleItems.find(item => !isItemDisabled(item)) ?? null,
+    [isItemDisabled, visibleItems]
   );
   const isItemVisibleAndEnabled = useCallback(
     (targetItem: Item) =>
       visibleItems.some(
-        item => isSameItem(item, targetItem) && !isDisabledItem(item)
+        item => isSameItem(item, targetItem) && !isItemDisabled(item)
       ),
-    [isSameItem, visibleItems]
+    [isItemDisabled, isSameItem, visibleItems]
   );
   const isItemVisuallyHighlighted = useCallback(
     (item: Item, baseHighlighted: boolean) =>
@@ -308,27 +345,18 @@ export function PharmaComboboxSelect<Item>({
   });
   const getItemHoverDetailData = useCallback(
     (item: Item): Partial<HoverDetailData> => {
-      const itemRecord =
-        typeof item === 'object' && item !== null
-          ? (item as Partial<HoverDetailData>)
-          : {};
+      const id = itemToStringValue(item);
+      const name = itemToStringLabel(item);
+      const customData = itemToHoverDetailData?.(item);
 
       return {
-        id: itemToStringValue(item),
-        name: itemToStringLabel(item),
-        display: itemRecord.display,
-        data: itemRecord.data,
-        code: itemRecord.code,
-        description: itemRecord.description,
-        metaLabel: itemRecord.metaLabel,
-        metaTone: itemRecord.metaTone,
-        created_at: itemRecord.created_at,
-        createdAt: itemRecord.createdAt,
-        updated_at: itemRecord.updated_at,
-        updatedAt: itemRecord.updatedAt,
+        ...getDefaultHoverDetailData(item),
+        ...customData,
+        id,
+        name,
       };
     },
-    [itemToStringLabel, itemToStringValue]
+    [itemToHoverDetailData, itemToStringLabel, itemToStringValue]
   );
   const runItemHoverDetail = useCallback(
     (
@@ -431,7 +459,7 @@ export function PharmaComboboxSelect<Item>({
         : null);
     pendingScrollHoverRef.current = null;
 
-    if (!hoverTarget || isDisabledItem(hoverTarget.item)) return;
+    if (!hoverTarget || isItemDisabled(hoverTarget.item)) return;
 
     clearKeyboardScrollHighlight();
     visualHighlightedValueRef.current = hoverTarget.item;
@@ -440,7 +468,12 @@ export function PharmaComboboxSelect<Item>({
     runItemHoverDetail(hoverTarget.item, hoverTarget.element, {
       immediate: true,
     });
-  }, [clearKeyboardScrollHighlight, getPointerHoverTarget, runItemHoverDetail]);
+  }, [
+    clearKeyboardScrollHighlight,
+    getPointerHoverTarget,
+    isItemDisabled,
+    runItemHoverDetail,
+  ]);
   const handleListScroll = useCallback(() => {
     if (!hoverDetailEnabled) return;
 
@@ -458,7 +491,7 @@ export function PharmaComboboxSelect<Item>({
   }, [flushScrollHover, hideHoverDetail, hoverDetailEnabled]);
   const handleOptionHover = useCallback(
     (item: Item, element: HTMLElement) => {
-      if (isDisabledItem(item)) return;
+      if (isItemDisabled(item)) return;
       if (isKeyboardNavigatingRef.current) return;
 
       clearKeyboardScrollHighlight();
@@ -475,7 +508,12 @@ export function PharmaComboboxSelect<Item>({
 
       runItemHoverDetail(item, element);
     },
-    [clearKeyboardScrollHighlight, hoverDetailEnabled, runItemHoverDetail]
+    [
+      clearKeyboardScrollHighlight,
+      hoverDetailEnabled,
+      isItemDisabled,
+      runItemHoverDetail,
+    ]
   );
   const handleListPointerMove = useCallback(
     (
@@ -503,11 +541,16 @@ export function PharmaComboboxSelect<Item>({
       isKeyboardNavigatingRef.current = false;
       keyboardHoverResumePointerPositionRef.current = null;
       const hoverTarget = getPointerHoverTarget();
-      if (!hoverTarget || isDisabledItem(hoverTarget.item)) return;
+      if (!hoverTarget || isItemDisabled(hoverTarget.item)) return;
 
       handleOptionHover(hoverTarget.item, hoverTarget.element);
     },
-    [getPointerHoverTarget, handleOptionHover, updateListPointerPosition]
+    [
+      getPointerHoverTarget,
+      handleOptionHover,
+      isItemDisabled,
+      updateListPointerPosition,
+    ]
   );
   const scheduleKeyboardHighlightedScroll = useCallback(
     (targetVisibleIndex: number, sourceVisibleIndex: number | null) => {
@@ -554,7 +597,10 @@ export function PharmaComboboxSelect<Item>({
   );
   const activeBackgroundLayoutId = `combobox-active-background-${instanceId}-${inputValue}`;
   const handleOpenChange = useCallback(
-    (nextOpen: boolean) => {
+    (nextOpen: boolean, details: PharmaComboboxOpenChangeDetails<Item>) => {
+      onOpenChange?.(nextOpen, details);
+      if (details.isCanceled) return;
+
       setUncontrolledOpen(nextOpen);
       if (!nextOpen) {
         hideHoverDetail();
@@ -566,7 +612,6 @@ export function PharmaComboboxSelect<Item>({
         setVisualHighlightedOptionId(undefined);
         if (!isOpenControlled) setInputValue('');
       }
-      onOpenChange?.(nextOpen);
     },
     [
       clearKeyboardScrollHighlight,
@@ -577,7 +622,7 @@ export function PharmaComboboxSelect<Item>({
   );
   const navigateVisualHighlight = useCallback(
     (direction: 'next' | 'previous') => {
-      const enabledItems = visibleItems.filter(item => !isDisabledItem(item));
+      const enabledItems = visibleItems.filter(item => !isItemDisabled(item));
       if (enabledItems.length === 0) return false;
 
       const currentItem =
@@ -615,6 +660,7 @@ export function PharmaComboboxSelect<Item>({
     [
       firstHighlightableVisibleItem,
       getOptionElementAtIndex,
+      isItemDisabled,
       isSameItem,
       scheduleKeyboardHighlightedScroll,
       visibleItems,
@@ -622,7 +668,7 @@ export function PharmaComboboxSelect<Item>({
   );
   const selectVisualHighlightedItem = useCallback(() => {
     const highlightedItem = visualHighlightedValueRef.current;
-    if (highlightedItem == null || isDisabledItem(highlightedItem))
+    if (highlightedItem == null || isItemDisabled(highlightedItem))
       return false;
 
     const targetVisibleIndex = visibleItems.findIndex(item =>
@@ -633,7 +679,44 @@ export function PharmaComboboxSelect<Item>({
 
     targetElement.click();
     return true;
-  }, [getOptionElementAtIndex, isSameItem, visibleItems]);
+  }, [getOptionElementAtIndex, isItemDisabled, isSameItem, visibleItems]);
+  const isFocusWithinCombobox = useCallback((target: EventTarget | null) => {
+    if (typeof Node === 'undefined' || !(target instanceof Node)) return false;
+
+    return Boolean(
+      rootRef.current?.contains(target) ||
+      popupContentRef.current?.contains(target)
+    );
+  }, []);
+  const handleComboboxBlur = useCallback(
+    (event: React.FocusEvent<HTMLDivElement>) => {
+      if (blurValidationFrameRef.current !== null) {
+        window.cancelAnimationFrame(blurValidationFrameRef.current);
+        blurValidationFrameRef.current = null;
+      }
+
+      const nextFocusedTarget = event.relatedTarget;
+      if (isFocusWithinCombobox(nextFocusedTarget)) return;
+
+      if (nextFocusedTarget || typeof window === 'undefined') {
+        setBlurred(true);
+        return;
+      }
+
+      blurValidationFrameRef.current = window.requestAnimationFrame(() => {
+        blurValidationFrameRef.current = null;
+        if (
+          typeof document !== 'undefined' &&
+          isFocusWithinCombobox(document.activeElement)
+        ) {
+          return;
+        }
+
+        setBlurred(true);
+      });
+    },
+    [isFocusWithinCombobox]
+  );
   const handleTriggerKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLButtonElement>) => {
       if (!searchable || !actualOpen) return;
@@ -795,7 +878,7 @@ export function PharmaComboboxSelect<Item>({
         : null;
 
     const nextHighlightedValue =
-      selectedVisibleItem && !isDisabledItem(selectedVisibleItem)
+      selectedVisibleItem && !isItemDisabled(selectedVisibleItem)
         ? selectedVisibleItem
         : firstHighlightableVisibleItem;
     const nextHighlightedIndex =
@@ -837,6 +920,7 @@ export function PharmaComboboxSelect<Item>({
     clearKeyboardScrollHighlight,
     firstHighlightableVisibleItem,
     getOptionElementAtIndex,
+    isItemDisabled,
     isItemVisibleAndEnabled,
     isSameItem,
     normalizedInputValue,
@@ -886,12 +970,15 @@ export function PharmaComboboxSelect<Item>({
       if (releaseHeldHighlightFrameRef.current !== null) {
         window.cancelAnimationFrame(releaseHeldHighlightFrameRef.current);
       }
+      if (blurValidationFrameRef.current !== null) {
+        window.cancelAnimationFrame(blurValidationFrameRef.current);
+      }
     },
     []
   );
 
   return (
-    <div ref={rootRef} className={className}>
+    <div ref={rootRef} className={className} onBlur={handleComboboxBlur}>
       {!ariaLabelledBy && !ariaLabel ? (
         <span id={fallbackLabelId} className="sr-only">
           {controlName}
@@ -902,6 +989,8 @@ export function PharmaComboboxSelect<Item>({
         value={selectedValue}
         onValueChange={(nextValue, details) => {
           onValueChange(nextValue, details);
+          if (details.isCanceled) return;
+
           setInputValue('');
           hideHoverDetail();
         }}
@@ -988,10 +1077,6 @@ export function PharmaComboboxSelect<Item>({
                 ref={node => {
                   setRef(ref, node);
                 }}
-                onBlur={event => {
-                  triggerProps.onBlur?.(event);
-                  setBlurred(true);
-                }}
                 onKeyDown={event => {
                   handleTriggerKeyDown(event);
                   if (event.defaultPrevented) return;
@@ -1037,7 +1122,11 @@ export function PharmaComboboxSelect<Item>({
                   'overflow-hidden rounded-xl bg-white shadow-thin-md'
               )}
             >
-              <div ref={popupContentRef} className="relative">
+              <div
+                ref={popupContentRef}
+                className="relative"
+                onBlur={handleComboboxBlur}
+              >
                 {heldHighlightFrame ? (
                   <motion.div
                     aria-hidden="true"
@@ -1136,7 +1225,7 @@ export function PharmaComboboxSelect<Item>({
                         <Combobox.Item
                           value={item}
                           index={index}
-                          disabled={isDisabledItem(item)}
+                          disabled={isItemDisabled(item)}
                           data-pharma-combobox-index={index.toString()}
                           onMouseEnter={event => {
                             listPointerPositionRef.current = {

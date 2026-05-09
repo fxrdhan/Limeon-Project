@@ -4,6 +4,7 @@ export { findComboboxItemByValue } from './helpers';
 export {
   PharmaComboboxSelect,
   type PharmaComboboxChangeDetails,
+  type PharmaComboboxOpenChangeDetails,
   type PharmaComboboxSelectProps,
 } from './presets';
 export {
