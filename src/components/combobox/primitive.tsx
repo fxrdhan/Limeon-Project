@@ -943,7 +943,8 @@ function ComboboxTrigger({
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
         event.preventDefault();
         if (!context.open) {
-          context.setOpen(true, 'keyboard', event);
+          const opened = context.setOpen(true, 'keyboard', event);
+          if (!opened) return;
         }
         moveHighlight(event.key === 'ArrowDown' ? 1 : -1, event);
         return;

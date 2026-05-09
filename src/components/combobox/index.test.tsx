@@ -454,6 +454,46 @@ describe('Combobox primitive', () => {
     expect(screen.getByRole('listbox')).toBeTruthy();
   });
 
+  it('does not move highlight when a keyboard open request is canceled', () => {
+    const onHighlightedIndexChange = vi.fn();
+
+    render(
+      <Combobox.Root
+        items={fruitItems}
+        onOpenChange={(_open, details) => {
+          details.cancel();
+        }}
+        onHighlightedIndexChange={onHighlightedIndexChange}
+        itemToStringLabel={item => item}
+        itemToStringValue={item => item}
+      >
+        <Combobox.Trigger aria-label="Fruit">
+          <Combobox.Value placeholder="Choose fruit" />
+        </Combobox.Trigger>
+        <Combobox.Portal>
+          <Combobox.Positioner>
+            <Combobox.Popup initialFocus={false}>
+              <Combobox.List<string>>
+                {(item, index) => (
+                  <Combobox.Item key={item} value={item} index={index}>
+                    {item}
+                  </Combobox.Item>
+                )}
+              </Combobox.List>
+            </Combobox.Popup>
+          </Combobox.Positioner>
+        </Combobox.Portal>
+      </Combobox.Root>
+    );
+
+    const trigger = screen.getByRole('combobox', { name: /fruit/i });
+    fireEvent.keyDown(trigger, { key: 'ArrowDown' });
+
+    expect(screen.queryByRole('listbox')).toBeNull();
+    expect(trigger.getAttribute('aria-activedescendant')).toBeNull();
+    expect(onHighlightedIndexChange).not.toHaveBeenCalled();
+  });
+
   it('keeps required semantics out of the hidden submitted value', () => {
     render(
       <Combobox.Root
