@@ -65,10 +65,25 @@
 
 ## When to Run `vp check`
 
-- Run `vp check --fix [filenames path]` after editing or adding code that can affect behavior, typing, lint rules, imports/exports, data flow, or build output.
-- Run `vp check --fix [filenames path]` after complex code edits, shared module changes, type changes, hook/state changes, conditional rendering changes, API contract changes, config changes with runtime effect, or changes that touch multiple files in a connected flow.
 - Use this repo's canonical validation entrypoint: `vp check`.
-- Treat the pre-commit hook as stricter than a successful targeted `vp check`. Before retrying a failed commit, fix every hook issue it reports, restage any formatter/linter changes, and commit again.
+- Do not run validation commands repeatedly during normal exploration or after every small patch. First read the relevant code, make the focused edit, and use judgment about whether validation adds signal.
+- Run `vp check --fix [filenames path]` after a coherent batch of edits that can affect behavior, typing, lint rules, imports/exports, data flow, or build output.
+- Run `vp check --fix [filenames path]` after complex code edits, shared module changes, type changes, hook/state changes, conditional rendering changes, API contract changes, config changes with runtime effect, or changes that touch multiple files in a connected flow.
+
+## Pre-Commit Parity
+
+- Treat the pre-commit hook as stricter than a successful targeted `vp check`.
+- Do not run the pre-commit parity commands repeatedly during the dev loop. Run them once near commit time, or after a risky batch of edits, when they are likely to catch issues that `vp check` may miss.
+- For edited `*.ts`, `*.tsx`, `*.js`, or `*.jsx` files, run the same lint command that lint-staged uses before committing when the change is substantial or touches React hooks, component logic, imports/exports, types, or shared behavior:
+
+```bash
+node_modules/.bin/oxlint --fix --deny-warnings [changed files]
+vp fmt --write [changed files]
+```
+
+- Use the local `node_modules/.bin/oxlint` binary for this parity check. Do not rely on a global `oxlint`.
+- Do not replace `vp check` with the direct `oxlint` command. Use direct `oxlint` only to mirror the stricter pre-commit path, because `vp check` may not exercise the exact same plugin/rule set as `.lintstagedrc.json`.
+- After any lint or format command changes files, re-run the relevant validation, restage those files, and verify `git diff --cached` before committing.
 - If a commit hook reports `oxlint --fix --deny-warnings` failures, address the reported lint and TypeScript diagnostics in the changed files instead of bypassing the hook.
 
 ## When to Skip `vp check`
