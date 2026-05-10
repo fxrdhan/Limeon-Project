@@ -1,10 +1,4 @@
-import React, {
-  forwardRef,
-  isValidElement,
-  useCallback,
-  useLayoutEffect,
-  useRef,
-} from 'react';
+import React, { forwardRef, isValidElement, useLayoutEffect } from 'react';
 import { useComboboxContext } from './primitive-context';
 import {
   callIfFunction,
@@ -68,6 +62,8 @@ type ComboboxListComponent = <Value = React.ReactNode>(
   props: ComboboxListProps<Value> & React.RefAttributes<HTMLDivElement>
 ) => React.ReactElement | null;
 
+const setItemRenderRef: React.RefCallback<HTMLElement> = () => undefined;
+
 export const ComboboxList = forwardRef(function ComboboxList<
   Value = React.ReactNode,
 >(
@@ -122,7 +118,6 @@ export function ComboboxItem<Value>({
   ...props
 }: ComboboxItemProps<Value>) {
   const context = useComboboxContext<Value>();
-  const itemRef = useRef<HTMLElement | null>(null);
   const { registerItem } = context;
   const selected =
     context.selectedValue !== null &&
@@ -139,10 +134,6 @@ export function ComboboxItem<Value>({
       }),
     [index, itemDisabled, registerItem, value]
   );
-
-  const setItemRef = useCallback((node: HTMLElement | null) => {
-    itemRef.current = node;
-  }, []);
 
   const itemState: ItemState = {
     disabled: itemDisabled,
@@ -210,7 +201,7 @@ export function ComboboxItem<Value>({
 
   const itemRenderProps: ItemRenderProps = {
     ...itemElementProps,
-    ref: setItemRef,
+    ref: setItemRenderRef,
   };
 
   if (typeof render === 'function') {
@@ -224,16 +215,11 @@ export function ComboboxItem<Value>({
       ...mergeRenderElementProps(render.props, itemRenderProps),
       ref: (node: HTMLElement | null) => {
         setRef(renderRef, node);
-        setItemRef(node);
       },
     } satisfies Record<string, unknown>);
   }
 
-  return (
-    <div {...itemElementProps} ref={setItemRef}>
-      {children}
-    </div>
-  );
+  return <div {...itemElementProps}>{children}</div>;
 }
 
 export function ComboboxItemIndicator({

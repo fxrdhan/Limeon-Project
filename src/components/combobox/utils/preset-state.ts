@@ -41,15 +41,6 @@ export const getComboboxSelectedValue = <Item>(
   isValueEmpty?: ComboboxValueIsEmpty<Item>
 ) => (isComboboxValueEmpty(value, isValueEmpty) ? null : value);
 
-export const matchesComboboxSearch = <Item>(
-  item: Item,
-  search: string,
-  itemToStringLabel: ItemLabelGetter<Item>
-) =>
-  normalizeComboboxSearchText(itemToStringLabel(item)).includes(
-    normalizeComboboxSearchText(search)
-  );
-
 export const getComboboxSearchEntries = <Item>(
   items: Item[],
   itemToStringLabel: ItemLabelGetter<Item>
