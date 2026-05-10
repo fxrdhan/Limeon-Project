@@ -400,6 +400,7 @@ describe('Combobox app presets', () => {
 
   it('warns when option submitted values are duplicated in development', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     try {
       render(
@@ -423,8 +424,23 @@ describe('Combobox app presets', () => {
           )
         );
       });
+
+      fireEvent.click(screen.getByRole('combobox', { name: /pilih/i }));
+
+      expect(screen.getByRole('option', { name: /supplier a/i })).toBeTruthy();
+      expect(screen.getByRole('option', { name: /supplier b/i })).toBeTruthy();
+      expect(
+        error.mock.calls.filter(call =>
+          call.some(
+            argument =>
+              typeof argument === 'string' &&
+              argument.includes('Encountered two children with the same key')
+          )
+        )
+      ).toHaveLength(0);
     } finally {
       warn.mockRestore();
+      error.mockRestore();
     }
   });
 
