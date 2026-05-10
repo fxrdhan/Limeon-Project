@@ -7,6 +7,10 @@ import {
 } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vite-plus/test';
 import { findComboboxItemByValue, PharmaComboboxSelect } from './index';
+import {
+  getPharmaComboboxOptionIndexSelector,
+  pharmaComboboxOptionIndexAttribute,
+} from './utils/preset-dom';
 
 describe('Combobox app presets', () => {
   it('restores the selected visual highlight when search is cleared', async () => {
@@ -348,13 +352,17 @@ describe('Combobox app presets', () => {
 
     fireEvent.click(screen.getByRole('combobox', { name: /pilih/i }));
     const listbox = screen.getByRole('listbox');
-    expect(listbox.querySelector('[data-pharma-combobox-index]')).toBeTruthy();
+    expect(
+      listbox.querySelector(`[${pharmaComboboxOptionIndexAttribute}]`)
+    ).toBeTruthy();
 
     fireEvent.change(screen.getByPlaceholderText('Cari...'), {
       target: { value: 'gada' },
     });
 
-    expect(listbox.querySelector('[data-pharma-combobox-index]')).toBeNull();
+    expect(
+      listbox.querySelector(`[${pharmaComboboxOptionIndexAttribute}]`)
+    ).toBeNull();
     expect(screen.getByRole('status').textContent).toBe('Tidak ada data');
   });
 
@@ -381,7 +389,9 @@ describe('Combobox app presets', () => {
     fireEvent.change(searchInput, { target: { value: 'Supplier B' } });
     const supplierB = screen.getByRole('option', { name: /supplier b/i });
 
-    expect(supplierB.getAttribute('data-pharma-combobox-index')).toBe('0');
+    expect(supplierB.matches(getPharmaComboboxOptionIndexSelector(0))).toBe(
+      true
+    );
     await waitFor(() => {
       expect(searchInput.getAttribute('aria-activedescendant')).toBe(
         supplierB.id

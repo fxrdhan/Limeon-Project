@@ -42,6 +42,7 @@ import {
   getDefaultHoverDetailData,
   getDefaultItemDisabled,
 } from './utils/preset-item';
+import { getPharmaComboboxOptionIndexSelector } from './utils/preset-dom';
 
 export type PharmaComboboxChangeDetails<Item> = Parameters<
   NonNullable<ComboboxRootProps<Item>['onValueChange']>
@@ -272,7 +273,7 @@ export function PharmaComboboxSelect<Item>({
 
     return (
       listRef.current?.querySelector<HTMLElement>(
-        `[data-pharma-combobox-index="${index}"]`
+        getPharmaComboboxOptionIndexSelector(index)
       ) ?? null
     );
   }, []);

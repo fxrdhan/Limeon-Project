@@ -1,7 +1,10 @@
 import type { MouseEvent, ReactNode, Ref } from 'react';
 import { motion } from 'motion/react';
 import { cn } from '@/lib/utils';
-import { setRef } from '../utils/preset-dom';
+import {
+  getPharmaComboboxOptionIndexAttributes,
+  setRef,
+} from '../utils/preset-dom';
 import { Combobox } from '../primitive';
 import { comboboxHighlightBackgroundTransition } from './combobox-highlight-motion';
 import { ComboboxOptionMotionFrame } from './combobox-option-motion-frame';
@@ -83,7 +86,7 @@ export function ComboboxOptionList<Item>({
             value={item}
             index={index}
             disabled={isItemDisabled(item)}
-            data-pharma-combobox-index={index.toString()}
+            {...getPharmaComboboxOptionIndexAttributes(index)}
             onMouseEnter={event => {
               onOptionMouseEnter(event, item);
             }}
@@ -107,10 +110,10 @@ export function ComboboxOptionList<Item>({
               return (
                 <div
                   {...itemProps}
+                  {...getPharmaComboboxOptionIndexAttributes(index)}
                   ref={node => {
                     setRef(ref, node);
                   }}
-                  data-pharma-combobox-index={index.toString()}
                   className={cn(
                     'relative flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-800 outline-hidden',
                     state.selected && 'font-semibold text-primary',

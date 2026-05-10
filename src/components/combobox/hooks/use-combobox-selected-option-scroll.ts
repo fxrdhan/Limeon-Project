@@ -5,6 +5,7 @@ import {
   useState,
   type RefObject,
 } from 'react';
+import { getPharmaComboboxOptionIndexSelector } from '../utils/preset-dom';
 
 const selectedOptionScrollTopInset = 4;
 
@@ -41,7 +42,7 @@ export function useComboboxSelectedOptionScroll<Item>({
       if (!list) return;
 
       const option = list.querySelector<HTMLElement>(
-        `[data-pharma-combobox-index="${selectedVisibleIndex}"]`
+        getPharmaComboboxOptionIndexSelector(selectedVisibleIndex)
       );
       if (!option) return;
 

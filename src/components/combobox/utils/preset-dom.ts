@@ -4,6 +4,27 @@ type ComboboxPreventableSyntheticEvent = React.SyntheticEvent & {
   preventComboboxHandler?: () => void;
 };
 
+export const pharmaComboboxOptionIndexAttribute =
+  'data-pharma-combobox-index' as const;
+
+type PharmaComboboxOptionIndexAttributes = {
+  [pharmaComboboxOptionIndexAttribute]: string;
+};
+
+const getPharmaComboboxOptionIndexValue = (index: number) => index.toString();
+
+export const getPharmaComboboxOptionIndexAttributes = (
+  index: number
+): PharmaComboboxOptionIndexAttributes => ({
+  [pharmaComboboxOptionIndexAttribute]:
+    getPharmaComboboxOptionIndexValue(index),
+});
+
+export const getPharmaComboboxOptionIndexSelector = (index: number) =>
+  `[${pharmaComboboxOptionIndexAttribute}="${getPharmaComboboxOptionIndexValue(
+    index
+  )}"]`;
+
 export const setRef = <Node>(
   ref: React.Ref<Node> | undefined,
   value: Node | null
