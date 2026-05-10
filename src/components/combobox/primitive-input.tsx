@@ -125,9 +125,8 @@ export const ComboboxInput = forwardRef<HTMLInputElement, ComboboxInputProps>(
           }
 
           if (event.key === 'Enter') {
-            context.selectActiveItem('item-press', event, {
-              preventDefault: true,
-            });
+            event.preventDefault();
+            context.selectActiveItem('item-press', event);
           }
         }}
       />

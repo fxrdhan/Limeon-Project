@@ -175,6 +175,8 @@ export function usePharmaComboboxSelectController<Item>({
   );
 
   useEffect(() => {
+    if (!import.meta.env.DEV) return;
+
     const duplicateValue = getDuplicateComboboxOptionValue(
       items,
       itemToStringValue

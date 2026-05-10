@@ -340,6 +340,51 @@ describe('Combobox primitive', () => {
     expect(onValueChange).not.toHaveBeenCalled();
   });
 
+  it('prevents primitive popup search Enter when no option is active', () => {
+    const onValueChange = vi.fn();
+
+    render(
+      <Combobox.Root
+        items={fruitItems}
+        defaultOpen
+        onValueChange={onValueChange}
+        itemToStringLabel={item => item}
+        itemToStringValue={item => item}
+      >
+        <Combobox.Trigger aria-label="Fruit">
+          <Combobox.Value placeholder="Choose fruit" />
+        </Combobox.Trigger>
+        <Combobox.Portal>
+          <Combobox.Positioner>
+            <Combobox.Popup initialFocus={false}>
+              <Combobox.Input aria-label="Search fruit" />
+              <Combobox.List<string>>
+                {(item, index) => (
+                  <Combobox.Item key={item} value={item} index={index}>
+                    {item}
+                  </Combobox.Item>
+                )}
+              </Combobox.List>
+            </Combobox.Popup>
+          </Combobox.Positioner>
+        </Combobox.Portal>
+      </Combobox.Root>
+    );
+
+    const enterEvent = new KeyboardEvent('keydown', {
+      bubbles: true,
+      cancelable: true,
+      key: 'Enter',
+    });
+    fireEvent(
+      screen.getByRole('searchbox', { name: /search fruit/i }),
+      enterEvent
+    );
+
+    expect(enterEvent.defaultPrevented).toBe(true);
+    expect(onValueChange).not.toHaveBeenCalled();
+  });
+
   it('moves trigger highlight to first and last enabled items with Home and End', () => {
     const statusItems = ['disabled-start', 'active', 'pending', 'disabled-end'];
 
