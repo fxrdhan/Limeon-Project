@@ -186,7 +186,8 @@ export const useComboboxHoverDetail = ({
     (
       itemId: string,
       element: HTMLElement,
-      itemData?: ComboboxHoverDetailSourceData
+      itemData?: ComboboxHoverDetailSourceData,
+      options: { fetch?: boolean } = {}
     ) => {
       if (currentItemIdRef.current !== itemId) return;
 
@@ -197,7 +198,9 @@ export const useComboboxHoverDetail = ({
       if (itemData) {
         setData(getHoverDetailData(itemId, itemData));
       }
-      void fetchHoverDetail(itemId);
+      if (options.fetch !== false) {
+        void fetchHoverDetail(itemId);
+      }
     },
     [fetchHoverDetail]
   );
@@ -240,6 +243,43 @@ export const useComboboxHoverDetail = ({
     },
     [clearHoverDetailTimeouts, commitHoverDetail, hoverDelay, isEnabled]
   );
+
+  const syncHighlightedHoverDetail = useCallback(
+    (
+      itemId: string,
+      element: HTMLElement,
+      itemData?: ComboboxHoverDetailSourceData,
+      options: { show?: boolean } = {}
+    ) => {
+      if (!isEnabled) return;
+
+      clearHoverDetailTimeouts();
+      if (!isPortalShownRef.current && options.show !== true) {
+        currentAnchorElementRef.current = null;
+        currentItemIdRef.current = null;
+        setData(null);
+        return;
+      }
+
+      const previousItemId = currentItemIdRef.current;
+      currentItemIdRef.current = itemId;
+      commitHoverDetail(itemId, element, itemData, {
+        fetch: previousItemId !== itemId,
+      });
+    },
+    [clearHoverDetailTimeouts, commitHoverDetail, isEnabled]
+  );
+
+  const cancelPendingHoverDetail = useCallback(() => {
+    if (!isEnabled) return;
+
+    clearHoverDetailTimeouts();
+    if (isPortalShownRef.current) return;
+
+    currentAnchorElementRef.current = null;
+    currentItemIdRef.current = null;
+    setData(null);
+  }, [clearHoverDetailTimeouts, isEnabled]);
 
   const handleItemLeave = useCallback(() => {
     if (!isEnabled) return;
@@ -327,10 +367,12 @@ export const useComboboxHoverDetail = ({
 
   return {
     data,
+    cancelPendingHoverDetail,
     handleItemHover,
     handleItemLeave,
     hidePopover,
     isVisible,
     position,
+    syncHighlightedHoverDetail,
   };
 };

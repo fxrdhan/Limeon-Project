@@ -5,6 +5,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type MouseEvent,
 } from 'react';
 import { useFormFieldContext } from '@/components/form-field/context';
 import type { HoverDetailData } from '@/types/components';
@@ -33,6 +34,8 @@ import {
   getComboboxSelectedValue,
   getDuplicateComboboxOptionValue,
 } from '../utils/preset-state';
+
+const keyboardHoverDetailSyncDelay = 160;
 
 type PharmaComboboxRootBoundaryProps<Item> = Pick<
   ComboboxRootProps<Item>,
@@ -107,6 +110,9 @@ export function usePharmaComboboxSelectController<Item>({
   const popupContentRef = useRef<HTMLDivElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const keyboardHoverDetailSyncTimeoutRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
   const fallbackLabelId = useId();
   const valueId = useId();
   const warnedDuplicateValueRef = useRef<string | null>(null);
@@ -236,12 +242,14 @@ export function usePharmaComboboxSelectController<Item>({
     hoverDetail?.enabled ??
     Boolean(onFetchHoverDetail || itemToHoverDetailData);
   const {
+    cancelPendingHoverDetail,
     data: hoverDetailData,
     handleItemHover,
     handleItemLeave,
     hidePopover: hideHoverDetail,
     isVisible: isHoverDetailVisible,
     position: hoverDetailPosition,
+    syncHighlightedHoverDetail,
   } = useComboboxHoverDetail({
     hoverDelay: hoverDetail?.delay ?? 800,
     isComboboxOpen: actualOpen,
@@ -249,6 +257,12 @@ export function usePharmaComboboxSelectController<Item>({
     onFetchData: onFetchHoverDetail,
     onFetchError: onFetchHoverDetailError,
   });
+  const clearKeyboardHoverDetailSync = useCallback(() => {
+    if (keyboardHoverDetailSyncTimeoutRef.current === null) return;
+
+    clearTimeout(keyboardHoverDetailSyncTimeoutRef.current);
+    keyboardHoverDetailSyncTimeoutRef.current = null;
+  }, []);
   const getOptionElementAtIndex = useCallback((index: number) => {
     if (!Number.isInteger(index) || index < 0) return null;
 
@@ -270,6 +284,25 @@ export function usePharmaComboboxSelectController<Item>({
     popupContentRef,
     visibleItemCount: visibleItems.length,
   });
+  const getHighlightedHoverDetailAnchorElement = useCallback(
+    (index: number) => {
+      const pinnedHighlight = heldHighlightFrame
+        ? popupContentRef.current?.querySelector<HTMLElement>(
+            '[data-pharma-combobox-pinned-highlight]'
+          )
+        : null;
+      if (pinnedHighlight) return pinnedHighlight;
+
+      const optionElement = getOptionElementAtIndex(index);
+
+      return (
+        optionElement?.querySelector<HTMLElement>(
+          '[data-pharma-combobox-highlight]'
+        ) ?? optionElement
+      );
+    },
+    [getOptionElementAtIndex, heldHighlightFrame]
+  );
 
   const getItemHoverDetailData = useCallback(
     (item: Item): Partial<HoverDetailData> => {
@@ -290,6 +323,7 @@ export function usePharmaComboboxSelectController<Item>({
     (item: Item, element: HTMLElement) => {
       if (isItemDisabled(item)) return;
 
+      clearKeyboardHoverDetailSync();
       clearKeyboardScrollHighlight();
 
       if (!hoverDetailEnabled) return;
@@ -301,6 +335,7 @@ export function usePharmaComboboxSelectController<Item>({
       );
     },
     [
+      clearKeyboardHoverDetailSync,
       clearKeyboardScrollHighlight,
       getItemHoverDetailData,
       handleItemHover,
@@ -326,12 +361,18 @@ export function usePharmaComboboxSelectController<Item>({
       onValueChange(nextValue, details);
       if (details.isCanceled) return;
 
+      clearKeyboardHoverDetailSync();
       setInputValue('');
       setIsSearchNavigationFocus(false);
       resetKeyboardHoverSuppression();
       hideHoverDetail();
     },
-    [hideHoverDetail, onValueChange, resetKeyboardHoverSuppression]
+    [
+      clearKeyboardHoverDetailSync,
+      hideHoverDetail,
+      onValueChange,
+      resetKeyboardHoverSuppression,
+    ]
   );
   const {
     effectiveHighlightedIndex,
@@ -363,23 +404,101 @@ export function usePharmaComboboxSelectController<Item>({
     visibleItems,
   });
 
+  const handleTriggerMouseEnter = useCallback(
+    (event: MouseEvent<HTMLButtonElement>) => {
+      if (actualOpen || !hoverDetailEnabled || selectedValue === null) return;
+
+      handleItemHover(
+        itemToStringValue(selectedValue),
+        event.currentTarget,
+        getItemHoverDetailData(selectedValue)
+      );
+    },
+    [
+      actualOpen,
+      getItemHoverDetailData,
+      handleItemHover,
+      hoverDetailEnabled,
+      itemToStringValue,
+      selectedValue,
+    ]
+  );
+
+  const handleTriggerMouseLeave = useCallback(() => {
+    if (actualOpen || !hoverDetailEnabled || selectedValue === null) return;
+
+    handleItemLeave();
+  }, [actualOpen, handleItemLeave, hoverDetailEnabled, selectedValue]);
+
+  useEffect(() => {
+    if (!actualOpen || !hoverDetailEnabled) return;
+    if (!isKeyboardHoverSuppressed()) return;
+    if (effectiveHighlightedIndex === null) return;
+
+    const highlightedItem = visibleItems[effectiveHighlightedIndex];
+    if (highlightedItem === undefined || isItemDisabled(highlightedItem)) {
+      return;
+    }
+
+    cancelPendingHoverDetail();
+    keyboardHoverDetailSyncTimeoutRef.current = setTimeout(() => {
+      keyboardHoverDetailSyncTimeoutRef.current = null;
+
+      const anchorElement = getHighlightedHoverDetailAnchorElement(
+        effectiveHighlightedIndex
+      );
+      if (!anchorElement) return;
+
+      syncHighlightedHoverDetail(
+        itemToStringValue(highlightedItem),
+        anchorElement,
+        getItemHoverDetailData(highlightedItem),
+        { show: true }
+      );
+    }, keyboardHoverDetailSyncDelay);
+
+    return clearKeyboardHoverDetailSync;
+  }, [
+    actualOpen,
+    cancelPendingHoverDetail,
+    clearKeyboardHoverDetailSync,
+    effectiveHighlightedIndex,
+    getHighlightedHoverDetailAnchorElement,
+    getItemHoverDetailData,
+    hoverDetailEnabled,
+    isItemDisabled,
+    isKeyboardHoverSuppressed,
+    itemToStringValue,
+    syncHighlightedHoverDetail,
+    visibleItems,
+  ]);
+
+  useEffect(() => clearKeyboardHoverDetailSync, [clearKeyboardHoverDetailSync]);
+
   useEffect(() => {
     const wasOpen = previousActualOpenRef.current;
     previousActualOpenRef.current = actualOpen;
 
     if (actualOpen) {
-      if (!wasOpen) clearFocusRestoreIntent();
+      if (!wasOpen) {
+        clearFocusRestoreIntent();
+        clearKeyboardHoverDetailSync();
+        cancelPendingHoverDetail();
+      }
       return;
     }
 
     setIsSearchNavigationFocus(false);
+    clearKeyboardHoverDetailSync();
     hideHoverDetail();
     resetPointerHoverState();
 
     restoreFocusAfterCloseIfNeeded();
   }, [
     actualOpen,
+    cancelPendingHoverDetail,
     clearFocusRestoreIntent,
+    clearKeyboardHoverDetailSync,
     hideHoverDetail,
     resetPointerHoverState,
     restoreFocusAfterCloseIfNeeded,
@@ -473,6 +592,8 @@ export function usePharmaComboboxSelectController<Item>({
       ariaDescribedBy: triggerDescribedBy,
       ariaInvalid: Boolean(showValidation),
       tabIndex,
+      onMouseEnter: handleTriggerMouseEnter,
+      onMouseLeave: handleTriggerMouseLeave,
       onNavigationKeyDown: handleTriggerKeyDown,
       placeholder,
       selectedLabel,

@@ -172,6 +172,215 @@ describe('Combobox app preset hover detail', () => {
     }
   });
 
+  it('moves visible hover detail to the keyboard-highlighted background', async () => {
+    const originalInnerWidth = Object.getOwnPropertyDescriptor(
+      window,
+      'innerWidth'
+    );
+    const originalGetBoundingClientRect = Object.getOwnPropertyDescriptor(
+      HTMLElement.prototype,
+      'getBoundingClientRect'
+    );
+    const createRect = ({
+      height,
+      left,
+      top,
+      width,
+    }: {
+      height: number;
+      left: number;
+      top: number;
+      width: number;
+    }) =>
+      ({
+        bottom: top + height,
+        height,
+        left,
+        right: left + width,
+        toJSON: () => {},
+        top,
+        width,
+        x: left,
+        y: top,
+      }) as DOMRect;
+
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: 500,
+    });
+    Object.defineProperty(HTMLElement.prototype, 'getBoundingClientRect', {
+      configurable: true,
+      value: function getBoundingClientRect(this: HTMLElement) {
+        if (this.hasAttribute('data-pharma-combobox-highlight')) {
+          return createRect({ height: 32, left: 20, top: 140, width: 180 });
+        }
+
+        if (
+          this.getAttribute('role') === 'option' &&
+          this.textContent?.includes('Supplier B')
+        ) {
+          return createRect({ height: 32, left: 450, top: 140, width: 40 });
+        }
+
+        if (
+          this.getAttribute('role') === 'option' &&
+          this.textContent?.includes('Supplier A')
+        ) {
+          return createRect({ height: 32, left: 20, top: 100, width: 100 });
+        }
+
+        return originalGetBoundingClientRect?.value
+          ? originalGetBoundingClientRect.value.call(this)
+          : createRect({ height: 0, left: 0, top: 0, width: 0 });
+      },
+    });
+
+    try {
+      render(
+        <PharmaComboboxSelect<EntityItem>
+          name="supplier_id"
+          items={[
+            { id: 'a', name: 'Supplier A' },
+            { id: 'b', name: 'Supplier B' },
+          ]}
+          value={null}
+          onValueChange={() => {}}
+          itemToStringLabel={item => item.name}
+          itemToStringValue={item => item.id}
+          itemToHoverDetailData={item => ({
+            description: `Detail ${item.name}`,
+          })}
+          placeholder="Pilih supplier"
+          hoverDetail={{ enabled: true, delay: 0 }}
+        />
+      );
+
+      fireEvent.click(
+        screen.getByRole('combobox', { name: /pilih supplier/i })
+      );
+      const supplierA = screen.getByRole('option', { name: /supplier a/i });
+      const supplierB = screen.getByRole('option', { name: /supplier b/i });
+
+      fireEvent.mouseEnter(supplierA);
+
+      await waitFor(() => {
+        expect(
+          (
+            document.querySelector(
+              '[data-combobox-hover-detail-sizer]'
+            ) as HTMLElement | null
+          )?.style.maxWidth
+        ).toBe('350px');
+      });
+
+      fireEvent.keyDown(screen.getByPlaceholderText('Cari...'), {
+        key: 'ArrowDown',
+      });
+
+      await waitFor(() => {
+        expect(
+          supplierB.querySelector('[data-pharma-combobox-highlight]')
+        ).toBeTruthy();
+      });
+      await waitFor(() => {
+        expect(screen.getAllByText('Detail Supplier B').length).toBeGreaterThan(
+          0
+        );
+        expect(
+          (
+            document.querySelector(
+              '[data-combobox-hover-detail-sizer]'
+            ) as HTMLElement | null
+          )?.style.maxWidth
+        ).toBe('270px');
+      });
+    } finally {
+      if (originalInnerWidth) {
+        Object.defineProperty(window, 'innerWidth', originalInnerWidth);
+      } else {
+        Reflect.deleteProperty(window, 'innerWidth');
+      }
+
+      if (originalGetBoundingClientRect) {
+        Object.defineProperty(
+          HTMLElement.prototype,
+          'getBoundingClientRect',
+          originalGetBoundingClientRect
+        );
+      } else {
+        Reflect.deleteProperty(HTMLElement.prototype, 'getBoundingClientRect');
+      }
+    }
+  });
+
+  it('shows hover detail from keyboard navigation without pointer hover', async () => {
+    render(
+      <PharmaComboboxSelect<EntityItem>
+        name="supplier_id"
+        items={[
+          { id: 'a', name: 'Supplier A' },
+          { id: 'b', name: 'Supplier B' },
+        ]}
+        value={null}
+        onValueChange={() => {}}
+        itemToStringLabel={item => item.name}
+        itemToStringValue={item => item.id}
+        itemToHoverDetailData={item => ({
+          description: `Detail ${item.name}`,
+        })}
+        placeholder="Pilih supplier"
+        hoverDetail={{ enabled: true, delay: 400 }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: /pilih supplier/i }));
+    fireEvent.keyDown(screen.getByPlaceholderText('Cari...'), {
+      key: 'ArrowDown',
+    });
+
+    await waitFor(() => {
+      expect(
+        screen
+          .getByRole('option', { name: /supplier b/i })
+          .querySelector('[data-pharma-combobox-highlight]')
+      ).toBeTruthy();
+      expect(screen.getAllByText('Detail Supplier B').length).toBeGreaterThan(
+        0
+      );
+    });
+  });
+
+  it('shows hover detail from the selected trigger value', async () => {
+    const suppliers = [
+      { id: 'a', name: 'Supplier A' },
+      { id: 'b', name: 'Supplier B' },
+    ];
+
+    render(
+      <PharmaComboboxSelect<EntityItem>
+        name="supplier_id"
+        items={suppliers}
+        value={suppliers[1] ?? null}
+        onValueChange={() => {}}
+        itemToStringLabel={item => item.name}
+        itemToStringValue={item => item.id}
+        itemToHoverDetailData={item => ({
+          description: `Detail ${item.name}`,
+        })}
+        placeholder="Pilih supplier"
+        hoverDetail={{ enabled: true, delay: 0 }}
+      />
+    );
+
+    fireEvent.mouseEnter(screen.getByRole('combobox', { name: /supplier b/i }));
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Detail Supplier B').length).toBeGreaterThan(
+        0
+      );
+    });
+  });
+
   it('keeps hover detail exit animation from intercepting pointer input', async () => {
     render(
       <PharmaComboboxSelect<EntityItem>
@@ -360,6 +569,109 @@ describe('Combobox app preset hover detail', () => {
         false,
         expect.objectContaining({ reason: 'escape-key' })
       );
+      expect(screen.getAllByText('Detail Supplier B').length).toBeGreaterThan(
+        0
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('debounces keyboard hover detail while keyboard navigation is moving quickly', async () => {
+    vi.useFakeTimers();
+
+    try {
+      render(
+        <PharmaComboboxSelect<EntityItem>
+          name="supplier_id"
+          items={[
+            { id: 'a', name: 'Supplier A' },
+            { id: 'b', name: 'Supplier B' },
+            { id: 'c', name: 'Supplier C' },
+          ]}
+          value={null}
+          onValueChange={() => {}}
+          itemToStringLabel={item => item.name}
+          itemToStringValue={item => item.id}
+          itemToHoverDetailData={item => ({
+            description: `Detail ${item.name}`,
+          })}
+          placeholder="Pilih supplier"
+          hoverDetail={{ enabled: true, delay: 400 }}
+        />
+      );
+
+      fireEvent.click(
+        screen.getByRole('combobox', { name: /pilih supplier/i })
+      );
+      const searchInput = screen.getByPlaceholderText('Cari...');
+
+      fireEvent.keyDown(searchInput, { key: 'ArrowDown' });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(80);
+      });
+      fireEvent.keyDown(searchInput, { key: 'ArrowDown' });
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(80);
+      });
+      expect(screen.queryByText('Detail Supplier B')).toBeNull();
+      expect(screen.queryByText('Detail Supplier C')).toBeNull();
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(200);
+      });
+      expect(screen.queryByText('Detail Supplier B')).toBeNull();
+      expect(screen.getAllByText('Detail Supplier C').length).toBeGreaterThan(
+        0
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('replaces pending hover detail when keyboard highlight takes over', async () => {
+    vi.useFakeTimers();
+
+    try {
+      render(
+        <PharmaComboboxSelect<EntityItem>
+          name="supplier_id"
+          items={[
+            { id: 'a', name: 'Supplier A' },
+            { id: 'b', name: 'Supplier B' },
+          ]}
+          value={null}
+          onValueChange={() => {}}
+          itemToStringLabel={item => item.name}
+          itemToStringValue={item => item.id}
+          itemToHoverDetailData={item => ({
+            description: `Detail ${item.name}`,
+          })}
+          placeholder="Pilih supplier"
+          hoverDetail={{ enabled: true, delay: 400 }}
+        />
+      );
+
+      fireEvent.click(
+        screen.getByRole('combobox', { name: /pilih supplier/i })
+      );
+      const supplierA = screen.getByRole('option', { name: /supplier a/i });
+      const supplierB = screen.getByRole('option', { name: /supplier b/i });
+
+      fireEvent.mouseEnter(supplierA);
+      fireEvent.keyDown(screen.getByPlaceholderText('Cari...'), {
+        key: 'ArrowDown',
+      });
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(500);
+      });
+
+      expect(
+        supplierB.querySelector('[data-pharma-combobox-highlight]')
+      ).toBeTruthy();
+      expect(screen.queryByText('Detail Supplier A')).toBeNull();
       expect(screen.getAllByText('Detail Supplier B').length).toBeGreaterThan(
         0
       );

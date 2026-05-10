@@ -150,6 +150,12 @@ export default function ItemPricingForm({
     }, 0);
   };
 
+  const fetchBaseUnitHoverDetail = useCallback(
+    async (unitId: string) =>
+      baseUnitOptions.find(unit => unit.id === unitId) ?? null,
+    [baseUnitOptions]
+  );
+
   const openBaselineModal = () => {
     if (!levelPricing) return;
     if (baselineOpen) {
@@ -675,6 +681,8 @@ export default function ItemPricingForm({
                           autoHide: true,
                           autoHideDelay: 3000,
                         }}
+                        hoverDetail={{ enabled: true, delay: 400 }}
+                        onFetchHoverDetail={fetchBaseUnitHoverDetail}
                         disabled={disabled}
                       />
                       <p className="text-xs text-slate-500">

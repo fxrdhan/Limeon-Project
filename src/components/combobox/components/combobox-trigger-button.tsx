@@ -1,4 +1,4 @@
-import type { KeyboardEvent } from 'react';
+import type { KeyboardEvent, MouseEvent } from 'react';
 import { TbChevronDown } from 'react-icons/tb';
 import { cn } from '@/lib/utils';
 import { Combobox } from '../primitive';
@@ -10,6 +10,8 @@ interface ComboboxTriggerButtonProps {
   ariaLabel?: string;
   ariaLabelledBy?: string;
   id?: string;
+  onMouseEnter?: (event: MouseEvent<HTMLButtonElement>) => void;
+  onMouseLeave?: () => void;
   onNavigationKeyDown: (event: KeyboardEvent<HTMLButtonElement>) => void;
   placeholder: string;
   selectedLabel: string;
@@ -24,6 +26,8 @@ export function ComboboxTriggerButton({
   ariaLabel,
   ariaLabelledBy,
   id,
+  onMouseEnter,
+  onMouseLeave,
   onNavigationKeyDown,
   placeholder,
   selectedLabel,
@@ -56,6 +60,10 @@ export function ComboboxTriggerButton({
 
               onKeyDown?.(event);
             }}
+            onMouseEnter={event => {
+              onMouseEnter?.(event);
+            }}
+            onMouseLeave={onMouseLeave}
             className={cn(
               'flex min-h-10 w-full items-center justify-between gap-2 rounded-xl border bg-white px-3 py-2 text-left text-sm transition focus:border-primary focus:outline-hidden focus:ring-3 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-slate-100',
               ariaInvalid
