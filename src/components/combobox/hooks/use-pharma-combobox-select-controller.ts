@@ -77,6 +77,7 @@ export function usePharmaComboboxSelectController<Item>({
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const fallbackLabelId = useId();
   const valueId = useId();
+  const warnedDuplicateValueRef = useRef<string | null>(null);
   const [inputValue, setInputValue] = useState('');
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const [isSearchNavigationFocus, setIsSearchNavigationFocus] = useState(false);
@@ -141,6 +142,39 @@ export function usePharmaComboboxSelectController<Item>({
     (item: Item) => isItemDisabledProp(item),
     [isItemDisabledProp]
   );
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'production') return;
+
+    const seenValues = new Set<string>();
+    let duplicateValue: string | null = null;
+
+    for (const item of items) {
+      const itemValue = itemToStringValue(item);
+      if (seenValues.has(itemValue)) {
+        duplicateValue = itemValue;
+        break;
+      }
+
+      seenValues.add(itemValue);
+    }
+
+    if (duplicateValue === null) {
+      warnedDuplicateValueRef.current = null;
+      return;
+    }
+
+    const warningKey = `${name ?? ''}:${duplicateValue}`;
+    if (warnedDuplicateValueRef.current === warningKey) return;
+
+    warnedDuplicateValueRef.current = warningKey;
+    console.warn(
+      `[PharmaComboboxSelect] Duplicate itemToStringValue "${duplicateValue}" detected for ${
+        name ?? 'unnamed combobox'
+      }. Combobox option values must be unique.`
+    );
+  }, [itemToStringValue, items, name]);
+
   const { requestSelectedOptionScroll } = useComboboxSelectedOptionScroll({
     actualOpen,
     isSameItem,

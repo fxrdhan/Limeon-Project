@@ -110,8 +110,30 @@ export const useComboboxHoverDetail = ({
   const clearDataTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null
   );
+  const positionUpdateFrameRef = useRef<number | null>(null);
+  const currentAnchorElementRef = useRef<HTMLElement | null>(null);
   const currentItemIdRef = useRef<string | null>(null);
   const isPortalShownRef = useRef(false);
+
+  const cancelPositionUpdateFrame = useCallback(() => {
+    if (positionUpdateFrameRef.current === null) return;
+
+    window.cancelAnimationFrame(positionUpdateFrameRef.current);
+    positionUpdateFrameRef.current = null;
+  }, []);
+
+  const schedulePositionUpdate = useCallback(() => {
+    if (positionUpdateFrameRef.current !== null) return;
+
+    positionUpdateFrameRef.current = window.requestAnimationFrame(() => {
+      positionUpdateFrameRef.current = null;
+
+      const anchorElement = currentAnchorElementRef.current;
+      if (!anchorElement?.isConnected) return;
+
+      setPosition(getHoverDetailPosition(anchorElement));
+    });
+  }, []);
 
   const clearHoverDetailTimeouts = useCallback(() => {
     if (showTimeoutRef.current) {
@@ -168,6 +190,7 @@ export const useComboboxHoverDetail = ({
     ) => {
       if (currentItemIdRef.current !== itemId) return;
 
+      currentAnchorElementRef.current = element;
       isPortalShownRef.current = true;
       setPosition(getHoverDetailPosition(element));
       setIsVisible(true);
@@ -225,12 +248,14 @@ export const useComboboxHoverDetail = ({
     currentItemIdRef.current = null;
 
     if (!isPortalShownRef.current) {
+      currentAnchorElementRef.current = null;
       setData(null);
       return;
     }
 
     hideTimeoutRef.current = setTimeout(() => {
       isPortalShownRef.current = false;
+      currentAnchorElementRef.current = null;
       setIsVisible(false);
       scheduleDataClear();
     }, hoverDetailHideDelay);
@@ -238,11 +263,39 @@ export const useComboboxHoverDetail = ({
 
   const hidePopover = useCallback(() => {
     clearHoverDetailTimeouts();
+    cancelPositionUpdateFrame();
     isPortalShownRef.current = false;
+    currentAnchorElementRef.current = null;
     currentItemIdRef.current = null;
     setIsVisible(false);
     scheduleDataClear();
-  }, [clearHoverDetailTimeouts, scheduleDataClear]);
+  }, [cancelPositionUpdateFrame, clearHoverDetailTimeouts, scheduleDataClear]);
+
+  useEffect(() => {
+    if (
+      !isEnabled ||
+      !isComboboxOpen ||
+      !isVisible ||
+      typeof window === 'undefined'
+    ) {
+      return;
+    }
+
+    window.addEventListener('resize', schedulePositionUpdate);
+    window.addEventListener('scroll', schedulePositionUpdate, true);
+
+    return () => {
+      window.removeEventListener('resize', schedulePositionUpdate);
+      window.removeEventListener('scroll', schedulePositionUpdate, true);
+      cancelPositionUpdateFrame();
+    };
+  }, [
+    cancelPositionUpdateFrame,
+    isComboboxOpen,
+    isEnabled,
+    isVisible,
+    schedulePositionUpdate,
+  ]);
 
   useEffect(() => {
     if (!isComboboxOpen && isVisible) {
@@ -253,10 +306,12 @@ export const useComboboxHoverDetail = ({
   useEffect(() => {
     return () => {
       clearHoverDetailTimeouts();
+      cancelPositionUpdateFrame();
+      currentAnchorElementRef.current = null;
       currentItemIdRef.current = null;
       isPortalShownRef.current = false;
     };
-  }, [clearHoverDetailTimeouts]);
+  }, [cancelPositionUpdateFrame, clearHoverDetailTimeouts]);
 
   return {
     data,

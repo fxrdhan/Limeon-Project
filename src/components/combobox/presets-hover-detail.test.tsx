@@ -84,6 +84,93 @@ describe('Combobox app preset hover detail', () => {
     expect(screen.getAllByText('Analgesik').length).toBeGreaterThan(0);
   });
 
+  it('keeps hover detail geometry anchored when the viewport scrolls', async () => {
+    const originalInnerWidth = Object.getOwnPropertyDescriptor(
+      window,
+      'innerWidth'
+    );
+
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: 500,
+    });
+
+    try {
+      render(
+        <PharmaComboboxSelect<EntityItem>
+          name="category_id"
+          items={[{ id: 'analgesik', name: 'Analgesik' }]}
+          value={null}
+          onValueChange={() => {}}
+          itemToStringLabel={item => item.name}
+          itemToStringValue={item => item.id}
+          placeholder="Pilih kategori"
+          hoverDetail={{ enabled: true, delay: 0 }}
+        />
+      );
+
+      fireEvent.click(
+        screen.getByRole('combobox', { name: /pilih kategori/i })
+      );
+      const option = screen.getByRole('option', { name: /analgesik/i });
+      let optionRect = {
+        bottom: 132,
+        height: 32,
+        left: 20,
+        right: 120,
+        toJSON: () => {},
+        top: 100,
+        width: 100,
+        x: 20,
+        y: 100,
+      };
+
+      Object.defineProperty(option, 'getBoundingClientRect', {
+        configurable: true,
+        value: () => optionRect,
+      });
+
+      fireEvent.mouseEnter(option);
+
+      await waitFor(() => {
+        expect(
+          (
+            document.querySelector(
+              '[data-combobox-hover-detail-sizer]'
+            ) as HTMLElement | null
+          )?.style.maxWidth
+        ).toBe('350px');
+      });
+
+      optionRect = {
+        ...optionRect,
+        bottom: 132,
+        left: 450,
+        right: 490,
+        top: 100,
+        width: 40,
+        x: 450,
+      };
+      fireEvent.scroll(window);
+
+      await waitFor(() => {
+        expect(
+          (
+            document.querySelector(
+              '[data-combobox-hover-detail-sizer]'
+            ) as HTMLElement | null
+          )?.style.maxWidth
+        ).toBe('380px');
+      });
+    } finally {
+      if (originalInnerWidth) {
+        Object.defineProperty(window, 'innerWidth', originalInnerWidth);
+      } else {
+        Reflect.deleteProperty(window, 'innerWidth');
+      }
+    }
+  });
+
   it('ignores pending hover detail fetch failures after unmount', async () => {
     const fetchError = new Error('fetch failed');
     let rejectFetch: (error: unknown) => void = () => {};

@@ -398,6 +398,36 @@ describe('Combobox app presets', () => {
     ).toBeNull();
   });
 
+  it('warns when option submitted values are duplicated in development', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    try {
+      render(
+        <PharmaComboboxSelect
+          name="supplier_id"
+          items={[
+            { id: 'duplicate', name: 'Supplier A' },
+            { id: 'duplicate', name: 'Supplier B' },
+          ]}
+          value={null}
+          onValueChange={() => {}}
+          itemToStringLabel={supplier => supplier.name}
+          itemToStringValue={supplier => supplier.id}
+        />
+      );
+
+      await waitFor(() => {
+        expect(warn).toHaveBeenCalledWith(
+          expect.stringContaining(
+            'Duplicate itemToStringValue "duplicate" detected'
+          )
+        );
+      });
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
   it('keeps the selected option visible when a visible item limit is applied', () => {
     const suppliers = [
       { id: 'a', name: 'Supplier A' },
