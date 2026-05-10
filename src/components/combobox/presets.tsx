@@ -2,34 +2,42 @@ import React, {
   useCallback,
   useEffect,
   useId,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from 'react';
 import { motion } from 'motion/react';
-import { TbChevronDown, TbPlus, TbSearch } from 'react-icons/tb';
 import { useFormFieldContext } from '@/components/form-field/context';
 import ValidationOverlay from '@/components/validation-overlay';
 import { cn } from '@/lib/utils';
 import type { HoverDetailData } from '@/types/components';
+import { comboboxHighlightBackgroundTransition } from './components/combobox-highlight-motion';
 import ComboboxHoverDetailPopover from './components/combobox-hover-detail-popover';
-import { ComboboxOptionMotionFrame } from './components/combobox-option-motion-frame';
-import {
-  ComboboxSelectionIndicator,
-  type ComboboxIndicatorKind,
-} from './components/combobox-selection-indicator';
+import { ComboboxOptionList } from './components/combobox-option-list';
+import { ComboboxSearchHeader } from './components/combobox-search-header';
+import type { ComboboxIndicatorKind } from './components/combobox-selection-indicator';
+import { ComboboxTriggerButton } from './components/combobox-trigger-button';
 import { Combobox, type ComboboxRootProps } from './primitive';
-import { useComboboxKeyboardHighlightScroll } from './hooks/use-combobox-keyboard-highlight-scroll';
+import { useComboboxAccessibility } from './hooks/use-combobox-accessibility';
 import {
-  getComboboxControlName,
+  useComboboxCreateAction,
+  type ComboboxCreateAction,
+} from './hooks/use-combobox-create-action';
+import { useComboboxFocusRestore } from './hooks/use-combobox-focus-restore';
+import { useComboboxKeyboardHighlightScroll } from './hooks/use-combobox-keyboard-highlight-scroll';
+import { useComboboxPointerHover } from './hooks/use-combobox-pointer-hover';
+import { useComboboxSearch } from './hooks/use-combobox-search';
+import { useComboboxSelectedOptionScroll } from './hooks/use-combobox-selected-option-scroll';
+import {
+  comboboxRequiredValidationMessage,
+  useComboboxValidation,
+} from './hooks/use-combobox-validation';
+import { useComboboxHighlight } from './hooks/use-combobox-highlight';
+import {
   getComboboxSelectedValue,
-  getVisibleComboboxItems,
-  hasExactComboboxItem,
   type ComboboxValueIsEmpty,
 } from './utils/preset-state';
 import { useComboboxHoverDetail } from './hooks/use-combobox-hover-detail';
-import { preventComboboxHandler, setRef } from './utils/preset-dom';
 import {
   getDefaultHoverDetailData,
   getDefaultItemDisabled,
@@ -41,14 +49,6 @@ export type PharmaComboboxChangeDetails<Item> = Parameters<
 export type PharmaComboboxOpenChangeDetails<Item> = Parameters<
   NonNullable<ComboboxRootProps<Item>['onOpenChange']>
 >[1];
-type PharmaComboboxHighlightDetails<Item> = Parameters<
-  NonNullable<ComboboxRootProps<Item>['onItemHighlighted']>
->[1];
-
-type PointerPosition = {
-  x: number;
-  y: number;
-};
 
 export interface PharmaComboboxOptionRenderState {
   disabled: boolean;
@@ -61,7 +61,7 @@ export interface PharmaComboboxOptionRenderState {
 export interface PharmaComboboxSelectProps<Item> {
   id?: string;
   label?: string;
-  name: string;
+  name?: string;
   items: Item[];
   value: Item | null;
   onValueChange: (
@@ -99,10 +99,7 @@ export interface PharmaComboboxSelectProps<Item> {
     autoHide?: boolean;
     autoHideDelay?: number;
   };
-  createAction?: {
-    label?: string;
-    onCreate: (searchTerm?: string) => void;
-  };
+  createAction?: ComboboxCreateAction;
   hoverDetail?: {
     enabled?: boolean;
     delay?: number;
@@ -118,17 +115,6 @@ export interface PharmaComboboxSelectProps<Item> {
   'aria-labelledby'?: string;
   'aria-describedby'?: string;
 }
-
-const highlightBackgroundTransition = {
-  type: 'spring' as const,
-  stiffness: 400,
-  damping: 30,
-  mass: 0.8,
-};
-
-const selectedOptionScrollTopInset = 4;
-const pointerHoverResumeThreshold = 1;
-const requiredValidationMessage = 'Field ini wajib diisi';
 
 export function PharmaComboboxSelect<Item>({
   id,
@@ -174,25 +160,14 @@ export function PharmaComboboxSelect<Item>({
   const popupContentRef = useRef<HTMLDivElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
-  const blurValidationFrameRef = useRef<number | null>(null);
-  const lastPointerPositionRef = useRef<PointerPosition | null>(null);
-  const keyboardHoverResumePointerPositionRef = useRef<PointerPosition | null>(
-    null
-  );
-  const keyboardHoverSuppressedRef = useRef(false);
   const fallbackLabelId = useId();
   const valueId = useId();
-  const validationMessageId = useId();
   const [inputValue, setInputValue] = useState('');
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
-  const [blurred, setBlurred] = useState(false);
-  const [, setIsKeyboardHoverSuppressed] = useState(false);
   const [isSearchNavigationFocus, setIsSearchNavigationFocus] = useState(false);
-  const [selectedOptionScrollRevision, setSelectedOptionScrollRevision] =
-    useState(0);
-  const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
 
   const actualOpen = open !== undefined ? open : uncontrolledOpen;
+  const previousActualOpenRef = useRef(actualOpen);
   const isOpenControlled = open !== undefined;
   const effectiveId = id ?? formField?.controlId;
   const effectiveLabel = label ?? formField?.label;
@@ -201,25 +176,38 @@ export function PharmaComboboxSelect<Item>({
     () => getComboboxSelectedValue(value, isValueEmpty),
     [isValueEmpty, value]
   );
-  const showValidation =
-    validation?.enabled &&
-    effectiveRequired &&
-    blurred &&
-    selectedValue == null;
-  const normalizedInputValue = inputValue.trim();
-  const visibleItems = useMemo(
-    () =>
-      getVisibleComboboxItems(items, normalizedInputValue, itemToStringLabel),
-    [itemToStringLabel, items, normalizedInputValue]
-  );
-  const hasExactItem = useMemo(
-    () => hasExactComboboxItem(items, normalizedInputValue, itemToStringLabel),
-    [itemToStringLabel, items, normalizedInputValue]
-  );
-  const hasVisibleItems = visibleItems.length > 0;
-  const canCreate = Boolean(
-    createAction && normalizedInputValue.length > 0 && !hasExactItem
-  );
+  const {
+    clearFocusRestoreIntent,
+    handleOpenChange,
+    isFocusWithinCombobox,
+    restoreFocusAfterCloseIfNeeded,
+    setTriggerButtonRef,
+  } = useComboboxFocusRestore<Item>({
+    isOpenControlled,
+    onOpenChange,
+    popupContentRef,
+    rootRef,
+    setUncontrolledOpen,
+  });
+  const { handleComboboxBlur, showValidation, validationMessageId } =
+    useComboboxValidation({
+      effectiveRequired,
+      isFocusWithinCombobox,
+      selectedValue,
+      validation,
+    });
+  const { hasExactItem, hasVisibleItems, normalizedInputValue, visibleItems } =
+    useComboboxSearch({
+      inputValue,
+      itemToStringLabel,
+      items,
+    });
+  const { canCreate, createActionLabel, handleCreate } =
+    useComboboxCreateAction({
+      createAction,
+      hasExactItem,
+      normalizedInputValue,
+    });
   const shouldAnimateListItems =
     normalizedInputValue.length > 0 && hasVisibleItems;
   const selectedLabel =
@@ -235,36 +223,33 @@ export function PharmaComboboxSelect<Item>({
     (item: Item) => isItemDisabledProp(item),
     [isItemDisabledProp]
   );
-  const selectedVisibleIndex = useMemo(
-    () =>
-      selectedValue == null
-        ? -1
-        : visibleItems.findIndex(item => isSameItem(item, selectedValue)),
-    [isSameItem, selectedValue, visibleItems]
-  );
-  const controlName = getComboboxControlName({
+  const { requestSelectedOptionScroll } = useComboboxSelectedOptionScroll({
+    actualOpen,
+    isSameItem,
+    listRef,
+    selectedValue,
+    visibleItems,
+  });
+  const {
+    controlName,
+    listboxAriaLabel,
+    listboxLabelId,
+    shouldRenderFallbackLabel,
+    triggerDescribedBy,
+    triggerLabelledBy,
+  } = useComboboxAccessibility({
+    ariaDescribedBy,
+    ariaLabel,
+    ariaLabelledBy,
+    fallbackLabelId,
+    formFieldLabelId: formField?.labelId,
     label: effectiveLabel,
     name,
     placeholder,
+    showValidation,
+    validationMessageId,
+    valueId,
   });
-  const shouldRenderFallbackLabel =
-    !ariaLabelledBy && !ariaLabel && !formField?.labelId;
-  const triggerLabelledBy = ariaLabelledBy
-    ? `${ariaLabelledBy} ${valueId}`
-    : ariaLabel
-      ? undefined
-      : `${formField?.labelId ?? fallbackLabelId} ${valueId}`;
-  const listboxLabelId =
-    ariaLabelledBy ??
-    formField?.labelId ??
-    (shouldRenderFallbackLabel ? fallbackLabelId : undefined);
-  const listboxAriaLabel = listboxLabelId
-    ? undefined
-    : (ariaLabel ?? controlName);
-  const triggerDescribedBy =
-    [ariaDescribedBy, showValidation ? validationMessageId : undefined]
-      .filter(Boolean)
-      .join(' ') || undefined;
   const hoverDetailEnabled =
     hoverDetail?.enabled ??
     Boolean(onFetchHoverDetail || itemToHoverDetailData);
@@ -303,79 +288,6 @@ export function PharmaComboboxSelect<Item>({
     popupContentRef,
     visibleItemCount: visibleItems.length,
   });
-  const setKeyboardHoverSuppressed = useCallback((nextSuppressed: boolean) => {
-    keyboardHoverSuppressedRef.current = nextSuppressed;
-    setIsKeyboardHoverSuppressed(nextSuppressed);
-  }, []);
-  const resetKeyboardHoverSuppression = useCallback(() => {
-    keyboardHoverResumePointerPositionRef.current = null;
-    setKeyboardHoverSuppressed(false);
-  }, [setKeyboardHoverSuppressed]);
-  // Scrolling a list under a stationary cursor can emit hover events.
-  const suppressPointerHoverForKeyboard = useCallback(() => {
-    keyboardHoverResumePointerPositionRef.current =
-      lastPointerPositionRef.current;
-    setKeyboardHoverSuppressed(true);
-  }, [setKeyboardHoverSuppressed]);
-  const getPointerPosition = useCallback(
-    (event: React.MouseEvent<HTMLElement>): PointerPosition => ({
-      x: event.clientX,
-      y: event.clientY,
-    }),
-    []
-  );
-  const handleHighlightedIndexChange = useCallback(
-    (nextHighlightedIndex: number | null) => {
-      setHighlightedIndex(nextHighlightedIndex);
-    },
-    []
-  );
-  const hasPointerMovedFromKeyboardPosition = useCallback(
-    (pointerPosition: PointerPosition) => {
-      const resumePointerPosition =
-        keyboardHoverResumePointerPositionRef.current;
-
-      return (
-        !resumePointerPosition ||
-        Math.abs(pointerPosition.x - resumePointerPosition.x) >
-          pointerHoverResumeThreshold ||
-        Math.abs(pointerPosition.y - resumePointerPosition.y) >
-          pointerHoverResumeThreshold
-      );
-    },
-    []
-  );
-  const getDefaultHighlightedIndex = useCallback(
-    (candidateItems: Item[]) => {
-      if (selectedValue !== null) {
-        const selectedIndex = candidateItems.findIndex(
-          item => isSameItem(item, selectedValue) && !isItemDisabled(item)
-        );
-        if (selectedIndex >= 0) return selectedIndex;
-      }
-
-      const firstEnabledIndex = candidateItems.findIndex(
-        item => !isItemDisabled(item)
-      );
-
-      return firstEnabledIndex >= 0 ? firstEnabledIndex : null;
-    },
-    [isItemDisabled, isSameItem, selectedValue]
-  );
-  const highlightedItem =
-    highlightedIndex === null ? undefined : visibleItems[highlightedIndex];
-  const defaultHighlightedIndex = actualOpen
-    ? getDefaultHighlightedIndex(visibleItems)
-    : null;
-  const effectiveHighlightedIndex =
-    actualOpen &&
-    highlightedItem !== undefined &&
-    !isItemDisabled(highlightedItem)
-      ? highlightedIndex
-      : defaultHighlightedIndex;
-  const primitiveHighlightedIndex = searchable
-    ? effectiveHighlightedIndex
-    : highlightedIndex;
 
   const getItemHoverDetailData = useCallback(
     (item: Item): Partial<HoverDetailData> => {
@@ -391,130 +303,6 @@ export function PharmaComboboxSelect<Item>({
       };
     },
     [itemToHoverDetailData, itemToStringLabel, itemToStringValue]
-  );
-  const handleCreate = useCallback(() => {
-    if (!canCreate) return;
-
-    createAction?.onCreate(normalizedInputValue);
-  }, [canCreate, createAction, normalizedInputValue]);
-  const handleOpenChange = useCallback(
-    (nextOpen: boolean, details: PharmaComboboxOpenChangeDetails<Item>) => {
-      onOpenChange?.(nextOpen, details);
-      if (details.isCanceled) return;
-
-      if (!isOpenControlled) setUncontrolledOpen(nextOpen);
-    },
-    [isOpenControlled, onOpenChange]
-  );
-  const handleValueChange = useCallback(
-    (nextValue: Item | null, details: PharmaComboboxChangeDetails<Item>) => {
-      onValueChange(nextValue, details);
-      if (details.isCanceled) return;
-
-      setInputValue('');
-      setIsSearchNavigationFocus(false);
-      resetKeyboardHoverSuppression();
-      hideHoverDetail();
-    },
-    [hideHoverDetail, onValueChange, resetKeyboardHoverSuppression]
-  );
-  const handleInputValueChange = useCallback(
-    (nextValue: string) => {
-      const shouldRestoreDefaultHighlight = nextValue.trim().length === 0;
-      const nextHighlightedIndex = shouldRestoreDefaultHighlight
-        ? getDefaultHighlightedIndex(items)
-        : null;
-
-      setInputValue(nextValue);
-      setHighlightedIndex(nextHighlightedIndex);
-      setIsSearchNavigationFocus(false);
-      resetKeyboardHoverSuppression();
-      clearKeyboardScrollHighlight();
-      hideHoverDetail();
-
-      if (shouldRestoreDefaultHighlight) {
-        setSelectedOptionScrollRevision(revision => revision + 1);
-      }
-    },
-    [
-      clearKeyboardScrollHighlight,
-      getDefaultHighlightedIndex,
-      hideHoverDetail,
-      items,
-      resetKeyboardHoverSuppression,
-    ]
-  );
-  const handleItemHighlighted = useCallback(
-    (
-      nextHighlighted: Item | undefined,
-      details: PharmaComboboxHighlightDetails<Item>
-    ) => {
-      if (!actualOpen) {
-        setHighlightedIndex(null);
-        return;
-      }
-
-      if (nextHighlighted === undefined) {
-        if (details.reason === 'pointer') return;
-
-        resetKeyboardHoverSuppression();
-        clearKeyboardScrollHighlight();
-        setHighlightedIndex(getDefaultHighlightedIndex(visibleItems));
-        return;
-      }
-
-      if (
-        details.reason === 'none' &&
-        normalizedInputValue.length === 0 &&
-        selectedValue !== null &&
-        visibleItems.some(
-          item => isSameItem(item, selectedValue) && !isItemDisabled(item)
-        ) &&
-        !isSameItem(nextHighlighted, selectedValue)
-      ) {
-        const selectedIndex = visibleItems.findIndex(
-          item => isSameItem(item, selectedValue) && !isItemDisabled(item)
-        );
-
-        if (selectedIndex >= 0) {
-          details.cancel();
-          setHighlightedIndex(selectedIndex);
-        }
-        return;
-      }
-
-      if (details.reason === 'pointer' && keyboardHoverSuppressedRef.current) {
-        details.cancel();
-        return;
-      }
-
-      if (details.reason === 'keyboard') {
-        suppressPointerHoverForKeyboard();
-        const sourceVisibleIndex = effectiveHighlightedIndex;
-
-        scheduleKeyboardHighlightedScroll(details.index, sourceVisibleIndex);
-      } else {
-        if (details.reason === 'pointer') {
-          resetKeyboardHoverSuppression();
-        }
-
-        clearKeyboardScrollHighlight();
-      }
-    },
-    [
-      actualOpen,
-      clearKeyboardScrollHighlight,
-      effectiveHighlightedIndex,
-      getDefaultHighlightedIndex,
-      isItemDisabled,
-      isSameItem,
-      normalizedInputValue.length,
-      resetKeyboardHoverSuppression,
-      scheduleKeyboardHighlightedScroll,
-      selectedValue,
-      suppressPointerHoverForKeyboard,
-      visibleItems,
-    ]
   );
   const applyPointerHover = useCallback(
     (item: Item, element: HTMLElement) => {
@@ -539,187 +327,81 @@ export function PharmaComboboxSelect<Item>({
       itemToStringValue,
     ]
   );
-  const handleOptionMouseEnter = useCallback(
-    (event: React.MouseEvent<HTMLElement>, item: Item) => {
-      lastPointerPositionRef.current = getPointerPosition(event);
+  const {
+    handleListMouseLeave,
+    handleOptionMouseEnter,
+    handleOptionMouseMove,
+    isKeyboardHoverSuppressed,
+    resetKeyboardHoverSuppression,
+    resetPointerHoverState,
+    suppressPointerHoverForKeyboard,
+  } = useComboboxPointerHover({
+    onHoverAllowed: applyPointerHover,
+    onLeave: handleItemLeave,
+  });
+  const handleValueChange = useCallback(
+    (nextValue: Item | null, details: PharmaComboboxChangeDetails<Item>) => {
+      onValueChange(nextValue, details);
+      if (details.isCanceled) return;
 
-      if (keyboardHoverSuppressedRef.current) {
-        preventComboboxHandler(event);
-        return;
-      }
-
-      applyPointerHover(item, event.currentTarget);
-    },
-    [applyPointerHover, getPointerPosition]
-  );
-  const handleOptionMouseMove = useCallback(
-    (event: React.MouseEvent<HTMLElement>, item: Item) => {
-      const pointerPosition = getPointerPosition(event);
-      lastPointerPositionRef.current = pointerPosition;
-
-      if (!keyboardHoverSuppressedRef.current) return true;
-
-      if (!hasPointerMovedFromKeyboardPosition(pointerPosition)) return false;
-
-      resetKeyboardHoverSuppression();
-      applyPointerHover(item, event.currentTarget);
-      return true;
-    },
-    [
-      applyPointerHover,
-      getPointerPosition,
-      hasPointerMovedFromKeyboardPosition,
-      resetKeyboardHoverSuppression,
-    ]
-  );
-  const handleListMouseLeave = useCallback(() => {
-    lastPointerPositionRef.current = null;
-    resetKeyboardHoverSuppression();
-    handleItemLeave();
-  }, [handleItemLeave, resetKeyboardHoverSuppression]);
-  const handleSearchInputKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLInputElement>) => {
-      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-        setIsSearchNavigationFocus(true);
-        return;
-      }
-
+      setInputValue('');
       setIsSearchNavigationFocus(false);
-      if (event.key !== 'Enter') return;
-
-      if (!canCreate) return;
-
-      event.preventDefault();
-      event.stopPropagation();
-      preventComboboxHandler(event);
-      handleCreate();
-    },
-    [canCreate, handleCreate]
-  );
-  const handleTriggerKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLButtonElement>) => {
-      if (!searchable || !actualOpen) return;
-      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-        setIsSearchNavigationFocus(true);
-        return;
-      }
-
-      if (
-        event.key.length !== 1 ||
-        event.altKey ||
-        event.ctrlKey ||
-        event.metaKey
-      ) {
-        return;
-      }
-
-      event.preventDefault();
-      event.stopPropagation();
-      preventComboboxHandler(event);
-      setIsSearchNavigationFocus(false);
-      setInputValue(currentValue => `${currentValue}${event.key}`);
-      setHighlightedIndex(null);
       resetKeyboardHoverSuppression();
-      clearKeyboardScrollHighlight();
       hideHoverDetail();
-      searchInputRef.current?.focus({ preventScroll: true });
     },
-    [
-      actualOpen,
-      clearKeyboardScrollHighlight,
-      hideHoverDetail,
-      resetKeyboardHoverSuppression,
-      searchable,
-    ]
+    [hideHoverDetail, onValueChange, resetKeyboardHoverSuppression]
   );
-  const isFocusWithinCombobox = useCallback((target: EventTarget | null) => {
-    if (typeof Node === 'undefined' || !(target instanceof Node)) return false;
-
-    return Boolean(
-      rootRef.current?.contains(target) ||
-      popupContentRef.current?.contains(target)
-    );
-  }, []);
-  const handleComboboxBlur = useCallback(
-    (event: React.FocusEvent<HTMLDivElement>) => {
-      if (blurValidationFrameRef.current !== null) {
-        window.cancelAnimationFrame(blurValidationFrameRef.current);
-        blurValidationFrameRef.current = null;
-      }
-
-      const nextFocusedTarget = event.relatedTarget;
-      if (isFocusWithinCombobox(nextFocusedTarget)) return;
-
-      if (nextFocusedTarget || typeof window === 'undefined') {
-        setBlurred(true);
-        return;
-      }
-
-      blurValidationFrameRef.current = window.requestAnimationFrame(() => {
-        blurValidationFrameRef.current = null;
-        if (
-          typeof document !== 'undefined' &&
-          isFocusWithinCombobox(document.activeElement)
-        ) {
-          return;
-        }
-
-        setBlurred(true);
-      });
-    },
-    [isFocusWithinCombobox]
-  );
-
-  useLayoutEffect(() => {
-    if (!actualOpen) setInputValue('');
-  }, [actualOpen]);
+  const {
+    effectiveHighlightedIndex,
+    handleHighlightedIndexChange,
+    handleInputValueChange,
+    handleItemHighlighted,
+    handleSearchInputKeyDown,
+    handleTriggerKeyDown,
+  } = useComboboxHighlight({
+    actualOpen,
+    canCreate,
+    clearKeyboardScrollHighlight,
+    handleCreate,
+    hideHoverDetail,
+    isItemDisabled,
+    isKeyboardHoverSuppressed,
+    isSameItem,
+    items,
+    normalizedInputValue,
+    requestSelectedOptionScroll,
+    resetKeyboardHoverSuppression,
+    scheduleKeyboardHighlightedScroll,
+    searchable,
+    searchInputRef,
+    selectedValue,
+    setInputValue,
+    setIsSearchNavigationFocus,
+    suppressPointerHoverForKeyboard,
+    visibleItems,
+  });
 
   useEffect(() => {
-    if (actualOpen) return;
+    const wasOpen = previousActualOpenRef.current;
+    previousActualOpenRef.current = actualOpen;
 
-    lastPointerPositionRef.current = null;
+    if (actualOpen) {
+      if (!wasOpen) clearFocusRestoreIntent();
+      return;
+    }
+
     setIsSearchNavigationFocus(false);
     hideHoverDetail();
-    resetKeyboardHoverSuppression();
-    setHighlightedIndex(null);
-  }, [actualOpen, hideHoverDetail, resetKeyboardHoverSuppression]);
+    resetPointerHoverState();
 
-  useEffect(() => {
-    if (!actualOpen || !searchable) return;
-
-    if (highlightedIndex === effectiveHighlightedIndex) return;
-
-    setHighlightedIndex(effectiveHighlightedIndex);
-  }, [actualOpen, effectiveHighlightedIndex, highlightedIndex, searchable]);
-
-  useEffect(() => {
-    if (!actualOpen || selectedVisibleIndex < 0) return undefined;
-
-    const frame = window.requestAnimationFrame(() => {
-      const list = listRef.current;
-      if (!list) return;
-
-      const option = list.querySelector<HTMLElement>(
-        `[data-pharma-combobox-index="${selectedVisibleIndex}"]`
-      );
-      if (!option) return;
-
-      const listTop = list.getBoundingClientRect().top;
-      const optionTop = option.getBoundingClientRect().top;
-      list.scrollTop += optionTop - listTop - selectedOptionScrollTopInset;
-    });
-
-    return () => window.cancelAnimationFrame(frame);
-  }, [actualOpen, selectedOptionScrollRevision, selectedVisibleIndex]);
-
-  useEffect(
-    () => () => {
-      if (blurValidationFrameRef.current !== null) {
-        window.cancelAnimationFrame(blurValidationFrameRef.current);
-      }
-    },
-    []
-  );
+    restoreFocusAfterCloseIfNeeded();
+  }, [
+    actualOpen,
+    clearFocusRestoreIntent,
+    hideHoverDetail,
+    resetPointerHoverState,
+    restoreFocusAfterCloseIfNeeded,
+  ]);
 
   return (
     <div ref={rootRef} className={className} onBlur={handleComboboxBlur}>
@@ -736,7 +418,7 @@ export function PharmaComboboxSelect<Item>({
         onOpenChange={handleOpenChange}
         inputValue={inputValue}
         onInputValueChange={handleInputValueChange}
-        highlightedIndex={primitiveHighlightedIndex}
+        highlightedIndex={effectiveHighlightedIndex}
         onHighlightedIndexChange={handleHighlightedIndexChange}
         onItemHighlighted={handleItemHighlighted}
         itemToStringLabel={itemToStringLabel}
@@ -753,73 +435,36 @@ export function PharmaComboboxSelect<Item>({
         filter={null}
         autoHighlight={searchable}
       >
-        <Combobox.Trigger
+        <ComboboxTriggerButton
           id={effectiveId}
-          aria-label={ariaLabel}
-          aria-labelledby={triggerLabelledBy}
-          aria-describedby={triggerDescribedBy}
-          aria-invalid={showValidation || undefined}
+          ariaLabel={ariaLabel}
+          ariaLabelledBy={triggerLabelledBy}
+          ariaDescribedBy={triggerDescribedBy}
+          ariaInvalid={Boolean(showValidation)}
           tabIndex={tabIndex}
-          render={(props, state) => {
-            const { ref, onKeyDown, ...triggerProps } = props;
-
-            return (
-              <button
-                {...triggerProps}
-                type="button"
-                ref={node => {
-                  setRef(ref, node);
-                }}
-                onKeyDown={event => {
-                  handleTriggerKeyDown(event);
-                  if (event.defaultPrevented) return;
-
-                  onKeyDown?.(event);
-                }}
-                className={cn(
-                  'flex min-h-10 w-full items-center justify-between gap-2 rounded-xl border bg-white px-3 py-2 text-left text-sm transition focus:border-primary focus:outline-hidden focus:ring-3 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-slate-100',
-                  showValidation
-                    ? 'border-red-400'
-                    : state.open
-                      ? 'border-primary'
-                      : 'border-slate-300'
-                )}
-              >
-                <span
-                  id={valueId}
-                  className={
-                    selectedLabel ? 'truncate' : 'truncate text-slate-400'
-                  }
-                >
-                  {selectedLabel || placeholder}
-                </span>
-                <TbChevronDown
-                  aria-hidden="true"
-                  className={cn(
-                    'h-4 w-4 shrink-0 text-slate-500 transition-transform',
-                    state.open && 'rotate-180'
-                  )}
-                />
-              </button>
-            );
-          }}
+          onNavigationKeyDown={handleTriggerKeyDown}
+          placeholder={placeholder}
+          selectedLabel={selectedLabel}
+          setTriggerButtonRef={setTriggerButtonRef}
+          valueId={valueId}
         />
         <Combobox.Portal>
           <Combobox.Positioner
             sideOffset={4}
+            matchAnchorWidth={popupClassName === undefined}
             className="z-[1000] w-[var(--anchor-width)]"
           >
             <Combobox.Popup
               initialFocus={false}
               className={cn(
-                'w-full',
+                'max-w-[var(--available-width)]',
                 popupClassName ??
-                  'overflow-hidden rounded-xl bg-white shadow-thin-md'
+                  'w-full overflow-hidden rounded-xl bg-white shadow-thin-md'
               )}
             >
               <div
                 ref={popupContentRef}
-                className="relative"
+                className="relative flex max-h-[var(--available-height)] flex-col overflow-hidden"
                 onBlur={handleComboboxBlur}
               >
                 {heldHighlightFrame ? (
@@ -831,157 +476,44 @@ export function PharmaComboboxSelect<Item>({
                     style={heldHighlightFrame}
                     initial={false}
                     animate={heldHighlightFrame}
-                    transition={highlightBackgroundTransition}
+                    transition={comboboxHighlightBackgroundTransition}
                   />
                 ) : null}
                 {searchable ? (
-                  <div className="sticky top-0 z-20 border-b border-slate-200 bg-white p-2">
-                    <div className="relative flex items-center">
-                      <TbSearch
-                        aria-hidden="true"
-                        className={cn(
-                          'pointer-events-none absolute left-3 h-4 w-4',
-                          normalizedInputValue
-                            ? 'text-primary'
-                            : 'text-slate-400'
-                        )}
-                      />
-                      <Combobox.Input
-                        ref={searchInputRef}
-                        role="searchbox"
-                        data-pharma-combobox-navigation-focus={
-                          isSearchNavigationFocus ? '' : undefined
-                        }
-                        className={cn(
-                          'w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-10 text-sm text-slate-800 outline-hidden transition placeholder:text-slate-400',
-                          isSearchNavigationFocus
-                            ? 'focus:border-slate-200 focus:ring-0'
-                            : 'focus:border-primary focus:ring-2 focus:ring-primary/15'
-                        )}
-                        aria-label={`Cari ${controlName}`}
-                        aria-required={false}
-                        placeholder={searchPlaceholder}
-                        onKeyDown={handleSearchInputKeyDown}
-                        onPointerDown={() => {
-                          setIsSearchNavigationFocus(false);
-                        }}
-                        onBlur={() => {
-                          setIsSearchNavigationFocus(false);
-                        }}
-                      />
-                      {canCreate ? (
-                        <button
-                          type="button"
-                          aria-label={createAction?.label ?? 'Tambah baru'}
-                          className="absolute right-2 inline-flex h-6 w-6 items-center justify-center rounded-md text-primary transition hover:bg-primary/10"
-                          onMouseDown={event => event.preventDefault()}
-                          onClick={handleCreate}
-                        >
-                          <TbPlus aria-hidden="true" className="h-4 w-4" />
-                        </button>
-                      ) : null}
-                    </div>
-                  </div>
+                  <ComboboxSearchHeader
+                    canCreate={canCreate}
+                    controlName={controlName}
+                    createActionLabel={createActionLabel}
+                    isSearchNavigationFocus={isSearchNavigationFocus}
+                    normalizedInputValue={normalizedInputValue}
+                    onCreate={handleCreate}
+                    onNavigationFocusChange={setIsSearchNavigationFocus}
+                    onSearchInputKeyDown={handleSearchInputKeyDown}
+                    searchInputRef={searchInputRef}
+                    searchPlaceholder={searchPlaceholder}
+                  />
                 ) : null}
-                <Combobox.List
-                  ref={listRef}
-                  aria-label={listboxAriaLabel}
-                  onMouseLeave={handleListMouseLeave}
-                  className={cn(
-                    'relative z-10 overflow-y-auto outline-hidden',
-                    hasVisibleItems ? 'max-h-60 p-1' : 'max-h-0 p-0'
-                  )}
-                >
-                  {visibleItems.map((item, index) => (
-                    <ComboboxOptionMotionFrame
-                      key={itemToStringValue(item)}
-                      shouldAnimate={shouldAnimateListItems}
-                    >
-                      <Combobox.Item
-                        value={item}
-                        index={index}
-                        disabled={isItemDisabled(item)}
-                        data-pharma-combobox-index={index.toString()}
-                        onMouseEnter={event => {
-                          handleOptionMouseEnter(event, item);
-                        }}
-                        onMouseMove={event => {
-                          const shouldAllowPrimitiveHover =
-                            handleOptionMouseMove(event, item);
-
-                          if (!shouldAllowPrimitiveHover) {
-                            preventComboboxHandler(event);
-                          }
-                        }}
-                        onMouseLeave={handleItemLeave}
-                        render={(props, state) => {
-                          const { ref, ...itemProps } = props;
-                          const labelText = itemToStringLabel(item);
-                          const isVisuallyHighlighted =
-                            effectiveHighlightedIndex === index;
-                          const renderState: PharmaComboboxOptionRenderState = {
-                            disabled: state.disabled,
-                            highlighted: isVisuallyHighlighted,
-                            inputValue,
-                            label: labelText,
-                            selected: state.selected,
-                          };
-                          const optionMeta = renderOptionMeta?.(
-                            item,
-                            renderState
-                          );
-
-                          return (
-                            <div
-                              {...itemProps}
-                              ref={node => {
-                                setRef(ref, node);
-                              }}
-                              data-pharma-combobox-index={index.toString()}
-                              className={cn(
-                                'relative flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-800 outline-hidden',
-                                state.selected && 'font-semibold text-primary',
-                                state.disabled &&
-                                  'cursor-not-allowed opacity-50'
-                              )}
-                            >
-                              {isVisuallyHighlighted && !heldHighlightFrame ? (
-                                <motion.div
-                                  key={`combobox-active-background-${instanceId}-${inputValue}`}
-                                  layoutId={`combobox-active-background-${instanceId}-${inputValue}`}
-                                  initial={false}
-                                  data-pharma-combobox-highlight=""
-                                  className="pointer-events-none absolute inset-0 z-0 rounded-lg bg-primary/10"
-                                  transition={highlightBackgroundTransition}
-                                />
-                              ) : null}
-                              <span className="relative z-10 flex min-w-0 flex-1 items-center gap-2">
-                                <ComboboxSelectionIndicator
-                                  kind={indicator}
-                                  selected={state.selected}
-                                />
-                                {renderOption ? (
-                                  <span className="min-w-0 flex-1">
-                                    {renderOption(item, renderState)}
-                                  </span>
-                                ) : (
-                                  <span className="min-w-0 flex-1 truncate">
-                                    {labelText}
-                                  </span>
-                                )}
-                                {optionMeta ? (
-                                  <span className="shrink-0 text-xs font-normal text-slate-500">
-                                    {optionMeta}
-                                  </span>
-                                ) : null}
-                              </span>
-                            </div>
-                          );
-                        }}
-                      />
-                    </ComboboxOptionMotionFrame>
-                  ))}
-                </Combobox.List>
+                <ComboboxOptionList
+                  effectiveHighlightedIndex={effectiveHighlightedIndex}
+                  hasHeldHighlightFrame={heldHighlightFrame !== null}
+                  hasVisibleItems={hasVisibleItems}
+                  indicator={indicator}
+                  inputValue={inputValue}
+                  isItemDisabled={isItemDisabled}
+                  itemToStringLabel={itemToStringLabel}
+                  itemToStringValue={itemToStringValue}
+                  listRef={listRef}
+                  listboxAriaLabel={listboxAriaLabel}
+                  onItemLeave={handleItemLeave}
+                  onListMouseLeave={handleListMouseLeave}
+                  onOptionMouseEnter={handleOptionMouseEnter}
+                  onOptionMouseMove={handleOptionMouseMove}
+                  renderOption={renderOption}
+                  renderOptionMeta={renderOptionMeta}
+                  shouldAnimateListItems={shouldAnimateListItems}
+                  visibleItems={visibleItems}
+                  visualHighlightId={`combobox-active-background-${instanceId}`}
+                />
                 <Combobox.Empty className="empty:hidden relative z-10 px-3 py-4 text-center text-sm text-slate-500">
                   {emptyText}
                 </Combobox.Empty>
@@ -992,12 +524,12 @@ export function PharmaComboboxSelect<Item>({
       </Combobox.Root>
       {validation?.enabled ? (
         <span id={validationMessageId} className="sr-only">
-          {showValidation ? requiredValidationMessage : ''}
+          {showValidation ? comboboxRequiredValidationMessage : ''}
         </span>
       ) : null}
       {validation?.enabled ? (
         <ValidationOverlay
-          error={requiredValidationMessage}
+          error={comboboxRequiredValidationMessage}
           showError={Boolean(showValidation)}
           targetRef={rootRef}
           autoHide={validation.autoHide}

@@ -10,6 +10,17 @@ The primitive is a focused Base-UI-like engine owned by this repo. It covers the
 
 Popup placement is delegated to Floating UI through `Combobox.Positioner`. The combobox still owns value state, item highlighting, search, keyboard behavior, form integration, and the app preset animations.
 
+Implementation is split by ownership:
+
+- `primitive.tsx` owns the public compound namespace and root provider shell.
+- `primitive-root-state.ts` owns root state, filtering, option registry, value changes, and hidden form value derivation.
+- `primitive-hidden-input.tsx` owns the native hidden input used for form submission.
+- `primitive-label.tsx`, `primitive-trigger.tsx`, `primitive-value.tsx`, and `primitive-input.tsx` own the individual control parts and their keyboard/event handlers.
+- `primitive-items.tsx` owns list, collection, item rendering, item registration, item indicators, empty state, and status.
+- `primitive-popup.tsx` owns portal rendering, popup focus, and Floating UI positioning.
+- `primitive-context.ts` and `utils/primitive-*` hold shared context, event details, keyboard math, outside press handling, positioning, and render-prop merging.
+- `presets.tsx`, `components/*`, `hooks/*`, and `utils/preset-*` compose the PharmaSys app select UX, including popup content, search, highlighting, validation, and hover-detail layout on top of the primitive.
+
 ## Primitive Parts
 
 ```tsx
@@ -29,7 +40,7 @@ Popup placement is delegated to Floating UI through `Combobox.Positioner`. The c
   <Combobox.Portal>
     <Combobox.Positioner>
       <Combobox.Popup>
-        <Combobox.Input placeholder="Cari..." />
+        <Combobox.Input aria-label="Cari supplier" placeholder="Cari..." />
         <Combobox.List<(typeof suppliers)[number]>>
           {(supplier, index) => (
             <Combobox.Item key={supplier.id} value={supplier} index={index}>
@@ -61,6 +72,10 @@ Available parts:
 - `Combobox.Empty`
 - `Combobox.Status`
 
+`Combobox.Portal` renders into `document.body` by default. Pass `container` when a real call-site needs the popup mounted under a different DOM root.
+
+`Combobox.Positioner` matches the trigger width by default and uses `placement="bottom-start"`. Pass `matchAnchorWidth={false}` when the popup content owns a custom width; the positioner will keep the popup at least as wide as the trigger while letting Floating UI shift the wider content inside the available viewport. Pass `placement` when a composition needs a different preferred Floating UI placement.
+
 ## Root API
 
 `Combobox.Root<Value>` supports the local subset used by PharmaSys:
@@ -79,13 +94,23 @@ Available parts:
 
 Change callbacks receive cancelable event details with `reason`, `event`, `cancel()`, and `isCanceled`.
 
+`itemToStringValue` must return a stable unique submitted value for every option that can appear in the same list. The primitive uses that value for hidden form submission, while the preset also relies on it for item keys and entity/id bridging.
+
 When a popup is open, pressing outside both the trigger and the portaled popup requests close with reason `outside-press`. Controlled `open` callers and `details.cancel()` still decide whether that close request takes effect.
 
 `autoComplete` sets the default native `autocomplete` attribute for `Combobox.Input`. A direct `autoComplete` prop on `Combobox.Input` wins over the root default.
 
+Trigger and popup search keyboard navigation covers ArrowUp/ArrowDown, PageUp/PageDown, Home/End on the trigger, Enter selection, and Escape close.
+
+`Combobox.Input` defaults to `role="searchbox"` for the supported trigger-plus-popup-search composition. Its text value is owned by `Combobox.Root` through `inputValue` / `defaultInputValue`; pass `onInputValueChange` to the root instead of `value` or `defaultValue` to the input. Do not treat the input alone as a full standalone combobox unless the missing open/focus behavior is added for a real call-site.
+
 `name` and `form` render a hidden input for submission. `required` is primitive state consumed by the app preset and validation integrations; it is not implemented through native hidden-input constraint validation. Use `PharmaComboboxSelect` validation for required user feedback.
 
 The local primitive intentionally does not aim to mirror every upstream combobox feature. Add behavior only when a real PharmaSys call-site needs it.
+
+When the popup is open, the primitive trigger supports the local keyboard set used by PharmaSys: Arrow navigation, Home/End, PageUp/PageDown, Enter/Space selection, Escape close, and basic typeahead. The popup search input keeps normal text-entry ownership, handles list navigation keys, and lets Enter select the active option before the preset falls back to a create action with no active option.
+
+The preset renders the visible item list directly. For very large datasets, keep the option list bounded before it reaches the preset by using caller-owned filtering, server-backed search, or the primitive `filteredItems` contract. Do not add virtualization to the app preset without a call-site that needs that extra behavior.
 
 ## Render Props
 
@@ -125,7 +150,7 @@ Use the entity preset when a standard id-backed PharmaSys select is needed:
 />
 ```
 
-If the selected id can outlive the current option list, pass `selectedItem` when available. The scalar `valueId` is still preserved for hidden form submission and required validation while options are loading; `selectedItem` keeps the trigger label human-readable during that gap.
+If the selected id can outlive the current option list, pass `selectedItem` when available. The scalar `valueId` is still preserved for hidden form submission and required validation while options are loading. When no matching option or `selectedItem` is available, the trigger uses a neutral fallback label while keeping the raw id submitted; `selectedItem` keeps that temporary gap fully human-readable.
 
 ```tsx
 <PharmaEntityComboboxSelect
@@ -198,12 +223,12 @@ The preset owns:
 - The animated visual highlight background, including hover continuity, keyboard scroll pinning, wrap-to-edge scroll behavior, stationary-pointer suppression, and the selected/default visual anchor after search is cleared.
 - The popup search input's visual active state. Arrow navigation may keep DOM focus on the input, but it must not make the search field look actively focused unless the user is typing or pointing at the input.
 
-The shared boundary is item highlighting. The primitive owns the semantic highlighted index. The preset controls that index declaratively through `highlightedIndex` and renders the existing animated visual background from it. Non-searchable selects preserve the legacy first-arrow keyboard behavior while keeping highlight syncing declarative in production.
+The shared boundary is item highlighting. The primitive owns the semantic highlighted index. The preset controls that index declaratively through `highlightedIndex` and renders the existing animated visual background from it. Searchable and non-searchable presets keep their semantic active descendant aligned with the visible highlight anchor.
 
 Rules for maintaining this boundary:
 
 - Do not let the visual background directly change submitted value or selection. Selection must still happen through primitive item press or keyboard handling.
-- Searchable preset keyboard navigation must continue from the visible highlight anchor through the primitive controlled highlighted index.
+- Preset keyboard navigation must continue from the visible highlight anchor through the primitive controlled highlighted index.
 - Clearing search must restore the visual highlight to the selected enabled item when it is visible, otherwise to the first enabled visible item.
 - Keyboard scroll and pointer hover must remain arbitrated by the preset so a stationary cursor does not steal highlight while Arrow navigation scrolls the list.
 - `value`/`valueId` is the selected value source of truth. `inputValue` is only the transient search query and is cleared when the popup actually closes.
@@ -216,16 +241,30 @@ Do not add app-specific props to `Combobox.Root`. Compose app behavior around th
 
 ## Test Coverage
 
-Combobox regression coverage is intentionally split by what each runner can prove:
+Combobox regression coverage is intentionally split by what each runner and file can prove:
 
-- Vitest with Testing Library covers primitive and preset behavior in `src/components/combobox/index.test.tsx`: value changes, search/filtering, keyboard selection, disabled items, hidden form values, label/id wiring, cancelable event details, controlled open behavior, visual highlight state, and animation behavior contracts.
+- `src/components/combobox/index.test.tsx` covers primitive behavior: value changes, filtering, keyboard selection, disabled items, cancelable event details, controlled highlight state, render props, and outside press.
+- `src/components/combobox/primitive-aria-id.test.tsx` covers internal listbox and option id contracts that back `aria-controls` and `aria-activedescendant`.
+- `src/components/combobox/primitive-form-state.test.tsx` covers hidden form values, controlled nullable values, read-only state, and input autocomplete defaults.
+- `src/components/combobox/primitive-label.test.tsx` covers primitive label/id wiring and listbox labelling contracts.
+- `src/components/combobox/primitive-popup.test.tsx` covers primitive portal container wiring, positioner placement API coverage, Floating UI sizing, and initial focus.
+- `src/components/combobox/primitive-render-props.test.tsx` covers primitive render-prop prop merging, child passthrough, refs, and internal handler cancellation.
+- `src/components/combobox/presets-accessibility.test.tsx` covers app label sources, listbox labelling, fallback accessible names, empty status placement, and omitted-name form behavior.
+- `src/components/combobox/presets-create-validation.test.tsx` covers create-action precedence, required validation, and non-null empty sentinel behavior.
+- `src/components/combobox/presets-highlight.test.ts` covers pure preset highlight and keyboard-routing helpers.
+- `src/components/combobox/presets-search-lifecycle.test.tsx` covers search input reset, controlled popup close behavior, focus restore, trigger typing, and search navigation focus state.
+- `src/components/combobox/presets-state.test.tsx` covers cancelable details, disabled options, and non-searchable trigger keyboard state.
+- `src/components/combobox/presets.test.tsx` covers the generic PharmaSys preset: visual highlight state, keyboard scroll behavior, filtered option indices, typed option rendering, and cross-call-site preset examples.
+- `src/components/combobox/presets-entity.test.tsx` covers id-backed entity select behavior, selected-item fallback, scalar form submission, and unavailable-item fallback safeguards.
+- `src/components/combobox/presets-hover-detail.test.tsx` covers hover detail data, fetch failures, unmount cleanup, and controlled-open cleanup boundaries.
+- `src/components/combobox/presets-keyboard-scroll.test.tsx` covers low-level preset keyboard scroll and pinned-highlight geometry helpers.
 - `@testing-library/user-event` is used for user-facing click/type flows where realistic event order matters. Lower-level `fireEvent` remains acceptable for targeted primitive and edge-case transitions.
 - Playwright covers browser-only layout behavior in `tests/playwright/combobox.spec.ts`: the combobox fixture renders the real components, verifies search/select still works in Chromium, and verifies Floating UI flips/clamps the portaled fixed popup near the viewport edge.
 
 Useful commands:
 
 ```bash
-AI_AGENT=codex vp test run --passWithNoTests src/components/combobox/index.test.tsx
+AI_AGENT=codex vp test run --passWithNoTests src/components/combobox/index.test.tsx src/components/combobox/primitive-aria-id.test.tsx src/components/combobox/primitive-form-state.test.tsx src/components/combobox/primitive-label.test.tsx src/components/combobox/primitive-popup.test.tsx src/components/combobox/primitive-render-props.test.tsx src/components/combobox/presets.test.tsx src/components/combobox/presets-accessibility.test.tsx src/components/combobox/presets-create-validation.test.tsx src/components/combobox/presets-entity.test.tsx src/components/combobox/presets-highlight.test.ts src/components/combobox/presets-hover-detail.test.tsx src/components/combobox/presets-keyboard-scroll.test.tsx src/components/combobox/presets-search-lifecycle.test.tsx src/components/combobox/presets-state.test.tsx
 PLAYWRIGHT_BASE_URL=http://127.0.0.1:5173 bun run test:e2e -- tests/playwright/combobox.spec.ts
 ```
 

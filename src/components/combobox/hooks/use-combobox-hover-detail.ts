@@ -253,6 +253,7 @@ export const useComboboxHoverDetail = ({
   useEffect(() => {
     return () => {
       clearHoverDetailTimeouts();
+      currentItemIdRef.current = null;
       isPortalShownRef.current = false;
     };
   }, [clearHoverDetailTimeouts]);

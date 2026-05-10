@@ -63,6 +63,7 @@ function ComboboxRegressionHarness() {
   const [bottomMedicine, setBottomMedicine] = useState<MedicineOption | null>(
     null
   );
+  const [wideMedicine, setWideMedicine] = useState<MedicineOption | null>(null);
   const [primitiveValue, setPrimitiveValue] = useState<MedicineOption | null>(
     null
   );
@@ -124,6 +125,34 @@ function ComboboxRegressionHarness() {
             indicator="check"
             renderOptionMeta={(option: MedicineOption) => option.code}
           />
+        </div>
+
+        <div
+          data-testid="wide-popup-stage"
+          className="flex justify-end space-y-2"
+        >
+          <div className="w-40 space-y-2">
+            <label
+              className="block text-sm font-semibold"
+              htmlFor="wide-popup-combobox"
+            >
+              Popup lebar
+            </label>
+            <PharmaComboboxSelect<MedicineOption>
+              id="wide-popup-combobox"
+              name="wide_medicine_id"
+              items={medicineOptions}
+              value={wideMedicine}
+              onValueChange={setWideMedicine}
+              itemToStringLabel={optionLabel}
+              itemToStringValue={optionValue}
+              label="Popup lebar"
+              placeholder="Pilih"
+              searchPlaceholder="Cari popup lebar"
+              popupClassName="w-[420px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl"
+              renderOptionMeta={(option: MedicineOption) => option.code}
+            />
+          </div>
         </div>
 
         <div className="space-y-2">

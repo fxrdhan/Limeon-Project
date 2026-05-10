@@ -7,218 +7,23 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useAnimationControls } from 'motion/react';
-import Badge from '@/components/badge';
 import { cn } from '@/lib/utils';
 import type { HoverDetailData } from '@/types/components';
 import type {
   ComboboxHoverDetailGeometry,
   ComboboxHoverDetailPosition,
-  ComboboxHoverDetailSize,
 } from '@/components/combobox/internal-types';
-
-const hoverDetailViewportPadding = 12;
-const hoverDetailHiddenOffset = 4;
-const hoverDetailMinWidth = 220;
-const hoverDetailSurfaceHorizontalPadding = 32;
-const hoverDetailLineWidthBuffer = 8;
-const hoverDetailAppearTransition = {
-  type: 'spring' as const,
-  stiffness: 520,
-  damping: 24,
-  mass: 0.75,
-};
-const hoverDetailExitTransition = {
-  type: 'spring' as const,
-  stiffness: 520,
-  damping: 30,
-  mass: 0.65,
-};
-const hoverDetailRepositionTransition = {
-  type: 'tween' as const,
-  duration: 0.22,
-  ease: 'easeOut' as const,
-};
-const defaultHoverDetailGeometry: ComboboxHoverDetailGeometry = {
-  x: 0,
-  y: 0,
-  hiddenX: 0,
-  hiddenY: 0,
-  width: 0,
-  height: 0,
-};
-
-const getHoverDetailGeometry = (
-  position: ComboboxHoverDetailPosition,
-  size: ComboboxHoverDetailSize
-): ComboboxHoverDetailGeometry => {
-  const viewportWidth =
-    typeof window === 'undefined' ? 1024 : window.innerWidth;
-  const viewportHeight =
-    typeof window === 'undefined' ? 768 : window.innerHeight;
-  const maxTop = Math.max(
-    hoverDetailViewportPadding,
-    viewportHeight - size.height - hoverDetailViewportPadding
-  );
-  const width = Math.min(
-    size.width,
-    position.maxWidth,
-    viewportWidth - hoverDetailViewportPadding * 2
-  );
-  const preferredX =
-    position.direction === 'right' ? position.left : position.left - width;
-  const x =
-    typeof window === 'undefined'
-      ? preferredX
-      : Math.min(
-          Math.max(preferredX, hoverDetailViewportPadding),
-          viewportWidth - width - hoverDetailViewportPadding
-        );
-  const y = Math.min(
-    Math.max(position.top, hoverDetailViewportPadding),
-    maxTop
-  );
-  const hiddenX =
-    position.direction === 'right'
-      ? x - hoverDetailHiddenOffset
-      : x + hoverDetailHiddenOffset;
-
-  return {
-    x,
-    y,
-    hiddenX,
-    hiddenY: y,
-    width,
-    height: size.height,
-  };
-};
-
-const getDisplayCode = (data: HoverDetailData) =>
-  data.display?.code ?? data.code;
-
-const getDisplayDescription = (data: HoverDetailData) =>
-  data.display?.description ?? data.description;
-
-const getDisplayBadgeLabel = (data: HoverDetailData) =>
-  data.display?.badgeLabel ?? data.metaLabel;
-
-const getDisplayBadgeTone = (data?: HoverDetailData | null) =>
-  data?.display?.badgeTone ?? data?.metaTone ?? 'default';
-
-const getHoverDetailMetaBadgeVariant = (data?: HoverDetailData | null) => {
-  const tone = getDisplayBadgeTone(data);
-  if (tone === 'success') return 'success';
-  if (tone === 'warning') return 'warning';
-  if (tone === 'info') return 'info';
-  return 'default';
-};
-
-const getNaturalTextWidth = (element: HTMLElement) => {
-  const previousDisplay = element.style.display;
-  const previousWhiteSpace = element.style.whiteSpace;
-
-  element.style.display = 'inline-block';
-  element.style.whiteSpace = 'nowrap';
-
-  const width = element.getBoundingClientRect().width;
-  element.style.display = previousDisplay;
-  element.style.whiteSpace = previousWhiteSpace;
-
-  return width;
-};
-
-const getMeasuredInlineWidth = (element: HTMLElement) => {
-  const lineRects = element.querySelectorAll<HTMLElement>(
-    '[data-hover-detail-line]'
-  );
-  const titleLine = element.querySelector<HTMLElement>(
-    '[data-hover-detail-title-line]'
-  );
-  const codeBadge = element.querySelector<HTMLElement>(
-    '[data-hover-detail-code-badge]'
-  );
-  let maxLineWidth = 0;
-
-  lineRects.forEach(lineElement => {
-    Array.from(lineElement.getClientRects()).forEach(rect => {
-      maxLineWidth = Math.max(maxLineWidth, rect.width);
-    });
-  });
-
-  if (titleLine) {
-    const codeWidth = codeBadge ? codeBadge.getBoundingClientRect().width : 0;
-    const headerGapWidth = codeWidth > 0 ? 8 : 0;
-    maxLineWidth = Math.max(
-      maxLineWidth,
-      codeWidth + headerGapWidth + getNaturalTextWidth(titleLine)
-    );
-  }
-
-  return maxLineWidth > 0
-    ? maxLineWidth +
-        hoverDetailSurfaceHorizontalPadding +
-        hoverDetailLineWidthBuffer
-    : null;
-};
-
-const HoverDetailContent = ({
-  data,
-  width,
-}: {
-  data: HoverDetailData;
-  width?: number;
-}) => {
-  const code = getDisplayCode(data);
-  const description = getDisplayDescription(data);
-  const metaLabel = getDisplayBadgeLabel(data);
-  const metaBadgeVariant = getHoverDetailMetaBadgeVariant(data);
-
-  return (
-    <div
-      className="pointer-events-auto max-h-[calc(100vh-24px)] min-w-0 overflow-hidden"
-      style={width ? { width } : undefined}
-    >
-      <div
-        className={cn(
-          'flex min-w-0 items-start justify-between gap-3',
-          description && 'mb-3'
-        )}
-      >
-        <div className="flex min-w-0 flex-1 items-start gap-2">
-          {code ? (
-            <span data-hover-detail-code-badge="" className="shrink-0">
-              <Badge
-                variant="success"
-                size="sm"
-                className="shrink-0 rounded-md"
-              >
-                {code}
-              </Badge>
-            </span>
-          ) : null}
-          <h3 className="min-w-0 flex-1 whitespace-normal break-words font-semibold text-slate-900">
-            <span data-hover-detail-line="" data-hover-detail-title-line="">
-              {data.name}
-            </span>
-          </h3>
-        </div>
-        {metaLabel ? (
-          <Badge
-            variant={metaBadgeVariant}
-            size="sm"
-            className="shrink-0 rounded-md uppercase tracking-wide"
-          >
-            {metaLabel}
-          </Badge>
-        ) : null}
-      </div>
-      {description ? (
-        <p className="whitespace-normal break-words text-sm leading-relaxed text-slate-600">
-          <span data-hover-detail-line="">{description}</span>
-        </p>
-      ) : null}
-    </div>
-  );
-};
+import { ComboboxHoverDetailContent } from './combobox-hover-detail-content';
+import {
+  defaultHoverDetailGeometry,
+  getHoverDetailElementSize,
+  getHoverDetailGeometry,
+  hoverDetailAppearTransition,
+  hoverDetailExitTransition,
+  hoverDetailMinWidth,
+  hoverDetailRepositionTransition,
+  hoverDetailSurfaceHorizontalPadding,
+} from '../utils/preset-hover-detail-popover';
 
 const hoverDetailSurfaceClassName =
   'group pointer-events-auto rounded-xl p-4 w-fit relative bg-white shadow-thin-md';
@@ -254,19 +59,10 @@ const ComboboxHoverDetailPopover = ({
     animationFrameRef.current = null;
   }, []);
 
-  const getPopupSize = useCallback((): ComboboxHoverDetailSize | null => {
+  const getPopupSize = useCallback(() => {
     if (!popupSizerRef.current) return null;
 
-    const rect = popupSizerRef.current.getBoundingClientRect();
-    const measuredInlineWidth = getMeasuredInlineWidth(popupSizerRef.current);
-    const width = measuredInlineWidth
-      ? Math.min(rect.width, measuredInlineWidth)
-      : rect.width;
-
-    return {
-      width: Math.max(hoverDetailMinWidth, width),
-      height: rect.height,
-    };
+    return getHoverDetailElementSize(popupSizerRef.current);
   }, []);
 
   const animateToMeasuredGeometry = useCallback(
@@ -398,13 +194,15 @@ const ComboboxHoverDetailPopover = ({
       {showContent ? (
         <div
           ref={popupSizerRef}
+          aria-hidden="true"
+          data-combobox-hover-detail-sizer=""
           className={cn(
             hoverDetailSurfaceClassName,
             'pointer-events-none fixed left-0 top-0 -z-10 opacity-0'
           )}
           style={{ maxWidth: position.maxWidth, minWidth: hoverDetailMinWidth }}
         >
-          <HoverDetailContent data={data} />
+          <ComboboxHoverDetailContent data={data} />
         </div>
       ) : null}
       <AnimatePresence>
@@ -438,7 +236,7 @@ const ComboboxHoverDetailPopover = ({
             }}
           >
             {renderedData ? (
-              <HoverDetailContent
+              <ComboboxHoverDetailContent
                 data={renderedData}
                 width={activeContentWidth}
               />

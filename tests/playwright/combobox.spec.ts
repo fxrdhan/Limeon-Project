@@ -45,6 +45,7 @@ test.describe('combobox browser regressions', () => {
       page.locator('input[type="hidden"][name="medicine_id"]')
     ).toHaveValue('med-paracetamol');
     await expect(page.getByRole('listbox')).toHaveCount(0);
+    await expect(trigger).toBeFocused();
   });
 
   test('keeps primitive label connected to a custom trigger id', async ({
@@ -223,6 +224,25 @@ test.describe('combobox browser regressions', () => {
       return getComputedStyle(positioner).overflow;
     });
     expect(positionerOverflow).toBe('visible');
+  });
+
+  test('keeps a custom wider popup inside the viewport', async ({ page }) => {
+    await openComboboxHarness(page);
+
+    const trigger = page.getByRole('combobox', { name: /^Popup lebar\b/i });
+    await trigger.click();
+
+    const popup = page.locator('[data-combobox-popup]');
+    await expect(popup).toBeVisible();
+
+    const triggerBox = await getBoundingBox(trigger, 'wide popup trigger');
+    const popupBox = await getBoundingBox(popup, 'wide popup');
+    const viewport = page.viewportSize();
+    if (!viewport) throw new Error('Viewport size is unavailable');
+
+    expect(popupBox.width).toBeGreaterThan(triggerBox.width + 100);
+    expect(popupBox.x).toBeGreaterThanOrEqual(0);
+    expect(popupBox.x + popupBox.width).toBeLessThanOrEqual(viewport.width + 1);
   });
 
   test('flips the popup above a trigger near the viewport bottom', async ({
