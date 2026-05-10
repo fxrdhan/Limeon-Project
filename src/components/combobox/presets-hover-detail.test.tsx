@@ -172,6 +172,45 @@ describe('Combobox app preset hover detail', () => {
     }
   });
 
+  it('keeps hover detail exit animation from intercepting pointer input', async () => {
+    render(
+      <PharmaComboboxSelect<EntityItem>
+        name="category_id"
+        items={[{ id: 'analgesik', name: 'Analgesik' }]}
+        value={null}
+        onValueChange={() => {}}
+        itemToStringLabel={item => item.name}
+        itemToStringValue={item => item.id}
+        placeholder="Pilih kategori"
+        hoverDetail={{ enabled: true, delay: 0 }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: /pilih kategori/i }));
+    const option = screen.getByRole('option', { name: /analgesik/i });
+    fireEvent.mouseEnter(option);
+
+    await waitFor(() => {
+      const popover = document.querySelector<HTMLElement>(
+        '[data-combobox-hover-detail-popover]'
+      );
+
+      expect(popover).not.toBeNull();
+      expect(popover?.style.pointerEvents).not.toBe('none');
+    });
+
+    fireEvent.mouseLeave(option);
+
+    await waitFor(() => {
+      const popover = document.querySelector<HTMLElement>(
+        '[data-combobox-hover-detail-popover]'
+      );
+
+      expect(popover).not.toBeNull();
+      expect(popover?.style.pointerEvents).toBe('none');
+    });
+  });
+
   it('ignores pending hover detail fetch failures after unmount', async () => {
     const fetchError = new Error('fetch failed');
     let rejectFetch: (error: unknown) => void = () => {};

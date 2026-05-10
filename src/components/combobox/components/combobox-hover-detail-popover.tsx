@@ -209,6 +209,7 @@ const ComboboxHoverDetailPopover = ({
         {shouldRenderPositionedPopup && activeGeometry ? (
           <motion.div
             key="combobox-hover-detail-portal"
+            data-combobox-hover-detail-popover=""
             className={cn(
               hoverDetailSurfaceClassName,
               'fixed left-0 top-0 z-[1100] overflow-hidden',
@@ -216,6 +217,10 @@ const ComboboxHoverDetailPopover = ({
                 !isPlacementReady &&
                 'pointer-events-none opacity-0'
             )}
+            style={{
+              pointerEvents:
+                showContent && isPlacementReady ? undefined : 'none',
+            }}
             initial={{
               x: activeGeometry.hiddenX,
               y: activeGeometry.hiddenY,
