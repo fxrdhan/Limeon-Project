@@ -645,6 +645,94 @@ describe('Combobox primitive', () => {
     expect(screen.getByRole('listbox')).toBeTruthy();
   });
 
+  it('keeps the popup open for portaled internal focus and closes when focus leaves', async () => {
+    const onOpenChange = vi.fn();
+
+    render(
+      <>
+        <Combobox.Root
+          items={fruitItems}
+          defaultOpen
+          onOpenChange={onOpenChange}
+          itemToStringLabel={item => item}
+          itemToStringValue={item => item}
+        >
+          <Combobox.Trigger aria-label="Fruit">
+            <Combobox.Value placeholder="Choose fruit" />
+          </Combobox.Trigger>
+          <Combobox.Portal>
+            <Combobox.Positioner>
+              <Combobox.Popup initialFocus={false}>
+                <Combobox.Input aria-label="Search fruit" />
+                <Combobox.List<string>>
+                  {(item, index) => (
+                    <Combobox.Item key={item} value={item} index={index}>
+                      {item}
+                    </Combobox.Item>
+                  )}
+                </Combobox.List>
+              </Combobox.Popup>
+            </Combobox.Positioner>
+          </Combobox.Portal>
+        </Combobox.Root>
+        <button type="button">After combobox</button>
+      </>
+    );
+
+    expect(screen.getByRole('listbox')).toBeTruthy();
+
+    fireEvent.focusIn(screen.getByRole('searchbox', { name: /search fruit/i }));
+    expect(screen.getByRole('listbox')).toBeTruthy();
+
+    fireEvent.focusIn(screen.getByRole('button', { name: /after combobox/i }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('listbox')).toBeNull();
+    });
+    expect(onOpenChange).toHaveBeenLastCalledWith(
+      false,
+      expect.objectContaining({ reason: 'focus-out' })
+    );
+  });
+
+  it('lets callers cancel focus-out dismissal', () => {
+    render(
+      <>
+        <Combobox.Root
+          items={fruitItems}
+          defaultOpen
+          onOpenChange={(_open, details) => {
+            details.cancel();
+          }}
+          itemToStringLabel={item => item}
+          itemToStringValue={item => item}
+        >
+          <Combobox.Trigger aria-label="Fruit">
+            <Combobox.Value placeholder="Choose fruit" />
+          </Combobox.Trigger>
+          <Combobox.Portal>
+            <Combobox.Positioner>
+              <Combobox.Popup initialFocus={false}>
+                <Combobox.List<string>>
+                  {(item, index) => (
+                    <Combobox.Item key={item} value={item} index={index}>
+                      {item}
+                    </Combobox.Item>
+                  )}
+                </Combobox.List>
+              </Combobox.Popup>
+            </Combobox.Positioner>
+          </Combobox.Portal>
+        </Combobox.Root>
+        <button type="button">After combobox</button>
+      </>
+    );
+
+    fireEvent.focusIn(screen.getByRole('button', { name: /after combobox/i }));
+
+    expect(screen.getByRole('listbox')).toBeTruthy();
+  });
+
   it('does not move highlight when a keyboard open request is canceled', () => {
     const onHighlightedIndexChange = vi.fn();
 

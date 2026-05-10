@@ -96,7 +96,7 @@ Change callbacks receive cancelable event details with `reason`, `event`, `cance
 
 `itemToStringValue` must return a stable unique submitted value for every option that can appear in the same list. The primitive uses that value for hidden form submission, while the preset also relies on it for item keys and entity/id bridging.
 
-When a popup is open, pressing outside both the trigger and the portaled popup requests close with reason `outside-press`. Controlled `open` callers and `details.cancel()` still decide whether that close request takes effect.
+When a popup is open, pressing outside both the trigger and the portaled popup requests close with reason `outside-press`. Moving focus outside both nodes, including with Tab, requests close with reason `focus-out`. Controlled `open` callers and `details.cancel()` still decide whether that close request takes effect.
 
 `autoComplete` sets the default native `autocomplete` attribute for `Combobox.Input`. A direct `autoComplete` prop on `Combobox.Input` wins over the root default.
 
@@ -243,7 +243,7 @@ Do not add app-specific props to `Combobox.Root`. Compose app behavior around th
 
 Combobox regression coverage is intentionally split by what each runner and file can prove:
 
-- `src/components/combobox/index.test.tsx` covers primitive behavior: value changes, filtering, keyboard selection, disabled items, cancelable event details, controlled highlight state, render props, and outside press.
+- `src/components/combobox/index.test.tsx` covers primitive behavior: value changes, filtering, keyboard selection, disabled items, cancelable event details, controlled highlight state, render props, outside press, and focus-out dismissal.
 - `src/components/combobox/primitive-aria-id.test.tsx` covers internal listbox and option id contracts that back `aria-controls` and `aria-activedescendant`.
 - `src/components/combobox/primitive-form-state.test.tsx` covers hidden form values, controlled nullable values, read-only state, and input autocomplete defaults.
 - `src/components/combobox/primitive-label.test.tsx` covers primitive label/id wiring and listbox labelling contracts.
@@ -259,7 +259,7 @@ Combobox regression coverage is intentionally split by what each runner and file
 - `src/components/combobox/presets-hover-detail.test.tsx` covers hover detail data, fetch failures, unmount cleanup, and controlled-open cleanup boundaries.
 - `src/components/combobox/presets-keyboard-scroll.test.tsx` covers low-level preset keyboard scroll and pinned-highlight geometry helpers.
 - `@testing-library/user-event` is used for user-facing click/type flows where realistic event order matters. Lower-level `fireEvent` remains acceptable for targeted primitive and edge-case transitions.
-- Playwright covers browser-only layout behavior in `tests/playwright/combobox.spec.ts`: the combobox fixture renders the real components, verifies search/select still works in Chromium, and verifies Floating UI flips/clamps the portaled fixed popup near the viewport edge.
+- Playwright covers browser-only layout behavior in `tests/playwright/combobox.spec.ts`: the combobox fixture renders the real components, verifies search/select and Tab dismissal still work in Chromium, and verifies Floating UI flips/clamps the portaled fixed popup near the viewport edge.
 
 Useful commands:
 

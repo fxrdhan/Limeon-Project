@@ -18,6 +18,7 @@ import {
   type ComboboxEventReason as EventReason,
   type ComboboxHighlightEventDetails,
 } from './utils/primitive-events';
+import { useComboboxFocusOutside } from './utils/primitive-focus-outside';
 import { getNextEnabledIndex } from './utils/primitive-keyboard';
 import { useComboboxOutsidePress } from './utils/primitive-outside-press';
 import {
@@ -402,9 +403,21 @@ export function useComboboxRootState<Value>({
     },
     [setOpen]
   );
+  const handleFocusOutside = useCallback(
+    (event: FocusEvent) => {
+      setOpen(false, 'focus-out', event);
+    },
+    [setOpen]
+  );
   useComboboxOutsidePress({
     enabled: open,
     onOutsidePress: handleOutsidePress,
+    popupRef,
+    triggerRef,
+  });
+  useComboboxFocusOutside({
+    enabled: open,
+    onFocusOutside: handleFocusOutside,
     popupRef,
     triggerRef,
   });

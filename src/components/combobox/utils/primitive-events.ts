@@ -2,6 +2,7 @@ import type React from 'react';
 
 export type ComboboxEventReason =
   | 'escape-key'
+  | 'focus-out'
   | 'input-change'
   | 'item-press'
   | 'keyboard'

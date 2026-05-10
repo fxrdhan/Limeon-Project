@@ -72,6 +72,23 @@ test.describe('combobox browser regressions', () => {
     await expect(page.getByRole('listbox')).toHaveCount(0);
   });
 
+  test('closes the portaled popup when keyboard focus tabs outside', async ({
+    page,
+  }) => {
+    await openComboboxHarness(page);
+
+    const trigger = page.getByRole('combobox', { name: /^Obat\b/i });
+    await trigger.click();
+    await expect(page.getByRole('listbox')).toBeVisible();
+
+    await page.keyboard.press('Tab');
+
+    await expect(page.getByRole('listbox')).toHaveCount(0);
+    await expect(
+      page.getByRole('combobox', { name: /^Kategori\b/i })
+    ).toBeFocused();
+  });
+
   test('continues keyboard navigation from the selected visual highlight after reopening', async ({
     page,
   }) => {
