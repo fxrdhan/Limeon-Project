@@ -1,8 +1,30 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vite-plus/test';
 import { PharmaComboboxSelect } from './index';
+import { getDuplicateComboboxOptionValue } from './utils/preset-state';
 
 describe('Combobox app preset state interactions', () => {
+  it('detects duplicate submitted option values without collapsing options', () => {
+    const duplicateValue = getDuplicateComboboxOptionValue(
+      [
+        { id: 'supplier-a', name: 'Supplier A' },
+        { id: 'supplier-a', name: 'Supplier A duplicate' },
+      ],
+      supplier => supplier.id
+    );
+
+    expect(duplicateValue).toBe('supplier-a');
+    expect(
+      getDuplicateComboboxOptionValue(
+        [
+          { id: 'supplier-a', name: 'Supplier A' },
+          { id: 'supplier-b', name: 'Supplier B' },
+        ],
+        supplier => supplier.id
+      )
+    ).toBeNull();
+  });
+
   it('preserves cancelable details for preset value changes', () => {
     const onValueChange = vi.fn();
 

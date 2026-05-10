@@ -6,6 +6,7 @@ import {
   setRef,
 } from '../utils/preset-dom';
 import { Combobox } from '../primitive';
+import type { PharmaComboboxOptionRenderState } from '../presets-types';
 import { comboboxHighlightBackgroundTransition } from './combobox-highlight-motion';
 import { ComboboxOptionMotionFrame } from './combobox-option-motion-frame';
 import {
@@ -20,14 +21,6 @@ const getComboboxOptionKey = (
   optionValueOccurrence === 0
     ? optionValue
     : `${optionValue}__duplicate-${optionValueOccurrence}`;
-
-interface ComboboxOptionRenderState {
-  disabled: boolean;
-  highlighted: boolean;
-  inputValue: string;
-  label: string;
-  selected: boolean;
-}
 
 interface ComboboxOptionListProps<Item> {
   effectiveHighlightedIndex: number | null;
@@ -44,10 +37,13 @@ interface ComboboxOptionListProps<Item> {
   onListMouseLeave: () => void;
   onOptionMouseEnter: (event: MouseEvent<HTMLElement>, item: Item) => void;
   onOptionMouseMove: (event: MouseEvent<HTMLElement>, item: Item) => void;
-  renderOption?: (item: Item, state: ComboboxOptionRenderState) => ReactNode;
+  renderOption?: (
+    item: Item,
+    state: PharmaComboboxOptionRenderState
+  ) => ReactNode;
   renderOptionMeta?: (
     item: Item,
-    state: ComboboxOptionRenderState
+    state: PharmaComboboxOptionRenderState
   ) => ReactNode;
   shouldAnimateListItems: boolean;
   visibleItems: Item[];
@@ -115,7 +111,7 @@ export function ComboboxOptionList<Item>({
                 const labelText = itemToStringLabel(item);
                 const isVisuallyHighlighted =
                   effectiveHighlightedIndex === index;
-                const renderState: ComboboxOptionRenderState = {
+                const renderState: PharmaComboboxOptionRenderState = {
                   disabled: state.disabled,
                   highlighted: isVisuallyHighlighted,
                   inputValue,

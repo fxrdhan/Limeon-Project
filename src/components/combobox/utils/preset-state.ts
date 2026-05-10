@@ -50,6 +50,22 @@ export const getComboboxSearchEntries = <Item>(
     normalizedLabel: normalizeComboboxSearchText(itemToStringLabel(item)),
   }));
 
+export const getDuplicateComboboxOptionValue = <Item>(
+  items: readonly Item[],
+  itemToStringValue: (item: Item) => string
+) => {
+  const seenValues = new Set<string>();
+
+  for (const item of items) {
+    const itemValue = itemToStringValue(item);
+    if (seenValues.has(itemValue)) return itemValue;
+
+    seenValues.add(itemValue);
+  }
+
+  return null;
+};
+
 const getNormalizedComboboxVisibleItemLimit = (limit?: number) => {
   if (limit === undefined || !Number.isFinite(limit) || limit <= 0) {
     return undefined;

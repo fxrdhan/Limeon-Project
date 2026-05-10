@@ -28,7 +28,37 @@ import {
   getDefaultHoverDetailData,
   getDefaultItemDisabled,
 } from '../utils/preset-item';
-import { getComboboxSelectedValue } from '../utils/preset-state';
+import {
+  getComboboxSelectedValue,
+  getDuplicateComboboxOptionValue,
+} from '../utils/preset-state';
+
+type PharmaComboboxRootBoundaryProps<Item> = Pick<
+  ComboboxRootProps<Item>,
+  | 'autoHighlight'
+  | 'disabled'
+  | 'filter'
+  | 'filteredItems'
+  | 'form'
+  | 'highlightedIndex'
+  | 'inputValue'
+  | 'isItemDisabled'
+  | 'isItemEqualToValue'
+  | 'itemToStringLabel'
+  | 'itemToStringValue'
+  | 'items'
+  | 'labelId'
+  | 'name'
+  | 'onHighlightedIndexChange'
+  | 'onInputValueChange'
+  | 'onItemHighlighted'
+  | 'onOpenChange'
+  | 'onValueChange'
+  | 'open'
+  | 'readOnly'
+  | 'required'
+  | 'value'
+>;
 
 export function usePharmaComboboxSelectController<Item>({
   id,
@@ -145,21 +175,10 @@ export function usePharmaComboboxSelectController<Item>({
   );
 
   useEffect(() => {
-    if (process.env.NODE_ENV === 'production') return;
-
-    const seenValues = new Set<string>();
-    let duplicateValue: string | null = null;
-
-    for (const item of items) {
-      const itemValue = itemToStringValue(item);
-      if (seenValues.has(itemValue)) {
-        duplicateValue = itemValue;
-        break;
-      }
-
-      seenValues.add(itemValue);
-    }
-
+    const duplicateValue = getDuplicateComboboxOptionValue(
+      items,
+      itemToStringValue
+    );
     if (duplicateValue === null) {
       warnedDuplicateValueRef.current = null;
       return;
@@ -172,7 +191,7 @@ export function usePharmaComboboxSelectController<Item>({
     console.warn(
       `[PharmaComboboxSelect] Duplicate itemToStringValue "${duplicateValue}" detected for ${
         name ?? 'unnamed combobox'
-      }. Combobox option values must be unique.`
+      }. Combobox option values must be unique because hidden form submission uses itemToStringValue.`
     );
   }, [itemToStringValue, items, name]);
 
@@ -356,7 +375,7 @@ export function usePharmaComboboxSelectController<Item>({
     restoreFocusAfterCloseIfNeeded,
   ]);
 
-  const comboboxRootProps = {
+  const comboboxRootProps: PharmaComboboxRootBoundaryProps<Item> = {
     items,
     value: selectedValue,
     onValueChange: handleValueChange,
@@ -380,7 +399,7 @@ export function usePharmaComboboxSelectController<Item>({
     filteredItems: visibleItems,
     filter: null,
     autoHighlight: searchable,
-  } satisfies Omit<ComboboxRootProps<Item>, 'children'>;
+  };
 
   return {
     actualOpen,
