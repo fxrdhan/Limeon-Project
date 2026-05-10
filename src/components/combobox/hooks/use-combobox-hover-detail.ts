@@ -304,6 +304,18 @@ export const useComboboxHoverDetail = ({
   }, [hidePopover, isComboboxOpen, isVisible]);
 
   useEffect(() => {
+    if (isEnabled) return;
+
+    clearHoverDetailTimeouts();
+    cancelPositionUpdateFrame();
+    currentAnchorElementRef.current = null;
+    currentItemIdRef.current = null;
+    isPortalShownRef.current = false;
+    setIsVisible(false);
+    setData(null);
+  }, [cancelPositionUpdateFrame, clearHoverDetailTimeouts, isEnabled]);
+
+  useEffect(() => {
     return () => {
       clearHoverDetailTimeouts();
       cancelPositionUpdateFrame();

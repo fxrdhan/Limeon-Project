@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   act,
   fireEvent,
@@ -209,6 +210,65 @@ describe('Combobox app preset hover detail', () => {
     });
 
     expect(onFetchHoverDetailError).not.toHaveBeenCalled();
+  });
+
+  it('clears visible hover detail state when hover detail is disabled', async () => {
+    const onFetchHoverDetail = vi.fn(async (id: string) => ({
+      id,
+      name: 'Analgesik',
+      description: 'Detail kategori obat',
+    }));
+
+    function ToggleableHoverDetailCombobox() {
+      const [enabled, setEnabled] = useState(true);
+
+      return (
+        <>
+          <button type="button" onClick={() => setEnabled(false)}>
+            Disable hover detail
+          </button>
+          <button type="button" onClick={() => setEnabled(true)}>
+            Enable hover detail
+          </button>
+          <PharmaComboboxSelect<EntityItem>
+            name="category_id"
+            items={[{ id: 'analgesik', name: 'Analgesik' }]}
+            value={null}
+            onValueChange={() => {}}
+            itemToStringLabel={item => item.name}
+            itemToStringValue={item => item.id}
+            placeholder="Pilih kategori"
+            hoverDetail={{ enabled, delay: 0 }}
+            onFetchHoverDetail={onFetchHoverDetail}
+            open
+          />
+        </>
+      );
+    }
+
+    render(<ToggleableHoverDetailCombobox />);
+
+    fireEvent.mouseEnter(screen.getByRole('option', { name: /analgesik/i }));
+
+    await waitFor(() => {
+      expect(
+        screen.getAllByText('Detail kategori obat').length
+      ).toBeGreaterThan(0);
+    });
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /disable hover detail/i })
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByText('Detail kategori obat')).toBeNull();
+    });
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /enable hover detail/i })
+    );
+
+    expect(screen.queryByText('Detail kategori obat')).toBeNull();
   });
 
   it('does not run close cleanup when a controlled popup stays open', async () => {
