@@ -110,7 +110,7 @@ The local primitive intentionally does not aim to mirror every upstream combobox
 
 When the popup is open, the primitive trigger supports the local keyboard set used by PharmaSys: Arrow navigation, Home/End, PageUp/PageDown, Enter/Space selection, Escape close, and basic typeahead. The popup search input keeps normal text-entry ownership, handles list navigation keys, and lets Enter select the active option before the preset falls back to a create action with no active option.
 
-The preset renders the visible item list directly. For very large datasets, keep the option list bounded before it reaches the preset by using caller-owned filtering, server-backed search, or the primitive `filteredItems` contract. Do not add virtualization to the app preset without a call-site that needs that extra behavior.
+The preset keeps search local and in-memory. It precomputes normalized labels when `items` or `itemToStringLabel` changes, then scans those entries on each query. For very large datasets, keep the default behavior unbounded unless a real call-site needs a cap; use `visibleItemLimit` as an opt-in render guardrail. The limit only caps rendered visible options, still scans all provided items for exact-create checks, and keeps the selected option visible when it would otherwise fall outside the cap. Do not add virtualization to the app preset without a call-site that needs that extra behavior.
 
 ## Render Props
 

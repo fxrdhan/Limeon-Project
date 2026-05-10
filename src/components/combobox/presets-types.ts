@@ -48,6 +48,7 @@ export interface PharmaComboboxSelectProps<Item> {
   placeholder?: string;
   searchPlaceholder?: string;
   emptyText?: string;
+  visibleItemLimit?: number;
   searchable?: boolean;
   indicator?: ComboboxIndicatorKind;
   required?: boolean;

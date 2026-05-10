@@ -48,6 +48,7 @@ export function usePharmaComboboxSelectController<Item>({
   placeholder = '-- Pilih --',
   searchPlaceholder = 'Cari...',
   emptyText = 'Tidak ada data',
+  visibleItemLimit,
   searchable = true,
   indicator = 'none',
   required = false,
@@ -110,11 +111,21 @@ export function usePharmaComboboxSelectController<Item>({
       selectedValue,
       validation,
     });
+  const isSameItem = useCallback(
+    (item: Item, itemValue: Item) =>
+      isItemEqualToValue
+        ? isItemEqualToValue(item, itemValue)
+        : Object.is(item, itemValue),
+    [isItemEqualToValue]
+  );
   const { hasExactItem, hasVisibleItems, normalizedInputValue, visibleItems } =
     useComboboxSearch({
       inputValue,
+      isSameItem,
       itemToStringLabel,
       items,
+      selectedValue,
+      visibleItemLimit,
     });
   const { canCreate, createActionLabel, handleCreate } =
     useComboboxCreateAction({
@@ -126,13 +137,6 @@ export function usePharmaComboboxSelectController<Item>({
     normalizedInputValue.length > 0 && hasVisibleItems;
   const selectedLabel =
     selectedValue == null ? '' : itemToStringLabel(selectedValue);
-  const isSameItem = useCallback(
-    (item: Item, itemValue: Item) =>
-      isItemEqualToValue
-        ? isItemEqualToValue(item, itemValue)
-        : Object.is(item, itemValue),
-    [isItemEqualToValue]
-  );
   const isItemDisabled = useCallback(
     (item: Item) => isItemDisabledProp(item),
     [isItemDisabledProp]

@@ -15,10 +15,16 @@ import {
 } from '@/components/shared/keyboard-pinned-highlight';
 
 const keyboardScrollHighlightMaxHold = 700;
+const wrappedKeyboardScrollBehavior = 'auto';
+const edgeKeyboardScrollBehavior = 'smooth';
 
-const scrollElementTo = (element: HTMLElement, top: number) => {
+const scrollElementTo = (
+  element: HTMLElement,
+  top: number,
+  behavior: ScrollBehavior
+) => {
   if (typeof element.scrollTo === 'function') {
-    element.scrollTo({ top, behavior: 'smooth' });
+    element.scrollTo({ top, behavior });
     return;
   }
 
@@ -34,6 +40,7 @@ interface UseComboboxKeyboardHighlightScrollOptions {
 }
 
 export type ComboboxKeyboardHighlightScrollTarget = {
+  behavior: ScrollBehavior;
   direction: KeyboardScrollDirection;
   scrollTop: number;
   wrapped: boolean;
@@ -60,6 +67,7 @@ export const getComboboxKeyboardHighlightScrollTarget = ({
 
   if (wrapped) {
     return {
+      behavior: wrappedKeyboardScrollBehavior,
       direction: targetIndex === 0 ? 'up' : 'down',
       scrollTop:
         targetIndex === 0
@@ -76,7 +84,9 @@ export const getComboboxKeyboardHighlightScrollTarget = ({
     targetIndex,
   });
 
-  return scrollTarget ? { ...scrollTarget, wrapped: false } : null;
+  return scrollTarget
+    ? { ...scrollTarget, behavior: edgeKeyboardScrollBehavior, wrapped: false }
+    : null;
 };
 
 export function useComboboxKeyboardHighlightScroll({
@@ -204,7 +214,7 @@ export function useComboboxKeyboardHighlightScroll({
 
     let scrollCommandFrame: number | null = null;
     const startScrollAndRelease = () => {
-      scrollElementTo(list, scrollTarget.scrollTop);
+      scrollElementTo(list, scrollTarget.scrollTop, scrollTarget.behavior);
 
       const startedAt = window.performance.now();
       const releaseWhenSettled = () => {

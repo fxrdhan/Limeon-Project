@@ -1,20 +1,47 @@
 import { useMemo } from 'react';
-import { getComboboxSearchState } from '../utils/preset-state';
+import {
+  getComboboxSearchEntries,
+  getComboboxSearchState,
+} from '../utils/preset-state';
 
 export function useComboboxSearch<Item>({
   inputValue,
+  isSameItem,
   itemToStringLabel,
   items,
+  selectedValue,
+  visibleItemLimit,
 }: {
   inputValue: string;
+  isSameItem: (item: Item, value: Item) => boolean;
   itemToStringLabel: (item: Item) => string;
   items: Item[];
+  selectedValue: Item | null;
+  visibleItemLimit?: number;
 }) {
   const normalizedInputValue = inputValue.trim();
+  const searchEntries = useMemo(
+    () => getComboboxSearchEntries(items, itemToStringLabel),
+    [itemToStringLabel, items]
+  );
   const { hasExactItem, visibleItems } = useMemo(
     () =>
-      getComboboxSearchState(items, normalizedInputValue, itemToStringLabel),
-    [itemToStringLabel, items, normalizedInputValue]
+      getComboboxSearchState({
+        isSameItem,
+        items,
+        normalizedInputValue,
+        searchEntries,
+        selectedValue,
+        visibleItemLimit,
+      }),
+    [
+      isSameItem,
+      items,
+      normalizedInputValue,
+      searchEntries,
+      selectedValue,
+      visibleItemLimit,
+    ]
   );
 
   return {

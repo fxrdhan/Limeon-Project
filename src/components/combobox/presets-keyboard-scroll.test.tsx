@@ -113,7 +113,12 @@ describe('Combobox preset keyboard scroll helpers', () => {
         targetElement: targetOption,
         targetIndex: 0,
       })
-    ).toEqual({ direction: 'up', scrollTop: 0, wrapped: true });
+    ).toEqual({
+      behavior: 'auto',
+      direction: 'up',
+      scrollTop: 0,
+      wrapped: true,
+    });
     expect(
       getComboboxKeyboardHighlightScrollTarget({
         container: listbox,
@@ -122,6 +127,41 @@ describe('Combobox preset keyboard scroll helpers', () => {
         targetElement: targetOption,
         targetIndex: 4,
       })
-    ).toEqual({ direction: 'down', scrollTop: 64, wrapped: true });
+    ).toEqual({
+      behavior: 'auto',
+      direction: 'down',
+      scrollTop: 64,
+      wrapped: true,
+    });
+  });
+
+  it('keeps nearby keyboard edge scroll smooth', () => {
+    const listbox = document.createElement('div');
+    const targetOption = document.createElement('div');
+
+    Object.defineProperties(listbox, {
+      clientHeight: { configurable: true, value: 32 },
+      scrollHeight: { configurable: true, value: 96 },
+      scrollTop: { configurable: true, value: 0 },
+    });
+    Object.defineProperties(targetOption, {
+      offsetTop: { configurable: true, value: 34 },
+      offsetHeight: { configurable: true, value: 28 },
+    });
+
+    expect(
+      getComboboxKeyboardHighlightScrollTarget({
+        container: listbox,
+        itemCount: 5,
+        sourceIndex: 0,
+        targetElement: targetOption,
+        targetIndex: 1,
+      })
+    ).toEqual({
+      behavior: 'smooth',
+      direction: 'down',
+      scrollTop: 34,
+      wrapped: false,
+    });
   });
 });

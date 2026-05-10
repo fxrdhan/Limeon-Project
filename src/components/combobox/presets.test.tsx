@@ -366,6 +366,64 @@ describe('Combobox app presets', () => {
     expect(screen.getByRole('status').textContent).toBe('Tidak ada data');
   });
 
+  it('keeps exact-match create detection across limited visible options', () => {
+    render(
+      <PharmaComboboxSelect
+        name="supplier_id"
+        items={[
+          { id: 'alpha', name: 'Alpha Supplier' },
+          { id: 'supplier', name: 'Supplier' },
+          { id: 'beta', name: 'Beta Supplier' },
+        ]}
+        value={null}
+        onValueChange={() => {}}
+        itemToStringLabel={supplier => supplier.name}
+        itemToStringValue={supplier => supplier.id}
+        visibleItemLimit={1}
+        createAction={{ onCreate: () => {}, label: 'Tambah supplier' }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: /pilih/i }));
+    fireEvent.change(screen.getByPlaceholderText('Cari...'), {
+      target: { value: 'Supplier' },
+    });
+
+    expect(
+      screen.getByRole('option', { name: /alpha supplier/i })
+    ).toBeTruthy();
+    expect(screen.queryByRole('option', { name: /^supplier$/i })).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: /tambah supplier/i })
+    ).toBeNull();
+  });
+
+  it('keeps the selected option visible when a visible item limit is applied', () => {
+    const suppliers = [
+      { id: 'a', name: 'Supplier A' },
+      { id: 'b', name: 'Supplier B' },
+      { id: 'c', name: 'Supplier C' },
+    ];
+
+    render(
+      <PharmaComboboxSelect
+        name="supplier_id"
+        items={suppliers}
+        value={suppliers[2]}
+        onValueChange={() => {}}
+        itemToStringLabel={supplier => supplier.name}
+        itemToStringValue={supplier => supplier.id}
+        visibleItemLimit={2}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: /supplier c/i }));
+
+    expect(screen.getByRole('option', { name: /supplier a/i })).toBeTruthy();
+    expect(screen.getByRole('option', { name: /supplier c/i })).toBeTruthy();
+    expect(screen.queryByRole('option', { name: /supplier b/i })).toBeNull();
+  });
+
   it('keeps filtered option indices aligned with primitive active descendant', async () => {
     const onValueChange = vi.fn();
 
