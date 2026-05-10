@@ -2,6 +2,7 @@
 // Hooks for real-time data updates and form synchronization
 
 export * from './useItemsSync';
+export * from './useSuppliersSync';
 export * from './useItemModalRealtime';
 export * from './useSmartFormSync';
 export * from './useDashboardRealtime';

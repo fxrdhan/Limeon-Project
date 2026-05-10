@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   recalculateItems,
@@ -13,7 +13,8 @@ import type {
   PurchaseItem,
 } from '@/types';
 import { purchasesService } from '@/services/api/purchases.service';
-import { supplierService } from '@/services/api/masterData.service';
+import { useSuppliers } from '@/hooks/queries';
+import { useSuppliersSync } from '@/hooks/realtime/useSuppliersSync';
 import { companyProfileService } from '@/services/api/companyProfile.service';
 import { resolveItemUnitEntry } from '@/lib/item-units';
 
@@ -24,10 +25,16 @@ interface UsePurchaseFormProps {
 
 export const usePurchaseForm = ({
   initialInvoiceNumber = '',
+  enabled = true,
 }: UsePurchaseFormProps = {}) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  useSuppliersSync({ enabled });
+  const suppliersQuery = useSuppliers({ enabled });
+  const suppliers = useMemo(
+    () => (suppliersQuery.data ?? []) as Supplier[],
+    [suppliersQuery.data]
+  );
   const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(
     null
   );
@@ -47,7 +54,7 @@ export const usePurchaseForm = ({
 
   const total = purchaseItems.reduce((sum, item) => sum + item.subtotal, 0);
 
-  const fetchCompanyProfile = async () => {
+  const fetchCompanyProfile = useCallback(async () => {
     try {
       const { data, error } = await companyProfileService.getProfile();
       if (error) {
@@ -61,22 +68,13 @@ export const usePurchaseForm = ({
     } catch (error) {
       console.error('Error fetching company profile:', error);
     }
-  };
-
-  const fetchSuppliers = useCallback(async () => {
-    try {
-      const { data, error } = await supplierService.getActiveSuppliers();
-      if (error) throw error;
-      setSuppliers(data || []);
-    } catch (error) {
-      console.error('Error fetching suppliers:', error);
-    }
   }, []);
 
   useEffect(() => {
-    void fetchSuppliers();
+    if (!enabled) return;
+
     void fetchCompanyProfile();
-  }, [fetchSuppliers]);
+  }, [enabled, fetchCompanyProfile]);
 
   // Recalculate items when VAT inclusion flag changes to keep subtotals consistent
   useEffect(() => {

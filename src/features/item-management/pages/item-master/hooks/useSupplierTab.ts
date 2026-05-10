@@ -4,9 +4,12 @@ import type { ColDef } from 'ag-grid-community';
 import { createTextColumn } from '@/components/ag-grid/columns';
 import type { FieldConfig, Supplier as SupplierType } from '@/types';
 import { useSuppliers, useSupplierMutations } from '@/hooks/queries';
+import { useSuppliersSync } from '@/hooks/realtime/useSuppliersSync';
 
 export const useSupplierTab = (options?: { enabled?: boolean }) => {
-  const suppliersQuery = useSuppliers({ enabled: options?.enabled ?? true });
+  const enabled = options?.enabled ?? true;
+  useSuppliersSync({ enabled });
+  const suppliersQuery = useSuppliers({ enabled });
   const supplierMutations = useSupplierMutations();
 
   const [isAddSupplierModalOpen, setIsAddSupplierModalOpen] = useState(false);
