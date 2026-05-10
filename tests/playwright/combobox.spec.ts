@@ -225,6 +225,35 @@ test.describe('combobox browser regressions', () => {
       .toBe(initialSelectedOffset);
   });
 
+  test('keeps selected auto-scroll from hiding the first ranked search result', async ({
+    page,
+  }) => {
+    await openComboboxHarness(page);
+
+    const trigger = page.getByRole('combobox', { name: /^Kategori\b/i });
+    await trigger.click();
+
+    const searchInput = page.getByRole('searchbox', {
+      name: /^Cari kategori$/i,
+    });
+    const listbox = page.getByRole('listbox');
+    const selectedOption = page.getByRole('option', { name: /Mukolitik/i });
+    await expect(
+      selectedOption.locator('[data-pharma-combobox-highlight]')
+    ).toBeVisible();
+
+    await searchInput.fill('m');
+
+    const firstRankedOption = listbox.getByRole('option').first();
+    await expect(firstRankedOption).toContainText('Mineral');
+    await expect(
+      firstRankedOption.locator('[data-pharma-combobox-highlight]')
+    ).toBeVisible();
+    await expect
+      .poll(() => listbox.evaluate(element => element.scrollTop))
+      .toBe(0);
+  });
+
   test('keeps the positioner from clipping popup shadow', async ({ page }) => {
     await openComboboxHarness(page);
 

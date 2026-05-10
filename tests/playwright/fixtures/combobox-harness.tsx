@@ -43,6 +43,7 @@ const categoryOptions: MedicineOption[] = [
   { code: 'HST', id: 'cat-antihistamin', name: 'Antihistamin' },
   { code: 'MUK', id: 'cat-mukolitik', name: 'Mukolitik' },
   { code: 'MYD', id: 'cat-mydriatic', name: 'Mydriatic' },
+  { code: 'MIN', id: 'cat-mineral', name: 'Mineral' },
   { code: 'NSA', id: 'cat-nsaid', name: 'NSAID' },
   { code: 'NTP', id: 'cat-nootropik', name: 'Nootropik' },
   { code: 'ONK', id: 'cat-onkologi', name: 'Onkologi' },

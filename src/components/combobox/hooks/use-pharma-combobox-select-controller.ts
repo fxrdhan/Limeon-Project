@@ -21,6 +21,7 @@ import { useComboboxHoverDetail } from './use-combobox-hover-detail';
 import { useComboboxKeyboardHighlightScroll } from './use-combobox-keyboard-highlight-scroll';
 import { useComboboxPointerHover } from './use-combobox-pointer-hover';
 import { useComboboxSearch } from './use-combobox-search';
+import { useComboboxSearchResultScroll } from './use-combobox-search-result-scroll';
 import { useComboboxSelectedOptionScroll } from './use-combobox-selected-option-scroll';
 import { useComboboxValidation } from './use-combobox-validation';
 import { getPharmaComboboxOptionIndexSelector } from '../utils/preset-dom';
@@ -199,9 +200,16 @@ export function usePharmaComboboxSelectController<Item>({
 
   const { requestSelectedOptionScroll } = useComboboxSelectedOptionScroll({
     actualOpen,
+    enabled: normalizedInputValue.length === 0,
     isSameItem,
     listRef,
     selectedValue,
+    visibleItems,
+  });
+  useComboboxSearchResultScroll({
+    actualOpen,
+    listRef,
+    normalizedInputValue,
     visibleItems,
   });
   const {

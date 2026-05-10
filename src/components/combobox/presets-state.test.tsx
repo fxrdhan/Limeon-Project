@@ -1,9 +1,89 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vite-plus/test';
 import { PharmaComboboxSelect } from './index';
-import { getDuplicateComboboxOptionValue } from './utils/preset-state';
+import {
+  getComboboxSearchEntries,
+  getComboboxSearchState,
+  getDuplicateComboboxOptionValue,
+} from './utils/preset-state';
 
 describe('Combobox app preset state interactions', () => {
+  it('ranks searched options by deterministic match quality', () => {
+    const items = [
+      { id: 'substring', name: 'ArchivedSupplier' },
+      { id: 'word-prefix', name: 'Alpha Supplier' },
+      { id: 'prefix', name: 'Supplier Alpha' },
+      { id: 'exact', name: 'Supplier' },
+    ];
+    const searchState = getComboboxSearchState({
+      isSameItem: (item, value) => item.id === value.id,
+      items,
+      normalizedInputValue: 'Supplier',
+      searchEntries: getComboboxSearchEntries(items, item => item.name),
+      selectedValue: null,
+    });
+
+    expect(searchState.visibleItems.map(item => item.id)).toEqual([
+      'exact',
+      'prefix',
+      'word-prefix',
+      'substring',
+    ]);
+    expect(searchState.hasExactItem).toBe(true);
+  });
+
+  it('keeps empty searches in original item order', () => {
+    const items = [
+      { id: 'b', name: 'Supplier B' },
+      { id: 'a', name: 'Supplier A' },
+    ];
+    const searchState = getComboboxSearchState({
+      isSameItem: (item, value) => item.id === value.id,
+      items,
+      normalizedInputValue: '',
+      searchEntries: getComboboxSearchEntries(items, item => item.name),
+      selectedValue: null,
+    });
+
+    expect(searchState.visibleItems.map(item => item.id)).toEqual(['b', 'a']);
+  });
+
+  it('keeps a matching selected option visible when ranked results are limited', () => {
+    const items = [
+      { id: 'a', name: 'Supplier A' },
+      { id: 'b', name: 'Supplier B' },
+      { id: 'c', name: 'Supplier C' },
+    ];
+    const searchState = getComboboxSearchState({
+      isSameItem: (item, value) => item.id === value.id,
+      items,
+      normalizedInputValue: 'Supplier',
+      searchEntries: getComboboxSearchEntries(items, item => item.name),
+      selectedValue: items[2],
+      visibleItemLimit: 2,
+    });
+
+    expect(searchState.visibleItems.map(item => item.id)).toEqual(['a', 'c']);
+  });
+
+  it('matches acronyms, consonant skeletons, subsequences, and typo fuzzy fallbacks', () => {
+    const items = [{ id: 'paracetamol-tablet', name: 'Paracetamol Tablet' }];
+    const searchEntries = getComboboxSearchEntries(items, item => item.name);
+    const getVisibleIds = (query: string) =>
+      getComboboxSearchState({
+        isSameItem: (item, value) => item.id === value.id,
+        items,
+        normalizedInputValue: query,
+        searchEntries,
+        selectedValue: null,
+      }).visibleItems.map(item => item.id);
+
+    expect(getVisibleIds('pt')).toEqual(['paracetamol-tablet']);
+    expect(getVisibleIds('prctml')).toEqual(['paracetamol-tablet']);
+    expect(getVisibleIds('pct')).toEqual(['paracetamol-tablet']);
+    expect(getVisibleIds('paracitamol')).toEqual(['paracetamol-tablet']);
+  });
+
   it('detects duplicate submitted option values without collapsing options', () => {
     const duplicateValue = getDuplicateComboboxOptionValue(
       [

@@ -11,12 +11,14 @@ const selectedOptionScrollTopInset = 4;
 
 export function useComboboxSelectedOptionScroll<Item>({
   actualOpen,
+  enabled,
   isSameItem,
   listRef,
   selectedValue,
   visibleItems,
 }: {
   actualOpen: boolean;
+  enabled: boolean;
   isSameItem: (item: Item, value: Item) => boolean;
   listRef: RefObject<HTMLDivElement | null>;
   selectedValue: Item | null;
@@ -35,7 +37,7 @@ export function useComboboxSelectedOptionScroll<Item>({
   }, []);
 
   useEffect(() => {
-    if (!actualOpen || selectedVisibleIndex < 0) return undefined;
+    if (!actualOpen || !enabled || selectedVisibleIndex < 0) return undefined;
 
     const frame = window.requestAnimationFrame(() => {
       const list = listRef.current;
@@ -52,7 +54,7 @@ export function useComboboxSelectedOptionScroll<Item>({
     });
 
     return () => window.cancelAnimationFrame(frame);
-  }, [actualOpen, listRef, scrollRevision, selectedVisibleIndex]);
+  }, [actualOpen, enabled, listRef, scrollRevision, selectedVisibleIndex]);
 
   return {
     requestSelectedOptionScroll,

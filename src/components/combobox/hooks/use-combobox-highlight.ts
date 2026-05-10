@@ -69,6 +69,8 @@ export function useComboboxHighlight<Item>({
   visibleItems: Item[];
 }) {
   const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
+  const defaultHighlightedValue =
+    normalizedInputValue.length === 0 ? selectedValue : null;
 
   const effectiveHighlightedIndex = getComboboxEffectiveHighlightIndex({
     actualOpen,
@@ -76,7 +78,7 @@ export function useComboboxHighlight<Item>({
     isItemDisabled,
     isSameItem,
     items: visibleItems,
-    selectedValue,
+    selectedValue: defaultHighlightedValue,
   });
 
   const handleHighlightedIndexChange = useCallback(

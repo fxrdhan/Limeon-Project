@@ -144,6 +144,86 @@ describe('Combobox app presets', () => {
     });
   });
 
+  it('keeps selected auto-scroll from hiding the first ranked search result', async () => {
+    const categories = [
+      { id: 'mineral', name: 'Mineral' },
+      { id: 'mukolitik', name: 'Mukolitik' },
+      { id: 'mydriatic', name: 'Mydriatic' },
+      { id: 'medical-device', name: 'Medical Device' },
+    ];
+
+    render(
+      <PharmaComboboxSelect
+        name="category_id"
+        items={categories}
+        value={categories[1]}
+        onValueChange={() => {}}
+        itemToStringLabel={category => category.name}
+        itemToStringValue={category => category.id}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: /mukolitik/i }));
+    const searchInput = screen.getByPlaceholderText('Cari...');
+    const listbox = screen.getByRole('listbox');
+    let scrollTop = 96;
+
+    Object.defineProperty(listbox, 'scrollTop', {
+      configurable: true,
+      get: () => scrollTop,
+      set: value => {
+        scrollTop = value;
+      },
+    });
+    Object.defineProperty(listbox, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => ({
+        bottom: 200,
+        height: 120,
+        left: 0,
+        right: 240,
+        toJSON: () => {},
+        top: 80,
+        width: 240,
+        x: 0,
+        y: 80,
+      }),
+    });
+    fireEvent.change(searchInput, { target: { value: 'm' } });
+    const mineralOption = screen.getByRole('option', { name: /^mineral$/i });
+    const mukolitikOption = screen.getByRole('option', {
+      name: /^mukolitik$/i,
+    });
+
+    Object.defineProperty(mukolitikOption, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => ({
+        bottom: 146,
+        height: 28,
+        left: 0,
+        right: 240,
+        toJSON: () => {},
+        top: 118,
+        width: 240,
+        x: 0,
+        y: 118,
+      }),
+    });
+
+    await new Promise<void>(resolve => {
+      window.requestAnimationFrame(() => {
+        resolve();
+      });
+    });
+
+    await waitFor(() => {
+      expect(searchInput.getAttribute('aria-activedescendant')).toBe(
+        mineralOption.id
+      );
+      expect(scrollTop).toBe(0);
+    });
+  });
+
   it('continues keyboard navigation from the selected visual highlight on open', async () => {
     const suppliers = [
       { id: 'a', name: 'Supplier A' },
@@ -366,7 +446,7 @@ describe('Combobox app presets', () => {
     expect(screen.getByRole('status').textContent).toBe('Tidak ada data');
   });
 
-  it('keeps exact-match create detection across limited visible options', () => {
+  it('keeps exact-match create detection in ranked search with limited visible options', () => {
     render(
       <PharmaComboboxSelect
         name="supplier_id"
@@ -389,10 +469,10 @@ describe('Combobox app presets', () => {
       target: { value: 'Supplier' },
     });
 
+    expect(screen.getByRole('option', { name: /^supplier$/i })).toBeTruthy();
     expect(
-      screen.getByRole('option', { name: /alpha supplier/i })
-    ).toBeTruthy();
-    expect(screen.queryByRole('option', { name: /^supplier$/i })).toBeNull();
+      screen.queryByRole('option', { name: /alpha supplier/i })
+    ).toBeNull();
     expect(
       screen.queryByRole('button', { name: /tambah supplier/i })
     ).toBeNull();
@@ -506,6 +586,47 @@ describe('Combobox app presets', () => {
 
     expect(onValueChange).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'b' }),
+      expect.objectContaining({ reason: 'item-press' })
+    );
+  });
+
+  it('uses the first ranked search result as the active option while searching', async () => {
+    const suppliers = [
+      { id: 'best', name: 'Supplier Target' },
+      { id: 'selected', name: 'Archived Supplier Target' },
+    ];
+    const onValueChange = vi.fn();
+
+    render(
+      <PharmaComboboxSelect
+        name="supplier_id"
+        items={suppliers}
+        value={suppliers[1]}
+        onValueChange={onValueChange}
+        itemToStringLabel={supplier => supplier.name}
+        itemToStringValue={supplier => supplier.id}
+      />
+    );
+
+    fireEvent.click(
+      screen.getByRole('combobox', { name: /archived supplier target/i })
+    );
+    const searchInput = screen.getByPlaceholderText('Cari...');
+    fireEvent.change(searchInput, { target: { value: 'Supplier' } });
+    const bestOption = screen.getByRole('option', {
+      name: /^supplier target$/i,
+    });
+
+    await waitFor(() => {
+      expect(searchInput.getAttribute('aria-activedescendant')).toBe(
+        bestOption.id
+      );
+    });
+
+    fireEvent.keyDown(searchInput, { key: 'Enter' });
+
+    expect(onValueChange).toHaveBeenCalledWith(
+      suppliers[0],
       expect.objectContaining({ reason: 'item-press' })
     );
   });
