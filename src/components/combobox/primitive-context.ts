@@ -12,6 +12,7 @@ export type ComboboxContextValue<Value> = {
   autoComplete?: string;
   autoHighlight: boolean;
   defaultLabelId: string;
+  defaultTriggerId: string;
   disabled: boolean;
   filteredItems: Value[];
   form?: string;

@@ -23,6 +23,40 @@ describe('Combobox primitive labels', () => {
     });
   });
 
+  it('reconnects the label when a custom primitive trigger id is removed', async () => {
+    function DynamicTriggerIdCombobox() {
+      const [useCustomId, setUseCustomId] = useState(true);
+
+      return (
+        <>
+          <button type="button" onClick={() => setUseCustomId(false)}>
+            Use generated id
+          </button>
+          <Combobox.Root items={fruitItems}>
+            <Combobox.Label>Fruit</Combobox.Label>
+            <Combobox.Trigger id={useCustomId ? 'fruit-trigger' : undefined}>
+              <Combobox.Value placeholder="Choose fruit" />
+            </Combobox.Trigger>
+          </Combobox.Root>
+        </>
+      );
+    }
+
+    render(<DynamicTriggerIdCombobox />);
+
+    const label = screen.getByText('Fruit');
+    expect(label.getAttribute('for')).toBe('fruit-trigger');
+
+    fireEvent.click(screen.getByRole('button', { name: /use generated id/i }));
+
+    await waitFor(() => {
+      const trigger = screen.getByRole('combobox', { name: /^fruit$/i });
+
+      expect(trigger.id).not.toBe('fruit-trigger');
+      expect(label.getAttribute('for')).toBe(trigger.id);
+    });
+  });
+
   it('keeps custom primitive label ids connected to trigger and listbox aria', async () => {
     render(
       <Combobox.Root items={fruitItems}>

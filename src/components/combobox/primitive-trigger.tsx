@@ -59,7 +59,7 @@ export function ComboboxTrigger({
 }: ComboboxTriggerProps) {
   const context = useComboboxContext<unknown>();
   const disabled = context.disabled || Boolean(disabledProp);
-  const effectiveId = props.id ?? context.triggerId;
+  const effectiveId = props.id ?? context.defaultTriggerId;
   const { setTriggerId, triggerRef } = context;
   const typeaheadBufferRef = useRef('');
   const typeaheadTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(

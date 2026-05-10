@@ -123,6 +123,7 @@ export function useComboboxRootState<Value>({
   value: valueProp,
 }: ComboboxRootStateProps<Value>) {
   const generatedId = useId();
+  const defaultTriggerId = `${generatedId}-trigger`;
   const triggerRef = useRef<HTMLElement | null>(null);
   const popupRef = useRef<HTMLElement | null>(null);
   const itemMetaRef = useRef(new Map<number, ComboboxItemMeta<Value>>());
@@ -137,7 +138,7 @@ export function useComboboxRootState<Value>({
     defaultValue
   );
   const [registeredLabelIds, setRegisteredLabelIds] = useState<string[]>([]);
-  const [triggerId, setTriggerIdState] = useState(`${generatedId}-trigger`);
+  const [triggerId, setTriggerIdState] = useState(defaultTriggerId);
 
   const itemToStringLabel = useCallback(
     (item: Value) =>
@@ -469,6 +470,7 @@ export function useComboboxRootState<Value>({
       autoComplete,
       autoHighlight,
       defaultLabelId: `${generatedId}-label`,
+      defaultTriggerId,
       disabled,
       filteredItems,
       form,
@@ -510,6 +512,7 @@ export function useComboboxRootState<Value>({
       activeIndexState,
       autoComplete,
       autoHighlight,
+      defaultTriggerId,
       disabled,
       filteredItems,
       form,
