@@ -197,6 +197,8 @@ When the preset is not wrapped by `FormField` or another visible label, pass `la
 
 When wrapped by `FormField`, including through layout wrappers, the preset inherits the field label automatically.
 
+`popupClassName` only customizes the popup surface classes. Pass `popupMatchAnchorWidth={false}` when a preset popup intentionally owns a custom content width wider or narrower than the trigger.
+
 If a scalar select uses a non-null empty sentinel such as `''`, pass `isValueEmpty` so required validation and selection state still treat it as empty:
 
 ```tsx

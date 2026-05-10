@@ -15,15 +15,18 @@ const normalizeComboboxSearchText = (value: string) =>
   value.toLocaleLowerCase('id-ID');
 
 export const getComboboxControlName = ({
+  ariaLabel,
   label,
   name,
   placeholder,
 }: {
+  ariaLabel?: string;
   label?: string;
   name?: string;
   placeholder: string;
 }) =>
   label?.trim() ||
+  ariaLabel?.trim() ||
   name?.replace(/[_-]+/g, ' ') ||
   placeholder.replace(/^-+\s*|\s*-+$/g, '').trim() ||
   'combobox';

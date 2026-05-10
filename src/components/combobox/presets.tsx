@@ -34,6 +34,7 @@ export function PharmaComboboxSelect<Item>(
     hoverDetail,
     optionListProps,
     popupClassName,
+    popupMatchAnchorWidth,
     popupContentRef,
     rootRef,
     searchable,
@@ -55,7 +56,7 @@ export function PharmaComboboxSelect<Item>(
         <Combobox.Portal>
           <Combobox.Positioner
             sideOffset={4}
-            matchAnchorWidth={popupClassName === undefined}
+            matchAnchorWidth={popupMatchAnchorWidth}
             className="z-[1000] w-[var(--anchor-width)]"
           >
             <Combobox.Popup

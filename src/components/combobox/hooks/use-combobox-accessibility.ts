@@ -26,6 +26,7 @@ export function useComboboxAccessibility({
   valueId: string;
 }) {
   const controlName = getComboboxControlName({
+    ariaLabel,
     label,
     name,
     placeholder,

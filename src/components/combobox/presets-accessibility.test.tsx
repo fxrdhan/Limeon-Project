@@ -101,6 +101,9 @@ describe('Combobox app preset accessibility', () => {
     expect(screen.getByRole('listbox').getAttribute('aria-label')).toBe(
       'Supplier picker'
     );
+    expect(
+      screen.getByRole('searchbox', { name: /^Cari Supplier picker$/i })
+    ).toBeTruthy();
     expect(screen.getByRole('listbox').hasAttribute('aria-labelledby')).toBe(
       false
     );

@@ -649,6 +649,52 @@ describe('Combobox app presets', () => {
     expect(screen.getByText('SUP-A')).toBeTruthy();
   });
 
+  it('keeps custom popup classes separate from popup width matching', () => {
+    const suppliers = [{ id: 'supplier-a', name: 'Supplier A' }];
+    const baseProps = {
+      label: 'Supplier',
+      name: 'supplier_id',
+      items: suppliers,
+      value: null,
+      onValueChange: () => {},
+      itemToStringLabel: (supplier: (typeof suppliers)[number]) =>
+        supplier.name,
+      itemToStringValue: (supplier: (typeof suppliers)[number]) => supplier.id,
+    };
+    const getPositioner = () => {
+      const listbox = screen.getByRole('listbox');
+      const popup = listbox.closest('[data-combobox-popup]');
+
+      expect(popup).toBeTruthy();
+      expect(popup?.parentElement).toBeTruthy();
+
+      return popup?.parentElement as HTMLElement;
+    };
+
+    const defaultPopup = render(
+      <PharmaComboboxSelect
+        {...baseProps}
+        popupClassName="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl"
+      />
+    );
+    fireEvent.click(screen.getByRole('combobox', { name: /supplier/i }));
+    expect(getPositioner().style.width).toBe('var(--anchor-width)');
+    defaultPopup.unmount();
+
+    render(
+      <PharmaComboboxSelect
+        {...baseProps}
+        popupClassName="w-[420px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl"
+        popupMatchAnchorWidth={false}
+      />
+    );
+    fireEvent.click(screen.getByRole('combobox', { name: /supplier/i }));
+
+    const customWidthPositioner = getPositioner();
+    expect(customWidthPositioner.style.width).toBe('max-content');
+    expect(customWidthPositioner.style.minWidth).toBe('var(--anchor-width)');
+  });
+
   it('covers enum radio-style, calendar text, and purchase object selects', () => {
     const onEnumChange = vi.fn();
     const onMonthChange = vi.fn();

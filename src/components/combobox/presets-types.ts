@@ -58,6 +58,7 @@ export interface PharmaComboboxSelectProps<Item> {
   form?: string;
   className?: string;
   popupClassName?: string;
+  popupMatchAnchorWidth?: boolean;
   validation?: {
     enabled?: boolean;
     autoHide?: boolean;

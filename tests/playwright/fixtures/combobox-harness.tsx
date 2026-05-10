@@ -150,6 +150,7 @@ function ComboboxRegressionHarness() {
               placeholder="Pilih"
               searchPlaceholder="Cari popup lebar"
               popupClassName="w-[420px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl"
+              popupMatchAnchorWidth={false}
               renderOptionMeta={(option: MedicineOption) => option.code}
             />
           </div>

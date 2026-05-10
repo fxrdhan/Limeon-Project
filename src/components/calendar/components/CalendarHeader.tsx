@@ -38,6 +38,7 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
           searchable={false}
           indicator="none"
           popupClassName="w-[120px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl"
+          popupMatchAnchorWidth={false}
         />
 
         <PharmaComboboxSelect
@@ -54,6 +55,7 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
           searchable={false}
           indicator="none"
           popupClassName="w-[100px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl"
+          popupMatchAnchorWidth={false}
         />
       </div>
 
