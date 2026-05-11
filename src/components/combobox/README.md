@@ -1,30 +1,131 @@
-# Combobox
+# Combobox Component Documentation
 
-`@/components/combobox` exports the local PharmaSys combobox primitive plus app presets:
+## Overview
+
+`@/components/combobox` provides the combobox/select implementation used by PharmaSys forms and data-entry flows. The module has a primitive layer and an app preset layer:
+
+- Primitive: `Combobox`, a local compound component for custom combobox compositions.
+- App presets: `PharmaComboboxSelect` for arbitrary item types and `PharmaEntityComboboxSelect` for common `{ id, name }` entity options.
+
+The component supports single selection, controlled or uncontrolled open state, controlled or uncontrolled selected value, searchable option lists, keyboard navigation, hidden form submission, portal-based popup positioning, required-state feedback, create actions, and optional hover detail popovers.
+
+Use the app presets for normal product screens. Use the primitive only when a screen needs a custom layout that the preset cannot express.
+
+## Import
 
 ```tsx
-import { Combobox, PharmaEntityComboboxSelect } from '@/components/combobox';
+import {
+  Combobox,
+  PharmaComboboxSelect,
+  PharmaEntityComboboxSelect,
+} from '@/components/combobox';
 ```
 
-The primitive is a focused Base-UI-like engine owned by this repo. It covers the current PharmaSys needs: single-select values, controlled/uncontrolled open state, controlled search input, filtering, keyboard navigation, cancelable event details, hidden form values, and render-prop parts.
+Additional exports:
 
-Popup placement is delegated to Floating UI through `Combobox.Positioner`. The combobox still owns value state, item highlighting, search, keyboard behavior, form integration, and the app preset animations.
+| Export                            | Description                                                   |
+| --------------------------------- | ------------------------------------------------------------- |
+| `ComboboxRootProps`               | Type for `Combobox.Root` props.                               |
+| `ComboboxChangeEventDetails`      | Callback details for value, open, and input changes.          |
+| `ComboboxHighlightEventDetails`   | Callback details for highlighted option changes.              |
+| `PharmaComboboxSelectProps`       | Props for the generic app preset.                             |
+| `PharmaComboboxOptionRenderState` | State passed to `renderOption` and `renderOptionMeta`.        |
+| `PharmaEntityComboboxSelectProps` | Props for the entity preset.                                  |
+| `findComboboxItemByValue`         | Helper for resolving an item from its submitted string value. |
 
-Implementation is split by ownership:
+## Recommended Usage
 
-- `primitive.tsx` owns the public compound namespace and root provider shell.
-- `primitive-root-state.ts` owns root state, filtering, option registry, value changes, and hidden form value derivation.
-- `primitive-hidden-input.tsx` owns the native hidden input used for form submission.
-- `primitive-label.tsx`, `primitive-trigger.tsx`, `primitive-value.tsx`, and `primitive-input.tsx` own the individual control parts and their keyboard/event handlers.
-- `primitive-items.tsx` owns list, collection, item rendering, item registration, item indicators, empty state, and status.
-- `primitive-popup.tsx` owns portal rendering, popup focus, and Floating UI positioning.
-- `primitive-context.ts` and `utils/primitive-*` hold shared context, event details, keyboard math, outside press handling, positioning, and render-prop merging.
-- `presets.tsx`, `components/*`, `hooks/*`, and `utils/preset-*` compose the PharmaSys app select UX, including popup content, search, highlighting, validation, and hover-detail layout on top of the primitive.
-
-## Primitive Parts
+Use `PharmaEntityComboboxSelect` for database-backed selects where the submitted value is an entity id.
 
 ```tsx
-<Combobox.Root
+type Category = {
+  id: string;
+  name: string;
+};
+
+<PharmaEntityComboboxSelect<Category>
+  label="Kategori"
+  name="category_id"
+  items={categories}
+  valueId={formData.category_id}
+  onValueIdChange={valueId => updateField('category_id', valueId)}
+  placeholder="Pilih Kategori"
+  required
+/>;
+```
+
+Use `selectedItem` when the saved id can exist before the option list has finished loading.
+
+```tsx
+<PharmaEntityComboboxSelect
+  label="Supplier"
+  name="supplier_id"
+  items={supplierOptions}
+  valueId={supplierId}
+  selectedItem={selectedSupplier}
+  onValueIdChange={(valueId, item) => {
+    setSupplierId(valueId);
+    setSelectedSupplier(item);
+  }}
+/>
+```
+
+Use `PharmaComboboxSelect` when values are not standard `{ id, name }` entities or when the caller needs custom label/value conversion.
+
+```tsx
+type Supplier = {
+  code: string;
+  id: string;
+  name: string;
+};
+
+<PharmaComboboxSelect<Supplier>
+  label="Supplier"
+  name="supplier_id"
+  items={suppliers}
+  value={selectedSupplier}
+  onValueChange={setSelectedSupplier}
+  itemToStringLabel={supplier => supplier.name}
+  itemToStringValue={supplier => supplier.id}
+  isItemEqualToValue={(item, value) => item.id === value.id}
+  renderOptionMeta={supplier => supplier.code}
+/>;
+```
+
+For enum or string-list selects, pass scalar values directly.
+
+```tsx
+const statusOptions = ['active', 'inactive'] as const;
+type Status = (typeof statusOptions)[number];
+
+const statusLabels: Record<Status, string> = {
+  active: 'Aktif',
+  inactive: 'Tidak Aktif',
+};
+
+<PharmaComboboxSelect<Status>
+  label="Status"
+  name="status"
+  items={[...statusOptions]}
+  value={status}
+  onValueChange={setStatus}
+  itemToStringLabel={value => statusLabels[value]}
+  itemToStringValue={value => value}
+  searchable={false}
+  indicator="radio"
+  required
+/>;
+```
+
+Use the primitive directly only for custom UI composition.
+
+```tsx
+type Supplier = {
+  id: string;
+  name: string;
+};
+
+<Combobox.Root<Supplier>
   items={suppliers}
   value={selectedSupplier}
   onValueChange={setSelectedSupplier}
@@ -35,13 +136,13 @@ Implementation is split by ownership:
 >
   <Combobox.Label>Supplier</Combobox.Label>
   <Combobox.Trigger>
-    <Combobox.Value placeholder="-- Pilih Supplier --" />
+    <Combobox.Value placeholder="Pilih Supplier" />
   </Combobox.Trigger>
   <Combobox.Portal>
-    <Combobox.Positioner>
+    <Combobox.Positioner sideOffset={4}>
       <Combobox.Popup>
         <Combobox.Input aria-label="Cari supplier" placeholder="Cari..." />
-        <Combobox.List<(typeof suppliers)[number]>>
+        <Combobox.List<Supplier>>
           {(supplier, index) => (
             <Combobox.Item key={supplier.id} value={supplier} index={index}>
               {supplier.name}
@@ -52,222 +153,240 @@ Implementation is split by ownership:
       </Combobox.Popup>
     </Combobox.Positioner>
   </Combobox.Portal>
-</Combobox.Root>
+</Combobox.Root>;
 ```
 
-Available parts:
+## App Presets
 
-- `Combobox.Root`
-- `Combobox.Label`
-- `Combobox.Trigger`
-- `Combobox.Value`
-- `Combobox.Portal`
-- `Combobox.Positioner`
-- `Combobox.Popup`
-- `Combobox.Input`
-- `Combobox.List`
-- `Combobox.Collection`
-- `Combobox.Item`
-- `Combobox.ItemIndicator`
-- `Combobox.Empty`
-- `Combobox.Status`
+### `PharmaEntityComboboxSelect`
 
-`Combobox.Portal` renders into `document.body` by default. Pass `container` when a real call-site needs the popup mounted under a different DOM root.
+`PharmaEntityComboboxSelect` is the preferred preset for id-backed entity fields. It accepts items with at least this shape:
 
-`Combobox.Positioner` matches the trigger width by default and uses `placement="bottom-start"`. Pass `matchAnchorWidth={false}` when the popup content owns a custom width; the positioner will keep the popup at least as wide as the trigger while letting Floating UI shift the wider content inside the available viewport. Pass `placement` when a composition needs a different preferred Floating UI placement.
+```ts
+type EntityComboboxItem = {
+  id: string;
+  name: string;
+};
+```
 
-## Root API
+| Prop                 | Type                               | Description                                                         |
+| -------------------- | ---------------------------------- | ------------------------------------------------------------------- |
+| `items`              | `Item[]`                           | Available options.                                                  |
+| `valueId`            | `string`                           | Current submitted id. Use `''` for empty selection.                 |
+| `onValueIdChange`    | `(valueId, item, details) => void` | Called when selection changes.                                      |
+| `selectedItem`       | `Item \| null`                     | Optional item for the current id when it is not present in `items`. |
+| `itemToStringLabel`  | `(item) => string`                 | Optional label formatter. Defaults to `item.name`.                  |
+| `itemToStringValue`  | `(item) => string`                 | Optional submitted-value formatter. Defaults to `item.id`.          |
+| `isItemEqualToValue` | `(item, value) => boolean`         | Optional equality check. Defaults to matching submitted values.     |
 
-`Combobox.Root<Value>` supports the local subset used by PharmaSys:
+If `valueId` is not empty and neither `items` nor `selectedItem` can resolve it, the preset keeps the hidden form value intact and displays a neutral fallback label.
 
-- `items`, `filteredItems`
-- `value`, `defaultValue`, `onValueChange`
-- `open`, `defaultOpen`, `onOpenChange`
-- `inputValue`, `defaultInputValue`, `onInputValueChange`, `autoComplete`
-- `highlightedIndex`, `defaultHighlightedIndex`, `onHighlightedIndexChange`
-- `onItemHighlighted`
-- `filter`
-- `itemToStringLabel`, `itemToStringValue`, `isItemEqualToValue`, `isItemDisabled`
-- `labelId`
-- `name`, `form`, `disabled`, `readOnly`, `required`
-- `autoHighlight`, `highlightItemOnHover`
+### `PharmaComboboxSelect`
 
-Change callbacks receive cancelable event details with `reason`, `event`, `cancel()`, and `isCanceled`.
+`PharmaComboboxSelect` is the generic app preset. It should be used when the selected value is an object or scalar that needs custom string conversion.
 
-`itemToStringValue` must return a stable unique submitted value for every option that can appear in the same list. The primitive uses that value for hidden form submission, while the preset also relies on it for item keys and entity/id bridging.
+| Prop                      | Type                                                                | Description                                                                       |
+| ------------------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `items`                   | `Item[]`                                                            | Options displayed by the select.                                                  |
+| `value`                   | `Item \| null`                                                      | Selected item.                                                                    |
+| `onValueChange`           | `(item, details) => void`                                           | Called after the selected item changes.                                           |
+| `itemToStringLabel`       | `(item) => string`                                                  | Human-readable option label.                                                      |
+| `itemToStringValue`       | `(item) => string`                                                  | Stable submitted value. Must be unique within the option list.                    |
+| `isItemEqualToValue`      | `(item, value) => boolean`                                          | Equality check for object values that can be different references.                |
+| `isItemDisabled`          | `(item) => boolean`                                                 | Disables individual options. Defaults to reading `item.disabled` on object items. |
+| `isValueEmpty`            | `(item) => boolean`                                                 | Defines custom empty sentinels such as `''`.                                      |
+| `id`                      | `string`                                                            | Trigger/control id. Inherits `FormField` control id when available.               |
+| `label`                   | `string`                                                            | Visible or accessible label. Inherits `FormField` label when available.           |
+| `name`                    | `string`                                                            | Hidden input name for form submission.                                            |
+| `form`                    | `string`                                                            | Associates the hidden input with a form id.                                       |
+| `placeholder`             | `string`                                                            | Trigger placeholder. Defaults to `'-- Pilih --'`.                                 |
+| `searchPlaceholder`       | `string`                                                            | Search input placeholder. Defaults to `'Cari...'`.                                |
+| `emptyText`               | `string`                                                            | Empty-state text. Defaults to `'Tidak ada data'`.                                 |
+| `searchable`              | `boolean`                                                           | Enables the popup search input. Defaults to `true`.                               |
+| `visibleItemLimit`        | `number`                                                            | Optional render cap for large lists. Filtering still evaluates all items.         |
+| `indicator`               | `'none' \| 'check' \| 'radio' \| 'checkbox'`                        | Selection indicator style.                                                        |
+| `required`                | `boolean`                                                           | Enables required-state semantics and preset validation integration.               |
+| `disabled`                | `boolean`                                                           | Disables the control.                                                             |
+| `readOnly`                | `boolean`                                                           | Prevents selection changes while keeping the current value readable.              |
+| `tabIndex`                | `number`                                                            | Trigger tab order.                                                                |
+| `className`               | `string`                                                            | Root container class.                                                             |
+| `popupClassName`          | `string`                                                            | Popup surface class.                                                              |
+| `popupMatchAnchorWidth`   | `boolean`                                                           | Whether the popup width follows the trigger width. Defaults to `true`.            |
+| `validation`              | `{ enabled?: boolean; autoHide?: boolean; autoHideDelay?: number }` | Required-field validation overlay configuration.                                  |
+| `createAction`            | `{ label?: string; onCreate: (searchTerm?: string) => void }`       | Create action rendered when no exact option exists.                               |
+| `hoverDetail`             | `{ enabled?: boolean; delay?: number }`                             | Hover-detail behavior configuration.                                              |
+| `itemToHoverDetailData`   | `(item) => Partial<HoverDetailData>`                                | Maps an item to local hover-detail data.                                          |
+| `onFetchHoverDetail`      | `(id) => Promise<HoverDetailData \| null>`                          | Loads hover-detail data asynchronously.                                           |
+| `onFetchHoverDetailError` | `(error, id) => void`                                               | Handles hover-detail fetch failures.                                              |
+| `renderOption`            | `(item, state) => ReactNode`                                        | Custom option content.                                                            |
+| `renderOptionMeta`        | `(item, state) => ReactNode`                                        | Secondary option metadata.                                                        |
+| `open`                    | `boolean`                                                           | Controlled popup state.                                                           |
+| `onOpenChange`            | `(open, details) => void`                                           | Called when the primitive requests an open-state change.                          |
+| `aria-label`              | `string`                                                            | Accessible name override.                                                         |
+| `aria-labelledby`         | `string`                                                            | Accessible label reference override.                                              |
+| `aria-describedby`        | `string`                                                            | Accessible description reference.                                                 |
 
-When a popup is open, pressing outside both the trigger and the portaled popup requests close with reason `outside-press`. Moving focus outside both nodes, including with Tab, requests close with reason `focus-out`. Controlled `open` callers and `details.cancel()` still decide whether that close request takes effect.
+## Primitive API
 
-`autoComplete` sets the default native `autocomplete` attribute for `Combobox.Input`. A direct `autoComplete` prop on `Combobox.Input` wins over the root default.
+### Compound Parts
 
-Trigger and popup search keyboard navigation covers ArrowUp/ArrowDown, PageUp/PageDown, Home/End on the trigger, Enter selection, and Escape close.
+| Part                     | Description                                                                                  |
+| ------------------------ | -------------------------------------------------------------------------------------------- |
+| `Combobox.Root`          | State provider for value, input, open state, filtering, highlighting, and hidden form value. |
+| `Combobox.Label`         | Label element registered with the trigger, input, and listbox.                               |
+| `Combobox.Trigger`       | Button that opens the popup and exposes combobox ARIA attributes.                            |
+| `Combobox.Value`         | Displays the selected item label or a placeholder.                                           |
+| `Combobox.Portal`        | Renders popup content into `document.body` by default.                                       |
+| `Combobox.Positioner`    | Positions popup content relative to the trigger.                                             |
+| `Combobox.Popup`         | Popup container and optional initial focus manager.                                          |
+| `Combobox.Input`         | Search input controlled by `Combobox.Root`.                                                  |
+| `Combobox.List`          | Listbox wrapper. Can map `filteredItems` through a render function.                          |
+| `Combobox.Collection`    | Render-only mapper for `filteredItems`.                                                      |
+| `Combobox.Item`          | Selectable option.                                                                           |
+| `Combobox.ItemIndicator` | Optional indicator element inside an option.                                                 |
+| `Combobox.Empty`         | Status element rendered only when there are no filtered items.                               |
+| `Combobox.Status`        | Generic status element.                                                                      |
 
-`Combobox.Input` defaults to `role="searchbox"` for the supported trigger-plus-popup-search composition. Its text value is owned by `Combobox.Root` through `inputValue` / `defaultInputValue`; pass `onInputValueChange` to the root instead of `value` or `defaultValue` to the input. Do not treat the input alone as a full standalone combobox unless the missing open/focus behavior is added for a real call-site.
+### `Combobox.Root`
 
-`name` and `form` render a hidden input for submission. `required` is primitive state consumed by the app preset and validation integrations; it is not implemented through native hidden-input constraint validation. Use `PharmaComboboxSelect` validation for required user feedback.
+| Prop                                           | Type                                     | Description                                                       |
+| ---------------------------------------------- | ---------------------------------------- | ----------------------------------------------------------------- |
+| `items`                                        | `readonly Value[]`                       | Full option list.                                                 |
+| `filteredItems`                                | `readonly Value[]`                       | Controlled filtered list. Overrides root filtering when provided. |
+| `value` / `defaultValue`                       | `Value \| null`                          | Controlled or uncontrolled selected value.                        |
+| `onValueChange`                                | `(value, details) => void`               | Called when selection changes.                                    |
+| `open` / `defaultOpen`                         | `boolean`                                | Controlled or uncontrolled popup state.                           |
+| `onOpenChange`                                 | `(open, details) => void`                | Called when open state is requested to change.                    |
+| `inputValue` / `defaultInputValue`             | `string`                                 | Controlled or uncontrolled search value.                          |
+| `onInputValueChange`                           | `(inputValue, details) => void`          | Called when the search input changes.                             |
+| `highlightedIndex` / `defaultHighlightedIndex` | `number \| null`                         | Controlled or uncontrolled highlighted option index.              |
+| `onHighlightedIndexChange`                     | `(index, details) => void`               | Called when highlight changes.                                    |
+| `onItemHighlighted`                            | `(item, details) => void`                | Called with the highlighted item.                                 |
+| `filter`                                       | `(item, query, itemToString) => boolean` | Custom filter. Pass `null` to disable filtering.                  |
+| `itemToStringLabel`                            | `(item) => string`                       | Option label formatter.                                           |
+| `itemToStringValue`                            | `(item) => string`                       | Hidden input value formatter. Must return stable unique values.   |
+| `isItemEqualToValue`                           | `(item, value) => boolean`               | Equality check. Defaults to `Object.is`.                          |
+| `isItemDisabled`                               | `(item) => boolean`                      | Disables options.                                                 |
+| `name`                                         | `string`                                 | Enables hidden input submission.                                  |
+| `form`                                         | `string`                                 | Native form id for the hidden input.                              |
+| `disabled`                                     | `boolean`                                | Disables the control.                                             |
+| `readOnly`                                     | `boolean`                                | Prevents user changes.                                            |
+| `required`                                     | `boolean`                                | Adds required semantics for consumers.                            |
+| `labelId`                                      | `string`                                 | External label id.                                                |
+| `autoComplete`                                 | `string`                                 | Default native `autocomplete` for `Combobox.Input`.               |
+| `autoHighlight`                                | `boolean`                                | Highlights the first enabled item when opening or filtering.      |
+| `highlightItemOnHover`                         | `boolean`                                | Enables pointer-driven highlighting. Defaults to `true`.          |
 
-The local primitive intentionally does not aim to mirror every upstream combobox feature. Add behavior only when a real PharmaSys call-site needs it.
+### Event Details
 
-When the popup is open, the primitive trigger supports the local keyboard set used by PharmaSys: Arrow navigation, Home/End, PageUp/PageDown, Enter/Space selection, Escape close, and basic typeahead. The popup search input keeps normal text-entry ownership, handles list navigation keys, and lets Enter select the active option before the preset falls back to a create action with no active option.
+Change and highlight callbacks receive a details object:
 
-The preset keeps search local and in-memory. It precomputes normalized search entries when `items` or `itemToStringLabel` changes, then ranks matches on each query by exact match, prefix match, word prefix match, substring match, acronym/consonant/subsequence match, and typo-fuzzy fallback. Typo-fuzzy results are only used when deterministic tiers return no matches, so exact/prefix results do not get polluted by loose typo candidates. For very large datasets, keep the default behavior unbounded unless a real call-site needs a cap; use `visibleItemLimit` as an opt-in render guardrail. The limit only caps rendered visible options, still scans all provided items for exact-create checks, and keeps the selected option visible when it would otherwise fall outside the cap. Do not add virtualization to the app preset without a call-site that needs that extra behavior.
+```ts
+type ComboboxEventDetails = {
+  cancel: () => void;
+  event?: Event;
+  isCanceled: boolean;
+  reason:
+    | 'escape-key'
+    | 'focus-out'
+    | 'input-change'
+    | 'item-press'
+    | 'keyboard'
+    | 'none'
+    | 'outside-press'
+    | 'pointer'
+    | 'trigger-press';
+};
+```
 
-## Render Props
+Call `details.cancel()` to prevent the primitive from applying the requested transition. Controlled callers still own the final external state.
 
-DOM-rendering parts accept `render={element}` or `render={(props, state) => element}`. Internal ARIA attributes, refs, handlers, class names, styles, and children are passed through the render props.
+### Popup Positioning
+
+`Combobox.Portal` renders into `document.body` unless `container` is provided.
+
+`Combobox.Positioner` defaults to `placement="bottom-start"` and `matchAnchorWidth={true}`. Set `matchAnchorWidth={false}` when popup content needs a custom width while keeping the popup at least as wide as the trigger.
+
+### Render Props
+
+`Combobox.Trigger` and `Combobox.Item` accept `render={element}` or `render={(props, state) => element}`. The generated props include ARIA attributes, event handlers, refs, class names, styles, and data attributes.
 
 ```tsx
 <Combobox.Trigger
   render={(props, state) => (
     <button {...props} data-open={state.open}>
-      <Combobox.Value placeholder="Choose" />
+      <Combobox.Value placeholder="Pilih data" />
     </button>
   )}
 />
 ```
 
-Stable local `data-*` states include `data-selected`, `data-highlighted`, `data-disabled`, and `data-placeholder` where relevant.
+Stable data attributes include `data-selected`, `data-highlighted`, `data-disabled`, and `data-placeholder` where applicable.
 
-`Combobox.Popup initialFocus` focuses the first focusable popup control only when explicitly enabled.
+## Behavior Notes
 
-`highlightedIndex` controls the primitive highlighted option declaratively. Use it for advanced compositions that need to synchronize visual and semantic highlight state.
+### Search
 
-## App Preset
+`Combobox.Input` gets its value from `Combobox.Root` through `inputValue` or `defaultInputValue`. Do not pass `value` or `defaultValue` directly to `Combobox.Input`.
 
-Use the entity preset when a standard id-backed PharmaSys select is needed:
+The app preset keeps search in memory. Results are ranked by exact match, prefix match, word prefix match, substring match, acronym/consonant/subsequence match, and typo-tolerant fallback. Typo-tolerant matches are used only when deterministic matches do not produce results.
 
-```tsx
-<PharmaEntityComboboxSelect
-  label="Kategori"
-  name="category_id"
-  items={categories}
-  valueId={formData.category_id}
-  onValueIdChange={value => updateField('category_id', value)}
-  placeholder="Pilih Kategori"
-  required
-  validation={{ enabled: true, autoHide: true, autoHideDelay: 3000 }}
-  createAction={{ onCreate: openCategoryModal, label: 'Tambah data baru' }}
-/>
-```
+### Keyboard
 
-If the selected id can outlive the current option list, pass `selectedItem` when available. The scalar `valueId` is still preserved for hidden form submission and required validation while options are loading. When no matching option or `selectedItem` is available, the trigger uses a neutral fallback label while keeping the raw id submitted; `selectedItem` keeps that temporary gap fully human-readable.
+The trigger supports:
 
-```tsx
-<PharmaEntityComboboxSelect
-  name="supplier_id"
-  items={supplierOptions}
-  valueId={supplierId}
-  selectedItem={selectedSupplier}
-  onValueIdChange={setSupplierId}
-/>
-```
+- `ArrowUp` / `ArrowDown`: open and move highlight.
+- `Home` / `End`: move to first or last enabled option.
+- `PageUp` / `PageDown`: move highlight by page.
+- `Enter` / `Space`: select the highlighted option when available.
+- `Escape`: close the popup.
+- Printable characters: typeahead while the popup is open.
 
-Use the generic app preset directly when values are not `id`/`name` entities or when the caller needs full control over stringification and equality. For object values, pass `isItemEqualToValue` when selected values can be different references with the same semantic id.
+The popup search input supports:
 
-```tsx
-<PharmaComboboxSelect
-  name="supplier_id"
-  items={suppliers}
-  value={selectedSupplier}
-  onValueChange={setSelectedSupplier}
-  itemToStringLabel={supplier => supplier.name}
-  itemToStringValue={supplier => supplier.id}
-  isItemEqualToValue={(item, value) => item.id === value.id}
-  renderOption={(supplier, state) => <span>{state.label}</span>}
-  renderOptionMeta={supplier => supplier.code}
-/>
-```
+- `ArrowUp` / `ArrowDown`: move highlight.
+- `PageUp` / `PageDown`: move highlight by page.
+- `Enter`: select the highlighted option.
+- `Escape`: close the popup.
 
-Enum/list-only selects should pass primitive values directly:
+### Forms
 
-```tsx
-<PharmaComboboxSelect
-  name="payment_status"
-  items={['unpaid', 'partial', 'paid']}
-  value={status}
-  onValueChange={value => value && setStatus(value)}
-  itemToStringLabel={value => labels[value]}
-  itemToStringValue={value => value}
-  searchable={false}
-  indicator="radio"
-/>
-```
+Passing `name` renders a hidden input. Its value comes from `itemToStringValue(selectedItem)`. For entity selects, the hidden value is the selected id.
 
-When the preset is not wrapped by `FormField` or another visible label, pass `label`. The trigger uses that label plus the current value for its accessible name while keeping the same visual output.
+`required` is used for accessibility and preset validation state. It is not native hidden-input constraint validation.
 
-When wrapped by `FormField`, including through layout wrappers, the preset inherits the field label automatically.
+### Accessibility
 
-`popupClassName` only customizes the popup surface classes. Pass `popupMatchAnchorWidth={false}` when a preset popup intentionally owns a custom content width wider or narrower than the trigger.
+The primitive wires the trigger, input, listbox, option ids, active descendant, selected state, disabled state, and registered labels. When a preset is not wrapped by `FormField`, pass `label`, `aria-label`, or `aria-labelledby` so the control has an accessible name.
 
-If a scalar select uses a non-null empty sentinel such as `''`, pass `isValueEmpty` so required validation and selection state still treat it as empty:
+### Controlled Open State
 
-```tsx
-<PharmaComboboxSelect
-  name="status"
-  items={['active', 'inactive']}
-  value={status}
-  onValueChange={value => setStatus(value ?? '')}
-  itemToStringLabel={value => labels[value] ?? value}
-  itemToStringValue={value => value}
-  isValueEmpty={value => value === ''}
-  required
-/>
-```
+When `open` is controlled, `onOpenChange(false, details)` is only a close request. The caller must update `open` for the popup to close. If `details.cancel()` is called, preset side effects for that transition should not run.
 
-## Preset Behavior Contract
+## File Structure
 
-`PharmaComboboxSelect` is the production app adapter. The local primitive owns ARIA roles, focus/reference wiring, option registry, keyboard navigation, highlighted option state, selected value state, hidden form value, filtered item rendering, and cancelable callback details.
+| File                      | Responsibility                                                                 |
+| ------------------------- | ------------------------------------------------------------------------------ |
+| `index.ts`                | Public exports.                                                                |
+| `primitive.tsx`           | Public compound namespace and root provider shell.                             |
+| `primitive-root-state.ts` | Root state, filtering, option registry, callbacks, and hidden input state.     |
+| `primitive-label.tsx`     | Label registration and label association.                                      |
+| `primitive-trigger.tsx`   | Trigger ARIA, open behavior, keyboard navigation, and typeahead.               |
+| `primitive-value.tsx`     | Selected label and placeholder rendering.                                      |
+| `primitive-input.tsx`     | Search input ownership and search-list keyboard handling.                      |
+| `primitive-items.tsx`     | Listbox, options, item registration, empty state, and status parts.            |
+| `primitive-popup.tsx`     | Portal, popup container, and positioner integration.                           |
+| `presets.tsx`             | Standard PharmaSys select composition.                                         |
+| `entity-select.tsx`       | Entity id adapter.                                                             |
+| `presets-types.ts`        | Public preset types.                                                           |
+| `hooks/*`                 | Preset state, search, highlight, validation, focus, and hover-detail behavior. |
+| `components/*`            | Preset visual subcomponents.                                                   |
+| `utils/*`                 | Primitive and preset utilities.                                                |
 
-The preset owns:
+## Maintenance Guidelines
 
-- Search query state and filtered item lists passed into the primitive through `filteredItems`.
-- Entity ID bridging, required validation overlay, create action, localized copy, visual styling, and hover detail.
-- The animated visual highlight background, including hover continuity, keyboard scroll pinning, wrap-to-edge scroll behavior, stationary-pointer suppression, and the selected/default visual anchor after search is cleared.
-- The popup search input's visual active state. Arrow navigation may keep DOM focus on the input, but it must not make the search field look actively focused unless the user is typing or pointing at the input.
-
-The shared boundary is item highlighting. The primitive owns the semantic highlighted index. The preset controls that index declaratively through `highlightedIndex` and renders the existing animated visual background from it. Searchable and non-searchable presets keep their semantic active descendant aligned with the visible highlight anchor.
-
-Rules for maintaining this boundary:
-
-- Do not let the visual background directly change submitted value or selection. Selection must still happen through primitive item press or keyboard handling.
-- Preset keyboard navigation must continue from the visible highlight anchor through the primitive controlled highlighted index.
-- Clearing search must restore the visual highlight to the selected enabled item when it is visible, otherwise to the first enabled visible item.
-- Keyboard scroll and pointer hover must remain arbitrated by the preset so a stationary cursor does not steal highlight while Arrow navigation scrolls the list.
-- `value`/`valueId` is the selected value source of truth. `inputValue` is only the transient search query and is cleared when the popup actually closes.
-- Outside pointer dismissal is primitive-owned and must ignore presses inside the trigger or portaled popup.
-- Controlled `open` callers own whether a close request takes effect. The preset must not run close cleanup when `onOpenChange(false)` fires but `open` remains `true`.
-- `details.cancel()` from primitive callbacks prevents preset side effects for that transition.
-- Hover detail must never change selection, focus, or submitted value.
-
-Do not add app-specific props to `Combobox.Root`. Compose app behavior around the primitive parts or extend the preset.
-
-## Test Coverage
-
-Combobox regression coverage is intentionally split by what each runner and file can prove:
-
-- `src/components/combobox/index.test.tsx` covers primitive behavior: value changes, filtering, keyboard selection, disabled items, cancelable event details, controlled highlight state, render props, outside press, and focus-out dismissal.
-- `src/components/combobox/primitive-aria-id.test.tsx` covers internal listbox and option id contracts that back `aria-controls` and `aria-activedescendant`.
-- `src/components/combobox/primitive-form-state.test.tsx` covers hidden form values, controlled nullable values, read-only state, and input autocomplete defaults.
-- `src/components/combobox/primitive-label.test.tsx` covers primitive label/id wiring and listbox labelling contracts.
-- `src/components/combobox/primitive-popup.test.tsx` covers primitive portal container wiring, positioner placement API coverage, Floating UI sizing, and initial focus.
-- `src/components/combobox/primitive-render-props.test.tsx` covers primitive render-prop prop merging, child passthrough, refs, and internal handler cancellation.
-- `src/components/combobox/presets-accessibility.test.tsx` covers app label sources, listbox labelling, fallback accessible names, empty status placement, and omitted-name form behavior.
-- `src/components/combobox/presets-create-validation.test.tsx` covers create-action precedence, required validation, and non-null empty sentinel behavior.
-- `src/components/combobox/presets-highlight.test.ts` covers pure preset highlight and keyboard-routing helpers.
-- `src/components/combobox/presets-search-lifecycle.test.tsx` covers search input reset, controlled popup close behavior, focus restore, trigger typing, and search navigation focus state.
-- `src/components/combobox/presets-state.test.tsx` covers cancelable details, disabled options, and non-searchable trigger keyboard state.
-- `src/components/combobox/presets.test.tsx` covers the generic PharmaSys preset: visual highlight state, keyboard scroll behavior, filtered option indices, typed option rendering, and cross-call-site preset examples.
-- `src/components/combobox/presets-entity.test.tsx` covers id-backed entity select behavior, selected-item fallback, scalar form submission, and unavailable-item fallback safeguards.
-- `src/components/combobox/presets-hover-detail.test.tsx` covers hover detail data, fetch failures, unmount cleanup, and controlled-open cleanup boundaries.
-- `src/components/combobox/presets-keyboard-scroll.test.tsx` covers low-level preset keyboard scroll and pinned-highlight geometry helpers.
-- `@testing-library/user-event` is used for user-facing click/type flows where realistic event order matters. Lower-level `fireEvent` remains acceptable for targeted primitive and edge-case transitions.
-- Playwright covers browser-only layout behavior in `tests/playwright/combobox.spec.ts`: the combobox fixture renders the real components, verifies search/select and Tab dismissal still work in Chromium, and verifies Floating UI flips/clamps the portaled fixed popup near the viewport edge.
-
-Useful commands:
-
-```bash
-AI_AGENT=codex vp test run --passWithNoTests src/components/combobox/index.test.tsx src/components/combobox/primitive-aria-id.test.tsx src/components/combobox/primitive-form-state.test.tsx src/components/combobox/primitive-label.test.tsx src/components/combobox/primitive-popup.test.tsx src/components/combobox/primitive-render-props.test.tsx src/components/combobox/presets.test.tsx src/components/combobox/presets-accessibility.test.tsx src/components/combobox/presets-create-validation.test.tsx src/components/combobox/presets-entity.test.tsx src/components/combobox/presets-highlight.test.ts src/components/combobox/presets-hover-detail.test.tsx src/components/combobox/presets-keyboard-scroll.test.tsx src/components/combobox/presets-search-lifecycle.test.tsx src/components/combobox/presets-state.test.tsx
-PLAYWRIGHT_BASE_URL=http://127.0.0.1:5173 bun run test:e2e -- tests/playwright/combobox.spec.ts
-```
-
-The Playwright tests require an already-running VitePlus server. Install the browser binary once with `bunx playwright install chromium` if Playwright reports a missing executable.
+- Keep app screens on `PharmaEntityComboboxSelect` or `PharmaComboboxSelect` unless custom markup is required.
+- Keep `itemToStringValue` stable and unique for every option in the same list.
+- Prefer `selectedItem` over placeholder-only workarounds when a saved id is loaded before its option list.
+- Add primitive behavior only when a real PharmaSys call site needs it.
+- Keep visual highlight behavior in the preset and submitted value changes in the primitive selection flow.
