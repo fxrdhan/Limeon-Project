@@ -40,6 +40,8 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
     tooltipLabel = 'Export Data',
   }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [isGoogleSheetsInitializing, setIsGoogleSheetsInitializing] =
+      useState(false);
     const [isGoogleSheetsLoading, setIsGoogleSheetsLoading] = useState(false);
     const [isAuthenticating, setIsAuthenticating] = useState(false);
     const [portalStyle, setPortalStyle] = useState<CSSProperties>({});
@@ -321,8 +323,11 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
       }
 
       try {
-        // Initialize service first if needed
-        await googleSheetsService.initialize();
+        if (!googleSheetsService.isInitialized()) {
+          setIsGoogleSheetsInitializing(true);
+          await googleSheetsService.initialize();
+          setIsGoogleSheetsInitializing(false);
+        }
 
         // Check if already authorized (token exists in memory for current session)
         if (googleSheetsService.isAuthorized()) {
@@ -341,23 +346,22 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
         // Need authentication - set state and trigger auth
         setIsAuthenticating(true);
 
-        // Trigger auth popup (synchronous with user click)
+        // Trigger auth popup. The dropdown preloads Google APIs while open so
+        // requestAccessToken can still run inside this click handler.
         await googleSheetsService.authorize();
         setIsAuthenticating(false);
 
         // Open placeholder tab after successful auth
         const placeholderTab = window.open('about:blank', '_blank');
-        if (!placeholderTab) {
-          alert('Please allow popups to open Google Sheets.');
-          return;
-        }
-
-        showLoadingInTab(placeholderTab);
+        if (placeholderTab) showLoadingInTab(placeholderTab);
         void performExportToTab(placeholderTab);
       } catch (error) {
         console.error('❌ Auth process failed:', error);
+        setIsGoogleSheetsInitializing(false);
         setIsAuthenticating(false);
-        alert('Authentication failed. Please allow popups and try again.');
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        alert(`Authentication failed: ${errorMessage}`);
       }
 
       function showLoadingInTab(tab: Window) {
@@ -384,7 +388,7 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
         }
       }
 
-      async function performExportToTab(placeholderTab: Window) {
+      async function performExportToTab(placeholderTab: Window | null) {
         let exportSuccess = false;
 
         try {
@@ -402,11 +406,22 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
 
           // Redirect placeholder tab to actual Google Sheet
           if (sheetUrl) {
-            placeholderTab.location.href = sheetUrl;
+            if (placeholderTab && !placeholderTab.closed) {
+              placeholderTab.location.href = sheetUrl;
+            } else {
+              const openedSheetTab = window.open(
+                sheetUrl,
+                '_blank',
+                'noopener,noreferrer'
+              );
+              if (!openedSheetTab) {
+                window.location.assign(sheetUrl);
+              }
+            }
             exportSuccess = true;
           } else {
             console.warn('⚠️ No sheet URL returned');
-            placeholderTab.close();
+            placeholderTab?.close();
             alert('Failed to create Google Sheet. Please try again.');
           }
         } catch (error) {
@@ -417,7 +432,7 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
 
           // Check if token expired - offer to retry
           if (errorMessage.includes('Authentication token expired')) {
-            placeholderTab.close();
+            placeholderTab?.close();
             if (
               confirm(
                 'Your Google authentication has expired. Click OK to re-authenticate and try again.'
@@ -447,11 +462,38 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
       }
     }, [gridApi, filename, closeDropdown, processAndExportData]);
 
+    useEffect(() => {
+      if (!isOpen || googleSheetsService.isInitialized()) return;
+
+      let isCurrent = true;
+      setIsGoogleSheetsInitializing(true);
+
+      googleSheetsService
+        .initialize()
+        .catch(error => {
+          console.error(
+            '❌ Failed to initialize Google Sheets service:',
+            error
+          );
+        })
+        .finally(() => {
+          if (isCurrent) setIsGoogleSheetsInitializing(false);
+        });
+
+      return () => {
+        isCurrent = false;
+      };
+    }, [isOpen]);
+
     // Handle click outside to close dropdown
     useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
         // Don't close dropdown if we're in the middle of auth or export process
-        if (isAuthenticating || isGoogleSheetsLoading) {
+        if (
+          isGoogleSheetsInitializing ||
+          isAuthenticating ||
+          isGoogleSheetsLoading
+        ) {
           return;
         }
 
@@ -472,7 +514,13 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
       return () => {
         document.removeEventListener('mousedown', handleClickOutside);
       };
-    }, [isOpen, closeDropdown, isAuthenticating, isGoogleSheetsLoading]);
+    }, [
+      isOpen,
+      closeDropdown,
+      isGoogleSheetsInitializing,
+      isAuthenticating,
+      isGoogleSheetsLoading,
+    ]);
 
     return (
       <TooltipProvider>
@@ -553,16 +601,22 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
                         size="sm"
                         withUnderline={false}
                         onClick={handleGoogleSheetsExport}
-                        disabled={isGoogleSheetsLoading || isAuthenticating}
+                        disabled={
+                          isGoogleSheetsInitializing ||
+                          isGoogleSheetsLoading ||
+                          isAuthenticating
+                        }
                         className="w-full px-3 py-2 text-left text-slate-700 hover:text-slate-900 hover:bg-slate-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <TbBrandGoogle className="h-5 w-5 text-slate-500 group-hover:text-primary" />
                         <span>
-                          {isAuthenticating
-                            ? 'Authenticating...'
-                            : isGoogleSheetsLoading
-                              ? 'Exporting...'
-                              : 'Export ke Google Sheets'}
+                          {isGoogleSheetsInitializing
+                            ? 'Menyiapkan Google...'
+                            : isAuthenticating
+                              ? 'Authenticating...'
+                              : isGoogleSheetsLoading
+                                ? 'Exporting...'
+                                : 'Export ke Google Sheets'}
                         </span>
                       </Button>
                     </div>
