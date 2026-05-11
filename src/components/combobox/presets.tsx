@@ -1,4 +1,5 @@
 import { motion } from 'motion/react';
+import { TbPlus } from 'react-icons/tb';
 import ValidationOverlay from '@/components/validation-overlay';
 import { cn } from '@/lib/utils';
 import { comboboxHighlightBackgroundTransition } from './components/combobox-highlight-motion';
@@ -26,6 +27,7 @@ export function PharmaComboboxSelect<Item>(
     className,
     comboboxRootProps,
     controlName,
+    emptyAction,
     emptyText,
     fallbackLabelId,
     handleComboboxBlur,
@@ -89,7 +91,19 @@ export function PharmaComboboxSelect<Item>(
                 ) : null}
                 <ComboboxOptionList {...optionListProps} />
                 <Combobox.Empty className="empty:hidden relative z-10 px-3 py-4 text-center text-sm text-slate-500">
-                  {emptyText}
+                  {emptyAction.canCreate ? (
+                    <button
+                      type="button"
+                      className="mx-auto inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-primary transition hover:bg-primary/10 focus:outline-hidden focus:ring-2 focus:ring-primary/20"
+                      onMouseDown={event => event.preventDefault()}
+                      onClick={emptyAction.onCreate}
+                    >
+                      <TbPlus aria-hidden="true" className="h-4 w-4" />
+                      <span>{emptyAction.label}</span>
+                    </button>
+                  ) : (
+                    emptyText
+                  )}
                 </Combobox.Empty>
               </div>
             </Combobox.Popup>

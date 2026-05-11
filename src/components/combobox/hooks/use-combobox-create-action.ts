@@ -8,24 +8,28 @@ export type ComboboxCreateAction = {
 export function useComboboxCreateAction({
   createAction,
   hasExactItem,
+  hasVisibleItems,
   normalizedInputValue,
 }: {
   createAction?: ComboboxCreateAction;
   hasExactItem: boolean;
+  hasVisibleItems: boolean;
   normalizedInputValue: string;
 }) {
   const canCreate = Boolean(
-    createAction && normalizedInputValue.length > 0 && !hasExactItem
+    createAction &&
+    !hasExactItem &&
+    (normalizedInputValue.length > 0 || !hasVisibleItems)
   );
   const handleCreate = useCallback(() => {
     if (!canCreate) return;
 
-    createAction?.onCreate(normalizedInputValue);
+    createAction?.onCreate(normalizedInputValue || undefined);
   }, [canCreate, createAction, normalizedInputValue]);
 
   return {
     canCreate,
-    createActionLabel: createAction?.label ?? 'Tambah baru',
+    createActionLabel: createAction?.label ?? 'Tambah data baru',
     handleCreate,
   };
 }

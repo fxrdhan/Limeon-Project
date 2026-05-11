@@ -207,7 +207,7 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
             ? undefined
             : {
                 onCreate,
-                label: 'Tambah baru',
+                label: 'Tambah data baru',
               }
         }
         hoverDetail={{ enabled: true, delay: 400 }}

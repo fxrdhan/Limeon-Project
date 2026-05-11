@@ -26,13 +26,17 @@ describe('Combobox app preset create action and validation', () => {
     expect(trigger.getAttribute('aria-required')).toBe('true');
     fireEvent.blur(trigger, { relatedTarget: document.body });
     fireEvent.click(trigger);
-    fireEvent.change(screen.getByPlaceholderText('Cari...'), {
+    const searchInput = screen.getByPlaceholderText('Cari...');
+    fireEvent.change(searchInput, {
       target: { value: 'Analgesik' },
     });
     const createButton = screen.getByRole('button', {
       name: /tambah kategori/i,
     });
+    expect(searchInput.parentElement?.contains(createButton)).toBe(false);
     expect(screen.getByRole('listbox').contains(createButton)).toBe(false);
+    expect(screen.getByRole('status').contains(createButton)).toBe(true);
+    expect(screen.queryByText('Tidak ada data')).toBeNull();
     fireEvent.click(createButton);
 
     expect(onCreate).toHaveBeenCalledWith('Analgesik');
@@ -42,6 +46,32 @@ describe('Combobox app preset create action and validation', () => {
     expect(
       document.getElementById(validationDescriptionId as string)?.textContent
     ).toBe('Field ini wajib diisi');
+  });
+
+  it('shows the default create action in the empty state before typing', () => {
+    const onCreate = vi.fn();
+    render(
+      <PharmaComboboxSelect<EntityItem>
+        name="category_id"
+        items={[]}
+        value={null}
+        onValueChange={() => {}}
+        itemToStringLabel={item => item.name}
+        itemToStringValue={item => item.id}
+        placeholder="Pilih kategori"
+        createAction={{ onCreate }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: /pilih kategori/i }));
+    const createButton = screen.getByRole('button', {
+      name: /tambah data baru/i,
+    });
+
+    expect(screen.getByRole('status').contains(createButton)).toBe(true);
+    fireEvent.click(createButton);
+
+    expect(onCreate).toHaveBeenCalledWith(undefined);
   });
 
   it('selects the highlighted partial match before create action on Enter', () => {

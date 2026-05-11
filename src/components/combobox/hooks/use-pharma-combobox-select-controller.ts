@@ -170,6 +170,7 @@ export function usePharmaComboboxSelectController<Item>({
     useComboboxCreateAction({
       createAction,
       hasExactItem,
+      hasVisibleItems,
       normalizedInputValue,
     });
   const shouldAnimateListItems =
@@ -536,6 +537,11 @@ export function usePharmaComboboxSelectController<Item>({
     comboboxRootProps,
     controlName,
     emptyText,
+    emptyAction: {
+      canCreate,
+      label: createActionLabel,
+      onCreate: handleCreate,
+    },
     fallbackLabelId,
     handleComboboxBlur,
     heldHighlightFrame,
@@ -573,12 +579,9 @@ export function usePharmaComboboxSelectController<Item>({
     rootRef,
     searchable,
     searchHeaderProps: {
-      canCreate,
       controlName,
-      createActionLabel,
       isSearchNavigationFocus,
       normalizedInputValue,
-      onCreate: handleCreate,
       onNavigationFocusChange: setIsSearchNavigationFocus,
       onSearchInputKeyDown: handleSearchInputKeyDown,
       searchInputRef,

@@ -1,15 +1,12 @@
 import type { KeyboardEvent, Ref } from 'react';
-import { TbPlus, TbSearch } from 'react-icons/tb';
+import { TbSearch } from 'react-icons/tb';
 import { cn } from '@/lib/utils';
 import { Combobox } from '../primitive';
 
 interface ComboboxSearchHeaderProps {
-  canCreate: boolean;
   controlName: string;
-  createActionLabel: string;
   isSearchNavigationFocus: boolean;
   normalizedInputValue: string;
-  onCreate: () => void;
   onNavigationFocusChange: (isFocused: boolean) => void;
   onSearchInputKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void;
   searchInputRef: Ref<HTMLInputElement>;
@@ -17,12 +14,9 @@ interface ComboboxSearchHeaderProps {
 }
 
 export function ComboboxSearchHeader({
-  canCreate,
   controlName,
-  createActionLabel,
   isSearchNavigationFocus,
   normalizedInputValue,
-  onCreate,
   onNavigationFocusChange,
   onSearchInputKeyDown,
   searchInputRef,
@@ -45,7 +39,7 @@ export function ComboboxSearchHeader({
             isSearchNavigationFocus ? '' : undefined
           }
           className={cn(
-            'w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-10 text-sm text-slate-800 outline-hidden transition placeholder:text-slate-400',
+            'w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 outline-hidden transition placeholder:text-slate-400',
             isSearchNavigationFocus
               ? 'focus:border-slate-200 focus:ring-0'
               : 'focus:border-primary focus:ring-2 focus:ring-primary/15'
@@ -61,17 +55,6 @@ export function ComboboxSearchHeader({
             onNavigationFocusChange(false);
           }}
         />
-        {canCreate ? (
-          <button
-            type="button"
-            aria-label={createActionLabel}
-            className="absolute right-2 inline-flex h-6 w-6 items-center justify-center rounded-md text-primary transition hover:bg-primary/10"
-            onMouseDown={event => event.preventDefault()}
-            onClick={onCreate}
-          >
-            <TbPlus aria-hidden="true" className="h-4 w-4" />
-          </button>
-        ) : null}
       </div>
     </div>
   );

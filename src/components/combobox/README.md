@@ -146,7 +146,7 @@ Use the entity preset when a standard id-backed PharmaSys select is needed:
   placeholder="Pilih Kategori"
   required
   validation={{ enabled: true, autoHide: true, autoHideDelay: 3000 }}
-  createAction={{ onCreate: openCategoryModal, label: 'Tambah baru' }}
+  createAction={{ onCreate: openCategoryModal, label: 'Tambah data baru' }}
 />
 ```
 
