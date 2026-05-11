@@ -25,6 +25,7 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
     <div className="calendar__header">
       <div className="calendar__header-controls">
         <PharmaComboboxSelect
+          className="calendar__month-select"
           label="Bulan"
           name="month-selector"
           items={monthOptions}
@@ -42,6 +43,7 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
         />
 
         <PharmaComboboxSelect
+          className="calendar__year-select"
           label="Tahun"
           name="year-selector"
           items={yearOptions}

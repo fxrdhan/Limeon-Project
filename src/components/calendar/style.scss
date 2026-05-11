@@ -97,19 +97,28 @@
 
   // Header section
   &__header {
-    @apply flex items-center justify-between mb-1 gap-2 pl-2;
+    @apply flex items-center justify-between mb-1 gap-2;
 
     &-controls {
-      @apply flex items-center gap-4;
+      @apply flex min-w-0 flex-1 items-center gap-2;
     }
 
     &-navigation {
-      @apply flex items-center;
+      @apply flex shrink-0 items-center;
     }
+  }
+
+  &__month-select {
+    @apply min-w-0 flex-1;
+  }
+
+  &__year-select {
+    @apply w-20 shrink-0;
   }
 
   &__nav-button {
     @include calendar-navigation-button();
+    @apply p-2;
   }
 
   // Days grid
