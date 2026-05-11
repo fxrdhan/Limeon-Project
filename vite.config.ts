@@ -266,11 +266,6 @@ export default defineConfig({
             return 'search-libs';
           }
 
-          // Google APIs - only used in specific features
-          if (id.includes('google-auth-library') || id.includes('googleapis')) {
-            return 'google-apis';
-          }
-
           // Utility libraries
           if (
             id.includes('clsx') ||
