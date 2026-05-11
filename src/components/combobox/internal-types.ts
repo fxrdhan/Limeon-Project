@@ -3,6 +3,8 @@ import type { HoverDetailData } from '@/types/components';
 export type ComboboxHoverDetailPosition = {
   top: number;
   left: number;
+  boundaryBottom?: number;
+  boundaryTop?: number;
   direction: 'left' | 'right';
   anchorCenterY: number;
   maxWidth: number;

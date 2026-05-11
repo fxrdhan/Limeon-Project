@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from 'react';
 import type { HoverDetailData } from '@/types/components';
 import type {
   ComboboxHoverDetailPosition,
@@ -6,12 +12,17 @@ import type {
 } from '@/components/combobox/internal-types';
 
 const hoverDetailHideDelay = 300;
+const hoverDetailScrollResumeDelay = 140;
 const hoverDetailSwitchDelay = 80;
 
 const getHoverDetailPosition = (
-  element: HTMLElement
+  element: HTMLElement,
+  boundaryElement: HTMLElement | null
 ): ComboboxHoverDetailPosition => {
   const rect = element.getBoundingClientRect();
+  const rawBoundaryRect = boundaryElement?.getBoundingClientRect();
+  const boundaryRect =
+    rawBoundaryRect && rawBoundaryRect.height > 0 ? rawBoundaryRect : undefined;
   const viewportWidth = window.innerWidth;
   const padding = 15;
   const minPortalWidth = 220;
@@ -29,6 +40,8 @@ const getHoverDetailPosition = (
     return {
       left: rect.right + padding,
       top: rect.top,
+      boundaryBottom: boundaryRect?.bottom,
+      boundaryTop: boundaryRect?.top,
       direction: 'right',
       anchorCenterY,
       maxWidth: getMaxWidth(spaceOnRight),
@@ -39,6 +52,8 @@ const getHoverDetailPosition = (
     return {
       left: rect.left - padding,
       top: rect.top,
+      boundaryBottom: boundaryRect?.bottom,
+      boundaryTop: boundaryRect?.top,
       direction: 'left',
       anchorCenterY,
       maxWidth: getMaxWidth(spaceOnLeft),
@@ -49,6 +64,8 @@ const getHoverDetailPosition = (
     return {
       left: Math.max(padding, rect.right + padding),
       top: rect.top,
+      boundaryBottom: boundaryRect?.bottom,
+      boundaryTop: boundaryRect?.top,
       direction: 'right',
       anchorCenterY,
       maxWidth: getMaxWidth(spaceOnRight),
@@ -58,6 +75,8 @@ const getHoverDetailPosition = (
   return {
     left: rect.left - padding,
     top: rect.top,
+    boundaryBottom: boundaryRect?.bottom,
+    boundaryTop: boundaryRect?.top,
     direction: 'left',
     anchorCenterY,
     maxWidth: getMaxWidth(spaceOnLeft),
@@ -83,12 +102,14 @@ const getHoverDetailData = (
 });
 
 export const useComboboxHoverDetail = ({
+  boundaryRef,
   hoverDelay,
   isComboboxOpen,
   isEnabled,
   onFetchData,
   onFetchError,
 }: {
+  boundaryRef?: RefObject<HTMLElement | null>;
   hoverDelay: number;
   isComboboxOpen: boolean;
   isEnabled: boolean;
@@ -107,6 +128,9 @@ export const useComboboxHoverDetail = ({
   const showTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const switchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scrollResumeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
   const clearDataTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null
   );
@@ -114,6 +138,41 @@ export const useComboboxHoverDetail = ({
   const currentAnchorElementRef = useRef<HTMLElement | null>(null);
   const currentItemIdRef = useRef<string | null>(null);
   const isPortalShownRef = useRef(false);
+  const getPosition = useCallback(
+    (element: HTMLElement) =>
+      getHoverDetailPosition(element, boundaryRef?.current ?? null),
+    [boundaryRef]
+  );
+  const isBoundaryScrollEvent = useCallback(
+    (event: Event) => {
+      const boundaryElement = boundaryRef?.current;
+      const target = event.target;
+
+      return Boolean(
+        boundaryElement &&
+        target instanceof Node &&
+        boundaryElement.contains(target)
+      );
+    },
+    [boundaryRef]
+  );
+  const isAnchorFullyInsideBoundary = useCallback(
+    (element: HTMLElement) => {
+      const boundaryElement = boundaryRef?.current;
+      if (!boundaryElement) return true;
+
+      const boundaryRect = boundaryElement.getBoundingClientRect();
+      if (boundaryRect.height <= 0) return true;
+
+      const elementRect = element.getBoundingClientRect();
+
+      return (
+        elementRect.top >= boundaryRect.top &&
+        elementRect.bottom <= boundaryRect.bottom
+      );
+    },
+    [boundaryRef]
+  );
 
   const cancelPositionUpdateFrame = useCallback(() => {
     if (positionUpdateFrameRef.current === null) return;
@@ -131,9 +190,9 @@ export const useComboboxHoverDetail = ({
       const anchorElement = currentAnchorElementRef.current;
       if (!anchorElement?.isConnected) return;
 
-      setPosition(getHoverDetailPosition(anchorElement));
+      setPosition(getPosition(anchorElement));
     });
-  }, []);
+  }, [getPosition]);
 
   const clearHoverDetailTimeouts = useCallback(() => {
     if (showTimeoutRef.current) {
@@ -147,6 +206,10 @@ export const useComboboxHoverDetail = ({
     if (switchTimeoutRef.current) {
       clearTimeout(switchTimeoutRef.current);
       switchTimeoutRef.current = null;
+    }
+    if (scrollResumeTimeoutRef.current) {
+      clearTimeout(scrollResumeTimeoutRef.current);
+      scrollResumeTimeoutRef.current = null;
     }
     if (clearDataTimeoutRef.current) {
       clearTimeout(clearDataTimeoutRef.current);
@@ -193,7 +256,7 @@ export const useComboboxHoverDetail = ({
 
       currentAnchorElementRef.current = element;
       isPortalShownRef.current = true;
-      setPosition(getHoverDetailPosition(element));
+      setPosition(getPosition(element));
       setIsVisible(true);
       if (itemData) {
         setData(getHoverDetailData(itemId, itemData));
@@ -202,7 +265,7 @@ export const useComboboxHoverDetail = ({
         void fetchHoverDetail(itemId);
       }
     },
-    [fetchHoverDetail]
+    [fetchHoverDetail, getPosition]
   );
 
   const handleItemHover = useCallback(
@@ -230,7 +293,7 @@ export const useComboboxHoverDetail = ({
         return;
       }
 
-      setPosition(getHoverDetailPosition(element));
+      setPosition(getPosition(element));
       if (itemData) {
         setData(getHoverDetailData(itemId, itemData));
       }
@@ -241,7 +304,13 @@ export const useComboboxHoverDetail = ({
         commitHoverDetail(itemId, element, itemData);
       }, hoverDelay);
     },
-    [clearHoverDetailTimeouts, commitHoverDetail, hoverDelay, isEnabled]
+    [
+      clearHoverDetailTimeouts,
+      commitHoverDetail,
+      getPosition,
+      hoverDelay,
+      isEnabled,
+    ]
   );
 
   const syncHighlightedHoverDetail = useCallback(
@@ -281,6 +350,38 @@ export const useComboboxHoverDetail = ({
     setData(null);
   }, [clearHoverDetailTimeouts, isEnabled]);
 
+  const suspendHoverDetailForBoundaryScroll = useCallback(() => {
+    if (!isEnabled || !isPortalShownRef.current) return;
+
+    clearHoverDetailTimeouts();
+    setIsVisible(false);
+
+    scrollResumeTimeoutRef.current = setTimeout(() => {
+      scrollResumeTimeoutRef.current = null;
+
+      const anchorElement = currentAnchorElementRef.current;
+      if (
+        !isEnabled ||
+        !isComboboxOpen ||
+        !anchorElement?.isConnected ||
+        !currentItemIdRef.current ||
+        !isAnchorFullyInsideBoundary(anchorElement)
+      ) {
+        isPortalShownRef.current = false;
+        return;
+      }
+
+      setPosition(getPosition(anchorElement));
+      setIsVisible(true);
+    }, hoverDetailScrollResumeDelay);
+  }, [
+    clearHoverDetailTimeouts,
+    getPosition,
+    isAnchorFullyInsideBoundary,
+    isComboboxOpen,
+    isEnabled,
+  ]);
+
   const handleItemLeave = useCallback(() => {
     if (!isEnabled) return;
 
@@ -312,29 +413,34 @@ export const useComboboxHoverDetail = ({
   }, [cancelPositionUpdateFrame, clearHoverDetailTimeouts, scheduleDataClear]);
 
   useEffect(() => {
-    if (
-      !isEnabled ||
-      !isComboboxOpen ||
-      !isVisible ||
-      typeof window === 'undefined'
-    ) {
+    if (!isEnabled || !isComboboxOpen || typeof window === 'undefined') {
       return;
     }
 
+    const handleScroll = (event: Event) => {
+      if (isBoundaryScrollEvent(event)) {
+        suspendHoverDetailForBoundaryScroll();
+        return;
+      }
+
+      schedulePositionUpdate();
+    };
+
     window.addEventListener('resize', schedulePositionUpdate);
-    window.addEventListener('scroll', schedulePositionUpdate, true);
+    window.addEventListener('scroll', handleScroll, true);
 
     return () => {
       window.removeEventListener('resize', schedulePositionUpdate);
-      window.removeEventListener('scroll', schedulePositionUpdate, true);
+      window.removeEventListener('scroll', handleScroll, true);
       cancelPositionUpdateFrame();
     };
   }, [
     cancelPositionUpdateFrame,
+    isBoundaryScrollEvent,
     isComboboxOpen,
     isEnabled,
-    isVisible,
     schedulePositionUpdate,
+    suspendHoverDetailForBoundaryScroll,
   ]);
 
   useEffect(() => {

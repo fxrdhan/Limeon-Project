@@ -48,10 +48,21 @@ export const getHoverDetailGeometry = (
     typeof window === 'undefined' ? 1024 : window.innerWidth;
   const viewportHeight =
     typeof window === 'undefined' ? 768 : window.innerHeight;
-  const maxTop = Math.max(
-    hoverDetailViewportPadding,
-    viewportHeight - size.height - hoverDetailViewportPadding
+  const boundaryTop =
+    position.boundaryTop === undefined
+      ? hoverDetailViewportPadding
+      : position.boundaryTop;
+  const boundaryBottom =
+    position.boundaryBottom === undefined
+      ? viewportHeight - hoverDetailViewportPadding
+      : position.boundaryBottom;
+  const minTop = Math.max(hoverDetailViewportPadding, boundaryTop);
+  const maxBottom = Math.min(
+    viewportHeight - hoverDetailViewportPadding,
+    boundaryBottom
   );
+  const height = Math.min(size.height, Math.max(0, maxBottom - minTop));
+  const maxTop = Math.max(minTop, maxBottom - height);
   const width = Math.min(
     size.width,
     position.maxWidth,
@@ -66,10 +77,7 @@ export const getHoverDetailGeometry = (
           Math.max(preferredX, hoverDetailViewportPadding),
           viewportWidth - width - hoverDetailViewportPadding
         );
-  const y = Math.min(
-    Math.max(position.top, hoverDetailViewportPadding),
-    maxTop
-  );
+  const y = Math.min(Math.max(position.top, minTop), maxTop);
   const hiddenX =
     position.direction === 'right'
       ? x - hoverDetailHiddenOffset
@@ -81,7 +89,7 @@ export const getHoverDetailGeometry = (
     hiddenX,
     hiddenY: y,
     width,
-    height: size.height,
+    height,
   };
 };
 

@@ -35,6 +35,7 @@ interface ComboboxOptionListProps<Item> {
   listboxAriaLabel?: string;
   onItemLeave: () => void;
   onListMouseLeave: () => void;
+  onListScrollIntent: () => void;
   onOptionMouseEnter: (event: MouseEvent<HTMLElement>, item: Item) => void;
   onOptionMouseMove: (event: MouseEvent<HTMLElement>, item: Item) => void;
   renderOption?: (
@@ -63,6 +64,7 @@ export function ComboboxOptionList<Item>({
   listboxAriaLabel,
   onItemLeave,
   onListMouseLeave,
+  onListScrollIntent,
   onOptionMouseEnter,
   onOptionMouseMove,
   renderOption,
@@ -78,6 +80,9 @@ export function ComboboxOptionList<Item>({
       ref={listRef}
       aria-label={listboxAriaLabel}
       onMouseLeave={onListMouseLeave}
+      onScrollCapture={onListScrollIntent}
+      onTouchMove={onListScrollIntent}
+      onWheel={onListScrollIntent}
       className={cn(
         'relative z-10 min-h-0 overflow-y-auto outline-hidden',
         hasVisibleItems ? 'max-h-60 flex-1 p-1' : 'max-h-0 p-0'

@@ -8,6 +8,7 @@ import {
 } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vite-plus/test';
 import { PharmaComboboxSelect } from './index';
+import { getHoverDetailGeometry } from './utils/preset-hover-detail-popover';
 
 type EntityItem = { id: string; name: string };
 
@@ -170,6 +171,81 @@ describe('Combobox app preset hover detail', () => {
         Reflect.deleteProperty(window, 'innerWidth');
       }
     }
+  });
+
+  it('keeps hover detail geometry inside the popup vertical boundary', () => {
+    const geometry = getHoverDetailGeometry(
+      {
+        top: 40,
+        left: 180,
+        boundaryTop: 100,
+        boundaryBottom: 180,
+        direction: 'right',
+        anchorCenterY: 56,
+        maxWidth: 380,
+      },
+      { width: 240, height: 60 }
+    );
+
+    expect(geometry.y).toBe(100);
+    expect(geometry.y + geometry.height).toBeLessThanOrEqual(180);
+  });
+
+  it('hides hover detail while the option list scrolls and restores it after scroll settles', async () => {
+    render(
+      <PharmaComboboxSelect<EntityItem>
+        name="supplier_id"
+        items={[
+          { id: 'a', name: 'Supplier A' },
+          { id: 'b', name: 'Supplier B' },
+        ]}
+        value={null}
+        onValueChange={() => {}}
+        itemToStringLabel={item => item.name}
+        itemToStringValue={item => item.id}
+        itemToHoverDetailData={item => ({
+          description: `Detail ${item.name}`,
+        })}
+        placeholder="Pilih supplier"
+        hoverDetail={{ enabled: true, delay: 0 }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: /pilih supplier/i }));
+    fireEvent.mouseEnter(screen.getByRole('option', { name: /supplier a/i }));
+
+    await waitFor(() => {
+      expect(
+        document.querySelector<HTMLElement>(
+          '[data-combobox-hover-detail-popover]'
+        )?.style.pointerEvents
+      ).not.toBe('none');
+    });
+
+    fireEvent.scroll(screen.getByRole('listbox'));
+
+    await waitFor(() => {
+      const popover = document.querySelector<HTMLElement>(
+        '[data-combobox-hover-detail-popover]'
+      );
+
+      expect(popover === null || popover.style.pointerEvents === 'none').toBe(
+        true
+      );
+    });
+    await act(async () => {
+      await new Promise(resolve => {
+        setTimeout(resolve, 180);
+      });
+    });
+
+    await waitFor(() => {
+      expect(
+        document.querySelector<HTMLElement>(
+          '[data-combobox-hover-detail-popover]'
+        )?.style.pointerEvents
+      ).not.toBe('none');
+    });
   });
 
   it('moves visible hover detail to the keyboard-highlighted background', async () => {
