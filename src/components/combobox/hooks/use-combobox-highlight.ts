@@ -178,6 +178,13 @@ export function useComboboxHighlight<Item>({
 
       if (details.reason === 'keyboard') {
         suppressPointerHoverForKeyboard();
+        if (
+          typeof KeyboardEvent !== 'undefined' &&
+          details.event instanceof KeyboardEvent &&
+          details.event.repeat
+        ) {
+          hideHoverDetail();
+        }
         scheduleKeyboardHighlightedScroll(
           details.index,
           effectiveHighlightedIndex
@@ -194,6 +201,7 @@ export function useComboboxHighlight<Item>({
       actualOpen,
       clearKeyboardScrollHighlight,
       effectiveHighlightedIndex,
+      hideHoverDetail,
       isItemDisabled,
       isKeyboardHoverSuppressed,
       isSameItem,

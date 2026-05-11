@@ -191,7 +191,58 @@ describe('Combobox app preset hover detail', () => {
     expect(geometry.y + geometry.height).toBeLessThanOrEqual(180);
   });
 
-  it('hides hover detail while the option list scrolls and restores it after scroll settles', async () => {
+  it('keeps hover detail visible during slow option list scroll', async () => {
+    render(
+      <PharmaComboboxSelect<EntityItem>
+        name="supplier_id"
+        items={[
+          { id: 'a', name: 'Supplier A' },
+          { id: 'b', name: 'Supplier B' },
+        ]}
+        value={null}
+        onValueChange={() => {}}
+        itemToStringLabel={item => item.name}
+        itemToStringValue={item => item.id}
+        itemToHoverDetailData={item => ({
+          description: `Detail ${item.name}`,
+        })}
+        placeholder="Pilih supplier"
+        hoverDetail={{ enabled: true, delay: 0 }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: /pilih supplier/i }));
+    fireEvent.mouseEnter(screen.getByRole('option', { name: /supplier a/i }));
+
+    await waitFor(() => {
+      expect(
+        document.querySelector<HTMLElement>(
+          '[data-combobox-hover-detail-popover]'
+        )?.style.pointerEvents
+      ).not.toBe('none');
+      expect(screen.getAllByText('Detail Supplier A').length).toBeGreaterThan(
+        0
+      );
+    });
+
+    fireEvent.mouseEnter(screen.getByRole('option', { name: /supplier b/i }));
+    const listbox = screen.getByRole('listbox');
+    listbox.scrollTop = 24;
+    fireEvent.scroll(listbox);
+
+    await waitFor(() => {
+      expect(
+        document.querySelector<HTMLElement>(
+          '[data-combobox-hover-detail-popover]'
+        )?.style.pointerEvents
+      ).not.toBe('none');
+      expect(screen.getAllByText('Detail Supplier B').length).toBeGreaterThan(
+        0
+      );
+    });
+  });
+
+  it('hides hover detail while fast option list scroll settles', async () => {
     render(
       <PharmaComboboxSelect<EntityItem>
         name="supplier_id"
@@ -222,7 +273,9 @@ describe('Combobox app preset hover detail', () => {
       ).not.toBe('none');
     });
 
-    fireEvent.scroll(screen.getByRole('listbox'));
+    const listbox = screen.getByRole('listbox');
+    listbox.scrollTop = 80;
+    fireEvent.scroll(listbox);
 
     await waitFor(() => {
       const popover = document.querySelector<HTMLElement>(
@@ -420,6 +473,62 @@ describe('Combobox app preset hover detail', () => {
           .getByRole('option', { name: /supplier b/i })
           .querySelector('[data-pharma-combobox-highlight]')
       ).toBeTruthy();
+      expect(screen.getAllByText('Detail Supplier B').length).toBeGreaterThan(
+        0
+      );
+    });
+  });
+
+  it('hides visible hover detail while keyboard arrow navigation repeats', async () => {
+    render(
+      <PharmaComboboxSelect<EntityItem>
+        name="supplier_id"
+        items={[
+          { id: 'a', name: 'Supplier A' },
+          { id: 'b', name: 'Supplier B' },
+        ]}
+        value={null}
+        onValueChange={() => {}}
+        itemToStringLabel={item => item.name}
+        itemToStringValue={item => item.id}
+        itemToHoverDetailData={item => ({
+          description: `Detail ${item.name}`,
+        })}
+        placeholder="Pilih supplier"
+        hoverDetail={{ enabled: true, delay: 0 }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: /pilih supplier/i }));
+    fireEvent.mouseEnter(screen.getByRole('option', { name: /supplier a/i }));
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Detail Supplier A').length).toBeGreaterThan(
+        0
+      );
+    });
+
+    fireEvent.keyDown(screen.getByPlaceholderText('Cari...'), {
+      key: 'ArrowDown',
+      repeat: true,
+    });
+
+    await waitFor(() => {
+      const popover = document.querySelector<HTMLElement>(
+        '[data-combobox-hover-detail-popover]'
+      );
+
+      expect(popover === null || popover.style.pointerEvents === 'none').toBe(
+        true
+      );
+    });
+    await act(async () => {
+      await new Promise(resolve => {
+        setTimeout(resolve, 180);
+      });
+    });
+
+    await waitFor(() => {
       expect(screen.getAllByText('Detail Supplier B').length).toBeGreaterThan(
         0
       );

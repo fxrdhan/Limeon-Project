@@ -12,8 +12,7 @@ import type {
 } from '@/components/combobox/internal-types';
 
 const hoverDetailHideDelay = 300;
-const hoverDetailScrollResumeDelay = 140;
-const hoverDetailSwitchDelay = 80;
+const hoverDetailSwitchDelay = 40;
 
 const getHoverDetailPosition = (
   element: HTMLElement,
@@ -128,9 +127,6 @@ export const useComboboxHoverDetail = ({
   const showTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const switchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const scrollResumeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null
-  );
   const clearDataTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null
   );
@@ -141,36 +137,6 @@ export const useComboboxHoverDetail = ({
   const getPosition = useCallback(
     (element: HTMLElement) =>
       getHoverDetailPosition(element, boundaryRef?.current ?? null),
-    [boundaryRef]
-  );
-  const isBoundaryScrollEvent = useCallback(
-    (event: Event) => {
-      const boundaryElement = boundaryRef?.current;
-      const target = event.target;
-
-      return Boolean(
-        boundaryElement &&
-        target instanceof Node &&
-        boundaryElement.contains(target)
-      );
-    },
-    [boundaryRef]
-  );
-  const isAnchorFullyInsideBoundary = useCallback(
-    (element: HTMLElement) => {
-      const boundaryElement = boundaryRef?.current;
-      if (!boundaryElement) return true;
-
-      const boundaryRect = boundaryElement.getBoundingClientRect();
-      if (boundaryRect.height <= 0) return true;
-
-      const elementRect = element.getBoundingClientRect();
-
-      return (
-        elementRect.top >= boundaryRect.top &&
-        elementRect.bottom <= boundaryRect.bottom
-      );
-    },
     [boundaryRef]
   );
 
@@ -206,10 +172,6 @@ export const useComboboxHoverDetail = ({
     if (switchTimeoutRef.current) {
       clearTimeout(switchTimeoutRef.current);
       switchTimeoutRef.current = null;
-    }
-    if (scrollResumeTimeoutRef.current) {
-      clearTimeout(scrollResumeTimeoutRef.current);
-      scrollResumeTimeoutRef.current = null;
     }
     if (clearDataTimeoutRef.current) {
       clearTimeout(clearDataTimeoutRef.current);
@@ -350,38 +312,6 @@ export const useComboboxHoverDetail = ({
     setData(null);
   }, [clearHoverDetailTimeouts, isEnabled]);
 
-  const suspendHoverDetailForBoundaryScroll = useCallback(() => {
-    if (!isEnabled || !isPortalShownRef.current) return;
-
-    clearHoverDetailTimeouts();
-    setIsVisible(false);
-
-    scrollResumeTimeoutRef.current = setTimeout(() => {
-      scrollResumeTimeoutRef.current = null;
-
-      const anchorElement = currentAnchorElementRef.current;
-      if (
-        !isEnabled ||
-        !isComboboxOpen ||
-        !anchorElement?.isConnected ||
-        !currentItemIdRef.current ||
-        !isAnchorFullyInsideBoundary(anchorElement)
-      ) {
-        isPortalShownRef.current = false;
-        return;
-      }
-
-      setPosition(getPosition(anchorElement));
-      setIsVisible(true);
-    }, hoverDetailScrollResumeDelay);
-  }, [
-    clearHoverDetailTimeouts,
-    getPosition,
-    isAnchorFullyInsideBoundary,
-    isComboboxOpen,
-    isEnabled,
-  ]);
-
   const handleItemLeave = useCallback(() => {
     if (!isEnabled) return;
 
@@ -417,30 +347,19 @@ export const useComboboxHoverDetail = ({
       return;
     }
 
-    const handleScroll = (event: Event) => {
-      if (isBoundaryScrollEvent(event)) {
-        suspendHoverDetailForBoundaryScroll();
-        return;
-      }
-
-      schedulePositionUpdate();
-    };
-
     window.addEventListener('resize', schedulePositionUpdate);
-    window.addEventListener('scroll', handleScroll, true);
+    window.addEventListener('scroll', schedulePositionUpdate, true);
 
     return () => {
       window.removeEventListener('resize', schedulePositionUpdate);
-      window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('scroll', schedulePositionUpdate, true);
       cancelPositionUpdateFrame();
     };
   }, [
     cancelPositionUpdateFrame,
-    isBoundaryScrollEvent,
     isComboboxOpen,
     isEnabled,
     schedulePositionUpdate,
-    suspendHoverDetailForBoundaryScroll,
   ]);
 
   useEffect(() => {
