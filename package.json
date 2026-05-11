@@ -77,17 +77,17 @@
     "googleapis": "^171.4.0",
     "motion": "^12.38.0",
     "pdfjs-dist": "^5.7.284",
-    "react": "^19.2.5",
+    "react": "^19.2.6",
     "react-chartjs-2": "^5.3.1",
-    "react-dom": "^19.2.5",
+    "react-dom": "^19.2.6",
     "react-hot-toast": "^2.6.0",
     "react-icons": "^5.6.0",
     "react-router-dom": "^7.14.2",
     "react-spinners": "^0.17.0",
     "recharts": "3.8.1",
     "tailwind-merge": "^3.5.0",
-    "zod": "^4.4.2",
-    "zustand": "^5.0.12"
+    "zod": "^4.4.3",
+    "zustand": "^5.0.13"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.5.3",
