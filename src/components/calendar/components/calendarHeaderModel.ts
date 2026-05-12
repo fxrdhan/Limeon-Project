@@ -15,6 +15,8 @@ export const getCalendarHeaderModel = (
   const lastYear = maxDate
     ? maxDate.getFullYear()
     : currentYear + DEFAULT_CALENDAR_YEAR_WINDOW.future;
+  const firstOptionYear = Math.min(firstYear, lastYear);
+  const lastOptionYear = Math.max(firstYear, lastYear);
 
   return {
     canNavigateNext: isMonthInRange(
@@ -35,8 +37,8 @@ export const getCalendarHeaderModel = (
     isYearDisabled: (year: number) => !isYearInRange(year, minDate, maxDate),
     monthOptions: MONTH_NAMES_ID.map((_, index) => index),
     yearOptions: Array.from(
-      { length: lastYear - firstYear + 1 },
-      (_, index) => firstYear + index
+      { length: lastOptionYear - firstOptionYear + 1 },
+      (_, index) => firstOptionYear + index
     ),
   };
 };

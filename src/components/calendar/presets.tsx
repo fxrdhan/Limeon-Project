@@ -45,6 +45,7 @@ const createCalendarHeaderSelectRenderer =
     itemToStringLabel,
     itemToStringValue,
     placeholder,
+    disabled,
   }: CalendarHeaderSelectRenderProps) => (
     <PharmaComboboxSelect
       className={className}
@@ -58,6 +59,7 @@ const createCalendarHeaderSelectRenderer =
       placeholder={placeholder}
       searchable={false}
       indicator="none"
+      disabled={disabled}
       popupClassName={getHeaderSelectPopupClassName(className)}
       popupContainerRef={popupContainerRef}
       popupMatchAnchorWidth={false}
@@ -201,6 +203,7 @@ const PharmaCalendarContent: React.FC<PharmaCalendarContentProps> = ({
           onYearChange={handleYearChange}
           minDate={minDate}
           maxDate={maxDate}
+          disabled={disabled}
           renderMonthSelect={renderInlineHeaderSelect}
           renderYearSelect={renderInlineHeaderSelect}
         />
@@ -242,6 +245,7 @@ const PharmaCalendarContent: React.FC<PharmaCalendarContentProps> = ({
           onYearChange={handleYearChange}
           minDate={minDate}
           maxDate={maxDate}
+          disabled={disabled}
           renderMonthSelect={renderPortalHeaderSelect}
           renderYearSelect={renderPortalHeaderSelect}
         />

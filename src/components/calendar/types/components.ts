@@ -55,6 +55,7 @@ export interface CalendarHeaderSelectRenderProps {
   itemToStringLabel: (value: number) => string;
   itemToStringValue: (value: number) => string;
   placeholder: string;
+  disabled?: boolean;
 }
 
 export interface CalendarPortalProps {
@@ -70,6 +71,7 @@ export interface CalendarHeaderProps {
   onYearChange: (year: number) => void;
   minDate?: Date;
   maxDate?: Date;
+  disabled?: boolean;
   renderMonthSelect: (
     props: CalendarHeaderSelectRenderProps
   ) => React.ReactNode;

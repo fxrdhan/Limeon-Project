@@ -12,6 +12,7 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   onYearChange,
   minDate,
   maxDate,
+  disabled = false,
   renderMonthSelect,
   renderYearSelect,
 }) => {
@@ -23,6 +24,8 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
     monthOptions,
     yearOptions,
   } = getCalendarHeaderModel(displayDate, minDate, maxDate);
+  const isNavigatePrevDisabled = disabled || !canNavigatePrev;
+  const isNavigateNextDisabled = disabled || !canNavigateNext;
 
   return (
     <div className="calendar__header">
@@ -33,12 +36,13 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
           items: monthOptions,
           value: displayDate.getMonth(),
           onValueChange: value => {
-            if (value !== null) onMonthChange(value);
+            if (!disabled && value !== null) onMonthChange(value);
           },
           isItemDisabled: isMonthDisabled,
           itemToStringLabel: value => MONTH_NAMES_ID[value] ?? '',
           itemToStringValue: value => value.toString(),
           placeholder: 'Bulan',
+          disabled,
         })}
 
         {renderYearSelect({
@@ -47,12 +51,13 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
           items: yearOptions,
           value: displayDate.getFullYear(),
           onValueChange: value => {
-            if (value !== null) onYearChange(value);
+            if (!disabled && value !== null) onYearChange(value);
           },
           isItemDisabled: isYearDisabled,
           itemToStringLabel: value => value.toString(),
           itemToStringValue: value => value.toString(),
           placeholder: 'Tahun',
+          disabled,
         })}
       </div>
 
@@ -60,10 +65,10 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
         <button
           type="button"
           onClick={() => {
-            if (canNavigatePrev) onNavigatePrev();
+            if (!isNavigatePrevDisabled) onNavigatePrev();
           }}
-          disabled={!canNavigatePrev}
-          aria-disabled={!canNavigatePrev}
+          disabled={isNavigatePrevDisabled}
+          aria-disabled={isNavigatePrevDisabled}
           className="calendar__nav-button"
           aria-label="Bulan sebelumnya"
         >
@@ -73,10 +78,10 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
         <button
           type="button"
           onClick={() => {
-            if (canNavigateNext) onNavigateNext();
+            if (!isNavigateNextDisabled) onNavigateNext();
           }}
-          disabled={!canNavigateNext}
-          aria-disabled={!canNavigateNext}
+          disabled={isNavigateNextDisabled}
+          aria-disabled={isNavigateNextDisabled}
           className="calendar__nav-button"
           aria-label="Bulan berikutnya"
         >

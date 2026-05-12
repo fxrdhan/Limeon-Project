@@ -154,12 +154,12 @@ const DaysGrid: React.FC<DaysGridProps> = ({
                   <button
                     type="button"
                     id={dayButtonId}
-                    onClick={() =>
-                      !isDisabled && !readOnly && onDateSelect(currentDate)
-                    }
-                    onMouseEnter={() =>
-                      !isDisabled && !readOnly && onDateHighlight(currentDate)
-                    }
+                    onClick={() => {
+                      if (!isButtonDisabled) onDateSelect(currentDate);
+                    }}
+                    onMouseEnter={() => {
+                      if (!isButtonDisabled) onDateHighlight(currentDate);
+                    }}
                     onMouseLeave={() => onDateHighlight(null)}
                     disabled={isButtonDisabled}
                     aria-label={formatAccessibleDate(currentDate)}

@@ -11,6 +11,7 @@ import Calendar, {
   CalendarPrimitive,
   createCalendarDate,
   formatDateOnlyValue,
+  getCalendarHeaderModel,
   parseDateOnlyValue,
 } from './index';
 
@@ -302,6 +303,45 @@ describe('Calendar presets', () => {
 
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(onTriggerClick).not.toHaveBeenCalled();
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('keeps disabled inline calendars inert across header and date controls', () => {
+    const onChange = vi.fn();
+
+    render(
+      <Calendar
+        mode="inline"
+        value={new Date(2026, 0, 15)}
+        onChange={onChange}
+        disabled
+      />
+    );
+
+    const grid = screen.getByRole('grid', { name: /Januari 2026/ });
+    const monthSelect = screen.getByRole('combobox', {
+      name: /Bulan Januari/,
+    }) as HTMLButtonElement;
+    const yearSelect = screen.getByRole('combobox', {
+      name: /Tahun 2026/,
+    }) as HTMLButtonElement;
+    const previousButton = screen.getByRole('button', {
+      name: 'Bulan sebelumnya',
+    }) as HTMLButtonElement;
+    const nextButton = screen.getByRole('button', {
+      name: 'Bulan berikutnya',
+    }) as HTMLButtonElement;
+
+    expect(grid.getAttribute('tabindex')).toBe('-1');
+    expect(monthSelect.disabled).toBe(true);
+    expect(yearSelect.disabled).toBe(true);
+    expect(previousButton.disabled).toBe(true);
+    expect(nextButton.disabled).toBe(true);
+
+    fireEvent.click(nextButton);
+    fireEvent.click(getDateButton(document.body, 16, 'Januari', 2026));
+
+    expect(screen.getByRole('grid', { name: /Januari 2026/ })).toBeTruthy();
     expect(onChange).not.toHaveBeenCalled();
   });
 
@@ -879,6 +919,17 @@ describe('Calendar presets', () => {
     expect(() => parseDateOnlyValue('15 Jan 2026')).toThrow(
       'Expected a date-only value in YYYY-MM-DD format.'
     );
+  });
+
+  it('keeps inverted date bounds from crashing the header model', () => {
+    const model = getCalendarHeaderModel(
+      new Date(2026, 0, 1),
+      new Date(2027, 0, 1),
+      new Date(2025, 11, 31)
+    );
+
+    expect(model.yearOptions).toEqual([2025, 2026, 2027]);
+    expect(model.isYearDisabled(2026)).toBe(true);
   });
 });
 
