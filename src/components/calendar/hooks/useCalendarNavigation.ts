@@ -1,5 +1,10 @@
 import { useCallback } from 'react';
-import { CALENDAR_CONSTANTS } from '../constants';
+import {
+  clampMonthToRange,
+  createDisplayDate,
+  isMonthInRange,
+  isYearInRange,
+} from '../utils';
 import type {
   UseCalendarNavigationParams,
   UseCalendarNavigationReturn,
@@ -8,45 +13,42 @@ import type {
 export const useCalendarNavigation = (
   params: UseCalendarNavigationParams
 ): UseCalendarNavigationReturn => {
-  const { currentView, setDisplayDate } = params;
+  const { displayDate, setDisplayDate, minDate, maxDate } = params;
 
   const navigateYear = useCallback(
     (direction: 'prev' | 'next') => {
-      setDisplayDate(prev => {
-        const newDate = new Date(prev);
-        newDate.setFullYear(
-          newDate.getFullYear() + (direction === 'prev' ? -1 : 1)
-        );
-        return newDate;
-      });
+      const targetYear =
+        displayDate.getFullYear() + (direction === 'prev' ? -1 : 1);
+      if (!isYearInRange(targetYear, minDate, maxDate)) return false;
+
+      const targetMonth = clampMonthToRange(
+        targetYear,
+        displayDate.getMonth(),
+        minDate,
+        maxDate
+      );
+      setDisplayDate(createDisplayDate(displayDate, targetYear, targetMonth));
+      return true;
     },
-    [setDisplayDate]
+    [displayDate, maxDate, minDate, setDisplayDate]
   );
 
   const navigateViewDate = useCallback(
     (direction: 'prev' | 'next') => {
-      setDisplayDate(prev => {
-        const newDate = new Date(prev);
-        if (currentView === 'days') {
-          newDate.setDate(1);
-          newDate.setMonth(
-            newDate.getMonth() + (direction === 'prev' ? -1 : 1)
-          );
-        } else if (currentView === 'months') {
-          newDate.setFullYear(
-            newDate.getFullYear() + (direction === 'prev' ? -1 : 1)
-          );
-        } else if (currentView === 'years') {
-          const decadeShift = CALENDAR_CONSTANTS.DECADE_SHIFT;
-          newDate.setFullYear(
-            newDate.getFullYear() +
-              (direction === 'prev' ? -decadeShift : decadeShift)
-          );
-        }
-        return newDate;
-      });
+      const targetMonthIndex =
+        displayDate.getMonth() + (direction === 'prev' ? -1 : 1);
+      const targetYear =
+        displayDate.getFullYear() + Math.floor(targetMonthIndex / 12);
+      const targetMonth = ((targetMonthIndex % 12) + 12) % 12;
+
+      if (!isMonthInRange(targetYear, targetMonth, minDate, maxDate)) {
+        return false;
+      }
+
+      setDisplayDate(createDisplayDate(displayDate, targetYear, targetMonth));
+      return true;
     },
-    [setDisplayDate, currentView]
+    [displayDate, maxDate, minDate, setDisplayDate]
   );
 
   return {

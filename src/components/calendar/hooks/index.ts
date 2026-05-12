@@ -2,6 +2,15 @@
 export { useCalendarState } from './useCalendarState';
 export { useCalendarPosition } from './useCalendarPosition';
 export { useCalendarNavigation } from './useCalendarNavigation';
+export { useCalendarAnimatedNavigation } from './useCalendarAnimatedNavigation';
+export { useCalendarDisplayState } from './useCalendarDisplayState';
 export { useCalendarHover } from './useCalendarHover';
 export { useCalendarKeyboard } from './useCalendarKeyboard';
-export { useCalendarContext } from './useCalendarContext';
+export { useCalendarFocus } from './useCalendarFocus';
+export { useCalendarOutsideClick } from './useCalendarOutsideClick';
+export { useCalendarModalIsolation } from './useCalendarModalIsolation';
+export {
+  useCalendarContentContext,
+  useCalendarPortalContext,
+  useCalendarTriggerContext,
+} from './useCalendarContext';

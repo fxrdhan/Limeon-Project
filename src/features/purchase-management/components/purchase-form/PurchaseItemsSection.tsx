@@ -5,13 +5,17 @@ import Checkbox from '@/components/checkbox';
 import DataGrid from '@/components/ag-grid/DataGrid';
 import VatPercentageEditor from '@/features/purchase-management/components/purchase-form/VatPercentageEditor';
 import Button from '@/components/button';
-import Calendar from '@/components/calendar';
+import {
+  default as Calendar,
+  formatDateOnlyValue,
+  parseDateOnlyValue,
+  type CustomDateValueType,
+} from '@/components/calendar';
 import type { PurchaseItem, ItemSearchBarRef, Item } from '@/types';
 import { getItemUnitOptions } from '@/lib/item-units';
 import { extractNumericValue, formatRupiah } from '@/lib/formatters';
 import { TbTrash } from 'react-icons/tb';
 import type { ColDef, ICellRendererParams } from 'ag-grid-community';
-import type { CustomDateValueType } from '@/components/calendar/types';
 
 interface PurchaseItemsSectionProps {
   searchItem: string;
@@ -83,6 +87,10 @@ const PurchaseItemsSection: React.FC<PurchaseItemsSectionProps> = ({
       }));
     },
     [getItemById]
+  );
+  const todayDate = React.useMemo(
+    () => parseDateOnlyValue(formatDateOnlyValue(new Date())),
+    []
   );
 
   const handleVatCheckboxChange = (isChecked: boolean) => {
@@ -199,16 +207,20 @@ const PurchaseItemsSection: React.FC<PurchaseItemsSectionProps> = ({
 
           return (
             <Calendar
-              value={item.expiry_date ? new Date(item.expiry_date) : null}
+              id={`purchase-expiry-${item.id}`}
+              name="expiry_date"
+              value={
+                item.expiry_date ? parseDateOnlyValue(item.expiry_date) : null
+              }
               onChange={(newDate: CustomDateValueType) => {
                 updateItemExpiry(
                   item.id,
-                  newDate ? newDate.toISOString().split('T')[0] : ''
+                  newDate ? formatDateOnlyValue(newDate) : ''
                 );
               }}
               inputClassName="w-full text-center text-sm py-[3px]! px-1! bg-transparent border-0! border-b border-slate-300! focus:border-primary! focus:ring-0! rounded-none!"
               placeholder="Pilih ED"
-              minDate={new Date()}
+              minDate={todayDate}
               size="md"
             />
           );
@@ -414,6 +426,7 @@ const PurchaseItemsSection: React.FC<PurchaseItemsSectionProps> = ({
     handlePercentageInput,
     onHandleUnitChange,
     removeItem,
+    todayDate,
     updateItem,
     updateItemBatchNo,
     updateItemExpiry,

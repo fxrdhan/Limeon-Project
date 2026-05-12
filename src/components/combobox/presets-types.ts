@@ -58,6 +58,7 @@ export interface PharmaComboboxSelectProps<Item> {
   form?: string;
   className?: string;
   popupClassName?: string;
+  popupContainerRef?: React.RefObject<Element | DocumentFragment | null>;
   popupMatchAnchorWidth?: boolean;
   validation?: {
     enabled?: boolean;

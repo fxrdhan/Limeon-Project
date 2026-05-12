@@ -35,7 +35,7 @@ export const useCalendarState = (
       setIsOpen(false);
       setIsClosing(false);
       onClose?.();
-    }, CALENDAR_CONSTANTS.ANIMATION_DURATION);
+    }, CALENDAR_CONSTANTS.CLOSE_ANIMATION_DURATION);
   }, [onClose]);
 
   useEffect(() => {

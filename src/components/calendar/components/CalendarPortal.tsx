@@ -1,10 +1,14 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import classNames from 'classnames';
-import { useCalendarContext } from '../hooks';
+import { CALENDAR_CONSTANTS } from '../constants';
+import { useCalendarModalIsolation, useCalendarPortalContext } from '../hooks';
 import type { CalendarPortalProps } from '../types';
 
-const CalendarPortal: React.FC<CalendarPortalProps> = ({ children }) => {
+const CalendarPortal: React.FC<CalendarPortalProps> = ({
+  children,
+  container,
+}) => {
   const {
     isOpen,
     isClosing,
@@ -14,13 +18,20 @@ const CalendarPortal: React.FC<CalendarPortalProps> = ({ children }) => {
     dropDirection,
     setPortalContentRef,
     portalId,
+    portalTitleId,
     handleCalendarKeyDown,
     handleCalendarMouseEnter,
     handleCalendarMouseLeave,
     trigger,
-  } = useCalendarContext();
+  } = useCalendarPortalContext();
+  const isModal = trigger !== 'hover';
 
-  if (!isOpen && !isClosing) {
+  useCalendarModalIsolation({
+    enabled: isModal && (isOpen || isClosing),
+    portalId,
+  });
+
+  if ((!isOpen && !isClosing) || typeof document === 'undefined') {
     return null;
   }
 
@@ -29,11 +40,14 @@ const CalendarPortal: React.FC<CalendarPortalProps> = ({ children }) => {
       ref={setPortalContentRef}
       id={portalId}
       tabIndex={-1}
-      style={{
-        ...portalStyle,
-        pointerEvents: isPositionReady ? undefined : 'none',
-        visibility: isPositionReady ? undefined : 'hidden',
-      }}
+      style={
+        {
+          ...portalStyle,
+          '--calendar-portal-transition-duration': `${CALENDAR_CONSTANTS.PORTAL_TRANSITION_DURATION}ms`,
+          pointerEvents: isPositionReady ? undefined : 'none',
+          visibility: isPositionReady ? undefined : 'hidden',
+        } as React.CSSProperties
+      }
       className={classNames(
         'calendar__container',
         'calendar__container--portal',
@@ -49,12 +63,16 @@ const CalendarPortal: React.FC<CalendarPortalProps> = ({ children }) => {
       onKeyDown={handleCalendarKeyDown}
       onMouseEnter={trigger === 'hover' ? handleCalendarMouseEnter : undefined}
       onMouseLeave={trigger === 'hover' ? handleCalendarMouseLeave : undefined}
-      aria-label="Pilih tanggal"
+      aria-labelledby={portalTitleId}
+      aria-modal={isModal ? true : undefined}
       role="dialog"
     >
+      <span id={portalTitleId} className="sr-only">
+        Pilih tanggal
+      </span>
       {children}
     </div>,
-    document.body
+    container ?? document.body
   );
 };
 

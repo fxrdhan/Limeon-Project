@@ -1,37 +1,42 @@
 import React from 'react';
 import { CalendarHeader } from './components';
 import { CALENDAR_SIZE_PRESETS } from './constants';
-import { useCalendarContext } from './hooks';
+import { useCalendarContentContext } from './hooks';
 import { CalendarPrimitive } from './primitive';
+import {
+  clampMonthToRange,
+  createDisplayDate,
+  isMonthInRange,
+  isYearInRange,
+} from './utils';
 import type { CalendarProps } from './types';
 import './style.scss';
 
 export type { CalendarProps } from './types';
 
-const PharmaCalendarContent: React.FC<{
-  mode?: 'datepicker' | 'inline';
-  label?: string;
-  inputClassName?: string;
-  placeholder?: string;
-  portalWidth?: string | number;
-  readOnly?: boolean;
-  children?: React.ReactNode;
-}> = ({
-  mode = 'datepicker',
+type PharmaCalendarContentProps = Pick<
+  CalendarProps,
+  'children' | 'id' | 'inputClassName' | 'label' | 'name' | 'placeholder'
+>;
+
+const PharmaCalendarContent: React.FC<PharmaCalendarContentProps> = ({
+  id,
+  name,
   label,
   inputClassName,
   placeholder,
-  portalWidth,
-  readOnly,
   children,
 }) => {
   const {
     value,
     displayDate,
     highlightedDate,
+    mode,
     minDate,
     maxDate,
     size,
+    navigationDirection,
+    yearNavigationDirection,
     navigateViewDate,
     triggerYearAnimation,
     triggerMonthAnimation,
@@ -39,19 +44,23 @@ const PharmaCalendarContent: React.FC<{
     setHighlightedDate,
     setDisplayDate,
     calculatePosition,
-  } = useCalendarContext();
+    getDayButtonId,
+    portalContentRef,
+    portalWidth,
+    readOnly,
+  } = useCalendarContentContext();
 
   const handleMonthChange = (month: number) => {
     const currentMonth = displayDate.getMonth();
+    const currentYear = displayDate.getFullYear();
+
+    if (!isMonthInRange(currentYear, month, minDate, maxDate)) return;
 
     if (month !== currentMonth) {
       const direction = month > currentMonth ? 'next' : 'prev';
 
       triggerMonthAnimation(direction);
-
-      const newDate = new Date(displayDate);
-      newDate.setMonth(month);
-      setDisplayDate(newDate);
+      setDisplayDate(createDisplayDate(displayDate, currentYear, month));
     }
 
     calculatePosition?.();
@@ -60,34 +69,37 @@ const PharmaCalendarContent: React.FC<{
   const handleYearChange = (year: number) => {
     const currentYear = displayDate.getFullYear();
 
+    if (!isYearInRange(year, minDate, maxDate)) return;
+
     if (year !== currentYear) {
       const direction = year > currentYear ? 'next' : 'prev';
+      const targetMonth = clampMonthToRange(
+        year,
+        displayDate.getMonth(),
+        minDate,
+        maxDate
+      );
 
       triggerYearAnimation(direction);
-
-      const newDate = new Date(displayDate);
-      newDate.setFullYear(year);
-      setDisplayDate(newDate);
+      setDisplayDate(createDisplayDate(displayDate, year, targetMonth));
     }
 
     calculatePosition?.();
   };
 
-  const handleDateSelectWrapper = (date: Date) => {
-    if (mode !== 'inline' && !readOnly) {
-      handleDateSelect(date);
-    }
-  };
-
   const renderCalendarContent = () => (
     <CalendarPrimitive.Grid
       displayDate={displayDate}
-      value={readOnly ? null : value}
+      value={value}
       highlightedDate={highlightedDate}
       minDate={minDate}
       maxDate={maxDate}
-      onDateSelect={handleDateSelectWrapper}
+      onDateSelect={handleDateSelect}
       onDateHighlight={setHighlightedDate}
+      getDayButtonId={getDayButtonId}
+      navigationDirection={navigationDirection}
+      yearNavigationDirection={yearNavigationDirection}
+      readOnly={readOnly}
       animated={true}
     />
   );
@@ -100,7 +112,7 @@ const PharmaCalendarContent: React.FC<{
         className="calendar-container-inline"
         style={{
           width: width,
-          minWidth: width,
+          maxWidth: '100%',
         }}
       >
         <CalendarHeader
@@ -109,6 +121,8 @@ const PharmaCalendarContent: React.FC<{
           onNavigateNext={() => navigateViewDate('next')}
           onMonthChange={handleMonthChange}
           onYearChange={handleYearChange}
+          minDate={minDate}
+          maxDate={maxDate}
         />
         {renderCalendarContent()}
       </div>
@@ -122,6 +136,8 @@ const PharmaCalendarContent: React.FC<{
       ) : (
         <CalendarPrimitive.Button
           value={value}
+          id={id}
+          name={name}
           placeholder={placeholder}
           inputClassName={inputClassName}
           label={label}
@@ -135,6 +151,9 @@ const PharmaCalendarContent: React.FC<{
           onNavigateNext={() => navigateViewDate('next')}
           onMonthChange={handleMonthChange}
           onYearChange={handleYearChange}
+          minDate={minDate}
+          maxDate={maxDate}
+          popupContainerRef={portalContentRef}
         />
         {renderCalendarContent()}
       </CalendarPrimitive.Portal>
@@ -143,6 +162,8 @@ const PharmaCalendarContent: React.FC<{
 };
 
 export const PharmaCalendar: React.FC<CalendarProps> = ({
+  id,
+  name,
   mode = 'datepicker',
   size = 'md',
   trigger,
@@ -158,8 +179,7 @@ export const PharmaCalendar: React.FC<CalendarProps> = ({
   children,
 }) => {
   const effectiveTrigger = trigger || (mode === 'inline' ? 'hover' : 'click');
-  const effectiveReadOnly =
-    readOnly ?? (mode === 'datepicker' && effectiveTrigger === 'hover');
+  const effectiveReadOnly = readOnly ?? false;
 
   return (
     <CalendarPrimitive.Root
@@ -174,12 +194,11 @@ export const PharmaCalendar: React.FC<CalendarProps> = ({
       readOnly={effectiveReadOnly}
     >
       <PharmaCalendarContent
-        mode={mode}
+        id={id}
+        name={name}
         label={label}
         inputClassName={inputClassName}
         placeholder={placeholder}
-        portalWidth={portalWidth}
-        readOnly={effectiveReadOnly}
       >
         {children}
       </PharmaCalendarContent>

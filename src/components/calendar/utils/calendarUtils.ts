@@ -1,5 +1,15 @@
 import type { CustomDateValueType } from '../types';
 
+export const cloneDate = (date: Date): Date => {
+  return new Date(date.getTime());
+};
+
+const toCalendarDate = (date: Date): Date => {
+  const calendarDate = cloneDate(date);
+  calendarDate.setHours(0, 0, 0, 0);
+  return calendarDate;
+};
+
 // Date calculation utilities
 export const daysInMonth = (year: number, month: number): number =>
   new Date(year, month + 1, 0).getDate();
@@ -13,16 +23,16 @@ export const isDateInRange = (
   minDate?: Date,
   maxDate?: Date
 ): boolean => {
+  const normalizedDate = toCalendarDate(date);
+
   if (minDate) {
-    const min = new Date(minDate);
-    min.setHours(0, 0, 0, 0);
-    if (date < min) return false;
+    const min = toCalendarDate(minDate);
+    if (normalizedDate < min) return false;
   }
 
   if (maxDate) {
-    const max = new Date(maxDate);
-    max.setHours(0, 0, 0, 0);
-    if (date > max) return false;
+    const max = toCalendarDate(maxDate);
+    if (normalizedDate > max) return false;
   }
 
   return true;
@@ -35,17 +45,15 @@ export const isMonthInRange = (
   maxDate?: Date
 ): boolean => {
   if (minDate) {
-    const minD = new Date(minDate);
+    const minD = toCalendarDate(minDate);
     minD.setDate(1);
-    minD.setHours(0, 0, 0, 0);
     const lastDayOfMonth = new Date(year, month + 1, 0);
     if (lastDayOfMonth < minD) return false;
   }
 
   if (maxDate) {
-    const maxD = new Date(maxDate);
+    const maxD = toCalendarDate(maxDate);
     maxD.setDate(1);
-    maxD.setHours(0, 0, 0, 0);
     const firstDayOfMonth = new Date(year, month, 1);
     if (firstDayOfMonth > maxD) return false;
   }
@@ -61,6 +69,44 @@ export const isYearInRange = (
   if (minDate && year < new Date(minDate).getFullYear()) return false;
   if (maxDate && year > new Date(maxDate).getFullYear()) return false;
   return true;
+};
+
+export const clampDateToRange = (
+  date: Date,
+  minDate?: Date,
+  maxDate?: Date
+): Date => {
+  const normalizedDate = toCalendarDate(date);
+  if (minDate && normalizedDate < toCalendarDate(minDate)) {
+    return cloneDate(minDate);
+  }
+  if (maxDate && normalizedDate > toCalendarDate(maxDate)) {
+    return cloneDate(maxDate);
+  }
+  return cloneDate(date);
+};
+
+export const clampMonthToRange = (
+  year: number,
+  month: number,
+  minDate?: Date,
+  maxDate?: Date
+): number => {
+  if (minDate) {
+    const min = new Date(minDate);
+    if (year === min.getFullYear() && month < min.getMonth()) {
+      return min.getMonth();
+    }
+  }
+
+  if (maxDate) {
+    const max = new Date(maxDate);
+    if (year === max.getFullYear() && month > max.getMonth()) {
+      return max.getMonth();
+    }
+  }
+
+  return month;
 };
 
 // Date comparison utilities
@@ -85,8 +131,22 @@ export const createDateWithTime = (
   return new Date(year, month, day, hour, minute, second);
 };
 
-export const cloneDate = (date: Date): Date => {
-  return new Date(date.getTime());
+export const createDisplayDate = (
+  sourceDate: Date,
+  year: number,
+  month: number
+): Date => {
+  const day = Math.min(sourceDate.getDate(), daysInMonth(year, month));
+
+  return new Date(
+    year,
+    month,
+    day,
+    sourceDate.getHours(),
+    sourceDate.getMinutes(),
+    sourceDate.getSeconds(),
+    sourceDate.getMilliseconds()
+  );
 };
 
 // Calendar grid utilities
@@ -109,33 +169,6 @@ export const generateCalendarDays = (
   return calendarDays;
 };
 
-// Navigation utilities
-export const navigateDate = (
-  currentDate: Date,
-  direction: 'prev' | 'next',
-  unit: 'day' | 'week' | 'month' | 'year'
-): Date => {
-  const newDate = cloneDate(currentDate);
-  const multiplier = direction === 'prev' ? -1 : 1;
-
-  switch (unit) {
-    case 'day':
-      newDate.setDate(newDate.getDate() + multiplier);
-      break;
-    case 'week':
-      newDate.setDate(newDate.getDate() + 7 * multiplier);
-      break;
-    case 'month':
-      newDate.setMonth(newDate.getMonth() + multiplier);
-      break;
-    case 'year':
-      newDate.setFullYear(newDate.getFullYear() + multiplier);
-      break;
-  }
-
-  return newDate;
-};
-
 // Format utilities
 export const formatDisplayValue = (
   value: CustomDateValueType,
@@ -150,20 +183,44 @@ export const formatDisplayValue = (
   });
 };
 
-export const formatHeaderContent = (
-  date: Date,
-  view: 'days' | 'months' | 'years',
-  locale: string = 'id-ID'
-): string => {
-  if (view === 'days') {
-    return date.toLocaleDateString(locale, {
-      month: 'long',
-      year: 'numeric',
-    });
-  } else if (view === 'months') {
-    return date.getFullYear().toString();
+export const formatDateOnlyValue = (value: Date): string => {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, '0');
+  const day = String(value.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+};
+
+export const parseDateOnlyValue = (value: string): Date => {
+  const dateOnlyMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!dateOnlyMatch) {
+    throw new Error('Expected a date-only value in YYYY-MM-DD format.');
   }
 
-  // years view is handled differently due to decade range
-  return '';
+  const [, yearText, monthText, dayText] = dateOnlyMatch;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const parsedDate = createDateWithTime(year, month - 1, day);
+
+  if (
+    parsedDate.getFullYear() !== year ||
+    parsedDate.getMonth() !== month - 1 ||
+    parsedDate.getDate() !== day
+  ) {
+    throw new Error('Expected a valid date-only value.');
+  }
+
+  return parsedDate;
 };
+
+export const formatAccessibleDate = (
+  value: Date,
+  locale: string = 'id-ID'
+): string =>
+  value.toLocaleDateString(locale, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });

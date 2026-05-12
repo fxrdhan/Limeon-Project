@@ -1,10 +1,8 @@
 import React from 'react';
-import { CalendarView, CustomDateValueType, CalendarMode } from './components';
+import { CustomDateValueType } from './components';
 
 // Hook parameter interfaces
 export interface UseCalendarStateParams {
-  value: CustomDateValueType;
-  mode?: CalendarMode;
   onOpen?: () => void;
   onClose?: () => void;
 }
@@ -19,7 +17,7 @@ export interface UseCalendarStateReturn {
 }
 
 export interface UseCalendarPositionParams {
-  triggerRef: React.RefObject<HTMLInputElement | HTMLDivElement | null>;
+  triggerRef: React.RefObject<HTMLElement | null>;
   portalRef: React.RefObject<HTMLDivElement | null>;
   isOpen: boolean;
   portalWidth?: string | number;
@@ -36,46 +34,38 @@ export interface UseCalendarPositionReturn {
 
 export interface UseCalendarKeyboardParams {
   isOpen: boolean;
-  currentView: CalendarView;
   highlightedDate: Date | null;
-  highlightedMonth: number | null;
-  highlightedYear: number | null;
   displayDate: Date;
   value: CustomDateValueType;
   minDate?: Date;
   maxDate?: Date;
   onDateSelect: (date: Date) => void;
-  onMonthSelect: (month: number) => void;
-  onYearSelect: (year: number) => void;
+  onDateClear: () => void;
   openCalendar: () => void;
   closeCalendar: () => void;
+  closeCalendarAndRestoreFocus: () => void;
   setHighlightedDate: React.Dispatch<React.SetStateAction<Date | null>>;
-  setHighlightedMonth: React.Dispatch<React.SetStateAction<number | null>>;
-  setHighlightedYear: React.Dispatch<React.SetStateAction<number | null>>;
   setDisplayDate: React.Dispatch<React.SetStateAction<Date>>;
-  setCurrentView: React.Dispatch<React.SetStateAction<CalendarView>>;
-  navigateViewDate: (direction: 'prev' | 'next') => void;
-  navigateYear?: (direction: 'prev' | 'next') => void; // Optional, use navigateYearWithAnimation instead
-  navigateYearWithAnimation: (direction: 'prev' | 'next') => void;
+  navigateViewDate: (direction: 'prev' | 'next') => boolean;
+  navigateYearWithAnimation: (direction: 'prev' | 'next') => boolean;
   focusPortal: () => void;
 }
 
 export interface UseCalendarKeyboardReturn {
-  handleInputKeyDown: (
-    e: React.KeyboardEvent<HTMLInputElement | HTMLDivElement>
-  ) => void;
+  handleInputKeyDown: (e: React.KeyboardEvent<HTMLElement>) => void;
   handleCalendarKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => void;
 }
 
 export interface UseCalendarNavigationParams {
   displayDate: Date;
-  currentView: CalendarView;
   setDisplayDate: React.Dispatch<React.SetStateAction<Date>>;
+  minDate?: Date;
+  maxDate?: Date;
 }
 
 export interface UseCalendarNavigationReturn {
-  navigateViewDate: (direction: 'prev' | 'next') => void;
-  navigateYear: (direction: 'prev' | 'next') => void;
+  navigateViewDate: (direction: 'prev' | 'next') => boolean;
+  navigateYear: (direction: 'prev' | 'next') => boolean;
 }
 
 export interface UseCalendarHoverParams {

@@ -1,12 +1,16 @@
 import React from 'react';
 import Input from '@/components/input';
 import { PharmaComboboxSelect } from '@/components/combobox';
-import Calendar from '@/components/calendar';
+import {
+  default as Calendar,
+  formatDateOnlyValue,
+  parseDateOnlyValue,
+  type CustomDateValueType,
+} from '@/components/calendar';
 import Button from '@/components/button';
 import { TbBan, TbDeviceFloppy, TbPencil } from 'react-icons/tb';
 import { useIdentityModalContext } from '@/contexts/IdentityModalContext';
 import type { FieldConfig } from '@/types';
-import type { CustomDateValueType } from '@/components/calendar/types';
 
 interface IdentityFormFieldProps {
   field: FieldConfig;
@@ -33,6 +37,8 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
     (mode === 'add' || !useInlineFieldActions || editMode[field.key]);
   const fieldValue = editValues[field.key];
   const displayValue = localData[field.key];
+  const birthDateMinDate = React.useMemo(() => new Date(1900, 0, 1), []);
+  const birthDateMaxDate = React.useMemo(() => new Date(), []);
 
   const renderEditModeActions = () => {
     if (!isFieldEditable || mode !== 'edit' || !useInlineFieldActions) {
@@ -112,15 +118,17 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
     if (field.type === 'date') {
       return (
         <Calendar
-          value={fieldValue ? new Date(String(fieldValue)) : null}
+          id={field.key}
+          name={field.key}
+          value={fieldValue ? parseDateOnlyValue(String(fieldValue)) : null}
           onChange={(date: CustomDateValueType) => {
-            const formattedDate = date
-              ? date.toISOString().split('T')[0]
-              : null;
+            const formattedDate = date ? formatDateOnlyValue(date) : null;
             handleChange(field.key, formattedDate as string | number | boolean);
           }}
           placeholder={`Pilih ${field.label.toLowerCase()}`}
           inputClassName="w-full p-2.5 border rounded-xl text-sm"
+          minDate={field.key === 'birth_date' ? birthDateMinDate : undefined}
+          maxDate={field.key === 'birth_date' ? birthDateMaxDate : undefined}
           size="md"
         />
       );

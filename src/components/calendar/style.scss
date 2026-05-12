@@ -7,6 +7,12 @@
 
 @mixin calendar-button-base() {
   @apply rounded-xl transition-colors shrink-0 cursor-pointer focus:outline-hidden;
+
+  &:focus-visible {
+    outline: 2px solid
+      color-mix(in oklch, var(--color-primary) 40%, transparent);
+    outline-offset: 1px;
+  }
 }
 
 @mixin calendar-navigation-button() {
@@ -39,6 +45,10 @@
 }
 
 // Calendar Component Styles
+.calendar-container-inline {
+  @include calendar-container();
+}
+
 .calendar {
   // Container element with modifiers
   &__container {
@@ -50,7 +60,8 @@
     }
 
     &--portal {
-      @apply transition-all duration-150 ease-out;
+      @apply transition-all ease-out;
+      transition-duration: var(--calendar-portal-transition-duration);
     }
 
     // State modifiers (can be combined with --portal)
@@ -60,7 +71,7 @@
     }
 
     &--open {
-      @apply opacity-100 scale-100;
+      @apply opacity-100;
     }
 
     // Position modifiers (can be combined with --portal)
@@ -92,6 +103,7 @@
       }
 
       @apply cursor-pointer;
+      transition-duration: var(--calendar-input-transition-duration);
     }
   }
 
@@ -142,6 +154,14 @@
 
     &-empty {
       @apply py-2 px-2;
+    }
+
+    &-row {
+      display: contents;
+    }
+
+    &-cell {
+      @apply flex justify-center;
     }
 
     // Day button with state modifiers
@@ -202,5 +222,11 @@
   &__custom-trigger {
     @apply focus:outline-hidden;
     outline: none;
+
+    &:focus-visible {
+      outline: 2px solid
+        color-mix(in oklch, var(--color-primary) 40%, transparent);
+      outline-offset: 1px;
+    }
   }
 }

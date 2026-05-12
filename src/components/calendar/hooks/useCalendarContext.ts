@@ -1,15 +1,33 @@
-import { useContext } from 'react';
-import { CalendarContext } from '../providers/calendarContext';
-import type { CalendarContextState } from '../types';
+import { useContext, type Context } from 'react';
+import {
+  CalendarContentContext,
+  CalendarPortalContext,
+  CalendarTriggerContext,
+} from '../providers/calendarContext';
+import type {
+  CalendarContentContextState,
+  CalendarPortalContextState,
+  CalendarTriggerContextState,
+} from '../types';
 
-export const useCalendarContext = (): CalendarContextState => {
-  const context = useContext(CalendarContext);
+const useRequiredCalendarContext = <T>(
+  context: Context<T | null>,
+  contextName: string
+): T => {
+  const value = useContext(context);
 
-  if (!context) {
-    throw new Error(
-      'useCalendarContext must be used within a CalendarProvider'
-    );
+  if (!value) {
+    throw new Error(`${contextName} must be used within a CalendarProvider`);
   }
 
-  return context;
+  return value;
 };
+
+export const useCalendarContentContext = (): CalendarContentContextState =>
+  useRequiredCalendarContext(CalendarContentContext, 'CalendarContentContext');
+
+export const useCalendarTriggerContext = (): CalendarTriggerContextState =>
+  useRequiredCalendarContext(CalendarTriggerContext, 'CalendarTriggerContext');
+
+export const useCalendarPortalContext = (): CalendarPortalContextState =>
+  useRequiredCalendarContext(CalendarPortalContext, 'CalendarPortalContext');

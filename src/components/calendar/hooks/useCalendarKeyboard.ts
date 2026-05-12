@@ -1,41 +1,58 @@
-import { useCallback } from 'react';
-import { getYearsToDisplay } from '../constants';
+import { useCallback, type KeyboardEvent } from 'react';
+import { isDateInRange } from '../utils';
 import type {
   UseCalendarKeyboardParams,
   UseCalendarKeyboardReturn,
 } from '../types';
+
+const focusableSelector = [
+  'button:not([disabled])',
+  '[href]',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',');
+
+const getFocusableElements = (container: HTMLElement): HTMLElement[] =>
+  Array.from(container.querySelectorAll<HTMLElement>(focusableSelector)).filter(
+    element => !element.hasAttribute('disabled') && element.tabIndex >= 0
+  );
 
 export const useCalendarKeyboard = (
   params: UseCalendarKeyboardParams
 ): UseCalendarKeyboardReturn => {
   const {
     isOpen,
-    currentView,
     highlightedDate,
-    highlightedMonth,
-    highlightedYear,
     displayDate,
     value,
     minDate,
     maxDate,
     onDateSelect,
-    onMonthSelect,
-    onYearSelect,
+    onDateClear,
     openCalendar,
     closeCalendar,
+    closeCalendarAndRestoreFocus,
     setHighlightedDate,
-    setHighlightedMonth,
-    setHighlightedYear,
     setDisplayDate,
-    setCurrentView,
     navigateViewDate,
     navigateYearWithAnimation,
     focusPortal,
   } = params;
 
   const handleDaysNavigation = useCallback(
-    (e: React.KeyboardEvent) => {
-      const currentHighlight = highlightedDate || value || new Date();
+    (e: KeyboardEvent) => {
+      const isDisplayedMonth = (date: Date | null) =>
+        Boolean(
+          date &&
+          date.getMonth() === displayDate.getMonth() &&
+          date.getFullYear() === displayDate.getFullYear()
+        );
+      const currentHighlight =
+        (isDisplayedMonth(highlightedDate) && highlightedDate) ||
+        (isDisplayedMonth(value) && value) ||
+        displayDate;
       const newHighlight = new Date(currentHighlight);
       let navigated = false;
 
@@ -58,31 +75,21 @@ export const useCalendarKeyboard = (
           break;
       }
 
-      if (navigated) {
-        e.preventDefault();
-        let isValidDate = true;
-        if (minDate) {
-          const min = new Date(minDate);
-          min.setHours(0, 0, 0, 0);
-          if (newHighlight < min) isValidDate = false;
-        }
-        if (maxDate) {
-          const max = new Date(maxDate);
-          max.setHours(0, 0, 0, 0);
-          if (newHighlight > max) isValidDate = false;
-        }
+      if (!navigated) return;
 
-        if (isValidDate) {
-          setHighlightedDate(newHighlight);
-          if (
-            newHighlight.getMonth() !== displayDate.getMonth() ||
-            newHighlight.getFullYear() !== displayDate.getFullYear()
-          ) {
-            setDisplayDate(
-              new Date(newHighlight.getFullYear(), newHighlight.getMonth(), 1)
-            );
-          }
-        }
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (!isDateInRange(newHighlight, minDate, maxDate)) return;
+
+      setHighlightedDate(newHighlight);
+      if (
+        newHighlight.getMonth() !== displayDate.getMonth() ||
+        newHighlight.getFullYear() !== displayDate.getFullYear()
+      ) {
+        setDisplayDate(
+          new Date(newHighlight.getFullYear(), newHighlight.getMonth(), 1)
+        );
       }
     },
     [
@@ -96,283 +103,183 @@ export const useCalendarKeyboard = (
     ]
   );
 
-  const handleMonthsNavigation = useCallback(
-    (e: React.KeyboardEvent) => {
-      const currentHighlight =
-        highlightedMonth ?? (value ? value.getMonth() : 0);
-      let newHighlight = currentHighlight;
-      let navigated = false;
-
-      switch (e.key) {
-        case 'ArrowLeft':
-          newHighlight = Math.max(0, currentHighlight - 1);
-          navigated = true;
-          break;
-        case 'ArrowRight':
-          newHighlight = Math.min(11, currentHighlight + 1);
-          navigated = true;
-          break;
-        case 'ArrowUp':
-          newHighlight = Math.max(0, currentHighlight - 3);
-          navigated = true;
-          break;
-        case 'ArrowDown':
-          newHighlight = Math.min(11, currentHighlight + 3);
-          navigated = true;
-          break;
-      }
-
-      if (navigated) {
-        e.preventDefault();
-        const currentYear = displayDate.getFullYear();
-        let isValidMonth = true;
-        if (minDate) {
-          const minD = new Date(minDate);
-          const lastDayOfMonth = new Date(currentYear, newHighlight + 1, 0);
-          if (lastDayOfMonth < minD) isValidMonth = false;
-        }
-        if (maxDate) {
-          const maxD = new Date(maxDate);
-          const firstDayOfMonth = new Date(currentYear, newHighlight, 1);
-          if (firstDayOfMonth > maxD) isValidMonth = false;
-        }
-
-        if (isValidMonth) {
-          setHighlightedMonth(newHighlight);
-        }
-      }
-    },
-    [
-      highlightedMonth,
-      value,
-      displayDate,
-      minDate,
-      maxDate,
-      setHighlightedMonth,
-    ]
-  );
-
-  const handleYearsNavigation = useCallback(
-    (e: React.KeyboardEvent) => {
-      const yearsToDisplay = getYearsToDisplay(displayDate.getFullYear());
-      const currentHighlight =
-        highlightedYear ?? (value ? value.getFullYear() : yearsToDisplay[5]);
-      const currentIndex = yearsToDisplay.indexOf(currentHighlight);
-      let newIndex = currentIndex;
-      let navigated = false;
-
-      switch (e.key) {
-        case 'ArrowLeft':
-          newIndex = Math.max(0, currentIndex - 1);
-          navigated = true;
-          break;
-        case 'ArrowRight':
-          newIndex = Math.min(yearsToDisplay.length - 1, currentIndex + 1);
-          navigated = true;
-          break;
-        case 'ArrowUp':
-          newIndex = Math.max(0, currentIndex - 3);
-          navigated = true;
-          break;
-        case 'ArrowDown':
-          newIndex = Math.min(yearsToDisplay.length - 1, currentIndex + 3);
-          navigated = true;
-          break;
-      }
-
-      if (navigated) {
-        e.preventDefault();
-        const newYear = yearsToDisplay[newIndex];
-        let isValidYear = true;
-        if (minDate && newYear < new Date(minDate).getFullYear())
-          isValidYear = false;
-        if (maxDate && newYear > new Date(maxDate).getFullYear())
-          isValidYear = false;
-
-        if (isValidYear) {
-          setHighlightedYear(newYear);
-        }
-      }
-    },
-    [highlightedYear, value, displayDate, minDate, maxDate, setHighlightedYear]
-  );
-
   const handleViewNavigation = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.ctrlKey && currentView === 'days') {
-        let navigated = false;
+    (e: KeyboardEvent) => {
+      if (e.ctrlKey) {
+        let handled = false;
+
         switch (e.key) {
           case 'ArrowLeft':
+            handled = true;
             navigateViewDate('prev');
-            navigated = true;
             break;
           case 'ArrowRight':
+            handled = true;
             navigateViewDate('next');
-            navigated = true;
             break;
           case 'ArrowUp':
+            handled = true;
             navigateYearWithAnimation('prev');
-            navigated = true;
             break;
           case 'ArrowDown':
+            handled = true;
             navigateYearWithAnimation('next');
-            navigated = true;
             break;
         }
-        if (navigated) {
+
+        if (handled) {
           e.preventDefault();
+          e.stopPropagation();
           return;
         }
       }
 
-      if (currentView === 'days' && !e.ctrlKey) {
-        handleDaysNavigation(e);
-      } else if (currentView === 'months') {
-        handleMonthsNavigation(e);
-      } else if (currentView === 'years') {
-        handleYearsNavigation(e);
-      }
+      handleDaysNavigation(e);
     },
-    [
-      currentView,
-      navigateViewDate,
-      navigateYearWithAnimation,
-      handleDaysNavigation,
-      handleMonthsNavigation,
-      handleYearsNavigation,
-    ]
+    [navigateViewDate, navigateYearWithAnimation, handleDaysNavigation]
   );
 
   const handleInputKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement | HTMLDivElement>) => {
+    (e: KeyboardEvent<HTMLElement>) => {
       if (e.key === 'Tab' && isOpen) {
-        e.preventDefault();
+        closeCalendar();
         return;
       }
 
-      if (e.key === 'Enter') {
+      if ((e.key === 'Backspace' || e.key === 'Delete') && value) {
         e.preventDefault();
+        e.stopPropagation();
+        onDateClear();
+        return;
+      }
+
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        e.stopPropagation();
         if (isOpen) {
-          if (currentView === 'days' && highlightedDate) {
+          if (highlightedDate) {
             onDateSelect(highlightedDate);
-          } else if (currentView === 'months' && highlightedMonth !== null) {
-            onMonthSelect(highlightedMonth);
-          } else if (currentView === 'years' && highlightedYear !== null) {
-            onYearSelect(highlightedYear);
           } else {
-            closeCalendar();
+            closeCalendarAndRestoreFocus();
           }
         } else {
           openCalendar();
+          focusPortal();
         }
       } else if (e.key === 'Escape' && isOpen) {
         e.preventDefault();
-        closeCalendar();
+        e.stopPropagation();
+        closeCalendarAndRestoreFocus();
       } else if (isOpen) {
         handleViewNavigation(e);
       }
     },
     [
       isOpen,
-      currentView,
       highlightedDate,
-      highlightedMonth,
-      highlightedYear,
+      value,
       onDateSelect,
-      onMonthSelect,
-      onYearSelect,
+      onDateClear,
       openCalendar,
       closeCalendar,
+      closeCalendarAndRestoreFocus,
+      focusPortal,
       handleViewNavigation,
     ]
   );
 
-  const handleCalendarKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLDivElement>) => {
-      // Check if any dropdown is currently open by looking for dropdown portals in the DOM
-      const isDropdownOpen =
-        document.querySelector('[role="listbox"]') !== null;
+  const handleCalendarTabKey = useCallback(
+    (e: KeyboardEvent<HTMLDivElement>) => {
+      const focusableElements = getFocusableElements(e.currentTarget);
 
-      // If a dropdown is open, don't handle calendar navigation for arrow keys
+      if (focusableElements.length === 0) {
+        e.preventDefault();
+        e.currentTarget.focus();
+        return;
+      }
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement;
+      const activeElementIsInsideCycle = focusableElements.some(
+        element => element === activeElement
+      );
+
+      if (e.shiftKey) {
+        if (!activeElementIsInsideCycle || activeElement === firstElement) {
+          e.preventDefault();
+          lastElement.focus();
+        }
+        return;
+      }
+
+      if (!activeElementIsInsideCycle || activeElement === lastElement) {
+        e.preventDefault();
+        firstElement.focus();
+      }
+    },
+    []
+  );
+
+  const handleCalendarKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLDivElement>) => {
+      const activePopupTrigger =
+        e.target instanceof Element
+          ? e.target.closest('[aria-expanded="true"][aria-controls]')
+          : null;
+
       if (
-        isDropdownOpen &&
+        activePopupTrigger &&
+        e.currentTarget.contains(activePopupTrigger) &&
         ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)
       ) {
         return;
       }
 
       if (e.key === 'Tab') {
-        e.preventDefault();
+        e.stopPropagation();
+        handleCalendarTabKey(e);
         return;
       }
 
       if (e.key === 'Enter') {
-        if (e.target === e.currentTarget) {
+        const isGridTarget =
+          e.target instanceof HTMLElement &&
+          e.target.hasAttribute('data-calendar-grid');
+
+        if (e.target === e.currentTarget || isGridTarget) {
           e.preventDefault();
-          if (currentView === 'days' && highlightedDate) {
+          e.stopPropagation();
+          if (highlightedDate) {
             onDateSelect(highlightedDate);
-          } else if (currentView === 'months' && highlightedMonth !== null) {
-            onMonthSelect(highlightedMonth);
-          } else if (currentView === 'years' && highlightedYear !== null) {
-            onYearSelect(highlightedYear);
           }
         }
+        return;
+      }
+
+      if ((e.key === 'Backspace' || e.key === 'Delete') && value) {
+        e.preventDefault();
+        e.stopPropagation();
+        onDateClear();
         return;
       }
 
       if (e.key === 'Escape') {
         e.preventDefault();
-        if (currentView === 'years') {
-          setCurrentView('months');
-          setHighlightedYear(null);
-          const currentDisplayYear = displayDate.getFullYear();
-          setHighlightedMonth(
-            value && value.getFullYear() === currentDisplayYear
-              ? value.getMonth()
-              : 0
-          );
-          focusPortal();
-        } else if (currentView === 'months') {
-          setCurrentView('days');
-          const currentDisplayMonth = displayDate.getMonth();
-          const currentDisplayYear = displayDate.getFullYear();
-          let newHighlight: Date;
-          if (
-            value &&
-            value.getFullYear() === currentDisplayYear &&
-            value.getMonth() === currentDisplayMonth
-          ) {
-            newHighlight = new Date(value);
-          } else {
-            newHighlight = new Date(currentDisplayYear, currentDisplayMonth, 1);
-          }
-          setHighlightedDate(newHighlight);
-          setHighlightedMonth(null);
-          focusPortal();
-        } else {
-          closeCalendar();
-        }
+        e.stopPropagation();
+        closeCalendarAndRestoreFocus();
         return;
       }
 
       handleViewNavigation(e);
     },
     [
-      currentView,
       highlightedDate,
-      highlightedMonth,
-      highlightedYear,
-      onDateSelect,
-      onMonthSelect,
-      onYearSelect,
-      closeCalendar,
-      setCurrentView,
-      setHighlightedDate,
-      setHighlightedMonth,
-      setHighlightedYear,
-      displayDate,
       value,
-      focusPortal,
+      onDateSelect,
+      onDateClear,
+      closeCalendarAndRestoreFocus,
+      handleCalendarTabKey,
       handleViewNavigation,
     ]
   );

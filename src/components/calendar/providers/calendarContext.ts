@@ -1,4 +1,13 @@
 import { createContext } from 'react';
-import type { CalendarContextState } from '../types';
+import type {
+  CalendarContentContextState,
+  CalendarPortalContextState,
+  CalendarTriggerContextState,
+} from '../types';
 
-export const CalendarContext = createContext<CalendarContextState | null>(null);
+export const CalendarContentContext =
+  createContext<CalendarContentContextState | null>(null);
+export const CalendarTriggerContext =
+  createContext<CalendarTriggerContextState | null>(null);
+export const CalendarPortalContext =
+  createContext<CalendarPortalContextState | null>(null);

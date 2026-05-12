@@ -1,8 +1,14 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import classNames from 'classnames';
-import { DAY_LABELS } from '../constants';
-import { useCalendarContext } from '../hooks';
+import { CALENDAR_CONSTANTS, DAY_LABELS } from '../constants';
+import {
+  formatAccessibleDate,
+  generateCalendarDays,
+  isDateInRange,
+  isSameDate,
+  isToday as isCalendarToday,
+} from '../utils';
 import type { DaysGridProps } from '../types';
 
 const DaysGrid: React.FC<DaysGridProps> = ({
@@ -13,14 +19,15 @@ const DaysGrid: React.FC<DaysGridProps> = ({
   maxDate,
   onDateSelect,
   onDateHighlight,
+  getDayButtonId,
+  navigationDirection = null,
+  yearNavigationDirection = null,
+  readOnly = false,
   animated = false,
 }) => {
-  const { navigationDirection, yearNavigationDirection, readOnly } =
-    useCalendarContext();
-
-  // readOnly provided by context
   // Create unique key based on year and month for AnimatePresence
   const gridKey = `${displayDate.getFullYear()}-${displayDate.getMonth()}`;
+  const getDayCellId = (date: Date) => `${getDayButtonId(date)}-cell`;
 
   const getAnimationDirection = () => {
     // Year navigation (vertical)
@@ -57,92 +64,113 @@ const DaysGrid: React.FC<DaysGridProps> = ({
   const renderDatesGrid = (displayDate: Date) => {
     const year = displayDate.getFullYear();
     const month = displayDate.getMonth();
-
-    // Calculate days in month and first day
-    const daysInMonth = (year: number, month: number) =>
-      new Date(year, month + 1, 0).getDate();
-    const firstDayOfMonth = (year: number, month: number) =>
-      new Date(year, month, 1).getDay();
-
-    const numDays = daysInMonth(year, month);
-    let firstDay = firstDayOfMonth(year, month);
-    if (firstDay === 0) firstDay = 6;
-    else firstDay -= 1;
-
-    const calendarDays: (number | null)[] = Array(firstDay).fill(null);
-    for (let i = 1; i <= numDays; i++) calendarDays.push(i);
+    const calendarDays = generateCalendarDays(year, month);
+    const calendarWeeks = Array.from(
+      { length: Math.ceil(calendarDays.length / 7) },
+      (_, weekIndex) => calendarDays.slice(weekIndex * 7, weekIndex * 7 + 7)
+    );
+    const activeDescendant =
+      highlightedDate?.getFullYear() === year &&
+      highlightedDate.getMonth() === month
+        ? getDayCellId(highlightedDate)
+        : undefined;
 
     return (
       <div
+        role="grid"
+        aria-label={displayDate.toLocaleDateString('id-ID', {
+          month: 'long',
+          year: 'numeric',
+        })}
+        aria-activedescendant={activeDescendant}
+        tabIndex={-1}
+        data-calendar-grid=""
         className={
           animated
             ? 'calendar__days-grid--animated'
             : 'calendar__days-grid--static'
         }
       >
-        {/* Day labels - show only if not animated (static version) */}
-        {!animated &&
-          DAY_LABELS.map(day => (
-            <div key={day} className="calendar__day-label">
+        <div role="row" className={animated ? 'sr-only' : 'calendar__day-row'}>
+          {DAY_LABELS.map(day => (
+            <div
+              key={day}
+              role="columnheader"
+              className={animated ? undefined : 'calendar__day-label'}
+            >
               {day}
             </div>
           ))}
-        {calendarDays.map((day, index) => {
-          if (day === null)
-            return (
-              <div key={`empty-${index}`} className="calendar__day-empty"></div>
-            );
+        </div>
+        {calendarWeeks.map((week, weekIndex) => (
+          <div
+            key={`week-${weekIndex}`}
+            role="row"
+            className="calendar__day-row"
+          >
+            {week.map((day, dayIndex) => {
+              const cellKey = `${weekIndex}-${dayIndex}`;
 
-          const currentDate = new Date(year, month, day);
-          const isSelected =
-            !readOnly &&
-            value &&
-            currentDate.toDateString() === value.toDateString();
-          const isHighlighted =
-            !readOnly &&
-            highlightedDate &&
-            currentDate.toDateString() === highlightedDate.toDateString();
-
-          let isDisabled = false;
-          if (minDate) {
-            const min = new Date(minDate);
-            min.setHours(0, 0, 0, 0);
-            if (currentDate < min) isDisabled = true;
-          }
-          if (maxDate) {
-            const max = new Date(maxDate);
-            max.setHours(0, 0, 0, 0);
-            if (currentDate > max) isDisabled = true;
-          }
-
-          const isToday =
-            new Date(year, month, day).toDateString() ===
-            new Date().toDateString();
-
-          return (
-            <button
-              key={day}
-              onClick={() =>
-                !isDisabled && !readOnly && onDateSelect(currentDate)
+              if (day === null) {
+                return (
+                  <div
+                    key={`empty-${cellKey}`}
+                    role="gridcell"
+                    aria-hidden="true"
+                    className="calendar__day-empty"
+                  ></div>
+                );
               }
-              onMouseEnter={() =>
-                !isDisabled && !readOnly && onDateHighlight(currentDate)
-              }
-              onMouseLeave={() => onDateHighlight(null)}
-              disabled={isDisabled}
-              className={classNames('calendar__day-button', {
-                'calendar__day-button--disabled': isDisabled,
-                'calendar__day-button--selected': !isDisabled && isSelected,
-                'calendar__day-button--highlighted':
-                  !isDisabled && !isSelected && isHighlighted,
-                'calendar__day-button--today':
-                  !isDisabled && !isSelected && !isHighlighted && isToday,
-              })}
-            >
-              {day}
-            </button>
-          );
-        })}
+
+              const currentDate = new Date(year, month, day);
+              const dayButtonId = getDayButtonId(currentDate);
+              const dayCellId = getDayCellId(currentDate);
+              const isSelected = isSameDate(currentDate, value);
+              const isHighlighted =
+                !readOnly && isSameDate(currentDate, highlightedDate);
+
+              const isDisabled = !isDateInRange(currentDate, minDate, maxDate);
+              const isToday = isCalendarToday(currentDate);
+
+              return (
+                <div
+                  key={day}
+                  id={dayCellId}
+                  role="gridcell"
+                  aria-selected={isSelected}
+                  className="calendar__day-cell"
+                >
+                  <button
+                    id={dayButtonId}
+                    onClick={() =>
+                      !isDisabled && !readOnly && onDateSelect(currentDate)
+                    }
+                    onMouseEnter={() =>
+                      !isDisabled && !readOnly && onDateHighlight(currentDate)
+                    }
+                    onMouseLeave={() => onDateHighlight(null)}
+                    disabled={isDisabled}
+                    aria-label={formatAccessibleDate(currentDate)}
+                    aria-current={isToday ? 'date' : undefined}
+                    aria-disabled={isDisabled || readOnly}
+                    tabIndex={-1}
+                    className={classNames('calendar__day-button', {
+                      'calendar__day-button--disabled': isDisabled,
+                      'calendar__day-button--selected':
+                        !isDisabled && isSelected,
+                      'calendar__day-button--highlighted':
+                        !isDisabled && !isSelected && isHighlighted,
+                      'calendar__day-button--today':
+                        !isDisabled && !isSelected && !isHighlighted && isToday,
+                    })}
+                  >
+                    {day}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        ))}
       </div>
     );
   };
@@ -160,7 +188,7 @@ const DaysGrid: React.FC<DaysGridProps> = ({
   return (
     <div className="calendar__animation-container">
       {/* Static day labels header */}
-      <div className="calendar__animation-header">
+      <div className="calendar__animation-header" aria-hidden="true">
         {DAY_LABELS.map(day => (
           <div key={day} className="calendar__day-label">
             {day}
@@ -183,7 +211,7 @@ const DaysGrid: React.FC<DaysGridProps> = ({
             transition={{
               type: 'tween',
               ease: [0.4, 0.0, 0.2, 1],
-              duration: 0.25,
+              duration: CALENDAR_CONSTANTS.GRID_TRANSITION_DURATION / 1000,
             }}
             className="calendar__animation-grid"
           >

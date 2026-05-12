@@ -1,6 +1,10 @@
 import React from 'react';
-import { CalendarContext } from './providers/calendarContext';
-import { useCalendarContext } from './hooks';
+import {
+  CalendarContentContext,
+  CalendarPortalContext,
+  CalendarTriggerContext,
+} from './providers/calendarContext';
+import { useCalendarTriggerContext } from './hooks';
 import {
   type CalendarRootProps,
   useCalendarRootState,
@@ -19,11 +23,36 @@ export function CalendarRoot({ children, ...props }: CalendarRootProps) {
   const context = useCalendarRootState(props);
 
   return (
-    <CalendarContext.Provider value={context}>
-      {children}
-    </CalendarContext.Provider>
+    <CalendarContentContext.Provider value={context.content}>
+      <CalendarTriggerContext.Provider value={context.trigger}>
+        <CalendarPortalContext.Provider value={context.portal}>
+          {children}
+        </CalendarPortalContext.Provider>
+      </CalendarTriggerContext.Provider>
+    </CalendarContentContext.Provider>
   );
 }
+
+const assignRef = <T,>(ref: React.Ref<T> | undefined, value: T | null) => {
+  if (!ref) return;
+  if (typeof ref === 'function') {
+    ref(value);
+    return;
+  }
+
+  ref.current = value;
+};
+
+const mergeRefs =
+  <T,>(...refs: Array<React.Ref<T> | undefined>) =>
+  (value: T | null) => {
+    refs.forEach(ref => assignRef(ref, value));
+  };
+
+type TriggerChildProps = React.HTMLAttributes<HTMLElement> & {
+  ref?: React.Ref<HTMLElement>;
+  type?: string;
+};
 
 export function CalendarTrigger({
   children,
@@ -46,13 +75,63 @@ export function CalendarTrigger({
     isOpen,
     triggerId,
     portalId,
-  } = useCalendarContext();
+  } = useCalendarTriggerContext();
+
+  const triggerAttributes = {
+    id: id ?? triggerId,
+    'aria-controls': isOpen ? portalId : undefined,
+    'aria-expanded': isOpen,
+    'aria-haspopup': 'dialog' as const,
+  };
+
+  if (React.isValidElement<TriggerChildProps>(children)) {
+    const childProps = children.props;
+    const isNativeButton = children.type === 'button';
+
+    return React.cloneElement(children, {
+      ...props,
+      ...triggerAttributes,
+      ref: mergeRefs(childProps.ref, triggerInputRef),
+      className: [childProps.className, className].filter(Boolean).join(' '),
+      onClick: event => {
+        childProps.onClick?.(event);
+        onClick?.(event as React.MouseEvent<HTMLDivElement>);
+        if (!event.defaultPrevented && trigger === 'click') {
+          handleTriggerClick();
+        }
+      },
+      onMouseEnter: event => {
+        childProps.onMouseEnter?.(event);
+        onMouseEnter?.(event as React.MouseEvent<HTMLDivElement>);
+        if (!event.defaultPrevented && trigger === 'hover') {
+          handleTriggerMouseEnter();
+        }
+      },
+      onMouseLeave: event => {
+        childProps.onMouseLeave?.(event);
+        onMouseLeave?.(event as React.MouseEvent<HTMLDivElement>);
+        if (!event.defaultPrevented && trigger === 'hover') {
+          handleTriggerMouseLeave();
+        }
+      },
+      onKeyDown: event => {
+        childProps.onKeyDown?.(event);
+        onKeyDown?.(event as React.KeyboardEvent<HTMLDivElement>);
+        if (!event.defaultPrevented) {
+          handleInputKeyDown(event);
+        }
+      },
+      ...(isNativeButton
+        ? { type: childProps.type ?? 'button' }
+        : { role: 'button', tabIndex }),
+    });
+  }
 
   return (
     <div
       {...props}
-      id={id ?? triggerId}
-      ref={triggerInputRef as React.RefObject<HTMLDivElement>}
+      {...triggerAttributes}
+      ref={triggerInputRef as React.RefObject<HTMLDivElement | null>}
       onClick={event => {
         onClick?.(event);
         if (!event.defaultPrevented && trigger === 'click') {
@@ -78,9 +157,6 @@ export function CalendarTrigger({
         }
       }}
       tabIndex={tabIndex}
-      aria-controls={isOpen ? portalId : undefined}
-      aria-expanded={isOpen}
-      aria-haspopup="dialog"
       role="button"
       className={className}
     >

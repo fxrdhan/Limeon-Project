@@ -1,11 +1,13 @@
 import React from 'react';
 import classNames from 'classnames';
-import Input from '@/components/input';
-import { useCalendarContext } from '../hooks';
-import { DATE_FORMAT_CONFIG } from '../constants';
+import { CALENDAR_CONSTANTS } from '../constants';
+import { useCalendarTriggerContext } from '../hooks';
+import { formatDateOnlyValue, formatDisplayValue } from '../utils';
 import type { CalendarButtonProps } from '../types';
 
 const CalendarButton: React.FC<CalendarButtonProps> = ({
+  id,
+  name,
   value,
   placeholder = 'Pilih tanggal',
   inputClassName,
@@ -21,34 +23,78 @@ const CalendarButton: React.FC<CalendarButtonProps> = ({
     isOpen,
     triggerId,
     portalId,
-  } = useCalendarContext();
+  } = useCalendarTriggerContext();
+  const inputId = id ?? triggerId;
 
-  const formattedDisplayValue = () => {
-    if (value) {
-      return value.toLocaleDateString(
-        DATE_FORMAT_CONFIG.locale,
-        DATE_FORMAT_CONFIG.dayMonthYear
-      );
+  const handleMouseDown = (e: React.MouseEvent<HTMLInputElement>) => {
+    if (
+      e.defaultPrevented ||
+      e.button !== 0 ||
+      e.detail !== 1 ||
+      e.altKey ||
+      e.ctrlKey ||
+      e.metaKey ||
+      e.shiftKey
+    ) {
+      return;
     }
-    return '';
+
+    const input = e.currentTarget;
+
+    if (input.disabled || document.activeElement === input) {
+      return;
+    }
+
+    e.preventDefault();
+
+    const inputLength = input.value.length;
+    input.focus({ preventScroll: true });
+    input.setSelectionRange(inputLength, inputLength);
   };
 
   return (
     <div className="calendar__button-wrapper">
       {label && (
-        <label className="calendar__button-label" htmlFor={triggerId}>
+        <label className="calendar__button-label" htmlFor={inputId}>
           {label}
         </label>
       )}
       <div className="calendar__button-input-wrapper">
-        <Input
+        {name && (
+          <input
+            type="hidden"
+            name={name}
+            value={value ? formatDateOnlyValue(value) : ''}
+            readOnly
+          />
+        )}
+        <input
           ref={triggerInputRef as React.RefObject<HTMLInputElement>}
-          id={triggerId}
+          id={inputId}
           type="text"
-          value={formattedDisplayValue()}
+          value={formatDisplayValue(value)}
           placeholder={placeholder}
-          className={classNames('calendar__button-input', inputClassName)}
+          className={classNames(
+            'p-2.5 border rounded-xl',
+            'px-3 text-sm font-medium text-slate-800',
+            'h-[2.5rem]',
+            'placeholder:text-slate-400',
+            'border-slate-300',
+            'focus:outline-hidden focus:border-primary focus:ring-3 focus:ring-emerald-200',
+            'disabled:bg-slate-100 disabled:cursor-not-allowed read-only:bg-slate-100 read-only:cursor-default',
+            'disabled:focus:ring-0 disabled:focus:border-slate-300 read-only:focus:ring-0 read-only:focus:border-slate-300',
+            'transition-all ease-in-out',
+            'w-full',
+            'calendar__button-input',
+            inputClassName
+          )}
+          style={
+            {
+              '--calendar-input-transition-duration': `${CALENDAR_CONSTANTS.INPUT_TRANSITION_DURATION}ms`,
+            } as React.CSSProperties
+          }
           onClick={trigger === 'click' ? handleTriggerClick : undefined}
+          onMouseDown={handleMouseDown}
           onMouseEnter={
             trigger === 'hover' ? handleTriggerMouseEnter : undefined
           }
@@ -56,10 +102,9 @@ const CalendarButton: React.FC<CalendarButtonProps> = ({
             trigger === 'hover' ? handleTriggerMouseLeave : undefined
           }
           onKeyDown={handleInputKeyDown}
-          onChange={e => e.preventDefault()}
+          role="combobox"
           aria-controls={isOpen ? portalId : undefined}
           aria-expanded={isOpen}
-          aria-haspopup="dialog"
           readOnly
         />
       </div>

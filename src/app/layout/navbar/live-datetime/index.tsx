@@ -124,6 +124,7 @@ const DateTimeDisplay = () => {
               size="md"
               value={selectedDate}
               onChange={setSelectedDate}
+              readOnly
             >
               {dateTrigger}
             </Calendar>

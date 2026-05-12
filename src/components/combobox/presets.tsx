@@ -36,6 +36,7 @@ export function PharmaComboboxSelect<Item>(
     hoverDetail,
     optionListProps,
     popupClassName,
+    popupContainerRef,
     popupMatchAnchorWidth,
     popupContentRef,
     rootRef,
@@ -55,7 +56,7 @@ export function PharmaComboboxSelect<Item>(
       ) : null}
       <Combobox.Root<Item> {...comboboxRootProps}>
         <ComboboxTriggerButton {...triggerButtonProps} />
-        <Combobox.Portal>
+        <Combobox.Portal container={popupContainerRef?.current}>
           <Combobox.Positioner
             sideOffset={4}
             matchAnchorWidth={popupMatchAnchorWidth}

@@ -5,9 +5,13 @@ import {
   PharmaComboboxSelect,
   PharmaEntityComboboxSelect,
 } from '@/components/combobox';
-import Calendar from '@/components/calendar';
+import {
+  default as Calendar,
+  formatDateOnlyValue,
+  parseDateOnlyValue,
+  type CustomDateValueType,
+} from '@/components/calendar';
 import DescriptiveTextarea from '@/components/descriptive-textarea';
-import type { CustomDateValueType } from '@/components/calendar/types';
 
 interface PurchaseInfoSectionProps {
   formData: {
@@ -41,7 +45,7 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
     const fakeEvent = {
       target: {
         name: fieldName,
-        value: newDate ? newDate.toISOString().split('T')[0] : '',
+        value: newDate ? formatDateOnlyValue(newDate) : '',
       },
     } as React.ChangeEvent<HTMLInputElement>;
     handleChange(fakeEvent);
@@ -98,11 +102,16 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
         </div>
 
         <div className="flex flex-col">
-          <label className="block text-sm font-medium text-slate-700 mb-1">
+          <label
+            className="block text-sm font-medium text-slate-700 mb-1"
+            htmlFor="purchase-date"
+          >
             Tanggal Pembelian
           </label>
           <Calendar
-            value={formData.date ? new Date(formData.date) : null}
+            id="purchase-date"
+            name="date"
+            value={formData.date ? parseDateOnlyValue(formData.date) : null}
             onChange={newDate => handleDateChange('date', newDate)}
             inputClassName="w-full p-2.5 border rounded-xl text-sm"
             placeholder="Pilih tanggal pembelian"
@@ -111,14 +120,23 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
         </div>
 
         <div className="flex flex-col">
-          <label className="block text-sm font-medium text-slate-700 mb-1">
+          <label
+            className="block text-sm font-medium text-slate-700 mb-1"
+            htmlFor="purchase-due-date"
+          >
             Tanggal Jatuh Tempo
           </label>
           <Calendar
-            value={formData.due_date ? new Date(formData.due_date) : null}
+            id="purchase-due-date"
+            name="due_date"
+            value={
+              formData.due_date ? parseDateOnlyValue(formData.due_date) : null
+            }
             onChange={newDate => handleDateChange('due_date', newDate)}
             inputClassName="w-full p-2.5 border rounded-xl text-sm"
-            minDate={formData.date ? new Date(formData.date) : undefined}
+            minDate={
+              formData.date ? parseDateOnlyValue(formData.date) : undefined
+            }
             placeholder="Pilih tanggal jatuh tempo"
             size="md"
           />

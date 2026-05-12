@@ -2,6 +2,7 @@ import React from 'react';
 import { TbChevronLeft, TbChevronRight } from 'react-icons/tb';
 import { PharmaComboboxSelect } from '@/components/combobox';
 import { MONTH_NAMES_ID } from '../constants';
+import { getCalendarHeaderModel } from './calendarHeaderModel';
 import type { CalendarHeaderProps } from '../types';
 
 const CalendarHeader: React.FC<CalendarHeaderProps> = ({
@@ -10,16 +11,18 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
   onNavigateNext,
   onMonthChange,
   onYearChange,
+  minDate,
+  maxDate,
+  popupContainerRef,
 }) => {
-  // Generate month options
-  const monthOptions = MONTH_NAMES_ID.map((_, index) => index);
-
-  // Generate year options (current year ± 50 years)
-  const currentYear = displayDate.getFullYear();
-  const yearOptions = Array.from({ length: 101 }, (_, i) => {
-    const year = currentYear - 50 + i;
-    return year;
-  });
+  const {
+    canNavigateNext,
+    canNavigatePrev,
+    isMonthDisabled,
+    isYearDisabled,
+    monthOptions,
+    yearOptions,
+  } = getCalendarHeaderModel(displayDate, minDate, maxDate);
 
   return (
     <div className="calendar__header">
@@ -27,43 +30,49 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
         <PharmaComboboxSelect
           className="calendar__month-select"
           label="Bulan"
-          name="month-selector"
           items={monthOptions}
           value={displayDate.getMonth()}
           onValueChange={value => {
             if (value !== null) onMonthChange(value);
           }}
+          isItemDisabled={isMonthDisabled}
           itemToStringLabel={value => MONTH_NAMES_ID[value] ?? ''}
           itemToStringValue={value => value.toString()}
           placeholder="Bulan"
           searchable={false}
           indicator="none"
           popupClassName="w-[120px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl"
+          popupContainerRef={popupContainerRef}
           popupMatchAnchorWidth={false}
         />
 
         <PharmaComboboxSelect
           className="calendar__year-select"
           label="Tahun"
-          name="year-selector"
           items={yearOptions}
           value={displayDate.getFullYear()}
           onValueChange={value => {
             if (value !== null) onYearChange(value);
           }}
+          isItemDisabled={isYearDisabled}
           itemToStringLabel={value => value.toString()}
           itemToStringValue={value => value.toString()}
           placeholder="Tahun"
           searchable={false}
           indicator="none"
           popupClassName="w-[100px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl"
+          popupContainerRef={popupContainerRef}
           popupMatchAnchorWidth={false}
         />
       </div>
 
       <div className="calendar__header-navigation">
         <button
-          onClick={onNavigatePrev}
+          onClick={() => {
+            if (canNavigatePrev) onNavigatePrev();
+          }}
+          disabled={!canNavigatePrev}
+          aria-disabled={!canNavigatePrev}
           className="calendar__nav-button"
           aria-label="Previous month"
         >
@@ -71,7 +80,11 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({
         </button>
 
         <button
-          onClick={onNavigateNext}
+          onClick={() => {
+            if (canNavigateNext) onNavigateNext();
+          }}
+          disabled={!canNavigateNext}
+          aria-disabled={!canNavigateNext}
           className="calendar__nav-button"
           aria-label="Next month"
         >
