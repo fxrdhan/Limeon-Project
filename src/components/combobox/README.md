@@ -205,7 +205,7 @@ If `valueId` is not empty and neither `items` nor `selectedItem` can resolve it,
 | `searchable`              | `boolean`                                                           | Enables the popup search input. Defaults to `true`.                               |
 | `visibleItemLimit`        | `number`                                                            | Optional render cap for large lists. Filtering still evaluates all items.         |
 | `indicator`               | `'none' \| 'check' \| 'radio' \| 'checkbox'`                        | Selection indicator style.                                                        |
-| `required`                | `boolean`                                                           | Enables required-state semantics and preset validation integration.               |
+| `required`                | `boolean`                                                           | Enables required-state semantics and preset validation.                           |
 | `disabled`                | `boolean`                                                           | Disables the control.                                                             |
 | `readOnly`                | `boolean`                                                           | Prevents selection changes while keeping the current value readable.              |
 | `tabIndex`                | `number`                                                            | Trigger tab order.                                                                |
@@ -225,6 +225,9 @@ If `valueId` is not empty and neither `items` nor `selectedItem` can resolve it,
 | `aria-label`              | `string`                                                            | Accessible name override.                                                         |
 | `aria-labelledby`         | `string`                                                            | Accessible label reference override.                                              |
 | `aria-describedby`        | `string`                                                            | Accessible description reference.                                                 |
+
+When `required` is set, preset validation is enabled by default. Set
+`validation.enabled` to `false` to opt out.
 
 ## Primitive API
 

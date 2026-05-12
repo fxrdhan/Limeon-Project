@@ -35,7 +35,7 @@ describe('Combobox app preset create action and validation', () => {
     });
     expect(searchInput.parentElement?.contains(createButton)).toBe(false);
     expect(screen.getByRole('listbox').contains(createButton)).toBe(false);
-    expect(screen.getByRole('status').contains(createButton)).toBe(true);
+    expect(screen.queryByRole('status')).toBeNull();
     expect(screen.queryByText('Tidak ada data')).toBeNull();
     fireEvent.click(createButton);
 
@@ -68,10 +68,57 @@ describe('Combobox app preset create action and validation', () => {
       name: /tambah data baru/i,
     });
 
-    expect(screen.getByRole('status').contains(createButton)).toBe(true);
+    expect(screen.queryByRole('status')).toBeNull();
     fireEvent.click(createButton);
 
     expect(onCreate).toHaveBeenCalledWith(undefined);
+  });
+
+  it('enables required validation without explicit validation props', () => {
+    render(
+      <PharmaComboboxSelect<EntityItem>
+        name="category_id"
+        items={[{ id: 'category-a', name: 'Kategori A' }]}
+        value={null}
+        onValueChange={() => {}}
+        itemToStringLabel={item => item.name}
+        itemToStringValue={item => item.id}
+        placeholder="Pilih kategori"
+        required
+      />
+    );
+
+    const trigger = screen.getByRole('combobox', { name: /pilih kategori/i });
+    fireEvent.blur(trigger, { relatedTarget: document.body });
+
+    expect(trigger.getAttribute('aria-invalid')).toBe('true');
+    const validationDescriptionId = trigger.getAttribute('aria-describedby');
+    expect(validationDescriptionId).toBeTruthy();
+    expect(
+      document.getElementById(validationDescriptionId as string)?.textContent
+    ).toBe('Field ini wajib diisi');
+  });
+
+  it('lets callers disable the default required validation overlay', () => {
+    render(
+      <PharmaComboboxSelect<EntityItem>
+        name="category_id"
+        items={[{ id: 'category-a', name: 'Kategori A' }]}
+        value={null}
+        onValueChange={() => {}}
+        itemToStringLabel={item => item.name}
+        itemToStringValue={item => item.id}
+        placeholder="Pilih kategori"
+        required
+        validation={{ enabled: false }}
+      />
+    );
+
+    const trigger = screen.getByRole('combobox', { name: /pilih kategori/i });
+    fireEvent.blur(trigger, { relatedTarget: document.body });
+
+    expect(trigger.getAttribute('aria-invalid')).toBeNull();
+    expect(trigger.getAttribute('aria-describedby')).toBeNull();
   });
 
   it('selects the highlighted partial match before create action on Enter', () => {

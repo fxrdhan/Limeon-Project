@@ -214,7 +214,6 @@ export function useComboboxOptionInteraction<Item>({
   });
   const {
     effectiveHighlightedIndex,
-    handleHighlightedIndexChange,
     handleInputValueChange,
     handleItemHighlighted,
     handleSearchInputKeyDown,
@@ -373,7 +372,6 @@ export function useComboboxOptionInteraction<Item>({
 
   return {
     effectiveHighlightedIndex,
-    handleHighlightedIndexChange,
     handleInputValueChange,
     handleItemHighlighted,
     handleItemLeave,

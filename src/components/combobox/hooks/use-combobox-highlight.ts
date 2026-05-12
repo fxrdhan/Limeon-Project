@@ -81,13 +81,6 @@ export function useComboboxHighlight<Item>({
     selectedValue: defaultHighlightedValue,
   });
 
-  const handleHighlightedIndexChange = useCallback(
-    (nextHighlightedIndex: number | null) => {
-      setHighlightedIndex(nextHighlightedIndex);
-    },
-    []
-  );
-
   const handleInputValueChange = useCallback(
     (nextValue: string) => {
       const shouldRestoreDefaultHighlight = nextValue.trim().length === 0;
@@ -196,6 +189,8 @@ export function useComboboxHighlight<Item>({
 
         clearKeyboardScrollHighlight();
       }
+
+      setHighlightedIndex(details.index);
     },
     [
       actualOpen,
@@ -301,7 +296,6 @@ export function useComboboxHighlight<Item>({
 
   return {
     effectiveHighlightedIndex,
-    handleHighlightedIndexChange,
     handleInputValueChange,
     handleItemHighlighted,
     handleSearchInputKeyDown,

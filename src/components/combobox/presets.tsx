@@ -31,6 +31,7 @@ export function PharmaComboboxSelect<Item>(
     emptyText,
     fallbackLabelId,
     handleComboboxBlur,
+    hasVisibleItems,
     heldHighlightFrame,
     heldHighlightFrameKey,
     hoverDetail,
@@ -91,21 +92,25 @@ export function PharmaComboboxSelect<Item>(
                   <ComboboxSearchHeader {...searchHeaderProps} />
                 ) : null}
                 <ComboboxOptionList {...optionListProps} />
-                <Combobox.Empty className="empty:hidden relative z-10 px-3 py-4 text-center text-sm text-slate-500">
-                  {emptyAction.canCreate ? (
-                    <button
-                      type="button"
-                      className="mx-auto inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-primary transition hover:bg-primary/10 focus:outline-hidden focus:ring-2 focus:ring-primary/20"
-                      onMouseDown={event => event.preventDefault()}
-                      onClick={emptyAction.onCreate}
-                    >
-                      <TbPlus aria-hidden="true" className="h-4 w-4" />
-                      <span>{emptyAction.label}</span>
-                    </button>
+                {!hasVisibleItems ? (
+                  emptyAction.canCreate ? (
+                    <div className="empty:hidden relative z-10 px-3 py-4 text-center text-sm text-slate-500">
+                      <button
+                        type="button"
+                        className="mx-auto inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-primary transition hover:bg-primary/10 focus:outline-hidden focus:ring-2 focus:ring-primary/20"
+                        onMouseDown={event => event.preventDefault()}
+                        onClick={emptyAction.onCreate}
+                      >
+                        <TbPlus aria-hidden="true" className="h-4 w-4" />
+                        <span>{emptyAction.label}</span>
+                      </button>
+                    </div>
                   ) : (
-                    emptyText
-                  )}
-                </Combobox.Empty>
+                    <Combobox.Empty className="empty:hidden relative z-10 px-3 py-4 text-center text-sm text-slate-500">
+                      {emptyText}
+                    </Combobox.Empty>
+                  )
+                ) : null}
               </div>
             </Combobox.Popup>
           </Combobox.Positioner>

@@ -20,7 +20,6 @@ export type PharmaComboboxRootBoundaryProps<Item> = Pick<
   | 'items'
   | 'labelId'
   | 'name'
-  | 'onHighlightedIndexChange'
   | 'onInputValueChange'
   | 'onItemHighlighted'
   | 'onOpenChange'
@@ -37,9 +36,6 @@ type PharmaComboboxRootPropsOptions<Item> = {
   effectiveHighlightedIndex: number | null;
   effectiveRequired: boolean;
   form?: string;
-  handleHighlightedIndexChange: NonNullable<
-    ComboboxRootProps<Item>['onHighlightedIndexChange']
-  >;
   handleInputValueChange: NonNullable<
     ComboboxRootProps<Item>['onInputValueChange']
   >;
@@ -104,6 +100,7 @@ type PharmaComboboxViewPropsOptions<Item> = {
   triggerDescribedBy?: string;
   triggerLabelledBy?: string;
   validation?: PharmaComboboxSelectProps<Item>['validation'];
+  validationEnabled: boolean;
   validationMessageId: string;
   valueId: string;
   visibleItems: Item[];
@@ -117,7 +114,6 @@ export const getPharmaComboboxRootProps = <Item>({
   effectiveHighlightedIndex,
   effectiveRequired,
   form,
-  handleHighlightedIndexChange,
   handleInputValueChange,
   handleItemHighlighted,
   handleOpenChange,
@@ -143,7 +139,6 @@ export const getPharmaComboboxRootProps = <Item>({
   inputValue,
   onInputValueChange: handleInputValueChange,
   highlightedIndex: effectiveHighlightedIndex,
-  onHighlightedIndexChange: handleHighlightedIndexChange,
   onItemHighlighted: handleItemHighlighted,
   itemToStringLabel,
   itemToStringValue,
@@ -202,6 +197,7 @@ export const getPharmaComboboxViewProps = <Item>({
   triggerDescribedBy,
   triggerLabelledBy,
   validation,
+  validationEnabled,
   validationMessageId,
   valueId,
   visibleItems,
@@ -270,7 +266,7 @@ export const getPharmaComboboxViewProps = <Item>({
     validationState: {
       autoHide: validation?.autoHide,
       autoHideDelay: validation?.autoHideDelay,
-      enabled: validation?.enabled,
+      enabled: validationEnabled,
       messageId: validationMessageId,
       show: showValidation,
     },

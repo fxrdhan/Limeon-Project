@@ -7,12 +7,11 @@ import {
   getPharmaComboboxRootProps,
   getPharmaComboboxViewProps,
 } from '../utils/preset-controller-props';
-import { useComboboxAccessibility } from './use-combobox-accessibility';
 import { useComboboxFocusRestore } from './use-combobox-focus-restore';
 import { useComboboxOptionInteraction } from './use-combobox-option-interaction';
 import { useComboboxSearchResultScroll } from './use-combobox-search-result-scroll';
 import { useComboboxSelectedOptionScroll } from './use-combobox-selected-option-scroll';
-import { useComboboxValidation } from './use-combobox-validation';
+import { usePharmaComboboxFeedback } from './use-pharma-combobox-feedback';
 import { usePharmaComboboxCoreState } from './use-pharma-combobox-core-state';
 import { usePharmaComboboxOpenLifecycle } from './use-pharma-combobox-open-lifecycle';
 import { usePharmaComboboxSelectionModel } from './use-pharma-combobox-selection-model';
@@ -101,13 +100,32 @@ export function usePharmaComboboxSelectController<Item>({
     rootRef,
     setUncontrolledOpen,
   });
-  const { handleComboboxBlur, showValidation, validationMessageId } =
-    useComboboxValidation({
-      effectiveRequired,
-      isFocusWithinCombobox,
-      selectedValue,
-      validation,
-    });
+  const {
+    handleComboboxBlur,
+    controlName,
+    listboxAriaLabel,
+    listboxLabelId,
+    shouldRenderFallbackLabel,
+    showValidation,
+    triggerDescribedBy,
+    triggerLabelledBy,
+    validationEnabled,
+    validationMessageId,
+  } = usePharmaComboboxFeedback({
+    'aria-describedby': ariaDescribedBy,
+    'aria-label': ariaLabel,
+    'aria-labelledby': ariaLabelledBy,
+    effectiveLabel,
+    effectiveRequired,
+    fallbackLabelId,
+    formFieldLabelId,
+    isFocusWithinCombobox,
+    name,
+    placeholder,
+    selectedValue,
+    validation,
+    valueId,
+  });
   const {
     canCreate,
     createActionLabel,
@@ -147,28 +165,7 @@ export function usePharmaComboboxSelectController<Item>({
     visibleItems,
   });
   const {
-    controlName,
-    listboxAriaLabel,
-    listboxLabelId,
-    shouldRenderFallbackLabel,
-    triggerDescribedBy,
-    triggerLabelledBy,
-  } = useComboboxAccessibility({
-    ariaDescribedBy,
-    ariaLabel,
-    ariaLabelledBy,
-    fallbackLabelId,
-    formFieldLabelId,
-    label: effectiveLabel,
-    name,
-    placeholder,
-    showValidation,
-    validationMessageId,
-    valueId,
-  });
-  const {
     effectiveHighlightedIndex,
-    handleHighlightedIndexChange,
     handleInputValueChange,
     handleItemHighlighted,
     handleItemLeave,
@@ -236,7 +233,6 @@ export function usePharmaComboboxSelectController<Item>({
     effectiveHighlightedIndex,
     effectiveRequired,
     form,
-    handleHighlightedIndexChange,
     handleInputValueChange,
     handleItemHighlighted,
     handleOpenChange,
@@ -303,6 +299,7 @@ export function usePharmaComboboxSelectController<Item>({
     triggerLabelledBy,
     validation,
     validationMessageId,
+    validationEnabled,
     valueId,
     visibleItems,
     virtualScrollToIndexRef,
@@ -318,6 +315,7 @@ export function usePharmaComboboxSelectController<Item>({
     emptyAction,
     fallbackLabelId,
     handleComboboxBlur,
+    hasVisibleItems,
     heldHighlightFrame,
     heldHighlightFrameKey,
     hoverDetail: hoverDetailState,

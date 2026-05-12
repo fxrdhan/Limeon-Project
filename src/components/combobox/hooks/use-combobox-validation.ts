@@ -27,11 +27,9 @@ export function useComboboxValidation<Item>({
   const validationMessageId = useId();
   const blurValidationFrameRef = useRef<number | null>(null);
   const [blurred, setBlurred] = useState(false);
+  const validationEnabled = validation?.enabled ?? effectiveRequired;
   const showValidation =
-    validation?.enabled &&
-    effectiveRequired &&
-    blurred &&
-    selectedValue == null;
+    validationEnabled && effectiveRequired && blurred && selectedValue == null;
 
   const handleComboboxBlur = useCallback(
     (event: FocusEvent<HTMLDivElement>) => {
@@ -75,6 +73,7 @@ export function useComboboxValidation<Item>({
   return {
     handleComboboxBlur,
     showValidation,
+    validationEnabled,
     validationMessageId,
   };
 }
