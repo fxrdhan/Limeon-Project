@@ -977,4 +977,68 @@ describe('Calendar primitive', () => {
       portalHost.remove();
     }
   });
+
+  it('keeps shared background isolated until the last stacked portal closes', async () => {
+    const { container } = render(
+      <main>
+        <CalendarPrimitive.Root value={null} onChange={() => {}}>
+          <CalendarPrimitive.Trigger>Pick first date</CalendarPrimitive.Trigger>
+          <CalendarPrimitive.Portal>
+            <div>First primitive popup</div>
+          </CalendarPrimitive.Portal>
+        </CalendarPrimitive.Root>
+        <CalendarPrimitive.Root value={null} onChange={() => {}}>
+          <CalendarPrimitive.Trigger>
+            Pick second date
+          </CalendarPrimitive.Trigger>
+          <CalendarPrimitive.Portal>
+            <div>Second primitive popup</div>
+          </CalendarPrimitive.Portal>
+        </CalendarPrimitive.Root>
+      </main>
+    );
+    const appRoot = container as HTMLElement & { inert: boolean };
+    const firstTrigger = screen.getByRole('button', {
+      name: 'Pick first date',
+    });
+    const secondTrigger = screen.getByRole('button', {
+      name: 'Pick second date',
+    });
+
+    fireEvent.click(firstTrigger);
+    const firstDialog = (
+      await screen.findByText('First primitive popup')
+    ).closest<HTMLElement>('[role="dialog"]');
+    if (!firstDialog) throw new Error('Expected first calendar dialog.');
+
+    await waitFor(() => {
+      expect(appRoot.inert).toBe(true);
+      expect(appRoot.getAttribute('aria-hidden')).toBe('true');
+    });
+
+    fireEvent.click(secondTrigger);
+    const secondDialog = (
+      await screen.findByText('Second primitive popup')
+    ).closest<HTMLElement>('[role="dialog"]');
+    if (!secondDialog) throw new Error('Expected second calendar dialog.');
+
+    fireEvent.keyDown(firstDialog, { key: 'Escape' });
+
+    await waitFor(() => {
+      expect(firstDialog.isConnected).toBe(false);
+    });
+    expect(secondDialog.isConnected).toBe(true);
+    expect(appRoot.inert).toBe(true);
+    expect(appRoot.getAttribute('aria-hidden')).toBe('true');
+
+    fireEvent.keyDown(secondDialog, { key: 'Escape' });
+
+    await waitFor(() => {
+      expect(secondDialog.isConnected).toBe(false);
+    });
+    await waitFor(() => {
+      expect(appRoot.inert).toBe(false);
+      expect(appRoot.hasAttribute('aria-hidden')).toBe(false);
+    });
+  });
 });

@@ -1,9 +1,45 @@
 import { useEffect } from 'react';
 
 type IsolatedElementState = {
-  element: HTMLElement;
   inert: boolean;
   ariaHidden: string | null;
+  references: number;
+};
+
+const isolatedElementStates = new Map<HTMLElement, IsolatedElementState>();
+
+const isolateElement = (element: HTMLElement) => {
+  const currentState = isolatedElementStates.get(element);
+
+  if (currentState) {
+    currentState.references += 1;
+  } else {
+    isolatedElementStates.set(element, {
+      inert: Boolean(element.inert),
+      ariaHidden: element.getAttribute('aria-hidden'),
+      references: 1,
+    });
+  }
+
+  element.inert = true;
+  element.setAttribute('aria-hidden', 'true');
+};
+
+const restoreElementIsolation = (element: HTMLElement) => {
+  const currentState = isolatedElementStates.get(element);
+
+  if (!currentState) return;
+
+  currentState.references -= 1;
+  if (currentState.references > 0) return;
+
+  isolatedElementStates.delete(element);
+  element.inert = currentState.inert;
+  if (currentState.ariaHidden === null) {
+    element.removeAttribute('aria-hidden');
+  } else {
+    element.setAttribute('aria-hidden', currentState.ariaHidden);
+  }
 };
 
 const getIsolationParentElement = (
@@ -60,28 +96,10 @@ export const useCalendarModalIsolation = ({
     if (!portalElement) return;
 
     const isolatedElements = getModalBackgroundElements(portalElement);
-    const previousStates: IsolatedElementState[] = isolatedElements.map(
-      element => ({
-        element,
-        inert: Boolean(element.inert),
-        ariaHidden: element.getAttribute('aria-hidden'),
-      })
-    );
-
-    isolatedElements.forEach(element => {
-      element.inert = true;
-      element.setAttribute('aria-hidden', 'true');
-    });
+    isolatedElements.forEach(isolateElement);
 
     return () => {
-      previousStates.forEach(({ element, inert, ariaHidden }) => {
-        element.inert = inert;
-        if (ariaHidden === null) {
-          element.removeAttribute('aria-hidden');
-        } else {
-          element.setAttribute('aria-hidden', ariaHidden);
-        }
-      });
+      isolatedElements.forEach(restoreElementIsolation);
     };
   }, [enabled, portalElement]);
 };
