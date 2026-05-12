@@ -9,6 +9,8 @@ export { useCalendarKeyboard } from './useCalendarKeyboard';
 export { useCalendarFocus } from './useCalendarFocus';
 export { useCalendarOutsideClick } from './useCalendarOutsideClick';
 export { useCalendarModalIsolation } from './useCalendarModalIsolation';
+export { useCalendarRootContextValues } from './useCalendarRootContextValues';
+export { useCalendarSelection } from './useCalendarSelection';
 export {
   useCalendarContentContext,
   useCalendarPortalContext,

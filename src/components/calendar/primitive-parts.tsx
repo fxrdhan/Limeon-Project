@@ -77,16 +77,19 @@ export function CalendarTrigger({
     portalId,
   } = useCalendarTriggerContext();
 
-  const triggerAttributes = {
-    id: id ?? triggerId,
+  const getTriggerAttributes = (effectiveTriggerId: string) => ({
+    id: effectiveTriggerId,
     'aria-controls': isOpen ? portalId : undefined,
     'aria-expanded': isOpen,
     'aria-haspopup': 'dialog' as const,
-  };
+  });
 
   if (React.isValidElement<TriggerChildProps>(children)) {
     const childProps = children.props;
     const isNativeButton = children.type === 'button';
+    const triggerAttributes = getTriggerAttributes(
+      id ?? childProps.id ?? triggerId
+    );
 
     return React.cloneElement(children, {
       ...props,
@@ -130,7 +133,7 @@ export function CalendarTrigger({
   return (
     <div
       {...props}
-      {...triggerAttributes}
+      {...getTriggerAttributes(id ?? triggerId)}
       ref={triggerInputRef as React.RefObject<HTMLDivElement | null>}
       onClick={event => {
         onClick?.(event);

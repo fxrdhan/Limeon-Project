@@ -1,6 +1,11 @@
 import React from 'react';
 
-export type CustomDateValueType = Date | null;
+/**
+ * Calendar values are local date-only values. The component accepts Date
+ * instances for React form ergonomics, but only year/month/day are meaningful.
+ */
+export type CalendarDateValue = Date | null;
+export type CustomDateValueType = CalendarDateValue;
 
 export type CalendarMode = 'datepicker' | 'inline';
 export type CalendarSize = 'md' | 'lg' | 'xl';
@@ -9,11 +14,13 @@ export type CalendarTrigger = 'click' | 'hover';
 export interface CalendarProps {
   id?: string;
   name?: string;
+  'aria-label'?: string;
+  'aria-labelledby'?: string;
   mode?: CalendarMode;
   size?: CalendarSize;
   trigger?: CalendarTrigger;
-  value: CustomDateValueType;
-  onChange: (date: CustomDateValueType) => void;
+  value: CalendarDateValue;
+  onChange: (date: CalendarDateValue) => void;
   label?: string;
   inputClassName?: string;
   placeholder?: string;
@@ -27,10 +34,25 @@ export interface CalendarProps {
 export interface CalendarButtonProps {
   id?: string;
   name?: string;
-  value: CustomDateValueType;
+  'aria-label'?: string;
+  'aria-labelledby'?: string;
+  value: CalendarDateValue;
   placeholder?: string;
   inputClassName?: string;
   label?: string;
+  readOnly?: boolean;
+}
+
+export interface CalendarHeaderSelectRenderProps {
+  className: string;
+  label: string;
+  items: number[];
+  value: number;
+  onValueChange: (value: number | null) => void;
+  isItemDisabled: (value: number) => boolean;
+  itemToStringLabel: (value: number) => string;
+  itemToStringValue: (value: number) => string;
+  placeholder: string;
 }
 
 export interface CalendarPortalProps {
@@ -46,18 +68,23 @@ export interface CalendarHeaderProps {
   onYearChange: (year: number) => void;
   minDate?: Date;
   maxDate?: Date;
-  popupContainerRef?: React.RefObject<Element | DocumentFragment | null>;
+  renderMonthSelect: (
+    props: CalendarHeaderSelectRenderProps
+  ) => React.ReactNode;
+  renderYearSelect: (props: CalendarHeaderSelectRenderProps) => React.ReactNode;
 }
 
 export interface DaysGridProps {
   displayDate: Date;
-  value: CustomDateValueType;
+  value: CalendarDateValue;
   highlightedDate: Date | null;
   minDate?: Date;
   maxDate?: Date;
   onDateSelect: (date: Date) => void;
   onDateHighlight: (date: Date | null) => void;
   getDayButtonId: (date: Date) => string;
+  gridTabIndex?: number;
+  onGridKeyDown?: React.KeyboardEventHandler<HTMLDivElement>;
   navigationDirection?: 'prev' | 'next' | null;
   yearNavigationDirection?: 'prev' | 'next' | null;
   readOnly?: boolean;

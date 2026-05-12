@@ -1,13 +1,13 @@
 import React from 'react';
 import {
-  CustomDateValueType,
+  CalendarDateValue,
   CalendarMode,
   CalendarSize,
   CalendarTrigger,
 } from './components';
 
 export interface CalendarContentContextState {
-  value: CustomDateValueType;
+  value: CalendarDateValue;
   displayDate: Date;
   navigationDirection: 'prev' | 'next' | null;
   yearNavigationDirection: 'prev' | 'next' | null;
@@ -68,8 +68,8 @@ export interface CalendarProviderProps {
   mode?: CalendarMode;
   size?: CalendarSize;
   trigger?: CalendarTrigger;
-  value: CustomDateValueType;
-  onChange: (date: CustomDateValueType) => void;
+  value: CalendarDateValue;
+  onChange: (date: CalendarDateValue) => void;
   minDate?: Date;
   maxDate?: Date;
   portalWidth?: string | number;

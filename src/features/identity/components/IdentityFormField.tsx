@@ -5,7 +5,7 @@ import {
   default as Calendar,
   formatDateOnlyValue,
   parseDateOnlyValue,
-  type CustomDateValueType,
+  type CalendarDateValue,
 } from '@/components/calendar';
 import Button from '@/components/button';
 import { TbBan, TbDeviceFloppy, TbPencil } from 'react-icons/tb';
@@ -121,7 +121,7 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
           id={field.key}
           name={field.key}
           value={fieldValue ? parseDateOnlyValue(String(fieldValue)) : null}
-          onChange={(date: CustomDateValueType) => {
+          onChange={(date: CalendarDateValue) => {
             const formattedDate = date ? formatDateOnlyValue(date) : null;
             handleChange(field.key, formattedDate as string | number | boolean);
           }}

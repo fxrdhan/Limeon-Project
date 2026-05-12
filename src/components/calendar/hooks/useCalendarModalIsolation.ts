@@ -6,12 +6,29 @@ type IsolatedElementState = {
   ariaHidden: string | null;
 };
 
+const getIsolationParentElement = (
+  element: HTMLElement
+): HTMLElement | null => {
+  if (element.parentElement) return element.parentElement;
+
+  const root = element.getRootNode();
+  if (
+    typeof ShadowRoot !== 'undefined' &&
+    root instanceof ShadowRoot &&
+    root.host instanceof HTMLElement
+  ) {
+    return root.host;
+  }
+
+  return null;
+};
+
 const getModalBackgroundElements = (portalElement: HTMLElement) => {
   const backgroundElements = new Set<HTMLElement>();
   let currentElement: HTMLElement | null = portalElement;
 
   while (currentElement && currentElement !== document.body) {
-    const parentElement: HTMLElement | null = currentElement.parentElement;
+    const parentElement = getIsolationParentElement(currentElement);
 
     if (!parentElement) break;
 
@@ -33,15 +50,13 @@ const getModalBackgroundElements = (portalElement: HTMLElement) => {
 
 export const useCalendarModalIsolation = ({
   enabled,
-  portalId,
+  portalElement,
 }: {
   enabled: boolean;
-  portalId: string;
+  portalElement: HTMLElement | null;
 }) => {
   useEffect(() => {
     if (!enabled || typeof document === 'undefined') return;
-
-    const portalElement = document.getElementById(portalId);
     if (!portalElement) return;
 
     const isolatedElements = getModalBackgroundElements(portalElement);
@@ -68,5 +83,5 @@ export const useCalendarModalIsolation = ({
         }
       });
     };
-  }, [enabled, portalId]);
+  }, [enabled, portalElement]);
 };

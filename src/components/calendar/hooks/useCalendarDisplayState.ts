@@ -1,10 +1,12 @@
 import { useCallback, useMemo, useState } from 'react';
-import type { CustomDateValueType } from '../types';
+import type { CalendarDateValue } from '../types';
 import {
   clampDateToRange,
+  createCalendarDate,
   createDisplayDate,
   isDateInRange,
   isSameDate,
+  normalizeCalendarDateValue,
 } from '../utils';
 
 const isDateInDisplayMonth = (
@@ -22,17 +24,25 @@ export const useCalendarDisplayState = ({
   minDate,
   maxDate,
 }: {
-  value: CustomDateValueType;
+  value: CalendarDateValue;
   minDate?: Date;
   maxDate?: Date;
 }) => {
   const valueTime = value?.getTime() ?? null;
   const selectedValue = useMemo(
-    () => (valueTime === null ? null : new Date(valueTime)),
+    () =>
+      normalizeCalendarDateValue(
+        valueTime === null ? null : new Date(valueTime)
+      ),
     [valueTime]
   );
   const initialDisplayDate = useMemo(
-    () => clampDateToRange(selectedValue || new Date(), minDate, maxDate),
+    () =>
+      clampDateToRange(
+        selectedValue || createCalendarDate(new Date()),
+        minDate,
+        maxDate
+      ),
     [maxDate, minDate, selectedValue]
   );
   const [displayDate, setDisplayDate] = useState(initialDisplayDate);

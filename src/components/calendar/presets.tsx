@@ -1,23 +1,81 @@
 import React from 'react';
+import { PharmaComboboxSelect } from '@/components/combobox';
 import { CalendarHeader } from './components';
 import { CALENDAR_SIZE_PRESETS } from './constants';
-import { useCalendarContentContext } from './hooks';
+import { useCalendarContentContext, useCalendarPortalContext } from './hooks';
 import { CalendarPrimitive } from './primitive';
 import {
   clampMonthToRange,
   createDisplayDate,
+  formatDateOnlyValue,
   isMonthInRange,
   isYearInRange,
 } from './utils';
-import type { CalendarProps } from './types';
+import type { CalendarHeaderSelectRenderProps, CalendarProps } from './types';
 import './style.scss';
 
 export type { CalendarProps } from './types';
 
 type PharmaCalendarContentProps = Pick<
   CalendarProps,
-  'children' | 'id' | 'inputClassName' | 'label' | 'name' | 'placeholder'
+  | 'aria-label'
+  | 'aria-labelledby'
+  | 'children'
+  | 'id'
+  | 'inputClassName'
+  | 'label'
+  | 'name'
+  | 'placeholder'
 >;
+
+const getHeaderSelectPopupClassName = (className: string) =>
+  className === 'calendar__month-select'
+    ? 'w-[120px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl'
+    : 'w-[100px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl';
+
+const createCalendarHeaderSelectRenderer =
+  (popupContainerRef?: React.RefObject<Element | DocumentFragment | null>) =>
+  ({
+    className,
+    label,
+    items,
+    value,
+    onValueChange,
+    isItemDisabled,
+    itemToStringLabel,
+    itemToStringValue,
+    placeholder,
+  }: CalendarHeaderSelectRenderProps) => (
+    <PharmaComboboxSelect
+      className={className}
+      label={label}
+      items={items}
+      value={value}
+      onValueChange={onValueChange}
+      isItemDisabled={isItemDisabled}
+      itemToStringLabel={itemToStringLabel}
+      itemToStringValue={itemToStringValue}
+      placeholder={placeholder}
+      searchable={false}
+      indicator="none"
+      popupClassName={getHeaderSelectPopupClassName(className)}
+      popupContainerRef={popupContainerRef}
+      popupMatchAnchorWidth={false}
+    />
+  );
+
+const renderHiddenDateInput = (
+  name: string | undefined,
+  value: CalendarProps['value']
+) =>
+  name ? (
+    <input
+      type="hidden"
+      name={name}
+      value={value ? formatDateOnlyValue(value) : ''}
+      readOnly
+    />
+  ) : null;
 
 const PharmaCalendarContent: React.FC<PharmaCalendarContentProps> = ({
   id,
@@ -25,6 +83,8 @@ const PharmaCalendarContent: React.FC<PharmaCalendarContentProps> = ({
   label,
   inputClassName,
   placeholder,
+  'aria-label': ariaLabel,
+  'aria-labelledby': ariaLabelledBy,
   children,
 }) => {
   const {
@@ -49,6 +109,17 @@ const PharmaCalendarContent: React.FC<PharmaCalendarContentProps> = ({
     portalWidth,
     readOnly,
   } = useCalendarContentContext();
+  const { handleCalendarKeyDown } = useCalendarPortalContext();
+  const renderInlineHeaderSelect = React.useMemo(
+    () => createCalendarHeaderSelectRenderer(),
+    []
+  );
+  const renderPortalHeaderSelect = React.useMemo(
+    () => createCalendarHeaderSelectRenderer(portalContentRef),
+    [portalContentRef]
+  );
+
+  const hiddenDateInput = renderHiddenDateInput(name, value);
 
   const handleMonthChange = (month: number) => {
     const currentMonth = displayDate.getMonth();
@@ -97,6 +168,8 @@ const PharmaCalendarContent: React.FC<PharmaCalendarContentProps> = ({
       onDateSelect={handleDateSelect}
       onDateHighlight={setHighlightedDate}
       getDayButtonId={getDayButtonId}
+      gridTabIndex={mode === 'inline' ? 0 : -1}
+      onGridKeyDown={mode === 'inline' ? handleCalendarKeyDown : undefined}
       navigationDirection={navigationDirection}
       yearNavigationDirection={yearNavigationDirection}
       readOnly={readOnly}
@@ -115,6 +188,7 @@ const PharmaCalendarContent: React.FC<PharmaCalendarContentProps> = ({
           maxWidth: '100%',
         }}
       >
+        {hiddenDateInput}
         <CalendarHeader
           displayDate={displayDate}
           onNavigatePrev={() => navigateViewDate('prev')}
@@ -123,6 +197,8 @@ const PharmaCalendarContent: React.FC<PharmaCalendarContentProps> = ({
           onYearChange={handleYearChange}
           minDate={minDate}
           maxDate={maxDate}
+          renderMonthSelect={renderInlineHeaderSelect}
+          renderYearSelect={renderInlineHeaderSelect}
         />
         {renderCalendarContent()}
       </div>
@@ -132,7 +208,12 @@ const PharmaCalendarContent: React.FC<PharmaCalendarContentProps> = ({
   return (
     <>
       {children ? (
-        <CalendarPrimitive.Trigger>{children}</CalendarPrimitive.Trigger>
+        <>
+          {hiddenDateInput}
+          <CalendarPrimitive.Trigger id={id}>
+            {children}
+          </CalendarPrimitive.Trigger>
+        </>
       ) : (
         <CalendarPrimitive.Button
           value={value}
@@ -141,6 +222,9 @@ const PharmaCalendarContent: React.FC<PharmaCalendarContentProps> = ({
           placeholder={placeholder}
           inputClassName={inputClassName}
           label={label}
+          aria-label={ariaLabel}
+          aria-labelledby={ariaLabelledBy}
+          readOnly={readOnly}
         />
       )}
 
@@ -153,7 +237,8 @@ const PharmaCalendarContent: React.FC<PharmaCalendarContentProps> = ({
           onYearChange={handleYearChange}
           minDate={minDate}
           maxDate={maxDate}
-          popupContainerRef={portalContentRef}
+          renderMonthSelect={renderPortalHeaderSelect}
+          renderYearSelect={renderPortalHeaderSelect}
         />
         {renderCalendarContent()}
       </CalendarPrimitive.Portal>
@@ -164,6 +249,8 @@ const PharmaCalendarContent: React.FC<PharmaCalendarContentProps> = ({
 export const PharmaCalendar: React.FC<CalendarProps> = ({
   id,
   name,
+  'aria-label': ariaLabel,
+  'aria-labelledby': ariaLabelledBy,
   mode = 'datepicker',
   size = 'md',
   trigger,
@@ -199,6 +286,8 @@ export const PharmaCalendar: React.FC<CalendarProps> = ({
         label={label}
         inputClassName={inputClassName}
         placeholder={placeholder}
+        aria-label={ariaLabel}
+        aria-labelledby={ariaLabelledBy}
       >
         {children}
       </PharmaCalendarContent>

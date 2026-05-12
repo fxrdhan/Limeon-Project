@@ -28,6 +28,7 @@ export const useCalendarState = (
 
   const closeCalendar = useCallback(() => {
     if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+    if (!isOpen && !isOpening) return;
 
     setIsClosing(true);
     setIsOpening(false);
@@ -36,7 +37,7 @@ export const useCalendarState = (
       setIsClosing(false);
       onClose?.();
     }, CALENDAR_CONSTANTS.CLOSE_ANIMATION_DURATION);
-  }, [onClose]);
+  }, [isOpen, isOpening, onClose]);
 
   useEffect(() => {
     return () => {

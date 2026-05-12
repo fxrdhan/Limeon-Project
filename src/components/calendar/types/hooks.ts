@@ -1,5 +1,5 @@
 import React from 'react';
-import { CustomDateValueType } from './components';
+import { CalendarDateValue } from './components';
 
 // Hook parameter interfaces
 export interface UseCalendarStateParams {
@@ -36,7 +36,7 @@ export interface UseCalendarKeyboardParams {
   isOpen: boolean;
   highlightedDate: Date | null;
   displayDate: Date;
-  value: CustomDateValueType;
+  value: CalendarDateValue;
   minDate?: Date;
   maxDate?: Date;
   onDateSelect: (date: Date) => void;
@@ -49,6 +49,7 @@ export interface UseCalendarKeyboardParams {
   navigateViewDate: (direction: 'prev' | 'next') => boolean;
   navigateYearWithAnimation: (direction: 'prev' | 'next') => boolean;
   focusPortal: () => void;
+  trapFocus?: boolean;
 }
 
 export interface UseCalendarKeyboardReturn {

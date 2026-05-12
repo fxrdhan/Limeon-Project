@@ -25,10 +25,19 @@ const CalendarPortal: React.FC<CalendarPortalProps> = ({
     trigger,
   } = useCalendarPortalContext();
   const isModal = trigger !== 'hover';
+  const [portalElement, setPortalElement] =
+    React.useState<HTMLDivElement | null>(null);
+  const handlePortalRef = React.useCallback(
+    (node: HTMLDivElement | null) => {
+      setPortalContentRef(node);
+      setPortalElement(current => (current === node ? current : node));
+    },
+    [setPortalContentRef]
+  );
 
   useCalendarModalIsolation({
     enabled: isModal && (isOpen || isClosing),
-    portalId,
+    portalElement,
   });
 
   if ((!isOpen && !isClosing) || typeof document === 'undefined') {
@@ -37,7 +46,7 @@ const CalendarPortal: React.FC<CalendarPortalProps> = ({
 
   return createPortal(
     <div
-      ref={setPortalContentRef}
+      ref={handlePortalRef}
       id={portalId}
       tabIndex={-1}
       style={

@@ -20,6 +20,8 @@ const DaysGrid: React.FC<DaysGridProps> = ({
   onDateSelect,
   onDateHighlight,
   getDayButtonId,
+  gridTabIndex = -1,
+  onGridKeyDown,
   navigationDirection = null,
   yearNavigationDirection = null,
   readOnly = false,
@@ -28,6 +30,9 @@ const DaysGrid: React.FC<DaysGridProps> = ({
   // Create unique key based on year and month for AnimatePresence
   const gridKey = `${displayDate.getFullYear()}-${displayDate.getMonth()}`;
   const getDayCellId = (date: Date) => `${getDayButtonId(date)}-cell`;
+  const isGridTransitioning = Boolean(
+    animated && (navigationDirection || yearNavigationDirection)
+  );
 
   const getAnimationDirection = () => {
     // Year navigation (vertical)
@@ -83,8 +88,9 @@ const DaysGrid: React.FC<DaysGridProps> = ({
           year: 'numeric',
         })}
         aria-activedescendant={activeDescendant}
-        tabIndex={-1}
+        tabIndex={gridTabIndex}
         data-calendar-grid=""
+        onKeyDown={onGridKeyDown}
         className={
           animated
             ? 'calendar__days-grid--animated'
@@ -130,6 +136,7 @@ const DaysGrid: React.FC<DaysGridProps> = ({
                 !readOnly && isSameDate(currentDate, highlightedDate);
 
               const isDisabled = !isDateInRange(currentDate, minDate, maxDate);
+              const isButtonDisabled = isDisabled || readOnly;
               const isToday = isCalendarToday(currentDate);
 
               return (
@@ -141,6 +148,7 @@ const DaysGrid: React.FC<DaysGridProps> = ({
                   className="calendar__day-cell"
                 >
                   <button
+                    type="button"
                     id={dayButtonId}
                     onClick={() =>
                       !isDisabled && !readOnly && onDateSelect(currentDate)
@@ -149,10 +157,10 @@ const DaysGrid: React.FC<DaysGridProps> = ({
                       !isDisabled && !readOnly && onDateHighlight(currentDate)
                     }
                     onMouseLeave={() => onDateHighlight(null)}
-                    disabled={isDisabled}
+                    disabled={isButtonDisabled}
                     aria-label={formatAccessibleDate(currentDate)}
                     aria-current={isToday ? 'date' : undefined}
-                    aria-disabled={isDisabled || readOnly}
+                    aria-disabled={isButtonDisabled}
                     tabIndex={-1}
                     className={classNames('calendar__day-button', {
                       'calendar__day-button--disabled': isDisabled,
@@ -197,7 +205,10 @@ const DaysGrid: React.FC<DaysGridProps> = ({
       </div>
 
       {/* Animated dates grid */}
-      <div className="calendar__animation-content">
+      <div
+        className="calendar__animation-content"
+        style={isGridTransitioning ? { pointerEvents: 'none' } : undefined}
+      >
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={gridKey}

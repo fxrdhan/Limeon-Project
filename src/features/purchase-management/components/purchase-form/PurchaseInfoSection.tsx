@@ -9,7 +9,7 @@ import {
   default as Calendar,
   formatDateOnlyValue,
   parseDateOnlyValue,
-  type CustomDateValueType,
+  type CalendarDateValue,
 } from '@/components/calendar';
 import DescriptiveTextarea from '@/components/descriptive-textarea';
 
@@ -38,10 +38,7 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
   invoiceNumberInputRef,
   handleChange,
 }) => {
-  const handleDateChange = (
-    fieldName: string,
-    newDate: CustomDateValueType
-  ) => {
+  const handleDateChange = (fieldName: string, newDate: CalendarDateValue) => {
     const fakeEvent = {
       target: {
         name: fieldName,

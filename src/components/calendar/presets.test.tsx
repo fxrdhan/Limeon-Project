@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { describe, expect, it, vi } from 'vite-plus/test';
 import Calendar, {
   CalendarPrimitive,
+  createCalendarDate,
   formatDateOnlyValue,
   parseDateOnlyValue,
 } from './index';
@@ -201,6 +202,28 @@ describe('Calendar presets', () => {
     expect(trigger.getAttribute('aria-expanded')).toBe('true');
   });
 
+  it('keeps custom trigger ids and native form date-only values', () => {
+    render(
+      <form data-testid="custom-trigger-form">
+        <label htmlFor="custom-calendar-trigger">Tanggal khusus</label>
+        <Calendar
+          id="custom-calendar-trigger"
+          name="custom_date"
+          value={new Date(2026, 0, 15)}
+          onChange={() => {}}
+        >
+          <button type="button">Tanggal khusus</button>
+        </Calendar>
+      </form>
+    );
+
+    const trigger = screen.getByRole('button', { name: 'Tanggal khusus' });
+    const form = screen.getByTestId('custom-trigger-form') as HTMLFormElement;
+
+    expect(trigger.getAttribute('id')).toBe('custom-calendar-trigger');
+    expect(new FormData(form).get('custom_date')).toBe('2026-01-15');
+  });
+
   it('keeps read-only selected state visible while blocking changes', async () => {
     const onChange = vi.fn();
 
@@ -212,14 +235,26 @@ describe('Calendar presets', () => {
 
     const dialog = await screen.findByRole('dialog', { name: 'Pilih tanggal' });
     const selectedDay = getDateButton(dialog, 15, 'Januari', 2026);
+    const nextDay = getDateButton(dialog, 16, 'Januari', 2026);
 
     expect(
       selectedDay.closest('[role="gridcell"]')?.getAttribute('aria-selected')
     ).toBe('true');
+    expect((nextDay as HTMLButtonElement).disabled).toBe(true);
 
-    fireEvent.click(getDateButton(dialog, 16, 'Januari', 2026));
+    fireEvent.click(nextDay);
 
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('gives an unlabeled display input an accessible name from its placeholder', () => {
+    render(
+      <Calendar value={null} onChange={() => {}} placeholder="Tanggal retur" />
+    );
+
+    expect(
+      screen.getByRole('combobox', { name: 'Tanggal retur' })
+    ).toBeTruthy();
   });
 
   it('cycles focus within the dialog instead of blocking tab navigation', async () => {
@@ -381,7 +416,9 @@ describe('Calendar presets', () => {
     fireEvent.click(screen.getByPlaceholderText('Tanggal transaksi'));
 
     const dialog = await screen.findByRole('dialog', { name: 'Pilih tanggal' });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Next month' }));
+    fireEvent.click(
+      within(dialog).getByRole('button', { name: 'Bulan berikutnya' })
+    );
 
     await waitFor(() => {
       const grid = within(dialog).getByRole('grid', { name: /Februari 2026/ });
@@ -450,6 +487,64 @@ describe('Calendar presets', () => {
 
     expect(formData.has('month-selector')).toBe(false);
     expect(formData.has('year-selector')).toBe(false);
+  });
+
+  it('keeps inline calendar date controls from submitting surrounding forms', () => {
+    const onSubmit = vi.fn((event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+    });
+    const onChange = vi.fn();
+
+    render(
+      <form data-testid="inline-submit-form" onSubmit={onSubmit}>
+        <Calendar
+          mode="inline"
+          name="inline_date"
+          value={new Date(2026, 0, 15)}
+          onChange={onChange}
+        />
+      </form>
+    );
+
+    fireEvent.click(getDateButton(document.body, 16, 'Januari', 2026));
+
+    const form = screen.getByTestId('inline-submit-form') as HTMLFormElement;
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(new FormData(form).get('inline_date')).toBe('2026-01-15');
+  });
+
+  it('selects dates from inline mode with the keyboard', async () => {
+    const onChange = vi.fn();
+
+    render(
+      <Calendar
+        mode="inline"
+        value={new Date(2026, 0, 15)}
+        onChange={onChange}
+      />
+    );
+
+    const grid = screen.getByRole('grid', { name: /Januari 2026/ });
+    await waitFor(() => {
+      expect(grid.getAttribute('aria-activedescendant')).toContain(
+        '-2026-0-15'
+      );
+    });
+
+    fireEvent.keyDown(grid, { key: 'ArrowRight' });
+    await waitFor(() => {
+      expect(grid.getAttribute('aria-activedescendant')).toContain(
+        '-2026-0-16'
+      );
+    });
+    fireEvent.keyDown(grid, { key: 'Enter' });
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    const selectedDate = onChange.mock.calls[0][0] as Date;
+    expect(selectedDate.getFullYear()).toBe(2026);
+    expect(selectedDate.getMonth()).toBe(0);
+    expect(selectedDate.getDate()).toBe(16);
   });
 
   it('restores focus to the trigger after Escape closes the dialog', async () => {
@@ -630,7 +725,7 @@ describe('Calendar presets', () => {
 
     const dialog = await screen.findByRole('dialog', { name: 'Pilih tanggal' });
     const previousButton = within(dialog).getByRole('button', {
-      name: 'Previous month',
+      name: 'Bulan sebelumnya',
     }) as HTMLButtonElement;
 
     expect(previousButton.disabled).toBe(true);
@@ -706,11 +801,20 @@ describe('Calendar presets', () => {
 
   it('keeps date-only parsing and formatting on local calendar dates', () => {
     const parsedDate = parseDateOnlyValue('2026-01-15');
+    const normalizedDate = createCalendarDate(
+      new Date(2026, 0, 15, 23, 59, 59)
+    );
 
     expect(parsedDate.getFullYear()).toBe(2026);
     expect(parsedDate.getMonth()).toBe(0);
     expect(parsedDate.getDate()).toBe(15);
+    expect(normalizedDate.getFullYear()).toBe(2026);
+    expect(normalizedDate.getMonth()).toBe(0);
+    expect(normalizedDate.getDate()).toBe(15);
+    expect(normalizedDate.getHours()).toBe(12);
+    expect(normalizedDate.getMinutes()).toBe(0);
     expect(formatDateOnlyValue(parsedDate)).toBe('2026-01-15');
+    expect(formatDateOnlyValue(normalizedDate)).toBe('2026-01-15');
     expect(() => parseDateOnlyValue('2026-02-31')).toThrow(
       'Expected a valid date-only value.'
     );
@@ -830,5 +934,47 @@ describe('Calendar primitive', () => {
       expect(outsideAction.inert).toBe(false);
       expect(outsideAction.hasAttribute('aria-hidden')).toBe(false);
     });
+  });
+
+  it('isolates modal background when a primitive portal renders into a shadow root', async () => {
+    const portalHost = document.createElement('div');
+    document.body.append(portalHost);
+    const shadowRoot = portalHost.attachShadow({ mode: 'open' });
+
+    try {
+      const { container } = render(
+        <CalendarPrimitive.Root value={null} onChange={() => {}}>
+          <CalendarPrimitive.Trigger>
+            Pick shadow date
+          </CalendarPrimitive.Trigger>
+          <CalendarPrimitive.Portal container={shadowRoot}>
+            <div>Shadow primitive popup</div>
+          </CalendarPrimitive.Portal>
+        </CalendarPrimitive.Root>
+      );
+      const appRoot = container as HTMLElement & { inert: boolean };
+
+      fireEvent.click(screen.getByRole('button', { name: 'Pick shadow date' }));
+
+      await waitFor(() => {
+        expect(shadowRoot.querySelector('[role="dialog"]')).not.toBeNull();
+      });
+      await waitFor(() => {
+        expect(appRoot.inert).toBe(true);
+        expect(appRoot.getAttribute('aria-hidden')).toBe('true');
+      });
+
+      const dialog = shadowRoot.querySelector<HTMLElement>('[role="dialog"]');
+      if (!dialog) throw new Error('Expected shadow calendar dialog.');
+
+      fireEvent.keyDown(dialog, { key: 'Escape' });
+
+      await waitFor(() => {
+        expect(appRoot.inert).toBe(false);
+        expect(appRoot.hasAttribute('aria-hidden')).toBe(false);
+      });
+    } finally {
+      portalHost.remove();
+    }
   });
 });

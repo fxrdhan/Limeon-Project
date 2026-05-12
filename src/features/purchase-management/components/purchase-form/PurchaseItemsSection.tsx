@@ -9,7 +9,7 @@ import {
   default as Calendar,
   formatDateOnlyValue,
   parseDateOnlyValue,
-  type CustomDateValueType,
+  type CalendarDateValue,
 } from '@/components/calendar';
 import type { PurchaseItem, ItemSearchBarRef, Item } from '@/types';
 import { getItemUnitOptions } from '@/lib/item-units';
@@ -212,7 +212,7 @@ const PurchaseItemsSection: React.FC<PurchaseItemsSectionProps> = ({
               value={
                 item.expiry_date ? parseDateOnlyValue(item.expiry_date) : null
               }
-              onChange={(newDate: CustomDateValueType) => {
+              onChange={(newDate: CalendarDateValue) => {
                 updateItemExpiry(
                   item.id,
                   newDate ? formatDateOnlyValue(newDate) : ''

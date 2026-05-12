@@ -1,11 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-} from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useRef } from 'react';
 import { CALENDAR_CONSTANTS, CALENDAR_SIZE_PRESETS } from './constants';
 import {
   useCalendarAnimatedNavigation,
@@ -16,85 +9,13 @@ import {
   useCalendarNavigation,
   useCalendarOutsideClick,
   useCalendarPosition,
+  useCalendarRootContextValues,
+  useCalendarSelection,
   useCalendarState,
 } from './hooks';
 import type { CalendarProviderProps, CalendarRootContextState } from './types';
-import { createDateWithTime, isDateInRange } from './utils';
 
 export type CalendarRootProps = CalendarProviderProps;
-
-type UseCalendarSelectionHandlersParams = {
-  mode: NonNullable<CalendarProviderProps['mode']>;
-  readOnly?: boolean;
-  selectedValue: Date | null;
-  minDate?: Date;
-  maxDate?: Date;
-  isOpen: boolean;
-  onChange: CalendarProviderProps['onChange'];
-  closeCalendar: () => void;
-  focusTrigger: () => void;
-};
-
-const useCalendarSelectionHandlers = ({
-  mode,
-  readOnly,
-  selectedValue,
-  minDate,
-  maxDate,
-  isOpen,
-  onChange,
-  closeCalendar,
-  focusTrigger,
-}: UseCalendarSelectionHandlersParams) => {
-  const closeCalendarAndRestoreFocus = useCallback(() => {
-    closeCalendar();
-    focusTrigger();
-  }, [closeCalendar, focusTrigger]);
-
-  const handleDateSelect = useCallback(
-    (date: Date) => {
-      if (readOnly) return;
-      if (!isDateInRange(date, minDate, maxDate)) return;
-
-      const selectedDate = createDateWithTime(
-        date.getFullYear(),
-        date.getMonth(),
-        date.getDate()
-      );
-      onChange(selectedDate);
-
-      if (mode !== 'inline') {
-        closeCalendar();
-        focusTrigger();
-      }
-    },
-    [onChange, closeCalendar, focusTrigger, mode, readOnly, minDate, maxDate]
-  );
-
-  const handleDateClear = useCallback(() => {
-    if (readOnly || !selectedValue) return;
-
-    onChange(null);
-    if (mode !== 'inline' && isOpen) {
-      closeCalendar();
-      focusTrigger();
-    }
-  }, [
-    closeCalendar,
-    focusTrigger,
-    isOpen,
-    mode,
-    onChange,
-    readOnly,
-    selectedValue,
-  ]);
-
-  return {
-    closeCalendarAndRestoreFocus,
-    handleDateSelect,
-    handleDateClear,
-  };
-};
 
 export function useCalendarRootState({
   mode = 'datepicker',
@@ -162,7 +83,7 @@ export function useCalendarRootState({
     portalContentRef,
   });
   const { closeCalendarAndRestoreFocus, handleDateSelect, handleDateClear } =
-    useCalendarSelectionHandlers({
+    useCalendarSelection({
       mode,
       readOnly,
       selectedValue,
@@ -235,6 +156,7 @@ export function useCalendarRootState({
     navigateViewDate,
     navigateYearWithAnimation,
     focusPortal,
+    trapFocus: mode !== 'inline',
   });
 
   useEffect(() => {
@@ -295,116 +217,45 @@ export function useCalendarRootState({
     openCalendar,
   ]);
 
-  const contentContext = useMemo<CalendarRootContextState['content']>(
-    () => ({
-      value: selectedValue,
-      displayDate,
-      navigationDirection,
-      yearNavigationDirection,
-      highlightedDate,
-      mode,
-      size,
-      minDate,
-      maxDate,
-      portalWidth,
-      readOnly,
-      setDisplayDate,
-      setHighlightedDate,
-      handleDateSelect,
-      navigateViewDate,
-      triggerYearAnimation,
-      triggerMonthAnimation,
-      portalContentRef,
-      getDayButtonId,
-      calculatePosition,
-    }),
-    [
-      selectedValue,
-      displayDate,
-      navigationDirection,
-      yearNavigationDirection,
-      highlightedDate,
-      mode,
-      size,
-      minDate,
-      maxDate,
-      portalWidth,
-      readOnly,
-      setDisplayDate,
-      setHighlightedDate,
-      handleDateSelect,
-      navigateViewDate,
-      triggerYearAnimation,
-      triggerMonthAnimation,
-      getDayButtonId,
-      calculatePosition,
-    ]
-  );
-
-  const triggerContext = useMemo<CalendarRootContextState['trigger']>(
-    () => ({
-      trigger,
-      triggerInputRef,
-      isOpen: effectiveIsOpen,
-      triggerId,
-      portalId,
-      handleTriggerClick,
-      handleInputKeyDown,
-      handleTriggerMouseEnter,
-      handleTriggerMouseLeave,
-    }),
-    [
-      trigger,
-      effectiveIsOpen,
-      triggerId,
-      portalId,
-      handleTriggerClick,
-      handleInputKeyDown,
-      handleTriggerMouseEnter,
-      handleTriggerMouseLeave,
-    ]
-  );
-
-  const portalContext = useMemo<CalendarRootContextState['portal']>(
-    () => ({
-      isOpen: effectiveIsOpen,
-      isClosing: effectiveIsClosing,
-      isOpening: effectiveIsOpening,
-      isPositionReady: mode === 'inline' ? true : isPositionReady,
-      dropDirection,
-      portalStyle,
-      setPortalContentRef,
-      portalId,
-      portalTitleId,
-      handleCalendarKeyDown,
-      handleCalendarMouseEnter,
-      handleCalendarMouseLeave,
-      trigger,
-    }),
-    [
-      effectiveIsOpen,
-      effectiveIsClosing,
-      effectiveIsOpening,
-      mode,
-      isPositionReady,
-      dropDirection,
-      portalStyle,
-      setPortalContentRef,
-      portalId,
-      portalTitleId,
-      handleCalendarKeyDown,
-      handleCalendarMouseEnter,
-      handleCalendarMouseLeave,
-      trigger,
-    ]
-  );
-
-  return useMemo<CalendarRootContextState>(
-    () => ({
-      content: contentContext,
-      trigger: triggerContext,
-      portal: portalContext,
-    }),
-    [contentContext, triggerContext, portalContext]
-  );
+  return useCalendarRootContextValues({
+    selectedValue,
+    displayDate,
+    navigationDirection,
+    yearNavigationDirection,
+    highlightedDate,
+    mode,
+    size,
+    minDate,
+    maxDate,
+    portalWidth,
+    readOnly,
+    setDisplayDate,
+    setHighlightedDate,
+    handleDateSelect,
+    navigateViewDate,
+    triggerYearAnimation,
+    triggerMonthAnimation,
+    portalContentRef,
+    getDayButtonId,
+    calculatePosition,
+    trigger,
+    triggerInputRef,
+    effectiveIsOpen,
+    triggerId,
+    portalId,
+    handleTriggerClick,
+    handleInputKeyDown,
+    handleTriggerMouseEnter,
+    handleTriggerMouseLeave,
+    effectiveIsClosing,
+    effectiveIsOpening,
+    isPositionReady: mode === 'inline' ? true : isPositionReady,
+    dropDirection,
+    portalStyle,
+    setPortalContentRef,
+    portalTitleId,
+    handleCalendarKeyDown,
+    handleCalendarMouseEnter,
+    handleCalendarMouseLeave,
+  });
 }

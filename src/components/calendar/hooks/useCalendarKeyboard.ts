@@ -39,6 +39,7 @@ export const useCalendarKeyboard = (
     navigateViewDate,
     navigateYearWithAnimation,
     focusPortal,
+    trapFocus = true,
   } = params;
 
   const handleDaysNavigation = useCallback(
@@ -237,6 +238,8 @@ export const useCalendarKeyboard = (
       }
 
       if (e.key === 'Tab') {
+        if (!trapFocus) return;
+
         e.stopPropagation();
         handleCalendarTabKey(e);
         return;
@@ -281,6 +284,7 @@ export const useCalendarKeyboard = (
       closeCalendarAndRestoreFocus,
       handleCalendarTabKey,
       handleViewNavigation,
+      trapFocus,
     ]
   );
 

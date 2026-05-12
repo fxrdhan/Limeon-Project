@@ -8,10 +8,13 @@ import type { CalendarButtonProps } from '../types';
 const CalendarButton: React.FC<CalendarButtonProps> = ({
   id,
   name,
+  'aria-label': ariaLabel,
+  'aria-labelledby': ariaLabelledBy,
   value,
   placeholder = 'Pilih tanggal',
   inputClassName,
   label,
+  readOnly,
 }) => {
   const {
     triggerInputRef,
@@ -25,6 +28,7 @@ const CalendarButton: React.FC<CalendarButtonProps> = ({
     portalId,
   } = useCalendarTriggerContext();
   const inputId = id ?? triggerId;
+  const displayInputReadOnly = true;
 
   const handleMouseDown = (e: React.MouseEvent<HTMLInputElement>) => {
     if (
@@ -103,9 +107,12 @@ const CalendarButton: React.FC<CalendarButtonProps> = ({
           }
           onKeyDown={handleInputKeyDown}
           role="combobox"
+          aria-label={ariaLabel ?? (label ? undefined : placeholder)}
+          aria-labelledby={ariaLabelledBy}
           aria-controls={isOpen ? portalId : undefined}
           aria-expanded={isOpen}
-          readOnly
+          aria-readonly={readOnly ? true : undefined}
+          readOnly={displayInputReadOnly}
         />
       </div>
     </div>

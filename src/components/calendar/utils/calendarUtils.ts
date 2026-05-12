@@ -1,4 +1,4 @@
-import type { CustomDateValueType } from '../types';
+import type { CalendarDateValue } from '../types';
 
 export const cloneDate = (date: Date): Date => {
   return new Date(date.getTime());
@@ -9,6 +9,25 @@ const toCalendarDate = (date: Date): Date => {
   calendarDate.setHours(0, 0, 0, 0);
   return calendarDate;
 };
+
+// Date creation utilities
+export const createDateWithTime = (
+  year: number,
+  month: number,
+  day: number,
+  hour: number = 12,
+  minute: number = 0,
+  second: number = 0
+): Date => {
+  return new Date(year, month, day, hour, minute, second);
+};
+
+export const createCalendarDate = (date: Date): Date =>
+  createDateWithTime(date.getFullYear(), date.getMonth(), date.getDate());
+
+export const normalizeCalendarDateValue = (
+  value: CalendarDateValue
+): CalendarDateValue => (value ? createCalendarDate(value) : null);
 
 // Date calculation utilities
 export const daysInMonth = (year: number, month: number): number =>
@@ -78,12 +97,12 @@ export const clampDateToRange = (
 ): Date => {
   const normalizedDate = toCalendarDate(date);
   if (minDate && normalizedDate < toCalendarDate(minDate)) {
-    return cloneDate(minDate);
+    return createCalendarDate(minDate);
   }
   if (maxDate && normalizedDate > toCalendarDate(maxDate)) {
-    return cloneDate(maxDate);
+    return createCalendarDate(maxDate);
   }
-  return cloneDate(date);
+  return createCalendarDate(date);
 };
 
 export const clampMonthToRange = (
@@ -112,23 +131,15 @@ export const clampMonthToRange = (
 // Date comparison utilities
 export const isSameDate = (date1: Date | null, date2: Date | null): boolean => {
   if (!date1 || !date2) return false;
-  return date1.toDateString() === date2.toDateString();
+  return (
+    date1.getFullYear() === date2.getFullYear() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getDate() === date2.getDate()
+  );
 };
 
 export const isToday = (date: Date): boolean => {
-  return date.toDateString() === new Date().toDateString();
-};
-
-// Date creation utilities
-export const createDateWithTime = (
-  year: number,
-  month: number,
-  day: number,
-  hour: number = 12,
-  minute: number = 0,
-  second: number = 0
-): Date => {
-  return new Date(year, month, day, hour, minute, second);
+  return isSameDate(date, new Date());
 };
 
 export const createDisplayDate = (
@@ -171,7 +182,7 @@ export const generateCalendarDays = (
 
 // Format utilities
 export const formatDisplayValue = (
-  value: CustomDateValueType,
+  value: CalendarDateValue,
   locale: string = 'id-ID'
 ): string => {
   if (!value) return '';
