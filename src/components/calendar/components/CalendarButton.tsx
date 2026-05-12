@@ -15,6 +15,7 @@ const CalendarButton: React.FC<CalendarButtonProps> = ({
   inputClassName,
   label,
   readOnly,
+  disabled,
 }) => {
   const {
     triggerInputRef,
@@ -69,6 +70,7 @@ const CalendarButton: React.FC<CalendarButtonProps> = ({
             type="hidden"
             name={name}
             value={value ? formatDateOnlyValue(value) : ''}
+            disabled={disabled}
             readOnly
           />
         )}
@@ -111,7 +113,9 @@ const CalendarButton: React.FC<CalendarButtonProps> = ({
           aria-labelledby={ariaLabelledBy}
           aria-controls={isOpen ? portalId : undefined}
           aria-expanded={isOpen}
+          aria-disabled={disabled ? true : undefined}
           aria-readonly={readOnly ? true : undefined}
+          disabled={disabled}
           readOnly={displayInputReadOnly}
         />
       </div>

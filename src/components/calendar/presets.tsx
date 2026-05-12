@@ -66,13 +66,15 @@ const createCalendarHeaderSelectRenderer =
 
 const renderHiddenDateInput = (
   name: string | undefined,
-  value: CalendarProps['value']
+  value: CalendarProps['value'],
+  disabled?: boolean
 ) =>
   name ? (
     <input
       type="hidden"
       name={name}
       value={value ? formatDateOnlyValue(value) : ''}
+      disabled={disabled}
       readOnly
     />
   ) : null;
@@ -108,6 +110,7 @@ const PharmaCalendarContent: React.FC<PharmaCalendarContentProps> = ({
     portalContentRef,
     portalWidth,
     readOnly,
+    disabled,
   } = useCalendarContentContext();
   const { handleCalendarKeyDown } = useCalendarPortalContext();
   const renderInlineHeaderSelect = React.useMemo(
@@ -119,7 +122,7 @@ const PharmaCalendarContent: React.FC<PharmaCalendarContentProps> = ({
     [portalContentRef]
   );
 
-  const hiddenDateInput = renderHiddenDateInput(name, value);
+  const hiddenDateInput = renderHiddenDateInput(name, value, disabled);
 
   const handleMonthChange = (month: number) => {
     const currentMonth = displayDate.getMonth();
@@ -168,11 +171,12 @@ const PharmaCalendarContent: React.FC<PharmaCalendarContentProps> = ({
       onDateSelect={handleDateSelect}
       onDateHighlight={setHighlightedDate}
       getDayButtonId={getDayButtonId}
-      gridTabIndex={mode === 'inline' ? 0 : -1}
+      gridTabIndex={mode === 'inline' && !disabled ? 0 : -1}
       onGridKeyDown={mode === 'inline' ? handleCalendarKeyDown : undefined}
       navigationDirection={navigationDirection}
       yearNavigationDirection={yearNavigationDirection}
       readOnly={readOnly}
+      disabled={disabled}
       animated={true}
     />
   );
@@ -225,6 +229,7 @@ const PharmaCalendarContent: React.FC<PharmaCalendarContentProps> = ({
           aria-label={ariaLabel}
           aria-labelledby={ariaLabelledBy}
           readOnly={readOnly}
+          disabled={disabled}
         />
       )}
 
@@ -263,10 +268,12 @@ export const PharmaCalendar: React.FC<CalendarProps> = ({
   maxDate,
   portalWidth,
   readOnly,
+  disabled,
   children,
 }) => {
   const effectiveTrigger = trigger || (mode === 'inline' ? 'hover' : 'click');
   const effectiveReadOnly = readOnly ?? false;
+  const effectiveDisabled = disabled ?? false;
 
   return (
     <CalendarPrimitive.Root
@@ -279,6 +286,7 @@ export const PharmaCalendar: React.FC<CalendarProps> = ({
       maxDate={maxDate}
       portalWidth={portalWidth}
       readOnly={effectiveReadOnly}
+      disabled={effectiveDisabled}
     >
       <PharmaCalendarContent
         id={id}

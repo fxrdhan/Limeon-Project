@@ -28,6 +28,7 @@ type UseCalendarRootContextValuesParams = {
   maxDate?: Date;
   portalWidth?: string | number;
   readOnly?: boolean;
+  disabled?: boolean;
   setDisplayDate: Dispatch<SetStateAction<Date>>;
   setHighlightedDate: Dispatch<SetStateAction<Date | null>>;
   handleDateSelect: (date: Date) => void;
@@ -70,6 +71,7 @@ export const useCalendarRootContextValues = ({
   maxDate,
   portalWidth,
   readOnly,
+  disabled,
   setDisplayDate,
   setHighlightedDate,
   handleDateSelect,
@@ -112,6 +114,7 @@ export const useCalendarRootContextValues = ({
       maxDate,
       portalWidth,
       readOnly,
+      disabled,
       setDisplayDate,
       setHighlightedDate,
       handleDateSelect,
@@ -134,6 +137,7 @@ export const useCalendarRootContextValues = ({
       maxDate,
       portalWidth,
       readOnly,
+      disabled,
       setDisplayDate,
       setHighlightedDate,
       handleDateSelect,
@@ -149,6 +153,7 @@ export const useCalendarRootContextValues = ({
   const triggerContext = useMemo<CalendarRootContextState['trigger']>(
     () => ({
       trigger,
+      disabled,
       triggerInputRef,
       isOpen: effectiveIsOpen,
       triggerId,
@@ -160,6 +165,7 @@ export const useCalendarRootContextValues = ({
     }),
     [
       trigger,
+      disabled,
       triggerInputRef,
       effectiveIsOpen,
       triggerId,

@@ -34,6 +34,7 @@ export interface UseCalendarPositionReturn {
 
 export interface UseCalendarKeyboardParams {
   isOpen: boolean;
+  disabled?: boolean;
   highlightedDate: Date | null;
   displayDate: Date;
   value: CalendarDateValue;

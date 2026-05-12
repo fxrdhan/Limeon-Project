@@ -1,15 +1,14 @@
-import { useCallback, useEffect, useId, useLayoutEffect, useRef } from 'react';
-import { CALENDAR_CONSTANTS, CALENDAR_SIZE_PRESETS } from './constants';
+import { useCallback, useId, useRef } from 'react';
+import { CALENDAR_SIZE_PRESETS } from './constants';
 import {
   useCalendarAnimatedNavigation,
   useCalendarDisplayState,
   useCalendarFocus,
-  useCalendarHover,
-  useCalendarKeyboard,
   useCalendarNavigation,
-  useCalendarOutsideClick,
   useCalendarPosition,
   useCalendarRootContextValues,
+  useCalendarRootInteractions,
+  useCalendarRootLifecycle,
   useCalendarSelection,
   useCalendarState,
 } from './hooks';
@@ -27,6 +26,7 @@ export function useCalendarRootState({
   maxDate,
   portalWidth,
   readOnly,
+  disabled,
 }: Omit<CalendarRootProps, 'children'>): CalendarRootContextState {
   const sizeConfig = CALENDAR_SIZE_PRESETS[size];
   const reactId = useId();
@@ -47,7 +47,6 @@ export function useCalendarRootState({
     syncHighlightToDisplayDate,
   } = useCalendarDisplayState({ value, minDate, maxDate });
   const selectedValueTime = selectedValue?.getTime() ?? null;
-  const previousSelectedValueTimeRef = useRef(selectedValueTime);
 
   const {
     isOpen,
@@ -86,6 +85,7 @@ export function useCalendarRootState({
     useCalendarSelection({
       mode,
       readOnly,
+      disabled,
       selectedValue,
       minDate,
       maxDate,
@@ -120,34 +120,29 @@ export function useCalendarRootState({
     [portalId]
   );
 
-  const openIfAllowed = useCallback(() => {
-    openCalendar();
-  }, [openCalendar]);
-
-  const closeIfAllowed = useCallback(() => {
-    closeCalendar();
-  }, [closeCalendar]);
-
   const {
+    handleTriggerClick,
+    handleInputKeyDown,
     handleTriggerMouseEnter,
     handleTriggerMouseLeave,
+    handleCalendarKeyDown,
     handleCalendarMouseEnter,
     handleCalendarMouseLeave,
-  } = useCalendarHover({
-    openCalendar: openIfAllowed,
-    closeCalendar: closeIfAllowed,
-    portalRef: portalContentRef,
-  });
-
-  const { handleInputKeyDown, handleCalendarKeyDown } = useCalendarKeyboard({
+  } = useCalendarRootInteractions({
+    disabled,
+    mode,
+    trigger,
+    portalContentRef,
+    triggerInputRef,
     isOpen,
+    isClosing,
     highlightedDate,
     displayDate,
-    value: selectedValue,
+    selectedValue,
     minDate,
     maxDate,
-    onDateSelect: handleDateSelect,
-    onDateClear: handleDateClear,
+    handleDateSelect,
+    handleDateClear,
     openCalendar,
     closeCalendar,
     closeCalendarAndRestoreFocus,
@@ -156,66 +151,21 @@ export function useCalendarRootState({
     navigateViewDate,
     navigateYearWithAnimation,
     focusPortal,
-    trapFocus: mode !== 'inline',
-  });
-
-  useEffect(() => {
-    if (isOpen && isPositionReady && isOpening) {
-      const timer = setTimeout(() => {
-        setIsOpening(false);
-      }, CALENDAR_CONSTANTS.OPENING_READY_DELAY);
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen, isPositionReady, isOpening, setIsOpening]);
-
-  useLayoutEffect(() => {
-    if (isOpen && mode !== 'inline') return;
-
-    previousSelectedValueTimeRef.current = selectedValueTime;
-    syncDisplayToInitialDate();
-  }, [isOpen, mode, selectedValueTime, syncDisplayToInitialDate]);
-
-  useEffect(() => {
-    if (!isOpen || mode === 'inline') return;
-    if (previousSelectedValueTimeRef.current === selectedValueTime) return;
-
-    previousSelectedValueTimeRef.current = selectedValueTime;
-    syncDisplayToSelectedValue();
-  }, [isOpen, mode, selectedValueTime, syncDisplayToSelectedValue]);
-
-  useEffect(() => {
-    if (mode !== 'inline' && !isOpen) return;
-
-    syncHighlightToDisplayDate();
-  }, [isOpen, mode, syncHighlightToDisplayDate]);
-
-  useCalendarOutsideClick({
-    isOpen,
-    mode,
-    trigger,
-    portalContentRef,
-    triggerInputRef,
-    closeCalendar,
     focusTrigger,
+    calculatePosition,
   });
 
-  const handleTriggerClick = useCallback(() => {
-    if (isOpen && !isClosing) {
-      closeCalendar();
-      return;
-    }
-
-    openCalendar();
-    calculatePosition();
-    focusPortal();
-  }, [
-    calculatePosition,
-    closeCalendar,
-    focusPortal,
-    isClosing,
+  useCalendarRootLifecycle({
     isOpen,
-    openCalendar,
-  ]);
+    isOpening,
+    isPositionReady,
+    mode,
+    selectedValueTime,
+    setIsOpening,
+    syncDisplayToInitialDate,
+    syncDisplayToSelectedValue,
+    syncHighlightToDisplayDate,
+  });
 
   return useCalendarRootContextValues({
     selectedValue,
@@ -229,6 +179,7 @@ export function useCalendarRootState({
     maxDate,
     portalWidth,
     readOnly,
+    disabled,
     setDisplayDate,
     setHighlightedDate,
     handleDateSelect,

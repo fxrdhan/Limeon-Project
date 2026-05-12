@@ -28,6 +28,7 @@ export interface CalendarProps {
   maxDate?: Date;
   portalWidth?: string | number;
   readOnly?: boolean;
+  disabled?: boolean;
   children?: React.ReactNode; // For custom trigger element
 }
 
@@ -41,6 +42,7 @@ export interface CalendarButtonProps {
   inputClassName?: string;
   label?: string;
   readOnly?: boolean;
+  disabled?: boolean;
 }
 
 export interface CalendarHeaderSelectRenderProps {
@@ -88,5 +90,7 @@ export interface DaysGridProps {
   navigationDirection?: 'prev' | 'next' | null;
   yearNavigationDirection?: 'prev' | 'next' | null;
   readOnly?: boolean;
+  disabled?: boolean;
   animated?: boolean;
+  fixedWeekCount?: boolean;
 }

@@ -52,6 +52,7 @@ const mergeRefs =
 type TriggerChildProps = React.HTMLAttributes<HTMLElement> & {
   ref?: React.Ref<HTMLElement>;
   type?: string;
+  disabled?: boolean;
 };
 
 export function CalendarTrigger({
@@ -73,6 +74,7 @@ export function CalendarTrigger({
     handleTriggerMouseEnter,
     handleTriggerMouseLeave,
     isOpen,
+    disabled,
     triggerId,
     portalId,
   } = useCalendarTriggerContext();
@@ -80,6 +82,7 @@ export function CalendarTrigger({
   const getTriggerAttributes = (effectiveTriggerId: string) => ({
     id: effectiveTriggerId,
     'aria-controls': isOpen ? portalId : undefined,
+    'aria-disabled': disabled ? true : undefined,
     'aria-expanded': isOpen,
     'aria-haspopup': 'dialog' as const,
   });
@@ -87,6 +90,7 @@ export function CalendarTrigger({
   if (React.isValidElement<TriggerChildProps>(children)) {
     const childProps = children.props;
     const isNativeButton = children.type === 'button';
+    const isTriggerDisabled = Boolean(disabled || childProps.disabled);
     const triggerAttributes = getTriggerAttributes(
       id ?? childProps.id ?? triggerId
     );
@@ -97,6 +101,11 @@ export function CalendarTrigger({
       ref: mergeRefs(childProps.ref, triggerInputRef),
       className: [childProps.className, className].filter(Boolean).join(' '),
       onClick: event => {
+        if (isTriggerDisabled) {
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
         childProps.onClick?.(event);
         onClick?.(event as React.MouseEvent<HTMLDivElement>);
         if (!event.defaultPrevented && trigger === 'click') {
@@ -104,6 +113,7 @@ export function CalendarTrigger({
         }
       },
       onMouseEnter: event => {
+        if (isTriggerDisabled) return;
         childProps.onMouseEnter?.(event);
         onMouseEnter?.(event as React.MouseEvent<HTMLDivElement>);
         if (!event.defaultPrevented && trigger === 'hover') {
@@ -111,6 +121,7 @@ export function CalendarTrigger({
         }
       },
       onMouseLeave: event => {
+        if (isTriggerDisabled) return;
         childProps.onMouseLeave?.(event);
         onMouseLeave?.(event as React.MouseEvent<HTMLDivElement>);
         if (!event.defaultPrevented && trigger === 'hover') {
@@ -118,6 +129,11 @@ export function CalendarTrigger({
         }
       },
       onKeyDown: event => {
+        if (isTriggerDisabled) {
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
         childProps.onKeyDown?.(event);
         onKeyDown?.(event as React.KeyboardEvent<HTMLDivElement>);
         if (!event.defaultPrevented) {
@@ -125,8 +141,8 @@ export function CalendarTrigger({
         }
       },
       ...(isNativeButton
-        ? { type: childProps.type ?? 'button' }
-        : { role: 'button', tabIndex }),
+        ? { type: childProps.type ?? 'button', disabled: isTriggerDisabled }
+        : { role: 'button', tabIndex: isTriggerDisabled ? -1 : tabIndex }),
     });
   }
 
@@ -136,30 +152,42 @@ export function CalendarTrigger({
       {...getTriggerAttributes(id ?? triggerId)}
       ref={triggerInputRef as React.RefObject<HTMLDivElement | null>}
       onClick={event => {
+        if (disabled) {
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
         onClick?.(event);
         if (!event.defaultPrevented && trigger === 'click') {
           handleTriggerClick();
         }
       }}
       onMouseEnter={event => {
+        if (disabled) return;
         onMouseEnter?.(event);
         if (!event.defaultPrevented && trigger === 'hover') {
           handleTriggerMouseEnter();
         }
       }}
       onMouseLeave={event => {
+        if (disabled) return;
         onMouseLeave?.(event);
         if (!event.defaultPrevented && trigger === 'hover') {
           handleTriggerMouseLeave();
         }
       }}
       onKeyDown={event => {
+        if (disabled) {
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
         onKeyDown?.(event);
         if (!event.defaultPrevented) {
           handleInputKeyDown(event);
         }
       }}
-      tabIndex={tabIndex}
+      tabIndex={disabled ? -1 : tabIndex}
       role="button"
       className={className}
     >

@@ -247,6 +247,64 @@ describe('Calendar presets', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
+  it('keeps disabled datepickers inert and out of native form submission', () => {
+    const onChange = vi.fn();
+
+    render(
+      <form data-testid="disabled-calendar-form">
+        <Calendar
+          name="disabled_date"
+          value={new Date(2026, 0, 15)}
+          onChange={onChange}
+          placeholder="Tanggal nonaktif"
+          disabled
+        />
+      </form>
+    );
+
+    const trigger = screen.getByPlaceholderText(
+      'Tanggal nonaktif'
+    ) as HTMLInputElement;
+    const form = screen.getByTestId(
+      'disabled-calendar-form'
+    ) as HTMLFormElement;
+
+    expect(trigger.disabled).toBe(true);
+    expect(trigger.getAttribute('aria-disabled')).toBe('true');
+
+    fireEvent.click(trigger);
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(onChange).not.toHaveBeenCalled();
+    expect(new FormData(form).has('disabled_date')).toBe(false);
+  });
+
+  it('keeps disabled custom triggers inert without changing enabled trigger behavior', () => {
+    const onChange = vi.fn();
+    const onTriggerClick = vi.fn();
+
+    render(
+      <Calendar value={new Date(2026, 0, 15)} onChange={onChange} disabled>
+        <button type="button" onClick={onTriggerClick}>
+          Disabled custom date
+        </button>
+      </Calendar>
+    );
+
+    const trigger = screen.getByRole('button', {
+      name: 'Disabled custom date',
+    }) as HTMLButtonElement;
+
+    expect(trigger.disabled).toBe(true);
+    expect(trigger.getAttribute('aria-disabled')).toBe('true');
+
+    fireEvent.click(trigger);
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(onTriggerClick).not.toHaveBeenCalled();
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
   it('gives an unlabeled display input an accessible name from its placeholder', () => {
     render(
       <Calendar value={null} onChange={() => {}} placeholder="Tanggal retur" />

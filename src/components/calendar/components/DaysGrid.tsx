@@ -25,7 +25,9 @@ const DaysGrid: React.FC<DaysGridProps> = ({
   navigationDirection = null,
   yearNavigationDirection = null,
   readOnly = false,
+  disabled = false,
   animated = false,
+  fixedWeekCount = false,
 }) => {
   // Create unique key based on year and month for AnimatePresence
   const gridKey = `${displayDate.getFullYear()}-${displayDate.getMonth()}`;
@@ -69,7 +71,7 @@ const DaysGrid: React.FC<DaysGridProps> = ({
   const renderDatesGrid = (displayDate: Date) => {
     const year = displayDate.getFullYear();
     const month = displayDate.getMonth();
-    const calendarDays = generateCalendarDays(year, month);
+    const calendarDays = generateCalendarDays(year, month, { fixedWeekCount });
     const calendarWeeks = Array.from(
       { length: Math.ceil(calendarDays.length / 7) },
       (_, weekIndex) => calendarDays.slice(weekIndex * 7, weekIndex * 7 + 7)
@@ -133,10 +135,12 @@ const DaysGrid: React.FC<DaysGridProps> = ({
               const dayCellId = getDayCellId(currentDate);
               const isSelected = isSameDate(currentDate, value);
               const isHighlighted =
-                !readOnly && isSameDate(currentDate, highlightedDate);
+                !readOnly &&
+                !disabled &&
+                isSameDate(currentDate, highlightedDate);
 
               const isDisabled = !isDateInRange(currentDate, minDate, maxDate);
-              const isButtonDisabled = isDisabled || readOnly;
+              const isButtonDisabled = isDisabled || readOnly || disabled;
               const isToday = isCalendarToday(currentDate);
 
               return (

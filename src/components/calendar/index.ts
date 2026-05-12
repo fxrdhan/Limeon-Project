@@ -5,12 +5,18 @@ export {
   formatDateOnlyValue,
   parseDateOnlyValue,
 } from './utils';
+export { getCalendarHeaderModel } from './components/calendarHeaderModel';
 export type { CalendarRootProps } from './primitive';
 export type {
+  CalendarButtonProps,
   CalendarDateValue,
+  CalendarHeaderProps,
+  CalendarHeaderSelectRenderProps,
   CalendarMode,
+  CalendarPortalProps,
   CalendarProps,
   CalendarSize,
   CalendarTrigger,
   CustomDateValueType,
+  DaysGridProps,
 } from './types';

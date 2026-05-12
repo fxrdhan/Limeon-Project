@@ -10,6 +10,8 @@ export { useCalendarFocus } from './useCalendarFocus';
 export { useCalendarOutsideClick } from './useCalendarOutsideClick';
 export { useCalendarModalIsolation } from './useCalendarModalIsolation';
 export { useCalendarRootContextValues } from './useCalendarRootContextValues';
+export { useCalendarRootInteractions } from './useCalendarRootInteractions';
+export { useCalendarRootLifecycle } from './useCalendarRootLifecycle';
 export { useCalendarSelection } from './useCalendarSelection';
 export {
   useCalendarContentContext,

@@ -5,6 +5,7 @@ import { createCalendarDate, isDateInRange } from '../utils';
 type UseCalendarSelectionParams = {
   mode: NonNullable<CalendarProviderProps['mode']>;
   readOnly?: boolean;
+  disabled?: boolean;
   selectedValue: Date | null;
   minDate?: Date;
   maxDate?: Date;
@@ -17,6 +18,7 @@ type UseCalendarSelectionParams = {
 export const useCalendarSelection = ({
   mode,
   readOnly,
+  disabled,
   selectedValue,
   minDate,
   maxDate,
@@ -32,7 +34,7 @@ export const useCalendarSelection = ({
 
   const handleDateSelect = useCallback(
     (date: Date) => {
-      if (readOnly) return;
+      if (readOnly || disabled) return;
       if (!isDateInRange(date, minDate, maxDate)) return;
 
       onChange(createCalendarDate(date));
@@ -42,11 +44,20 @@ export const useCalendarSelection = ({
         focusTrigger();
       }
     },
-    [onChange, closeCalendar, focusTrigger, mode, readOnly, minDate, maxDate]
+    [
+      onChange,
+      closeCalendar,
+      focusTrigger,
+      mode,
+      readOnly,
+      disabled,
+      minDate,
+      maxDate,
+    ]
   );
 
   const handleDateClear = useCallback(() => {
-    if (readOnly || !selectedValue) return;
+    if (readOnly || disabled || !selectedValue) return;
 
     onChange(null);
     if (mode !== 'inline' && isOpen) {
@@ -55,6 +66,7 @@ export const useCalendarSelection = ({
     }
   }, [
     closeCalendar,
+    disabled,
     focusTrigger,
     isOpen,
     mode,

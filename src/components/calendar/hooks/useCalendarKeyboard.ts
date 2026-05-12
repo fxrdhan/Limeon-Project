@@ -24,6 +24,7 @@ export const useCalendarKeyboard = (
 ): UseCalendarKeyboardReturn => {
   const {
     isOpen,
+    disabled,
     highlightedDate,
     displayDate,
     value,
@@ -142,6 +143,8 @@ export const useCalendarKeyboard = (
 
   const handleInputKeyDown = useCallback(
     (e: KeyboardEvent<HTMLElement>) => {
+      if (disabled) return;
+
       if (e.key === 'Tab' && isOpen) {
         closeCalendar();
         return;
@@ -177,6 +180,7 @@ export const useCalendarKeyboard = (
     },
     [
       isOpen,
+      disabled,
       highlightedDate,
       value,
       onDateSelect,
@@ -224,6 +228,8 @@ export const useCalendarKeyboard = (
 
   const handleCalendarKeyDown = useCallback(
     (e: KeyboardEvent<HTMLDivElement>) => {
+      if (disabled) return;
+
       const activePopupTrigger =
         e.target instanceof Element
           ? e.target.closest('[aria-expanded="true"][aria-controls]')
@@ -278,6 +284,7 @@ export const useCalendarKeyboard = (
     },
     [
       highlightedDate,
+      disabled,
       value,
       onDateSelect,
       onDateClear,

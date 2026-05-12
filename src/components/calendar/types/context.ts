@@ -18,6 +18,7 @@ export interface CalendarContentContextState {
   maxDate?: Date;
   portalWidth?: string | number;
   readOnly?: boolean;
+  disabled?: boolean;
   setDisplayDate: React.Dispatch<React.SetStateAction<Date>>;
   setHighlightedDate: React.Dispatch<React.SetStateAction<Date | null>>;
   handleDateSelect: (date: Date) => void;
@@ -31,6 +32,7 @@ export interface CalendarContentContextState {
 
 export interface CalendarTriggerContextState {
   trigger: CalendarTrigger;
+  disabled?: boolean;
   triggerInputRef: React.RefObject<HTMLElement | null>;
   isOpen: boolean;
   triggerId: string;
@@ -74,4 +76,5 @@ export interface CalendarProviderProps {
   maxDate?: Date;
   portalWidth?: string | number;
   readOnly?: boolean;
+  disabled?: boolean;
 }

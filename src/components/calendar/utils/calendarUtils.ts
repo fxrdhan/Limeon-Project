@@ -160,10 +160,15 @@ export const createDisplayDate = (
   );
 };
 
+type GenerateCalendarDaysOptions = {
+  fixedWeekCount?: boolean;
+};
+
 // Calendar grid utilities
 export const generateCalendarDays = (
   year: number,
-  month: number
+  month: number,
+  options: GenerateCalendarDaysOptions = {}
 ): (number | null)[] => {
   const numDays = daysInMonth(year, month);
   let firstDay = firstDayOfMonth(year, month);
@@ -175,6 +180,12 @@ export const generateCalendarDays = (
   const calendarDays: (number | null)[] = Array(firstDay).fill(null);
   for (let i = 1; i <= numDays; i++) {
     calendarDays.push(i);
+  }
+
+  if (options.fixedWeekCount) {
+    while (calendarDays.length < 42) {
+      calendarDays.push(null);
+    }
   }
 
   return calendarDays;
