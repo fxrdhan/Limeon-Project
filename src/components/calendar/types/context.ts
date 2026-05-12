@@ -64,6 +64,9 @@ export interface CalendarContextState {
   // Refs
   triggerInputRef: React.RefObject<HTMLInputElement | HTMLDivElement | null>;
   portalContentRef: React.RefObject<HTMLDivElement | null>;
+  setPortalContentRef: (node: HTMLDivElement | null) => void;
+  triggerId: string;
+  portalId: string;
 
   // Additional handlers for components
   handleTriggerClick: () => void;

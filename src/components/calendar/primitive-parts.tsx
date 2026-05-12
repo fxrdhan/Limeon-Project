@@ -28,6 +28,7 @@ export function CalendarRoot({ children, ...props }: CalendarRootProps) {
 export function CalendarTrigger({
   children,
   className = 'calendar__custom-trigger',
+  id,
   onClick,
   onKeyDown,
   onMouseEnter,
@@ -42,11 +43,15 @@ export function CalendarTrigger({
     handleInputKeyDown,
     handleTriggerMouseEnter,
     handleTriggerMouseLeave,
+    isOpen,
+    triggerId,
+    portalId,
   } = useCalendarContext();
 
   return (
     <div
       {...props}
+      id={id ?? triggerId}
       ref={triggerInputRef as React.RefObject<HTMLDivElement>}
       onClick={event => {
         onClick?.(event);
@@ -73,6 +78,9 @@ export function CalendarTrigger({
         }
       }}
       tabIndex={tabIndex}
+      aria-controls={isOpen ? portalId : undefined}
+      aria-expanded={isOpen}
+      aria-haspopup="dialog"
       role="button"
       className={className}
     >

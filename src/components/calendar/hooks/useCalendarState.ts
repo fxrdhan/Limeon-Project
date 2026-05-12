@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { CALENDAR_CONSTANTS } from '../constants';
 import type { UseCalendarStateParams, UseCalendarStateReturn } from '../types';
 
@@ -11,11 +11,9 @@ export const useCalendarState = (
   const [isClosing, setIsClosing] = useState(false);
   const [isOpening, setIsOpening] = useState(false);
 
-  const openTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const openCalendar = useCallback(() => {
-    if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
     if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
 
     setIsOpen(true);
@@ -29,7 +27,6 @@ export const useCalendarState = (
   }, [onOpen]);
 
   const closeCalendar = useCallback(() => {
-    if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
     if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
 
     setIsClosing(true);
@@ -41,13 +38,11 @@ export const useCalendarState = (
     }, CALENDAR_CONSTANTS.ANIMATION_DURATION);
   }, [onClose]);
 
-  // Cleanup timeouts on unmount
-  useState(() => {
+  useEffect(() => {
     return () => {
-      if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
       if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
     };
-  });
+  }, []);
 
   return {
     isOpen,

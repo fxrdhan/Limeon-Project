@@ -18,6 +18,9 @@ const CalendarButton: React.FC<CalendarButtonProps> = ({
     handleTriggerMouseEnter,
     handleTriggerMouseLeave,
     trigger,
+    isOpen,
+    triggerId,
+    portalId,
   } = useCalendarContext();
 
   const formattedDisplayValue = () => {
@@ -32,23 +35,31 @@ const CalendarButton: React.FC<CalendarButtonProps> = ({
 
   return (
     <div className="calendar__button-wrapper">
-      {label && <label className="calendar__button-label">{label}</label>}
-      <div
-        ref={triggerInputRef as React.RefObject<HTMLDivElement>}
-        className="calendar__button-input-wrapper"
-        onClick={trigger === 'click' ? handleTriggerClick : undefined}
-        onMouseEnter={trigger === 'hover' ? handleTriggerMouseEnter : undefined}
-        onMouseLeave={trigger === 'hover' ? handleTriggerMouseLeave : undefined}
-        onKeyDown={handleInputKeyDown}
-        tabIndex={0}
-        role="button"
-      >
+      {label && (
+        <label className="calendar__button-label" htmlFor={triggerId}>
+          {label}
+        </label>
+      )}
+      <div className="calendar__button-input-wrapper">
         <Input
+          ref={triggerInputRef as React.RefObject<HTMLInputElement>}
+          id={triggerId}
           type="text"
           value={formattedDisplayValue()}
           placeholder={placeholder}
           className={classNames('calendar__button-input', inputClassName)}
+          onClick={trigger === 'click' ? handleTriggerClick : undefined}
+          onMouseEnter={
+            trigger === 'hover' ? handleTriggerMouseEnter : undefined
+          }
+          onMouseLeave={
+            trigger === 'hover' ? handleTriggerMouseLeave : undefined
+          }
+          onKeyDown={handleInputKeyDown}
           onChange={e => e.preventDefault()}
+          aria-controls={isOpen ? portalId : undefined}
+          aria-expanded={isOpen}
+          aria-haspopup="dialog"
           readOnly
         />
       </div>

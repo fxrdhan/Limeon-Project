@@ -24,13 +24,13 @@ export interface UseCalendarPositionParams {
   isOpen: boolean;
   portalWidth?: string | number;
   calendarWidth?: number;
-  calendarHeight?: number;
 }
 
 export interface UseCalendarPositionReturn {
   portalStyle: React.CSSProperties;
   isPositionReady: boolean;
   dropDirection: 'down' | 'up';
+  setPortalContentRef: (node: HTMLDivElement | null) => void;
   calculatePosition: () => void;
 }
 

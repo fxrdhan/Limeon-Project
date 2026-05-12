@@ -12,7 +12,8 @@ const CalendarPortal: React.FC<CalendarPortalProps> = ({ children }) => {
     isPositionReady,
     portalStyle,
     dropDirection,
-    portalContentRef,
+    setPortalContentRef,
+    portalId,
     handleCalendarKeyDown,
     handleCalendarMouseEnter,
     handleCalendarMouseLeave,
@@ -23,17 +24,15 @@ const CalendarPortal: React.FC<CalendarPortalProps> = ({ children }) => {
     return null;
   }
 
-  if (!isPositionReady) {
-    return null;
-  }
-
   return createPortal(
     <div
-      ref={portalContentRef}
-      tabIndex={0}
+      ref={setPortalContentRef}
+      id={portalId}
+      tabIndex={-1}
       style={{
         ...portalStyle,
-        outline: 'none',
+        pointerEvents: isPositionReady ? undefined : 'none',
+        visibility: isPositionReady ? undefined : 'hidden',
       }}
       className={classNames(
         'calendar__container',
@@ -50,6 +49,7 @@ const CalendarPortal: React.FC<CalendarPortalProps> = ({ children }) => {
       onKeyDown={handleCalendarKeyDown}
       onMouseEnter={trigger === 'hover' ? handleCalendarMouseEnter : undefined}
       onMouseLeave={trigger === 'hover' ? handleCalendarMouseLeave : undefined}
+      aria-label="Pilih tanggal"
       role="dialog"
     >
       {children}

@@ -22,7 +22,14 @@ describe('Calendar presets', () => {
 
     fireEvent.click(screen.getByPlaceholderText('Tanggal transaksi'));
 
-    const dialog = await screen.findByRole('dialog');
+    const dialog = await screen.findByRole('dialog', { name: 'Pilih tanggal' });
+    const trigger = screen.getByPlaceholderText('Tanggal transaksi');
+
+    expect(trigger.getAttribute('aria-controls')).toBe(dialog.id);
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    expect(trigger.getAttribute('aria-haspopup')).toBe('dialog');
+    expect(dialog.style.position).toBe('fixed');
+
     const selectedDay = within(dialog).getByRole('button', { name: '15' });
 
     expect(
@@ -67,6 +74,38 @@ describe('Calendar presets', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
+  it('keeps inline mode display synced with controlled value changes', async () => {
+    const onChange = vi.fn();
+    const { rerender } = render(
+      <Calendar
+        mode="inline"
+        value={new Date(2026, 0, 15)}
+        onChange={onChange}
+      />
+    );
+
+    const firstSelectedDay = screen.getByRole('button', { name: '15' });
+    expect(
+      firstSelectedDay.classList.contains('calendar__day-button--selected')
+    ).toBe(true);
+
+    rerender(
+      <Calendar
+        mode="inline"
+        value={new Date(2026, 1, 20)}
+        onChange={onChange}
+      />
+    );
+
+    await waitFor(() => {
+      const nextSelectedDay = screen.getByRole('button', { name: '20' });
+      expect(
+        nextSelectedDay.classList.contains('calendar__day-button--selected')
+      ).toBe(true);
+    });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
   it('keeps custom trigger datepicker behavior through the preset wrapper', async () => {
     render(
       <Calendar value={null} onChange={() => {}}>
@@ -74,9 +113,16 @@ describe('Calendar presets', () => {
       </Calendar>
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open calendar' }));
+    const trigger = screen.getByRole('button', { name: 'Open calendar' });
 
-    expect(await screen.findByRole('dialog')).toBeTruthy();
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+
+    fireEvent.click(trigger);
+
+    const dialog = await screen.findByRole('dialog', { name: 'Pilih tanggal' });
+
+    expect(trigger.getAttribute('aria-controls')).toBe(dialog.id);
+    expect(trigger.getAttribute('aria-expanded')).toBe('true');
   });
 });
 

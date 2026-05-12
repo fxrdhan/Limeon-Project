@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { CALENDAR_CONSTANTS } from '../constants';
 import type { UseCalendarHoverParams, UseCalendarHoverReturn } from '../types';
 
@@ -7,14 +7,17 @@ export const useCalendarHover = (
 ): UseCalendarHoverReturn => {
   const { openCalendar, closeCalendar, portalRef } = params;
 
-  const openTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const openTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const focusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleTriggerMouseEnter = useCallback(() => {
+    if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
     if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+    if (focusTimeoutRef.current) clearTimeout(focusTimeoutRef.current);
     openTimeoutRef.current = setTimeout(() => {
       openCalendar();
-      setTimeout(() => {
+      focusTimeoutRef.current = setTimeout(() => {
         if (portalRef.current) {
           portalRef.current.focus();
         }
@@ -36,10 +39,19 @@ export const useCalendarHover = (
   }, []);
 
   const handleCalendarMouseLeave = useCallback(() => {
+    if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
     closeTimeoutRef.current = setTimeout(() => {
       closeCalendar();
     }, CALENDAR_CONSTANTS.HOVER_CLOSE_DELAY);
   }, [closeCalendar]);
+
+  useEffect(() => {
+    return () => {
+      if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
+      if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+      if (focusTimeoutRef.current) clearTimeout(focusTimeoutRef.current);
+    };
+  }, []);
 
   return {
     handleTriggerMouseEnter,

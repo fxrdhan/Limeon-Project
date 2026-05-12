@@ -1,89 +1,160 @@
-import { useState, useCallback, useLayoutEffect } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useState } from 'react';
+import {
+  autoUpdate,
+  flip,
+  offset,
+  shift,
+  size,
+  useFloating,
+} from '@floating-ui/react-dom';
 import { CALENDAR_CONSTANTS } from '../constants';
 import type {
   UseCalendarPositionParams,
   UseCalendarPositionReturn,
 } from '../types';
 
+const calendarViewportPadding = CALENDAR_CONSTANTS.VIEWPORT_MARGIN;
+const calendarMinimumAvailableHeight = 240;
+
+const getPortalWidth = (
+  portalWidth: string | number | undefined,
+  calendarWidth: number
+) => {
+  if (typeof portalWidth === 'number') return `${portalWidth}px`;
+  if (portalWidth) return portalWidth;
+  return `${calendarWidth}px`;
+};
+
+const isPromiseLike = (
+  value: void | PromiseLike<void>
+): value is PromiseLike<void> =>
+  typeof value === 'object' && value !== null && 'then' in value;
+
 export const useCalendarPosition = (
   params: UseCalendarPositionParams
 ): UseCalendarPositionReturn => {
   const {
     triggerRef,
+    portalRef,
     isOpen,
     portalWidth,
     calendarWidth = CALENDAR_CONSTANTS.CALENDAR_WIDTH,
-    calendarHeight = CALENDAR_CONSTANTS.CALENDAR_HEIGHT,
   } = params;
 
-  const [portalStyle, setPortalStyle] = useState<React.CSSProperties>({});
   const [isPositionReady, setIsPositionReady] = useState(false);
-  const [dropDirection, setDropDirection] = useState<'down' | 'up'>('down');
+  const floatingMiddleware = useMemo(
+    () => [
+      offset(CALENDAR_CONSTANTS.POSITION_MARGIN),
+      flip({ padding: calendarViewportPadding }),
+      shift({ padding: calendarViewportPadding }),
+      size({
+        padding: calendarViewportPadding,
+        apply({ availableHeight, availableWidth, elements }) {
+          elements.floating.style.setProperty(
+            '--calendar-available-width',
+            `${Math.max(0, availableWidth)}px`
+          );
+          elements.floating.style.setProperty(
+            '--calendar-available-height',
+            `${Math.max(calendarMinimumAvailableHeight, availableHeight)}px`
+          );
+        },
+      }),
+    ],
+    []
+  );
+
+  const {
+    floatingStyles,
+    placement,
+    refs: { setFloating, setReference },
+    update,
+  } = useFloating<HTMLElement>({
+    middleware: floatingMiddleware,
+    open: isOpen,
+    placement: 'bottom-start',
+    strategy: 'fixed',
+    transform: false,
+    whileElementsMounted: autoUpdate,
+  });
+
+  const setPortalContentRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      portalRef.current = node;
+      setFloating(node);
+    },
+    [portalRef, setFloating]
+  );
 
   const calculatePosition = useCallback(() => {
-    if (!triggerRef.current) return;
+    if (!triggerRef.current || !portalRef.current) return;
 
-    const buttonRect = triggerRef.current.getBoundingClientRect();
-    const viewportHeight = window.innerHeight;
-
-    const margin = CALENDAR_CONSTANTS.POSITION_MARGIN;
-    const spaceBelow = viewportHeight - buttonRect.bottom - margin;
-    const spaceAbove = buttonRect.top - margin;
-
-    const shouldDropUp =
-      (spaceBelow < calendarHeight && spaceAbove > calendarHeight) ||
-      (spaceBelow < calendarHeight && spaceAbove > spaceBelow);
-
-    setDropDirection(shouldDropUp ? 'up' : 'down');
-
-    const newMenuStyle: React.CSSProperties = {
-      position: 'fixed',
-      left: `${buttonRect.left}px`,
-      width: portalWidth
-        ? typeof portalWidth === 'number'
-          ? `${portalWidth}px`
-          : portalWidth
-        : `${calendarWidth}px`,
-      zIndex: CALENDAR_CONSTANTS.PORTAL_Z_INDEX,
-    };
-
-    if (shouldDropUp) {
-      newMenuStyle.top = `${buttonRect.top - calendarHeight - margin - 3}px`; // Extra offset untuk calendar yang muncul ke atas
-    } else {
-      newMenuStyle.top = `${buttonRect.bottom + margin}px`;
-    }
-
-    setPortalStyle(newMenuStyle);
-    setIsPositionReady(true);
-  }, [triggerRef, portalWidth, calendarWidth, calendarHeight]);
-
-  useLayoutEffect(() => {
-    if (!isOpen) {
+    setReference(triggerRef.current);
+    const updateResult = update();
+    if (isPromiseLike(updateResult)) {
+      void updateResult.then(() => {
+        setIsPositionReady(true);
+      });
       return;
     }
 
-    // Use requestAnimationFrame to avoid synchronous setState in effect
-    requestAnimationFrame(() => {
+    setIsPositionReady(true);
+  }, [portalRef, setReference, triggerRef, update]);
+
+  const updatePositionWhenReady = useCallback(
+    (onReady: () => void) => {
+      const updateResult = update();
+      if (isPromiseLike(updateResult)) {
+        void updateResult.then(onReady);
+        return;
+      }
+
+      onReady();
+    },
+    [update]
+  );
+
+  useLayoutEffect(() => {
+    if (!isOpen || !triggerRef.current) {
       setIsPositionReady(false);
-      calculatePosition();
+      return;
+    }
+
+    let cancelled = false;
+    const frameId = requestAnimationFrame(() => {
+      setIsPositionReady(false);
+      setReference(triggerRef.current);
+      updatePositionWhenReady(() => {
+        if (!cancelled) {
+          setIsPositionReady(true);
+        }
+      });
     });
 
-    const handleScroll = () => calculatePosition();
-    const handleResize = () => calculatePosition();
-
-    window.addEventListener('scroll', handleScroll, true);
-    window.addEventListener('resize', handleResize);
-
     return () => {
-      window.removeEventListener('scroll', handleScroll, true);
-      window.removeEventListener('resize', handleResize);
+      cancelled = true;
+      cancelAnimationFrame(frameId);
     };
-  }, [isOpen, calculatePosition]);
+  }, [isOpen, setReference, triggerRef, updatePositionWhenReady]);
+
+  const portalStyle = useMemo<React.CSSProperties>(
+    () => ({
+      ...floatingStyles,
+      maxHeight: 'var(--calendar-available-height)',
+      maxWidth: 'var(--calendar-available-width)',
+      outline: 'none',
+      overflowY: 'auto',
+      width: getPortalWidth(portalWidth, calendarWidth),
+      zIndex: CALENDAR_CONSTANTS.PORTAL_Z_INDEX,
+    }),
+    [calendarWidth, floatingStyles, portalWidth]
+  );
 
   return {
     portalStyle,
     isPositionReady,
-    dropDirection,
+    dropDirection: placement.startsWith('top') ? 'up' : 'down',
+    setPortalContentRef,
     calculatePosition,
   };
 };

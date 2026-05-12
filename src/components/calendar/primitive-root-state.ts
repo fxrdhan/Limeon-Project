@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { CALENDAR_SIZE_PRESETS } from './constants';
 import {
   useCalendarHover,
@@ -27,10 +35,30 @@ export function useCalendarRootState({
   readOnly,
 }: Omit<CalendarRootProps, 'children'>): CalendarContextState {
   const sizeConfig = CALENDAR_SIZE_PRESETS[size];
+  const reactId = useId();
+  const triggerId = `${reactId}-trigger`;
+  const portalId = `${reactId}-portal`;
+  const valueTime = value?.getTime() ?? null;
+  const selectedValue = useMemo(
+    () => (valueTime === null ? null : new Date(valueTime)),
+    [valueTime]
+  );
   const triggerInputRef = useRef<HTMLInputElement | HTMLDivElement>(null);
   const portalContentRef = useRef<HTMLDivElement>(null);
+  const navigationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const yearNavigationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const focusPortalTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const returnFocusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
 
-  const [displayDate, setDisplayDate] = useState(value || new Date());
+  const [displayDate, setDisplayDate] = useState(selectedValue || new Date());
   const [currentView, setCurrentView] = useState<CalendarView>('days');
   const [highlightedDate, setHighlightedDate] = useState<Date | null>(null);
   const [highlightedMonth, setHighlightedMonth] = useState<number | null>(null);
@@ -50,12 +78,13 @@ export function useCalendarRootState({
     closeCalendar,
     setIsOpening,
   } = useCalendarState({
-    value,
+    value: selectedValue,
     mode,
     onOpen: () => {
-      setDisplayDate(value || new Date());
+      const nextDisplayDate = selectedValue || new Date();
+      setDisplayDate(nextDisplayDate);
       setCurrentView('days');
-      setHighlightedDate(value || new Date());
+      setHighlightedDate(nextDisplayDate);
       setHighlightedMonth(null);
       setHighlightedYear(null);
     },
@@ -70,15 +99,19 @@ export function useCalendarRootState({
   const effectiveIsClosing = mode === 'inline' ? false : isClosing;
   const effectiveIsOpening = mode === 'inline' ? false : isOpening;
 
-  const { portalStyle, isPositionReady, dropDirection, calculatePosition } =
-    useCalendarPosition({
-      triggerRef: triggerInputRef,
-      portalRef: portalContentRef,
-      isOpen,
-      portalWidth: portalWidth || sizeConfig.width,
-      calendarWidth: sizeConfig.width,
-      calendarHeight: sizeConfig.height,
-    });
+  const {
+    portalStyle,
+    isPositionReady,
+    dropDirection,
+    setPortalContentRef,
+    calculatePosition,
+  } = useCalendarPosition({
+    triggerRef: triggerInputRef,
+    portalRef: portalContentRef,
+    isOpen,
+    portalWidth: portalWidth || sizeConfig.width,
+    calendarWidth: sizeConfig.width,
+  });
 
   const { navigateViewDate: originalNavigateViewDate, navigateYear } =
     useCalendarNavigation({
@@ -92,7 +125,11 @@ export function useCalendarRootState({
       setNavigationDirection(direction);
       originalNavigateViewDate(direction);
 
-      setTimeout(() => {
+      if (navigationTimeoutRef.current) {
+        clearTimeout(navigationTimeoutRef.current);
+      }
+
+      navigationTimeoutRef.current = setTimeout(() => {
         setNavigationDirection(null);
       }, 300);
     },
@@ -104,7 +141,11 @@ export function useCalendarRootState({
       setYearNavigationDirection(direction);
       navigateYear(direction);
 
-      setTimeout(() => {
+      if (yearNavigationTimeoutRef.current) {
+        clearTimeout(yearNavigationTimeoutRef.current);
+      }
+
+      yearNavigationTimeoutRef.current = setTimeout(() => {
         setYearNavigationDirection(null);
       }, 300);
     },
@@ -114,7 +155,11 @@ export function useCalendarRootState({
   const triggerYearAnimation = useCallback((direction: 'prev' | 'next') => {
     setYearNavigationDirection(direction);
 
-    setTimeout(() => {
+    if (yearNavigationTimeoutRef.current) {
+      clearTimeout(yearNavigationTimeoutRef.current);
+    }
+
+    yearNavigationTimeoutRef.current = setTimeout(() => {
       setYearNavigationDirection(null);
     }, 300);
   }, []);
@@ -122,13 +167,21 @@ export function useCalendarRootState({
   const triggerMonthAnimation = useCallback((direction: 'prev' | 'next') => {
     setNavigationDirection(direction);
 
-    setTimeout(() => {
+    if (navigationTimeoutRef.current) {
+      clearTimeout(navigationTimeoutRef.current);
+    }
+
+    navigationTimeoutRef.current = setTimeout(() => {
       setNavigationDirection(null);
     }, 300);
   }, []);
 
   const focusPortal = useCallback(() => {
-    setTimeout(() => {
+    if (focusPortalTimeoutRef.current) {
+      clearTimeout(focusPortalTimeoutRef.current);
+    }
+
+    focusPortalTimeoutRef.current = setTimeout(() => {
       if (portalContentRef.current) {
         portalContentRef.current.focus();
       }
@@ -151,7 +204,11 @@ export function useCalendarRootState({
       if (mode !== 'inline') {
         closeCalendar();
 
-        setTimeout(() => {
+        if (returnFocusTimeoutRef.current) {
+          clearTimeout(returnFocusTimeoutRef.current);
+        }
+
+        returnFocusTimeoutRef.current = setTimeout(() => {
           triggerInputRef.current?.focus();
         }, 250);
       }
@@ -173,11 +230,11 @@ export function useCalendarRootState({
 
       let newHighlight: Date;
       if (
-        value &&
-        value.getFullYear() === currentDisplayYear &&
-        value.getMonth() === selectedMonth
+        selectedValue &&
+        selectedValue.getFullYear() === currentDisplayYear &&
+        selectedValue.getMonth() === selectedMonth
       ) {
-        newHighlight = new Date(value);
+        newHighlight = new Date(selectedValue);
       } else {
         newHighlight = new Date(currentDisplayYear, selectedMonth, 1);
       }
@@ -189,7 +246,7 @@ export function useCalendarRootState({
         focusPortal();
       }
     },
-    [displayDate, value, calculatePosition, focusPortal, mode]
+    [displayDate, selectedValue, calculatePosition, focusPortal, mode]
   );
 
   const handleYearSelect = useCallback(
@@ -202,7 +259,9 @@ export function useCalendarRootState({
       setCurrentView('months');
       setHighlightedYear(null);
       setHighlightedMonth(
-        value && value.getFullYear() === selectedYear ? value.getMonth() : 0
+        selectedValue && selectedValue.getFullYear() === selectedYear
+          ? selectedValue.getMonth()
+          : 0
       );
 
       if (mode !== 'inline') {
@@ -210,7 +269,7 @@ export function useCalendarRootState({
         focusPortal();
       }
     },
-    [value, calculatePosition, focusPortal, mode]
+    [selectedValue, calculatePosition, focusPortal, mode]
   );
 
   const openIfAllowed = useCallback(() => {
@@ -239,7 +298,7 @@ export function useCalendarRootState({
     highlightedMonth,
     highlightedYear,
     displayDate,
-    value,
+    value: selectedValue,
     minDate,
     maxDate,
     onDateSelect: handleDateSelect,
@@ -267,6 +326,12 @@ export function useCalendarRootState({
     }
   }, [isOpen, isPositionReady, isOpening, setIsOpening]);
 
+  useLayoutEffect(() => {
+    if (isOpen && mode !== 'inline') return;
+
+    setDisplayDate(selectedValue || new Date());
+  }, [isOpen, mode, selectedValue]);
+
   useEffect(() => {
     if (mode === 'inline') return;
 
@@ -276,14 +341,21 @@ export function useCalendarRootState({
       if (portalContentRef.current?.contains(target)) return;
       if (triggerInputRef.current?.contains(target)) return;
 
-      const dropdownMenu = (target as Element).closest(
+      if (!(target instanceof Element)) {
+        if (isOpen) {
+          closeCalendar();
+        }
+        return;
+      }
+
+      const dropdownMenu = target.closest(
         '[role="menu"], [data-combobox-popup]'
       );
       if (dropdownMenu) return;
 
       if (
-        (target as Element).getAttribute?.('role') === 'menu' ||
-        (target as Element).hasAttribute?.('data-combobox-popup')
+        target.getAttribute('role') === 'menu' ||
+        target.hasAttribute('data-combobox-popup')
       ) {
         return;
       }
@@ -296,8 +368,25 @@ export function useCalendarRootState({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen, closeCalendar, mode]);
 
+  useEffect(() => {
+    return () => {
+      if (navigationTimeoutRef.current) {
+        clearTimeout(navigationTimeoutRef.current);
+      }
+      if (yearNavigationTimeoutRef.current) {
+        clearTimeout(yearNavigationTimeoutRef.current);
+      }
+      if (focusPortalTimeoutRef.current) {
+        clearTimeout(focusPortalTimeoutRef.current);
+      }
+      if (returnFocusTimeoutRef.current) {
+        clearTimeout(returnFocusTimeoutRef.current);
+      }
+    };
+  }, []);
+
   return {
-    value,
+    value: selectedValue,
     onChange,
     isOpen: effectiveIsOpen,
     isClosing: effectiveIsClosing,
@@ -336,6 +425,9 @@ export function useCalendarRootState({
     triggerMonthAnimation,
     triggerInputRef,
     portalContentRef,
+    setPortalContentRef,
+    triggerId,
+    portalId,
     handleTriggerClick: () => {
       if (isOpen && !isClosing) {
         closeCalendar();
