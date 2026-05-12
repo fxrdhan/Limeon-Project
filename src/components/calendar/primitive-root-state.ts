@@ -23,6 +23,79 @@ import { createDateWithTime, isDateInRange } from './utils';
 
 export type CalendarRootProps = CalendarProviderProps;
 
+type UseCalendarSelectionHandlersParams = {
+  mode: NonNullable<CalendarProviderProps['mode']>;
+  readOnly?: boolean;
+  selectedValue: Date | null;
+  minDate?: Date;
+  maxDate?: Date;
+  isOpen: boolean;
+  onChange: CalendarProviderProps['onChange'];
+  closeCalendar: () => void;
+  focusTrigger: () => void;
+};
+
+const useCalendarSelectionHandlers = ({
+  mode,
+  readOnly,
+  selectedValue,
+  minDate,
+  maxDate,
+  isOpen,
+  onChange,
+  closeCalendar,
+  focusTrigger,
+}: UseCalendarSelectionHandlersParams) => {
+  const closeCalendarAndRestoreFocus = useCallback(() => {
+    closeCalendar();
+    focusTrigger();
+  }, [closeCalendar, focusTrigger]);
+
+  const handleDateSelect = useCallback(
+    (date: Date) => {
+      if (readOnly) return;
+      if (!isDateInRange(date, minDate, maxDate)) return;
+
+      const selectedDate = createDateWithTime(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate()
+      );
+      onChange(selectedDate);
+
+      if (mode !== 'inline') {
+        closeCalendar();
+        focusTrigger();
+      }
+    },
+    [onChange, closeCalendar, focusTrigger, mode, readOnly, minDate, maxDate]
+  );
+
+  const handleDateClear = useCallback(() => {
+    if (readOnly || !selectedValue) return;
+
+    onChange(null);
+    if (mode !== 'inline' && isOpen) {
+      closeCalendar();
+      focusTrigger();
+    }
+  }, [
+    closeCalendar,
+    focusTrigger,
+    isOpen,
+    mode,
+    onChange,
+    readOnly,
+    selectedValue,
+  ]);
+
+  return {
+    closeCalendarAndRestoreFocus,
+    handleDateSelect,
+    handleDateClear,
+  };
+};
+
 export function useCalendarRootState({
   mode = 'datepicker',
   size = 'md',
@@ -88,6 +161,18 @@ export function useCalendarRootState({
     triggerInputRef,
     portalContentRef,
   });
+  const { closeCalendarAndRestoreFocus, handleDateSelect, handleDateClear } =
+    useCalendarSelectionHandlers({
+      mode,
+      readOnly,
+      selectedValue,
+      minDate,
+      maxDate,
+      isOpen,
+      onChange,
+      closeCalendar,
+      focusTrigger,
+    });
 
   const { navigateViewDate: navigateViewDateBase, navigateYear } =
     useCalendarNavigation({
@@ -108,54 +193,11 @@ export function useCalendarRootState({
     navigateYear,
   });
 
-  const closeCalendarAndRestoreFocus = useCallback(() => {
-    closeCalendar();
-    focusTrigger();
-  }, [closeCalendar, focusTrigger]);
-
   const getDayButtonId = useCallback(
     (date: Date) =>
       `${portalId}-day-${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`,
     [portalId]
   );
-
-  const handleDateSelect = useCallback(
-    (date: Date) => {
-      if (readOnly) return;
-      if (!isDateInRange(date, minDate, maxDate)) return;
-
-      const selectedDate = createDateWithTime(
-        date.getFullYear(),
-        date.getMonth(),
-        date.getDate()
-      );
-      onChange(selectedDate);
-
-      if (mode !== 'inline') {
-        closeCalendar();
-        focusTrigger();
-      }
-    },
-    [onChange, closeCalendar, focusTrigger, mode, readOnly, minDate, maxDate]
-  );
-
-  const handleDateClear = useCallback(() => {
-    if (readOnly || !selectedValue) return;
-
-    onChange(null);
-    if (mode !== 'inline' && isOpen) {
-      closeCalendar();
-      focusTrigger();
-    }
-  }, [
-    closeCalendar,
-    focusTrigger,
-    isOpen,
-    mode,
-    onChange,
-    readOnly,
-    selectedValue,
-  ]);
 
   const openIfAllowed = useCallback(() => {
     openCalendar();

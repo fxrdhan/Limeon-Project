@@ -1,4 +1,4 @@
-import { useCallback, type KeyboardEvent } from 'react';
+import { useCallback, useRef, type KeyboardEvent } from 'react';
 import { isDateInRange } from '../utils';
 import type {
   UseCalendarKeyboardParams,
@@ -284,8 +284,28 @@ export const useCalendarKeyboard = (
     ]
   );
 
+  const handleInputKeyDownRef = useRef(handleInputKeyDown);
+  const handleCalendarKeyDownRef = useRef(handleCalendarKeyDown);
+
+  handleInputKeyDownRef.current = handleInputKeyDown;
+  handleCalendarKeyDownRef.current = handleCalendarKeyDown;
+
+  const stableHandleInputKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLElement>) => {
+      handleInputKeyDownRef.current(e);
+    },
+    []
+  );
+
+  const stableHandleCalendarKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLDivElement>) => {
+      handleCalendarKeyDownRef.current(e);
+    },
+    []
+  );
+
   return {
-    handleInputKeyDown,
-    handleCalendarKeyDown,
+    handleInputKeyDown: stableHandleInputKeyDown,
+    handleCalendarKeyDown: stableHandleCalendarKeyDown,
   };
 };

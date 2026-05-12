@@ -14,7 +14,6 @@ import type {
 } from '../types';
 
 const calendarViewportPadding = CALENDAR_CONSTANTS.VIEWPORT_MARGIN;
-const calendarMinimumAvailableHeight = 240;
 
 const getPortalWidth = (
   portalWidth: string | number | undefined,
@@ -56,7 +55,7 @@ export const useCalendarPosition = (
           );
           elements.floating.style.setProperty(
             '--calendar-available-height',
-            `${Math.max(calendarMinimumAvailableHeight, availableHeight)}px`
+            `${Math.max(0, availableHeight)}px`
           );
         },
       }),

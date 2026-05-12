@@ -3,6 +3,14 @@ import { TbCalendar, TbMoon, TbSun } from 'react-icons/tb';
 
 const Calendar = lazy(() => import('@/components/calendar'));
 
+const getLocalCalendarDate = (date = new Date()) =>
+  new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+const isSameLocalCalendarDate = (left: Date, right: Date) =>
+  left.getFullYear() === right.getFullYear() &&
+  left.getMonth() === right.getMonth() &&
+  left.getDate() === right.getDate();
+
 const DateTimeDisplay = () => {
   const [datePart, setDatePart] = useState('');
   const [hours, setHours] = useState('');
@@ -10,7 +18,9 @@ const DateTimeDisplay = () => {
   const [seconds, setSeconds] = useState('');
   const [ampm, setAmpm] = useState('');
   const [isDayTime, setIsDayTime] = useState(true);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(() =>
+    getLocalCalendarDate()
+  );
   const [is24HourFormat, setIs24HourFormat] = useState(true);
   const [shouldLoadCalendar, setShouldLoadCalendar] = useState(false);
 
@@ -51,6 +61,7 @@ const DateTimeDisplay = () => {
 
     const updateClock = () => {
       const now = new Date();
+      const todayCalendarDate = getLocalCalendarDate(now);
       const optionsDate: Intl.DateTimeFormatOptions = {
         weekday: 'short',
         year: 'numeric',
@@ -58,6 +69,16 @@ const DateTimeDisplay = () => {
         day: 'numeric',
       };
       setDatePart(now.toLocaleDateString('id-ID', optionsDate));
+      setSelectedDate(currentDate => {
+        if (
+          currentDate &&
+          isSameLocalCalendarDate(currentDate, todayCalendarDate)
+        ) {
+          return currentDate;
+        }
+
+        return todayCalendarDate;
+      });
 
       const currentHour = now.getHours();
 
