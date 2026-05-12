@@ -355,6 +355,31 @@ describe('Calendar presets', () => {
     ).toBeTruthy();
   });
 
+  it('opens the datepicker from the keyboard with fixed dialog focus', async () => {
+    render(
+      <Calendar
+        value={new Date(2026, 0, 15)}
+        onChange={() => {}}
+        placeholder="Tanggal transaksi"
+      />
+    );
+
+    const trigger = screen.getByRole('combobox', {
+      name: 'Tanggal transaksi',
+    });
+
+    fireEvent.keyDown(trigger, { key: 'Enter' });
+
+    const dialog = await screen.findByRole('dialog', { name: 'Pilih tanggal' });
+    const grid = within(dialog).getByRole('grid', { name: /Januari 2026/ });
+
+    expect(trigger.getAttribute('aria-controls')).toBe(dialog.id);
+    expect(dialog.style.position).toBe('fixed');
+    await waitFor(() => {
+      expect(document.activeElement).toBe(grid);
+    });
+  });
+
   it('cycles focus within the dialog instead of blocking tab navigation', async () => {
     render(
       <Calendar

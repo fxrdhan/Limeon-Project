@@ -6,28 +6,48 @@ import {
   CalendarTrigger,
 } from './components';
 
-export interface CalendarContentContextState {
+export interface CalendarContentViewState {
   value: CalendarDateValue;
   displayDate: Date;
   navigationDirection: 'prev' | 'next' | null;
   yearNavigationDirection: 'prev' | 'next' | null;
   highlightedDate: Date | null;
-  mode: CalendarMode;
+  isInline: boolean;
   size: CalendarSize;
+  gridTabIndex: number;
+}
+
+export interface CalendarContentBoundsState {
   minDate?: Date;
   maxDate?: Date;
-  portalWidth?: string | number;
+}
+
+export interface CalendarContentInteractionState {
   readOnly?: boolean;
   disabled?: boolean;
-  setDisplayDate: React.Dispatch<React.SetStateAction<Date>>;
-  setHighlightedDate: React.Dispatch<React.SetStateAction<Date | null>>;
+}
+
+export interface CalendarContentActions {
   handleDateSelect: (date: Date) => void;
-  navigateViewDate: (direction: 'prev' | 'next') => boolean;
-  triggerYearAnimation: (direction: 'prev' | 'next') => void;
-  triggerMonthAnimation: (direction: 'prev' | 'next') => void;
+  handleDateHighlight: (date: Date | null) => void;
+  handleNavigatePrev: () => void;
+  handleNavigateNext: () => void;
+  handleMonthChange: (month: number) => void;
+  handleYearChange: (year: number) => void;
+}
+
+export interface CalendarContentPortalState {
+  portalWidth?: string | number;
   portalContentRef: React.RefObject<HTMLDivElement | null>;
   getDayButtonId: (date: Date) => string;
-  calculatePosition: () => void;
+}
+
+export interface CalendarContentContextState {
+  actions: CalendarContentActions;
+  bounds: CalendarContentBoundsState;
+  interaction: CalendarContentInteractionState;
+  portal: CalendarContentPortalState;
+  view: CalendarContentViewState;
 }
 
 export interface CalendarTriggerContextState {

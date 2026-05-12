@@ -4,13 +4,7 @@ import { CalendarHeader } from './components';
 import { CALENDAR_SIZE_PRESETS } from './constants';
 import { useCalendarContentContext, useCalendarPortalContext } from './hooks';
 import { CalendarPrimitive } from './primitive';
-import {
-  clampMonthToRange,
-  createDisplayDate,
-  formatDateOnlyValue,
-  isMonthInRange,
-  isYearInRange,
-} from './utils';
+import { formatDateOnlyValue } from './utils';
 import type { CalendarHeaderSelectRenderProps, CalendarProps } from './types';
 import './style.scss';
 
@@ -91,29 +85,29 @@ const PharmaCalendarContent: React.FC<PharmaCalendarContentProps> = ({
   'aria-labelledby': ariaLabelledBy,
   children,
 }) => {
+  const calendarContent = useCalendarContentContext();
   const {
     value,
     displayDate,
     highlightedDate,
-    mode,
-    minDate,
-    maxDate,
+    isInline,
     size,
     navigationDirection,
     yearNavigationDirection,
-    navigateViewDate,
-    triggerYearAnimation,
-    triggerMonthAnimation,
+    gridTabIndex,
+  } = calendarContent.view;
+  const { minDate, maxDate } = calendarContent.bounds;
+  const { readOnly, disabled } = calendarContent.interaction;
+  const {
     handleDateSelect,
-    setHighlightedDate,
-    setDisplayDate,
-    calculatePosition,
-    getDayButtonId,
-    portalContentRef,
-    portalWidth,
-    readOnly,
-    disabled,
-  } = useCalendarContentContext();
+    handleDateHighlight,
+    handleNavigatePrev,
+    handleNavigateNext,
+    handleMonthChange,
+    handleYearChange,
+  } = calendarContent.actions;
+  const { getDayButtonId, portalContentRef, portalWidth } =
+    calendarContent.portal;
   const { handleCalendarKeyDown } = useCalendarPortalContext();
   const renderInlineHeaderSelect = React.useMemo(
     () => createCalendarHeaderSelectRenderer(),
@@ -126,43 +120,6 @@ const PharmaCalendarContent: React.FC<PharmaCalendarContentProps> = ({
 
   const hiddenDateInput = renderHiddenDateInput(name, value, disabled);
 
-  const handleMonthChange = (month: number) => {
-    const currentMonth = displayDate.getMonth();
-    const currentYear = displayDate.getFullYear();
-
-    if (!isMonthInRange(currentYear, month, minDate, maxDate)) return;
-
-    if (month !== currentMonth) {
-      const direction = month > currentMonth ? 'next' : 'prev';
-
-      triggerMonthAnimation(direction);
-      setDisplayDate(createDisplayDate(displayDate, currentYear, month));
-    }
-
-    calculatePosition?.();
-  };
-
-  const handleYearChange = (year: number) => {
-    const currentYear = displayDate.getFullYear();
-
-    if (!isYearInRange(year, minDate, maxDate)) return;
-
-    if (year !== currentYear) {
-      const direction = year > currentYear ? 'next' : 'prev';
-      const targetMonth = clampMonthToRange(
-        year,
-        displayDate.getMonth(),
-        minDate,
-        maxDate
-      );
-
-      triggerYearAnimation(direction);
-      setDisplayDate(createDisplayDate(displayDate, year, targetMonth));
-    }
-
-    calculatePosition?.();
-  };
-
   const renderCalendarContent = () => (
     <CalendarPrimitive.Grid
       displayDate={displayDate}
@@ -171,10 +128,10 @@ const PharmaCalendarContent: React.FC<PharmaCalendarContentProps> = ({
       minDate={minDate}
       maxDate={maxDate}
       onDateSelect={handleDateSelect}
-      onDateHighlight={setHighlightedDate}
+      onDateHighlight={handleDateHighlight}
       getDayButtonId={getDayButtonId}
-      gridTabIndex={mode === 'inline' && !disabled ? 0 : -1}
-      onGridKeyDown={mode === 'inline' ? handleCalendarKeyDown : undefined}
+      gridTabIndex={gridTabIndex}
+      onGridKeyDown={isInline ? handleCalendarKeyDown : undefined}
       navigationDirection={navigationDirection}
       yearNavigationDirection={yearNavigationDirection}
       readOnly={readOnly}
@@ -183,7 +140,7 @@ const PharmaCalendarContent: React.FC<PharmaCalendarContentProps> = ({
     />
   );
 
-  if (mode === 'inline') {
+  if (isInline) {
     const sizeConfig = CALENDAR_SIZE_PRESETS[size];
     const width = portalWidth || `${sizeConfig.width}px`;
     return (
@@ -197,8 +154,8 @@ const PharmaCalendarContent: React.FC<PharmaCalendarContentProps> = ({
         {hiddenDateInput}
         <CalendarHeader
           displayDate={displayDate}
-          onNavigatePrev={() => navigateViewDate('prev')}
-          onNavigateNext={() => navigateViewDate('next')}
+          onNavigatePrev={handleNavigatePrev}
+          onNavigateNext={handleNavigateNext}
           onMonthChange={handleMonthChange}
           onYearChange={handleYearChange}
           minDate={minDate}
@@ -239,8 +196,8 @@ const PharmaCalendarContent: React.FC<PharmaCalendarContentProps> = ({
       <CalendarPrimitive.Portal>
         <CalendarHeader
           displayDate={displayDate}
-          onNavigatePrev={() => navigateViewDate('prev')}
-          onNavigateNext={() => navigateViewDate('next')}
+          onNavigatePrev={handleNavigatePrev}
+          onNavigateNext={handleNavigateNext}
           onMonthChange={handleMonthChange}
           onYearChange={handleYearChange}
           minDate={minDate}
@@ -275,22 +232,18 @@ export const PharmaCalendar: React.FC<CalendarProps> = ({
   disabled,
   children,
 }) => {
-  const effectiveTrigger = trigger || (mode === 'inline' ? 'hover' : 'click');
-  const effectiveReadOnly = readOnly ?? false;
-  const effectiveDisabled = disabled ?? false;
-
   return (
     <CalendarPrimitive.Root
       mode={mode}
       size={size}
-      trigger={effectiveTrigger}
+      trigger={trigger}
       value={value}
       onChange={onChange}
       minDate={minDate}
       maxDate={maxDate}
       portalWidth={portalWidth}
-      readOnly={effectiveReadOnly}
-      disabled={effectiveDisabled}
+      readOnly={readOnly}
+      disabled={disabled}
     >
       <PharmaCalendarContent
         id={id}

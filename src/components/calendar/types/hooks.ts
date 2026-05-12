@@ -50,6 +50,7 @@ export interface UseCalendarKeyboardParams {
   navigateViewDate: (direction: 'prev' | 'next') => boolean;
   navigateYearWithAnimation: (direction: 'prev' | 'next') => boolean;
   focusPortal: () => void;
+  calculatePosition: () => void;
   trapFocus?: boolean;
 }
 

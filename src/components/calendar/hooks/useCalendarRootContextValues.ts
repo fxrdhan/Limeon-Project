@@ -1,13 +1,10 @@
 import {
   useMemo,
   type CSSProperties,
-  type Dispatch,
   type KeyboardEvent,
   type RefObject,
-  type SetStateAction,
 } from 'react';
 import type {
-  CalendarMode,
   CalendarRootContextState,
   CalendarSize,
   CalendarTrigger,
@@ -22,33 +19,33 @@ type UseCalendarRootContextValuesParams = {
   navigationDirection: CalendarNavigationDirection | null;
   yearNavigationDirection: CalendarNavigationDirection | null;
   highlightedDate: Date | null;
-  mode: CalendarMode;
+  isInline: boolean;
   size: CalendarSize;
   minDate?: Date;
   maxDate?: Date;
   portalWidth?: string | number;
   readOnly?: boolean;
   disabled?: boolean;
-  setDisplayDate: Dispatch<SetStateAction<Date>>;
-  setHighlightedDate: Dispatch<SetStateAction<Date | null>>;
+  gridTabIndex: number;
   handleDateSelect: (date: Date) => void;
-  navigateViewDate: (direction: CalendarNavigationDirection) => boolean;
-  triggerYearAnimation: (direction: CalendarNavigationDirection) => void;
-  triggerMonthAnimation: (direction: CalendarNavigationDirection) => void;
+  handleDateHighlight: (date: Date | null) => void;
+  handleNavigatePrev: () => void;
+  handleNavigateNext: () => void;
+  handleMonthChange: (month: number) => void;
+  handleYearChange: (year: number) => void;
   portalContentRef: RefObject<HTMLDivElement | null>;
   getDayButtonId: (date: Date) => string;
-  calculatePosition: () => void;
   trigger: CalendarTrigger;
   triggerInputRef: RefObject<HTMLElement | null>;
-  effectiveIsOpen: boolean;
+  isOpen: boolean;
   triggerId: string;
   portalId: string;
   handleTriggerClick: () => void;
   handleInputKeyDown: (e: KeyboardEvent<HTMLElement>) => void;
   handleTriggerMouseEnter: () => void;
   handleTriggerMouseLeave: () => void;
-  effectiveIsClosing: boolean;
-  effectiveIsOpening: boolean;
+  isClosing: boolean;
+  isOpening: boolean;
   isPositionReady: boolean;
   dropDirection: 'down' | 'up';
   portalStyle: CSSProperties;
@@ -65,33 +62,33 @@ export const useCalendarRootContextValues = ({
   navigationDirection,
   yearNavigationDirection,
   highlightedDate,
-  mode,
+  isInline,
   size,
   minDate,
   maxDate,
   portalWidth,
   readOnly,
   disabled,
-  setDisplayDate,
-  setHighlightedDate,
+  gridTabIndex,
   handleDateSelect,
-  navigateViewDate,
-  triggerYearAnimation,
-  triggerMonthAnimation,
+  handleDateHighlight,
+  handleNavigatePrev,
+  handleNavigateNext,
+  handleMonthChange,
+  handleYearChange,
   portalContentRef,
   getDayButtonId,
-  calculatePosition,
   trigger,
   triggerInputRef,
-  effectiveIsOpen,
+  isOpen,
   triggerId,
   portalId,
   handleTriggerClick,
   handleInputKeyDown,
   handleTriggerMouseEnter,
   handleTriggerMouseLeave,
-  effectiveIsClosing,
-  effectiveIsOpening,
+  isClosing,
+  isOpening,
   isPositionReady,
   dropDirection,
   portalStyle,
@@ -103,27 +100,37 @@ export const useCalendarRootContextValues = ({
 }: UseCalendarRootContextValuesParams): CalendarRootContextState => {
   const contentContext = useMemo<CalendarRootContextState['content']>(
     () => ({
-      value: selectedValue,
-      displayDate,
-      navigationDirection,
-      yearNavigationDirection,
-      highlightedDate,
-      mode,
-      size,
-      minDate,
-      maxDate,
-      portalWidth,
-      readOnly,
-      disabled,
-      setDisplayDate,
-      setHighlightedDate,
-      handleDateSelect,
-      navigateViewDate,
-      triggerYearAnimation,
-      triggerMonthAnimation,
-      portalContentRef,
-      getDayButtonId,
-      calculatePosition,
+      actions: {
+        handleDateHighlight,
+        handleDateSelect,
+        handleMonthChange,
+        handleNavigateNext,
+        handleNavigatePrev,
+        handleYearChange,
+      },
+      bounds: {
+        maxDate,
+        minDate,
+      },
+      interaction: {
+        disabled,
+        readOnly,
+      },
+      portal: {
+        getDayButtonId,
+        portalContentRef,
+        portalWidth,
+      },
+      view: {
+        displayDate,
+        gridTabIndex,
+        highlightedDate,
+        isInline,
+        navigationDirection,
+        size,
+        value: selectedValue,
+        yearNavigationDirection,
+      },
     }),
     [
       selectedValue,
@@ -131,21 +138,21 @@ export const useCalendarRootContextValues = ({
       navigationDirection,
       yearNavigationDirection,
       highlightedDate,
-      mode,
+      isInline,
       size,
       minDate,
       maxDate,
       portalWidth,
       readOnly,
       disabled,
-      setDisplayDate,
-      setHighlightedDate,
+      gridTabIndex,
       handleDateSelect,
-      navigateViewDate,
-      triggerYearAnimation,
-      triggerMonthAnimation,
+      handleDateHighlight,
+      handleNavigatePrev,
+      handleNavigateNext,
+      handleMonthChange,
+      handleYearChange,
       getDayButtonId,
-      calculatePosition,
       portalContentRef,
     ]
   );
@@ -155,7 +162,7 @@ export const useCalendarRootContextValues = ({
       trigger,
       disabled,
       triggerInputRef,
-      isOpen: effectiveIsOpen,
+      isOpen,
       triggerId,
       portalId,
       handleTriggerClick,
@@ -167,7 +174,7 @@ export const useCalendarRootContextValues = ({
       trigger,
       disabled,
       triggerInputRef,
-      effectiveIsOpen,
+      isOpen,
       triggerId,
       portalId,
       handleTriggerClick,
@@ -179,9 +186,9 @@ export const useCalendarRootContextValues = ({
 
   const portalContext = useMemo<CalendarRootContextState['portal']>(
     () => ({
-      isOpen: effectiveIsOpen,
-      isClosing: effectiveIsClosing,
-      isOpening: effectiveIsOpening,
+      isOpen,
+      isClosing,
+      isOpening,
       isPositionReady,
       dropDirection,
       portalStyle,
@@ -194,9 +201,9 @@ export const useCalendarRootContextValues = ({
       trigger,
     }),
     [
-      effectiveIsOpen,
-      effectiveIsClosing,
-      effectiveIsOpening,
+      isOpen,
+      isClosing,
+      isOpening,
       isPositionReady,
       dropDirection,
       portalStyle,

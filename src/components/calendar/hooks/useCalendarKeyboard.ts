@@ -40,6 +40,7 @@ export const useCalendarKeyboard = (
     navigateViewDate,
     navigateYearWithAnimation,
     focusPortal,
+    calculatePosition,
     trapFocus = true,
   } = params;
 
@@ -168,6 +169,7 @@ export const useCalendarKeyboard = (
           }
         } else {
           openCalendar();
+          calculatePosition();
           focusPortal();
         }
       } else if (e.key === 'Escape' && isOpen) {
@@ -189,6 +191,7 @@ export const useCalendarKeyboard = (
       closeCalendar,
       closeCalendarAndRestoreFocus,
       focusPortal,
+      calculatePosition,
       handleViewNavigation,
     ]
   );

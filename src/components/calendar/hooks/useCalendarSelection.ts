@@ -3,7 +3,7 @@ import type { CalendarProviderProps } from '../types';
 import { createCalendarDate, isDateInRange } from '../utils';
 
 type UseCalendarSelectionParams = {
-  mode: NonNullable<CalendarProviderProps['mode']>;
+  closeOnSelect: boolean;
   readOnly?: boolean;
   disabled?: boolean;
   selectedValue: Date | null;
@@ -16,7 +16,7 @@ type UseCalendarSelectionParams = {
 };
 
 export const useCalendarSelection = ({
-  mode,
+  closeOnSelect,
   readOnly,
   disabled,
   selectedValue,
@@ -39,7 +39,7 @@ export const useCalendarSelection = ({
 
       onChange(createCalendarDate(date));
 
-      if (mode !== 'inline') {
+      if (closeOnSelect) {
         closeCalendar();
         focusTrigger();
       }
@@ -48,7 +48,7 @@ export const useCalendarSelection = ({
       onChange,
       closeCalendar,
       focusTrigger,
-      mode,
+      closeOnSelect,
       readOnly,
       disabled,
       minDate,
@@ -60,7 +60,7 @@ export const useCalendarSelection = ({
     if (readOnly || disabled || !selectedValue) return;
 
     onChange(null);
-    if (mode !== 'inline' && isOpen) {
+    if (closeOnSelect && isOpen) {
       closeCalendar();
       focusTrigger();
     }
@@ -69,7 +69,7 @@ export const useCalendarSelection = ({
     disabled,
     focusTrigger,
     isOpen,
-    mode,
+    closeOnSelect,
     onChange,
     readOnly,
     selectedValue,

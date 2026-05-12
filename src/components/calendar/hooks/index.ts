@@ -13,6 +13,9 @@ export { useCalendarRootContextValues } from './useCalendarRootContextValues';
 export { useCalendarRootInteractions } from './useCalendarRootInteractions';
 export { useCalendarRootLifecycle } from './useCalendarRootLifecycle';
 export { useCalendarSelection } from './useCalendarSelection';
+export { useCalendarHeaderControls } from './useCalendarHeaderControls';
+export { useCalendarModeBehavior } from './useCalendarModeBehavior';
+export { useCalendarRootElements } from './useCalendarRootElements';
 export {
   useCalendarContentContext,
   useCalendarPortalContext,

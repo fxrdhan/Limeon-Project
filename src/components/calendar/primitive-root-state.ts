@@ -1,12 +1,14 @@
-import { useCallback, useId, useRef } from 'react';
 import { CALENDAR_SIZE_PRESETS } from './constants';
 import {
   useCalendarAnimatedNavigation,
   useCalendarDisplayState,
   useCalendarFocus,
+  useCalendarHeaderControls,
+  useCalendarModeBehavior,
   useCalendarNavigation,
   useCalendarPosition,
   useCalendarRootContextValues,
+  useCalendarRootElements,
   useCalendarRootInteractions,
   useCalendarRootLifecycle,
   useCalendarSelection,
@@ -19,7 +21,7 @@ export type CalendarRootProps = CalendarProviderProps;
 export function useCalendarRootState({
   mode = 'datepicker',
   size = 'md',
-  trigger = mode === 'inline' ? 'hover' : 'click',
+  trigger,
   value,
   onChange,
   minDate,
@@ -29,12 +31,14 @@ export function useCalendarRootState({
   disabled,
 }: Omit<CalendarRootProps, 'children'>): CalendarRootContextState {
   const sizeConfig = CALENDAR_SIZE_PRESETS[size];
-  const reactId = useId();
-  const triggerId = `${reactId}-trigger`;
-  const portalId = `${reactId}-portal`;
-  const portalTitleId = `${reactId}-portal-title`;
-  const triggerInputRef = useRef<HTMLElement | null>(null);
-  const portalContentRef = useRef<HTMLDivElement>(null);
+  const {
+    getDayButtonId,
+    portalContentRef,
+    portalId,
+    portalTitleId,
+    triggerId,
+    triggerInputRef,
+  } = useCalendarRootElements();
   const {
     selectedValue,
     displayDate,
@@ -60,10 +64,6 @@ export function useCalendarRootState({
     onClose: resetHighlightedDate,
   });
 
-  const effectiveIsOpen = mode === 'inline' ? true : isOpen;
-  const effectiveIsClosing = mode === 'inline' ? false : isClosing;
-  const effectiveIsOpening = mode === 'inline' ? false : isOpening;
-
   const {
     portalStyle,
     isPositionReady,
@@ -77,13 +77,22 @@ export function useCalendarRootState({
     portalWidth: portalWidth || sizeConfig.width,
     calendarWidth: sizeConfig.width,
   });
+  const modeBehavior = useCalendarModeBehavior({
+    mode,
+    trigger,
+    disabled,
+    isOpen,
+    isClosing,
+    isOpening,
+    isPositionReady,
+  });
   const { focusPortal, focusTrigger } = useCalendarFocus({
     triggerInputRef,
     portalContentRef,
   });
   const { closeCalendarAndRestoreFocus, handleDateSelect, handleDateClear } =
     useCalendarSelection({
-      mode,
+      closeOnSelect: modeBehavior.closeOnSelect,
       readOnly,
       disabled,
       selectedValue,
@@ -114,11 +123,21 @@ export function useCalendarRootState({
     navigateYear,
   });
 
-  const getDayButtonId = useCallback(
-    (date: Date) =>
-      `${portalId}-day-${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`,
-    [portalId]
-  );
+  const {
+    handleMonthChange,
+    handleNavigateNext,
+    handleNavigatePrev,
+    handleYearChange,
+  } = useCalendarHeaderControls({
+    displayDate,
+    minDate,
+    maxDate,
+    setDisplayDate,
+    navigateViewDate,
+    triggerMonthAnimation,
+    triggerYearAnimation,
+    calculatePosition,
+  });
 
   const {
     handleTriggerClick,
@@ -130,8 +149,9 @@ export function useCalendarRootState({
     handleCalendarMouseLeave,
   } = useCalendarRootInteractions({
     disabled,
-    mode,
-    trigger,
+    outsideClickEnabled: modeBehavior.outsideClickEnabled,
+    trapFocus: modeBehavior.trapFocus,
+    trigger: modeBehavior.trigger,
     portalContentRef,
     triggerInputRef,
     isOpen,
@@ -158,8 +178,8 @@ export function useCalendarRootState({
   useCalendarRootLifecycle({
     isOpen,
     isOpening,
-    isPositionReady,
-    mode,
+    isPositionReady: modeBehavior.isPositionReady,
+    isInline: modeBehavior.isInline,
     selectedValueTime,
     setIsOpening,
     syncDisplayToInitialDate,
@@ -173,34 +193,34 @@ export function useCalendarRootState({
     navigationDirection,
     yearNavigationDirection,
     highlightedDate,
-    mode,
+    isInline: modeBehavior.isInline,
     size,
     minDate,
     maxDate,
     portalWidth,
     readOnly,
     disabled,
-    setDisplayDate,
-    setHighlightedDate,
+    gridTabIndex: modeBehavior.gridTabIndex,
     handleDateSelect,
-    navigateViewDate,
-    triggerYearAnimation,
-    triggerMonthAnimation,
+    handleDateHighlight: setHighlightedDate,
+    handleNavigatePrev,
+    handleNavigateNext,
+    handleMonthChange,
+    handleYearChange,
     portalContentRef,
     getDayButtonId,
-    calculatePosition,
-    trigger,
+    trigger: modeBehavior.trigger,
     triggerInputRef,
-    effectiveIsOpen,
+    isOpen: modeBehavior.isOpen,
     triggerId,
     portalId,
     handleTriggerClick,
     handleInputKeyDown,
     handleTriggerMouseEnter,
     handleTriggerMouseLeave,
-    effectiveIsClosing,
-    effectiveIsOpening,
-    isPositionReady: mode === 'inline' ? true : isPositionReady,
+    isClosing: modeBehavior.isClosing,
+    isOpening: modeBehavior.isOpening,
+    isPositionReady: modeBehavior.isPositionReady,
     dropDirection,
     portalStyle,
     setPortalContentRef,

@@ -1,12 +1,11 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
 import { CALENDAR_CONSTANTS } from '../constants';
-import type { CalendarMode } from '../types';
 
 type UseCalendarRootLifecycleParams = {
   isOpen: boolean;
   isOpening: boolean;
   isPositionReady: boolean;
-  mode: CalendarMode;
+  isInline: boolean;
   selectedValueTime: number | null;
   setIsOpening: (value: boolean) => void;
   syncDisplayToInitialDate: () => void;
@@ -18,7 +17,7 @@ export const useCalendarRootLifecycle = ({
   isOpen,
   isOpening,
   isPositionReady,
-  mode,
+  isInline,
   selectedValueTime,
   setIsOpening,
   syncDisplayToInitialDate,
@@ -37,23 +36,23 @@ export const useCalendarRootLifecycle = ({
   }, [isOpen, isPositionReady, isOpening, setIsOpening]);
 
   useLayoutEffect(() => {
-    if (isOpen && mode !== 'inline') return;
+    if (isOpen && !isInline) return;
 
     previousSelectedValueTimeRef.current = selectedValueTime;
     syncDisplayToInitialDate();
-  }, [isOpen, mode, selectedValueTime, syncDisplayToInitialDate]);
+  }, [isInline, isOpen, selectedValueTime, syncDisplayToInitialDate]);
 
   useEffect(() => {
-    if (!isOpen || mode === 'inline') return;
+    if (!isOpen || isInline) return;
     if (previousSelectedValueTimeRef.current === selectedValueTime) return;
 
     previousSelectedValueTimeRef.current = selectedValueTime;
     syncDisplayToSelectedValue();
-  }, [isOpen, mode, selectedValueTime, syncDisplayToSelectedValue]);
+  }, [isInline, isOpen, selectedValueTime, syncDisplayToSelectedValue]);
 
   useEffect(() => {
-    if (mode !== 'inline' && !isOpen) return;
+    if (!isInline && !isOpen) return;
 
     syncHighlightToDisplayDate();
-  }, [isOpen, mode, syncHighlightToDisplayDate]);
+  }, [isInline, isOpen, syncHighlightToDisplayDate]);
 };

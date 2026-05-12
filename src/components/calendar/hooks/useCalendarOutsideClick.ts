@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import type { RefObject } from 'react';
-import type { CalendarMode, CalendarTrigger } from '../types';
+import type { CalendarTrigger } from '../types';
 
 const outsideFocusableSelector = [
   'button',
@@ -12,8 +12,8 @@ const outsideFocusableSelector = [
 ].join(',');
 
 interface UseCalendarOutsideClickParams {
+  enabled: boolean;
   isOpen: boolean;
-  mode: CalendarMode;
   trigger: CalendarTrigger;
   portalContentRef: RefObject<HTMLDivElement | null>;
   triggerInputRef: RefObject<HTMLElement | null>;
@@ -22,8 +22,8 @@ interface UseCalendarOutsideClickParams {
 }
 
 export const useCalendarOutsideClick = ({
+  enabled,
   isOpen,
-  mode,
   trigger,
   portalContentRef,
   triggerInputRef,
@@ -31,7 +31,7 @@ export const useCalendarOutsideClick = ({
   focusTrigger,
 }: UseCalendarOutsideClickParams) => {
   useEffect(() => {
-    if (mode === 'inline' || !isOpen) return;
+    if (!enabled || !isOpen) return;
 
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
@@ -57,9 +57,9 @@ export const useCalendarOutsideClick = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [
     closeCalendar,
+    enabled,
     focusTrigger,
     isOpen,
-    mode,
     portalContentRef,
     trigger,
     triggerInputRef,

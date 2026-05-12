@@ -7,17 +7,14 @@ import {
 import { useCalendarHover } from './useCalendarHover';
 import { useCalendarKeyboard } from './useCalendarKeyboard';
 import { useCalendarOutsideClick } from './useCalendarOutsideClick';
-import type {
-  CalendarDateValue,
-  CalendarMode,
-  CalendarTrigger,
-} from '../types';
+import type { CalendarDateValue, CalendarTrigger } from '../types';
 
 type CalendarNavigationDirection = 'prev' | 'next';
 
 type UseCalendarRootInteractionsParams = {
   disabled?: boolean;
-  mode: CalendarMode;
+  outsideClickEnabled: boolean;
+  trapFocus: boolean;
   trigger: CalendarTrigger;
   portalContentRef: RefObject<HTMLDivElement | null>;
   triggerInputRef: RefObject<HTMLElement | null>;
@@ -46,7 +43,8 @@ type UseCalendarRootInteractionsParams = {
 
 export const useCalendarRootInteractions = ({
   disabled,
-  mode,
+  outsideClickEnabled,
+  trapFocus,
   trigger,
   portalContentRef,
   triggerInputRef,
@@ -109,12 +107,13 @@ export const useCalendarRootInteractions = ({
     navigateViewDate,
     navigateYearWithAnimation,
     focusPortal,
-    trapFocus: mode !== 'inline',
+    calculatePosition,
+    trapFocus,
   });
 
   useCalendarOutsideClick({
+    enabled: outsideClickEnabled,
     isOpen,
-    mode,
     trigger,
     portalContentRef,
     triggerInputRef,
