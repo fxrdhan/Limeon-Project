@@ -66,6 +66,24 @@ describe('Combobox app preset state interactions', () => {
     expect(searchState.visibleItems.map(item => item.id)).toEqual(['a', 'c']);
   });
 
+  it('keeps exact-match state when selected matches replace limited results', () => {
+    const items = [
+      { id: 'exact', name: 'Supplier' },
+      { id: 'selected', name: 'Archived Supplier' },
+    ];
+    const searchState = getComboboxSearchState({
+      isSameItem: (item, value) => item.id === value.id,
+      items,
+      normalizedInputValue: 'Supplier',
+      searchEntries: getComboboxSearchEntries(items, item => item.name),
+      selectedValue: items[1],
+      visibleItemLimit: 1,
+    });
+
+    expect(searchState.visibleItems.map(item => item.id)).toEqual(['selected']);
+    expect(searchState.hasExactItem).toBe(true);
+  });
+
   it('matches acronyms, consonant skeletons, subsequences, and typo fuzzy fallbacks', () => {
     const items = [{ id: 'paracetamol-tablet', name: 'Paracetamol Tablet' }];
     const searchEntries = getComboboxSearchEntries(items, item => item.name);
