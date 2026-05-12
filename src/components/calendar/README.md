@@ -328,6 +328,16 @@ By default, the portal renders into `document.body`. Pass `container` to render 
 
 The portal uses fixed positioning with Floating UI. It flips or shifts when there is not enough viewport space and exposes `drop-down` / `drop-up` classes for styling.
 
+The default dialog label remains `Pilih tanggal`. Custom primitive compositions can provide a more specific accessible name without changing the preset behavior:
+
+```tsx
+<CalendarPrimitive.Portal title="Pilih tanggal faktur">
+  <CustomCalendarContent />
+</CalendarPrimitive.Portal>
+```
+
+Use `aria-label`, `aria-labelledby`, or `aria-describedby` when the dialog label or description is owned by custom content.
+
 ### `CalendarPrimitive.Header`
 
 `CalendarPrimitive.Header` is render-prop based for month and year controls. The preset uses `PharmaComboboxSelect` for both selectors.

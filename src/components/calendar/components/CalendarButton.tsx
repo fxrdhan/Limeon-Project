@@ -30,6 +30,25 @@ const CalendarButton: React.FC<CalendarButtonProps> = ({
   } = useCalendarTriggerContext();
   const inputId = id ?? triggerId;
   const displayInputReadOnly = true;
+  const [hasAssociatedLabel, setHasAssociatedLabel] = React.useState(false);
+
+  React.useLayoutEffect(() => {
+    if (ariaLabel || ariaLabelledBy || label) {
+      setHasAssociatedLabel(false);
+      return;
+    }
+
+    const input = triggerInputRef.current;
+    setHasAssociatedLabel(
+      input instanceof HTMLInputElement && Boolean(input.labels?.length)
+    );
+  }, [ariaLabel, ariaLabelledBy, inputId, label, triggerInputRef]);
+
+  const fallbackAriaLabel =
+    ariaLabel ??
+    (!ariaLabelledBy && !label && !hasAssociatedLabel
+      ? placeholder
+      : undefined);
 
   const handleMouseDown = (e: React.MouseEvent<HTMLInputElement>) => {
     if (
@@ -109,7 +128,7 @@ const CalendarButton: React.FC<CalendarButtonProps> = ({
           }
           onKeyDown={handleInputKeyDown}
           role="combobox"
-          aria-label={ariaLabel ?? (label ? undefined : placeholder)}
+          aria-label={fallbackAriaLabel}
           aria-labelledby={ariaLabelledBy}
           aria-controls={isOpen ? portalId : undefined}
           aria-expanded={isOpen}

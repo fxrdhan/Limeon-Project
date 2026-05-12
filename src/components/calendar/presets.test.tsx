@@ -918,6 +918,10 @@ describe('Calendar presets', () => {
     const form = screen.getByTestId('calendar-form') as HTMLFormElement;
 
     expect(input.getAttribute('id')).toBe('birth-date');
+    expect(screen.getByRole('combobox', { name: 'Tanggal lahir' })).toBe(input);
+    expect(
+      screen.queryByRole('combobox', { name: 'Pilih tanggal' })
+    ).toBeNull();
     expect(input.getAttribute('name')).toBeNull();
     expect(new FormData(form).get('birth_date')).toBe('2026-01-15');
   });
@@ -997,6 +1001,50 @@ describe('Calendar primitive', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Pick date' }));
 
     expect(await screen.findByText('Primitive popup')).toBeTruthy();
+  });
+
+  it('lets primitive portals provide their own dialog label', async () => {
+    render(
+      <CalendarPrimitive.Root value={null} onChange={() => {}}>
+        <CalendarPrimitive.Trigger>Pick invoice date</CalendarPrimitive.Trigger>
+        <CalendarPrimitive.Portal title="Pilih tanggal faktur">
+          <div>Invoice date popup</div>
+        </CalendarPrimitive.Portal>
+      </CalendarPrimitive.Root>
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Pick invoice date' }));
+
+    expect(
+      await screen.findByRole('dialog', { name: 'Pilih tanggal faktur' })
+    ).toBeTruthy();
+    expect(screen.queryByRole('dialog', { name: 'Pilih tanggal' })).toBeNull();
+  });
+
+  it('reflects child-disabled custom triggers in accessibility state', () => {
+    render(
+      <CalendarPrimitive.Root value={null} onChange={() => {}}>
+        <CalendarPrimitive.Trigger>
+          <button type="button" disabled>
+            Disabled child date
+          </button>
+        </CalendarPrimitive.Trigger>
+        <CalendarPrimitive.Portal>
+          <div>Primitive popup</div>
+        </CalendarPrimitive.Portal>
+      </CalendarPrimitive.Root>
+    );
+
+    const trigger = screen.getByRole('button', {
+      name: 'Disabled child date',
+    }) as HTMLButtonElement;
+
+    expect(trigger.disabled).toBe(true);
+    expect(trigger.getAttribute('aria-disabled')).toBe('true');
+
+    fireEvent.click(trigger);
+
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('lets primitive portal render into a custom container', async () => {

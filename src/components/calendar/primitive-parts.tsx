@@ -79,10 +79,13 @@ export function CalendarTrigger({
     portalId,
   } = useCalendarTriggerContext();
 
-  const getTriggerAttributes = (effectiveTriggerId: string) => ({
+  const getTriggerAttributes = (
+    effectiveTriggerId: string,
+    isTriggerDisabled = Boolean(disabled)
+  ) => ({
     id: effectiveTriggerId,
     'aria-controls': isOpen ? portalId : undefined,
-    'aria-disabled': disabled ? true : undefined,
+    'aria-disabled': isTriggerDisabled ? true : undefined,
     'aria-expanded': isOpen,
     'aria-haspopup': 'dialog' as const,
   });
@@ -92,7 +95,8 @@ export function CalendarTrigger({
     const isNativeButton = children.type === 'button';
     const isTriggerDisabled = Boolean(disabled || childProps.disabled);
     const triggerAttributes = getTriggerAttributes(
-      id ?? childProps.id ?? triggerId
+      id ?? childProps.id ?? triggerId,
+      isTriggerDisabled
     );
 
     return React.cloneElement(children, {

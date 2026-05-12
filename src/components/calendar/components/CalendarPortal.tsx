@@ -8,6 +8,10 @@ import type { CalendarPortalProps } from '../types';
 const CalendarPortal: React.FC<CalendarPortalProps> = ({
   children,
   container,
+  title = 'Pilih tanggal',
+  'aria-label': ariaLabel,
+  'aria-labelledby': ariaLabelledBy,
+  'aria-describedby': ariaDescribedBy,
 }) => {
   const {
     isOpen,
@@ -27,6 +31,10 @@ const CalendarPortal: React.FC<CalendarPortalProps> = ({
   const isModal = trigger !== 'hover';
   const [portalElement, setPortalElement] =
     React.useState<HTMLDivElement | null>(null);
+  const shouldRenderDefaultTitle = !ariaLabel && !ariaLabelledBy;
+  const dialogAriaLabel = ariaLabelledBy ? undefined : ariaLabel;
+  const dialogLabelledBy =
+    ariaLabelledBy ?? (shouldRenderDefaultTitle ? portalTitleId : undefined);
   const handlePortalRef = React.useCallback(
     (node: HTMLDivElement | null) => {
       setPortalContentRef(node);
@@ -72,13 +80,17 @@ const CalendarPortal: React.FC<CalendarPortalProps> = ({
       onKeyDown={handleCalendarKeyDown}
       onMouseEnter={trigger === 'hover' ? handleCalendarMouseEnter : undefined}
       onMouseLeave={trigger === 'hover' ? handleCalendarMouseLeave : undefined}
-      aria-labelledby={portalTitleId}
+      aria-label={dialogAriaLabel}
+      aria-labelledby={dialogLabelledBy}
+      aria-describedby={ariaDescribedBy}
       aria-modal={isModal ? true : undefined}
       role="dialog"
     >
-      <span id={portalTitleId} className="sr-only">
-        Pilih tanggal
-      </span>
+      {shouldRenderDefaultTitle ? (
+        <span id={portalTitleId} className="sr-only">
+          {title}
+        </span>
+      ) : null}
       {children}
     </div>,
     container ?? document.body

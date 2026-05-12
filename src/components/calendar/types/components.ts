@@ -61,6 +61,10 @@ export interface CalendarHeaderSelectRenderProps {
 export interface CalendarPortalProps {
   children: React.ReactNode;
   container?: Element | DocumentFragment;
+  title?: React.ReactNode;
+  'aria-label'?: string;
+  'aria-labelledby'?: string;
+  'aria-describedby'?: string;
 }
 
 export interface CalendarHeaderProps {
