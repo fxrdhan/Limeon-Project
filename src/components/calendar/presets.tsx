@@ -121,7 +121,7 @@ const PharmaCalendarContent: React.FC<PharmaCalendarContentProps> = ({
   const hiddenDateInput = renderHiddenDateInput(name, value, disabled);
 
   const renderCalendarContent = () => (
-    <CalendarPrimitive.Grid
+    <CalendarPrimitive.AnimatedGrid
       displayDate={displayDate}
       value={value}
       highlightedDate={highlightedDate}
@@ -136,7 +136,6 @@ const PharmaCalendarContent: React.FC<PharmaCalendarContentProps> = ({
       yearNavigationDirection={yearNavigationDirection}
       readOnly={readOnly}
       disabled={disabled}
-      animated={true}
     />
   );
 

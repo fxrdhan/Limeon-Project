@@ -106,8 +106,8 @@ const CalendarButton: React.FC<CalendarButtonProps> = ({
             'placeholder:text-slate-400',
             'border-slate-300',
             'focus:outline-hidden focus:border-primary focus:ring-3 focus:ring-emerald-200',
-            'disabled:bg-slate-100 disabled:cursor-not-allowed read-only:bg-slate-100 read-only:cursor-default',
-            'disabled:focus:ring-0 disabled:focus:border-slate-300 read-only:focus:ring-0 read-only:focus:border-slate-300',
+            'disabled:bg-slate-100 disabled:cursor-not-allowed',
+            'disabled:focus:ring-0 disabled:focus:border-slate-300',
             'transition-all ease-in-out',
             'w-full',
             'calendar__button-input',
@@ -132,6 +132,8 @@ const CalendarButton: React.FC<CalendarButtonProps> = ({
           aria-labelledby={ariaLabelledBy}
           aria-controls={isOpen ? portalId : undefined}
           aria-expanded={isOpen}
+          // eslint-disable-next-line jsx-a11y/role-supports-aria-props
+          aria-haspopup="dialog"
           aria-disabled={disabled ? true : undefined}
           aria-readonly={readOnly ? true : undefined}
           disabled={disabled}

@@ -33,6 +33,7 @@ import { useUnifiedSearch } from '@/hooks/data/useUnifiedSearch';
 import { restoreConfirmedPattern } from '@/components/search-bar/utils/patternRestoration';
 import { parseSearchValue } from '@/components/search-bar/utils/searchUtils';
 import { buildAdvancedFilterModel } from '@/utils/advancedFilterBuilder';
+import { formatDateOnlyDisplayValue } from '@/lib/formatters';
 import { useConfirmDialog } from '@/components/dialog-box';
 import {
   getOrderedSearchColumnsByEntity,
@@ -790,7 +791,7 @@ const ItemMasterNew = memo(() => {
         valueGetter: params => {
           const value = params.data.birth_date;
           return value && typeof value === 'string'
-            ? new Date(value).toLocaleDateString('id-ID')
+            ? formatDateOnlyDisplayValue(value)
             : '-';
         },
       }),

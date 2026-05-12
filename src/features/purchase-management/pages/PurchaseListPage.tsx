@@ -23,6 +23,7 @@ import {
 import { getSearchState } from '@/utils/search';
 import { purchasesService } from '@/services/api/purchases.service';
 import { QueryKeys } from '@/constants/queryKeys';
+import { formatDateOnlyDisplayValue } from '@/lib/formatters';
 
 interface Purchase {
   id: string;
@@ -195,7 +196,7 @@ const PurchaseList = () => {
         minWidth: 120,
         valueFormatter: params =>
           params.value
-            ? new Date(params.value).toLocaleDateString('id-ID', {
+            ? formatDateOnlyDisplayValue(String(params.value), {
                 day: '2-digit',
                 month: 'short',
                 year: 'numeric',

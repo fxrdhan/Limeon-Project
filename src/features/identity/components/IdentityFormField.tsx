@@ -165,11 +165,14 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
 
   const renderDisplayValue = () => {
     if (field.type === 'date' && displayValue) {
-      return new Date(String(displayValue)).toLocaleDateString('id-ID', {
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric',
-      });
+      return parseDateOnlyValue(String(displayValue)).toLocaleDateString(
+        'id-ID',
+        {
+          day: '2-digit',
+          month: 'long',
+          year: 'numeric',
+        }
+      );
     }
 
     const value = String(displayValue ?? '');

@@ -1,17 +1,14 @@
 import { CALENDAR_SIZE_PRESETS } from './constants';
 import {
-  useCalendarAnimatedNavigation,
+  useCalendarBounds,
   useCalendarDisplayState,
   useCalendarFocus,
-  useCalendarHeaderControls,
   useCalendarModeBehavior,
-  useCalendarNavigation,
   useCalendarPosition,
+  useCalendarRootActions,
   useCalendarRootContextValues,
   useCalendarRootElements,
-  useCalendarRootInteractions,
   useCalendarRootLifecycle,
-  useCalendarSelection,
   useCalendarState,
 } from './hooks';
 import type { CalendarProviderProps, CalendarRootContextState } from './types';
@@ -31,6 +28,7 @@ export function useCalendarRootState({
   disabled,
 }: Omit<CalendarRootProps, 'children'>): CalendarRootContextState {
   const sizeConfig = CALENDAR_SIZE_PRESETS[size];
+  const bounds = useCalendarBounds({ minDate, maxDate });
   const {
     getDayButtonId,
     portalContentRef,
@@ -49,7 +47,11 @@ export function useCalendarRootState({
     syncDisplayToInitialDate,
     syncDisplayToSelectedValue,
     syncHighlightToDisplayDate,
-  } = useCalendarDisplayState({ value, minDate, maxDate });
+  } = useCalendarDisplayState({
+    value,
+    minDate: bounds.minDate,
+    maxDate: bounds.maxDate,
+  });
   const selectedValueTime = selectedValue?.getTime() ?? null;
 
   const {
@@ -90,56 +92,15 @@ export function useCalendarRootState({
     triggerInputRef,
     portalContentRef,
   });
-  const { closeCalendarAndRestoreFocus, handleDateSelect, handleDateClear } =
-    useCalendarSelection({
-      closeOnSelect: modeBehavior.closeOnSelect,
-      readOnly,
-      disabled,
-      selectedValue,
-      minDate,
-      maxDate,
-      isOpen,
-      onChange,
-      closeCalendar,
-      focusTrigger,
-    });
-
-  const { navigateViewDate: navigateViewDateBase, navigateYear } =
-    useCalendarNavigation({
-      displayDate,
-      setDisplayDate,
-      minDate,
-      maxDate,
-    });
   const {
     navigationDirection,
     yearNavigationDirection,
-    navigateViewDate,
-    navigateYearWithAnimation,
-    triggerMonthAnimation,
-    triggerYearAnimation,
-  } = useCalendarAnimatedNavigation({
-    navigateViewDate: navigateViewDateBase,
-    navigateYear,
-  });
-
-  const {
+    handleDateSelect,
+    handleDateHighlight,
     handleMonthChange,
     handleNavigateNext,
     handleNavigatePrev,
     handleYearChange,
-  } = useCalendarHeaderControls({
-    displayDate,
-    minDate,
-    maxDate,
-    setDisplayDate,
-    navigateViewDate,
-    triggerMonthAnimation,
-    triggerYearAnimation,
-    calculatePosition,
-  });
-
-  const {
     handleTriggerClick,
     handleInputKeyDown,
     handleTriggerMouseEnter,
@@ -147,29 +108,24 @@ export function useCalendarRootState({
     handleCalendarKeyDown,
     handleCalendarMouseEnter,
     handleCalendarMouseLeave,
-  } = useCalendarRootInteractions({
+  } = useCalendarRootActions({
+    modeBehavior,
+    readOnly,
     disabled,
-    outsideClickEnabled: modeBehavior.outsideClickEnabled,
-    trapFocus: modeBehavior.trapFocus,
-    trigger: modeBehavior.trigger,
-    portalContentRef,
-    triggerInputRef,
-    isOpen,
-    isClosing,
+    selectedValue,
     highlightedDate,
     displayDate,
-    selectedValue,
-    minDate,
-    maxDate,
-    handleDateSelect,
-    handleDateClear,
+    minDate: bounds.minDate,
+    maxDate: bounds.maxDate,
+    isOpen,
+    isClosing,
+    onChange,
     openCalendar,
     closeCalendar,
-    closeCalendarAndRestoreFocus,
     setHighlightedDate,
     setDisplayDate,
-    navigateViewDate,
-    navigateYearWithAnimation,
+    portalContentRef,
+    triggerInputRef,
     focusPortal,
     focusTrigger,
     calculatePosition,
@@ -195,14 +151,14 @@ export function useCalendarRootState({
     highlightedDate,
     isInline: modeBehavior.isInline,
     size,
-    minDate,
-    maxDate,
+    minDate: bounds.minDate,
+    maxDate: bounds.maxDate,
     portalWidth,
     readOnly,
     disabled,
     gridTabIndex: modeBehavior.gridTabIndex,
     handleDateSelect,
-    handleDateHighlight: setHighlightedDate,
+    handleDateHighlight,
     handleNavigatePrev,
     handleNavigateNext,
     handleMonthChange,

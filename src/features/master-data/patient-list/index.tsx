@@ -11,6 +11,7 @@ import { useMasterDataManagement } from '@/hooks/data/useMasterDataManagement';
 import { useMasterDataList } from '@/features/master-data/hooks/useMasterDataList';
 import MasterDataListPage from '@/features/master-data/components/MasterDataListPage';
 import { patientSearchColumns } from '@/utils/searchColumns';
+import { formatDateOnlyDisplayValue } from '@/lib/formatters';
 
 const PatientListNew = () => {
   const searchInputRef = useRef<HTMLInputElement>(
@@ -125,7 +126,7 @@ const PatientListNew = () => {
         valueGetter: params => {
           const value = params.data.birth_date;
           return value && typeof value === 'string'
-            ? new Date(value).toLocaleDateString('id-ID')
+            ? formatDateOnlyDisplayValue(value)
             : '-';
         },
       }),

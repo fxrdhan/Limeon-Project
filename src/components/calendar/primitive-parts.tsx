@@ -13,7 +13,7 @@ import {
 export type { CalendarRootProps } from './primitive-root-state';
 
 type CalendarTriggerProps = Omit<
-  React.ComponentPropsWithoutRef<'div'>,
+  React.HTMLAttributes<HTMLElement>,
   'children' | 'role'
 > & {
   children: React.ReactNode;
@@ -51,7 +51,7 @@ const mergeRefs =
 
 type TriggerChildProps = React.HTMLAttributes<HTMLElement> & {
   ref?: React.Ref<HTMLElement>;
-  type?: string;
+  type?: React.ButtonHTMLAttributes<HTMLButtonElement>['type'];
   disabled?: boolean;
 };
 
@@ -92,7 +92,8 @@ export function CalendarTrigger({
 
   if (React.isValidElement<TriggerChildProps>(children)) {
     const childProps = children.props;
-    const isNativeButton = children.type === 'button';
+    const isNativeButton =
+      typeof children.type === 'string' && children.type === 'button';
     const isTriggerDisabled = Boolean(disabled || childProps.disabled);
     const triggerAttributes = getTriggerAttributes(
       id ?? childProps.id ?? triggerId,
@@ -111,7 +112,7 @@ export function CalendarTrigger({
           return;
         }
         childProps.onClick?.(event);
-        onClick?.(event as React.MouseEvent<HTMLDivElement>);
+        onClick?.(event);
         if (!event.defaultPrevented && trigger === 'click') {
           handleTriggerClick();
         }
@@ -119,7 +120,7 @@ export function CalendarTrigger({
       onMouseEnter: event => {
         if (isTriggerDisabled) return;
         childProps.onMouseEnter?.(event);
-        onMouseEnter?.(event as React.MouseEvent<HTMLDivElement>);
+        onMouseEnter?.(event);
         if (!event.defaultPrevented && trigger === 'hover') {
           handleTriggerMouseEnter();
         }
@@ -127,7 +128,7 @@ export function CalendarTrigger({
       onMouseLeave: event => {
         if (isTriggerDisabled) return;
         childProps.onMouseLeave?.(event);
-        onMouseLeave?.(event as React.MouseEvent<HTMLDivElement>);
+        onMouseLeave?.(event);
         if (!event.defaultPrevented && trigger === 'hover') {
           handleTriggerMouseLeave();
         }
@@ -139,7 +140,7 @@ export function CalendarTrigger({
           return;
         }
         childProps.onKeyDown?.(event);
-        onKeyDown?.(event as React.KeyboardEvent<HTMLDivElement>);
+        onKeyDown?.(event);
         if (!event.defaultPrevented) {
           handleInputKeyDown(event);
         }

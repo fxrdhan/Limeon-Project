@@ -22,6 +22,8 @@ export const useCalendarModeBehavior = ({
 }: UseCalendarModeBehaviorParams) =>
   useMemo(() => {
     const isInline = mode === 'inline';
+    const effectiveTrigger = trigger ?? (isInline ? 'hover' : 'click');
+    const isModal = !isInline && effectiveTrigger !== 'hover';
 
     return {
       closeOnSelect: !isInline,
@@ -32,7 +34,7 @@ export const useCalendarModeBehavior = ({
       isOpen: isInline ? true : isOpen,
       isPositionReady: isInline ? true : isPositionReady,
       outsideClickEnabled: !isInline,
-      trapFocus: !isInline,
-      trigger: trigger ?? (isInline ? 'hover' : 'click'),
+      trapFocus: isModal,
+      trigger: effectiveTrigger,
     };
   }, [disabled, isClosing, isOpening, isOpen, isPositionReady, mode, trigger]);

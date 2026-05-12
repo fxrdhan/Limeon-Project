@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { formatDateOnlyDisplayValue } from '@/lib/formatters';
 import type { PostgrestError } from '@supabase/supabase-js';
 
 export interface DashboardStats {
@@ -141,7 +142,7 @@ export class DashboardService {
 
       // Group sales by date
       const salesByDate = data.reduce<Record<string, number>>((acc, sale) => {
-        const date = new Date(sale.date).toLocaleDateString('id-ID');
+        const date = formatDateOnlyDisplayValue(sale.date);
         if (!acc[date]) acc[date] = 0;
         acc[date] += Number(sale.total);
         return acc;

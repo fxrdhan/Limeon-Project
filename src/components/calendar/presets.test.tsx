@@ -44,6 +44,7 @@ describe('Calendar presets', () => {
 
     expect(trigger.getAttribute('aria-controls')).toBe(dialog.id);
     expect(trigger.getAttribute('aria-expanded')).toBe('true');
+    expect(trigger.getAttribute('aria-haspopup')).toBe('dialog');
     expect(trigger.getAttribute('role')).toBe('combobox');
     expect(dialog.style.position).toBe('fixed');
 
@@ -134,6 +135,48 @@ describe('Calendar presets', () => {
       ).toBe('true');
     });
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('keeps an inline navigated month stable across equivalent bounds rerenders', async () => {
+    const InlineCalendarWithFreshBounds = () => {
+      const [rerenderCount, setRerenderCount] = useState(0);
+      const [selectedDate, setSelectedDate] = useState<Date | null>(
+        new Date(2026, 0, 15)
+      );
+
+      return (
+        <>
+          <button
+            type="button"
+            onClick={() => setRerenderCount(count => count + 1)}
+          >
+            Rerender bounds {rerenderCount}
+          </button>
+          <Calendar
+            mode="inline"
+            value={selectedDate}
+            onChange={setSelectedDate}
+            minDate={new Date(2026, 0, 1)}
+            maxDate={new Date(2026, 11, 31)}
+          />
+        </>
+      );
+    };
+
+    render(<InlineCalendarWithFreshBounds />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Bulan berikutnya' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('grid', { name: /Februari 2026/ })).toBeTruthy();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Rerender bounds/ }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('grid', { name: /Februari 2026/ })).toBeTruthy();
+    });
+    expect(screen.queryByRole('grid', { name: /Januari 2026/ })).toBeNull();
   });
 
   it('keeps an open datepicker display synced with controlled value changes', async () => {
@@ -434,6 +477,46 @@ describe('Calendar presets', () => {
     expect(selectedDay.getAttribute('tabindex')).toBe('-1');
   });
 
+  it('keeps modal accessible relationships internally resolvable', async () => {
+    render(
+      <main>
+        <button type="button">Outside action</button>
+        <Calendar
+          value={new Date(2026, 0, 15)}
+          onChange={() => {}}
+          placeholder="Tanggal transaksi"
+        />
+      </main>
+    );
+
+    const trigger = screen.getByRole('combobox', {
+      name: 'Tanggal transaksi',
+    });
+    fireEvent.click(trigger);
+
+    const dialog = await screen.findByRole('dialog', { name: 'Pilih tanggal' });
+    const grid = within(dialog).getByRole('grid', { name: /Januari 2026/ });
+    const labelledBy = dialog.getAttribute('aria-labelledby');
+    const activeDescendant = grid.getAttribute('aria-activedescendant');
+
+    expect(trigger.getAttribute('aria-controls')).toBe(dialog.id);
+    expect(labelledBy).not.toBeNull();
+    expect(document.getElementById(labelledBy ?? '')?.textContent).toBe(
+      'Pilih tanggal'
+    );
+    expect(activeDescendant).not.toBeNull();
+
+    const activeCell = document.getElementById(activeDescendant ?? '');
+    expect(activeCell?.getAttribute('role')).toBe('gridcell');
+    expect(activeCell?.getAttribute('aria-selected')).toBe('true');
+    expect(grid.contains(activeCell)).toBe(true);
+    expect(
+      Array.from(document.body.querySelectorAll<HTMLElement>('button, input'))
+        .filter(element => !dialog.contains(element))
+        .every(element => Boolean(element.closest('[aria-hidden="true"]')))
+    ).toBe(true);
+  });
+
   it('isolates background content from screen readers while modal datepicker is open', async () => {
     render(
       <main data-testid="app-shell">
@@ -500,6 +583,7 @@ describe('Calendar presets', () => {
 
     expect(dialog.hasAttribute('aria-modal')).toBe(false);
     expect(document.activeElement).toBe(trigger);
+    expect(fireEvent.keyDown(dialog, { key: 'Tab' })).toBe(true);
   });
 
   it('keeps hover trigger selectable unless read-only is explicit', async () => {
@@ -981,6 +1065,7 @@ describe('Calendar primitive', () => {
 
     fireEvent.click(getDateButton(document.body, 16, 'Januari', 2026));
 
+    expect(document.querySelector('.calendar__animation-content')).toBeNull();
     expect(onDateSelect).toHaveBeenCalledTimes(1);
     const selectedDate = onDateSelect.mock.calls[0][0] as Date;
     expect(selectedDate.getFullYear()).toBe(2026);

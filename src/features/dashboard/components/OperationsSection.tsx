@@ -1,5 +1,6 @@
 import React from 'react';
 import { TbShoppingBag, TbShoppingCart } from 'react-icons/tb';
+import { formatDateOnlyDisplayValue } from '@/lib/formatters';
 import { formatCurrency } from '../constants';
 import type { LowStockItem, RecentTransaction } from '../types';
 import { PanelMessage, SectionHeader } from './DashboardPrimitives';
@@ -68,7 +69,7 @@ const OperationsSection: React.FC<OperationsSectionProps> = ({
                   </p>
                   <p className="mt-1 text-sm text-slate-500">
                     {transaction.counterparty} •{' '}
-                    {new Date(transaction.date).toLocaleDateString('id-ID', {
+                    {formatDateOnlyDisplayValue(transaction.date, {
                       day: '2-digit',
                       month: 'short',
                       year: 'numeric',
