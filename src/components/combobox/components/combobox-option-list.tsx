@@ -22,7 +22,7 @@ const getComboboxOptionKey = (
     ? optionValue
     : `${optionValue}__duplicate-${optionValueOccurrence}`;
 
-interface ComboboxOptionListProps<Item> {
+export interface ComboboxOptionListProps<Item> {
   effectiveHighlightedIndex: number | null;
   hasHeldHighlightFrame: boolean;
   hasVisibleItems: boolean;

@@ -1,17 +1,12 @@
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-import { useFormFieldContext } from '@/components/form-field/context';
-import type { ComboboxRootProps } from '../primitive';
+import { useCallback } from 'react';
 import type {
   PharmaComboboxChangeDetails,
   PharmaComboboxSelectProps,
 } from '../presets-types';
+import {
+  getPharmaComboboxRootProps,
+  getPharmaComboboxViewProps,
+} from '../utils/preset-controller-props';
 import { useComboboxAccessibility } from './use-combobox-accessibility';
 import { useComboboxCreateAction } from './use-combobox-create-action';
 import { useComboboxDuplicateValueWarning } from './use-combobox-duplicate-value-warning';
@@ -21,35 +16,9 @@ import { useComboboxSearch } from './use-combobox-search';
 import { useComboboxSearchResultScroll } from './use-combobox-search-result-scroll';
 import { useComboboxSelectedOptionScroll } from './use-combobox-selected-option-scroll';
 import { useComboboxValidation } from './use-combobox-validation';
+import { usePharmaComboboxCoreState } from './use-pharma-combobox-core-state';
+import { usePharmaComboboxOpenLifecycle } from './use-pharma-combobox-open-lifecycle';
 import { getDefaultItemDisabled } from '../utils/preset-item';
-import { getComboboxSelectedValue } from '../utils/preset-state';
-
-type PharmaComboboxRootBoundaryProps<Item> = Pick<
-  ComboboxRootProps<Item>,
-  | 'autoHighlight'
-  | 'disabled'
-  | 'filter'
-  | 'filteredItems'
-  | 'form'
-  | 'highlightedIndex'
-  | 'inputValue'
-  | 'isItemDisabled'
-  | 'isItemEqualToValue'
-  | 'itemToStringLabel'
-  | 'itemToStringValue'
-  | 'items'
-  | 'labelId'
-  | 'name'
-  | 'onHighlightedIndexChange'
-  | 'onInputValueChange'
-  | 'onItemHighlighted'
-  | 'onOpenChange'
-  | 'onValueChange'
-  | 'open'
-  | 'readOnly'
-  | 'required'
-  | 'value'
->;
 
 export function usePharmaComboboxSelectController<Item>({
   id,
@@ -92,28 +61,34 @@ export function usePharmaComboboxSelectController<Item>({
   'aria-labelledby': ariaLabelledBy,
   'aria-describedby': ariaDescribedBy,
 }: PharmaComboboxSelectProps<Item>) {
-  const formField = useFormFieldContext();
-  const instanceId = useId();
-  const rootRef = useRef<HTMLDivElement | null>(null);
-  const popupContentRef = useRef<HTMLDivElement | null>(null);
-  const listRef = useRef<HTMLDivElement | null>(null);
-  const searchInputRef = useRef<HTMLInputElement | null>(null);
-  const fallbackLabelId = useId();
-  const valueId = useId();
-  const [inputValue, setInputValue] = useState('');
-  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
-  const [isSearchNavigationFocus, setIsSearchNavigationFocus] = useState(false);
-
-  const actualOpen = open !== undefined ? open : uncontrolledOpen;
-  const previousActualOpenRef = useRef(actualOpen);
-  const isOpenControlled = open !== undefined;
-  const effectiveId = id ?? formField?.controlId;
-  const effectiveLabel = label ?? formField?.label;
-  const effectiveRequired = required || Boolean(formField?.required);
-  const selectedValue = useMemo(
-    () => getComboboxSelectedValue(value, isValueEmpty),
-    [isValueEmpty, value]
-  );
+  const {
+    actualOpen,
+    effectiveId,
+    effectiveLabel,
+    effectiveRequired,
+    fallbackLabelId,
+    formFieldLabelId,
+    inputValue,
+    instanceId,
+    isOpenControlled,
+    isSearchNavigationFocus,
+    listRef,
+    popupContentRef,
+    rootRef,
+    searchInputRef,
+    selectedValue,
+    setInputValue,
+    setIsSearchNavigationFocus,
+    setUncontrolledOpen,
+    valueId,
+  } = usePharmaComboboxCoreState({
+    id,
+    isValueEmpty,
+    label,
+    open,
+    required,
+    value,
+  });
   const {
     clearFocusRestoreIntent,
     handleOpenChange,
@@ -157,10 +132,6 @@ export function usePharmaComboboxSelectController<Item>({
       hasVisibleItems,
       normalizedInputValue,
     });
-  const shouldAnimateListItems =
-    normalizedInputValue.length > 0 && hasVisibleItems;
-  const selectedLabel =
-    selectedValue == null ? '' : itemToStringLabel(selectedValue);
   const isItemDisabled = useCallback(
     (item: Item) => isItemDisabledProp(item),
     [isItemDisabledProp]
@@ -198,7 +169,7 @@ export function usePharmaComboboxSelectController<Item>({
     ariaLabel,
     ariaLabelledBy,
     fallbackLabelId,
-    formFieldLabelId: formField?.labelId,
+    formFieldLabelId,
     label: effectiveLabel,
     name,
     placeholder,
@@ -261,53 +232,90 @@ export function usePharmaComboboxSelectController<Item>({
     [onValueChange, resetAfterValueChange]
   );
 
-  useEffect(() => {
-    const wasOpen = previousActualOpenRef.current;
-    previousActualOpenRef.current = actualOpen;
-
-    if (actualOpen) {
-      if (!wasOpen) {
-        clearFocusRestoreIntent();
-        resetOnOpen();
-      }
-      return;
-    }
-
-    resetOnClose();
-    restoreFocusAfterCloseIfNeeded();
-  }, [
+  usePharmaComboboxOpenLifecycle({
     actualOpen,
     clearFocusRestoreIntent,
     resetOnClose,
     resetOnOpen,
     restoreFocusAfterCloseIfNeeded,
-  ]);
+  });
 
-  const comboboxRootProps: PharmaComboboxRootBoundaryProps<Item> = {
-    items,
-    value: selectedValue,
-    onValueChange: handleValueChange,
-    open: actualOpen,
-    onOpenChange: handleOpenChange,
+  const comboboxRootProps = getPharmaComboboxRootProps({
+    actualOpen,
+    disabled,
+    effectiveHighlightedIndex,
+    effectiveRequired,
+    form,
+    handleHighlightedIndexChange,
+    handleInputValueChange,
+    handleItemHighlighted,
+    handleOpenChange,
+    handleValueChange,
     inputValue,
-    onInputValueChange: handleInputValueChange,
-    highlightedIndex: effectiveHighlightedIndex,
-    onHighlightedIndexChange: handleHighlightedIndexChange,
-    onItemHighlighted: handleItemHighlighted,
-    itemToStringLabel,
-    itemToStringValue,
     isItemDisabled,
     isItemEqualToValue,
-    labelId: listboxLabelId,
+    itemToStringLabel,
+    itemToStringValue,
+    items,
+    listboxLabelId,
     name,
-    form,
-    disabled,
     readOnly,
-    required: effectiveRequired,
-    filteredItems: visibleItems,
-    filter: null,
-    autoHighlight: searchable,
-  };
+    searchable,
+    selectedValue,
+    visibleItems,
+  });
+  const {
+    emptyAction,
+    optionListProps,
+    searchHeaderProps,
+    triggerButtonProps,
+    validationState,
+  } = getPharmaComboboxViewProps({
+    ariaLabel,
+    canCreate,
+    controlName,
+    createActionLabel,
+    effectiveHighlightedIndex,
+    effectiveId,
+    handleCreate,
+    handleItemLeave,
+    handleListScroll,
+    handleOptionListMouseLeave,
+    handleOptionMouseEnter,
+    handleOptionMouseMove,
+    handleSearchInputKeyDown,
+    handleTriggerKeyDown,
+    handleTriggerMouseEnter,
+    handleTriggerMouseLeave,
+    hasHeldHighlightFrame: heldHighlightFrame !== null,
+    hasVisibleItems,
+    indicator,
+    inputValue,
+    isItemDisabled,
+    isSearchNavigationFocus,
+    itemToStringLabel,
+    itemToStringValue,
+    listRef,
+    listboxAriaLabel,
+    normalizedInputValue,
+    placeholder,
+    renderOption,
+    renderOptionMeta,
+    searchInputRef,
+    searchPlaceholder,
+    selectedValue,
+    setIsSearchNavigationFocus,
+    setTriggerButtonRef,
+    showValidation,
+    tabIndex,
+    triggerDescribedBy,
+    triggerLabelledBy,
+    validation,
+    validationMessageId,
+    valueId,
+    visibleItems,
+    visualHighlightId: `combobox-active-background-${instanceId}`,
+  });
 
   return {
     actualOpen,
@@ -315,75 +323,22 @@ export function usePharmaComboboxSelectController<Item>({
     comboboxRootProps,
     controlName,
     emptyText,
-    emptyAction: {
-      canCreate,
-      label: createActionLabel,
-      onCreate: handleCreate,
-    },
+    emptyAction,
     fallbackLabelId,
     handleComboboxBlur,
     heldHighlightFrame,
     heldHighlightFrameKey,
     hoverDetail: hoverDetailState,
-    optionListProps: {
-      effectiveHighlightedIndex,
-      hasHeldHighlightFrame: heldHighlightFrame !== null,
-      hasVisibleItems,
-      indicator,
-      inputValue,
-      isItemDisabled,
-      itemToStringLabel,
-      itemToStringValue,
-      listRef,
-      listboxAriaLabel,
-      onItemLeave: handleItemLeave,
-      onListMouseLeave: handleOptionListMouseLeave,
-      onListScrollIntent: handleListScroll,
-      onOptionMouseEnter: handleOptionMouseEnter,
-      onOptionMouseMove: handleOptionMouseMove,
-      renderOption,
-      renderOptionMeta,
-      shouldAnimateListItems,
-      visibleItems,
-      visualHighlightId: `combobox-active-background-${instanceId}`,
-    },
+    optionListProps,
     popupClassName,
     popupContainerRef,
     popupMatchAnchorWidth,
     popupContentRef,
     rootRef,
     searchable,
-    searchHeaderProps: {
-      controlName,
-      isSearchNavigationFocus,
-      normalizedInputValue,
-      onNavigationFocusChange: setIsSearchNavigationFocus,
-      onSearchInputKeyDown: handleSearchInputKeyDown,
-      searchInputRef,
-      searchPlaceholder,
-    },
+    searchHeaderProps,
     shouldRenderFallbackLabel,
-    triggerButtonProps: {
-      id: effectiveId,
-      ariaLabel,
-      ariaLabelledBy: triggerLabelledBy,
-      ariaDescribedBy: triggerDescribedBy,
-      ariaInvalid: Boolean(showValidation),
-      tabIndex,
-      onMouseEnter: handleTriggerMouseEnter,
-      onMouseLeave: handleTriggerMouseLeave,
-      onNavigationKeyDown: handleTriggerKeyDown,
-      placeholder,
-      selectedLabel,
-      setTriggerButtonRef,
-      valueId,
-    },
-    validationState: {
-      autoHide: validation?.autoHide,
-      autoHideDelay: validation?.autoHideDelay,
-      enabled: validation?.enabled,
-      messageId: validationMessageId,
-      show: showValidation,
-    },
+    triggerButtonProps,
+    validationState,
   };
 }

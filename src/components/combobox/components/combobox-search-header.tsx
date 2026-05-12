@@ -3,7 +3,7 @@ import { TbSearch } from 'react-icons/tb';
 import { cn } from '@/lib/utils';
 import { Combobox } from '../primitive';
 
-interface ComboboxSearchHeaderProps {
+export interface ComboboxSearchHeaderProps {
   controlName: string;
   isSearchNavigationFocus: boolean;
   normalizedInputValue: string;

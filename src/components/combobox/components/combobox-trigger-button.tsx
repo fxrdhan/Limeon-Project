@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { Combobox } from '../primitive';
 import { setRef } from '../utils/preset-dom';
 
-interface ComboboxTriggerButtonProps {
+export interface ComboboxTriggerButtonProps {
   ariaDescribedBy?: string;
   ariaInvalid?: boolean;
   ariaLabel?: string;
