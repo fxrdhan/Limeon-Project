@@ -589,35 +589,12 @@ export const getComboboxSearchState = <Item>({
   ).sort((first, second) =>
     compareComboboxSearchMatches(first.match, second.match)
   );
-  const visibleItems: Item[] = [];
-  let selectedMatchBeyondLimit: Item | null = null;
   const hasExactItem = matchedEntries.some(
     ({ match }) => match.tier === comboboxSearchTier.exact
   );
 
-  for (const { entry } of matchedEntries) {
-    if (limit === undefined || visibleItems.length < limit) {
-      visibleItems.push(entry.item);
-    } else if (
-      selectedValue !== null &&
-      selectedMatchBeyondLimit === null &&
-      isSameItem(entry.item, selectedValue) &&
-      !visibleItems.some(visibleItem => isSameItem(visibleItem, selectedValue))
-    ) {
-      selectedMatchBeyondLimit = entry.item;
-    }
-  }
-
-  if (selectedMatchBeyondLimit !== null && limit !== undefined) {
-    if (limit === 1) {
-      visibleItems[0] = selectedMatchBeyondLimit;
-    } else {
-      visibleItems[limit - 1] = selectedMatchBeyondLimit;
-    }
-  }
-
   return {
     hasExactItem,
-    visibleItems,
+    visibleItems: matchedEntries.map(({ entry }) => entry.item),
   };
 };

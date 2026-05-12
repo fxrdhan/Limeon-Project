@@ -66,9 +66,7 @@ export const ComboboxInput = forwardRef<HTMLInputElement, ComboboxInputProps>(
           props['aria-labelledby'] ??
           (props['aria-label'] ? undefined : context.labelId)
         }
-        aria-readonly={
-          props['aria-readonly'] ?? (context.readOnly ? true : undefined)
-        }
+        aria-readonly={props['aria-readonly'] ?? (readOnly ? true : undefined)}
         aria-required={
           props['aria-required'] ?? (context.required ? true : undefined)
         }

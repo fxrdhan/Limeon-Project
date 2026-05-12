@@ -117,6 +117,27 @@ describe('Combobox primitive form and input state', () => {
     expect(screen.getByRole('searchbox')).toBe(input);
   });
 
+  it('reflects direct primitive input read-only props to ARIA', () => {
+    render(
+      <Combobox.Root items={fruitItems} defaultOpen>
+        <Combobox.Trigger aria-label="Fruit">
+          <Combobox.Value placeholder="Choose fruit" />
+        </Combobox.Trigger>
+        <Combobox.Portal>
+          <Combobox.Positioner>
+            <Combobox.Popup initialFocus={false}>
+              <Combobox.Input placeholder="Search fruit" readOnly />
+            </Combobox.Popup>
+          </Combobox.Positioner>
+        </Combobox.Portal>
+      </Combobox.Root>
+    );
+
+    const input = screen.getByRole('searchbox');
+    expect((input as HTMLInputElement).readOnly).toBe(true);
+    expect(input.getAttribute('aria-readonly')).toBe('true');
+  });
+
   it('uses root autocomplete as the primitive input default', () => {
     const AutoCompleteCombobox = ({
       inputAutoComplete,

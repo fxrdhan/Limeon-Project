@@ -27,6 +27,8 @@ export function usePharmaComboboxOpenLifecycle({
       return;
     }
 
+    if (!wasOpen) return;
+
     resetOnClose();
     restoreFocusAfterCloseIfNeeded();
   }, [

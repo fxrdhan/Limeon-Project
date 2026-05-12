@@ -96,6 +96,7 @@ type PharmaComboboxViewPropsOptions<Item> = {
   searchInputRef: ComboboxSearchHeaderProps['searchInputRef'];
   searchPlaceholder: string;
   selectedValue: Item | null;
+  selectedVisibleIndex: number;
   setTriggerButtonRef: ComboboxTriggerButtonProps['setTriggerButtonRef'];
   setIsSearchNavigationFocus: ComboboxSearchHeaderProps['onNavigationFocusChange'];
   showValidation: boolean | undefined;
@@ -106,6 +107,7 @@ type PharmaComboboxViewPropsOptions<Item> = {
   validationMessageId: string;
   valueId: string;
   visibleItems: Item[];
+  virtualScrollToIndexRef: ComboboxOptionListProps<Item>['virtualScrollToIndexRef'];
   visualHighlightId: string;
 };
 
@@ -192,6 +194,7 @@ export const getPharmaComboboxViewProps = <Item>({
   searchInputRef,
   searchPlaceholder,
   selectedValue,
+  selectedVisibleIndex,
   setTriggerButtonRef,
   setIsSearchNavigationFocus,
   showValidation,
@@ -202,6 +205,7 @@ export const getPharmaComboboxViewProps = <Item>({
   validationMessageId,
   valueId,
   visibleItems,
+  virtualScrollToIndexRef,
   visualHighlightId,
 }: PharmaComboboxViewPropsOptions<Item>) => {
   const selectedLabel =
@@ -233,8 +237,10 @@ export const getPharmaComboboxViewProps = <Item>({
       onOptionMouseMove: handleOptionMouseMove,
       renderOption,
       renderOptionMeta,
+      selectedVisibleIndex,
       shouldAnimateListItems,
       visibleItems,
+      virtualScrollToIndexRef,
       visualHighlightId,
     },
     searchHeaderProps: {

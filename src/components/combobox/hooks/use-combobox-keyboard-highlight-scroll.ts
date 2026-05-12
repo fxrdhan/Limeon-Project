@@ -18,6 +18,14 @@ const keyboardScrollHighlightMaxHold = 700;
 const wrappedKeyboardScrollBehavior = 'auto';
 const edgeKeyboardScrollBehavior = 'smooth';
 
+export type ComboboxVirtualScrollToIndex = (
+  index: number,
+  options?: {
+    align?: 'auto' | 'center' | 'end' | 'start';
+    behavior?: ScrollBehavior;
+  }
+) => void;
+
 const scrollElementTo = (
   element: HTMLElement,
   top: number,
@@ -36,6 +44,7 @@ interface UseComboboxKeyboardHighlightScrollOptions {
   getOptionElementAtIndex: (index: number) => HTMLElement | null;
   listRef: RefObject<HTMLDivElement | null>;
   popupContentRef: RefObject<HTMLDivElement | null>;
+  virtualScrollToIndexRef: RefObject<ComboboxVirtualScrollToIndex | null>;
   visibleItemCount: number;
 }
 
@@ -94,6 +103,7 @@ export function useComboboxKeyboardHighlightScroll({
   getOptionElementAtIndex,
   listRef,
   popupContentRef,
+  virtualScrollToIndexRef,
   visibleItemCount,
 }: UseComboboxKeyboardHighlightScrollOptions) {
   const releaseHeldHighlightFrameRef = useRef<number | null>(null);
@@ -144,6 +154,26 @@ export function useComboboxKeyboardHighlightScroll({
             })
           : null;
 
+      if (list && !targetElement && virtualScrollToIndexRef.current) {
+        const wrapped = isWrappedKeyboardScroll({
+          itemCount: visibleItemCount,
+          sourceIndex,
+          targetIndex: targetVisibleIndex,
+        });
+        virtualScrollToIndexRef.current(targetVisibleIndex, {
+          align: wrapped
+            ? targetVisibleIndex === 0
+              ? 'start'
+              : 'end'
+            : 'auto',
+          behavior: wrapped
+            ? wrappedKeyboardScrollBehavior
+            : edgeKeyboardScrollBehavior,
+        });
+        setPendingKeyboardScroll(null);
+        return;
+      }
+
       if (scrollTarget) {
         setPendingKeyboardScroll({
           sourceIndex,
@@ -158,6 +188,7 @@ export function useComboboxKeyboardHighlightScroll({
       clearKeyboardScrollHighlight,
       getOptionElementAtIndex,
       listRef,
+      virtualScrollToIndexRef,
       visibleItemCount,
     ]
   );

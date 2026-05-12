@@ -8,16 +8,14 @@ import {
   getPharmaComboboxViewProps,
 } from '../utils/preset-controller-props';
 import { useComboboxAccessibility } from './use-combobox-accessibility';
-import { useComboboxCreateAction } from './use-combobox-create-action';
-import { useComboboxDuplicateValueWarning } from './use-combobox-duplicate-value-warning';
 import { useComboboxFocusRestore } from './use-combobox-focus-restore';
 import { useComboboxOptionInteraction } from './use-combobox-option-interaction';
-import { useComboboxSearch } from './use-combobox-search';
 import { useComboboxSearchResultScroll } from './use-combobox-search-result-scroll';
 import { useComboboxSelectedOptionScroll } from './use-combobox-selected-option-scroll';
 import { useComboboxValidation } from './use-combobox-validation';
 import { usePharmaComboboxCoreState } from './use-pharma-combobox-core-state';
 import { usePharmaComboboxOpenLifecycle } from './use-pharma-combobox-open-lifecycle';
+import { usePharmaComboboxSelectionModel } from './use-pharma-combobox-selection-model';
 import { getDefaultItemDisabled } from '../utils/preset-item';
 
 export function usePharmaComboboxSelectController<Item>({
@@ -81,6 +79,7 @@ export function usePharmaComboboxSelectController<Item>({
     setIsSearchNavigationFocus,
     setUncontrolledOpen,
     valueId,
+    virtualScrollToIndexRef,
   } = usePharmaComboboxCoreState({
     id,
     isValueEmpty,
@@ -109,48 +108,38 @@ export function usePharmaComboboxSelectController<Item>({
       selectedValue,
       validation,
     });
-  const isSameItem = useCallback(
-    (item: Item, itemValue: Item) =>
-      isItemEqualToValue
-        ? isItemEqualToValue(item, itemValue)
-        : Object.is(item, itemValue),
-    [isItemEqualToValue]
-  );
-  const { hasExactItem, hasVisibleItems, normalizedInputValue, visibleItems } =
-    useComboboxSearch({
-      inputValue,
-      isSameItem,
-      itemToStringLabel,
-      items,
-      selectedValue,
-      visibleItemLimit,
-    });
-  const { canCreate, createActionLabel, handleCreate } =
-    useComboboxCreateAction({
-      createAction,
-      hasExactItem,
-      hasVisibleItems,
-      normalizedInputValue,
-    });
-  const isItemDisabled = useCallback(
-    (item: Item) => isItemDisabledProp(item),
-    [isItemDisabledProp]
-  );
-
-  useComboboxDuplicateValueWarning({
+  const {
+    canCreate,
+    createActionLabel,
+    handleCreate,
+    hasVisibleItems,
+    isItemDisabled,
+    isSameItem,
+    normalizedInputValue,
+    visibleItems,
+  } = usePharmaComboboxSelectionModel({
+    createAction,
+    inputValue,
+    isItemDisabledProp,
+    isItemEqualToValue,
+    itemToStringLabel,
     itemToStringValue,
     items,
     name,
+    selectedValue,
+    visibleItemLimit,
   });
 
-  const { requestSelectedOptionScroll } = useComboboxSelectedOptionScroll({
-    actualOpen,
-    enabled: normalizedInputValue.length === 0,
-    isSameItem,
-    listRef,
-    selectedValue,
-    visibleItems,
-  });
+  const { requestSelectedOptionScroll, selectedVisibleIndex } =
+    useComboboxSelectedOptionScroll({
+      actualOpen,
+      enabled: normalizedInputValue.length === 0,
+      isSameItem,
+      listRef,
+      selectedValue,
+      virtualScrollToIndexRef,
+      visibleItems,
+    });
   useComboboxSearchResultScroll({
     actualOpen,
     listRef,
@@ -219,6 +208,7 @@ export function usePharmaComboboxSelectController<Item>({
     selectedValue,
     setInputValue,
     setIsSearchNavigationFocus,
+    virtualScrollToIndexRef,
     visibleItems,
   });
 
@@ -304,6 +294,7 @@ export function usePharmaComboboxSelectController<Item>({
     searchInputRef,
     searchPlaceholder,
     selectedValue,
+    selectedVisibleIndex,
     setIsSearchNavigationFocus,
     setTriggerButtonRef,
     showValidation,
@@ -314,6 +305,7 @@ export function usePharmaComboboxSelectController<Item>({
     validationMessageId,
     valueId,
     visibleItems,
+    virtualScrollToIndexRef,
     visualHighlightId: `combobox-active-background-${instanceId}`,
   });
 

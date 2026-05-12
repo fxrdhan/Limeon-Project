@@ -550,6 +550,60 @@ describe('Combobox app presets', () => {
     expect(screen.queryByRole('option', { name: /supplier b/i })).toBeNull();
   });
 
+  it('virtualizes long option lists without changing keyboard selection flow', async () => {
+    const longOptions = Array.from({ length: 150 }, (_, index) => {
+      const optionNumber = String(index + 1).padStart(3, '0');
+
+      return {
+        id: `option-${optionNumber}`,
+        name: `Virtual option ${optionNumber}`,
+      };
+    });
+    const onValueChange = vi.fn();
+
+    render(
+      <PharmaComboboxSelect
+        name="virtualized_option_id"
+        items={longOptions}
+        value={null}
+        onValueChange={onValueChange}
+        itemToStringLabel={option => option.name}
+        itemToStringValue={option => option.id}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: /pilih/i }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('option', { name: /virtual option 001/i })
+      ).toBeTruthy();
+    });
+    expect(screen.getAllByRole('option').length).toBeLessThan(
+      longOptions.length
+    );
+    expect(
+      screen.queryByRole('option', { name: /virtual option 150/i })
+    ).toBeNull();
+
+    const searchInput = screen.getByPlaceholderText('Cari...');
+    fireEvent.change(searchInput, {
+      target: { value: 'Virtual option 150' },
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('option', { name: /virtual option 150/i })
+      ).toBeTruthy();
+    });
+    fireEvent.keyDown(searchInput, { key: 'Enter' });
+
+    expect(onValueChange).toHaveBeenCalledWith(
+      longOptions[149],
+      expect.objectContaining({ reason: 'item-press' })
+    );
+  });
+
   it('keeps filtered option indices aligned with primitive active descendant', async () => {
     const onValueChange = vi.fn();
 

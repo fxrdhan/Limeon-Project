@@ -2,6 +2,7 @@ import { useId, useMemo, useRef, useState } from 'react';
 import { useFormFieldContext } from '@/components/form-field/context';
 import type { PharmaComboboxSelectProps } from '../presets-types';
 import { getComboboxSelectedValue } from '../utils/preset-state';
+import type { ComboboxVirtualScrollToIndex } from './use-combobox-keyboard-highlight-scroll';
 
 type PharmaComboboxCoreStateProps<Item> = Pick<
   PharmaComboboxSelectProps<Item>,
@@ -22,6 +23,9 @@ export function usePharmaComboboxCoreState<Item>({
   const popupContentRef = useRef<HTMLDivElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const virtualScrollToIndexRef = useRef<ComboboxVirtualScrollToIndex | null>(
+    null
+  );
   const fallbackLabelId = useId();
   const valueId = useId();
   const [inputValue, setInputValue] = useState('');
@@ -58,5 +62,6 @@ export function usePharmaComboboxCoreState<Item>({
     setIsSearchNavigationFocus,
     setUncontrolledOpen,
     valueId,
+    virtualScrollToIndexRef,
   };
 }

@@ -12,7 +12,10 @@ import { getPharmaComboboxOptionIndexSelector } from '../utils/preset-dom';
 import { getDefaultHoverDetailData } from '../utils/preset-item';
 import { useComboboxHighlight } from './use-combobox-highlight';
 import { useComboboxHoverDetail } from './use-combobox-hover-detail';
-import { useComboboxKeyboardHighlightScroll } from './use-combobox-keyboard-highlight-scroll';
+import {
+  useComboboxKeyboardHighlightScroll,
+  type ComboboxVirtualScrollToIndex,
+} from './use-combobox-keyboard-highlight-scroll';
 import { useComboboxPointerHover } from './use-combobox-pointer-hover';
 import { useComboboxScrollHoverDetailSync } from './use-combobox-scroll-hover-detail-sync';
 
@@ -40,6 +43,7 @@ export function useComboboxOptionInteraction<Item>({
   selectedValue,
   setInputValue,
   setIsSearchNavigationFocus,
+  virtualScrollToIndexRef,
   visibleItems,
 }: {
   actualOpen: boolean;
@@ -66,6 +70,7 @@ export function useComboboxOptionInteraction<Item>({
   selectedValue: Item | null;
   setInputValue: Dispatch<SetStateAction<string>>;
   setIsSearchNavigationFocus: Dispatch<SetStateAction<boolean>>;
+  virtualScrollToIndexRef: RefObject<ComboboxVirtualScrollToIndex | null>;
   visibleItems: Item[];
 }) {
   const keyboardHoverDetailSyncTimeoutRef = useRef<ReturnType<
@@ -119,6 +124,7 @@ export function useComboboxOptionInteraction<Item>({
     getOptionElementAtIndex,
     listRef,
     popupContentRef,
+    virtualScrollToIndexRef,
     visibleItemCount: visibleItems.length,
   });
   const getHighlightedHoverDetailAnchorElement = useCallback(
