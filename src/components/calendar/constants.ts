@@ -55,3 +55,8 @@ export const CALENDAR_SIZE_PRESETS = {
     width: 450,
   },
 } as const;
+
+export const DEFAULT_CALENDAR_YEAR_WINDOW = {
+  future: 50,
+  past: 50,
+} as const;

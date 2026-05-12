@@ -1,4 +1,4 @@
-import { MONTH_NAMES_ID } from '../constants';
+import { DEFAULT_CALENDAR_YEAR_WINDOW, MONTH_NAMES_ID } from '../constants';
 import { isMonthInRange, isYearInRange } from '../utils';
 
 export const getCalendarHeaderModel = (
@@ -9,8 +9,12 @@ export const getCalendarHeaderModel = (
   const currentYear = displayDate.getFullYear();
   const previousMonth = new Date(currentYear, displayDate.getMonth() - 1, 1);
   const nextMonth = new Date(currentYear, displayDate.getMonth() + 1, 1);
-  const firstYear = minDate ? minDate.getFullYear() : currentYear - 50;
-  const lastYear = maxDate ? maxDate.getFullYear() : currentYear + 50;
+  const firstYear = minDate
+    ? minDate.getFullYear()
+    : currentYear - DEFAULT_CALENDAR_YEAR_WINDOW.past;
+  const lastYear = maxDate
+    ? maxDate.getFullYear()
+    : currentYear + DEFAULT_CALENDAR_YEAR_WINDOW.future;
 
   return {
     canNavigateNext: isMonthInRange(
