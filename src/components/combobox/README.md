@@ -239,7 +239,7 @@ type EntityComboboxItem = {
 
 | Prop                 | Type                               | Description                                                         |
 | -------------------- | ---------------------------------- | ------------------------------------------------------------------- |
-| `items`              | `Item[]`                           | Available options.                                                  |
+| `items`              | `readonly Item[]`                  | Available options.                                                  |
 | `valueId`            | `string`                           | Current submitted id. Use `''` for empty selection.                 |
 | `onValueIdChange`    | `(valueId, item, details) => void` | Called when selection changes.                                      |
 | `selectedItem`       | `Item \| null`                     | Optional item for the current id when it is not present in `items`. |
@@ -255,7 +255,7 @@ If `valueId` is not empty and neither `items` nor `selectedItem` can resolve it,
 
 | Prop                      | Type                                                                | Description                                                                             |
 | ------------------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| `items`                   | `Item[]`                                                            | Options displayed by the select.                                                        |
+| `items`                   | `readonly Item[]`                                                   | Options displayed by the select.                                                        |
 | `value`                   | `Item \| null`                                                      | Selected item.                                                                          |
 | `onValueChange`           | `(item, details) => void`                                           | Called after the selected item changes.                                                 |
 | `itemToStringLabel`       | `(item) => string`                                                  | Human-readable option label.                                                            |
@@ -295,12 +295,14 @@ If `valueId` is not empty and neither `items` nor `selectedItem` can resolve it,
 | `aria-describedby`        | `string`                                                            | Accessible description reference.                                                       |
 
 When `required` is set, preset validation is enabled by default. Set
-`validation.enabled` to `false` to opt out.
+`validation.enabled` to `false` to opt out of preset overlay feedback and
+`aria-invalid` state.
 
 Required preset fields also render a separate native validation proxy. The
 submitted hidden input remains a plain submitted value, while the proxy lets
 browser form validation block empty required comboboxes and route focus back to
-the trigger.
+the trigger. This native required proxy remains active when `required` is true,
+even if `validation.enabled` is `false`.
 
 ## Typed Primitive API
 

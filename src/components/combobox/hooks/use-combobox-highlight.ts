@@ -52,7 +52,7 @@ export function useComboboxHighlight<Item>({
   isItemDisabled: (item: Item) => boolean;
   isKeyboardHoverSuppressed: () => boolean;
   isSameItem: (item: Item, value: Item) => boolean;
-  items: Item[];
+  items: readonly Item[];
   normalizedInputValue: string;
   requestSelectedOptionScroll: () => void;
   resetKeyboardHoverSuppression: () => void;
@@ -66,7 +66,7 @@ export function useComboboxHighlight<Item>({
   setInputValue: Dispatch<SetStateAction<string>>;
   setIsSearchNavigationFocus: Dispatch<SetStateAction<boolean>>;
   suppressPointerHoverForKeyboard: () => void;
-  visibleItems: Item[];
+  visibleItems: readonly Item[];
 }) {
   const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
   const defaultHighlightedValue =

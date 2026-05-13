@@ -53,13 +53,13 @@ type PharmaComboboxRootPropsOptions<Item> = {
   isItemEqualToValue?: ComboboxRootProps<Item>['isItemEqualToValue'];
   itemToStringLabel: NonNullable<ComboboxRootProps<Item>['itemToStringLabel']>;
   itemToStringValue: NonNullable<ComboboxRootProps<Item>['itemToStringValue']>;
-  items: Item[];
+  items: readonly Item[];
   listboxLabelId?: string;
   name?: string;
   readOnly: boolean;
   searchable: boolean;
   selectedValue: Item | null;
-  visibleItems: Item[];
+  visibleItems: readonly Item[];
 };
 
 type PharmaComboboxViewPropsOptions<Item> = {
@@ -107,7 +107,7 @@ type PharmaComboboxViewPropsOptions<Item> = {
   validationEnabled: boolean;
   validationMessageId: string;
   valueId: string;
-  visibleItems: Item[];
+  visibleItems: readonly Item[];
   virtualScrollToIndexRef: ComboboxOptionListProps<Item>['virtualScrollToIndexRef'];
   visualHighlightId: string;
 };

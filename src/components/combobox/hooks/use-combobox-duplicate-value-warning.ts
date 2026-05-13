@@ -7,7 +7,7 @@ export function useComboboxDuplicateValueInvariant<Item>({
   name,
 }: {
   itemToStringValue: (item: Item) => string;
-  items: Item[];
+  items: readonly Item[];
   name?: string;
 }) {
   const duplicateValue = useMemo(

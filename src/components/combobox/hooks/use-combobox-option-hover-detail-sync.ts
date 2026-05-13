@@ -48,7 +48,7 @@ export function useComboboxOptionHoverDetailSync<Item>({
     itemData?: Partial<HoverDetailData>,
     options?: { show?: boolean }
   ) => void;
-  visibleItems: Item[];
+  visibleItems: readonly Item[];
 }) {
   useComboboxKeyboardHoverDetailSync({
     actualOpen,

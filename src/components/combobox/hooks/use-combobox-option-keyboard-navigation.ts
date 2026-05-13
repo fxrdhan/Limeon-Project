@@ -31,7 +31,7 @@ export function useComboboxOptionKeyboardNavigation<Item>({
   isItemDisabled: (item: Item) => boolean;
   isKeyboardHoverSuppressed: () => boolean;
   isSameItem: (item: Item, value: Item) => boolean;
-  items: Item[];
+  items: readonly Item[];
   normalizedInputValue: string;
   requestSelectedOptionScroll: () => void;
   resetKeyboardHoverSuppression: () => void;
@@ -45,7 +45,7 @@ export function useComboboxOptionKeyboardNavigation<Item>({
   setInputValue: Dispatch<SetStateAction<string>>;
   setIsSearchNavigationFocus: Dispatch<SetStateAction<boolean>>;
   suppressPointerHoverForKeyboard: () => void;
-  visibleItems: Item[];
+  visibleItems: readonly Item[];
 }) {
   return useComboboxHighlight({
     actualOpen,

@@ -29,11 +29,11 @@ type ComboboxOptionInteractionSelection<Item> = {
   handleCreate: () => void;
   isItemDisabled: (item: Item) => boolean;
   isSameItem: (item: Item, value: Item) => boolean;
-  items: Item[];
+  items: readonly Item[];
   normalizedInputValue: string;
   searchable: boolean;
   selectedValue: Item | null;
-  visibleItems: Item[];
+  visibleItems: readonly Item[];
 };
 
 type ComboboxOptionInteractionHoverDetail<Item> = {

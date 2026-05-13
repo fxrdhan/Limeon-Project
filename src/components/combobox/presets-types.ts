@@ -25,7 +25,7 @@ export interface PharmaComboboxSelectProps<Item> {
   id?: string;
   label?: string;
   name?: string;
-  items: Item[];
+  items: readonly Item[];
   value: Item | null;
   onValueChange: (
     item: Item | null,

@@ -5,7 +5,7 @@ export interface PharmaComboboxControllerConfig<Item> {
   id?: string;
   label?: string;
   name?: string;
-  items: Item[];
+  items: readonly Item[];
   value: Item | null;
   onValueChange: PharmaComboboxSelectProps<Item>['onValueChange'];
   itemToStringLabel: PharmaComboboxSelectProps<Item>['itemToStringLabel'];

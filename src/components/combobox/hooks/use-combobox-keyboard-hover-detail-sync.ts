@@ -37,7 +37,7 @@ export function useComboboxKeyboardHoverDetailSync<Item>({
     itemData?: Partial<HoverDetailData>,
     options?: { show?: boolean }
   ) => void;
-  visibleItems: Item[];
+  visibleItems: readonly Item[];
 }) {
   useEffect(() => {
     if (!actualOpen || !hoverDetailEnabled) return;

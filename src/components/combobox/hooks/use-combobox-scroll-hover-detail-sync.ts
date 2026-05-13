@@ -62,7 +62,7 @@ export function useComboboxScrollHoverDetailSync<Item>({
     itemData?: Partial<HoverDetailData>,
     options?: { show?: boolean }
   ) => void;
-  visibleItems: Item[];
+  visibleItems: readonly Item[];
 }) {
   const scrollHoverDetailResumeTimeoutRef = useRef<ReturnType<
     typeof setTimeout

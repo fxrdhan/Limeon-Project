@@ -25,7 +25,7 @@ export function useComboboxSelectedOptionScroll<Item>({
   listRef: RefObject<HTMLDivElement | null>;
   selectedValue: Item | null;
   virtualScrollToIndexRef: RefObject<ComboboxVirtualScrollToIndex | null>;
-  visibleItems: Item[];
+  visibleItems: readonly Item[];
 }) {
   const [scrollRevision, setScrollRevision] = useState(0);
   const selectedVisibleIndex = useMemo(

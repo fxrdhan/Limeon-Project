@@ -26,7 +26,7 @@ const search = (
     visibleItemLimit,
   });
 
-const ids = (result: { visibleItems: TestItem[] }) =>
+const ids = (result: { visibleItems: readonly TestItem[] }) =>
   result.visibleItems.map(item => item.id);
 
 // ---------------------------------------------------------------------------

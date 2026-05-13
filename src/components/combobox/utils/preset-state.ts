@@ -13,7 +13,7 @@ export type ComboboxSearchEntry<Item> = {
 
 export type ComboboxSearchState<Item> = {
   hasExactItem: boolean;
-  visibleItems: Item[];
+  visibleItems: readonly Item[];
 };
 
 const normalizeComboboxSearchText = (value: string) =>
@@ -66,7 +66,7 @@ export const getComboboxSelectedValue = <Item>(
 ) => (isComboboxValueEmpty(value, isValueEmpty) ? null : value);
 
 export const getComboboxSearchEntries = <Item>(
-  items: Item[],
+  items: readonly Item[],
   itemToStringLabel: ItemLabelGetter<Item>
 ): ComboboxSearchEntry<Item>[] =>
   items.map((item, originalIndex) => {
@@ -130,7 +130,7 @@ const getLimitedComboboxItems = <Item>({
   selectedValue,
 }: {
   isSameItem: (item: Item, value: Item) => boolean;
-  items: Item[];
+  items: readonly Item[];
   limit: number | undefined;
   selectedValue: Item | null;
 }) => {
@@ -467,7 +467,7 @@ const getLimitedMatchedComboboxSearchState = <Item>({
   limit: number;
   normalizedSearch: string;
   normalizedSearchWords: string[];
-  searchEntries: ComboboxSearchEntry<Item>[];
+  searchEntries: readonly ComboboxSearchEntry<Item>[];
   selectedValue: Item | null;
 }) => {
   const matchedEntries: ComboboxMatchedSearchEntry<Item>[] = [];
@@ -536,9 +536,9 @@ export const getComboboxSearchState = <Item>({
   visibleItemLimit,
 }: {
   isSameItem: (item: Item, value: Item) => boolean;
-  items: Item[];
+  items: readonly Item[];
   normalizedInputValue: string;
-  searchEntries: ComboboxSearchEntry<Item>[];
+  searchEntries: readonly ComboboxSearchEntry<Item>[];
   selectedValue: Item | null;
   visibleItemLimit?: number;
 }): ComboboxSearchState<Item> => {

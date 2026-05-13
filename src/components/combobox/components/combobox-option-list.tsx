@@ -59,7 +59,7 @@ export interface ComboboxOptionListProps<Item> {
   ) => ReactNode;
   selectedVisibleIndex: number;
   shouldAnimateListItems: boolean;
-  visibleItems: Item[];
+  visibleItems: readonly Item[];
   virtualScrollToIndexRef: RefObject<ComboboxVirtualScrollToIndex | null>;
   visualHighlightId: string;
 }

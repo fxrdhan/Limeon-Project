@@ -9,7 +9,7 @@ export function useComboboxSearchResultScroll<Item>({
   actualOpen: boolean;
   listRef: RefObject<HTMLDivElement | null>;
   normalizedInputValue: string;
-  visibleItems: Item[];
+  visibleItems: readonly Item[];
 }) {
   useLayoutEffect(() => {
     if (!actualOpen || normalizedInputValue.length === 0) return;

@@ -147,6 +147,11 @@ describe('Combobox app preset create action and validation', () => {
 
     expect(trigger.getAttribute('aria-invalid')).toBeNull();
     expect(trigger.getAttribute('aria-describedby')).toBeNull();
+    const validationProxy = document.querySelector<HTMLInputElement>(
+      '[data-combobox-required-input]'
+    );
+    expect(validationProxy?.required).toBe(true);
+    expect(validationProxy?.checkValidity()).toBe(false);
   });
 
   it('selects the highlighted partial match before create action on Enter', () => {
