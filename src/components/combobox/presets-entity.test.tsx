@@ -11,11 +11,11 @@ describe('Combobox entity preset', () => {
       <FormField label="Unit Dasar" required>
         <div className="space-y-2">
           <PharmaEntityComboboxSelect
-            name="base_inventory_unit_id"
             items={[]}
             valueId=""
             onValueIdChange={() => {}}
-            placeholder="Pilih Unit Dasar"
+            field={{ name: 'base_inventory_unit_id' }}
+            display={{ placeholder: 'Pilih Unit Dasar' }}
           />
         </div>
       </FormField>
@@ -36,11 +36,11 @@ describe('Combobox entity preset', () => {
 
     render(
       <PharmaEntityComboboxSelect
-        name="supplier_id"
         items={suppliers}
         valueId="supplier-a"
         onValueIdChange={onValueIdChange}
-        placeholder="Pilih supplier"
+        field={{ name: 'supplier_id' }}
+        display={{ placeholder: 'Pilih supplier' }}
       />
     );
 
@@ -57,14 +57,13 @@ describe('Combobox entity preset', () => {
   it('keeps an entity value selected when the selected item is outside the option list', () => {
     render(
       <PharmaEntityComboboxSelect
-        name="supplier_id"
         items={[]}
         valueId="supplier-a"
         selectedItem={{ id: 'supplier-a', name: 'Supplier A' }}
         onValueIdChange={() => {}}
-        placeholder="Pilih supplier"
-        required
         validation={{ enabled: true, autoHide: false }}
+        field={{ name: 'supplier_id', required: true }}
+        display={{ placeholder: 'Pilih supplier' }}
       />
     );
 
@@ -80,13 +79,12 @@ describe('Combobox entity preset', () => {
   it('preserves an entity scalar value while the selected item is unavailable', () => {
     render(
       <PharmaEntityComboboxSelect
-        name="supplier_id"
         items={[]}
         valueId="supplier-a"
         onValueIdChange={() => {}}
-        placeholder="Pilih supplier"
-        required
         validation={{ enabled: true, autoHide: false }}
+        field={{ name: 'supplier_id', required: true }}
+        display={{ placeholder: 'Pilih supplier' }}
       />
     );
 
@@ -108,13 +106,12 @@ describe('Combobox entity preset', () => {
 
     render(
       <PharmaEntityComboboxSelect<EntityItem & { code: string }>
-        name="supplier_id"
         items={[]}
         valueId="supplier-a"
         onValueIdChange={() => {}}
-        itemToStringLabel={itemToStringLabel}
-        itemToStringValue={supplier => supplier.id}
-        placeholder="Pilih supplier"
+        item={{ toLabel: itemToStringLabel, toValue: supplier => supplier.id }}
+        field={{ name: 'supplier_id' }}
+        display={{ placeholder: 'Pilih supplier' }}
       />
     );
 
@@ -145,13 +142,15 @@ describe('Combobox entity preset', () => {
 
     render(
       <PharmaEntityComboboxSelect<EntityItem & { code: string }>
-        name="supplier_id"
         items={[supplier]}
         valueId="supplier-a"
         onValueIdChange={() => {}}
-        itemToStringValue={itemToStringValue}
-        isItemEqualToValue={isItemEqualToValue}
-        placeholder="Pilih supplier"
+        item={{
+          toValue: itemToStringValue,
+          isEqualToValue: isItemEqualToValue,
+        }}
+        field={{ name: 'supplier_id' }}
+        display={{ placeholder: 'Pilih supplier' }}
       />
     );
 
@@ -181,13 +180,12 @@ describe('Combobox entity preset', () => {
 
     render(
       <PharmaEntityComboboxSelect<EntityItem & { code: string }>
-        name="supplier_id"
         items={[]}
         valueId="supplier-a"
         onValueIdChange={() => {}}
-        itemToStringValue={supplier => supplier.id}
-        isValueEmpty={isValueEmpty}
-        placeholder="Pilih supplier"
+        item={{ toValue: supplier => supplier.id, isValueEmpty: isValueEmpty }}
+        field={{ name: 'supplier_id' }}
+        display={{ placeholder: 'Pilih supplier' }}
       />
     );
 
@@ -206,14 +204,16 @@ describe('Combobox entity preset', () => {
 
     render(
       <PharmaEntityComboboxSelect<EntityItem & { code: string }>
-        name="supplier_id"
         items={[]}
         valueId="supplier-a"
         onValueIdChange={() => {}}
-        itemToStringValue={supplier => supplier.id}
-        itemToHoverDetailData={itemToHoverDetailData}
-        placeholder="Pilih supplier"
         hoverDetail={{ enabled: true, delay: 0 }}
+        item={{
+          toValue: supplier => supplier.id,
+          toHoverDetailData: itemToHoverDetailData,
+        }}
+        field={{ name: 'supplier_id' }}
+        display={{ placeholder: 'Pilih supplier' }}
       />
     );
 
@@ -243,15 +243,17 @@ describe('Combobox entity preset', () => {
 
     render(
       <PharmaEntityComboboxSelect<EntityItem & { code: string }>
-        name="supplier_id"
         items={[]}
         valueId="supplier-a"
         selectedItem={supplier}
         onValueIdChange={() => {}}
-        itemToStringValue={item => item.id}
-        itemToHoverDetailData={itemToHoverDetailData}
-        placeholder="Pilih supplier"
         hoverDetail={{ enabled: true, delay: 0 }}
+        item={{
+          toValue: item => item.id,
+          toHoverDetailData: itemToHoverDetailData,
+        }}
+        field={{ name: 'supplier_id' }}
+        display={{ placeholder: 'Pilih supplier' }}
       />
     );
 
@@ -269,23 +271,23 @@ describe('Combobox entity preset', () => {
     render(
       <>
         <PharmaEntityComboboxSelect
-          name="supplier_id"
           items={suppliers}
           valueId="supplier-a"
           onValueIdChange={() => {}}
-          placeholder="Pilih supplier"
+          field={{ name: 'supplier_id' }}
+          display={{ placeholder: 'Pilih supplier' }}
         />
         <PharmaComboboxSelect<(typeof statusItems)[number]>
-          name="status"
           items={statusItems}
           value="active"
           onValueChange={() => {}}
-          itemToStringLabel={value =>
-            value === 'active' ? 'Aktif' : 'Tidak aktif'
-          }
-          itemToStringValue={value => value}
-          placeholder="Pilih status"
-          searchable={false}
+          item={{
+            toLabel: value => (value === 'active' ? 'Aktif' : 'Tidak aktif'),
+            toValue: value => value,
+          }}
+          field={{ name: 'status' }}
+          display={{ placeholder: 'Pilih status' }}
+          search={{ enabled: false }}
         />
       </>
     );

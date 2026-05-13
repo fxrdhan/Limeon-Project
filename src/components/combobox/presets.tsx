@@ -14,9 +14,17 @@ import type { PharmaComboboxSelectProps } from './presets-types';
 
 export type {
   PharmaComboboxChangeDetails,
+  PharmaComboboxDisplayConfig,
+  PharmaComboboxFieldConfig,
+  PharmaComboboxHoverDetailConfig,
+  PharmaComboboxInteractionConfig,
+  PharmaComboboxItemConfig,
   PharmaComboboxOpenChangeDetails,
   PharmaComboboxOptionRenderState,
+  PharmaComboboxPopupConfig,
+  PharmaComboboxSearchConfig,
   PharmaComboboxSelectProps,
+  PharmaComboboxValidationConfig,
 } from './presets-types';
 
 export function PharmaComboboxSelect<Item>(

@@ -42,21 +42,27 @@ const createCalendarHeaderSelectRenderer =
     disabled,
   }: CalendarHeaderSelectRenderProps) => (
     <PharmaComboboxSelect
-      className={className}
-      label={label}
       items={items}
       value={value}
       onValueChange={onValueChange}
-      isItemDisabled={isItemDisabled}
-      itemToStringLabel={itemToStringLabel}
-      itemToStringValue={itemToStringValue}
-      placeholder={placeholder}
-      searchable={false}
-      indicator="none"
-      disabled={disabled}
-      popupClassName={getHeaderSelectPopupClassName(className)}
-      popupContainerRef={popupContainerRef}
-      popupMatchAnchorWidth={false}
+      item={{
+        toLabel: itemToStringLabel,
+        toValue: itemToStringValue,
+        isDisabled: isItemDisabled,
+      }}
+      field={{ label }}
+      interaction={{ disabled }}
+      display={{
+        rootClassName: className,
+        placeholder,
+        indicator: 'none',
+      }}
+      search={{ enabled: false }}
+      popup={{
+        className: getHeaderSelectPopupClassName(className),
+        containerRef: popupContainerRef,
+        matchAnchorWidth: false,
+      }}
     />
   );
 

@@ -89,21 +89,27 @@ function ComboboxRegressionHarness() {
             Obat
           </label>
           <PharmaComboboxSelect<MedicineOption>
-            id="medicine-combobox"
-            name="medicine_id"
             items={medicineOptions}
             value={selectedMedicine}
             onValueChange={setSelectedMedicine}
-            itemToStringLabel={optionLabel}
-            itemToStringValue={optionValue}
-            isItemDisabled={(option: MedicineOption) =>
-              Boolean(option.disabled)
-            }
-            label="Obat"
-            placeholder="Pilih obat"
-            searchPlaceholder="Cari obat"
-            indicator="check"
-            renderOptionMeta={(option: MedicineOption) => option.code}
+            item={{
+              toLabel: optionLabel,
+              toValue: optionValue,
+              isDisabled: (option: MedicineOption) => Boolean(option.disabled),
+            }}
+            field={{
+              id: 'medicine-combobox',
+              name: 'medicine_id',
+              label: 'Obat',
+            }}
+            display={{
+              placeholder: 'Pilih obat',
+              indicator: 'check',
+              renderOptionMeta: (option: MedicineOption) => option.code,
+            }}
+            search={{
+              placeholder: 'Cari obat',
+            }}
           />
         </div>
 
@@ -115,18 +121,26 @@ function ComboboxRegressionHarness() {
             Kategori
           </label>
           <PharmaComboboxSelect<MedicineOption>
-            id="category-combobox"
-            name="category_id"
             items={categoryOptions}
             value={selectedCategory}
             onValueChange={setSelectedCategory}
-            itemToStringLabel={optionLabel}
-            itemToStringValue={optionValue}
-            label="Kategori"
-            placeholder="Pilih kategori"
-            searchPlaceholder="Cari kategori"
-            indicator="check"
-            renderOptionMeta={(option: MedicineOption) => option.code}
+            item={{
+              toLabel: optionLabel,
+              toValue: optionValue,
+            }}
+            field={{
+              id: 'category-combobox',
+              name: 'category_id',
+              label: 'Kategori',
+            }}
+            display={{
+              placeholder: 'Pilih kategori',
+              indicator: 'check',
+              renderOptionMeta: (option: MedicineOption) => option.code,
+            }}
+            search={{
+              placeholder: 'Cari kategori',
+            }}
           />
         </div>
 
@@ -142,19 +156,30 @@ function ComboboxRegressionHarness() {
               Popup lebar
             </label>
             <PharmaComboboxSelect<MedicineOption>
-              id="wide-popup-combobox"
-              name="wide_medicine_id"
               items={medicineOptions}
               value={wideMedicine}
               onValueChange={setWideMedicine}
-              itemToStringLabel={optionLabel}
-              itemToStringValue={optionValue}
-              label="Popup lebar"
-              placeholder="Pilih"
-              searchPlaceholder="Cari popup lebar"
-              popupClassName="w-[420px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl"
-              popupMatchAnchorWidth={false}
-              renderOptionMeta={(option: MedicineOption) => option.code}
+              item={{
+                toLabel: optionLabel,
+                toValue: optionValue,
+              }}
+              field={{
+                id: 'wide-popup-combobox',
+                name: 'wide_medicine_id',
+                label: 'Popup lebar',
+              }}
+              display={{
+                placeholder: 'Pilih',
+                renderOptionMeta: (option: MedicineOption) => option.code,
+              }}
+              search={{
+                placeholder: 'Cari popup lebar',
+              }}
+              popup={{
+                className:
+                  'w-[420px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl',
+                matchAnchorWidth: false,
+              }}
             />
           </div>
         </div>
@@ -209,20 +234,26 @@ function ComboboxRegressionHarness() {
             Posisi bawah
           </label>
           <PharmaComboboxSelect<MedicineOption>
-            id="bottom-combobox"
-            name="bottom_medicine_id"
             items={medicineOptions}
             value={bottomMedicine}
             onValueChange={setBottomMedicine}
-            itemToStringLabel={optionLabel}
-            itemToStringValue={optionValue}
-            isItemDisabled={(option: MedicineOption) =>
-              Boolean(option.disabled)
-            }
-            label="Posisi bawah"
-            placeholder="Pilih obat"
-            searchable={false}
-            indicator="radio"
+            item={{
+              toLabel: optionLabel,
+              toValue: optionValue,
+              isDisabled: (option: MedicineOption) => Boolean(option.disabled),
+            }}
+            field={{
+              id: 'bottom-combobox',
+              name: 'bottom_medicine_id',
+              label: 'Posisi bawah',
+            }}
+            display={{
+              placeholder: 'Pilih obat',
+              indicator: 'radio',
+            }}
+            search={{
+              enabled: false,
+            }}
           />
         </div>
       </section>

@@ -15,9 +15,17 @@ export { findComboboxItemByValue } from './helpers';
 export {
   PharmaComboboxSelect,
   type PharmaComboboxChangeDetails,
+  type PharmaComboboxDisplayConfig,
+  type PharmaComboboxFieldConfig,
+  type PharmaComboboxHoverDetailConfig,
+  type PharmaComboboxInteractionConfig,
+  type PharmaComboboxItemConfig,
   type PharmaComboboxOpenChangeDetails,
   type PharmaComboboxOptionRenderState,
+  type PharmaComboboxPopupConfig,
+  type PharmaComboboxSearchConfig,
   type PharmaComboboxSelectProps,
+  type PharmaComboboxValidationConfig,
 } from './presets';
 export {
   PharmaEntityComboboxSelect,

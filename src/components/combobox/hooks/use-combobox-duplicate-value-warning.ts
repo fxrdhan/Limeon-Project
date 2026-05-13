@@ -1,7 +1,12 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { getDuplicateComboboxOptionValue } from '../utils/preset-state';
 
-export function useComboboxDuplicateValueInvariant<Item>({
+const warnedDuplicateValues = new Set<string>();
+
+const shouldWarnDuplicateComboboxValue =
+  import.meta.env.DEV || import.meta.env.MODE === 'test';
+
+export function useComboboxDuplicateValueWarning<Item>({
   itemToStringValue,
   items,
   name,
@@ -15,11 +20,16 @@ export function useComboboxDuplicateValueInvariant<Item>({
     [itemToStringValue, items]
   );
 
-  if (duplicateValue !== null) {
-    throw new Error(
-      `[PharmaComboboxSelect] Duplicate itemToStringValue "${duplicateValue}" detected for ${
-        name ?? 'unnamed combobox'
-      }. Combobox option values must be unique because hidden form submission uses itemToStringValue.`
+  useEffect(() => {
+    if (!shouldWarnDuplicateComboboxValue || duplicateValue === null) return;
+
+    const comboboxName = name ?? 'unnamed combobox';
+    const warningKey = `${comboboxName}::${duplicateValue}`;
+    if (warnedDuplicateValues.has(warningKey)) return;
+
+    warnedDuplicateValues.add(warningKey);
+    console.warn(
+      `[PharmaComboboxSelect] Duplicate item.toValue "${duplicateValue}" detected for ${comboboxName}. Options remain selectable, but submitted values should be unique to avoid ambiguous form data.`
     );
-  }
+  }, [duplicateValue, name]);
 }

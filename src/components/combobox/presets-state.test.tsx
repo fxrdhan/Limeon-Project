@@ -152,7 +152,6 @@ describe('Combobox app preset state interactions', () => {
 
     render(
       <PharmaComboboxSelect
-        name="supplier_id"
         items={[
           { id: 'a', name: 'Supplier A' },
           { id: 'b', name: 'Supplier B' },
@@ -162,8 +161,11 @@ describe('Combobox app preset state interactions', () => {
           onValueChange(item, details);
           details.cancel();
         }}
-        itemToStringLabel={supplier => supplier.name}
-        itemToStringValue={supplier => supplier.id}
+        item={{
+          toLabel: supplier => supplier.name,
+          toValue: supplier => supplier.id,
+        }}
+        field={{ name: 'supplier_id' }}
       />
     );
 
@@ -188,15 +190,19 @@ describe('Combobox app preset state interactions', () => {
 
     render(
       <PharmaComboboxSelect
-        name="supplier_id"
         items={[{ id: 'a', name: 'Supplier A' }]}
         value={null}
         onValueChange={() => {}}
-        itemToStringLabel={supplier => supplier.name}
-        itemToStringValue={supplier => supplier.id}
-        onOpenChange={(nextOpen, details) => {
-          onOpenChange(nextOpen, details);
-          details.cancel();
+        item={{
+          toLabel: supplier => supplier.name,
+          toValue: supplier => supplier.id,
+        }}
+        field={{ name: 'supplier_id' }}
+        interaction={{
+          onOpenChange: (nextOpen, details) => {
+            onOpenChange(nextOpen, details);
+            details.cancel();
+          },
         }}
       />
     );
@@ -215,16 +221,16 @@ describe('Combobox app preset state interactions', () => {
 
     render(
       <PharmaComboboxSelect
-        name="status"
         items={['active', 'archived']}
         value={null}
         onValueChange={onValueChange}
-        itemToStringLabel={value =>
-          value === 'active' ? 'Aktif' : 'Diarsipkan'
-        }
-        itemToStringValue={value => value}
-        isItemDisabled={value => value === 'archived'}
-        searchable={false}
+        item={{
+          toLabel: value => (value === 'active' ? 'Aktif' : 'Diarsipkan'),
+          toValue: value => value,
+          isDisabled: value => value === 'archived',
+        }}
+        field={{ name: 'status' }}
+        search={{ enabled: false }}
       />
     );
 
@@ -241,15 +247,15 @@ describe('Combobox app preset state interactions', () => {
 
     render(
       <PharmaComboboxSelect
-        name="status"
         items={['active', 'inactive']}
         value={null}
         onValueChange={onValueChange}
-        itemToStringLabel={value =>
-          value === 'active' ? 'Aktif' : 'Tidak aktif'
-        }
-        itemToStringValue={value => value}
-        searchable={false}
+        item={{
+          toLabel: value => (value === 'active' ? 'Aktif' : 'Tidak aktif'),
+          toValue: value => value,
+        }}
+        field={{ name: 'status' }}
+        search={{ enabled: false }}
       />
     );
 
@@ -278,17 +284,19 @@ describe('Combobox app preset state interactions', () => {
 
     render(
       <PharmaComboboxSelect
-        name="status"
         items={['active', 'inactive', 'paused']}
         value="inactive"
         onValueChange={onValueChange}
-        itemToStringLabel={value => {
-          if (value === 'active') return 'Aktif';
-          if (value === 'inactive') return 'Tidak aktif';
-          return 'Ditahan';
+        item={{
+          toLabel: value => {
+            if (value === 'active') return 'Aktif';
+            if (value === 'inactive') return 'Tidak aktif';
+            return 'Ditahan';
+          },
+          toValue: value => value,
         }}
-        itemToStringValue={value => value}
-        searchable={false}
+        field={{ name: 'status' }}
+        search={{ enabled: false }}
       />
     );
 

@@ -8,22 +8,28 @@ export interface PharmaComboboxControllerConfig<Item> {
   items: readonly Item[];
   value: Item | null;
   onValueChange: PharmaComboboxSelectProps<Item>['onValueChange'];
-  itemToStringLabel: PharmaComboboxSelectProps<Item>['itemToStringLabel'];
-  itemToStringValue: PharmaComboboxSelectProps<Item>['itemToStringValue'];
-  isItemEqualToValue?: PharmaComboboxSelectProps<Item>['isItemEqualToValue'];
+  itemToStringLabel: PharmaComboboxSelectProps<Item>['item']['toLabel'];
+  itemToStringValue: PharmaComboboxSelectProps<Item>['item']['toValue'];
+  isItemEqualToValue?: PharmaComboboxSelectProps<Item>['item']['isEqualToValue'];
   isItemDisabledProp: NonNullable<
-    PharmaComboboxSelectProps<Item>['isItemDisabled']
+    PharmaComboboxSelectProps<Item>['item']['isDisabled']
   >;
-  isValueEmpty?: PharmaComboboxSelectProps<Item>['isValueEmpty'];
-  itemToHoverDetailData?: PharmaComboboxSelectProps<Item>['itemToHoverDetailData'];
-  renderOption?: PharmaComboboxSelectProps<Item>['renderOption'];
-  renderOptionMeta?: PharmaComboboxSelectProps<Item>['renderOptionMeta'];
+  isValueEmpty?: PharmaComboboxSelectProps<Item>['item']['isValueEmpty'];
+  itemToHoverDetailData?: PharmaComboboxSelectProps<Item>['item']['toHoverDetailData'];
+  renderOption?: NonNullable<
+    PharmaComboboxSelectProps<Item>['display']
+  >['renderOption'];
+  renderOptionMeta?: NonNullable<
+    PharmaComboboxSelectProps<Item>['display']
+  >['renderOptionMeta'];
   placeholder: string;
   searchPlaceholder: string;
   emptyText: string;
   visibleItemLimit?: number;
   searchable: boolean;
-  indicator: NonNullable<PharmaComboboxSelectProps<Item>['indicator']>;
+  indicator: NonNullable<
+    NonNullable<PharmaComboboxSelectProps<Item>['display']>['indicator']
+  >;
   required: boolean;
   disabled: boolean;
   readOnly: boolean;
@@ -31,100 +37,87 @@ export interface PharmaComboboxControllerConfig<Item> {
   form?: string;
   className?: string;
   popupClassName?: string;
-  popupContainerRef?: PharmaComboboxSelectProps<Item>['popupContainerRef'];
+  popupContainerRef?: NonNullable<
+    PharmaComboboxSelectProps<Item>['popup']
+  >['containerRef'];
   popupMatchAnchorWidth: boolean;
   validation?: PharmaComboboxSelectProps<Item>['validation'];
-  createAction?: PharmaComboboxSelectProps<Item>['createAction'];
+  createAction?: PharmaComboboxSelectProps<Item>['creation'];
   hoverDetail?: PharmaComboboxSelectProps<Item>['hoverDetail'];
-  onFetchHoverDetail?: PharmaComboboxSelectProps<Item>['onFetchHoverDetail'];
-  onFetchHoverDetailError?: PharmaComboboxSelectProps<Item>['onFetchHoverDetailError'];
+  onFetchHoverDetail?: NonNullable<
+    PharmaComboboxSelectProps<Item>['hoverDetail']
+  >['fetch'];
+  onFetchHoverDetailError?: NonNullable<
+    PharmaComboboxSelectProps<Item>['hoverDetail']
+  >['onFetchError'];
   open?: boolean;
-  onOpenChange?: PharmaComboboxSelectProps<Item>['onOpenChange'];
-  ariaLabel?: PharmaComboboxSelectProps<Item>['aria-label'];
-  ariaLabelledBy?: PharmaComboboxSelectProps<Item>['aria-labelledby'];
-  ariaDescribedBy?: PharmaComboboxSelectProps<Item>['aria-describedby'];
+  onOpenChange?: NonNullable<
+    PharmaComboboxSelectProps<Item>['interaction']
+  >['onOpenChange'];
+  ariaLabel?: NonNullable<
+    NonNullable<PharmaComboboxSelectProps<Item>['field']>['aria']
+  >['label'];
+  ariaLabelledBy?: NonNullable<
+    NonNullable<PharmaComboboxSelectProps<Item>['field']>['aria']
+  >['labelledBy'];
+  ariaDescribedBy?: NonNullable<
+    NonNullable<PharmaComboboxSelectProps<Item>['field']>['aria']
+  >['describedBy'];
 }
 
 export function getPharmaComboboxControllerConfig<Item>({
-  id,
-  label,
-  name,
   items,
   value,
   onValueChange,
-  itemToStringLabel,
-  itemToStringValue,
-  isItemEqualToValue,
-  isItemDisabled: isItemDisabledProp = getDefaultItemDisabled,
-  isValueEmpty,
-  itemToHoverDetailData,
-  renderOption,
-  renderOptionMeta,
-  placeholder = '-- Pilih --',
-  searchPlaceholder = 'Cari...',
-  emptyText = 'Tidak ada data',
-  visibleItemLimit,
-  searchable = true,
-  indicator = 'none',
-  required = false,
-  disabled = false,
-  readOnly = false,
-  tabIndex,
-  form,
-  className,
-  popupClassName,
-  popupContainerRef,
-  popupMatchAnchorWidth = true,
+  item,
+  field,
+  interaction,
+  display,
+  search,
+  popup,
   validation,
-  createAction,
+  creation,
   hoverDetail,
-  onFetchHoverDetail,
-  onFetchHoverDetailError,
-  open,
-  onOpenChange,
-  'aria-label': ariaLabel,
-  'aria-labelledby': ariaLabelledBy,
-  'aria-describedby': ariaDescribedBy,
 }: PharmaComboboxSelectProps<Item>): PharmaComboboxControllerConfig<Item> {
   return {
-    id,
-    label,
-    name,
+    id: field?.id,
+    label: field?.label,
+    name: field?.name,
     items,
     value,
     onValueChange,
-    itemToStringLabel,
-    itemToStringValue,
-    isItemEqualToValue,
-    isItemDisabledProp,
-    isValueEmpty,
-    itemToHoverDetailData,
-    renderOption,
-    renderOptionMeta,
-    placeholder,
-    searchPlaceholder,
-    emptyText,
-    visibleItemLimit,
-    searchable,
-    indicator,
-    required,
-    disabled,
-    readOnly,
-    tabIndex,
-    form,
-    className,
-    popupClassName,
-    popupContainerRef,
-    popupMatchAnchorWidth,
+    itemToStringLabel: item.toLabel,
+    itemToStringValue: item.toValue,
+    isItemEqualToValue: item.isEqualToValue,
+    isItemDisabledProp: item.isDisabled ?? getDefaultItemDisabled,
+    isValueEmpty: item.isValueEmpty,
+    itemToHoverDetailData: item.toHoverDetailData,
+    renderOption: display?.renderOption,
+    renderOptionMeta: display?.renderOptionMeta,
+    placeholder: display?.placeholder ?? '-- Pilih --',
+    searchPlaceholder: search?.placeholder ?? 'Cari...',
+    emptyText: display?.emptyText ?? 'Tidak ada data',
+    visibleItemLimit: search?.visibleItemLimit,
+    searchable: search?.enabled ?? true,
+    indicator: display?.indicator ?? 'none',
+    required: field?.required ?? false,
+    disabled: interaction?.disabled ?? false,
+    readOnly: interaction?.readOnly ?? false,
+    tabIndex: interaction?.tabIndex,
+    form: field?.form,
+    className: display?.rootClassName,
+    popupClassName: popup?.className,
+    popupContainerRef: popup?.containerRef,
+    popupMatchAnchorWidth: popup?.matchAnchorWidth ?? true,
     validation,
-    createAction,
+    createAction: creation,
     hoverDetail,
-    onFetchHoverDetail,
-    onFetchHoverDetailError,
-    open,
-    onOpenChange,
-    ariaLabel,
-    ariaLabelledBy,
-    ariaDescribedBy,
+    onFetchHoverDetail: hoverDetail?.fetch,
+    onFetchHoverDetailError: hoverDetail?.onFetchError,
+    open: interaction?.open,
+    onOpenChange: interaction?.onOpenChange,
+    ariaLabel: field?.aria?.label,
+    ariaLabelledBy: field?.aria?.labelledBy,
+    ariaDescribedBy: field?.aria?.describedBy,
   };
 }

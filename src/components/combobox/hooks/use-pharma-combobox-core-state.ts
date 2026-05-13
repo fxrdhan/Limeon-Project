@@ -1,13 +1,19 @@
 import { useId, useMemo, useRef, useState } from 'react';
 import { useFormFieldContext } from '@/components/form-field/context';
-import type { PharmaComboboxSelectProps } from '../presets-types';
-import { getComboboxSelectedValue } from '../utils/preset-state';
+import {
+  getComboboxSelectedValue,
+  type ComboboxValueIsEmpty,
+} from '../utils/preset-state';
 import type { ComboboxVirtualScrollToIndex } from './use-combobox-keyboard-highlight-scroll';
 
-type PharmaComboboxCoreStateProps<Item> = Pick<
-  PharmaComboboxSelectProps<Item>,
-  'id' | 'isValueEmpty' | 'label' | 'open' | 'required' | 'value'
->;
+type PharmaComboboxCoreStateProps<Item> = {
+  id?: string;
+  isValueEmpty?: ComboboxValueIsEmpty<Item>;
+  label?: string;
+  open?: boolean;
+  required?: boolean;
+  value: Item | null;
+};
 
 export function usePharmaComboboxCoreState<Item>({
   id,

@@ -9,16 +9,17 @@ describe('Combobox app preset create action and validation', () => {
     const onCreate = vi.fn();
     render(
       <PharmaComboboxSelect<EntityItem>
-        name="category_id"
         items={[]}
         value={null}
         onValueChange={() => {}}
-        itemToStringLabel={item => item.name}
-        itemToStringValue={item => item.id}
-        placeholder="Pilih kategori"
-        required
         validation={{ enabled: true, autoHide: false }}
-        createAction={{ onCreate, label: 'Tambah kategori' }}
+        item={{ toLabel: item => item.name, toValue: item => item.id }}
+        field={{ name: 'category_id', required: true }}
+        display={{ placeholder: 'Pilih kategori' }}
+        creation={{
+          onCreate,
+          label: 'Tambah kategori',
+        }}
       />
     );
 
@@ -52,14 +53,13 @@ describe('Combobox app preset create action and validation', () => {
     const onCreate = vi.fn();
     render(
       <PharmaComboboxSelect<EntityItem>
-        name="category_id"
         items={[]}
         value={null}
         onValueChange={() => {}}
-        itemToStringLabel={item => item.name}
-        itemToStringValue={item => item.id}
-        placeholder="Pilih kategori"
-        createAction={{ onCreate }}
+        item={{ toLabel: item => item.name, toValue: item => item.id }}
+        field={{ name: 'category_id' }}
+        display={{ placeholder: 'Pilih kategori' }}
+        creation={{ onCreate }}
       />
     );
 
@@ -77,14 +77,12 @@ describe('Combobox app preset create action and validation', () => {
   it('enables required validation without explicit validation props', () => {
     render(
       <PharmaComboboxSelect<EntityItem>
-        name="category_id"
         items={[{ id: 'category-a', name: 'Kategori A' }]}
         value={null}
         onValueChange={() => {}}
-        itemToStringLabel={item => item.name}
-        itemToStringValue={item => item.id}
-        placeholder="Pilih kategori"
-        required
+        item={{ toLabel: item => item.name, toValue: item => item.id }}
+        field={{ name: 'category_id', required: true }}
+        display={{ placeholder: 'Pilih kategori' }}
       />
     );
 
@@ -103,14 +101,12 @@ describe('Combobox app preset create action and validation', () => {
     render(
       <form>
         <PharmaComboboxSelect<EntityItem>
-          name="category_id"
           items={[{ id: 'category-a', name: 'Kategori A' }]}
           value={null}
           onValueChange={() => {}}
-          itemToStringLabel={item => item.name}
-          itemToStringValue={item => item.id}
-          placeholder="Pilih kategori"
-          required
+          item={{ toLabel: item => item.name, toValue: item => item.id }}
+          field={{ name: 'category_id', required: true }}
+          display={{ placeholder: 'Pilih kategori' }}
         />
       </form>
     );
@@ -130,15 +126,13 @@ describe('Combobox app preset create action and validation', () => {
   it('lets callers disable the default required validation overlay', () => {
     render(
       <PharmaComboboxSelect<EntityItem>
-        name="category_id"
         items={[{ id: 'category-a', name: 'Kategori A' }]}
         value={null}
         onValueChange={() => {}}
-        itemToStringLabel={item => item.name}
-        itemToStringValue={item => item.id}
-        placeholder="Pilih kategori"
-        required
         validation={{ enabled: false }}
+        item={{ toLabel: item => item.name, toValue: item => item.id }}
+        field={{ name: 'category_id', required: true }}
+        display={{ placeholder: 'Pilih kategori' }}
       />
     );
 
@@ -161,13 +155,15 @@ describe('Combobox app preset create action and validation', () => {
 
     render(
       <PharmaComboboxSelect
-        name="medicine_id"
         items={[medicine]}
         value={null}
         onValueChange={onValueChange}
-        itemToStringLabel={item => item.name}
-        itemToStringValue={item => item.id}
-        createAction={{ onCreate, label: 'Tambah obat' }}
+        item={{ toLabel: item => item.name, toValue: item => item.id }}
+        field={{ name: 'medicine_id' }}
+        creation={{
+          onCreate,
+          label: 'Tambah obat',
+        }}
       />
     );
 
@@ -193,13 +189,15 @@ describe('Combobox app preset create action and validation', () => {
 
     render(
       <PharmaComboboxSelect
-        name="medicine_id"
         items={[{ id: 'amox-250', name: 'Amoxicillin 250' }]}
         value={null}
         onValueChange={onValueChange}
-        itemToStringLabel={item => item.name}
-        itemToStringValue={item => item.id}
-        createAction={{ onCreate, label: 'Tambah obat' }}
+        item={{ toLabel: item => item.name, toValue: item => item.id }}
+        field={{ name: 'medicine_id' }}
+        creation={{
+          onCreate,
+          label: 'Tambah obat',
+        }}
       />
     );
 
@@ -215,15 +213,13 @@ describe('Combobox app preset create action and validation', () => {
   it('does not mark required fields invalid while focus stays inside the popup', () => {
     render(
       <PharmaComboboxSelect<EntityItem>
-        name="category_id"
         items={[{ id: 'category-a', name: 'Kategori A' }]}
         value={null}
         onValueChange={() => {}}
-        itemToStringLabel={item => item.name}
-        itemToStringValue={item => item.id}
-        placeholder="Pilih kategori"
-        required
         validation={{ enabled: true, autoHide: false }}
+        item={{ toLabel: item => item.name, toValue: item => item.id }}
+        field={{ name: 'category_id', required: true }}
+        display={{ placeholder: 'Pilih kategori' }}
       />
     );
 
@@ -243,22 +239,22 @@ describe('Combobox app preset create action and validation', () => {
 
     render(
       <PharmaComboboxSelect
-        name="status"
         items={['active', 'inactive']}
         value=""
         onValueChange={onValueChange}
-        itemToStringLabel={value =>
-          value === 'active'
-            ? 'Aktif'
-            : value === 'inactive'
-              ? 'Tidak aktif'
-              : ''
-        }
-        itemToStringValue={value => value}
-        placeholder="Pilih status"
-        required
         validation={{ enabled: true, autoHide: false }}
-        isValueEmpty={value => value === ''}
+        item={{
+          toLabel: value =>
+            value === 'active'
+              ? 'Aktif'
+              : value === 'inactive'
+                ? 'Tidak aktif'
+                : '',
+          toValue: value => value,
+          isValueEmpty: value => value === '',
+        }}
+        field={{ name: 'status', required: true }}
+        display={{ placeholder: 'Pilih status' }}
       />
     );
 

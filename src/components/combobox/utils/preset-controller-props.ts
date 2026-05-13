@@ -91,8 +91,12 @@ type PharmaComboboxViewPropsOptions<Item> = {
   listboxAriaLabel?: string;
   normalizedInputValue: string;
   placeholder: string;
-  renderOption?: PharmaComboboxSelectProps<Item>['renderOption'];
-  renderOptionMeta?: PharmaComboboxSelectProps<Item>['renderOptionMeta'];
+  renderOption?: NonNullable<
+    PharmaComboboxSelectProps<Item>['display']
+  >['renderOption'];
+  renderOptionMeta?: NonNullable<
+    PharmaComboboxSelectProps<Item>['display']
+  >['renderOptionMeta'];
   searchInputRef: ComboboxSearchHeaderProps['searchInputRef'];
   searchPlaceholder: string;
   selectedValue: Item | null;

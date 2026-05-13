@@ -3,6 +3,8 @@ import { findComboboxItemByValue } from './helpers';
 import {
   PharmaComboboxSelect,
   type PharmaComboboxChangeDetails,
+  type PharmaComboboxItemConfig,
+  type PharmaComboboxOptionRenderState,
   type PharmaComboboxSelectProps,
 } from './presets';
 
@@ -39,11 +41,7 @@ export interface PharmaEntityComboboxSelectProps<
   Item extends EntityComboboxItem,
 > extends Omit<
   PharmaComboboxSelectProps<Item>,
-  | 'value'
-  | 'onValueChange'
-  | 'itemToStringLabel'
-  | 'itemToStringValue'
-  | 'isItemEqualToValue'
+  'value' | 'onValueChange' | 'item'
 > {
   valueId: string;
   selectedItem?: Item | null;
@@ -52,28 +50,27 @@ export interface PharmaEntityComboboxSelectProps<
     item: Item | null,
     details: PharmaComboboxChangeDetails<Item>
   ) => void;
-  itemToStringLabel?: (item: Item) => string;
-  itemToStringValue?: (item: Item) => string;
-  isItemEqualToValue?: (item: Item, value: Item) => boolean;
+  item?: {
+    toLabel?: PharmaComboboxItemConfig<Item>['toLabel'];
+    toValue?: PharmaComboboxItemConfig<Item>['toValue'];
+    isEqualToValue?: PharmaComboboxItemConfig<Item>['isEqualToValue'];
+    isDisabled?: PharmaComboboxItemConfig<Item>['isDisabled'];
+    isValueEmpty?: PharmaComboboxItemConfig<Item>['isValueEmpty'];
+    toHoverDetailData?: PharmaComboboxItemConfig<Item>['toHoverDetailData'];
+  };
 }
 
 export function PharmaEntityComboboxSelect<Item extends EntityComboboxItem>({
   valueId,
   selectedItem = null,
   onValueIdChange,
-  itemToStringLabel,
-  itemToStringValue,
-  isItemEqualToValue,
-  isItemDisabled,
-  isValueEmpty,
-  itemToHoverDetailData,
-  renderOption,
-  renderOptionMeta,
+  item: itemConfig,
+  display,
   items,
   ...props
 }: PharmaEntityComboboxSelectProps<Item>) {
-  const itemLabelFormatter = itemToStringLabel ?? getDefaultEntityItemLabel;
-  const itemValueFormatter = itemToStringValue ?? getDefaultEntityItemValue;
+  const itemLabelFormatter = itemConfig?.toLabel ?? getDefaultEntityItemLabel;
+  const itemValueFormatter = itemConfig?.toValue ?? getDefaultEntityItemValue;
   const fallbackSelectedValue = useMemo(
     () =>
       valueId === ''
@@ -117,6 +114,7 @@ export function PharmaEntityComboboxSelect<Item extends EntityComboboxItem>({
       isUnavailableEntityValue(item) ? item.id : itemValueFormatter(item),
     [itemValueFormatter]
   );
+  const isItemEqualToValue = itemConfig?.isEqualToValue;
   const getIsItemEqualToValue = useCallback(
     (item: EntityComboboxValue<Item>, nextValue: EntityComboboxValue<Item>) => {
       if (isUnavailableEntityValue(item)) {
@@ -139,42 +137,38 @@ export function PharmaEntityComboboxSelect<Item extends EntityComboboxItem>({
   );
   const getIsItemDisabled = useCallback(
     (item: EntityComboboxValue<Item>) =>
-      isUnavailableEntityValue(item) ? false : Boolean(isItemDisabled?.(item)),
-    [isItemDisabled]
+      isUnavailableEntityValue(item)
+        ? false
+        : Boolean(itemConfig?.isDisabled?.(item)),
+    [itemConfig]
   );
   const getIsValueEmpty = useCallback(
     (item: EntityComboboxValue<Item> | null) =>
-      isUnavailableEntityValue(item) ? false : Boolean(isValueEmpty?.(item)),
-    [isValueEmpty]
+      isUnavailableEntityValue(item)
+        ? false
+        : Boolean(itemConfig?.isValueEmpty?.(item)),
+    [itemConfig]
   );
   const getItemHoverDetailData = useCallback(
     (item: EntityComboboxValue<Item>) =>
       isUnavailableEntityValue(item)
         ? {}
-        : (itemToHoverDetailData?.(item) ?? {}),
-    [itemToHoverDetailData]
+        : (itemConfig?.toHoverDetailData?.(item) ?? {}),
+    [itemConfig]
   );
   const renderEntityOption = useCallback(
-    (
-      item: EntityComboboxValue<Item>,
-      state: Parameters<
-        NonNullable<PharmaComboboxSelectProps<Item>['renderOption']>
-      >[1]
-    ) =>
+    (item: EntityComboboxValue<Item>, state: PharmaComboboxOptionRenderState) =>
       isUnavailableEntityValue(item)
         ? unavailableEntityItemLabel
-        : renderOption?.(item, state),
-    [renderOption]
+        : display?.renderOption?.(item, state),
+    [display]
   );
   const renderEntityOptionMeta = useCallback(
-    (
-      item: EntityComboboxValue<Item>,
-      state: Parameters<
-        NonNullable<PharmaComboboxSelectProps<Item>['renderOptionMeta']>
-      >[1]
-    ) =>
-      isUnavailableEntityValue(item) ? null : renderOptionMeta?.(item, state),
-    [renderOptionMeta]
+    (item: EntityComboboxValue<Item>, state: PharmaComboboxOptionRenderState) =>
+      isUnavailableEntityValue(item)
+        ? null
+        : display?.renderOptionMeta?.(item, state),
+    [display]
   );
   const handleValueChange = useCallback(
     (
@@ -196,16 +190,23 @@ export function PharmaEntityComboboxSelect<Item extends EntityComboboxItem>({
       items={items}
       value={value}
       onValueChange={handleValueChange}
-      itemToStringLabel={getItemLabel}
-      itemToStringValue={getItemValue}
-      isItemEqualToValue={getIsItemEqualToValue}
-      isItemDisabled={isItemDisabled ? getIsItemDisabled : undefined}
-      isValueEmpty={isValueEmpty ? getIsValueEmpty : undefined}
-      itemToHoverDetailData={
-        itemToHoverDetailData ? getItemHoverDetailData : undefined
-      }
-      renderOption={renderOption ? renderEntityOption : undefined}
-      renderOptionMeta={renderOptionMeta ? renderEntityOptionMeta : undefined}
+      item={{
+        toLabel: getItemLabel,
+        toValue: getItemValue,
+        isEqualToValue: getIsItemEqualToValue,
+        isDisabled: itemConfig?.isDisabled ? getIsItemDisabled : undefined,
+        isValueEmpty: itemConfig?.isValueEmpty ? getIsValueEmpty : undefined,
+        toHoverDetailData: itemConfig?.toHoverDetailData
+          ? getItemHoverDetailData
+          : undefined,
+      }}
+      display={{
+        ...display,
+        renderOption: display?.renderOption ? renderEntityOption : undefined,
+        renderOptionMeta: display?.renderOptionMeta
+          ? renderEntityOptionMeta
+          : undefined,
+      }}
     />
   );
 }

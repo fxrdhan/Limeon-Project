@@ -1,22 +1,20 @@
 import { useCallback } from 'react';
-import type { PharmaComboboxSelectProps } from '../presets-types';
+import type { ComboboxCreateAction } from './use-combobox-create-action';
 import { useComboboxCreateAction } from './use-combobox-create-action';
-import { useComboboxDuplicateValueInvariant } from './use-combobox-duplicate-value-warning';
+import { useComboboxDuplicateValueWarning } from './use-combobox-duplicate-value-warning';
 import { useComboboxSearch } from './use-combobox-search';
 
-type PharmaComboboxSelectionModelProps<Item> = Pick<
-  PharmaComboboxSelectProps<Item>,
-  | 'createAction'
-  | 'isItemEqualToValue'
-  | 'itemToStringLabel'
-  | 'itemToStringValue'
-  | 'items'
-  | 'name'
-  | 'visibleItemLimit'
-> & {
+type PharmaComboboxSelectionModelProps<Item> = {
+  createAction?: ComboboxCreateAction;
   inputValue: string;
+  isItemEqualToValue?: (item: Item, value: Item) => boolean;
   isItemDisabledProp: (item: Item) => boolean;
+  itemToStringLabel: (item: Item) => string;
+  itemToStringValue: (item: Item) => string;
+  items: readonly Item[];
+  name?: string;
   selectedValue: Item | null;
+  visibleItemLimit?: number;
 };
 
 export function usePharmaComboboxSelectionModel<Item>({
@@ -59,7 +57,7 @@ export function usePharmaComboboxSelectionModel<Item>({
     [isItemDisabledProp]
   );
 
-  useComboboxDuplicateValueInvariant({
+  useComboboxDuplicateValueWarning({
     itemToStringValue,
     items,
     name,

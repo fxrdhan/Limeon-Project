@@ -670,20 +670,25 @@ export default function ItemPricingForm({
                   <FormField label="Unit Dasar" required={true}>
                     <div className="space-y-2">
                       <PharmaEntityComboboxSelect
-                        name="base_inventory_unit_id"
                         items={baseUnitOptions}
                         valueId={baseUnitId}
                         onValueIdChange={onBaseUnitChange}
-                        placeholder="Pilih Unit Dasar"
-                        required
+                        field={{
+                          name: 'base_inventory_unit_id',
+                          required: true,
+                        }}
+                        display={{ placeholder: 'Pilih Unit Dasar' }}
                         validation={{
                           enabled: true,
                           autoHide: true,
                           autoHideDelay: 3000,
                         }}
-                        hoverDetail={{ enabled: true, delay: 400 }}
-                        onFetchHoverDetail={fetchBaseUnitHoverDetail}
-                        disabled={disabled}
+                        hoverDetail={{
+                          enabled: true,
+                          delay: 400,
+                          fetch: fetchBaseUnitHoverDetail,
+                        }}
+                        interaction={{ disabled }}
                       />
                       <p className="text-xs text-slate-500">
                         Harga pokok dan harga jual dihitung per{' '}

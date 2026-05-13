@@ -87,14 +87,13 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
             Supplier
           </label>
           <PharmaEntityComboboxSelect
-            label="Supplier"
-            name="supplier_id"
             items={suppliers}
             valueId={formData.supplier_id}
             onValueIdChange={value =>
               handleDropdownChange('supplier_id', value)
             }
-            placeholder="-- Pilih Supplier --"
+            field={{ label: 'Supplier', name: 'supplier_id' }}
+            display={{ placeholder: '-- Pilih Supplier --' }}
           />
         </div>
 
@@ -144,18 +143,21 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
             Status Pembayaran
           </label>
           <PharmaComboboxSelect
-            label="Status Pembayaran"
-            name="payment_status"
             items={paymentStatusItems}
             value={formData.payment_status}
             onValueChange={value => {
               if (value !== null) handleDropdownChange('payment_status', value);
             }}
-            itemToStringLabel={value => paymentStatusLabels.get(value) ?? value}
-            itemToStringValue={value => value}
-            placeholder="-- Pilih Status --"
-            searchable={false}
-            indicator="radio"
+            item={{
+              toLabel: value => paymentStatusLabels.get(value) ?? value,
+              toValue: value => value,
+            }}
+            field={{ label: 'Status Pembayaran', name: 'payment_status' }}
+            display={{
+              placeholder: '-- Pilih Status --',
+              indicator: 'radio',
+            }}
+            search={{ enabled: false }}
           />
         </div>
 
@@ -164,18 +166,21 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
             Metode Pembayaran
           </label>
           <PharmaComboboxSelect
-            label="Metode Pembayaran"
-            name="payment_method"
             items={paymentMethodItems}
             value={formData.payment_method}
             onValueChange={value => {
               if (value !== null) handleDropdownChange('payment_method', value);
             }}
-            itemToStringLabel={value => paymentMethodLabels.get(value) ?? value}
-            itemToStringValue={value => value}
-            placeholder="-- Pilih Metode --"
-            searchable={false}
-            indicator="radio"
+            item={{
+              toLabel: value => paymentMethodLabels.get(value) ?? value,
+              toValue: value => value,
+            }}
+            field={{ label: 'Metode Pembayaran', name: 'payment_method' }}
+            display={{
+              placeholder: '-- Pilih Metode --',
+              indicator: 'radio',
+            }}
+            search={{ enabled: false }}
           />
         </div>
       </div>

@@ -114,6 +114,65 @@ const getDirectImportSpecifiers = (relativePath: string) =>
     moduleSpecifier => moduleSpecifier.specifier
   );
 
+const legacyFlatPresetProps: string[] = [
+  'aria-describedby',
+  'aria-label',
+  'aria-labelledby',
+  'className',
+  'createAction',
+  'disabled',
+  'emptyText',
+  'form',
+  'id',
+  'indicator',
+  'isItemDisabled',
+  'isItemEqualToValue',
+  'isValueEmpty',
+  'itemToHoverDetailData',
+  'itemToStringLabel',
+  'itemToStringValue',
+  'label',
+  'name',
+  'onFetchHoverDetail',
+  'onFetchHoverDetailError',
+  'onOpenChange',
+  'open',
+  'placeholder',
+  'popupClassName',
+  'popupContainerRef',
+  'popupMatchAnchorWidth',
+  'readOnly',
+  'renderOption',
+  'renderOptionMeta',
+  'required',
+  'searchable',
+  'searchPlaceholder',
+  'tabIndex',
+  'visibleItemLimit',
+];
+
+const getInterfacePropertyNames = (
+  sourceFile: ts.SourceFile,
+  interfaceName: string
+) => {
+  const propertyNames: string[] = [];
+
+  sourceFile.forEachChild(node => {
+    if (!ts.isInterfaceDeclaration(node) || node.name.text !== interfaceName) {
+      return;
+    }
+
+    for (const member of node.members) {
+      if (!ts.isPropertySignature(member)) continue;
+      propertyNames.push(
+        member.name.getText(sourceFile).replaceAll(/['"]/g, '')
+      );
+    }
+  });
+
+  return propertyNames;
+};
+
 describe('Combobox primitive architecture', () => {
   it('keeps public exports on the safe typed primitive API', () => {
     const publicExports = getModuleSpecifiers(
@@ -182,6 +241,65 @@ describe('Combobox primitive architecture', () => {
 });
 
 describe('Combobox preset architecture', () => {
+  it('keeps the public preset props grouped by domain', () => {
+    const source = readSource('presets-types.ts');
+    const sourceFile = parseSource('presets-types.ts', source);
+    const rootProps = getInterfacePropertyNames(
+      sourceFile,
+      'PharmaComboboxSelectProps'
+    );
+
+    expect(rootProps.sort()).toEqual([
+      'creation',
+      'display',
+      'field',
+      'hoverDetail',
+      'interaction',
+      'item',
+      'items',
+      'onValueChange',
+      'popup',
+      'search',
+      'validation',
+      'value',
+    ]);
+    expect(
+      rootProps.filter(prop => legacyFlatPresetProps.includes(prop))
+    ).toEqual([]);
+  });
+
+  it('keeps preset JSX call sites off the legacy flat props', () => {
+    const flatLegacyProps = new Set(legacyFlatPresetProps);
+    const legacyAttributes: string[] = [];
+
+    for (const [filePath, source] of sourceByPath) {
+      const sourceFile = parseSource(filePath, source);
+      const visit = (node: ts.Node) => {
+        if (ts.isJsxSelfClosingElement(node)) {
+          const tagName = node.tagName.getText(sourceFile);
+          if (
+            tagName === 'PharmaComboboxSelect' ||
+            tagName === 'PharmaEntityComboboxSelect'
+          ) {
+            for (const attribute of node.attributes.properties) {
+              if (!ts.isJsxAttribute(attribute)) continue;
+              const attributeName = attribute.name.getText(sourceFile);
+              if (flatLegacyProps.has(attributeName)) {
+                legacyAttributes.push(`${filePath}: ${attributeName}`);
+              }
+            }
+          }
+        }
+
+        ts.forEachChild(node, visit);
+      };
+
+      visit(sourceFile);
+    }
+
+    expect(legacyAttributes).toEqual([]);
+  });
+
   it('keeps the select controller from owning low-level combobox behavior', () => {
     const directImports = getDirectImportSpecifiers(
       'hooks/use-pharma-combobox-select-controller.ts'

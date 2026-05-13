@@ -45,13 +45,17 @@ type Category = {
 };
 
 <PharmaEntityComboboxSelect<Category>
-  label="Kategori"
-  name="category_id"
   items={categories}
   valueId={formData.category_id}
   onValueIdChange={valueId => updateField('category_id', valueId)}
-  placeholder="Pilih Kategori"
-  required
+  field={{
+    label: 'Kategori',
+    name: 'category_id',
+    required: true,
+  }}
+  display={{
+    placeholder: 'Pilih Kategori',
+  }}
 />;
 ```
 
@@ -59,14 +63,16 @@ Use `selectedItem` when the saved id can exist before the option list has finish
 
 ```tsx
 <PharmaEntityComboboxSelect
-  label="Supplier"
-  name="supplier_id"
   items={supplierOptions}
   valueId={supplierId}
   selectedItem={selectedSupplier}
   onValueIdChange={(valueId, item) => {
     setSupplierId(valueId);
     setSelectedSupplier(item);
+  }}
+  field={{
+    label: 'Supplier',
+    name: 'supplier_id',
   }}
 />
 ```
@@ -81,15 +87,21 @@ type Supplier = {
 };
 
 <PharmaComboboxSelect<Supplier>
-  label="Supplier"
-  name="supplier_id"
   items={suppliers}
   value={selectedSupplier}
   onValueChange={setSelectedSupplier}
-  itemToStringLabel={supplier => supplier.name}
-  itemToStringValue={supplier => supplier.id}
-  isItemEqualToValue={(item, value) => item.id === value.id}
-  renderOptionMeta={supplier => supplier.code}
+  item={{
+    toLabel: supplier => supplier.name,
+    toValue: supplier => supplier.id,
+    isEqualToValue: (item, value) => item.id === value.id,
+  }}
+  field={{
+    label: 'Supplier',
+    name: 'supplier_id',
+  }}
+  display={{
+    renderOptionMeta: supplier => supplier.code,
+  }}
 />;
 ```
 
@@ -105,16 +117,24 @@ const statusLabels: Record<Status, string> = {
 };
 
 <PharmaComboboxSelect<Status>
-  label="Status"
-  name="status"
   items={[...statusOptions]}
   value={status}
   onValueChange={setStatus}
-  itemToStringLabel={value => statusLabels[value]}
-  itemToStringValue={value => value}
-  searchable={false}
-  indicator="radio"
-  required
+  item={{
+    toLabel: value => statusLabels[value],
+    toValue: value => value,
+  }}
+  field={{
+    label: 'Status',
+    name: 'status',
+    required: true,
+  }}
+  display={{
+    indicator: 'radio',
+  }}
+  search={{
+    enabled: false,
+  }}
 />;
 ```
 
@@ -237,15 +257,21 @@ type EntityComboboxItem = {
 };
 ```
 
-| Prop                 | Type                               | Description                                                         |
-| -------------------- | ---------------------------------- | ------------------------------------------------------------------- |
-| `items`              | `readonly Item[]`                  | Available options.                                                  |
-| `valueId`            | `string`                           | Current submitted id. Use `''` for empty selection.                 |
-| `onValueIdChange`    | `(valueId, item, details) => void` | Called when selection changes.                                      |
-| `selectedItem`       | `Item \| null`                     | Optional item for the current id when it is not present in `items`. |
-| `itemToStringLabel`  | `(item) => string`                 | Optional label formatter. Defaults to `item.name`.                  |
-| `itemToStringValue`  | `(item) => string`                 | Optional submitted-value formatter. Defaults to `item.id`.          |
-| `isItemEqualToValue` | `(item, value) => boolean`         | Optional equality check. Defaults to matching submitted values.     |
+| Prop              | Type                               | Description                                                                                                                        |
+| ----------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `items`           | `readonly Item[]`                  | Available options.                                                                                                                 |
+| `valueId`         | `string`                           | Current submitted id. Use `''` for empty selection.                                                                                |
+| `onValueIdChange` | `(valueId, item, details) => void` | Called when selection changes.                                                                                                     |
+| `selectedItem`    | `Item \| null`                     | Optional item for the current id when it is not present in `items`.                                                                |
+| `item`            | Entity item conversion config      | Optional overrides for label, submitted value, equality, disabled, empty, and hover-detail data behavior. Defaults to `name`/`id`. |
+| `field`           | Field metadata config              | Label, id, name, form, required state, and ARIA overrides.                                                                         |
+| `interaction`     | Interaction config                 | Disabled, read-only, tab order, and controlled open-state behavior.                                                                |
+| `display`         | Display config                     | Placeholder, empty text, root class, indicator, and option renderers.                                                              |
+| `search`          | Search config                      | Search enablement, placeholder, and visible item limit.                                                                            |
+| `popup`           | Popup config                       | Popup class, portal container, and width matching.                                                                                 |
+| `validation`      | Validation config                  | Required-field validation overlay configuration.                                                                                   |
+| `creation`        | Create action config               | Create action rendered when no exact option exists.                                                                                |
+| `hoverDetail`     | Hover-detail config                | Hover-detail behavior, async fetch, and fetch-error handling.                                                                      |
 
 If `valueId` is not empty and neither `items` nor `selectedItem` can resolve it, the preset keeps the hidden form value intact and displays a neutral fallback label.
 
@@ -253,46 +279,20 @@ If `valueId` is not empty and neither `items` nor `selectedItem` can resolve it,
 
 `PharmaComboboxSelect` is the generic app preset. It should be used when the selected value is an object or scalar that needs custom string conversion.
 
-| Prop                      | Type                                                                | Description                                                                             |
-| ------------------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| `items`                   | `readonly Item[]`                                                   | Options displayed by the select.                                                        |
-| `value`                   | `Item \| null`                                                      | Selected item.                                                                          |
-| `onValueChange`           | `(item, details) => void`                                           | Called after the selected item changes.                                                 |
-| `itemToStringLabel`       | `(item) => string`                                                  | Human-readable option label.                                                            |
-| `itemToStringValue`       | `(item) => string`                                                  | Stable submitted value. Must be unique within the option list.                          |
-| `isItemEqualToValue`      | `(item, value) => boolean`                                          | Equality check for object values that can be different references.                      |
-| `isItemDisabled`          | `(item) => boolean`                                                 | Disables individual options. Defaults to reading `item.disabled` on object items.       |
-| `isValueEmpty`            | `(item) => boolean`                                                 | Defines custom empty sentinels such as `''`.                                            |
-| `id`                      | `string`                                                            | Trigger/control id. Inherits `FormField` control id when available.                     |
-| `label`                   | `string`                                                            | Visible or accessible label. Inherits `FormField` label when available.                 |
-| `name`                    | `string`                                                            | Hidden input name for form submission.                                                  |
-| `form`                    | `string`                                                            | Associates the hidden input with a form id.                                             |
-| `placeholder`             | `string`                                                            | Trigger placeholder. Defaults to `'-- Pilih --'`.                                       |
-| `searchPlaceholder`       | `string`                                                            | Search input placeholder. Defaults to `'Cari...'`.                                      |
-| `emptyText`               | `string`                                                            | Empty-state text. Defaults to `'Tidak ada data'`.                                       |
-| `searchable`              | `boolean`                                                           | Enables the popup search input. Defaults to `true`.                                     |
-| `visibleItemLimit`        | `number`                                                            | Optional render cap for large lists. Defaults to a bounded large-list cap when omitted. |
-| `indicator`               | `'none' \| 'check' \| 'radio' \| 'checkbox'`                        | Selection indicator style.                                                              |
-| `required`                | `boolean`                                                           | Enables required-state semantics and preset validation.                                 |
-| `disabled`                | `boolean`                                                           | Disables the control.                                                                   |
-| `readOnly`                | `boolean`                                                           | Prevents selection changes while keeping the current value readable.                    |
-| `tabIndex`                | `number`                                                            | Trigger tab order.                                                                      |
-| `className`               | `string`                                                            | Root container class.                                                                   |
-| `popupClassName`          | `string`                                                            | Popup surface class.                                                                    |
-| `popupMatchAnchorWidth`   | `boolean`                                                           | Whether the popup width follows the trigger width. Defaults to `true`.                  |
-| `validation`              | `{ enabled?: boolean; autoHide?: boolean; autoHideDelay?: number }` | Required-field validation overlay configuration.                                        |
-| `createAction`            | `{ label?: string; onCreate: (searchTerm?: string) => void }`       | Create action rendered when no exact option exists.                                     |
-| `hoverDetail`             | `{ enabled?: boolean; delay?: number }`                             | Hover-detail behavior configuration.                                                    |
-| `itemToHoverDetailData`   | `(item) => Partial<HoverDetailData>`                                | Maps an item to local hover-detail data.                                                |
-| `onFetchHoverDetail`      | `(id) => Promise<HoverDetailData \| null>`                          | Loads hover-detail data asynchronously.                                                 |
-| `onFetchHoverDetailError` | `(error, id) => void`                                               | Handles hover-detail fetch failures.                                                    |
-| `renderOption`            | `(item, state) => ReactNode`                                        | Custom option content.                                                                  |
-| `renderOptionMeta`        | `(item, state) => ReactNode`                                        | Secondary option metadata.                                                              |
-| `open`                    | `boolean`                                                           | Controlled popup state.                                                                 |
-| `onOpenChange`            | `(open, details) => void`                                           | Called when the primitive requests an open-state change.                                |
-| `aria-label`              | `string`                                                            | Accessible name override.                                                               |
-| `aria-labelledby`         | `string`                                                            | Accessible label reference override.                                                    |
-| `aria-describedby`        | `string`                                                            | Accessible description reference.                                                       |
+| Prop            | Type                      | Description                                                                                                                                                  |
+| --------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `items`         | `readonly Item[]`         | Options displayed by the select.                                                                                                                             |
+| `value`         | `Item \| null`            | Selected item.                                                                                                                                               |
+| `onValueChange` | `(item, details) => void` | Called after the selected item changes.                                                                                                                      |
+| `item`          | Item conversion config    | `toLabel`, `toValue`, optional equality, disabled, empty-value, and hover-detail data mapping. `toValue` should be stable and unique within the option list. |
+| `field`         | Field metadata config     | Trigger id, label, hidden input name, form id, required state, and ARIA overrides.                                                                           |
+| `interaction`   | Interaction config        | Disabled, read-only, tab order, controlled popup state, and open-state callback.                                                                             |
+| `display`       | Display config            | Root class, placeholder, empty text, indicator, custom option content, and option metadata.                                                                  |
+| `search`        | Search config             | Search enablement, search placeholder, and visible item limit.                                                                                               |
+| `popup`         | Popup config              | Popup surface class, portal container ref, and anchor-width matching.                                                                                        |
+| `validation`    | Validation config         | Required-field validation overlay configuration.                                                                                                             |
+| `creation`      | Create action config      | Create action rendered when no exact option exists.                                                                                                          |
+| `hoverDetail`   | Hover-detail config       | Hover-detail enablement, delay, async data fetch, and fetch-error callback.                                                                                  |
 
 When `required` is set, preset validation is enabled by default. Set
 `validation.enabled` to `false` to opt out of preset overlay feedback and
@@ -433,9 +433,9 @@ The popup search input supports:
 
 ### Forms
 
-Passing `name` renders a hidden input. Its value comes from `itemToStringValue(selectedItem)`. For entity selects, the hidden value is the selected id.
+Passing `field.name` renders a hidden input. Its value comes from `item.toValue(selectedItem)`. For entity selects, the hidden value is the selected id.
 
-`required` is used for accessibility and preset validation state. It is not native hidden-input constraint validation.
+`field.required` is used for accessibility and preset validation state. It is not native hidden-input constraint validation.
 
 Native form reset restores uncontrolled combobox state to the corresponding
 `defaultValue`, `defaultInputValue`, `defaultHighlightedIndex`, and
@@ -445,7 +445,7 @@ change the combobox value.
 
 ### Accessibility
 
-The primitive wires the trigger, input, listbox, option ids, active descendant, selected state, disabled state, and registered labels. When a preset is not wrapped by `FormField`, pass `label`, `aria-label`, or `aria-labelledby` so the control has an accessible name.
+The primitive wires the trigger, input, listbox, option ids, active descendant, selected state, disabled state, and registered labels. When a preset is not wrapped by `FormField`, pass `field.label`, `field.aria.label`, or `field.aria.labelledBy` so the control has an accessible name.
 
 ### Controlled Open State
 
@@ -474,7 +474,7 @@ When `open` is controlled, `onOpenChange(false, details)` is only a close reques
 ## Maintenance Guidelines
 
 - Keep app screens on `PharmaEntityComboboxSelect` or `PharmaComboboxSelect` unless custom markup is required.
-- Keep `itemToStringValue` stable and unique for every option in the same list.
+- Keep `item.toValue` stable and unique for every option in the same list.
 - Prefer `selectedItem` over placeholder-only workarounds when a saved id is loaded before its option list.
 - Add primitive behavior only when a real PharmaSys call site needs it.
 - Keep visual highlight behavior in the preset and submitted value changes in the primitive selection flow.

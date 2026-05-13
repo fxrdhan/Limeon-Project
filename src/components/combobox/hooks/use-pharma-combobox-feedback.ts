@@ -1,18 +1,20 @@
-import type { PharmaComboboxSelectProps } from '../presets-types';
+import type { PharmaComboboxValidationConfig } from '../presets-types';
 import { useComboboxAccessibility } from './use-combobox-accessibility';
 import { useComboboxValidation } from './use-combobox-validation';
 
-type PharmaComboboxFeedbackProps<Item> = Pick<
-  PharmaComboboxSelectProps<Item>,
-  'aria-describedby' | 'aria-label' | 'aria-labelledby' | 'name' | 'validation'
-> & {
+type PharmaComboboxFeedbackProps<Item> = {
+  'aria-describedby'?: string;
+  'aria-label'?: string;
+  'aria-labelledby'?: string;
   effectiveLabel?: string;
   effectiveRequired: boolean;
   fallbackLabelId: string;
   formFieldLabelId?: string;
   isFocusWithinCombobox: (target: EventTarget | null) => boolean;
+  name?: string;
   placeholder: string;
   selectedValue: Item | null;
+  validation?: PharmaComboboxValidationConfig;
   valueId: string;
 };
 

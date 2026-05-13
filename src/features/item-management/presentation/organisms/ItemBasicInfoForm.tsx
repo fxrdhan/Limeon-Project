@@ -194,15 +194,21 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
       onFetchHoverDetail: (id: string) => Promise<HoverDetailData | null>
     ) => (
       <PharmaEntityComboboxSelect
-        name={name}
-        tabIndex={tabIndex}
         items={items}
         valueId={value}
         onValueIdChange={nextValue => onDropdownChange(name, nextValue)}
-        placeholder={placeholder}
-        required
+        field={{ name, required: true }}
+        interaction={{
+          tabIndex,
+          open: persistedDropdownName === name ? true : undefined,
+          onOpenChange: nextOpen => {
+            if (!nextOpen) onPersistedDropdownClear?.();
+          },
+          disabled,
+        }}
+        display={{ placeholder }}
         validation={{ enabled: true, autoHide: true, autoHideDelay: 3000 }}
-        createAction={
+        creation={
           disabled
             ? undefined
             : {
@@ -210,13 +216,11 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                 label: 'Tambah data baru',
               }
         }
-        hoverDetail={{ enabled: true, delay: 400 }}
-        onFetchHoverDetail={onFetchHoverDetail}
-        open={persistedDropdownName === name ? true : undefined}
-        onOpenChange={nextOpen => {
-          if (!nextOpen) onPersistedDropdownClear?.();
+        hoverDetail={{
+          enabled: true,
+          delay: 400,
+          fetch: onFetchHoverDetail,
         }}
-        disabled={disabled}
       />
     );
 
@@ -254,8 +258,6 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
 
             <FormField label="Tipe Produk" required={true}>
               <PharmaComboboxSelect
-                name="is_medicine"
-                tabIndex={2}
                 items={productTypeItems}
                 value={formData.is_medicine ? 'obat' : 'non-obat'}
                 onValueChange={value => {
@@ -267,13 +269,14 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
                     onFieldChange('has_expiry_date', false);
                   }
                 }}
-                itemToStringLabel={value =>
-                  productTypeLabels.get(value) ?? value
-                }
-                itemToStringValue={value => value}
-                indicator="radio"
-                searchable={false}
-                disabled={disabled}
+                item={{
+                  toLabel: value => productTypeLabels.get(value) ?? value,
+                  toValue: value => value,
+                }}
+                field={{ name: 'is_medicine' }}
+                interaction={{ tabIndex: 2, disabled }}
+                display={{ indicator: 'radio' }}
+                search={{ enabled: false }}
               />
             </FormField>
 
