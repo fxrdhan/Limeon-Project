@@ -19,7 +19,12 @@ export interface ComboboxOptionDisplay {
   updatedAt?: string | null;
 }
 
-export interface ComboboxOption extends ComboboxItem {
+/**
+ * Shared base for combobox items that carry display metadata.
+ * Both `ComboboxOption` (selectable list item) and `HoverDetailData`
+ * (hover-popover payload) extend this interface.
+ */
+export interface ComboboxDisplayableItem extends ComboboxItem {
   display?: ComboboxOptionDisplay;
   data?: unknown;
   /** @deprecated Use display.code for visual metadata. */
@@ -34,21 +39,11 @@ export interface ComboboxOption extends ComboboxItem {
   updated_at?: string | null;
 }
 
-export interface HoverDetailData extends ComboboxItem {
-  display?: ComboboxOptionDisplay;
-  data?: unknown;
-  /** @deprecated Use display.code for visual metadata. */
-  code?: string;
-  /** @deprecated Use display.description for visual metadata. */
-  description?: string;
-  /** @deprecated Use display.badgeLabel for visual metadata. */
-  metaLabel?: string;
-  /** @deprecated Use display.badgeTone for visual metadata. */
-  metaTone?: ComboboxMetaTone;
+export interface ComboboxOption extends ComboboxDisplayableItem {}
+
+export interface HoverDetailData extends ComboboxDisplayableItem {
   created_at?: string;
   createdAt?: string;
-  /** @deprecated Use display.updatedAt for visual metadata. */
-  updated_at?: string | null;
   updatedAt?: string | null;
 }
 

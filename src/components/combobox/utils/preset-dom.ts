@@ -25,19 +25,6 @@ export const getPharmaComboboxOptionIndexSelector = (index: number) =>
     index
   )}"]`;
 
-export const setRef = <Node>(
-  ref: React.Ref<Node> | undefined,
-  value: Node | null
-) => {
-  if (!ref) return;
-  if (typeof ref === 'function') {
-    ref(value);
-    return;
-  }
-
-  ref.current = value;
-};
-
 export const preventComboboxHandler = (event: React.SyntheticEvent) => {
   (event as ComboboxPreventableSyntheticEvent).preventComboboxHandler?.();
 };

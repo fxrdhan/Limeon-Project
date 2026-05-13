@@ -17,10 +17,8 @@ import {
   type VirtualItem,
 } from '@tanstack/react-virtual';
 import { cn } from '@/lib/utils';
-import {
-  getPharmaComboboxOptionIndexAttributes,
-  setRef,
-} from '../utils/preset-dom';
+import { getPharmaComboboxOptionIndexAttributes } from '../utils/preset-dom';
+import { setRef } from '../utils/primitive-render';
 import { Combobox } from '../primitive';
 import type { PharmaComboboxOptionRenderState } from '../presets-types';
 import { comboboxHighlightBackgroundTransition } from './combobox-highlight-motion';
