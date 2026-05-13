@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vite-plus/test';
-import { Combobox } from './index';
+import { Combobox } from './primitive';
 import { setupUserEvent } from '../../test/user-event';
 
 const fruitItems = ['Apple', 'Banana', 'Cherry'];
@@ -338,6 +338,42 @@ describe('Combobox primitive', () => {
     });
 
     expect(onValueChange).not.toHaveBeenCalled();
+  });
+
+  it('throws when an item index does not point at the rendered value', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    try {
+      expect(() => {
+        render(
+          <Combobox.Root
+            items={fruitItems}
+            defaultOpen
+            itemToStringLabel={item => item}
+            itemToStringValue={item => item}
+          >
+            <Combobox.Trigger aria-label="Fruit">
+              <Combobox.Value placeholder="Choose fruit" />
+            </Combobox.Trigger>
+            <Combobox.Portal>
+              <Combobox.Positioner>
+                <Combobox.Popup initialFocus={false}>
+                  <Combobox.List<string>>
+                    {(_item, index) => (
+                      <Combobox.Item key={index} value="Cherry" index={index}>
+                        Cherry
+                      </Combobox.Item>
+                    )}
+                  </Combobox.List>
+                </Combobox.Popup>
+              </Combobox.Positioner>
+            </Combobox.Portal>
+          </Combobox.Root>
+        );
+      }).toThrow('Combobox.Item value/index mismatch');
+    } finally {
+      error.mockRestore();
+    }
   });
 
   it('prevents primitive popup search Enter when no option is active', () => {

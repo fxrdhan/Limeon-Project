@@ -14,58 +14,87 @@ import {
   type ComboboxVirtualScrollToIndex,
 } from './use-combobox-option-keyboard-scroll';
 
-export function useComboboxOptionInteraction<Item>({
-  actualOpen,
-  canCreate,
-  handleCreate,
-  hoverDetail,
-  isItemDisabled,
-  isSameItem,
-  itemToHoverDetailData,
-  itemToStringLabel,
-  itemToStringValue,
-  items,
-  listRef,
-  normalizedInputValue,
-  onFetchHoverDetail,
-  onFetchHoverDetailError,
-  popupContentRef,
-  requestSelectedOptionScroll,
-  searchable,
-  searchInputRef,
-  selectedValue,
-  setInputValue,
-  setIsSearchNavigationFocus,
-  virtualScrollToIndexRef,
-  visibleItems,
-}: {
+type ComboboxOptionInteractionCore = {
   actualOpen: boolean;
+  listRef: RefObject<HTMLDivElement | null>;
+  popupContentRef: RefObject<HTMLDivElement | null>;
+  searchInputRef: RefObject<HTMLInputElement | null>;
+  setInputValue: Dispatch<SetStateAction<string>>;
+  setIsSearchNavigationFocus: Dispatch<SetStateAction<boolean>>;
+  virtualScrollToIndexRef: RefObject<ComboboxVirtualScrollToIndex | null>;
+};
+
+type ComboboxOptionInteractionSelection<Item> = {
   canCreate: boolean;
   handleCreate: () => void;
+  isItemDisabled: (item: Item) => boolean;
+  isSameItem: (item: Item, value: Item) => boolean;
+  items: Item[];
+  normalizedInputValue: string;
+  searchable: boolean;
+  selectedValue: Item | null;
+  visibleItems: Item[];
+};
+
+type ComboboxOptionInteractionHoverDetail<Item> = {
   hoverDetail?: {
     enabled?: boolean;
     delay?: number;
   };
-  isItemDisabled: (item: Item) => boolean;
-  isSameItem: (item: Item, value: Item) => boolean;
   itemToHoverDetailData?: (item: Item) => Partial<HoverDetailData>;
   itemToStringLabel: (item: Item) => string;
   itemToStringValue: (item: Item) => string;
-  items: Item[];
-  listRef: RefObject<HTMLDivElement | null>;
-  normalizedInputValue: string;
   onFetchHoverDetail?: (id: string) => Promise<HoverDetailData | null>;
   onFetchHoverDetailError?: (error: unknown, id: string) => void;
-  popupContentRef: RefObject<HTMLDivElement | null>;
+};
+
+type ComboboxOptionInteractionServices = {
   requestSelectedOptionScroll: () => void;
-  searchable: boolean;
-  searchInputRef: RefObject<HTMLInputElement | null>;
-  selectedValue: Item | null;
-  setInputValue: Dispatch<SetStateAction<string>>;
-  setIsSearchNavigationFocus: Dispatch<SetStateAction<boolean>>;
-  virtualScrollToIndexRef: RefObject<ComboboxVirtualScrollToIndex | null>;
-  visibleItems: Item[];
-}) {
+};
+
+type UseComboboxOptionInteractionOptions<Item> = {
+  core: ComboboxOptionInteractionCore;
+  hoverDetail: ComboboxOptionInteractionHoverDetail<Item>;
+  selection: ComboboxOptionInteractionSelection<Item>;
+  services: ComboboxOptionInteractionServices;
+};
+
+export function useComboboxOptionInteraction<Item>({
+  core,
+  hoverDetail,
+  selection,
+  services,
+}: UseComboboxOptionInteractionOptions<Item>) {
+  const {
+    actualOpen,
+    listRef,
+    popupContentRef,
+    searchInputRef,
+    setInputValue,
+    setIsSearchNavigationFocus,
+    virtualScrollToIndexRef,
+  } = core;
+  const {
+    canCreate,
+    handleCreate,
+    isItemDisabled,
+    isSameItem,
+    items,
+    normalizedInputValue,
+    searchable,
+    selectedValue,
+    visibleItems,
+  } = selection;
+  const {
+    hoverDetail: hoverDetailConfig,
+    itemToHoverDetailData,
+    itemToStringLabel,
+    itemToStringValue,
+    onFetchHoverDetail,
+    onFetchHoverDetailError,
+  } = hoverDetail;
+  const { requestSelectedOptionScroll } = services;
+
   const { getOptionElementAtIndex, isOptionElementFullyVisible } =
     useComboboxOptionElements({ listRef });
   const { clearKeyboardHoverDetailSync, keyboardHoverDetailSyncTimeoutRef } =
@@ -82,7 +111,7 @@ export function useComboboxOptionInteraction<Item>({
     actualOpen,
     clearKeyboardHoverDetailSync,
     clearKeyboardScrollHighlight: keyboardScroll.clearKeyboardScrollHighlight,
-    hoverDetail,
+    hoverDetail: hoverDetailConfig,
     isItemDisabled,
     itemToHoverDetailData,
     itemToStringLabel,

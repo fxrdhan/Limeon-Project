@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it } from 'vite-plus/test';
-import { Combobox } from './index';
+import { Combobox } from './primitive';
 
 const fruitItems = ['Apple', 'Banana', 'Cherry'];
 

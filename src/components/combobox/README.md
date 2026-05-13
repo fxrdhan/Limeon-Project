@@ -4,18 +4,17 @@
 
 `@/components/combobox` provides the combobox/select implementation used by PharmaSys forms and data-entry flows. The module has a primitive layer and an app preset layer:
 
-- Primitive: `Combobox`, a local compound component for custom combobox compositions.
+- Typed primitive: `createTypedCombobox`, a local compound component factory for custom combobox compositions.
 - App presets: `PharmaComboboxSelect` for arbitrary item types and `PharmaEntityComboboxSelect` for common `{ id, name }` entity options.
 
 The component supports single selection, controlled or uncontrolled open state, controlled or uncontrolled selected value, searchable option lists, keyboard navigation, hidden form submission, portal-based popup positioning, required-state feedback, create actions, and optional hover detail popovers.
 
-Use the app presets for normal product screens. Use the primitive only when a screen needs a custom layout that the preset cannot express.
+Use the app presets for normal product screens. Use the typed primitive only when a screen needs a custom layout that the preset cannot express.
 
 ## Import
 
 ```tsx
 import {
-  Combobox,
   createTypedCombobox,
   PharmaComboboxSelect,
   PharmaEntityComboboxSelect,
@@ -119,7 +118,10 @@ const statusLabels: Record<Status, string> = {
 />;
 ```
 
-Use the primitive directly only for custom UI composition.
+Use `createTypedCombobox` only when a screen needs custom UI composition that
+the presets cannot express. The raw primitive is internal; public custom
+composition should use a typed namespace so `Root`, `List`, `Collection`, and
+`Item` share the same value type.
 
 ```tsx
 type Supplier = {
@@ -127,7 +129,9 @@ type Supplier = {
   name: string;
 };
 
-<Combobox.Root<Supplier>
+const SupplierCombobox = createTypedCombobox<Supplier>();
+
+<SupplierCombobox.Root
   items={suppliers}
   value={selectedSupplier}
   onValueChange={setSelectedSupplier}
@@ -136,46 +140,28 @@ type Supplier = {
   name="supplier_id"
   autoHighlight
 >
-  <Combobox.Label>Supplier</Combobox.Label>
-  <Combobox.Trigger>
-    <Combobox.Value placeholder="Pilih Supplier" />
-  </Combobox.Trigger>
-  <Combobox.Portal>
-    <Combobox.Positioner sideOffset={4}>
-      <Combobox.Popup>
-        <Combobox.Input aria-label="Cari supplier" placeholder="Cari..." />
-        <Combobox.List<Supplier>>
-          {(supplier, index) => (
-            <Combobox.Item key={supplier.id} value={supplier} index={index}>
+  <SupplierCombobox.Label>Supplier</SupplierCombobox.Label>
+  <SupplierCombobox.Trigger>
+    <SupplierCombobox.Value placeholder="Pilih Supplier" />
+  </SupplierCombobox.Trigger>
+  <SupplierCombobox.Portal>
+    <SupplierCombobox.Positioner sideOffset={4}>
+      <SupplierCombobox.Popup>
+        <SupplierCombobox.Input
+          aria-label="Cari supplier"
+          placeholder="Cari..."
+        />
+        <SupplierCombobox.List>
+          {supplier => (
+            <SupplierCombobox.Item key={supplier.id}>
               {supplier.name}
-            </Combobox.Item>
+            </SupplierCombobox.Item>
           )}
-        </Combobox.List>
-        <Combobox.Empty>Tidak ada data</Combobox.Empty>
-      </Combobox.Popup>
-    </Combobox.Positioner>
-  </Combobox.Portal>
-</Combobox.Root>;
-```
-
-For larger custom compositions, create a typed primitive namespace once so
-`Root`, `List`, `Collection`, and `Item` share the same value type.
-
-```tsx
-const SupplierCombobox = createTypedCombobox<Supplier>();
-
-<SupplierCombobox.Root
-  items={suppliers}
-  value={selectedSupplier}
-  onValueChange={setSelectedSupplier}
->
-  <SupplierCombobox.List>
-    {(supplier, index) => (
-      <SupplierCombobox.Item key={supplier.id} value={supplier} index={index}>
-        {supplier.name}
-      </SupplierCombobox.Item>
-    )}
-  </SupplierCombobox.List>
+        </SupplierCombobox.List>
+        <SupplierCombobox.Empty>Tidak ada data</SupplierCombobox.Empty>
+      </SupplierCombobox.Popup>
+    </SupplierCombobox.Positioner>
+  </SupplierCombobox.Portal>
 </SupplierCombobox.Root>;
 ```
 
@@ -316,7 +302,10 @@ submitted hidden input remains a plain submitted value, while the proxy lets
 browser form validation block empty required comboboxes and route focus back to
 the trigger.
 
-## Primitive API
+## Typed Primitive API
+
+The `Combobox` name below refers to a typed namespace returned by
+`createTypedCombobox<Value>()`, not a public raw export.
 
 ### Compound Parts
 
@@ -332,7 +321,7 @@ the trigger.
 | `Combobox.Input`         | Search input controlled by `Combobox.Root`.                                                  |
 | `Combobox.List`          | Listbox wrapper. Can map `filteredItems` through a render function.                          |
 | `Combobox.Collection`    | Render-only mapper for `filteredItems`.                                                      |
-| `Combobox.Item`          | Selectable option.                                                                           |
+| `Combobox.Item`          | Selectable option scoped to a `List` or `Collection` item callback.                          |
 | `Combobox.ItemIndicator` | Optional indicator element inside an option.                                                 |
 | `Combobox.Empty`         | Status element rendered only when there are no filtered items.                               |
 | `Combobox.Status`        | Generic status element.                                                                      |
@@ -400,7 +389,7 @@ Call `details.cancel()` to prevent the primitive from applying the requested tra
 
 ### Render Props
 
-`Combobox.Trigger` and `Combobox.Item` accept `render={element}` or `render={(props, state) => element}`. The generated props include ARIA attributes, event handlers, refs, class names, styles, and data attributes.
+`Combobox.Trigger` and `Combobox.Item` accept `render={element}` or `render={(props, state) => element}`. The generated props include ARIA attributes, event handlers, refs, class names, styles, and data attributes. In the typed primitive, `Combobox.Item` receives its value and index from the surrounding `List` or `Collection` callback; do not pass `value` or `index`.
 
 ```tsx
 <Combobox.Trigger

@@ -478,48 +478,26 @@ describe('Combobox app presets', () => {
     ).toBeNull();
   });
 
-  it('warns when option submitted values are duplicated in development', async () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  it('throws when option submitted values are duplicated', () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     try {
-      render(
-        <PharmaComboboxSelect
-          name="supplier_id"
-          items={[
-            { id: 'duplicate', name: 'Supplier A' },
-            { id: 'duplicate', name: 'Supplier B' },
-          ]}
-          value={null}
-          onValueChange={() => {}}
-          itemToStringLabel={supplier => supplier.name}
-          itemToStringValue={supplier => supplier.id}
-        />
-      );
-
-      await waitFor(() => {
-        expect(warn).toHaveBeenCalledWith(
-          expect.stringContaining(
-            'Duplicate itemToStringValue "duplicate" detected'
-          )
+      expect(() => {
+        render(
+          <PharmaComboboxSelect
+            name="supplier_id"
+            items={[
+              { id: 'duplicate', name: 'Supplier A' },
+              { id: 'duplicate', name: 'Supplier B' },
+            ]}
+            value={null}
+            onValueChange={() => {}}
+            itemToStringLabel={supplier => supplier.name}
+            itemToStringValue={supplier => supplier.id}
+          />
         );
-      });
-
-      fireEvent.click(screen.getByRole('combobox', { name: /pilih/i }));
-
-      expect(screen.getByRole('option', { name: /supplier a/i })).toBeTruthy();
-      expect(screen.getByRole('option', { name: /supplier b/i })).toBeTruthy();
-      expect(
-        error.mock.calls.filter(call =>
-          call.some(
-            argument =>
-              typeof argument === 'string' &&
-              argument.includes('Encountered two children with the same key')
-          )
-        )
-      ).toHaveLength(0);
+      }).toThrow('Duplicate itemToStringValue "duplicate" detected');
     } finally {
-      warn.mockRestore();
       error.mockRestore();
     }
   });

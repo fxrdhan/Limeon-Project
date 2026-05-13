@@ -1,95 +1,191 @@
+/// <reference types="vite-plus/client" />
+
+import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 
-declare global {
-  interface ImportMeta {
-    glob: (
-      pattern: string,
-      options: {
-        eager: true;
-        import: 'default';
-        query: '?raw';
-      }
-    ) => Record<string, unknown>;
-  }
-}
+const sourceModules = import.meta.glob('../../**/*.{ts,tsx}', {
+  eager: true,
+  import: 'default',
+  query: '?raw',
+});
 
-const controllerSources = import.meta.glob(
-  './hooks/use-pharma-combobox-select-controller.ts',
-  {
-    eager: true,
-    import: 'default',
-    query: '?raw',
+const normalizeSegments = (path: string) => {
+  const segments: string[] = [];
+
+  for (const segment of path.split('/')) {
+    if (!segment || segment === '.') continue;
+    if (segment === '..') {
+      segments.pop();
+      continue;
+    }
+
+    segments.push(segment);
   }
+
+  return segments.join('/');
+};
+
+const normalizeSourcePath = (moduleKey: string) => {
+  const normalizedKey = moduleKey.replaceAll('\\', '/');
+  const srcIndex = normalizedKey.indexOf('/src/');
+
+  if (srcIndex >= 0) return normalizedKey.slice(srcIndex + 1);
+  if (normalizedKey.startsWith('/src/')) return normalizedKey.slice(1);
+  if (normalizedKey.startsWith('src/')) return normalizedKey;
+
+  return normalizeSegments(`src/components/combobox/${normalizedKey}`);
+};
+
+const sourceByPath = new Map(
+  Object.entries(sourceModules)
+    .filter((entry): entry is [string, string] => typeof entry[1] === 'string')
+    .map(([moduleKey, source]) => [normalizeSourcePath(moduleKey), source])
 );
-const selectControllerSource =
-  controllerSources['./hooks/use-pharma-combobox-select-controller.ts'];
+const sourcePaths = new Set(sourceByPath.keys());
 
-if (typeof selectControllerSource !== 'string') {
-  throw new Error('Combobox select controller source fixture is missing.');
-}
-
-const interactionSources = import.meta.glob(
-  './hooks/use-combobox-option-interaction.ts',
-  {
-    eager: true,
-    import: 'default',
-    query: '?raw',
+const readSource = (relativePath: string) => {
+  const source = sourceByPath.get(`src/components/combobox/${relativePath}`);
+  if (source === undefined) {
+    throw new Error(`Combobox architecture source missing: ${relativePath}`);
   }
-);
-const optionInteractionSource =
-  interactionSources['./hooks/use-combobox-option-interaction.ts'];
 
-if (typeof optionInteractionSource !== 'string') {
-  throw new Error('Combobox option interaction source fixture is missing.');
-}
+  return source;
+};
 
-const primitiveRootStateSources = import.meta.glob(
-  './primitive-root-state.ts',
-  {
-    eager: true,
-    import: 'default',
-    query: '?raw',
+const parseSource = (fileName: string, source: string) =>
+  ts.createSourceFile(
+    fileName,
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TSX
+  );
+
+const getModuleSpecifiers = (filePath: string) => {
+  const source = sourceByPath.get(filePath);
+  if (source === undefined) {
+    throw new Error(`Source fixture missing: ${filePath}`);
   }
-);
-const primitiveRootStateSource =
-  primitiveRootStateSources['./primitive-root-state.ts'];
 
-if (typeof primitiveRootStateSource !== 'string') {
-  throw new Error('Combobox primitive root state source fixture is missing.');
-}
+  const sourceFile = parseSource(filePath, source);
+  const moduleSpecifiers: {
+    isTypeOnly: boolean;
+    specifier: string;
+  }[] = [];
 
-const getLeakedImports = (source: string, importPaths: string[]) =>
-  importPaths.filter(
-    importPath =>
-      source.includes(`from '${importPath}'`) ||
-      source.includes(`from "${importPath}"`)
+  sourceFile.forEachChild(node => {
+    if (
+      (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
+      node.moduleSpecifier &&
+      ts.isStringLiteral(node.moduleSpecifier)
+    ) {
+      moduleSpecifiers.push({
+        isTypeOnly: Boolean(
+          ts.isImportDeclaration(node)
+            ? node.importClause?.isTypeOnly
+            : node.isTypeOnly
+        ),
+        specifier: node.moduleSpecifier.text,
+      });
+    }
+  });
+
+  return moduleSpecifiers;
+};
+
+const resolveLocalSpecifier = (fromFile: string, specifier: string) => {
+  if (!specifier.startsWith('.')) return null;
+
+  const directory = fromFile.split('/').slice(0, -1).join('/');
+  const resolvedPath = normalizeSegments(`${directory}/${specifier}`);
+  const candidates = [
+    resolvedPath,
+    `${resolvedPath}.ts`,
+    `${resolvedPath}.tsx`,
+    `${resolvedPath}/index.ts`,
+    `${resolvedPath}/index.tsx`,
+  ];
+
+  return candidates.find(candidate => sourcePaths.has(candidate)) ?? null;
+};
+
+const getDirectImportSpecifiers = (relativePath: string) =>
+  getModuleSpecifiers(`src/components/combobox/${relativePath}`).map(
+    moduleSpecifier => moduleSpecifier.specifier
   );
 
 describe('Combobox primitive architecture', () => {
-  it('keeps primitive root state as orchestration instead of owning stateful mechanics', () => {
+  it('keeps public exports on the safe typed primitive API', () => {
+    const publicExports = getModuleSpecifiers(
+      'src/components/combobox/index.ts'
+    );
+    const primitiveValueExports = publicExports.filter(
+      moduleSpecifier =>
+        moduleSpecifier.specifier === './primitive' &&
+        !moduleSpecifier.isTypeOnly
+    );
+
+    expect(primitiveValueExports).toEqual([]);
+  });
+
+  it('keeps unsafe primitive imports inside the combobox package', () => {
+    const illegalImports = Array.from(sourcePaths).flatMap(filePath => {
+      if (filePath.startsWith('src/components/combobox/')) {
+        return [];
+      }
+
+      return getModuleSpecifiers(filePath)
+        .filter(moduleSpecifier => {
+          if (moduleSpecifier.isTypeOnly) return false;
+          if (moduleSpecifier.specifier === '@/components/combobox/primitive') {
+            return true;
+          }
+
+          return (
+            resolveLocalSpecifier(filePath, moduleSpecifier.specifier) ===
+            'src/components/combobox/primitive.tsx'
+          );
+        })
+        .map(moduleSpecifier => `${filePath} -> ${moduleSpecifier.specifier}`);
+    });
+
+    expect(illegalImports).toEqual([]);
+  });
+
+  it('keeps primitive root state as orchestration instead of owning mechanics', () => {
+    const source = readSource('primitive-root-state.ts');
+    const directImports = getDirectImportSpecifiers('primitive-root-state.ts');
     const forbiddenPrimitiveRootImports = [
       './utils/primitive-focus-outside',
       './utils/primitive-keyboard',
       './utils/primitive-outside-press',
       './utils/primitive-root',
     ];
-    const leakedImports = getLeakedImports(
-      primitiveRootStateSource,
-      forbiddenPrimitiveRootImports
-    );
 
-    expect(leakedImports).toEqual([]);
-    expect(primitiveRootStateSource).not.toMatch(
-      /\buse(?:Callback|Effect|Ref|State)\b/
-    );
-    expect(primitiveRootStateSource).not.toContain(
-      'createComboboxEventDetails'
-    );
+    expect(
+      directImports.filter(importPath =>
+        forbiddenPrimitiveRootImports.includes(importPath)
+      )
+    ).toEqual([]);
+    expect(source).not.toMatch(/\buse(?:Callback|Effect|Ref|State)\b/);
+    expect(source).not.toContain('createComboboxEventDetails');
+  });
+
+  it('keeps primitive context split by static, state, and actions', () => {
+    const source = readSource('primitive-context.ts');
+
+    expect(source).toContain('ComboboxStaticContext');
+    expect(source).toContain('ComboboxStateContext');
+    expect(source).toContain('ComboboxActionsContext');
+    expect(source).not.toContain('export const ComboboxContext');
   });
 });
 
 describe('Combobox preset architecture', () => {
   it('keeps the select controller from owning low-level combobox behavior', () => {
+    const directImports = getDirectImportSpecifiers(
+      'hooks/use-pharma-combobox-select-controller.ts'
+    );
     const forbiddenBoundaryImports = [
       '../utils/preset-controller-props',
       '../utils/preset-item',
@@ -103,15 +199,18 @@ describe('Combobox preset architecture', () => {
       './use-pharma-combobox-open-lifecycle',
       './use-pharma-combobox-selection-model',
     ];
-    const leakedImports = getLeakedImports(
-      selectControllerSource,
-      forbiddenBoundaryImports
-    );
 
-    expect(leakedImports).toEqual([]);
+    expect(
+      directImports.filter(importPath =>
+        forbiddenBoundaryImports.includes(importPath)
+      )
+    ).toEqual([]);
   });
 
   it('keeps option interaction as a domain facade instead of a low-level orchestrator', () => {
+    const directImports = getDirectImportSpecifiers(
+      'hooks/use-combobox-option-interaction.ts'
+    );
     const forbiddenBoundaryImports = [
       '../utils/preset-dom',
       './use-combobox-highlight',
@@ -121,11 +220,11 @@ describe('Combobox preset architecture', () => {
       './use-combobox-pointer-hover',
       './use-combobox-scroll-hover-detail-sync',
     ];
-    const leakedImports = getLeakedImports(
-      optionInteractionSource,
-      forbiddenBoundaryImports
-    );
 
-    expect(leakedImports).toEqual([]);
+    expect(
+      directImports.filter(importPath =>
+        forbiddenBoundaryImports.includes(importPath)
+      )
+    ).toEqual([]);
   });
 });

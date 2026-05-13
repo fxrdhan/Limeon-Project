@@ -1,4 +1,4 @@
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useMemo } from 'react';
 import type React from 'react';
 import type { ComboboxEventReason as EventReason } from './utils/primitive-events';
 
@@ -7,38 +7,47 @@ export type ComboboxItemMeta<Value> = {
   value: Value;
 };
 
-export type ComboboxContextValue<Value> = {
+export type ComboboxStaticContextValue = {
+  defaultLabelId: string;
+  defaultTriggerId: string;
+  getItemId: (index: number) => string;
+  highlightedIndexRef: React.MutableRefObject<number | null>;
+  inputId: string;
+  listboxId: string;
+  popupRef: React.RefObject<HTMLElement | null>;
+  triggerRef: React.RefObject<HTMLElement | null>;
+};
+
+export type ComboboxStateContextValue<Value> = {
   activeIndex: number | null;
   autoComplete?: string;
   autoHighlight: boolean;
-  defaultLabelId: string;
-  defaultTriggerId: string;
   disabled: boolean;
   filteredItems: Value[];
   form?: string;
-  getItemId: (index: number) => string;
+  highlightItemOnHover: boolean;
+  inputValue: string;
+  labelId?: string;
+  name?: string;
+  open: boolean;
+  readOnly: boolean;
+  required: boolean;
+  selectedValue: Value | null;
+  triggerId: string;
+};
+
+export type ComboboxActionsContextValue<Value> = {
   getNextEnabledIndex: (
     direction: 1 | -1,
     fromIndex: number | null
   ) => number | null;
-  highlightedIndexRef: React.MutableRefObject<number | null>;
-  highlightItemOnHover: boolean;
-  inputId: string;
-  inputValue: string;
   isItemDisabled: (item: Value) => boolean;
   isItemIndexDisabled: (index: number) => boolean;
   isItemEqualToValue: (item: Value, value: Value) => boolean;
   itemToStringLabel: (item: Value) => string;
   itemToStringValue: (item: Value) => string;
-  labelId?: string;
-  listboxId: string;
-  name?: string;
-  open: boolean;
-  popupRef: React.RefObject<HTMLElement | null>;
-  readOnly: boolean;
   registerItem: (index: number, meta: ComboboxItemMeta<Value>) => () => void;
-  required: boolean;
-  selectedValue: Value | null;
+  registerLabelId: (id: string) => () => void;
   setActiveIndex: (
     index: number | null,
     reason: EventReason,
@@ -49,12 +58,12 @@ export type ComboboxContextValue<Value> = {
     reason: EventReason,
     event?: React.SyntheticEvent | Event
   ) => boolean;
-  registerLabelId: (id: string) => () => void;
   setOpen: (
     open: boolean,
     reason: EventReason,
     event?: React.SyntheticEvent | Event
   ) => boolean;
+  setTriggerId: (id: string) => void;
   selectItem: (
     item: Value,
     reason: EventReason,
@@ -68,19 +77,66 @@ export type ComboboxContextValue<Value> = {
       preventDefault?: boolean;
     }
   ) => boolean;
-  setTriggerId: (id: string) => void;
-  triggerId: string;
-  triggerRef: React.RefObject<HTMLElement | null>;
 };
 
-export const ComboboxContext =
-  createContext<ComboboxContextValue<unknown> | null>(null);
+export type ComboboxContextValue<Value> = ComboboxStaticContextValue &
+  ComboboxStateContextValue<Value> &
+  ComboboxActionsContextValue<Value>;
 
-export const useComboboxContext = <Value>() => {
-  const context = useContext(ComboboxContext);
+export type ComboboxRootContextValue<Value> = {
+  actions: ComboboxActionsContextValue<Value>;
+  state: ComboboxStateContextValue<Value>;
+  staticContext: ComboboxStaticContextValue;
+};
+
+export const ComboboxStaticContext =
+  createContext<ComboboxStaticContextValue | null>(null);
+export const ComboboxStateContext =
+  createContext<ComboboxStateContextValue<unknown> | null>(null);
+export const ComboboxActionsContext =
+  createContext<ComboboxActionsContextValue<unknown> | null>(null);
+
+const missingContextError =
+  'Combobox components must be used inside Combobox.Root';
+
+export const useComboboxStaticContext = () => {
+  const context = useContext(ComboboxStaticContext);
   if (!context) {
-    throw new Error('Combobox components must be used inside Combobox.Root');
+    throw new Error(missingContextError);
   }
 
-  return context as ComboboxContextValue<Value>;
+  return context;
+};
+
+export const useComboboxStateContext = <Value>() => {
+  const context = useContext(ComboboxStateContext);
+  if (!context) {
+    throw new Error(missingContextError);
+  }
+
+  return context as ComboboxStateContextValue<Value>;
+};
+
+export const useComboboxActionsContext = <Value>() => {
+  const context = useContext(ComboboxActionsContext);
+  if (!context) {
+    throw new Error(missingContextError);
+  }
+
+  return context as ComboboxActionsContextValue<Value>;
+};
+
+export const useComboboxContext = <Value>() => {
+  const staticContext = useComboboxStaticContext();
+  const state = useComboboxStateContext<Value>();
+  const actions = useComboboxActionsContext<Value>();
+
+  return useMemo<ComboboxContextValue<Value>>(
+    () => ({
+      ...staticContext,
+      ...state,
+      ...actions,
+    }),
+    [actions, state, staticContext]
+  );
 };

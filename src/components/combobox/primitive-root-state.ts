@@ -1,6 +1,11 @@
 import { useMemo } from 'react';
 import type React from 'react';
-import type { ComboboxContextValue } from './primitive-context';
+import type {
+  ComboboxActionsContextValue,
+  ComboboxRootContextValue,
+  ComboboxStateContextValue,
+  ComboboxStaticContextValue,
+} from './primitive-context';
 import { useComboboxRootAutoHighlight } from './hooks/use-combobox-root-auto-highlight';
 import { useComboboxRootCollection } from './hooks/use-combobox-root-collection';
 import { useComboboxRootDismissal } from './hooks/use-combobox-root-dismissal';
@@ -242,61 +247,73 @@ export function useComboboxRootState<Value>({
   // Stable context slice: refs and IDs that never change identity after mount.
   // Memoized with [] to make the stability contract explicit and reduce the
   // reactive dependency array below.
-  const stableContext = useMemo(
+  const staticContext = useMemo<ComboboxStaticContextValue>(
     () => ({
-      activeIndexRef,
       defaultLabelId,
       defaultTriggerId,
       getItemId,
+      highlightedIndexRef: activeIndexRef,
       inputId,
       listboxId,
       popupRef,
-      setTriggerId,
       triggerRef,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refs and useId values are stable
     []
   );
 
-  const context = useMemo<ComboboxContextValue<Value>>(
+  const actions = useMemo<ComboboxActionsContextValue<Value>>(
     () => ({
-      activeIndex: activeIndexState,
-      autoComplete,
-      autoHighlight,
-      defaultLabelId: stableContext.defaultLabelId,
-      defaultTriggerId: stableContext.defaultTriggerId,
-      disabled,
-      filteredItems,
-      form,
-      getItemId: stableContext.getItemId,
       getNextEnabledIndex: getNextEnabledComboboxIndex,
-      highlightedIndexRef: stableContext.activeIndexRef,
-      highlightItemOnHover,
-      inputId: stableContext.inputId,
-      inputValue: state.inputValue,
       isItemDisabled,
       isItemIndexDisabled,
       isItemEqualToValue,
       itemToStringLabel,
       itemToStringValue,
-      labelId,
-      listboxId: stableContext.listboxId,
-      name,
-      open: state.open,
-      popupRef: stableContext.popupRef,
-      readOnly,
       registerItem,
       registerLabelId,
-      required,
       selectActiveItem,
-      selectedValue: state.selectedValue,
+      selectItem,
       setActiveIndex,
       setInputValue,
       setOpen,
-      setTriggerId: stableContext.setTriggerId,
+      setTriggerId,
+    }),
+    [
+      getNextEnabledComboboxIndex,
+      isItemDisabled,
+      isItemIndexDisabled,
+      isItemEqualToValue,
+      itemToStringLabel,
+      itemToStringValue,
+      registerItem,
+      registerLabelId,
+      selectActiveItem,
       selectItem,
+      setActiveIndex,
+      setInputValue,
+      setOpen,
+      setTriggerId,
+    ]
+  );
+
+  const stateContext = useMemo<ComboboxStateContextValue<Value>>(
+    () => ({
+      activeIndex: activeIndexState,
+      autoComplete,
+      autoHighlight,
+      disabled,
+      filteredItems,
+      form,
+      highlightItemOnHover,
+      inputValue: state.inputValue,
+      labelId,
+      name,
+      open: state.open,
+      readOnly,
+      required,
+      selectedValue: state.selectedValue,
       triggerId,
-      triggerRef: stableContext.triggerRef,
     }),
     [
       activeIndexState,
@@ -305,30 +322,25 @@ export function useComboboxRootState<Value>({
       disabled,
       filteredItems,
       form,
-      getNextEnabledComboboxIndex,
       highlightItemOnHover,
-      isItemDisabled,
-      isItemIndexDisabled,
-      isItemEqualToValue,
-      itemToStringLabel,
-      itemToStringValue,
       labelId,
       name,
       readOnly,
-      registerItem,
-      registerLabelId,
       required,
-      selectActiveItem,
-      selectItem,
-      setActiveIndex,
-      setInputValue,
-      setOpen,
-      stableContext,
       state.inputValue,
       state.open,
       state.selectedValue,
       triggerId,
     ]
+  );
+
+  const context = useMemo<ComboboxRootContextValue<Value>>(
+    () => ({
+      actions,
+      state: stateContext,
+      staticContext,
+    }),
+    [actions, stateContext, staticContext]
   );
 
   const hiddenValue =

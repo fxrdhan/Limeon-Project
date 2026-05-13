@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vite-plus/test';
-import { Combobox } from './index';
+import { Combobox } from './primitive';
 
 const fruitItems = ['Apple', 'Banana', 'Cherry'];
 

@@ -1,7 +1,10 @@
 import { useCallback, useEffect } from 'react';
 import type React from 'react';
 import { createPortal } from 'react-dom';
-import { useComboboxContext } from './primitive-context';
+import {
+  useComboboxStateContext,
+  useComboboxStaticContext,
+} from './primitive-context';
 import {
   comboboxFloatingSizeVariables,
   useComboboxFloatingPositioner,
@@ -32,8 +35,8 @@ const popupFocusableSelector = [
 ].join(',');
 
 export function ComboboxPortal({ children, container }: ComboboxPortalProps) {
-  const context = useComboboxContext<unknown>();
-  if (!context.open || typeof document === 'undefined') return null;
+  const { open } = useComboboxStateContext<unknown>();
+  if (!open || typeof document === 'undefined') return null;
 
   const portalContainer = container === undefined ? document.body : container;
   if (!portalContainer) return null;
@@ -49,15 +52,16 @@ export function ComboboxPositioner({
   style,
   ...props
 }: ComboboxPositionerProps) {
-  const context = useComboboxContext<unknown>();
+  const { open } = useComboboxStateContext<unknown>();
+  const { triggerRef } = useComboboxStaticContext();
   const { floatingStyles, setFloating } = useComboboxFloatingPositioner({
-    open: context.open,
+    open,
     placement,
     sideOffset,
-    triggerRef: context.triggerRef,
+    triggerRef,
   });
 
-  if (!context.open) return null;
+  if (!open) return null;
 
   return (
     <div
@@ -84,26 +88,26 @@ export function ComboboxPopup({
   initialFocus = false,
   ...props
 }: ComboboxPopupProps) {
-  const context = useComboboxContext<unknown>();
+  const { open } = useComboboxStateContext<unknown>();
+  const { popupRef } = useComboboxStaticContext();
 
   const setPopupRef = useCallback(
     (node: HTMLDivElement | null) => {
-      context.popupRef.current = node;
+      popupRef.current = node;
     },
-    [context.popupRef]
+    [popupRef]
   );
 
   useEffect(() => {
-    if (!context.open || !initialFocus) return;
+    if (!open || !initialFocus) return;
 
     const focusTarget =
-      context.popupRef.current?.querySelector<HTMLElement>(
-        popupFocusableSelector
-      ) ?? null;
+      popupRef.current?.querySelector<HTMLElement>(popupFocusableSelector) ??
+      null;
     focusTarget?.focus({ preventScroll: true });
-  }, [context.open, context.popupRef, initialFocus]);
+  }, [initialFocus, open, popupRef]);
 
-  if (!context.open) return null;
+  if (!open) return null;
 
   return (
     <div data-combobox-popup="" {...props} ref={setPopupRef}>

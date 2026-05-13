@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
-  Combobox,
+  createTypedCombobox,
   PharmaComboboxSelect,
 } from '../../../src/components/combobox';
 import '../../../src/App.css';
@@ -14,6 +14,8 @@ type MedicineOption = {
   id: string;
   name: string;
 };
+
+const PrimitiveCombobox = createTypedCombobox<MedicineOption>();
 
 const medicineOptions: MedicineOption[] = [
   { code: 'AMX', id: 'med-amoxicillin', name: 'Amoxicillin 500 mg' },
@@ -158,42 +160,40 @@ function ComboboxRegressionHarness() {
         </div>
 
         <div className="space-y-2">
-          <Combobox.Root
+          <PrimitiveCombobox.Root
             items={medicineOptions}
             value={primitiveValue}
             onValueChange={setPrimitiveValue}
             itemToStringLabel={optionLabel}
             itemToStringValue={optionValue}
           >
-            <Combobox.Label className="block text-sm font-semibold">
+            <PrimitiveCombobox.Label className="block text-sm font-semibold">
               Primitive custom trigger
-            </Combobox.Label>
-            <Combobox.Trigger
+            </PrimitiveCombobox.Label>
+            <PrimitiveCombobox.Trigger
               id="primitive-custom-trigger"
               className="flex min-h-10 w-full items-center justify-between rounded-lg border border-slate-300 bg-white px-3 py-2 text-left text-sm"
             >
-              <Combobox.Value placeholder="Primitive value" />
-            </Combobox.Trigger>
-            <Combobox.Portal>
-              <Combobox.Positioner sideOffset={4}>
-                <Combobox.Popup className="w-full overflow-hidden rounded-lg bg-white shadow-thin-md">
-                  <Combobox.List className="max-h-56 overflow-y-auto p-1">
-                    {medicineOptions.map((option, index) => (
-                      <Combobox.Item
+              <PrimitiveCombobox.Value placeholder="Primitive value" />
+            </PrimitiveCombobox.Trigger>
+            <PrimitiveCombobox.Portal>
+              <PrimitiveCombobox.Positioner sideOffset={4}>
+                <PrimitiveCombobox.Popup className="w-full overflow-hidden rounded-lg bg-white shadow-thin-md">
+                  <PrimitiveCombobox.List className="max-h-56 overflow-y-auto p-1">
+                    {option => (
+                      <PrimitiveCombobox.Item
                         key={option.id}
-                        value={option}
-                        index={index}
                         disabled={Boolean(option.disabled)}
                         className="cursor-pointer rounded-md px-3 py-2 text-sm text-slate-800 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[highlighted]:bg-emerald-50"
                       >
                         {option.name}
-                      </Combobox.Item>
-                    ))}
-                  </Combobox.List>
-                </Combobox.Popup>
-              </Combobox.Positioner>
-            </Combobox.Portal>
-          </Combobox.Root>
+                      </PrimitiveCombobox.Item>
+                    )}
+                  </PrimitiveCombobox.List>
+                </PrimitiveCombobox.Popup>
+              </PrimitiveCombobox.Positioner>
+            </PrimitiveCombobox.Portal>
+          </PrimitiveCombobox.Root>
         </div>
       </section>
 

@@ -1,6 +1,5 @@
 import {
   useCallback,
-  useLayoutEffect,
   useMemo,
   useRef,
   type CSSProperties,
@@ -10,17 +9,13 @@ import {
   type RefObject,
 } from 'react';
 import { motion, type HTMLMotionProps } from 'motion/react';
-import {
-  defaultRangeExtractor,
-  useVirtualizer,
-  type Range,
-  type VirtualItem,
-} from '@tanstack/react-virtual';
+import type { VirtualItem } from '@tanstack/react-virtual';
 import { cn } from '@/lib/utils';
 import { getPharmaComboboxOptionIndexAttributes } from '../utils/preset-dom';
 import { setRef } from '../utils/primitive-render';
 import { Combobox } from '../primitive';
 import type { PharmaComboboxOptionRenderState } from '../presets-types';
+import { useComboboxOptionVirtualizer } from '../hooks/use-combobox-option-virtualizer';
 import { comboboxHighlightBackgroundTransition } from './combobox-highlight-motion';
 import { getComboboxOptionMotionFrameProps } from './combobox-option-motion';
 import { ComboboxOptionMotionFrame } from './combobox-option-motion-frame';
@@ -37,78 +32,6 @@ const getComboboxOptionKey = (
   optionValueOccurrence === 0
     ? optionValue
     : `${optionValue}__duplicate-${optionValueOccurrence}`;
-
-const comboboxVirtualizationThreshold = 80;
-const comboboxVirtualOptionEstimateSize = 36;
-const comboboxVirtualOptionOverscan = 12;
-const comboboxVirtualViewportFallbackHeight = 240;
-
-const getVirtualComboboxElementRect = (element: HTMLElement) => {
-  const rect = element.getBoundingClientRect();
-
-  return {
-    height: rect.height || comboboxVirtualViewportFallbackHeight,
-    width: rect.width,
-  };
-};
-
-const observeVirtualComboboxElementRect = (
-  instance: { scrollElement: Element | null },
-  callback: (rect: { height: number; width: number }) => void
-) => {
-  const element = instance.scrollElement as HTMLElement | null;
-  if (!element) return;
-
-  callback(getVirtualComboboxElementRect(element));
-  if (typeof ResizeObserver === 'undefined') return;
-
-  const observer = new ResizeObserver(() => {
-    callback(getVirtualComboboxElementRect(element));
-  });
-  observer.observe(element);
-
-  return () => {
-    observer.disconnect();
-  };
-};
-
-const measureVirtualComboboxOption = (element: HTMLElement) => {
-  const rect = element.getBoundingClientRect();
-
-  return (
-    rect.height || element.offsetHeight || comboboxVirtualOptionEstimateSize
-  );
-};
-
-const scrollVirtualComboboxElement = (
-  offset: number,
-  {
-    adjustments = 0,
-    behavior,
-  }: { adjustments?: number; behavior?: ScrollBehavior },
-  instance: {
-    options: { horizontal?: boolean };
-    scrollElement: Element | null;
-  }
-) => {
-  const element = instance.scrollElement as HTMLElement | null;
-  if (!element) return;
-
-  const nextOffset = offset + adjustments;
-  if (typeof element.scrollTo === 'function') {
-    element.scrollTo({
-      [instance.options.horizontal ? 'left' : 'top']: nextOffset,
-      behavior,
-    });
-    return;
-  }
-
-  if (instance.options.horizontal) {
-    element.scrollLeft = nextOffset;
-  } else {
-    element.scrollTop = nextOffset;
-  }
-};
 
 export interface ComboboxOptionListProps<Item> {
   effectiveHighlightedIndex: number | null;
@@ -178,41 +101,14 @@ export function ComboboxOptionList<Item>({
       return getComboboxOptionKey(optionValue, optionValueOccurrence);
     });
   }, [itemToStringValue, visibleItems]);
-  const shouldVirtualize =
-    visibleItems.length > comboboxVirtualizationThreshold;
-  const virtualRangeExtractor = useCallback(
-    (range: Range) => {
-      const rangeIndexes = defaultRangeExtractor(range);
-      if (
-        effectiveHighlightedIndex === null ||
-        effectiveHighlightedIndex < 0 ||
-        effectiveHighlightedIndex >= visibleItems.length ||
-        rangeIndexes.includes(effectiveHighlightedIndex)
-      ) {
-        return rangeIndexes;
-      }
-
-      return [...rangeIndexes, effectiveHighlightedIndex].sort(
-        (firstIndex, secondIndex) => firstIndex - secondIndex
-      );
-    },
-    [effectiveHighlightedIndex, visibleItems.length]
-  );
-  const virtualizer = useVirtualizer<HTMLDivElement, HTMLDivElement>({
-    count: visibleItems.length,
-    enabled: shouldVirtualize,
-    estimateSize: () => comboboxVirtualOptionEstimateSize,
-    getItemKey: index => optionKeys[index] ?? index,
-    getScrollElement: () => listElementRef.current,
-    initialRect: {
-      height: comboboxVirtualViewportFallbackHeight,
-      width: 0,
-    },
-    measureElement: measureVirtualComboboxOption,
-    observeElementRect: observeVirtualComboboxElementRect,
-    overscan: comboboxVirtualOptionOverscan,
-    rangeExtractor: virtualRangeExtractor,
-    scrollToFn: scrollVirtualComboboxElement,
+  const { shouldVirtualize, virtualizer } = useComboboxOptionVirtualizer({
+    effectiveHighlightedIndex,
+    inputValue,
+    listElementRef,
+    optionKeys,
+    selectedVisibleIndex,
+    virtualScrollToIndexRef,
+    visibleItemCount: visibleItems.length,
   });
   const setListElementRef = useCallback(
     (node: HTMLDivElement | null) => {
@@ -221,39 +117,6 @@ export function ComboboxOptionList<Item>({
     },
     [listRef]
   );
-
-  useLayoutEffect(() => {
-    if (!shouldVirtualize) {
-      virtualScrollToIndexRef.current = null;
-      return;
-    }
-
-    const scrollToVirtualIndex: ComboboxVirtualScrollToIndex = (
-      index,
-      options
-    ) => {
-      virtualizer.scrollToIndex(index, options);
-    };
-    virtualScrollToIndexRef.current = scrollToVirtualIndex;
-
-    return () => {
-      if (virtualScrollToIndexRef.current === scrollToVirtualIndex) {
-        virtualScrollToIndexRef.current = null;
-      }
-    };
-  }, [shouldVirtualize, virtualizer, virtualScrollToIndexRef]);
-
-  useLayoutEffect(() => {
-    if (
-      !shouldVirtualize ||
-      inputValue.trim().length > 0 ||
-      selectedVisibleIndex < 0
-    ) {
-      return;
-    }
-
-    virtualizer.scrollToIndex(selectedVisibleIndex, { align: 'start' });
-  }, [inputValue, selectedVisibleIndex, shouldVirtualize, virtualizer]);
 
   const renderOptionContent = (
     item: Item,

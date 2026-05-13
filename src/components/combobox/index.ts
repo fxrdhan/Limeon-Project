@@ -1,6 +1,16 @@
-export { Combobox, default } from './primitive';
-export type * from './primitive';
-export { createTypedCombobox, type TypedCombobox } from './primitive-typed';
+export type {
+  ComboboxChangeEventDetails,
+  ComboboxEventDetails,
+  ComboboxHighlightEventDetails,
+  ComboboxRootProps,
+} from './primitive';
+export {
+  createTypedCombobox,
+  type TypedCombobox,
+  type TypedComboboxCollectionProps,
+  type TypedComboboxItemProps,
+  type TypedComboboxListProps,
+} from './primitive-typed';
 export { findComboboxItemByValue } from './helpers';
 export {
   PharmaComboboxSelect,

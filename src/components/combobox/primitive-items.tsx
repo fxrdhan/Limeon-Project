@@ -5,7 +5,11 @@ import React, {
   useLayoutEffect,
   useRef,
 } from 'react';
-import { useComboboxContext } from './primitive-context';
+import {
+  useComboboxActionsContext,
+  useComboboxStateContext,
+  useComboboxStaticContext,
+} from './primitive-context';
 import {
   callIfFunction,
   getPreventableEvent,
@@ -74,23 +78,22 @@ export const ComboboxList = forwardRef(function ComboboxList<
   { children, ...props }: ComboboxListProps<Value>,
   ref: React.ForwardedRef<HTMLDivElement>
 ) {
-  const context = useComboboxContext<unknown>();
+  const { labelId, filteredItems } = useComboboxStateContext<unknown>();
   const labelledBy =
     props['aria-label'] === undefined
-      ? (props['aria-labelledby'] ?? context.labelId)
+      ? (props['aria-labelledby'] ?? labelId)
       : props['aria-labelledby'];
   const renderedChildren =
     typeof children === 'function'
-      ? context.filteredItems.map((item, index) =>
-          children(item as Value, index)
-        )
+      ? filteredItems.map((item, index) => children(item as Value, index))
       : children;
+  const { listboxId } = useComboboxStaticContext();
 
   return (
     <div
       {...props}
       ref={ref}
-      id={context.listboxId}
+      id={listboxId}
       role="listbox"
       aria-labelledby={labelledBy}
     >
@@ -102,11 +105,9 @@ export const ComboboxList = forwardRef(function ComboboxList<
 export function ComboboxCollection<Value = React.ReactNode>({
   children,
 }: ComboboxCollectionProps<Value>) {
-  const context = useComboboxContext<unknown>();
+  const { filteredItems } = useComboboxStateContext<unknown>();
 
-  return context.filteredItems.map((item, index) =>
-    children(item as Value, index)
-  );
+  return filteredItems.map((item, index) => children(item as Value, index));
 }
 
 export function ComboboxItem<Value>({
@@ -121,15 +122,33 @@ export function ComboboxItem<Value>({
   value,
   ...props
 }: ComboboxItemProps<Value>) {
-  const context = useComboboxContext<Value>();
-  const { registerItem } = context;
+  const {
+    activeIndex,
+    disabled: comboboxDisabled,
+    filteredItems,
+    highlightItemOnHover,
+    selectedValue,
+  } = useComboboxStateContext<Value>();
+  const { getItemId } = useComboboxStaticContext();
+  const {
+    isItemDisabled,
+    isItemEqualToValue,
+    registerItem,
+    selectItem,
+    setActiveIndex,
+  } = useComboboxActionsContext<Value>();
   const itemRef = useRef<HTMLElement | null>(null);
+  const indexedValue = filteredItems[index];
+  if (!(index in filteredItems) || !Object.is(indexedValue, value)) {
+    throw new Error(
+      'Combobox.Item value/index mismatch. Render items from Combobox.List or Combobox.Collection and pass the exact item and index provided by the primitive.'
+    );
+  }
+
   const selected =
-    context.selectedValue !== null &&
-    context.isItemEqualToValue(value, context.selectedValue);
-  const highlighted = context.activeIndex === index;
-  const itemDisabled =
-    context.disabled || disabled || context.isItemDisabled(value);
+    selectedValue !== null && isItemEqualToValue(value, selectedValue);
+  const highlighted = activeIndex === index;
+  const itemDisabled = comboboxDisabled || disabled || isItemDisabled(value);
 
   useLayoutEffect(
     () =>
@@ -158,7 +177,7 @@ export function ComboboxItem<Value>({
     'data-highlighted': highlighted ? '' : undefined,
     'data-selected': selected ? '' : undefined,
     ...(children === undefined ? {} : { children }),
-    id: context.getItemId(index),
+    id: getItemId(index),
     onClick: event => {
       const preventableEvent = getPreventableEvent(event);
       callIfFunction(onClick, event);
@@ -170,7 +189,7 @@ export function ComboboxItem<Value>({
         return;
       }
 
-      context.selectItem(value, 'item-press', event, index);
+      selectItem(value, 'item-press', event, index);
     },
     onMouseEnter: event => {
       const preventableEvent = getPreventableEvent(event);
@@ -179,12 +198,12 @@ export function ComboboxItem<Value>({
         event.defaultPrevented ||
         isComboboxHandlerPrevented(preventableEvent) ||
         itemDisabled ||
-        !context.highlightItemOnHover
+        !highlightItemOnHover
       ) {
         return;
       }
 
-      context.setActiveIndex(index, 'pointer', event);
+      setActiveIndex(index, 'pointer', event);
     },
     onMouseLeave: event => {
       getPreventableEvent(event);
@@ -197,12 +216,12 @@ export function ComboboxItem<Value>({
         event.defaultPrevented ||
         isComboboxHandlerPrevented(preventableEvent) ||
         itemDisabled ||
-        !context.highlightItemOnHover
+        !highlightItemOnHover
       ) {
         return;
       }
 
-      context.setActiveIndex(index, 'pointer', event);
+      setActiveIndex(index, 'pointer', event);
     },
     role: 'option',
     tabIndex: -1,
@@ -244,8 +263,8 @@ export function ComboboxItemIndicator({
 }
 
 export function ComboboxEmpty({ children, ...props }: ComboboxEmptyProps) {
-  const context = useComboboxContext<unknown>();
-  if (context.filteredItems.length > 0) return null;
+  const { filteredItems } = useComboboxStateContext<unknown>();
+  if (filteredItems.length > 0) return null;
 
   return (
     <div role="status" {...props}>
