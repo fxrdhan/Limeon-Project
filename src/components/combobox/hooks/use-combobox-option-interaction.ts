@@ -1,21 +1,18 @@
-import {
-  useCallback,
-  useRef,
-  type Dispatch,
-  type RefObject,
-  type SetStateAction,
-} from 'react';
+import type { Dispatch, RefObject, SetStateAction } from 'react';
 import type { HoverDetailData } from '@/types/components';
-import { getPharmaComboboxOptionIndexSelector } from '../utils/preset-dom';
-import { useComboboxHighlight } from './use-combobox-highlight';
-import { useComboboxHoverDetailController } from './use-combobox-hover-detail-controller';
-import { useComboboxKeyboardHoverDetailSync } from './use-combobox-keyboard-hover-detail-sync';
+import { useComboboxKeyboardHoverDetailTimer } from './use-combobox-keyboard-hover-detail-timer';
 import {
-  useComboboxKeyboardHighlightScroll,
+  useComboboxHighlightedOptionAnchor,
+  useComboboxOptionElements,
+} from './use-combobox-option-elements';
+import { useComboboxOptionHover } from './use-combobox-option-hover';
+import { useComboboxOptionHoverDetailSync } from './use-combobox-option-hover-detail-sync';
+import { useComboboxOptionInteractionResets } from './use-combobox-option-interaction-resets';
+import { useComboboxOptionKeyboardNavigation } from './use-combobox-option-keyboard-navigation';
+import {
+  useComboboxOptionKeyboardScroll,
   type ComboboxVirtualScrollToIndex,
-} from './use-combobox-keyboard-highlight-scroll';
-import { useComboboxPointerHover } from './use-combobox-pointer-hover';
-import { useComboboxScrollHoverDetailSync } from './use-combobox-scroll-hover-detail-sync';
+} from './use-combobox-option-keyboard-scroll';
 
 export function useComboboxOptionInteraction<Item>({
   actualOpen,
@@ -69,24 +66,24 @@ export function useComboboxOptionInteraction<Item>({
   virtualScrollToIndexRef: RefObject<ComboboxVirtualScrollToIndex | null>;
   visibleItems: Item[];
 }) {
-  const keyboardHoverDetailSyncTimeoutRef = useRef<ReturnType<
-    typeof setTimeout
-  > | null>(null);
-  const {
-    cancelPendingHoverDetail,
-    getItemHoverDetailData,
-    handleItemHover,
-    handleItemLeave,
-    handleTriggerMouseEnter,
-    handleTriggerMouseLeave,
-    hideHoverDetail,
-    hoverDetail: hoverDetailState,
-    hoverDetailEnabled,
-    isHoverDetailVisible,
-    syncHighlightedHoverDetail,
-  } = useComboboxHoverDetailController({
+  const { getOptionElementAtIndex, isOptionElementFullyVisible } =
+    useComboboxOptionElements({ listRef });
+  const { clearKeyboardHoverDetailSync, keyboardHoverDetailSyncTimeoutRef } =
+    useComboboxKeyboardHoverDetailTimer();
+  const keyboardScroll = useComboboxOptionKeyboardScroll({
     actualOpen,
+    getOptionElementAtIndex,
+    listRef,
+    popupContentRef,
+    virtualScrollToIndexRef,
+    visibleItemCount: visibleItems.length,
+  });
+  const optionHover = useComboboxOptionHover({
+    actualOpen,
+    clearKeyboardHoverDetailSync,
+    clearKeyboardScrollHighlight: keyboardScroll.clearKeyboardScrollHighlight,
     hoverDetail,
+    isItemDisabled,
     itemToHoverDetailData,
     itemToStringLabel,
     itemToStringValue,
@@ -95,229 +92,88 @@ export function useComboboxOptionInteraction<Item>({
     popupContentRef,
     selectedValue,
   });
-  const clearKeyboardHoverDetailSync = useCallback(() => {
-    if (keyboardHoverDetailSyncTimeoutRef.current === null) return;
-
-    clearTimeout(keyboardHoverDetailSyncTimeoutRef.current);
-    keyboardHoverDetailSyncTimeoutRef.current = null;
-  }, []);
-  const getOptionElementAtIndex = useCallback(
-    (index: number) => {
-      if (!Number.isInteger(index) || index < 0) return null;
-
-      return (
-        listRef.current?.querySelector<HTMLElement>(
-          getPharmaComboboxOptionIndexSelector(index)
-        ) ?? null
-      );
-    },
-    [listRef]
-  );
-  const {
-    clearKeyboardScrollHighlight,
-    heldHighlightFrame,
-    heldHighlightFrameKey,
-    scheduleKeyboardHighlightedScroll,
-  } = useComboboxKeyboardHighlightScroll({
-    actualOpen,
-    getOptionElementAtIndex,
-    listRef,
-    popupContentRef,
-    virtualScrollToIndexRef,
-    visibleItemCount: visibleItems.length,
-  });
-  const getHighlightedHoverDetailAnchorElement = useCallback(
-    (index: number) => {
-      const pinnedHighlight = heldHighlightFrame
-        ? popupContentRef.current?.querySelector<HTMLElement>(
-            '[data-pharma-combobox-pinned-highlight]'
-          )
-        : null;
-      if (pinnedHighlight) return pinnedHighlight;
-
-      const optionElement = getOptionElementAtIndex(index);
-
-      return (
-        optionElement?.querySelector<HTMLElement>(
-          '[data-pharma-combobox-highlight]'
-        ) ?? optionElement
-      );
-    },
-    [getOptionElementAtIndex, heldHighlightFrame, popupContentRef]
-  );
-  const isOptionElementFullyVisible = useCallback(
-    (element: HTMLElement) => {
-      const list = listRef.current;
-      if (!list) return false;
-
-      const listRect = list.getBoundingClientRect();
-      const elementRect = element.getBoundingClientRect();
-
-      return (
-        elementRect.top >= listRect.top && elementRect.bottom <= listRect.bottom
-      );
-    },
-    [listRef]
-  );
-  const applyPointerHover = useCallback(
-    (item: Item, element: HTMLElement) => {
-      if (isItemDisabled(item)) return;
-
-      clearKeyboardHoverDetailSync();
-      clearKeyboardScrollHighlight();
-
-      if (!hoverDetailEnabled) return;
-
-      handleItemHover(
-        itemToStringValue(item),
-        element,
-        getItemHoverDetailData(item)
-      );
-    },
-    [
-      clearKeyboardHoverDetailSync,
-      clearKeyboardScrollHighlight,
-      getItemHoverDetailData,
-      handleItemHover,
-      hoverDetailEnabled,
-      isItemDisabled,
-      itemToStringValue,
-    ]
-  );
-  const {
-    handleListMouseLeave,
-    handleOptionMouseEnter,
-    handleOptionMouseMove,
-    isKeyboardHoverSuppressed,
-    resetKeyboardHoverSuppression,
-    resetPointerHoverState,
-    suppressPointerHoverForKeyboard,
-  } = useComboboxPointerHover({
-    onHoverAllowed: applyPointerHover,
-    onLeave: handleItemLeave,
-  });
-  const {
-    effectiveHighlightedIndex,
-    handleInputValueChange,
-    handleItemHighlighted,
-    handleSearchInputKeyDown,
-    handleTriggerKeyDown,
-  } = useComboboxHighlight({
+  const keyboardNavigation = useComboboxOptionKeyboardNavigation({
     actualOpen,
     canCreate,
-    clearKeyboardScrollHighlight,
+    clearKeyboardScrollHighlight: keyboardScroll.clearKeyboardScrollHighlight,
     handleCreate,
-    hideHoverDetail,
+    hideHoverDetail: optionHover.hideHoverDetail,
     isItemDisabled,
-    isKeyboardHoverSuppressed,
+    isKeyboardHoverSuppressed: optionHover.isKeyboardHoverSuppressed,
     isSameItem,
     items,
     normalizedInputValue,
     requestSelectedOptionScroll,
-    resetKeyboardHoverSuppression,
-    scheduleKeyboardHighlightedScroll,
+    resetKeyboardHoverSuppression: optionHover.resetKeyboardHoverSuppression,
+    scheduleKeyboardHighlightedScroll:
+      keyboardScroll.scheduleKeyboardHighlightedScroll,
     searchable,
     searchInputRef,
     selectedValue,
     setInputValue,
     setIsSearchNavigationFocus,
-    suppressPointerHoverForKeyboard,
+    suppressPointerHoverForKeyboard:
+      optionHover.suppressPointerHoverForKeyboard,
     visibleItems,
   });
-  useComboboxKeyboardHoverDetailSync({
+  const getHighlightedHoverDetailAnchorElement =
+    useComboboxHighlightedOptionAnchor({
+      getOptionElementAtIndex,
+      hasHeldHighlightFrame: keyboardScroll.heldHighlightFrame !== null,
+      popupContentRef,
+    });
+  const scrollHoverDetailSync = useComboboxOptionHoverDetailSync({
     actualOpen,
-    cancelPendingHoverDetail,
+    cancelPendingHoverDetail: optionHover.cancelPendingHoverDetail,
     clearKeyboardHoverDetailSync,
-    effectiveHighlightedIndex,
+    effectiveHighlightedIndex: keyboardNavigation.effectiveHighlightedIndex,
     getHighlightedHoverDetailAnchorElement,
-    getItemHoverDetailData,
-    hoverDetailEnabled,
-    isItemDisabled,
-    isKeyboardHoverSuppressed,
-    itemToStringValue,
-    keyboardHoverDetailSyncTimeoutRef,
-    syncHighlightedHoverDetail,
-    visibleItems,
-  });
-  const {
-    handleListScroll,
-    handleOptionListMouseLeave,
-    resetScrollHoverDetailState,
-  } = useComboboxScrollHoverDetailSync({
-    actualOpen,
-    cancelPendingHoverDetail,
-    clearKeyboardHoverDetailSync,
-    effectiveHighlightedIndex,
-    getItemHoverDetailData,
+    getItemHoverDetailData: optionHover.getItemHoverDetailData,
     getOptionElementAtIndex,
-    handleListMouseLeave,
-    hideHoverDetail,
-    hoverDetailEnabled,
-    isHoverDetailVisible,
+    handleListMouseLeave: optionHover.handleListMouseLeave,
+    hideHoverDetail: optionHover.hideHoverDetail,
+    hoverDetailEnabled: optionHover.hoverDetailEnabled,
+    isHoverDetailVisible: optionHover.isHoverDetailVisible,
     isItemDisabled,
-    isKeyboardHoverSuppressed,
+    isKeyboardHoverSuppressed: optionHover.isKeyboardHoverSuppressed,
     isOptionElementFullyVisible,
     itemToStringValue,
+    keyboardHoverDetailSyncTimeoutRef,
     listRef,
-    syncHighlightedHoverDetail,
+    syncHighlightedHoverDetail: optionHover.syncHighlightedHoverDetail,
     visibleItems,
   });
-  const resetAfterValueChange = useCallback(() => {
-    clearKeyboardHoverDetailSync();
-    resetScrollHoverDetailState();
-    setInputValue('');
-    setIsSearchNavigationFocus(false);
-    resetKeyboardHoverSuppression();
-    hideHoverDetail();
-  }, [
+  const resets = useComboboxOptionInteractionResets({
+    cancelPendingHoverDetail: optionHover.cancelPendingHoverDetail,
     clearKeyboardHoverDetailSync,
-    hideHoverDetail,
-    resetKeyboardHoverSuppression,
-    resetScrollHoverDetailState,
+    hideHoverDetail: optionHover.hideHoverDetail,
+    resetKeyboardHoverSuppression: optionHover.resetKeyboardHoverSuppression,
+    resetPointerHoverState: optionHover.resetPointerHoverState,
+    resetScrollHoverDetailState:
+      scrollHoverDetailSync.resetScrollHoverDetailState,
     setInputValue,
     setIsSearchNavigationFocus,
-  ]);
-  const resetOnOpen = useCallback(() => {
-    clearKeyboardHoverDetailSync();
-    resetScrollHoverDetailState();
-    cancelPendingHoverDetail();
-  }, [
-    cancelPendingHoverDetail,
-    clearKeyboardHoverDetailSync,
-    resetScrollHoverDetailState,
-  ]);
-  const resetOnClose = useCallback(() => {
-    setIsSearchNavigationFocus(false);
-    clearKeyboardHoverDetailSync();
-    resetScrollHoverDetailState();
-    hideHoverDetail();
-    resetPointerHoverState();
-  }, [
-    clearKeyboardHoverDetailSync,
-    hideHoverDetail,
-    resetPointerHoverState,
-    resetScrollHoverDetailState,
-    setIsSearchNavigationFocus,
-  ]);
+  });
 
   return {
-    effectiveHighlightedIndex,
-    handleInputValueChange,
-    handleItemHighlighted,
-    handleItemLeave,
-    handleListScroll,
-    handleOptionListMouseLeave,
-    handleOptionMouseEnter,
-    handleOptionMouseMove,
-    handleSearchInputKeyDown,
-    handleTriggerKeyDown,
-    handleTriggerMouseEnter,
-    handleTriggerMouseLeave,
-    heldHighlightFrame,
-    heldHighlightFrameKey,
-    hoverDetail: hoverDetailState,
-    resetAfterValueChange,
-    resetOnClose,
-    resetOnOpen,
+    effectiveHighlightedIndex: keyboardNavigation.effectiveHighlightedIndex,
+    handleInputValueChange: keyboardNavigation.handleInputValueChange,
+    handleItemHighlighted: keyboardNavigation.handleItemHighlighted,
+    handleItemLeave: optionHover.handleItemLeave,
+    handleListScroll: scrollHoverDetailSync.handleListScroll,
+    handleOptionListMouseLeave:
+      scrollHoverDetailSync.handleOptionListMouseLeave,
+    handleOptionMouseEnter: optionHover.handleOptionMouseEnter,
+    handleOptionMouseMove: optionHover.handleOptionMouseMove,
+    handleSearchInputKeyDown: keyboardNavigation.handleSearchInputKeyDown,
+    handleTriggerKeyDown: keyboardNavigation.handleTriggerKeyDown,
+    handleTriggerMouseEnter: optionHover.handleTriggerMouseEnter,
+    handleTriggerMouseLeave: optionHover.handleTriggerMouseLeave,
+    heldHighlightFrame: keyboardScroll.heldHighlightFrame,
+    heldHighlightFrameKey: keyboardScroll.heldHighlightFrameKey,
+    hoverDetail: optionHover.hoverDetail,
+    resetAfterValueChange: resets.resetAfterValueChange,
+    resetOnClose: resets.resetOnClose,
+    resetOnOpen: resets.resetOnOpen,
   };
 }
