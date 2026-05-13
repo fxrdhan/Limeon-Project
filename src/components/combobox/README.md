@@ -179,6 +179,65 @@ const SupplierCombobox = createTypedCombobox<Supplier>();
 </SupplierCombobox.Root>;
 ```
 
+## State Boundary Between Primitive and Presets
+
+The primitive layer owns generic combobox mechanics. `Combobox.Root` is
+responsible for the selected `value`, popup `open` state, search `inputValue`,
+`highlightedIndex`, option registration, item selection, form submission,
+registered labels, ARIA ids, outside-press dismissal, focus-out dismissal, and
+native form reset behavior.
+
+Each primitive state slot can be controlled or uncontrolled:
+
+| State slot         | Controlled props                   | Uncontrolled props                         |
+| ------------------ | ---------------------------------- | ------------------------------------------ |
+| Selected value     | `value`, `onValueChange`           | `defaultValue`                             |
+| Popup visibility   | `open`, `onOpenChange`             | `defaultOpen`                              |
+| Search input       | `inputValue`, `onInputValueChange` | `defaultInputValue`                        |
+| Highlighted option | `highlightedIndex`, callbacks      | `defaultHighlightedIndex`, `autoHighlight` |
+| Filtered options   | `filteredItems`, `filter={null}`   | `items`, optional `filter`                 |
+
+Callbacks receive cancelable details. If a callback calls `details.cancel()`,
+the primitive does not apply its internal transition. Controlled callers still
+own the final state and must update their controlled props when they accept a
+requested transition.
+
+The app preset is a controlled consumer of the primitive, not a second
+independent combobox implementation. `PharmaComboboxSelect` computes
+PharmaSys-specific state before it reaches `Combobox.Root`: ranked search
+results, visible item limits, the effective highlighted index, validation
+feedback, focus restore intent, selected-option scrolling, keyboard scroll
+frames, hover detail state, and create-action availability.
+
+Because the preset owns ranked search, it passes `filteredItems={visibleItems}`
+and `filter={null}` to the primitive. Because the preset owns the search box
+lifecycle, it passes controlled `inputValue` and clears that value after close or
+after an uncanceled selection. Because the preset owns visual highlight policy,
+it passes controlled `highlightedIndex` while the primitive still owns option
+registration, ARIA active-descendant wiring, and selection commits.
+
+Selection remains a primitive transition. The preset can observe and decorate
+selection, but `Combobox.Item` and `Combobox.Root` still perform the actual
+commit, emit `onValueChange`, close the popup, and serialize the hidden form
+value through `itemToStringValue`. After an uncanceled value change, the preset
+resets search, hover detail, keyboard-hover suppression, and search-navigation
+focus.
+
+`PharmaEntityComboboxSelect` is only an id adapter over
+`PharmaComboboxSelect`. It resolves `valueId` to an item, preserves unavailable
+saved ids with a neutral fallback value, and maps selected items back to ids. It
+does not own popup, keyboard, search, validation, or hover behavior.
+
+When adding behavior, use this boundary:
+
+- Put generic, layout-agnostic combobox mechanics in the primitive.
+- Put PharmaSys UI policy in the preset, including ranked search, validation
+  overlays, animated highlights, hover detail, create actions, and virtual-list
+  scroll coordination.
+- Keep entity id resolution in `PharmaEntityComboboxSelect`.
+- Avoid mirroring the same state in both layers unless the preset is
+  intentionally controlling a primitive state slot.
+
 ## App Presets
 
 ### `PharmaEntityComboboxSelect`
