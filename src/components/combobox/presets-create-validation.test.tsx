@@ -99,6 +99,34 @@ describe('Combobox app preset create action and validation', () => {
     ).toBe('Field ini wajib diisi');
   });
 
+  it('shows preset validation when native required form validation fires', () => {
+    render(
+      <form>
+        <PharmaComboboxSelect<EntityItem>
+          name="category_id"
+          items={[{ id: 'category-a', name: 'Kategori A' }]}
+          value={null}
+          onValueChange={() => {}}
+          itemToStringLabel={item => item.name}
+          itemToStringValue={item => item.id}
+          placeholder="Pilih kategori"
+          required
+        />
+      </form>
+    );
+
+    const trigger = screen.getByRole('combobox', { name: /pilih kategori/i });
+    const validationProxy = document.querySelector<HTMLInputElement>(
+      '[data-combobox-required-input]'
+    );
+
+    expect(validationProxy?.checkValidity()).toBe(false);
+    fireEvent.invalid(validationProxy as HTMLInputElement);
+
+    expect(trigger.getAttribute('aria-invalid')).toBe('true');
+    expect(document.activeElement).toBe(trigger);
+  });
+
   it('lets callers disable the default required validation overlay', () => {
     render(
       <PharmaComboboxSelect<EntityItem>

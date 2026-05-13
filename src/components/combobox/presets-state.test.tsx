@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vite-plus/test';
 import { PharmaComboboxSelect } from './index';
 import {
+  defaultComboboxLargeListVisibleItemLimit,
   getComboboxSearchEntries,
   getComboboxSearchState,
   getDuplicateComboboxOptionValue,
@@ -46,6 +47,29 @@ describe('Combobox app preset state interactions', () => {
     });
 
     expect(searchState.visibleItems.map(item => item.id)).toEqual(['b', 'a']);
+  });
+
+  it('bounds unconfigured large option lists while preserving ranked order', () => {
+    const items = Array.from({ length: 220 }, (_, index) => ({
+      id: `supplier-${index}`,
+      name: `Supplier ${index.toString().padStart(3, '0')}`,
+    }));
+    const searchState = getComboboxSearchState({
+      isSameItem: (item, value) => item.id === value.id,
+      items,
+      normalizedInputValue: 'Supplier',
+      searchEntries: getComboboxSearchEntries(items, item => item.name),
+      selectedValue: null,
+    });
+
+    expect(searchState.visibleItems).toHaveLength(
+      defaultComboboxLargeListVisibleItemLimit
+    );
+    expect(searchState.visibleItems[0]?.id).toBe('supplier-0');
+    expect(
+      searchState.visibleItems.at(defaultComboboxLargeListVisibleItemLimit - 1)
+        ?.id
+    ).toBe(`supplier-${defaultComboboxLargeListVisibleItemLimit - 1}`);
   });
 
   it('keeps a matching selected option visible when ranked results are limited', () => {

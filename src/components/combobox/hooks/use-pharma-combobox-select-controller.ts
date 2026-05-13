@@ -102,6 +102,7 @@ export function usePharmaComboboxSelectController<Item>({
   });
   const {
     handleComboboxBlur,
+    handleComboboxInvalid,
     controlName,
     listboxAriaLabel,
     listboxLabelId,
@@ -236,6 +237,7 @@ export function usePharmaComboboxSelectController<Item>({
     handleInputValueChange,
     handleItemHighlighted,
     handleOpenChange,
+    handleRequiredInvalid: handleComboboxInvalid,
     handleValueChange,
     inputValue,
     isItemDisabled,

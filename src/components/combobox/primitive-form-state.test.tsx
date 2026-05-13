@@ -25,6 +25,48 @@ describe('Combobox primitive form and input state', () => {
     const hiddenInput = document.querySelector('input[name="required_fruit"]');
     expect(hiddenInput?.getAttribute('value')).toBe('Apple');
     expect(hiddenInput?.hasAttribute('required')).toBe(false);
+    expect(
+      document
+        .querySelector<HTMLInputElement>('[data-combobox-required-input]')
+        ?.checkValidity()
+    ).toBe(true);
+  });
+
+  it('uses a separate validation proxy for empty required values', () => {
+    render(
+      <form>
+        <Combobox.Root
+          items={fruitItems}
+          value={null}
+          itemToStringLabel={item => item}
+          itemToStringValue={item => item}
+          name="required_fruit"
+          required
+        >
+          <Combobox.Trigger aria-label="Fruit">
+            <Combobox.Value placeholder="Choose fruit" />
+          </Combobox.Trigger>
+        </Combobox.Root>
+      </form>
+    );
+
+    const trigger = screen.getByRole('combobox', { name: /fruit/i });
+    const hiddenInput = document.querySelector<HTMLInputElement>(
+      'input[name="required_fruit"]'
+    );
+    const validationProxy = document.querySelector<HTMLInputElement>(
+      '[data-combobox-required-input]'
+    );
+
+    expect(hiddenInput?.type).toBe('hidden');
+    expect(hiddenInput?.hasAttribute('required')).toBe(false);
+    expect(validationProxy?.required).toBe(true);
+    expect(validationProxy?.name).toBe('');
+    expect(validationProxy?.checkValidity()).toBe(false);
+
+    fireEvent.invalid(validationProxy as HTMLInputElement);
+
+    expect(document.activeElement).toBe(trigger);
   });
 
   it('keeps controlled null values from falling back to defaultValue', () => {

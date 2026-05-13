@@ -36,6 +36,8 @@ const getComboboxConsonantSkeleton = (value: string) =>
 const getComboboxAcronym = (words: string[]) =>
   words.map(word => word[0] ?? '').join('');
 
+export const defaultComboboxLargeListVisibleItemLimit = 160;
+
 export const getComboboxControlName = ({
   ariaLabel,
   label,
@@ -104,6 +106,21 @@ const getNormalizedComboboxVisibleItemLimit = (limit?: number) => {
   }
 
   return Math.floor(limit);
+};
+
+export const getEffectiveComboboxVisibleItemLimit = ({
+  itemCount,
+  visibleItemLimit,
+}: {
+  itemCount: number;
+  visibleItemLimit?: number;
+}) => {
+  const explicitLimit = getNormalizedComboboxVisibleItemLimit(visibleItemLimit);
+  if (explicitLimit !== undefined) return explicitLimit;
+
+  return itemCount > defaultComboboxLargeListVisibleItemLimit
+    ? defaultComboboxLargeListVisibleItemLimit
+    : undefined;
 };
 
 const getLimitedComboboxItems = <Item>({
@@ -525,7 +542,10 @@ export const getComboboxSearchState = <Item>({
   selectedValue: Item | null;
   visibleItemLimit?: number;
 }): ComboboxSearchState<Item> => {
-  const limit = getNormalizedComboboxVisibleItemLimit(visibleItemLimit);
+  const limit = getEffectiveComboboxVisibleItemLimit({
+    itemCount: items.length,
+    visibleItemLimit,
+  });
 
   if (!normalizedInputValue) {
     return {

@@ -1,5 +1,6 @@
 export { Combobox, default } from './primitive';
 export type * from './primitive';
+export { createTypedCombobox, type TypedCombobox } from './primitive-typed';
 export { findComboboxItemByValue } from './helpers';
 export {
   PharmaComboboxSelect,

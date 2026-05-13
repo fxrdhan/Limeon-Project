@@ -23,6 +23,7 @@ export type PharmaComboboxRootBoundaryProps<Item> = Pick<
   | 'onInputValueChange'
   | 'onItemHighlighted'
   | 'onOpenChange'
+  | 'onRequiredInvalid'
   | 'onValueChange'
   | 'open'
   | 'readOnly'
@@ -43,6 +44,9 @@ type PharmaComboboxRootPropsOptions<Item> = {
     ComboboxRootProps<Item>['onItemHighlighted']
   >;
   handleOpenChange: NonNullable<ComboboxRootProps<Item>['onOpenChange']>;
+  handleRequiredInvalid: NonNullable<
+    ComboboxRootProps<Item>['onRequiredInvalid']
+  >;
   handleValueChange: NonNullable<ComboboxRootProps<Item>['onValueChange']>;
   inputValue: string;
   isItemDisabled: NonNullable<ComboboxRootProps<Item>['isItemDisabled']>;
@@ -117,6 +121,7 @@ export const getPharmaComboboxRootProps = <Item>({
   handleInputValueChange,
   handleItemHighlighted,
   handleOpenChange,
+  handleRequiredInvalid,
   handleValueChange,
   inputValue,
   isItemDisabled,
@@ -140,6 +145,7 @@ export const getPharmaComboboxRootProps = <Item>({
   onInputValueChange: handleInputValueChange,
   highlightedIndex: effectiveHighlightedIndex,
   onItemHighlighted: handleItemHighlighted,
+  onRequiredInvalid: handleRequiredInvalid,
   itemToStringLabel,
   itemToStringValue,
   isItemDisabled,

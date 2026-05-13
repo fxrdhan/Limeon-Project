@@ -33,6 +33,7 @@ export function usePharmaComboboxFeedback<Item>({
 }: PharmaComboboxFeedbackProps<Item>) {
   const {
     handleComboboxBlur,
+    handleComboboxInvalid,
     showValidation,
     validationEnabled,
     validationMessageId,
@@ -59,6 +60,7 @@ export function usePharmaComboboxFeedback<Item>({
   return {
     ...accessibility,
     handleComboboxBlur,
+    handleComboboxInvalid,
     showValidation,
     validationEnabled,
     validationMessageId,

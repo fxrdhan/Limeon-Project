@@ -14,29 +14,29 @@ import {
   setRef,
 } from './utils/primitive-render';
 
-type RenderProp<Props, State> =
+export type ComboboxRenderProp<Props, State> =
   | React.ReactElement<Record<string, unknown>>
   | ((props: Props, state: State) => React.ReactElement | null);
 
 type RenderableProps<Props, State> = {
-  render?: RenderProp<Props, State>;
+  render?: ComboboxRenderProp<Props, State>;
 };
 
-type ItemElementProps = React.HTMLAttributes<HTMLElement> & {
+export type ComboboxItemElementProps = React.HTMLAttributes<HTMLElement> & {
   [key: `data-${string}`]: string | undefined;
 };
 
-type ItemRenderProps = ItemElementProps & {
+export type ComboboxItemRenderProps = ComboboxItemElementProps & {
   ref: React.Ref<HTMLElement>;
 };
 
-type ItemState = {
+export type ComboboxItemState = {
   disabled: boolean;
   highlighted: boolean;
   selected: boolean;
 };
 
-type ComboboxListProps<Value = React.ReactNode> = Omit<
+export type ComboboxListProps<Value = React.ReactNode> = Omit<
   React.ComponentPropsWithoutRef<'div'>,
   'children' | 'id'
 > & {
@@ -45,15 +45,15 @@ type ComboboxListProps<Value = React.ReactNode> = Omit<
     | ((item: Value, index: number) => React.ReactNode);
 };
 
-type ComboboxCollectionProps<Value = React.ReactNode> = {
+export type ComboboxCollectionProps<Value = React.ReactNode> = {
   children: (item: Value, index: number) => React.ReactNode;
 };
 
-type ComboboxItemProps<Value> = Omit<
+export type ComboboxItemProps<Value> = Omit<
   React.HTMLAttributes<HTMLElement>,
   'children' | 'id'
 > &
-  RenderableProps<ItemRenderProps, ItemState> & {
+  RenderableProps<ComboboxItemRenderProps, ComboboxItemState> & {
     children?: React.ReactNode;
     disabled?: boolean;
     index: number;
@@ -64,7 +64,7 @@ type ComboboxItemIndicatorProps = React.ComponentPropsWithoutRef<'span'>;
 type ComboboxEmptyProps = React.ComponentPropsWithoutRef<'div'>;
 type ComboboxStatusProps = React.ComponentPropsWithoutRef<'div'>;
 
-type ComboboxListComponent = <Value = React.ReactNode>(
+export type ComboboxListComponent = <Value = React.ReactNode>(
   props: ComboboxListProps<Value> & React.RefAttributes<HTMLDivElement>
 ) => React.ReactElement | null;
 
@@ -144,13 +144,13 @@ export function ComboboxItem<Value>({
     itemRef.current = node;
   }, []);
 
-  const itemState: ItemState = {
+  const itemState: ComboboxItemState = {
     disabled: itemDisabled,
     highlighted,
     selected,
   };
 
-  const itemElementProps: ItemElementProps = {
+  const itemElementProps: ComboboxItemElementProps = {
     ...props,
     'aria-disabled': itemDisabled || undefined,
     'aria-selected': selected,
@@ -208,7 +208,7 @@ export function ComboboxItem<Value>({
     tabIndex: -1,
   };
 
-  const itemRenderProps: ItemRenderProps = {
+  const itemRenderProps: ComboboxItemRenderProps = {
     ...itemElementProps,
     ref: setItemRef,
   };

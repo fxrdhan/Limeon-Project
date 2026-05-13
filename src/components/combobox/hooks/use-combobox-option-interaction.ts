@@ -1,25 +1,21 @@
 import {
   useCallback,
-  useEffect,
   useRef,
   type Dispatch,
-  type MouseEvent,
   type RefObject,
   type SetStateAction,
 } from 'react';
 import type { HoverDetailData } from '@/types/components';
 import { getPharmaComboboxOptionIndexSelector } from '../utils/preset-dom';
-import { getDefaultHoverDetailData } from '../utils/preset-item';
 import { useComboboxHighlight } from './use-combobox-highlight';
-import { useComboboxHoverDetail } from './use-combobox-hover-detail';
+import { useComboboxHoverDetailController } from './use-combobox-hover-detail-controller';
+import { useComboboxKeyboardHoverDetailSync } from './use-combobox-keyboard-hover-detail-sync';
 import {
   useComboboxKeyboardHighlightScroll,
   type ComboboxVirtualScrollToIndex,
 } from './use-combobox-keyboard-highlight-scroll';
 import { useComboboxPointerHover } from './use-combobox-pointer-hover';
 import { useComboboxScrollHoverDetailSync } from './use-combobox-scroll-hover-detail-sync';
-
-const keyboardHoverDetailSyncDelay = 90;
 
 export function useComboboxOptionInteraction<Item>({
   actualOpen,
@@ -76,25 +72,28 @@ export function useComboboxOptionInteraction<Item>({
   const keyboardHoverDetailSyncTimeoutRef = useRef<ReturnType<
     typeof setTimeout
   > | null>(null);
-  const hoverDetailEnabled =
-    hoverDetail?.enabled ??
-    Boolean(onFetchHoverDetail || itemToHoverDetailData);
   const {
     cancelPendingHoverDetail,
-    data: hoverDetailData,
+    getItemHoverDetailData,
     handleItemHover,
     handleItemLeave,
-    hidePopover: hideHoverDetail,
-    isVisible: isHoverDetailVisible,
-    position: hoverDetailPosition,
+    handleTriggerMouseEnter,
+    handleTriggerMouseLeave,
+    hideHoverDetail,
+    hoverDetail: hoverDetailState,
+    hoverDetailEnabled,
+    isHoverDetailVisible,
     syncHighlightedHoverDetail,
-  } = useComboboxHoverDetail({
-    boundaryRef: popupContentRef,
-    hoverDelay: hoverDetail?.delay ?? 800,
-    isComboboxOpen: actualOpen,
-    isEnabled: hoverDetailEnabled,
-    onFetchData: onFetchHoverDetail,
-    onFetchError: onFetchHoverDetailError,
+  } = useComboboxHoverDetailController({
+    actualOpen,
+    hoverDetail,
+    itemToHoverDetailData,
+    itemToStringLabel,
+    itemToStringValue,
+    onFetchHoverDetail,
+    onFetchHoverDetailError,
+    popupContentRef,
+    selectedValue,
   });
   const clearKeyboardHoverDetailSync = useCallback(() => {
     if (keyboardHoverDetailSyncTimeoutRef.current === null) return;
@@ -159,21 +158,6 @@ export function useComboboxOptionInteraction<Item>({
       );
     },
     [listRef]
-  );
-  const getItemHoverDetailData = useCallback(
-    (item: Item): Partial<HoverDetailData> => {
-      const idValue = itemToStringValue(item);
-      const nameValue = itemToStringLabel(item);
-      const customData = itemToHoverDetailData?.(item);
-
-      return {
-        ...getDefaultHoverDetailData(item),
-        ...customData,
-        id: idValue,
-        name: nameValue,
-      };
-    },
-    [itemToHoverDetailData, itemToStringLabel, itemToStringValue]
   );
   const applyPointerHover = useCallback(
     (item: Item, element: HTMLElement) => {
@@ -240,30 +224,21 @@ export function useComboboxOptionInteraction<Item>({
     suppressPointerHoverForKeyboard,
     visibleItems,
   });
-  const handleTriggerMouseEnter = useCallback(
-    (event: MouseEvent<HTMLButtonElement>) => {
-      if (actualOpen || !hoverDetailEnabled || selectedValue === null) return;
-
-      handleItemHover(
-        itemToStringValue(selectedValue),
-        event.currentTarget,
-        getItemHoverDetailData(selectedValue)
-      );
-    },
-    [
-      actualOpen,
-      getItemHoverDetailData,
-      handleItemHover,
-      hoverDetailEnabled,
-      itemToStringValue,
-      selectedValue,
-    ]
-  );
-  const handleTriggerMouseLeave = useCallback(() => {
-    if (actualOpen || !hoverDetailEnabled || selectedValue === null) return;
-
-    handleItemLeave();
-  }, [actualOpen, handleItemLeave, hoverDetailEnabled, selectedValue]);
+  useComboboxKeyboardHoverDetailSync({
+    actualOpen,
+    cancelPendingHoverDetail,
+    clearKeyboardHoverDetailSync,
+    effectiveHighlightedIndex,
+    getHighlightedHoverDetailAnchorElement,
+    getItemHoverDetailData,
+    hoverDetailEnabled,
+    isItemDisabled,
+    isKeyboardHoverSuppressed,
+    itemToStringValue,
+    keyboardHoverDetailSyncTimeoutRef,
+    syncHighlightedHoverDetail,
+    visibleItems,
+  });
   const {
     handleListScroll,
     handleOptionListMouseLeave,
@@ -325,51 +300,6 @@ export function useComboboxOptionInteraction<Item>({
     setIsSearchNavigationFocus,
   ]);
 
-  useEffect(() => {
-    if (!actualOpen || !hoverDetailEnabled) return;
-    if (!isKeyboardHoverSuppressed()) return;
-    if (effectiveHighlightedIndex === null) return;
-
-    const highlightedItem = visibleItems[effectiveHighlightedIndex];
-    if (highlightedItem === undefined || isItemDisabled(highlightedItem)) {
-      return;
-    }
-
-    cancelPendingHoverDetail();
-    keyboardHoverDetailSyncTimeoutRef.current = setTimeout(() => {
-      keyboardHoverDetailSyncTimeoutRef.current = null;
-
-      const anchorElement = getHighlightedHoverDetailAnchorElement(
-        effectiveHighlightedIndex
-      );
-      if (!anchorElement) return;
-
-      syncHighlightedHoverDetail(
-        itemToStringValue(highlightedItem),
-        anchorElement,
-        getItemHoverDetailData(highlightedItem),
-        { show: true }
-      );
-    }, keyboardHoverDetailSyncDelay);
-
-    return clearKeyboardHoverDetailSync;
-  }, [
-    actualOpen,
-    cancelPendingHoverDetail,
-    clearKeyboardHoverDetailSync,
-    effectiveHighlightedIndex,
-    getHighlightedHoverDetailAnchorElement,
-    getItemHoverDetailData,
-    hoverDetailEnabled,
-    isItemDisabled,
-    isKeyboardHoverSuppressed,
-    itemToStringValue,
-    syncHighlightedHoverDetail,
-    visibleItems,
-  ]);
-
-  useEffect(() => clearKeyboardHoverDetailSync, [clearKeyboardHoverDetailSync]);
-
   return {
     effectiveHighlightedIndex,
     handleInputValueChange,
@@ -385,12 +315,7 @@ export function useComboboxOptionInteraction<Item>({
     handleTriggerMouseLeave,
     heldHighlightFrame,
     heldHighlightFrameKey,
-    hoverDetail: {
-      data: hoverDetailData,
-      enabled: hoverDetailEnabled,
-      isVisible: isHoverDetailVisible,
-      position: hoverDetailPosition,
-    },
+    hoverDetail: hoverDetailState,
     resetAfterValueChange,
     resetOnClose,
     resetOnOpen,

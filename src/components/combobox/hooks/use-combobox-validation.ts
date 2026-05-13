@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   type FocusEvent,
+  type InvalidEvent,
 } from 'react';
 
 export const comboboxRequiredValidationMessage = 'Field ini wajib diisi';
@@ -60,6 +61,15 @@ export function useComboboxValidation<Item>({
     },
     [isFocusWithinCombobox]
   );
+  const handleComboboxInvalid = useCallback(
+    (event: InvalidEvent<HTMLInputElement>) => {
+      if (!validationEnabled || !effectiveRequired) return;
+
+      event.preventDefault();
+      setBlurred(true);
+    },
+    [effectiveRequired, validationEnabled]
+  );
 
   useEffect(
     () => () => {
@@ -72,6 +82,7 @@ export function useComboboxValidation<Item>({
 
   return {
     handleComboboxBlur,
+    handleComboboxInvalid,
     showValidation,
     validationEnabled,
     validationMessageId,

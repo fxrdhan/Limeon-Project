@@ -16,6 +16,7 @@ Use the app presets for normal product screens. Use the primitive only when a sc
 ```tsx
 import {
   Combobox,
+  createTypedCombobox,
   PharmaComboboxSelect,
   PharmaEntityComboboxSelect,
 } from '@/components/combobox';
@@ -31,6 +32,7 @@ Additional exports:
 | `PharmaComboboxSelectProps`       | Props for the generic app preset.                             |
 | `PharmaComboboxOptionRenderState` | State passed to `renderOption` and `renderOptionMeta`.        |
 | `PharmaEntityComboboxSelectProps` | Props for the entity preset.                                  |
+| `createTypedCombobox`             | Typed primitive namespace for custom compositions.            |
 | `findComboboxItemByValue`         | Helper for resolving an item from its submitted string value. |
 
 ## Recommended Usage
@@ -156,6 +158,27 @@ type Supplier = {
 </Combobox.Root>;
 ```
 
+For larger custom compositions, create a typed primitive namespace once so
+`Root`, `List`, `Collection`, and `Item` share the same value type.
+
+```tsx
+const SupplierCombobox = createTypedCombobox<Supplier>();
+
+<SupplierCombobox.Root
+  items={suppliers}
+  value={selectedSupplier}
+  onValueChange={setSelectedSupplier}
+>
+  <SupplierCombobox.List>
+    {(supplier, index) => (
+      <SupplierCombobox.Item key={supplier.id} value={supplier} index={index}>
+        {supplier.name}
+      </SupplierCombobox.Item>
+    )}
+  </SupplierCombobox.List>
+</SupplierCombobox.Root>;
+```
+
 ## App Presets
 
 ### `PharmaEntityComboboxSelect`
@@ -185,49 +208,54 @@ If `valueId` is not empty and neither `items` nor `selectedItem` can resolve it,
 
 `PharmaComboboxSelect` is the generic app preset. It should be used when the selected value is an object or scalar that needs custom string conversion.
 
-| Prop                      | Type                                                                | Description                                                                       |
-| ------------------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| `items`                   | `Item[]`                                                            | Options displayed by the select.                                                  |
-| `value`                   | `Item \| null`                                                      | Selected item.                                                                    |
-| `onValueChange`           | `(item, details) => void`                                           | Called after the selected item changes.                                           |
-| `itemToStringLabel`       | `(item) => string`                                                  | Human-readable option label.                                                      |
-| `itemToStringValue`       | `(item) => string`                                                  | Stable submitted value. Must be unique within the option list.                    |
-| `isItemEqualToValue`      | `(item, value) => boolean`                                          | Equality check for object values that can be different references.                |
-| `isItemDisabled`          | `(item) => boolean`                                                 | Disables individual options. Defaults to reading `item.disabled` on object items. |
-| `isValueEmpty`            | `(item) => boolean`                                                 | Defines custom empty sentinels such as `''`.                                      |
-| `id`                      | `string`                                                            | Trigger/control id. Inherits `FormField` control id when available.               |
-| `label`                   | `string`                                                            | Visible or accessible label. Inherits `FormField` label when available.           |
-| `name`                    | `string`                                                            | Hidden input name for form submission.                                            |
-| `form`                    | `string`                                                            | Associates the hidden input with a form id.                                       |
-| `placeholder`             | `string`                                                            | Trigger placeholder. Defaults to `'-- Pilih --'`.                                 |
-| `searchPlaceholder`       | `string`                                                            | Search input placeholder. Defaults to `'Cari...'`.                                |
-| `emptyText`               | `string`                                                            | Empty-state text. Defaults to `'Tidak ada data'`.                                 |
-| `searchable`              | `boolean`                                                           | Enables the popup search input. Defaults to `true`.                               |
-| `visibleItemLimit`        | `number`                                                            | Optional render cap for large lists. Filtering still evaluates all items.         |
-| `indicator`               | `'none' \| 'check' \| 'radio' \| 'checkbox'`                        | Selection indicator style.                                                        |
-| `required`                | `boolean`                                                           | Enables required-state semantics and preset validation.                           |
-| `disabled`                | `boolean`                                                           | Disables the control.                                                             |
-| `readOnly`                | `boolean`                                                           | Prevents selection changes while keeping the current value readable.              |
-| `tabIndex`                | `number`                                                            | Trigger tab order.                                                                |
-| `className`               | `string`                                                            | Root container class.                                                             |
-| `popupClassName`          | `string`                                                            | Popup surface class.                                                              |
-| `popupMatchAnchorWidth`   | `boolean`                                                           | Whether the popup width follows the trigger width. Defaults to `true`.            |
-| `validation`              | `{ enabled?: boolean; autoHide?: boolean; autoHideDelay?: number }` | Required-field validation overlay configuration.                                  |
-| `createAction`            | `{ label?: string; onCreate: (searchTerm?: string) => void }`       | Create action rendered when no exact option exists.                               |
-| `hoverDetail`             | `{ enabled?: boolean; delay?: number }`                             | Hover-detail behavior configuration.                                              |
-| `itemToHoverDetailData`   | `(item) => Partial<HoverDetailData>`                                | Maps an item to local hover-detail data.                                          |
-| `onFetchHoverDetail`      | `(id) => Promise<HoverDetailData \| null>`                          | Loads hover-detail data asynchronously.                                           |
-| `onFetchHoverDetailError` | `(error, id) => void`                                               | Handles hover-detail fetch failures.                                              |
-| `renderOption`            | `(item, state) => ReactNode`                                        | Custom option content.                                                            |
-| `renderOptionMeta`        | `(item, state) => ReactNode`                                        | Secondary option metadata.                                                        |
-| `open`                    | `boolean`                                                           | Controlled popup state.                                                           |
-| `onOpenChange`            | `(open, details) => void`                                           | Called when the primitive requests an open-state change.                          |
-| `aria-label`              | `string`                                                            | Accessible name override.                                                         |
-| `aria-labelledby`         | `string`                                                            | Accessible label reference override.                                              |
-| `aria-describedby`        | `string`                                                            | Accessible description reference.                                                 |
+| Prop                      | Type                                                                | Description                                                                             |
+| ------------------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `items`                   | `Item[]`                                                            | Options displayed by the select.                                                        |
+| `value`                   | `Item \| null`                                                      | Selected item.                                                                          |
+| `onValueChange`           | `(item, details) => void`                                           | Called after the selected item changes.                                                 |
+| `itemToStringLabel`       | `(item) => string`                                                  | Human-readable option label.                                                            |
+| `itemToStringValue`       | `(item) => string`                                                  | Stable submitted value. Must be unique within the option list.                          |
+| `isItemEqualToValue`      | `(item, value) => boolean`                                          | Equality check for object values that can be different references.                      |
+| `isItemDisabled`          | `(item) => boolean`                                                 | Disables individual options. Defaults to reading `item.disabled` on object items.       |
+| `isValueEmpty`            | `(item) => boolean`                                                 | Defines custom empty sentinels such as `''`.                                            |
+| `id`                      | `string`                                                            | Trigger/control id. Inherits `FormField` control id when available.                     |
+| `label`                   | `string`                                                            | Visible or accessible label. Inherits `FormField` label when available.                 |
+| `name`                    | `string`                                                            | Hidden input name for form submission.                                                  |
+| `form`                    | `string`                                                            | Associates the hidden input with a form id.                                             |
+| `placeholder`             | `string`                                                            | Trigger placeholder. Defaults to `'-- Pilih --'`.                                       |
+| `searchPlaceholder`       | `string`                                                            | Search input placeholder. Defaults to `'Cari...'`.                                      |
+| `emptyText`               | `string`                                                            | Empty-state text. Defaults to `'Tidak ada data'`.                                       |
+| `searchable`              | `boolean`                                                           | Enables the popup search input. Defaults to `true`.                                     |
+| `visibleItemLimit`        | `number`                                                            | Optional render cap for large lists. Defaults to a bounded large-list cap when omitted. |
+| `indicator`               | `'none' \| 'check' \| 'radio' \| 'checkbox'`                        | Selection indicator style.                                                              |
+| `required`                | `boolean`                                                           | Enables required-state semantics and preset validation.                                 |
+| `disabled`                | `boolean`                                                           | Disables the control.                                                                   |
+| `readOnly`                | `boolean`                                                           | Prevents selection changes while keeping the current value readable.                    |
+| `tabIndex`                | `number`                                                            | Trigger tab order.                                                                      |
+| `className`               | `string`                                                            | Root container class.                                                                   |
+| `popupClassName`          | `string`                                                            | Popup surface class.                                                                    |
+| `popupMatchAnchorWidth`   | `boolean`                                                           | Whether the popup width follows the trigger width. Defaults to `true`.                  |
+| `validation`              | `{ enabled?: boolean; autoHide?: boolean; autoHideDelay?: number }` | Required-field validation overlay configuration.                                        |
+| `createAction`            | `{ label?: string; onCreate: (searchTerm?: string) => void }`       | Create action rendered when no exact option exists.                                     |
+| `hoverDetail`             | `{ enabled?: boolean; delay?: number }`                             | Hover-detail behavior configuration.                                                    |
+| `itemToHoverDetailData`   | `(item) => Partial<HoverDetailData>`                                | Maps an item to local hover-detail data.                                                |
+| `onFetchHoverDetail`      | `(id) => Promise<HoverDetailData \| null>`                          | Loads hover-detail data asynchronously.                                                 |
+| `onFetchHoverDetailError` | `(error, id) => void`                                               | Handles hover-detail fetch failures.                                                    |
+| `renderOption`            | `(item, state) => ReactNode`                                        | Custom option content.                                                                  |
+| `renderOptionMeta`        | `(item, state) => ReactNode`                                        | Secondary option metadata.                                                              |
+| `open`                    | `boolean`                                                           | Controlled popup state.                                                                 |
+| `onOpenChange`            | `(open, details) => void`                                           | Called when the primitive requests an open-state change.                                |
+| `aria-label`              | `string`                                                            | Accessible name override.                                                               |
+| `aria-labelledby`         | `string`                                                            | Accessible label reference override.                                                    |
+| `aria-describedby`        | `string`                                                            | Accessible description reference.                                                       |
 
 When `required` is set, preset validation is enabled by default. Set
 `validation.enabled` to `false` to opt out.
+
+Required preset fields also render a separate native validation proxy. The
+submitted hidden input remains a plain submitted value, while the proxy lets
+browser form validation block empty required comboboxes and route focus back to
+the trigger.
 
 ## Primitive API
 

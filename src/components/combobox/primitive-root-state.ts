@@ -59,6 +59,7 @@ export type ComboboxRootProps<Value> = {
     inputValue: string,
     eventDetails: ComboboxChangeEventDetails
   ) => void;
+  onRequiredInvalid?: (event: React.InvalidEvent<HTMLInputElement>) => void;
   onHighlightedIndexChange?: (
     highlightedIndex: number | null,
     eventDetails: ComboboxHighlightEventDetails
@@ -85,7 +86,10 @@ export type ComboboxHiddenInputState = {
   disabled: boolean;
   form?: string;
   name?: string;
+  onRequiredInvalid?: (event: React.InvalidEvent<HTMLInputElement>) => void;
   readOnly: boolean;
+  required: boolean;
+  triggerRef: React.RefObject<HTMLElement | null>;
   value: string;
 };
 
@@ -116,6 +120,7 @@ export function useComboboxRootState<Value>({
   onInputValueChange,
   onItemHighlighted,
   onOpenChange,
+  onRequiredInvalid,
   onValueChange,
   open: openProp,
   readOnly = false,
@@ -552,10 +557,22 @@ export function useComboboxRootState<Value>({
       disabled,
       form,
       name,
+      onRequiredInvalid,
       readOnly,
+      required,
+      triggerRef,
       value: hiddenValue,
     }),
-    [disabled, form, hiddenValue, name, readOnly]
+    [
+      disabled,
+      form,
+      hiddenValue,
+      name,
+      onRequiredInvalid,
+      readOnly,
+      required,
+      triggerRef,
+    ]
   );
 
   return {
