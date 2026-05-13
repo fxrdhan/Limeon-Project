@@ -1,31 +1,22 @@
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { useMemo } from 'react';
 import type React from 'react';
+import type { ComboboxContextValue } from './primitive-context';
+import { useComboboxRootAutoHighlight } from './hooks/use-combobox-root-auto-highlight';
+import { useComboboxRootCollection } from './hooks/use-combobox-root-collection';
+import { useComboboxRootDismissal } from './hooks/use-combobox-root-dismissal';
+import { useComboboxRootFilteredItems } from './hooks/use-combobox-root-filtered-items';
+import { useComboboxRootFormReset } from './hooks/use-combobox-root-form-reset';
+import { useComboboxRootFormatters } from './hooks/use-combobox-root-formatters';
+import { useComboboxRootIds } from './hooks/use-combobox-root-ids';
+import { useComboboxRootLabelRegistry } from './hooks/use-combobox-root-label-registry';
+import { useComboboxRootRefs } from './hooks/use-combobox-root-refs';
+import { useComboboxRootSelection } from './hooks/use-combobox-root-selection';
+import { useComboboxRootTransitions } from './hooks/use-combobox-root-transitions';
+import { useControllableComboboxRootState } from './hooks/use-controllable-combobox-root-state';
 import type {
-  ComboboxContextValue,
-  ComboboxItemMeta,
-} from './primitive-context';
-import {
-  createComboboxEventDetails as createEventDetails,
-  createComboboxHighlightEventDetails as createHighlightEventDetails,
-  type ComboboxChangeEventDetails,
-  type ComboboxEventReason as EventReason,
-  type ComboboxHighlightEventDetails,
+  ComboboxChangeEventDetails,
+  ComboboxHighlightEventDetails,
 } from './utils/primitive-events';
-import { useComboboxFocusOutside } from './utils/primitive-focus-outside';
-import { getNextEnabledIndex } from './utils/primitive-keyboard';
-import { useComboboxOutsidePress } from './utils/primitive-outside-press';
-import {
-  getDefaultComboboxItemLabel,
-  getDefaultComboboxItemValue,
-  normalizeComboboxHighlightedIndex,
-} from './utils/primitive-root';
 
 export type ComboboxRootProps<Value> = {
   autoComplete?: string;
@@ -128,420 +119,132 @@ export function useComboboxRootState<Value>({
   required = false,
   value: valueProp,
 }: ComboboxRootStateProps<Value>) {
-  const generatedId = useId();
-  const defaultTriggerId = `${generatedId}-trigger`;
-  const triggerRef = useRef<HTMLElement | null>(null);
-  const popupRef = useRef<HTMLElement | null>(null);
-  const itemMetaRef = useRef(new Map<number, ComboboxItemMeta<Value>>());
-  const filteredItemsRef = useRef<Value[]>([]);
-  const activeIndexRef = useRef<number | null>(null);
-  const [uncontrolledInputValue, setUncontrolledInputValue] =
-    useState(defaultInputValue);
-  const [uncontrolledHighlightedIndex, setUncontrolledHighlightedIndex] =
-    useState<number | null>(defaultHighlightedIndex);
-  const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen);
-  const [uncontrolledValue, setUncontrolledValue] = useState<Value | null>(
-    defaultValue
-  );
-  const [registeredLabelIds, setRegisteredLabelIds] = useState<string[]>([]);
-  const [triggerId, setTriggerIdState] = useState(defaultTriggerId);
-
-  const itemToStringLabel = useCallback(
-    (item: Value) =>
-      itemToStringLabelProp
-        ? itemToStringLabelProp(item)
-        : getDefaultComboboxItemLabel(item),
-    [itemToStringLabelProp]
-  );
-  const itemToStringValue = useCallback(
-    (item: Value) =>
-      itemToStringValueProp
-        ? itemToStringValueProp(item)
-        : getDefaultComboboxItemValue(item),
-    [itemToStringValueProp]
-  );
-  const isItemEqualToValue = useCallback(
-    (item: Value, value: Value) =>
-      isItemEqualToValueProp
-        ? isItemEqualToValueProp(item, value)
-        : Object.is(item, value),
-    [isItemEqualToValueProp]
-  );
-  const isItemDisabled = useCallback(
-    (item: Value) => {
-      if (isItemDisabledProp) return isItemDisabledProp(item);
-      return false;
-    },
-    [isItemDisabledProp]
-  );
-  const isItemIndexDisabled = useCallback(
-    (index: number) => {
-      const item = filteredItemsRef.current[index];
-      if (item === undefined) return true;
-
-      const meta = itemMetaRef.current.get(index);
-      if (meta?.value === item) return meta.disabled || isItemDisabled(item);
-
-      return isItemDisabled(item);
-    },
-    [isItemDisabled]
-  );
-
-  const inputValue =
-    inputValueProp !== undefined ? inputValueProp : uncontrolledInputValue;
-  const open = openProp !== undefined ? openProp : uncontrolledOpen;
-  const selectedValue = (
-    valueProp !== undefined ? valueProp : uncontrolledValue
-  ) as Value | null;
-
-  const filteredItems = useMemo(() => {
-    if (filteredItemsProp !== undefined) return Array.from(filteredItemsProp);
-    if (filter === null || inputValue.trim() === '') return Array.from(items);
-
-    const query = inputValue.trim();
-    return Array.from(items).filter(item =>
-      filter
-        ? filter(item, query, itemToStringLabel)
-        : itemToStringLabel(item)
-            .toLocaleLowerCase('id-ID')
-            .includes(query.toLocaleLowerCase('id-ID'))
-    );
-  }, [filter, filteredItemsProp, inputValue, itemToStringLabel, items]);
-
-  const activeIndexState = normalizeComboboxHighlightedIndex(
-    highlightedIndexProp !== undefined
-      ? highlightedIndexProp
-      : uncontrolledHighlightedIndex,
-    filteredItems.length
-  );
-
-  filteredItemsRef.current = filteredItems;
-  activeIndexRef.current = activeIndexState;
-
-  const setOpen = useCallback(
-    (
-      nextOpen: boolean,
-      reason: EventReason,
-      event?: React.SyntheticEvent | Event
-    ) => {
-      if (open === nextOpen) return true;
-
-      const details = createEventDetails(reason, event);
-      onOpenChange?.(nextOpen, details);
-      if (details.isCanceled) return false;
-      if (openProp === undefined) setUncontrolledOpen(nextOpen);
-      return true;
-    },
-    [onOpenChange, open, openProp]
-  );
-
-  const setInputValue = useCallback(
-    (
-      nextValue: string,
-      reason: EventReason,
-      event?: React.SyntheticEvent | Event
-    ) => {
-      if (inputValue === nextValue) return true;
-
-      const details = createEventDetails(reason, event);
-      onInputValueChange?.(nextValue, details);
-      if (details.isCanceled) return false;
-      if (inputValueProp === undefined) setUncontrolledInputValue(nextValue);
-      return true;
-    },
-    [inputValue, inputValueProp, onInputValueChange]
-  );
-
-  const setActiveIndex = useCallback(
-    (
-      nextIndex: number | null,
-      reason: EventReason,
-      event?: React.SyntheticEvent | Event
-    ) => {
-      const normalizedIndex = normalizeComboboxHighlightedIndex(
-        nextIndex,
-        filteredItemsRef.current.length
-      );
-      const nextValue =
-        normalizedIndex === null
-          ? undefined
-          : filteredItemsRef.current[normalizedIndex];
-      const currentIndex = activeIndexRef.current;
-      const currentValue =
-        currentIndex === null
-          ? undefined
-          : filteredItemsRef.current[currentIndex];
-      const sameIndex = currentIndex === normalizedIndex;
-      const sameValue =
-        currentValue === undefined || nextValue === undefined
-          ? currentValue === nextValue
-          : isItemEqualToValue(currentValue, nextValue);
-
-      if (sameIndex && sameValue) return;
-
-      const details = createHighlightEventDetails(
-        reason,
-        normalizedIndex ?? -1,
-        event
-      );
-      onItemHighlighted?.(nextValue, details);
-      if (details.isCanceled) return;
-      onHighlightedIndexChange?.(normalizedIndex, details);
-      if (details.isCanceled) return;
-
-      activeIndexRef.current = normalizedIndex;
-      if (highlightedIndexProp === undefined) {
-        setUncontrolledHighlightedIndex(normalizedIndex);
-      }
-    },
-    [
-      highlightedIndexProp,
+  const {
+    defaultLabelId,
+    defaultTriggerId,
+    getItemId,
+    inputId,
+    listboxId,
+    setTriggerId,
+    triggerId,
+  } = useComboboxRootIds();
+  const { popupRef, triggerRef } = useComboboxRootRefs();
+  const {
+    isItemDisabled,
+    isItemEqualToValue,
+    itemToStringLabel,
+    itemToStringValue,
+  } = useComboboxRootFormatters({
+    isItemDisabled: isItemDisabledProp,
+    isItemEqualToValue: isItemEqualToValueProp,
+    itemToStringLabel: itemToStringLabelProp,
+    itemToStringValue: itemToStringValueProp,
+  });
+  const state = useControllableComboboxRootState({
+    defaultHighlightedIndex,
+    defaultInputValue,
+    defaultOpen,
+    defaultValue,
+    highlightedIndex: highlightedIndexProp,
+    inputValue: inputValueProp,
+    open: openProp,
+    value: valueProp,
+  });
+  const filteredItems = useComboboxRootFilteredItems({
+    filter,
+    filteredItems: filteredItemsProp,
+    inputValue: state.inputValue,
+    itemToStringLabel,
+    items,
+  });
+  const {
+    activeIndexRef,
+    activeIndexState,
+    filteredItemsRef,
+    getNextEnabledComboboxIndex,
+    isItemIndexDisabled,
+    registerItem,
+  } = useComboboxRootCollection({
+    filteredItems,
+    highlightedIndex: state.highlightedIndex,
+    isItemDisabled,
+  });
+  const { labelId, registerLabelId } = useComboboxRootLabelRegistry({
+    labelId: labelIdProp,
+  });
+  const { setActiveIndex, setInputValue, setOpen } = useComboboxRootTransitions(
+    {
+      activeIndexRef,
+      filteredItemsRef,
+      highlightedIndexControlled: state.isHighlightedIndexControlled,
+      inputValue: state.inputValue,
+      inputValueControlled: state.isInputValueControlled,
       isItemEqualToValue,
       onHighlightedIndexChange,
-      onItemHighlighted,
-    ]
-  );
-
-  const isSelectedValueEqual = useCallback(
-    (currentValue: Value | null, nextValue: Value | null) => {
-      if (currentValue === null || nextValue === null) {
-        return currentValue === nextValue;
-      }
-
-      return isItemEqualToValue(currentValue, nextValue);
-    },
-    [isItemEqualToValue]
-  );
-
-  const handleFormReset = useCallback(
-    (event: Event) => {
-      if (event.defaultPrevented) return;
-
-      if (!isSelectedValueEqual(selectedValue, defaultValue)) {
-        const details = createEventDetails('form-reset', event);
-        onValueChange?.(defaultValue, details);
-        if (!details.isCanceled && valueProp === undefined) {
-          setUncontrolledValue(defaultValue);
-        }
-      } else if (valueProp === undefined) {
-        setUncontrolledValue(defaultValue);
-      }
-
-      if (inputValue !== defaultInputValue) {
-        const details = createEventDetails('form-reset', event);
-        onInputValueChange?.(defaultInputValue, details);
-        if (!details.isCanceled && inputValueProp === undefined) {
-          setUncontrolledInputValue(defaultInputValue);
-        }
-      } else if (inputValueProp === undefined) {
-        setUncontrolledInputValue(defaultInputValue);
-      }
-
-      if (open !== defaultOpen) {
-        const details = createEventDetails('form-reset', event);
-        onOpenChange?.(defaultOpen, details);
-        if (!details.isCanceled && openProp === undefined) {
-          setUncontrolledOpen(defaultOpen);
-        }
-      } else if (openProp === undefined) {
-        setUncontrolledOpen(defaultOpen);
-      }
-
-      setActiveIndex(defaultHighlightedIndex, 'form-reset', event);
-    },
-    [
-      defaultHighlightedIndex,
-      defaultInputValue,
-      defaultOpen,
-      defaultValue,
-      inputValue,
-      inputValueProp,
-      isSelectedValueEqual,
       onInputValueChange,
+      onItemHighlighted,
       onOpenChange,
-      onValueChange,
-      open,
-      openProp,
-      selectedValue,
-      setActiveIndex,
-      valueProp,
-    ]
+      open: state.open,
+      openControlled: state.isOpenControlled,
+      setUncontrolledHighlightedIndex: state.setUncontrolledHighlightedIndex,
+      setUncontrolledInputValue: state.setUncontrolledInputValue,
+      setUncontrolledOpen: state.setUncontrolledOpen,
+    }
   );
-
-  const selectItem = useCallback(
-    (
-      item: Value,
-      reason: EventReason,
-      event?: React.SyntheticEvent | Event,
-      index?: number
-    ) => {
-      if (
-        disabled ||
-        readOnly ||
-        (index !== undefined
-          ? isItemIndexDisabled(index)
-          : isItemDisabled(item))
-      ) {
-        return false;
-      }
-
-      const details = createEventDetails(reason, event);
-      onValueChange?.(item, details);
-      if (details.isCanceled) return false;
-      if (valueProp === undefined) {
-        setUncontrolledValue(item);
-      }
-      setOpen(false, reason, event);
-      return true;
-    },
-    [
-      disabled,
-      isItemDisabled,
-      isItemIndexDisabled,
-      onValueChange,
-      readOnly,
-      setOpen,
-      valueProp,
-    ]
-  );
-  const selectActiveItem = useCallback(
-    (
-      reason: EventReason,
-      event?: React.SyntheticEvent | Event,
-      options?: { preventDefault?: boolean }
-    ) => {
-      const activeIndex = activeIndexRef.current;
-      if (activeIndex === null || isItemIndexDisabled(activeIndex))
-        return false;
-
-      const activeItem = filteredItemsRef.current[activeIndex];
-      if (activeItem === undefined) return false;
-
-      if (options?.preventDefault) event?.preventDefault();
-      return selectItem(activeItem, reason, event, activeIndex);
-    },
-    [isItemIndexDisabled, selectItem]
-  );
-
-  const registerItem = useCallback(
-    (index: number, meta: ComboboxItemMeta<Value>) => {
-      itemMetaRef.current.set(index, meta);
-      return () => {
-        const currentMeta = itemMetaRef.current.get(index);
-        if (currentMeta?.value === meta.value) {
-          itemMetaRef.current.delete(index);
-        }
-      };
-    },
-    []
-  );
-
-  const getItemId = useCallback(
-    (index: number) => `${generatedId}-option-${index}`,
-    [generatedId]
-  );
-  const getNextEnabledComboboxIndex = useCallback(
-    (direction: 1 | -1, fromIndex: number | null) =>
-      getNextEnabledIndex({
-        direction,
-        fromIndex,
-        isIndexDisabled: isItemIndexDisabled,
-        itemCount: filteredItemsRef.current.length,
-      }),
-    [isItemIndexDisabled]
-  );
-  const setTriggerId = useCallback((nextTriggerId: string) => {
-    setTriggerIdState(currentTriggerId =>
-      currentTriggerId === nextTriggerId ? currentTriggerId : nextTriggerId
-    );
-  }, []);
-  const registerLabelId = useCallback((nextLabelId: string) => {
-    setRegisteredLabelIds(currentLabelIds => [...currentLabelIds, nextLabelId]);
-    return () => {
-      setRegisteredLabelIds(currentLabelIds => {
-        const labelIndex = currentLabelIds.indexOf(nextLabelId);
-        if (labelIndex < 0) return currentLabelIds;
-
-        return [
-          ...currentLabelIds.slice(0, labelIndex),
-          ...currentLabelIds.slice(labelIndex + 1),
-        ];
-      });
-    };
-  }, []);
-
-  const handleOutsidePress = useCallback(
-    (event: PointerEvent) => {
-      setOpen(false, 'outside-press', event);
-    },
-    [setOpen]
-  );
-  const handleFocusOutside = useCallback(
-    (event: FocusEvent) => {
-      setOpen(false, 'focus-out', event);
-    },
-    [setOpen]
-  );
-  useComboboxOutsidePress({
-    enabled: open,
-    onOutsidePress: handleOutsidePress,
-    popupRef,
-    triggerRef,
+  const { selectActiveItem, selectItem } = useComboboxRootSelection({
+    activeIndexRef,
+    disabled,
+    filteredItemsRef,
+    isItemDisabled,
+    isItemIndexDisabled,
+    onValueChange,
+    readOnly,
+    setOpen,
+    setUncontrolledValue: state.setUncontrolledValue,
+    valueControlled: state.isValueControlled,
   });
-  useComboboxFocusOutside({
-    enabled: open,
-    onFocusOutside: handleFocusOutside,
-    popupRef,
-    triggerRef,
+  const handleFormReset = useComboboxRootFormReset({
+    defaultHighlightedIndex,
+    defaultInputValue,
+    defaultOpen,
+    defaultValue,
+    inputValue: state.inputValue,
+    inputValueControlled: state.isInputValueControlled,
+    isItemEqualToValue,
+    onInputValueChange,
+    onOpenChange,
+    onValueChange,
+    open: state.open,
+    openControlled: state.isOpenControlled,
+    selectedValue: state.selectedValue,
+    setActiveIndex,
+    setUncontrolledInputValue: state.setUncontrolledInputValue,
+    setUncontrolledOpen: state.setUncontrolledOpen,
+    setUncontrolledValue: state.setUncontrolledValue,
+    valueControlled: state.isValueControlled,
   });
 
-  useEffect(() => {
-    if (!open) {
-      setActiveIndex(null, 'none');
-      return;
-    }
-
-    if (filteredItems.length === 0) {
-      setActiveIndex(null, 'none');
-      return;
-    }
-
-    if (!autoHighlight) {
-      if (
-        activeIndexRef.current !== null &&
-        activeIndexRef.current >= filteredItems.length
-      ) {
-        setActiveIndex(null, 'none');
-      }
-      return;
-    }
-
-    if (
-      activeIndexRef.current !== null &&
-      activeIndexRef.current < filteredItems.length &&
-      !isItemIndexDisabled(activeIndexRef.current)
-    ) {
-      setActiveIndex(activeIndexRef.current, 'none');
-      return;
-    }
-
-    setActiveIndex(
-      getNextEnabledIndex({
-        direction: 1,
-        fromIndex: null,
-        isIndexDisabled: isItemIndexDisabled,
-        itemCount: filteredItems.length,
-      }),
-      'none'
-    );
-  }, [autoHighlight, filteredItems, isItemIndexDisabled, open, setActiveIndex]);
+  useComboboxRootDismissal({
+    open: state.open,
+    popupRef,
+    setOpen,
+    triggerRef,
+  });
+  useComboboxRootAutoHighlight({
+    activeIndexRef,
+    autoHighlight,
+    filteredItemCount: filteredItems.length,
+    isItemIndexDisabled,
+    open: state.open,
+    setActiveIndex,
+  });
 
   const context = useMemo<ComboboxContextValue<Value>>(
     () => ({
       activeIndex: activeIndexState,
       autoComplete,
       autoHighlight,
-      defaultLabelId: `${generatedId}-label`,
+      defaultLabelId,
       defaultTriggerId,
       disabled,
       filteredItems,
@@ -550,28 +253,24 @@ export function useComboboxRootState<Value>({
       getNextEnabledIndex: getNextEnabledComboboxIndex,
       highlightedIndexRef: activeIndexRef,
       highlightItemOnHover,
-      inputId: `${generatedId}-input`,
-      inputValue,
+      inputId,
+      inputValue: state.inputValue,
       isItemDisabled,
       isItemIndexDisabled,
       isItemEqualToValue,
       itemToStringLabel,
       itemToStringValue,
-      labelId:
-        labelIdProp ??
-        (registeredLabelIds.length > 0
-          ? Array.from(new Set(registeredLabelIds)).join(' ')
-          : undefined),
-      listboxId: `${generatedId}-listbox`,
+      labelId,
+      listboxId,
       name,
-      open,
+      open: state.open,
       popupRef,
       readOnly,
       registerItem,
       registerLabelId,
       required,
       selectActiveItem,
-      selectedValue,
+      selectedValue: state.selectedValue,
       setActiveIndex,
       setInputValue,
       setOpen,
@@ -581,44 +280,48 @@ export function useComboboxRootState<Value>({
       triggerRef,
     }),
     [
+      activeIndexRef,
       activeIndexState,
       autoComplete,
       autoHighlight,
+      defaultLabelId,
       defaultTriggerId,
       disabled,
       filteredItems,
       form,
-      generatedId,
       getItemId,
       getNextEnabledComboboxIndex,
       highlightItemOnHover,
-      inputValue,
+      inputId,
       isItemDisabled,
       isItemIndexDisabled,
       isItemEqualToValue,
       itemToStringLabel,
       itemToStringValue,
-      labelIdProp,
+      labelId,
+      listboxId,
       name,
-      open,
+      popupRef,
       readOnly,
-      registeredLabelIds,
-      registerLabelId,
       registerItem,
+      registerLabelId,
       required,
       selectActiveItem,
-      selectedValue,
+      selectItem,
       setActiveIndex,
       setInputValue,
       setOpen,
       setTriggerId,
-      selectItem,
+      state.inputValue,
+      state.open,
+      state.selectedValue,
       triggerId,
+      triggerRef,
     ]
   );
 
   const hiddenValue =
-    selectedValue === null ? '' : itemToStringValue(selectedValue);
+    state.selectedValue === null ? '' : itemToStringValue(state.selectedValue);
   const hiddenInputProps = useMemo<ComboboxHiddenInputState>(
     () => ({
       disabled,

@@ -43,6 +43,59 @@ if (typeof optionInteractionSource !== 'string') {
   throw new Error('Combobox option interaction source fixture is missing.');
 }
 
+const primitiveRootStateSources = import.meta.glob(
+  './primitive-root-state.ts',
+  {
+    eager: true,
+    import: 'default',
+    query: '?raw',
+  }
+);
+const primitiveRootStateSource =
+  primitiveRootStateSources['./primitive-root-state.ts'];
+
+if (typeof primitiveRootStateSource !== 'string') {
+  throw new Error('Combobox primitive root state source fixture is missing.');
+}
+
+describe('Combobox primitive architecture', () => {
+  it('keeps primitive root state as orchestration instead of owning stateful mechanics', () => {
+    const forbiddenPrimitiveRootImports = [
+      './utils/primitive-focus-outside',
+      './utils/primitive-keyboard',
+      './utils/primitive-outside-press',
+      './utils/primitive-root',
+    ];
+    const leakedImports = forbiddenPrimitiveRootImports.filter(
+      importPath =>
+        primitiveRootStateSource.includes(`from '${importPath}'`) ||
+        primitiveRootStateSource.includes(`from "${importPath}"`)
+    );
+    const rootStateFunctionSource = primitiveRootStateSource.slice(
+      primitiveRootStateSource.indexOf('export function useComboboxRootState')
+    );
+    const executableLineCount = rootStateFunctionSource
+      .split('\n')
+      .filter((line: string) => {
+        const trimmedLine = line.trim();
+        return (
+          trimmedLine.length > 0 &&
+          !trimmedLine.startsWith('//') &&
+          !trimmedLine.startsWith('type ')
+        );
+      }).length;
+
+    expect(leakedImports).toEqual([]);
+    expect(primitiveRootStateSource).not.toMatch(
+      /\buse(?:Callback|Effect|Ref|State)\b/
+    );
+    expect(primitiveRootStateSource).not.toContain(
+      'createComboboxEventDetails'
+    );
+    expect(executableLineCount).toBeLessThanOrEqual(280);
+  });
+});
+
 describe('Combobox preset architecture', () => {
   it('keeps the select controller from owning low-level combobox behavior', () => {
     const forbiddenBoundaryImports = [
