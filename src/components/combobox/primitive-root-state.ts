@@ -86,6 +86,7 @@ export type ComboboxHiddenInputState = {
   disabled: boolean;
   form?: string;
   name?: string;
+  onFormReset: (event: Event) => void;
   onRequiredInvalid?: (event: React.InvalidEvent<HTMLInputElement>) => void;
   readOnly: boolean;
   required: boolean;
@@ -298,6 +299,72 @@ export function useComboboxRootState<Value>({
       isItemEqualToValue,
       onHighlightedIndexChange,
       onItemHighlighted,
+    ]
+  );
+
+  const isSelectedValueEqual = useCallback(
+    (currentValue: Value | null, nextValue: Value | null) => {
+      if (currentValue === null || nextValue === null) {
+        return currentValue === nextValue;
+      }
+
+      return isItemEqualToValue(currentValue, nextValue);
+    },
+    [isItemEqualToValue]
+  );
+
+  const handleFormReset = useCallback(
+    (event: Event) => {
+      if (event.defaultPrevented) return;
+
+      if (!isSelectedValueEqual(selectedValue, defaultValue)) {
+        const details = createEventDetails('form-reset', event);
+        onValueChange?.(defaultValue, details);
+        if (!details.isCanceled && valueProp === undefined) {
+          setUncontrolledValue(defaultValue);
+        }
+      } else if (valueProp === undefined) {
+        setUncontrolledValue(defaultValue);
+      }
+
+      if (inputValue !== defaultInputValue) {
+        const details = createEventDetails('form-reset', event);
+        onInputValueChange?.(defaultInputValue, details);
+        if (!details.isCanceled && inputValueProp === undefined) {
+          setUncontrolledInputValue(defaultInputValue);
+        }
+      } else if (inputValueProp === undefined) {
+        setUncontrolledInputValue(defaultInputValue);
+      }
+
+      if (open !== defaultOpen) {
+        const details = createEventDetails('form-reset', event);
+        onOpenChange?.(defaultOpen, details);
+        if (!details.isCanceled && openProp === undefined) {
+          setUncontrolledOpen(defaultOpen);
+        }
+      } else if (openProp === undefined) {
+        setUncontrolledOpen(defaultOpen);
+      }
+
+      setActiveIndex(defaultHighlightedIndex, 'form-reset', event);
+    },
+    [
+      defaultHighlightedIndex,
+      defaultInputValue,
+      defaultOpen,
+      defaultValue,
+      inputValue,
+      inputValueProp,
+      isSelectedValueEqual,
+      onInputValueChange,
+      onOpenChange,
+      onValueChange,
+      open,
+      openProp,
+      selectedValue,
+      setActiveIndex,
+      valueProp,
     ]
   );
 
@@ -557,6 +624,7 @@ export function useComboboxRootState<Value>({
       disabled,
       form,
       name,
+      onFormReset: handleFormReset,
       onRequiredInvalid,
       readOnly,
       required,
@@ -567,6 +635,7 @@ export function useComboboxRootState<Value>({
       disabled,
       form,
       hiddenValue,
+      handleFormReset,
       name,
       onRequiredInvalid,
       readOnly,

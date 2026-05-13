@@ -320,6 +320,7 @@ type ComboboxEventDetails = {
   reason:
     | 'escape-key'
     | 'focus-out'
+    | 'form-reset'
     | 'input-change'
     | 'item-press'
     | 'keyboard'
@@ -385,6 +386,12 @@ The popup search input supports:
 Passing `name` renders a hidden input. Its value comes from `itemToStringValue(selectedItem)`. For entity selects, the hidden value is the selected id.
 
 `required` is used for accessibility and preset validation state. It is not native hidden-input constraint validation.
+
+Native form reset restores uncontrolled combobox state to the corresponding
+`defaultValue`, `defaultInputValue`, `defaultHighlightedIndex`, and
+`defaultOpen` props. Controlled callers receive `form-reset` change callbacks
+and must update their controlled state when they want native reset buttons to
+change the combobox value.
 
 ### Accessibility
 
