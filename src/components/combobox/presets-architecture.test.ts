@@ -3,11 +3,23 @@
 import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 
-const sourceModules = import.meta.glob('../../**/*.{ts,tsx}', {
+const comboboxSourceModules = import.meta.glob('../../**/*.{ts,tsx}', {
   eager: true,
   import: 'default',
   query: '?raw',
 });
+const playwrightFixtureSourceModules = import.meta.glob(
+  '../../../tests/playwright/**/*.{ts,tsx}',
+  {
+    eager: true,
+    import: 'default',
+    query: '?raw',
+  }
+);
+const sourceModules = {
+  ...comboboxSourceModules,
+  ...playwrightFixtureSourceModules,
+};
 
 const normalizeSegments = (path: string) => {
   const segments: string[] = [];
@@ -28,10 +40,14 @@ const normalizeSegments = (path: string) => {
 const normalizeSourcePath = (moduleKey: string) => {
   const normalizedKey = moduleKey.replaceAll('\\', '/');
   const srcIndex = normalizedKey.indexOf('/src/');
+  const testsIndex = normalizedKey.indexOf('/tests/');
 
   if (srcIndex >= 0) return normalizedKey.slice(srcIndex + 1);
+  if (testsIndex >= 0) return normalizedKey.slice(testsIndex + 1);
   if (normalizedKey.startsWith('/src/')) return normalizedKey.slice(1);
+  if (normalizedKey.startsWith('/tests/')) return normalizedKey.slice(1);
   if (normalizedKey.startsWith('src/')) return normalizedKey;
+  if (normalizedKey.startsWith('tests/')) return normalizedKey;
 
   return normalizeSegments(`src/components/combobox/${normalizedKey}`);
 };
@@ -374,6 +390,125 @@ const getCreateElementPropNames = (
   visit(sourceFile);
 
   return propNames;
+};
+
+const getCreateElementPropMatches = (
+  sourceFile: ts.SourceFile,
+  componentPredicate: (componentName: string) => boolean,
+  propName: string
+) => {
+  const matches: string[] = [];
+
+  const visit = (node: ts.Node) => {
+    if (
+      ts.isCallExpression(node) &&
+      node.expression.getText(sourceFile) === 'React.createElement' &&
+      componentPredicate(node.arguments[0]?.getText(sourceFile) ?? '')
+    ) {
+      const propsArgument = node.arguments[1];
+
+      if (propsArgument && ts.isObjectLiteralExpression(propsArgument)) {
+        for (const property of propsArgument.properties) {
+          if (
+            (ts.isPropertyAssignment(property) ||
+              ts.isShorthandPropertyAssignment(property) ||
+              ts.isMethodDeclaration(property)) &&
+            getPropertyNameText(property.name, sourceFile) === propName
+          ) {
+            matches.push(node.arguments[0]?.getText(sourceFile) ?? '');
+          }
+        }
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
+
+  return matches;
+};
+
+const getJsxTagsWithAttribute = (
+  sourceFile: ts.SourceFile,
+  tagPredicate: (tagName: string) => boolean,
+  attributeName: string
+) => {
+  const matches: string[] = [];
+
+  const inspectAttributes = (
+    tagName: ts.JsxTagNameExpression,
+    attributes: ts.JsxAttributes
+  ) => {
+    const tagNameText = tagName.getText(sourceFile);
+    if (!tagPredicate(tagNameText)) return;
+
+    for (const attribute of attributes.properties) {
+      if (
+        ts.isJsxAttribute(attribute) &&
+        attribute.name.getText(sourceFile) === attributeName
+      ) {
+        matches.push(tagNameText);
+      }
+    }
+  };
+
+  const visit = (node: ts.Node) => {
+    if (ts.isJsxElement(node)) {
+      inspectAttributes(
+        node.openingElement.tagName,
+        node.openingElement.attributes
+      );
+    }
+
+    if (ts.isJsxSelfClosingElement(node)) {
+      inspectAttributes(node.tagName, node.attributes);
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
+
+  return matches;
+};
+
+const getLocalTypedComboboxNamespaces = (sourceFile: ts.SourceFile) => {
+  const namespaces = new Set<string>();
+
+  const visit = (node: ts.Node) => {
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.initializer &&
+      ts.isCallExpression(node.initializer) &&
+      node.initializer.expression.getText(sourceFile) === 'createTypedCombobox'
+    ) {
+      namespaces.add(node.name.text);
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
+
+  return namespaces;
+};
+
+const isTypedComboboxItemComponent = (
+  componentName: string,
+  typedComboboxNamespaces: Set<string>
+) => {
+  if (!componentName.endsWith('.Item') || componentName === 'Combobox.Item') {
+    return false;
+  }
+
+  const namespaceName = componentName.slice(0, -'.Item'.length);
+
+  return (
+    typedComboboxNamespaces.has(namespaceName) ||
+    namespaceName.endsWith('Combobox')
+  );
 };
 
 const isProductionComboboxSource = (filePath: string) =>
@@ -753,5 +888,32 @@ describe('Combobox preset architecture', () => {
     );
     expect(disabledItemProps).toEqual([]);
     expect(typedPrimitiveSource).toContain("'disabled' | 'index' | 'value'");
+  });
+
+  it('keeps typed primitive disabled state on Root.isItemDisabled in runtime code', () => {
+    const comboboxHarnessPath =
+      'tests/playwright/fixtures/combobox-harness.tsx';
+    const typedPrimitiveContractTestPath =
+      'src/components/combobox/primitive-typed-contract.test.tsx';
+    expect(sourcePaths.has(comboboxHarnessPath)).toBe(true);
+
+    const disabledTypedItemProps = Array.from(sourceByPath).flatMap(
+      ([filePath, source]) => {
+        if (filePath === typedPrimitiveContractTestPath) return [];
+
+        const sourceFile = parseSource(filePath, source);
+        const typedComboboxNamespaces =
+          getLocalTypedComboboxNamespaces(sourceFile);
+        const isTypedItem = (componentName: string) =>
+          isTypedComboboxItemComponent(componentName, typedComboboxNamespaces);
+
+        return [
+          ...getJsxTagsWithAttribute(sourceFile, isTypedItem, 'disabled'),
+          ...getCreateElementPropMatches(sourceFile, isTypedItem, 'disabled'),
+        ].map(componentName => `${filePath}: ${componentName} disabled`);
+      }
+    );
+
+    expect(disabledTypedItemProps).toEqual([]);
   });
 });

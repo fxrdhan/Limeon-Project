@@ -191,6 +191,9 @@ function ComboboxRegressionHarness() {
             onValueChange={setPrimitiveValue}
             itemToStringLabel={optionLabel}
             itemToStringValue={optionValue}
+            isItemDisabled={(option: MedicineOption) =>
+              Boolean(option.disabled)
+            }
           >
             <PrimitiveCombobox.Label className="block text-sm font-semibold">
               Primitive custom trigger
@@ -208,7 +211,6 @@ function ComboboxRegressionHarness() {
                     {option => (
                       <PrimitiveCombobox.Item
                         key={option.id}
-                        disabled={Boolean(option.disabled)}
                         className="cursor-pointer rounded-md px-3 py-2 text-sm text-slate-800 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[highlighted]:bg-emerald-50"
                       >
                         {option.name}
