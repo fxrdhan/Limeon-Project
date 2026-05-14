@@ -1,7 +1,7 @@
 import type { KeyboardEvent, MouseEvent } from 'react';
 import { TbChevronDown } from 'react-icons/tb';
 import { cn } from '@/lib/utils';
-import { Combobox } from '../primitive';
+import { Combobox } from '../internal/primitive';
 import { setRef } from '../utils/primitive-render';
 
 export interface ComboboxTriggerButtonProps {

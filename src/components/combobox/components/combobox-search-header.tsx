@@ -1,7 +1,7 @@
 import type { KeyboardEvent, Ref } from 'react';
 import { TbSearch } from 'react-icons/tb';
 import { cn } from '@/lib/utils';
-import { Combobox } from '../primitive';
+import { Combobox } from '../internal/primitive';
 
 export interface ComboboxSearchHeaderProps {
   controlName: string;
@@ -47,6 +47,7 @@ export function ComboboxSearchHeader({
           aria-label={`Cari ${controlName}`}
           aria-required={false}
           placeholder={searchPlaceholder}
+          tabIndex={0}
           onKeyDown={onSearchInputKeyDown}
           onPointerDown={() => {
             onNavigationFocusChange(false);

@@ -1,7 +1,7 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vite-plus/test';
-import { Combobox } from './primitive';
+import { Combobox } from './internal/primitive';
 import { preventComboboxHandler } from './utils/preset-dom';
 
 const fruitItems = ['Apple', 'Banana', 'Cherry'];

@@ -26,6 +26,9 @@ function TypedComboboxContractExamples() {
 
             {/* @ts-expect-error index is provided by the typed list scope. */}
             <FruitCombobox.Item index={0}>{item.name}</FruitCombobox.Item>
+
+            {/* @ts-expect-error disabled state belongs on Root.isItemDisabled so keyboard navigation and rendered options share one source. */}
+            <FruitCombobox.Item disabled>{item.name}</FruitCombobox.Item>
           </>
         )}
       </FruitCombobox.List>

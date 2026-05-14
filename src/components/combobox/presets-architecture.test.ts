@@ -294,14 +294,57 @@ const getJsxAttributeNames = (sourceFile: ts.SourceFile, tagName: string) => {
   return attributeNames;
 };
 
+const getCreateElementPropNames = (
+  sourceFile: ts.SourceFile,
+  componentName: string
+) => {
+  const propNames: string[] = [];
+
+  const visit = (node: ts.Node) => {
+    if (
+      ts.isCallExpression(node) &&
+      node.expression.getText(sourceFile) === 'React.createElement' &&
+      node.arguments[0]?.getText(sourceFile) === componentName
+    ) {
+      const propsArgument = node.arguments[1];
+
+      if (propsArgument && ts.isObjectLiteralExpression(propsArgument)) {
+        for (const property of propsArgument.properties) {
+          if (
+            ts.isPropertyAssignment(property) ||
+            ts.isShorthandPropertyAssignment(property) ||
+            ts.isMethodDeclaration(property)
+          ) {
+            propNames.push(getPropertyNameText(property.name, sourceFile));
+          }
+        }
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
+
+  return propNames;
+};
+
+const isProductionComboboxSource = (filePath: string) =>
+  filePath.startsWith('src/components/combobox/') &&
+  !filePath.includes('.test.');
+
 describe('Combobox primitive architecture', () => {
   it('keeps public exports on the safe typed primitive API', () => {
     const publicExports = getModuleSpecifiers(
       'src/components/combobox/index.ts'
     );
+    const rawPrimitiveExportSpecifiers = new Set([
+      './internal/primitive',
+      './primitive',
+    ]);
     const primitiveValueExports = publicExports.filter(
       moduleSpecifier =>
-        moduleSpecifier.specifier === './primitive' &&
+        rawPrimitiveExportSpecifiers.has(moduleSpecifier.specifier) &&
         !moduleSpecifier.isTypeOnly
     );
 
@@ -309,32 +352,44 @@ describe('Combobox primitive architecture', () => {
   });
 
   it('keeps unsafe primitive imports inside the combobox package', () => {
+    const forbiddenRawPrimitiveSpecifiers = new Set([
+      '@/components/combobox/internal/primitive',
+      '@/components/combobox/internal/primitive.tsx',
+      '@/components/combobox/primitive',
+      '@/components/combobox/primitive.tsx',
+    ]);
+    const forbiddenRawPrimitiveTargets = new Set([
+      'src/components/combobox/internal/primitive.tsx',
+      'src/components/combobox/primitive.tsx',
+    ]);
     const illegalImports = Array.from(sourcePaths).flatMap(filePath => {
       if (filePath.startsWith('src/components/combobox/')) {
         return [];
       }
 
-      const source = sourceByPath.get(filePath);
-      if (source === undefined || !source.includes('combobox/primitive')) {
-        return [];
-      }
-
       return getModuleSpecifiers(filePath)
         .filter(moduleSpecifier => {
-          if (moduleSpecifier.isTypeOnly) return false;
-          if (moduleSpecifier.specifier === '@/components/combobox/primitive') {
-            return true;
-          }
+          const resolvedSpecifier = resolveLocalSpecifier(
+            filePath,
+            moduleSpecifier.specifier
+          );
 
           return (
-            resolveLocalSpecifier(filePath, moduleSpecifier.specifier) ===
-            'src/components/combobox/primitive.tsx'
+            forbiddenRawPrimitiveSpecifiers.has(moduleSpecifier.specifier) ||
+            (resolvedSpecifier !== null &&
+              forbiddenRawPrimitiveTargets.has(resolvedSpecifier))
           );
         })
         .map(moduleSpecifier => `${filePath} -> ${moduleSpecifier.specifier}`);
     });
 
     expect(illegalImports).toEqual([]);
+  });
+
+  it('keeps the legacy raw primitive import path unavailable', () => {
+    expect(sourcePaths.has('src/components/combobox/primitive.tsx')).toBe(
+      false
+    );
   });
 
   it('keeps primitive root state as orchestration instead of owning mechanics', () => {
@@ -571,20 +626,72 @@ describe('Combobox preset architecture', () => {
     const directImportTargets = getDirectImportTargets(
       'hooks/use-combobox-option-interaction.ts'
     );
+    const allowedFacadeImportTargets = [
+      'src/components/combobox/hooks/use-combobox-option-interaction-model.ts',
+      'src/components/combobox/hooks/use-combobox-option-interaction-types.ts',
+    ];
+
+    expect(directImportTargets.sort()).toEqual(allowedFacadeImportTargets);
+  });
+
+  it('keeps the option interaction model on domain sub-facades', () => {
+    const directImportTargets = getDirectImportTargets(
+      'hooks/use-combobox-option-interaction-model.ts'
+    );
+    const requiredSubFacadeImportTargets = [
+      'src/components/combobox/hooks/use-combobox-option-interaction-hover-state.ts',
+      'src/components/combobox/hooks/use-combobox-option-interaction-infrastructure.ts',
+      'src/components/combobox/hooks/use-combobox-option-interaction-keyboard-navigation.ts',
+      'src/components/combobox/hooks/use-combobox-option-interaction-scroll-hover-sync.ts',
+    ];
     const forbiddenBoundaryImportTargets = [
       'src/components/combobox/hooks/use-combobox-highlight.ts',
       'src/components/combobox/hooks/use-combobox-hover-detail-controller.ts',
+      'src/components/combobox/hooks/use-combobox-keyboard-hover-detail-timer.ts',
       'src/components/combobox/hooks/use-combobox-keyboard-highlight-scroll.ts',
-      'src/components/combobox/hooks/use-combobox-keyboard-hover-detail-sync.ts',
+      'src/components/combobox/hooks/use-combobox-option-elements.ts',
+      'src/components/combobox/hooks/use-combobox-option-hover.ts',
+      'src/components/combobox/hooks/use-combobox-option-hover-detail-sync.ts',
+      'src/components/combobox/hooks/use-combobox-option-keyboard-navigation.ts',
+      'src/components/combobox/hooks/use-combobox-option-keyboard-scroll.ts',
       'src/components/combobox/hooks/use-combobox-pointer-hover.ts',
       'src/components/combobox/hooks/use-combobox-scroll-hover-detail-sync.ts',
       'src/components/combobox/utils/preset-dom.ts',
     ];
 
+    expect(directImportTargets).toEqual(
+      expect.arrayContaining(requiredSubFacadeImportTargets)
+    );
     expect(
       directImportTargets.filter(importPath =>
         forbiddenBoundaryImportTargets.includes(importPath)
       )
     ).toEqual([]);
+  });
+
+  it('keeps preset disabled state canonical at the primitive root boundary', () => {
+    const disabledItemProps = Array.from(sourceByPath).flatMap(
+      ([filePath, source]) => {
+        if (!isProductionComboboxSource(filePath)) return [];
+
+        const sourceFile = parseSource(filePath, source);
+        const itemProps = [
+          ...getJsxAttributeNames(sourceFile, 'Combobox.Item'),
+          ...getCreateElementPropNames(sourceFile, 'Combobox.Item'),
+        ];
+
+        return itemProps.includes('disabled')
+          ? [`${filePath}: Combobox.Item disabled`]
+          : [];
+      }
+    );
+    const rootPropsSource = readSource('utils/preset-controller-props.ts');
+    const typedPrimitiveSource = readSource('primitive-typed.ts');
+
+    expect(rootPropsSource).toContain(
+      'isItemDisabled: formatters.isItemDisabled'
+    );
+    expect(disabledItemProps).toEqual([]);
+    expect(typedPrimitiveSource).toContain("'disabled' | 'index' | 'value'");
   });
 });

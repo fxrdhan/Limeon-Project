@@ -143,6 +143,11 @@ the presets cannot express. The raw primitive is internal; public custom
 composition should use a typed namespace so `Root`, `List`, `Collection`, and
 `Item` share the same value type.
 
+For typed primitive compositions, declare disabled options on
+`Root.isItemDisabled`. The typed `Item` intentionally does not expose a
+`disabled` prop, so keyboard navigation, ARIA state, and rendered option state
+share one canonical disabled source.
+
 ```tsx
 type Supplier = {
   id: string;
@@ -463,7 +468,7 @@ When `open` is controlled, `onOpenChange(false, details)` is only a close reques
 | File                      | Responsibility                                                                 |
 | ------------------------- | ------------------------------------------------------------------------------ |
 | `index.ts`                | Public exports.                                                                |
-| `primitive.tsx`           | Public compound namespace and root provider shell.                             |
+| `internal/primitive.tsx`  | Internal compound namespace and root provider shell.                           |
 | `primitive-root-state.ts` | Root state, filtering, option registry, callbacks, and hidden input state.     |
 | `primitive-label.tsx`     | Label registration and label association.                                      |
 | `primitive-trigger.tsx`   | Trigger ARIA, open behavior, keyboard navigation, and typeahead.               |

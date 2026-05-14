@@ -3,7 +3,7 @@ export type {
   ComboboxEventDetails,
   ComboboxHighlightEventDetails,
   ComboboxRootProps,
-} from './primitive';
+} from './internal/primitive';
 export {
   createTypedCombobox,
   type TypedCombobox,

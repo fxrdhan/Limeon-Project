@@ -4,12 +4,12 @@ import {
   ComboboxStaticContext,
   type ComboboxActionsContextValue,
   type ComboboxStateContextValue,
-} from './primitive-context';
-import { ComboboxHiddenInput } from './primitive-hidden-input';
-import { ComboboxInput } from './primitive-input';
-import { ComboboxLabel } from './primitive-label';
-import { ComboboxTrigger } from './primitive-trigger';
-import { ComboboxValue } from './primitive-value';
+} from '../primitive-context';
+import { ComboboxHiddenInput } from '../primitive-hidden-input';
+import { ComboboxInput } from '../primitive-input';
+import { ComboboxLabel } from '../primitive-label';
+import { ComboboxTrigger } from '../primitive-trigger';
+import { ComboboxValue } from '../primitive-value';
 import {
   ComboboxCollection,
   ComboboxEmpty,
@@ -17,27 +17,27 @@ import {
   ComboboxItemIndicator,
   ComboboxList,
   ComboboxStatus,
-} from './primitive-items';
+} from '../primitive-items';
 import {
   ComboboxPopup,
   ComboboxPortal,
   ComboboxPositioner,
-} from './primitive-popup';
+} from '../primitive-popup';
 import {
   type ComboboxRootProps,
   useComboboxRootState,
-} from './primitive-root-state';
+} from '../primitive-root-state';
 import {
   type ComboboxChangeEventDetails,
   type ComboboxEventReason as EventReason,
   type ComboboxHighlightEventDetails,
-} from './utils/primitive-events';
-export type { ComboboxRootProps } from './primitive-root-state';
+} from '../utils/primitive-events';
+export type { ComboboxRootProps } from '../primitive-root-state';
 export type {
   ComboboxChangeEventDetails,
   ComboboxEventDetails,
   ComboboxHighlightEventDetails,
-} from './utils/primitive-events';
+} from '../utils/primitive-events';
 
 export namespace ComboboxRoot {
   export type ChangeEventDetails = ComboboxChangeEventDetails;

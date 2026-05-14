@@ -108,7 +108,6 @@ export function getPharmaComboboxViewModel<Item>({
       hasHeldHighlightFrame: behavior.heldHighlightFrame !== null,
       hasVisibleItems: selection.hasVisibleItems,
       inputValue: core.inputValue,
-      isItemDisabled: selection.isItemDisabled,
       isSearchNavigationFocus: core.isSearchNavigationFocus,
       itemToStringLabel: config.itemToStringLabel,
       itemToStringValue: config.itemToStringValue,

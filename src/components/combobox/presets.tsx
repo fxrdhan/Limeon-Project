@@ -7,7 +7,7 @@ import ComboboxHoverDetailPopover from './components/combobox-hover-detail-popov
 import { ComboboxOptionList } from './components/combobox-option-list';
 import { ComboboxSearchHeader } from './components/combobox-search-header';
 import { ComboboxTriggerButton } from './components/combobox-trigger-button';
-import { Combobox } from './primitive';
+import { Combobox } from './internal/primitive';
 import { comboboxRequiredValidationMessage } from './hooks/use-combobox-validation';
 import { usePharmaComboboxSelectController } from './hooks/use-pharma-combobox-select-controller';
 import type { PharmaComboboxSelectProps } from './presets-types';

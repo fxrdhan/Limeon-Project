@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vite-plus/test';
-import { Combobox } from './primitive';
+import { Combobox } from './internal/primitive';
 import { setupUserEvent } from '../../test/user-event';
 
 const fruitItems = ['Apple', 'Banana', 'Cherry'];

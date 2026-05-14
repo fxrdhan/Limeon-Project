@@ -1,5 +1,5 @@
 import React, { createContext, forwardRef, useContext } from 'react';
-import { Combobox } from './primitive';
+import { Combobox } from './internal/primitive';
 import type { ComboboxItemProps, ComboboxListProps } from './primitive-items';
 import {
   useComboboxStateContext,
@@ -18,7 +18,7 @@ export type TypedComboboxCollectionProps<Value> = {
 
 export type TypedComboboxItemProps<Value> = Omit<
   ComboboxItemProps<Value>,
-  'index' | 'value'
+  'disabled' | 'index' | 'value'
 >;
 
 export type TypedComboboxListProps<Value> = Omit<

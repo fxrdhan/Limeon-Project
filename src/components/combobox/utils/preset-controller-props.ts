@@ -1,7 +1,7 @@
 import type { ComboboxOptionListProps } from '../components/combobox-option-list';
 import type { ComboboxSearchHeaderProps } from '../components/combobox-search-header';
 import type { ComboboxTriggerButtonProps } from '../components/combobox-trigger-button';
-import type { ComboboxRootProps } from '../primitive';
+import type { ComboboxRootProps } from '../internal/primitive';
 import type { PharmaComboboxSelectProps } from '../presets-types';
 
 export type PharmaComboboxRootBoundaryProps<Item> = Pick<
@@ -133,7 +133,6 @@ type PharmaComboboxViewState<Item> = {
   hasHeldHighlightFrame: boolean;
   hasVisibleItems: boolean;
   inputValue: string;
-  isItemDisabled: ComboboxOptionListProps<Item>['isItemDisabled'];
   isSearchNavigationFocus: boolean;
   itemToStringLabel: ComboboxOptionListProps<Item>['itemToStringLabel'];
   itemToStringValue: ComboboxOptionListProps<Item>['itemToStringValue'];
@@ -219,7 +218,6 @@ export const getPharmaComboboxViewProps = <Item>({
       hasVisibleItems: state.hasVisibleItems,
       indicator: display.indicator,
       inputValue: state.inputValue,
-      isItemDisabled: state.isItemDisabled,
       itemToStringLabel: state.itemToStringLabel,
       itemToStringValue: state.itemToStringValue,
       listRef: refs.listRef,

@@ -13,7 +13,7 @@ import type { VirtualItem } from '@tanstack/react-virtual';
 import { cn } from '@/lib/utils';
 import { getPharmaComboboxOptionIndexAttributes } from '../utils/preset-dom';
 import { setRef } from '../utils/primitive-render';
-import { Combobox } from '../primitive';
+import { Combobox } from '../internal/primitive';
 import type { PharmaComboboxOptionRenderState } from '../presets-types';
 import { useComboboxOptionVirtualizer } from '../hooks/use-combobox-option-virtualizer';
 import { comboboxHighlightBackgroundTransition } from './combobox-highlight-motion';
@@ -39,7 +39,6 @@ export interface ComboboxOptionListProps<Item> {
   hasVisibleItems: boolean;
   indicator: ComboboxIndicatorKind;
   inputValue: string;
-  isItemDisabled: (item: Item) => boolean;
   itemToStringLabel: (item: Item) => string;
   itemToStringValue: (item: Item) => string;
   listRef: Ref<HTMLDivElement>;
@@ -70,7 +69,6 @@ export function ComboboxOptionList<Item>({
   hasVisibleItems,
   indicator,
   inputValue,
-  isItemDisabled,
   itemToStringLabel,
   itemToStringValue,
   listRef,
@@ -169,7 +167,6 @@ export function ComboboxOptionList<Item>({
     <Combobox.Item
       value={item}
       index={index}
-      disabled={isItemDisabled(item)}
       {...getPharmaComboboxOptionIndexAttributes(index)}
       onMouseEnter={event => {
         onOptionMouseEnter(event, item);
@@ -227,7 +224,6 @@ export function ComboboxOptionList<Item>({
         key={virtualItem.key}
         value={item}
         index={virtualItem.index}
-        disabled={isItemDisabled(item)}
         {...getPharmaComboboxOptionIndexAttributes(virtualItem.index)}
         onMouseEnter={event => {
           onOptionMouseEnter(event, item);

@@ -6,7 +6,7 @@ import {
   type RefObject,
   type SetStateAction,
 } from 'react';
-import type { ComboboxRootProps } from '../primitive';
+import type { ComboboxRootProps } from '../internal/primitive';
 
 type ComboboxOpenChangeDetails<Item> = Parameters<
   NonNullable<ComboboxRootProps<Item>['onOpenChange']>

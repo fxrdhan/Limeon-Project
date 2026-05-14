@@ -8,7 +8,7 @@ import {
   type RefObject,
   type SetStateAction,
 } from 'react';
-import type { ComboboxRootProps } from '../primitive';
+import type { ComboboxRootProps } from '../internal/primitive';
 import { preventComboboxHandler } from '../utils/preset-dom';
 import {
   getComboboxDefaultHighlightIndex,
