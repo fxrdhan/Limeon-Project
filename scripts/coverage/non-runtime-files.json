@@ -141,7 +141,6 @@
   "src/features/item-management/presentation/templates/comparison/hooks/useScrollPosition.ts",
   "src/features/item-management/presentation/templates/comparison/index.ts",
   "src/features/item-management/presentation/templates/containers/index.ts",
-  "src/features/item-management/presentation/templates/core/UnifiedModalTemplate.tsx",
   "src/features/item-management/presentation/templates/entity/EntityModal.tsx",
   "src/features/item-management/presentation/templates/entity/EntityModalContent.tsx",
   "src/features/item-management/presentation/templates/entity/index.ts",
