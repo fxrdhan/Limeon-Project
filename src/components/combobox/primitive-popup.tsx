@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import type React from 'react';
 import { createPortal } from 'react-dom';
 import {
@@ -13,6 +13,7 @@ import {
 type ComboboxPortalProps = {
   children?: React.ReactNode;
   container?: Element | DocumentFragment | null;
+  containerRef?: React.RefObject<Element | DocumentFragment | null>;
 };
 
 type ComboboxPositionerProps = React.ComponentPropsWithoutRef<'div'> & {
@@ -34,11 +35,36 @@ const popupFocusableSelector = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(',');
 
-export function ComboboxPortal({ children, container }: ComboboxPortalProps) {
+export function ComboboxPortal({
+  children,
+  container,
+  containerRef,
+}: ComboboxPortalProps) {
   const { open } = useComboboxStateContext<unknown>();
+  const [resolvedRefContainer, setResolvedRefContainer] = useState<
+    Element | DocumentFragment | null
+  >(null);
+
+  useLayoutEffect(() => {
+    if (!open || container !== undefined || !containerRef) {
+      setResolvedRefContainer(null);
+      return;
+    }
+
+    const nextContainer = containerRef.current;
+    setResolvedRefContainer(currentContainer =>
+      currentContainer === nextContainer ? currentContainer : nextContainer
+    );
+  }, [container, containerRef, open]);
+
   if (!open || typeof document === 'undefined') return null;
 
-  const portalContainer = container === undefined ? document.body : container;
+  const portalContainer =
+    container !== undefined
+      ? container
+      : containerRef
+        ? (containerRef.current ?? resolvedRefContainer)
+        : document.body;
   if (!portalContainer) return null;
 
   return createPortal(children, portalContainer);

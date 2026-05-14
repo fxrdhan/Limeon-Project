@@ -37,6 +37,11 @@ const isUnavailableEntityValue = <Item extends EntityComboboxItem>(
     item && typeof item === 'object' && unavailableEntityValueMarker in item
   );
 
+const getAvailableEntityItem = <Item extends EntityComboboxItem>(
+  item: EntityComboboxValue<Item> | null
+): Item | null =>
+  item === null || isUnavailableEntityValue(item) ? null : item;
+
 export interface PharmaEntityComboboxSelectProps<
   Item extends EntityComboboxItem,
 > extends Omit<
@@ -103,10 +108,13 @@ export function PharmaEntityComboboxSelect<Item extends EntityComboboxItem>({
     ]
   );
   const getItemLabel = useCallback(
-    (item: EntityComboboxValue<Item>) =>
-      isUnavailableEntityValue(item)
-        ? unavailableEntityItemLabel
-        : itemLabelFormatter(item),
+    (item: EntityComboboxValue<Item>) => {
+      const availableItem = getAvailableEntityItem(item);
+
+      return availableItem
+        ? itemLabelFormatter(availableItem)
+        : unavailableEntityItemLabel;
+    },
     [itemLabelFormatter]
   );
   const getItemValue = useCallback(
@@ -117,57 +125,82 @@ export function PharmaEntityComboboxSelect<Item extends EntityComboboxItem>({
   const isItemEqualToValue = itemConfig?.isEqualToValue;
   const getIsItemEqualToValue = useCallback(
     (item: EntityComboboxValue<Item>, nextValue: EntityComboboxValue<Item>) => {
-      if (isUnavailableEntityValue(item)) {
-        if (isUnavailableEntityValue(nextValue)) {
+      const availableItem = getAvailableEntityItem(item);
+      const availableNextValue = getAvailableEntityItem(nextValue);
+
+      if (!availableItem) {
+        if (!availableNextValue) {
           return item.id === nextValue.id;
         }
 
-        return itemValueFormatter(nextValue) === item.id;
+        return itemValueFormatter(availableNextValue) === item.id;
       }
 
-      if (isUnavailableEntityValue(nextValue)) {
-        return itemValueFormatter(item) === nextValue.id;
+      if (!availableNextValue) {
+        return itemValueFormatter(availableItem) === nextValue.id;
       }
 
       return isItemEqualToValue
-        ? isItemEqualToValue(item, nextValue)
-        : itemValueFormatter(item) === itemValueFormatter(nextValue);
+        ? isItemEqualToValue(availableItem, availableNextValue)
+        : itemValueFormatter(availableItem) ===
+            itemValueFormatter(availableNextValue);
     },
     [isItemEqualToValue, itemValueFormatter]
   );
   const getIsItemDisabled = useCallback(
-    (item: EntityComboboxValue<Item>) =>
-      isUnavailableEntityValue(item)
-        ? false
-        : Boolean(itemConfig?.isDisabled?.(item)),
+    (item: EntityComboboxValue<Item>) => {
+      const availableItem = getAvailableEntityItem(item);
+
+      return availableItem
+        ? Boolean(itemConfig?.isDisabled?.(availableItem))
+        : false;
+    },
     [itemConfig]
   );
   const getIsValueEmpty = useCallback(
-    (item: EntityComboboxValue<Item> | null) =>
-      isUnavailableEntityValue(item)
-        ? false
-        : Boolean(itemConfig?.isValueEmpty?.(item)),
+    (item: EntityComboboxValue<Item> | null) => {
+      const availableItem = getAvailableEntityItem(item);
+
+      return availableItem
+        ? Boolean(itemConfig?.isValueEmpty?.(availableItem))
+        : false;
+    },
     [itemConfig]
   );
   const getItemHoverDetailData = useCallback(
-    (item: EntityComboboxValue<Item>) =>
-      isUnavailableEntityValue(item)
-        ? {}
-        : (itemConfig?.toHoverDetailData?.(item) ?? {}),
+    (item: EntityComboboxValue<Item>) => {
+      const availableItem = getAvailableEntityItem(item);
+
+      return availableItem
+        ? (itemConfig?.toHoverDetailData?.(availableItem) ?? {})
+        : {};
+    },
     [itemConfig]
   );
   const renderEntityOption = useCallback(
-    (item: EntityComboboxValue<Item>, state: PharmaComboboxOptionRenderState) =>
-      isUnavailableEntityValue(item)
-        ? unavailableEntityItemLabel
-        : display?.renderOption?.(item, state),
+    (
+      item: EntityComboboxValue<Item>,
+      state: PharmaComboboxOptionRenderState
+    ) => {
+      const availableItem = getAvailableEntityItem(item);
+
+      return availableItem
+        ? display?.renderOption?.(availableItem, state)
+        : unavailableEntityItemLabel;
+    },
     [display]
   );
   const renderEntityOptionMeta = useCallback(
-    (item: EntityComboboxValue<Item>, state: PharmaComboboxOptionRenderState) =>
-      isUnavailableEntityValue(item)
-        ? null
-        : display?.renderOptionMeta?.(item, state),
+    (
+      item: EntityComboboxValue<Item>,
+      state: PharmaComboboxOptionRenderState
+    ) => {
+      const availableItem = getAvailableEntityItem(item);
+
+      return availableItem
+        ? display?.renderOptionMeta?.(availableItem, state)
+        : null;
+    },
     [display]
   );
   const handleValueChange = useCallback(
@@ -175,11 +208,9 @@ export function PharmaEntityComboboxSelect<Item extends EntityComboboxItem>({
       item: EntityComboboxValue<Item> | null,
       details: PharmaComboboxChangeDetails<EntityComboboxValue<Item>>
     ) => {
-      onValueIdChange(
-        item ? getItemValue(item) : '',
-        item && !isUnavailableEntityValue(item) ? item : null,
-        details
-      );
+      const availableItem = getAvailableEntityItem(item);
+
+      onValueIdChange(item ? getItemValue(item) : '', availableItem, details);
     },
     [getItemValue, onValueIdChange]
   );

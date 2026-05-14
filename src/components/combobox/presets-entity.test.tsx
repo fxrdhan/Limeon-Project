@@ -172,6 +172,38 @@ describe('Combobox entity preset', () => {
     ).toBe(true);
   });
 
+  it('does not pass unavailable entity fallback values through custom disabled checks', () => {
+    const supplier = {
+      id: 'supplier-b',
+      name: 'Supplier B',
+      code: 'supplier-b',
+    };
+    const isItemDisabled = vi.fn(
+      (item: EntityItem & { code: string }) => item.code === ''
+    );
+
+    render(
+      <PharmaEntityComboboxSelect<EntityItem & { code: string }>
+        items={[supplier]}
+        valueId="supplier-a"
+        onValueIdChange={() => {}}
+        item={{
+          toValue: item => item.id,
+          isDisabled: isItemDisabled,
+        }}
+        field={{ name: 'supplier_id' }}
+        display={{ placeholder: 'Pilih supplier' }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox'));
+
+    expect(isItemDisabled).toHaveBeenCalled();
+    expect(isItemDisabled.mock.calls.every(([item]) => 'code' in item)).toBe(
+      true
+    );
+  });
+
   it('does not pass unavailable entity fallback values through custom empty checks', () => {
     const isValueEmpty = vi.fn(
       (supplier: (EntityItem & { code: string }) | null) =>

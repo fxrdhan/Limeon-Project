@@ -126,28 +126,42 @@ export function getPharmaComboboxViewModel<Item>({
   });
 
   return {
-    actualOpen: core.actualOpen,
-    className: config.className,
-    comboboxRootProps,
-    controlName: feedback.controlName,
-    emptyText: config.emptyText,
-    emptyAction,
-    fallbackLabelId: core.fallbackLabelId,
-    handleComboboxBlur: feedback.handleComboboxBlur,
-    hasVisibleItems: selection.hasVisibleItems,
-    heldHighlightFrame: behavior.heldHighlightFrame,
-    heldHighlightFrameKey: behavior.heldHighlightFrameKey,
+    feedback: {
+      controlName: feedback.controlName,
+      fallbackLabelId: core.fallbackLabelId,
+      shouldRenderFallbackLabel: feedback.shouldRenderFallbackLabel,
+      validationState,
+    },
+    highlight: {
+      heldFrame: behavior.heldHighlightFrame,
+      heldFrameKey: behavior.heldHighlightFrameKey,
+    },
     hoverDetail: behavior.hoverDetail,
-    optionListProps,
-    popupClassName: config.popupClassName,
-    popupContainerRef: config.popupContainerRef,
-    popupMatchAnchorWidth: config.popupMatchAnchorWidth,
-    popupContentRef: core.popupContentRef,
-    rootRef: core.rootRef,
-    searchable: config.searchable,
-    searchHeaderProps,
-    shouldRenderFallbackLabel: feedback.shouldRenderFallbackLabel,
-    triggerButtonProps,
-    validationState,
+    options: {
+      emptyAction,
+      emptyText: config.emptyText,
+      hasVisibleItems: selection.hasVisibleItems,
+      optionListProps,
+    },
+    popup: {
+      className: config.popupClassName,
+      containerRef: config.popupContainerRef,
+      contentRef: core.popupContentRef,
+      matchAnchorWidth: config.popupMatchAnchorWidth,
+    },
+    root: {
+      actualOpen: core.actualOpen,
+      className: config.className,
+      comboboxRootProps,
+      handleComboboxBlur: feedback.handleComboboxBlur,
+      rootRef: core.rootRef,
+    },
+    search: {
+      searchable: config.searchable,
+      searchHeaderProps,
+    },
+    trigger: {
+      triggerButtonProps,
+    },
   };
 }

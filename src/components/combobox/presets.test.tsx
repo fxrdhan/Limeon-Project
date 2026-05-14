@@ -5,7 +5,6 @@ import {
   waitFor,
   within,
 } from '@testing-library/react';
-import { useState } from 'react';
 import { describe, expect, it, vi } from 'vite-plus/test';
 import { findComboboxItemByValue, PharmaComboboxSelect } from './index';
 import {
@@ -502,26 +501,18 @@ describe('Combobox app presets', () => {
     ).toBeNull();
   });
 
-  it('warns and keeps duplicate submitted values selectable', async () => {
-    const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const onValueChange = vi.fn();
+  it('rejects duplicate submitted values for form-bound comboboxes', () => {
     const duplicateSuppliers = [
       { id: 'duplicate-supplier', name: 'Supplier A' },
       { id: 'duplicate-supplier', name: 'Supplier B' },
     ];
-    function DuplicateValueCombobox() {
-      const [value, setValue] = useState<
-        (typeof duplicateSuppliers)[number] | null
-      >(null);
 
-      return (
+    expect(() => {
+      render(
         <PharmaComboboxSelect
           items={duplicateSuppliers}
-          value={value}
-          onValueChange={(nextValue, details) => {
-            setValue(nextValue);
-            onValueChange(nextValue, details);
-          }}
+          value={null}
+          onValueChange={() => {}}
           item={{
             toLabel: supplier => supplier.name,
             toValue: supplier => supplier.id,
@@ -529,34 +520,9 @@ describe('Combobox app presets', () => {
           field={{ name: 'duplicate_supplier_id' }}
         />
       );
-    }
-
-    try {
-      render(<DuplicateValueCombobox />);
-
-      await waitFor(() => {
-        expect(warning).toHaveBeenCalledWith(
-          expect.stringContaining(
-            'Duplicate item.toValue "duplicate-supplier" detected'
-          )
-        );
-      });
-
-      fireEvent.click(screen.getByRole('combobox', { name: /pilih/i }));
-      fireEvent.click(screen.getByRole('option', { name: /supplier b/i }));
-
-      expect(onValueChange).toHaveBeenCalledWith(
-        duplicateSuppliers[1],
-        expect.objectContaining({ reason: 'item-press' })
-      );
-      expect(
-        document
-          .querySelector('input[name="duplicate_supplier_id"]')
-          ?.getAttribute('value')
-      ).toBe('duplicate-supplier');
-    } finally {
-      warning.mockRestore();
-    }
+    }).toThrow(
+      'Duplicate item.toValue "duplicate-supplier" detected for duplicate_supplier_id'
+    );
   });
 
   it('keeps the selected option visible when a visible item limit is applied', () => {

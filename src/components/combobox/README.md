@@ -385,7 +385,10 @@ Call `details.cancel()` to prevent the primitive from applying the requested tra
 
 ### Popup Positioning
 
-`Combobox.Portal` renders into `document.body` unless `container` is provided.
+`Combobox.Portal` renders into `document.body` unless `container` or
+`containerRef` is provided. Prefer `containerRef` when the portal host is
+created by React in the same render tree; the primitive resolves the ref after
+the host mounts instead of snapshotting `ref.current` during render.
 
 `Combobox.Positioner` defaults to `placement="bottom-start"` and `matchAnchorWidth={true}`. Set `matchAnchorWidth={false}` when popup content needs a custom width while keeping the popup at least as wide as the trigger.
 
@@ -434,6 +437,10 @@ The popup search input supports:
 ### Forms
 
 Passing `field.name` renders a hidden input. Its value comes from `item.toValue(selectedItem)`. For entity selects, the hidden value is the selected id.
+
+For form-bound presets, every `item.toValue` result must be unique. Duplicate
+submitted values are rejected because the hidden input would otherwise be
+ambiguous.
 
 `field.required` is used for accessibility and preset validation state. It is not native hidden-input constraint validation.
 

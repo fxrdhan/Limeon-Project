@@ -31,91 +31,80 @@ export function PharmaComboboxSelect<Item>(
   props: PharmaComboboxSelectProps<Item>
 ) {
   const {
-    actualOpen,
-    className,
-    comboboxRootProps,
-    controlName,
-    emptyAction,
-    emptyText,
-    fallbackLabelId,
-    handleComboboxBlur,
-    hasVisibleItems,
-    heldHighlightFrame,
-    heldHighlightFrameKey,
+    feedback,
+    highlight,
     hoverDetail,
-    optionListProps,
-    popupClassName,
-    popupContainerRef,
-    popupMatchAnchorWidth,
-    popupContentRef,
-    rootRef,
-    searchable,
-    searchHeaderProps,
-    shouldRenderFallbackLabel,
-    triggerButtonProps,
-    validationState,
+    options,
+    popup,
+    root,
+    search,
+    trigger,
   } = usePharmaComboboxSelectController(props);
 
   return (
-    <div ref={rootRef} className={className} onBlur={handleComboboxBlur}>
-      {shouldRenderFallbackLabel ? (
-        <span id={fallbackLabelId} className="sr-only">
-          {controlName}
+    <div
+      ref={root.rootRef}
+      className={root.className}
+      onBlur={root.handleComboboxBlur}
+    >
+      {feedback.shouldRenderFallbackLabel ? (
+        <span id={feedback.fallbackLabelId} className="sr-only">
+          {feedback.controlName}
         </span>
       ) : null}
-      <Combobox.Root<Item> {...comboboxRootProps}>
-        <ComboboxTriggerButton {...triggerButtonProps} />
-        <Combobox.Portal container={popupContainerRef?.current}>
+      <Combobox.Root<Item> {...root.comboboxRootProps}>
+        <ComboboxTriggerButton {...trigger.triggerButtonProps} />
+        <Combobox.Portal containerRef={popup.containerRef}>
           <Combobox.Positioner
             sideOffset={4}
-            matchAnchorWidth={popupMatchAnchorWidth}
+            matchAnchorWidth={popup.matchAnchorWidth}
             className="z-[1000] w-[var(--anchor-width)]"
           >
             <Combobox.Popup
               initialFocus={false}
               className={cn(
                 'max-w-[var(--available-width)]',
-                popupClassName ??
+                popup.className ??
                   'w-full overflow-hidden rounded-xl bg-white shadow-thin-md'
               )}
             >
               <div
-                ref={popupContentRef}
+                ref={popup.contentRef}
                 className="relative flex max-h-[var(--available-height)] flex-col overflow-hidden"
-                onBlur={handleComboboxBlur}
+                onBlur={root.handleComboboxBlur}
               >
-                {heldHighlightFrame ? (
+                {highlight.heldFrame ? (
                   <motion.div
-                    key={heldHighlightFrameKey}
+                    key={highlight.heldFrameKey}
                     aria-hidden="true"
                     data-pharma-combobox-pinned-highlight=""
                     className="pointer-events-none absolute z-0 rounded-lg bg-primary/10"
-                    style={heldHighlightFrame}
+                    style={highlight.heldFrame}
                     initial={false}
-                    animate={heldHighlightFrame}
+                    animate={highlight.heldFrame}
                     transition={comboboxHighlightBackgroundTransition}
                   />
                 ) : null}
-                {searchable ? (
-                  <ComboboxSearchHeader {...searchHeaderProps} />
+                {search.searchable ? (
+                  <ComboboxSearchHeader {...search.searchHeaderProps} />
                 ) : null}
-                <ComboboxOptionList {...optionListProps} />
-                {!hasVisibleItems ? (
-                  emptyAction.canCreate ? (
+                <ComboboxOptionList {...options.optionListProps} />
+                {!options.hasVisibleItems ? (
+                  options.emptyAction.canCreate ? (
                     <div className="empty:hidden relative z-10 px-3 py-4 text-center text-sm text-slate-500">
                       <button
                         type="button"
                         className="mx-auto inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-primary transition hover:bg-primary/10 focus:outline-hidden focus:ring-2 focus:ring-primary/20"
                         onMouseDown={event => event.preventDefault()}
-                        onClick={emptyAction.onCreate}
+                        onClick={options.emptyAction.onCreate}
                       >
                         <TbPlus aria-hidden="true" className="h-4 w-4" />
-                        <span>{emptyAction.label}</span>
+                        <span>{options.emptyAction.label}</span>
                       </button>
                     </div>
                   ) : (
                     <Combobox.Empty className="empty:hidden relative z-10 px-3 py-4 text-center text-sm text-slate-500">
-                      {emptyText}
+                      {options.emptyText}
                     </Combobox.Empty>
                   )
                 ) : null}
@@ -124,19 +113,21 @@ export function PharmaComboboxSelect<Item>(
           </Combobox.Positioner>
         </Combobox.Portal>
       </Combobox.Root>
-      {validationState.enabled ? (
-        <span id={validationState.messageId} className="sr-only">
-          {validationState.show ? comboboxRequiredValidationMessage : ''}
+      {feedback.validationState.enabled ? (
+        <span id={feedback.validationState.messageId} className="sr-only">
+          {feedback.validationState.show
+            ? comboboxRequiredValidationMessage
+            : ''}
         </span>
       ) : null}
-      {validationState.enabled ? (
+      {feedback.validationState.enabled ? (
         <ValidationOverlay
           error={comboboxRequiredValidationMessage}
-          showError={Boolean(validationState.show)}
-          targetRef={rootRef}
-          autoHide={validationState.autoHide}
-          autoHideDelay={validationState.autoHideDelay}
-          isOpen={actualOpen}
+          showError={Boolean(feedback.validationState.show)}
+          targetRef={root.rootRef}
+          autoHide={feedback.validationState.autoHide}
+          autoHideDelay={feedback.validationState.autoHideDelay}
+          isOpen={root.actualOpen}
         />
       ) : null}
       {hoverDetail.enabled ? (

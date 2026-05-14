@@ -58,7 +58,7 @@ const parseSource = (fileName: string, source: string) =>
     source,
     ts.ScriptTarget.Latest,
     true,
-    ts.ScriptKind.TSX
+    fileName.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS
   );
 
 const getModuleSpecifiers = (filePath: string) => {
@@ -109,10 +109,15 @@ const resolveLocalSpecifier = (fromFile: string, specifier: string) => {
   return candidates.find(candidate => sourcePaths.has(candidate)) ?? null;
 };
 
-const getDirectImportSpecifiers = (relativePath: string) =>
-  getModuleSpecifiers(`src/components/combobox/${relativePath}`).map(
-    moduleSpecifier => moduleSpecifier.specifier
+const getDirectImportTargets = (relativePath: string) => {
+  const filePath = `src/components/combobox/${relativePath}`;
+
+  return getModuleSpecifiers(filePath).map(
+    moduleSpecifier =>
+      resolveLocalSpecifier(filePath, moduleSpecifier.specifier) ??
+      moduleSpecifier.specifier
   );
+};
 
 const legacyFlatPresetProps: string[] = [
   'aria-describedby',
@@ -173,6 +178,122 @@ const getInterfacePropertyNames = (
   return propertyNames;
 };
 
+const getPropertyNameText = (
+  name: ts.PropertyName,
+  sourceFile: ts.SourceFile
+) =>
+  ts.isIdentifier(name) || ts.isStringLiteral(name) || ts.isNumericLiteral(name)
+    ? name.text
+    : name.getText(sourceFile);
+
+const getExportedValueNames = (sourceFile: ts.SourceFile) => {
+  const exportedNames: string[] = [];
+
+  sourceFile.forEachChild(node => {
+    const modifiers = ts.canHaveModifiers(node)
+      ? ts.getModifiers(node)
+      : undefined;
+    const isExported = modifiers?.some(
+      modifier => modifier.kind === ts.SyntaxKind.ExportKeyword
+    );
+    if (!isExported) return;
+
+    if (ts.isFunctionDeclaration(node) && node.name) {
+      exportedNames.push(node.name.text);
+      return;
+    }
+
+    if (ts.isVariableStatement(node)) {
+      for (const declaration of node.declarationList.declarations) {
+        if (ts.isIdentifier(declaration.name)) {
+          exportedNames.push(declaration.name.text);
+        }
+      }
+    }
+  });
+
+  return exportedNames;
+};
+
+const getFunctionReturnObjectPropertyNames = (
+  sourceFile: ts.SourceFile,
+  functionName: string
+) => {
+  const returnedPropertyNames: string[] = [];
+
+  const visit = (node: ts.Node) => {
+    if (
+      !ts.isFunctionDeclaration(node) ||
+      node.name?.text !== functionName ||
+      !node.body
+    ) {
+      ts.forEachChild(node, visit);
+      return;
+    }
+
+    const visitFunctionBody = (bodyNode: ts.Node) => {
+      if (
+        ts.isReturnStatement(bodyNode) &&
+        bodyNode.expression &&
+        ts.isObjectLiteralExpression(bodyNode.expression)
+      ) {
+        for (const property of bodyNode.expression.properties) {
+          if (
+            ts.isPropertyAssignment(property) ||
+            ts.isShorthandPropertyAssignment(property)
+          ) {
+            returnedPropertyNames.push(
+              getPropertyNameText(property.name, sourceFile)
+            );
+          }
+        }
+      }
+
+      ts.forEachChild(bodyNode, visitFunctionBody);
+    };
+
+    ts.forEachChild(node.body, visitFunctionBody);
+  };
+
+  visit(sourceFile);
+
+  return returnedPropertyNames;
+};
+
+const getJsxAttributeNames = (sourceFile: ts.SourceFile, tagName: string) => {
+  const attributeNames: string[] = [];
+
+  const visit = (node: ts.Node) => {
+    if (
+      ts.isJsxElement(node) &&
+      node.openingElement.tagName.getText(sourceFile) === tagName
+    ) {
+      for (const attribute of node.openingElement.attributes.properties) {
+        if (ts.isJsxAttribute(attribute)) {
+          attributeNames.push(attribute.name.getText(sourceFile));
+        }
+      }
+    }
+
+    if (
+      ts.isJsxSelfClosingElement(node) &&
+      node.tagName.getText(sourceFile) === tagName
+    ) {
+      for (const attribute of node.attributes.properties) {
+        if (ts.isJsxAttribute(attribute)) {
+          attributeNames.push(attribute.name.getText(sourceFile));
+        }
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
+
+  return attributeNames;
+};
+
 describe('Combobox primitive architecture', () => {
   it('keeps public exports on the safe typed primitive API', () => {
     const publicExports = getModuleSpecifiers(
@@ -218,17 +339,19 @@ describe('Combobox primitive architecture', () => {
 
   it('keeps primitive root state as orchestration instead of owning mechanics', () => {
     const source = readSource('primitive-root-state.ts');
-    const directImports = getDirectImportSpecifiers('primitive-root-state.ts');
-    const forbiddenPrimitiveRootImports = [
-      './utils/primitive-focus-outside',
-      './utils/primitive-keyboard',
-      './utils/primitive-outside-press',
-      './utils/primitive-root',
+    const directImportTargets = getDirectImportTargets(
+      'primitive-root-state.ts'
+    );
+    const forbiddenPrimitiveRootImportTargets = [
+      'src/components/combobox/utils/primitive-focus-outside.ts',
+      'src/components/combobox/utils/primitive-keyboard.ts',
+      'src/components/combobox/utils/primitive-outside-press.ts',
+      'src/components/combobox/utils/primitive-root.ts',
     ];
 
     expect(
-      directImports.filter(importPath =>
-        forbiddenPrimitiveRootImports.includes(importPath)
+      directImportTargets.filter(importPath =>
+        forbiddenPrimitiveRootImportTargets.includes(importPath)
       )
     ).toEqual([]);
     expect(source).not.toMatch(/\buse(?:Callback|Effect|Ref|State)\b/);
@@ -237,11 +360,17 @@ describe('Combobox primitive architecture', () => {
 
   it('keeps primitive context split by static, state, and actions', () => {
     const source = readSource('primitive-context.ts');
+    const sourceFile = parseSource('primitive-context.ts', source);
+    const exportedValueNames = getExportedValueNames(sourceFile);
 
-    expect(source).toContain('ComboboxStaticContext');
-    expect(source).toContain('ComboboxStateContext');
-    expect(source).toContain('ComboboxActionsContext');
-    expect(source).not.toContain('export const ComboboxContext');
+    expect(exportedValueNames).toEqual(
+      expect.arrayContaining([
+        'ComboboxActionsContext',
+        'ComboboxStateContext',
+        'ComboboxStaticContext',
+      ])
+    );
+    expect(exportedValueNames).not.toContain('ComboboxContext');
   });
 });
 
@@ -338,6 +467,42 @@ describe('Combobox preset architecture', () => {
     ]);
   });
 
+  it('keeps the preset view model grouped by render domain', () => {
+    const source = readSource('utils/preset-controller-view-model.ts');
+    const sourceFile = parseSource(
+      'utils/preset-controller-view-model.ts',
+      source
+    );
+
+    expect(
+      getFunctionReturnObjectPropertyNames(
+        sourceFile,
+        'getPharmaComboboxViewModel'
+      ).sort()
+    ).toEqual([
+      'feedback',
+      'highlight',
+      'hoverDetail',
+      'options',
+      'popup',
+      'root',
+      'search',
+      'trigger',
+    ]);
+  });
+
+  it('keeps preset portal wiring on refs instead of ref snapshots', () => {
+    const source = readSource('presets.tsx');
+    const sourceFile = parseSource('presets.tsx', source);
+    const portalAttributes = getJsxAttributeNames(
+      sourceFile,
+      'Combobox.Portal'
+    );
+
+    expect(portalAttributes).toContain('containerRef');
+    expect(portalAttributes).not.toContain('container');
+  });
+
   it('keeps highlight controller dependencies grouped by domain', () => {
     const source = readSource('hooks/use-combobox-highlight.ts');
     const sourceFile = parseSource('hooks/use-combobox-highlight.ts', source);
@@ -357,60 +522,68 @@ describe('Combobox preset architecture', () => {
   it('keeps preset value and search helpers split by responsibility', () => {
     const presetSearchSource = readSource('utils/preset-search.ts');
     const presetValueSource = readSource('utils/preset-value.ts');
+    const presetSearchExports = getExportedValueNames(
+      parseSource('utils/preset-search.ts', presetSearchSource)
+    );
+    const presetValueExports = getExportedValueNames(
+      parseSource('utils/preset-value.ts', presetValueSource)
+    );
 
     expect(
       sourcePaths.has('src/components/combobox/utils/preset-state.ts')
     ).toBe(false);
-    expect(presetSearchSource).toContain('getComboboxSearchState');
-    expect(presetSearchSource).not.toContain('getComboboxControlName');
-    expect(presetSearchSource).not.toContain('getDuplicateComboboxOptionValue');
-    expect(presetValueSource).toContain('getComboboxSelectedValue');
-    expect(presetValueSource).toContain('getDuplicateComboboxOptionValue');
-    expect(presetValueSource).not.toContain('getComboboxSearchState');
+    expect(presetSearchExports).toContain('getComboboxSearchState');
+    expect(presetSearchExports).not.toContain('getComboboxControlName');
+    expect(presetSearchExports).not.toContain(
+      'getDuplicateComboboxOptionValue'
+    );
+    expect(presetValueExports).toContain('getComboboxSelectedValue');
+    expect(presetValueExports).toContain('getDuplicateComboboxOptionValue');
+    expect(presetValueExports).not.toContain('getComboboxSearchState');
   });
 
   it('keeps the select controller from owning low-level combobox behavior', () => {
-    const directImports = getDirectImportSpecifiers(
+    const directImportTargets = getDirectImportTargets(
       'hooks/use-pharma-combobox-select-controller.ts'
     );
-    const forbiddenBoundaryImports = [
-      '../utils/preset-controller-props',
-      '../utils/preset-item',
+    const forbiddenBoundaryImportTargets = [
       'react',
-      './use-combobox-focus-restore',
-      './use-combobox-option-interaction',
-      './use-combobox-search-result-scroll',
-      './use-combobox-selected-option-scroll',
-      './use-pharma-combobox-core-state',
-      './use-pharma-combobox-feedback',
-      './use-pharma-combobox-open-lifecycle',
-      './use-pharma-combobox-selection-model',
+      'src/components/combobox/hooks/use-combobox-focus-restore.ts',
+      'src/components/combobox/hooks/use-combobox-option-interaction.ts',
+      'src/components/combobox/hooks/use-combobox-search-result-scroll.ts',
+      'src/components/combobox/hooks/use-combobox-selected-option-scroll.ts',
+      'src/components/combobox/hooks/use-pharma-combobox-core-state.ts',
+      'src/components/combobox/hooks/use-pharma-combobox-feedback.ts',
+      'src/components/combobox/hooks/use-pharma-combobox-open-lifecycle.ts',
+      'src/components/combobox/hooks/use-pharma-combobox-selection-model.ts',
+      'src/components/combobox/utils/preset-controller-props.ts',
+      'src/components/combobox/utils/preset-item.ts',
     ];
 
     expect(
-      directImports.filter(importPath =>
-        forbiddenBoundaryImports.includes(importPath)
+      directImportTargets.filter(importPath =>
+        forbiddenBoundaryImportTargets.includes(importPath)
       )
     ).toEqual([]);
   });
 
   it('keeps option interaction as a domain facade instead of a low-level orchestrator', () => {
-    const directImports = getDirectImportSpecifiers(
+    const directImportTargets = getDirectImportTargets(
       'hooks/use-combobox-option-interaction.ts'
     );
-    const forbiddenBoundaryImports = [
-      '../utils/preset-dom',
-      './use-combobox-highlight',
-      './use-combobox-hover-detail-controller',
-      './use-combobox-keyboard-highlight-scroll',
-      './use-combobox-keyboard-hover-detail-sync',
-      './use-combobox-pointer-hover',
-      './use-combobox-scroll-hover-detail-sync',
+    const forbiddenBoundaryImportTargets = [
+      'src/components/combobox/hooks/use-combobox-highlight.ts',
+      'src/components/combobox/hooks/use-combobox-hover-detail-controller.ts',
+      'src/components/combobox/hooks/use-combobox-keyboard-highlight-scroll.ts',
+      'src/components/combobox/hooks/use-combobox-keyboard-hover-detail-sync.ts',
+      'src/components/combobox/hooks/use-combobox-pointer-hover.ts',
+      'src/components/combobox/hooks/use-combobox-scroll-hover-detail-sync.ts',
+      'src/components/combobox/utils/preset-dom.ts',
     ];
 
     expect(
-      directImports.filter(importPath =>
-        forbiddenBoundaryImports.includes(importPath)
+      directImportTargets.filter(importPath =>
+        forbiddenBoundaryImportTargets.includes(importPath)
       )
     ).toEqual([]);
   });

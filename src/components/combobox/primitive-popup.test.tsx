@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { useRef } from 'react';
 import { describe, expect, it } from 'vite-plus/test';
 import { Combobox } from './primitive';
 
@@ -37,6 +38,46 @@ describe('Combobox primitive popup', () => {
 
     unmount();
     portalContainer.remove();
+  });
+
+  it('resolves caller supplied portal refs after the container mounts', async () => {
+    function RefContainerCombobox() {
+      const portalContainerRef = useRef<HTMLDivElement | null>(null);
+
+      return (
+        <div>
+          <div ref={portalContainerRef} data-testid="portal-container" />
+          <Combobox.Root items={fruitItems} defaultOpen>
+            <Combobox.Label>Fruit</Combobox.Label>
+            <Combobox.Trigger>
+              <Combobox.Value placeholder="Choose fruit" />
+            </Combobox.Trigger>
+            <Combobox.Portal containerRef={portalContainerRef}>
+              <Combobox.Positioner placement="top-start">
+                <Combobox.Popup initialFocus={false}>
+                  <Combobox.List<string>>
+                    {(item, index) => (
+                      <Combobox.Item key={item} value={item} index={index}>
+                        {item}
+                      </Combobox.Item>
+                    )}
+                  </Combobox.List>
+                </Combobox.Popup>
+              </Combobox.Positioner>
+            </Combobox.Portal>
+          </Combobox.Root>
+        </div>
+      );
+    }
+
+    render(<RefContainerCombobox />);
+
+    const portalContainer = screen.getByTestId('portal-container');
+    await waitFor(() => {
+      expect(portalContainer.querySelector('[role="listbox"]')).toBe(
+        screen.getByRole('listbox')
+      );
+    });
   });
 
   it('uses Floating UI sizing variables for the primitive popup', async () => {
