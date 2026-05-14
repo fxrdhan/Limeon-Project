@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo } from 'react';
+import { createContext, useContext } from 'react';
 import type React from 'react';
 import type { ComboboxEventReason as EventReason } from './utils/primitive-events';
 
@@ -79,10 +79,6 @@ export type ComboboxActionsContextValue<Value> = {
   ) => boolean;
 };
 
-export type ComboboxContextValue<Value> = ComboboxStaticContextValue &
-  ComboboxStateContextValue<Value> &
-  ComboboxActionsContextValue<Value>;
-
 export type ComboboxRootContextValue<Value> = {
   actions: ComboboxActionsContextValue<Value>;
   state: ComboboxStateContextValue<Value>;
@@ -124,19 +120,4 @@ export const useComboboxActionsContext = <Value>() => {
   }
 
   return context as ComboboxActionsContextValue<Value>;
-};
-
-export const useComboboxContext = <Value>() => {
-  const staticContext = useComboboxStaticContext();
-  const state = useComboboxStateContext<Value>();
-  const actions = useComboboxActionsContext<Value>();
-
-  return useMemo<ComboboxContextValue<Value>>(
-    () => ({
-      ...staticContext,
-      ...state,
-      ...actions,
-    }),
-    [actions, state, staticContext]
-  );
 };

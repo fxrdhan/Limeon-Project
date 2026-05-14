@@ -1,6 +1,10 @@
 import { forwardRef, useCallback } from 'react';
 import type React from 'react';
-import { useComboboxContext } from './primitive-context';
+import {
+  useComboboxActionsContext,
+  useComboboxStateContext,
+  useComboboxStaticContext,
+} from './primitive-context';
 import { getPagedEnabledIndex } from './utils/primitive-keyboard';
 import {
   callIfFunction,
@@ -15,63 +19,77 @@ type ComboboxInputProps = Omit<
 
 export const ComboboxInput = forwardRef<HTMLInputElement, ComboboxInputProps>(
   function ComboboxInput({ onChange, onKeyDown, ...props }, ref) {
-    const context = useComboboxContext<unknown>();
+    const { getItemId, highlightedIndexRef, inputId, listboxId } =
+      useComboboxStaticContext();
+    const {
+      activeIndex,
+      autoComplete,
+      disabled: rootDisabled,
+      inputValue,
+      labelId,
+      open,
+      readOnly: rootReadOnly,
+      required,
+    } = useComboboxStateContext<unknown>();
+    const {
+      getNextEnabledIndex,
+      selectActiveItem,
+      setActiveIndex,
+      setInputValue,
+      setOpen,
+    } = useComboboxActionsContext<unknown>();
     const inputRole = props.role ?? 'searchbox';
-    const disabled = context.disabled || props.disabled;
-    const readOnly = context.readOnly || props.readOnly;
+    const disabled = rootDisabled || Boolean(props.disabled);
+    const readOnly = rootReadOnly || Boolean(props.readOnly);
     const activeDescendant =
-      !context.open || context.activeIndex === null
-        ? undefined
-        : context.getItemId(context.activeIndex);
+      !open || activeIndex === null ? undefined : getItemId(activeIndex);
 
     const moveHighlight = useCallback(
       (direction: 1 | -1, event: React.KeyboardEvent<HTMLInputElement>) => {
-        const nextIndex = context.getNextEnabledIndex(
+        const nextIndex = getNextEnabledIndex(
           direction,
-          context.highlightedIndexRef.current
+          highlightedIndexRef.current
         );
 
         if (nextIndex !== null) {
-          context.setActiveIndex(nextIndex, 'keyboard', event);
+          setActiveIndex(nextIndex, 'keyboard', event);
         }
       },
-      [context]
+      [getNextEnabledIndex, highlightedIndexRef, setActiveIndex]
     );
     const moveHighlightByPage = useCallback(
       (direction: 1 | -1, event: React.KeyboardEvent<HTMLInputElement>) => {
         const nextIndex = getPagedEnabledIndex({
           direction,
-          fromIndex: context.highlightedIndexRef.current,
-          getNextIndex: context.getNextEnabledIndex,
+          fromIndex: highlightedIndexRef.current,
+          getNextIndex: getNextEnabledIndex,
         });
 
         if (nextIndex !== null) {
-          context.setActiveIndex(nextIndex, 'keyboard', event);
+          setActiveIndex(nextIndex, 'keyboard', event);
         }
       },
-      [context]
+      [getNextEnabledIndex, highlightedIndexRef, setActiveIndex]
     );
 
     return (
       <input
         {...props}
         ref={ref}
-        id={props.id ?? context.inputId}
+        id={props.id ?? inputId}
         role={inputRole}
         aria-activedescendant={activeDescendant}
         aria-autocomplete="list"
-        aria-controls={context.open ? context.listboxId : undefined}
-        aria-expanded={context.open}
+        aria-controls={open ? listboxId : undefined}
+        aria-expanded={open}
         aria-labelledby={
           props['aria-labelledby'] ??
-          (props['aria-label'] ? undefined : context.labelId)
+          (props['aria-label'] ? undefined : labelId)
         }
         aria-readonly={props['aria-readonly'] ?? (readOnly ? true : undefined)}
-        aria-required={
-          props['aria-required'] ?? (context.required ? true : undefined)
-        }
-        autoComplete={props.autoComplete ?? context.autoComplete}
-        value={context.inputValue}
+        aria-required={props['aria-required'] ?? (required ? true : undefined)}
+        autoComplete={props.autoComplete ?? autoComplete}
+        value={inputValue}
         disabled={disabled}
         readOnly={readOnly}
         onChange={event => {
@@ -86,11 +104,7 @@ export const ComboboxInput = forwardRef<HTMLInputElement, ComboboxInputProps>(
             return;
           }
 
-          context.setInputValue(
-            event.currentTarget.value,
-            'input-change',
-            event
-          );
+          setInputValue(event.currentTarget.value, 'input-change', event);
         }}
         onKeyDown={event => {
           const preventableEvent = getPreventableEvent(event);
@@ -106,7 +120,7 @@ export const ComboboxInput = forwardRef<HTMLInputElement, ComboboxInputProps>(
 
           if (event.key === 'Escape') {
             event.preventDefault();
-            context.setOpen(false, 'escape-key', event);
+            setOpen(false, 'escape-key', event);
             return;
           }
 
@@ -124,7 +138,7 @@ export const ComboboxInput = forwardRef<HTMLInputElement, ComboboxInputProps>(
 
           if (event.key === 'Enter') {
             event.preventDefault();
-            context.selectActiveItem('item-press', event);
+            selectActiveItem('item-press', event);
           }
         }}
       />

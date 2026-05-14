@@ -159,6 +159,24 @@ export interface PharmaComboboxViewPropsOptions<Item> {
   validation: PharmaComboboxViewValidation<Item>;
 }
 
+export interface PharmaComboboxViewProps<Item> {
+  emptyAction: {
+    canCreate: boolean;
+    label: string;
+    onCreate: () => void;
+  };
+  optionListProps: ComboboxOptionListProps<Item>;
+  searchHeaderProps: ComboboxSearchHeaderProps;
+  triggerButtonProps: ComboboxTriggerButtonProps;
+  validationState: {
+    autoHide?: boolean;
+    autoHideDelay?: number;
+    enabled: boolean;
+    messageId: string;
+    show: boolean | undefined;
+  };
+}
+
 export const getPharmaComboboxRootProps = <Item>({
   formatters,
   handlers,
@@ -198,7 +216,7 @@ export const getPharmaComboboxViewProps = <Item>({
   refs,
   state,
   validation,
-}: PharmaComboboxViewPropsOptions<Item>) => {
+}: PharmaComboboxViewPropsOptions<Item>): PharmaComboboxViewProps<Item> => {
   const selectedLabel =
     state.selectedValue == null
       ? ''

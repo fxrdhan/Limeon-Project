@@ -483,6 +483,25 @@ When `open` is controlled, `onOpenChange(false, details)` is only a close reques
 | `components/*`            | Preset visual subcomponents.                                                   |
 | `utils/*`                 | Primitive and preset utilities.                                                |
 
+## Change Route
+
+Use this route map before changing combobox behavior:
+
+| Change target                                    | Primary files                                                                                                         |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| Public preset API                                | `presets-types.ts`, `utils/preset-controller-config.ts`, `utils/preset-controller-props.ts`                           |
+| Generic state transition                         | `primitive-root-state.ts`, `hooks/use-combobox-root-*`, `utils/primitive-*`                                           |
+| Preset search, create action, or item filtering  | `hooks/use-pharma-combobox-selection-model.ts`, `hooks/use-combobox-search.ts`, `utils/preset-*`                      |
+| Preset open, focus, validation, or form feedback | `hooks/use-pharma-combobox-state-model.ts`, `hooks/use-combobox-focus-restore.ts`, `hooks/use-combobox-validation.ts` |
+| Preset keyboard, scroll, hover detail            | `hooks/use-pharma-combobox-behavior.ts`, `hooks/use-combobox-option-interaction*`                                     |
+| Rendered preset structure                        | `presets.tsx`, `components/*`, `utils/preset-controller-view-model.ts`                                                |
+| Entity id adaptation                             | `entity-select.tsx`                                                                                                   |
+| Architecture boundary guards                     | `presets-architecture.test.ts`                                                                                        |
+
+When a change crosses more than one row, update the controller mappers first so
+the primitive boundary, view props, and tests fail at one typed handoff instead
+of drifting independently.
+
 ## Maintenance Guidelines
 
 - Keep app screens on `PharmaEntityComboboxSelect` or `PharmaComboboxSelect` unless custom markup is required.

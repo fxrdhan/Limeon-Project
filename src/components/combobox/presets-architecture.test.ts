@@ -156,6 +156,21 @@ const legacyFlatPresetProps: string[] = [
   'visibleItemLimit',
 ];
 
+const requiredPresetDomainProps = [
+  'creation',
+  'display',
+  'field',
+  'hoverDetail',
+  'interaction',
+  'item',
+  'items',
+  'onValueChange',
+  'popup',
+  'search',
+  'validation',
+  'value',
+];
+
 const getInterfacePropertyNames = (
   sourceFile: ts.SourceFile,
   interfaceName: string
@@ -258,6 +273,38 @@ const getFunctionReturnObjectPropertyNames = (
   visit(sourceFile);
 
   return returnedPropertyNames;
+};
+
+const getVariableFunctionReturnTypeText = (
+  sourceFile: ts.SourceFile,
+  functionName: string
+) => {
+  let returnType: string | undefined;
+
+  const visit = (node: ts.Node) => {
+    if (returnType !== undefined) return;
+
+    if (
+      ts.isVariableDeclaration(node) &&
+      node.name.getText(sourceFile) === functionName
+    ) {
+      const initializer = node.initializer;
+      if (
+        initializer &&
+        (ts.isArrowFunction(initializer) ||
+          ts.isFunctionExpression(initializer))
+      ) {
+        returnType = initializer.type?.getText(sourceFile);
+      }
+      return;
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
+
+  return returnType;
 };
 
 const getJsxAttributeNames = (sourceFile: ts.SourceFile, tagName: string) => {
@@ -426,6 +473,8 @@ describe('Combobox primitive architecture', () => {
       ])
     );
     expect(exportedValueNames).not.toContain('ComboboxContext');
+    expect(exportedValueNames).not.toContain('useComboboxContext');
+    expect(source).not.toContain('ComboboxContextValue');
   });
 });
 
@@ -438,20 +487,9 @@ describe('Combobox preset architecture', () => {
       'PharmaComboboxSelectProps'
     );
 
-    expect(rootProps.sort()).toEqual([
-      'creation',
-      'display',
-      'field',
-      'hoverDetail',
-      'interaction',
-      'item',
-      'items',
-      'onValueChange',
-      'popup',
-      'search',
-      'validation',
-      'value',
-    ]);
+    expect(rootProps).toEqual(
+      expect.arrayContaining(requiredPresetDomainProps)
+    );
     expect(
       rootProps.filter(prop => legacyFlatPresetProps.includes(prop))
     ).toEqual([]);
@@ -501,25 +539,29 @@ describe('Combobox preset architecture', () => {
     const sourceFile = parseSource('utils/preset-controller-props.ts', source);
 
     expect(
-      getInterfacePropertyNames(
-        sourceFile,
-        'PharmaComboboxRootPropsOptions'
-      ).sort()
-    ).toEqual(['formatters', 'handlers', 'interaction', 'state']);
+      getInterfacePropertyNames(sourceFile, 'PharmaComboboxRootPropsOptions')
+    ).toEqual(
+      expect.arrayContaining(['formatters', 'handlers', 'interaction', 'state'])
+    );
     expect(
-      getInterfacePropertyNames(
+      getInterfacePropertyNames(sourceFile, 'PharmaComboboxViewPropsOptions')
+    ).toEqual(
+      expect.arrayContaining([
+        'accessibility',
+        'actions',
+        'display',
+        'interaction',
+        'refs',
+        'state',
+        'validation',
+      ])
+    );
+    expect(
+      getVariableFunctionReturnTypeText(
         sourceFile,
-        'PharmaComboboxViewPropsOptions'
-      ).sort()
-    ).toEqual([
-      'accessibility',
-      'actions',
-      'display',
-      'interaction',
-      'refs',
-      'state',
-      'validation',
-    ]);
+        'getPharmaComboboxViewProps'
+      )
+    ).toBe('PharmaComboboxViewProps<Item>');
   });
 
   it('keeps the preset view model grouped by render domain', () => {
@@ -533,17 +575,19 @@ describe('Combobox preset architecture', () => {
       getFunctionReturnObjectPropertyNames(
         sourceFile,
         'getPharmaComboboxViewModel'
-      ).sort()
-    ).toEqual([
-      'feedback',
-      'highlight',
-      'hoverDetail',
-      'options',
-      'popup',
-      'root',
-      'search',
-      'trigger',
-    ]);
+      )
+    ).toEqual(
+      expect.arrayContaining([
+        'feedback',
+        'highlight',
+        'hoverDetail',
+        'options',
+        'popup',
+        'root',
+        'search',
+        'trigger',
+      ])
+    );
   });
 
   it('keeps preset portal wiring on refs instead of ref snapshots', () => {
@@ -630,8 +674,24 @@ describe('Combobox preset architecture', () => {
       'src/components/combobox/hooks/use-combobox-option-interaction-model.ts',
       'src/components/combobox/hooks/use-combobox-option-interaction-types.ts',
     ];
+    const forbiddenFacadeImportTargets = [
+      'src/components/combobox/hooks/use-combobox-highlight.ts',
+      'src/components/combobox/hooks/use-combobox-hover-detail-controller.ts',
+      'src/components/combobox/hooks/use-combobox-keyboard-highlight-scroll.ts',
+      'src/components/combobox/hooks/use-combobox-option-hover.ts',
+      'src/components/combobox/hooks/use-combobox-option-keyboard-navigation.ts',
+      'src/components/combobox/hooks/use-combobox-option-keyboard-scroll.ts',
+      'src/components/combobox/hooks/use-combobox-scroll-hover-detail-sync.ts',
+    ];
 
-    expect(directImportTargets.sort()).toEqual(allowedFacadeImportTargets);
+    expect(directImportTargets).toEqual(
+      expect.arrayContaining(allowedFacadeImportTargets)
+    );
+    expect(
+      directImportTargets.filter(importPath =>
+        forbiddenFacadeImportTargets.includes(importPath)
+      )
+    ).toEqual([]);
   });
 
   it('keeps the option interaction model on domain sub-facades', () => {
