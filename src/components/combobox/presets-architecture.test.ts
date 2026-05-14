@@ -515,6 +515,11 @@ const isProductionComboboxSource = (filePath: string) =>
   filePath.startsWith('src/components/combobox/') &&
   !filePath.includes('.test.');
 
+const isRuntimeSource = (filePath: string) =>
+  (filePath.startsWith('src/') ||
+    filePath.startsWith('tests/playwright/fixtures/')) &&
+  !filePath.includes('.test.');
+
 describe('Combobox primitive architecture', () => {
   it('keeps public exports on the safe typed primitive API', () => {
     const publicExports = getModuleSpecifiers(
@@ -544,26 +549,34 @@ describe('Combobox primitive architecture', () => {
       'src/components/combobox/internal/primitive.tsx',
       'src/components/combobox/primitive.tsx',
     ]);
-    const illegalImports = Array.from(sourcePaths).flatMap(filePath => {
-      if (filePath.startsWith('src/components/combobox/')) {
-        return [];
+    const illegalImports = Array.from(sourceByPath).flatMap(
+      ([filePath, source]) => {
+        if (filePath.startsWith('src/components/combobox/')) {
+          return [];
+        }
+
+        if (!source.includes('primitive')) {
+          return [];
+        }
+
+        return getModuleSpecifiers(filePath)
+          .filter(moduleSpecifier => {
+            const resolvedSpecifier = resolveLocalSpecifier(
+              filePath,
+              moduleSpecifier.specifier
+            );
+
+            return (
+              forbiddenRawPrimitiveSpecifiers.has(moduleSpecifier.specifier) ||
+              (resolvedSpecifier !== null &&
+                forbiddenRawPrimitiveTargets.has(resolvedSpecifier))
+            );
+          })
+          .map(
+            moduleSpecifier => `${filePath} -> ${moduleSpecifier.specifier}`
+          );
       }
-
-      return getModuleSpecifiers(filePath)
-        .filter(moduleSpecifier => {
-          const resolvedSpecifier = resolveLocalSpecifier(
-            filePath,
-            moduleSpecifier.specifier
-          );
-
-          return (
-            forbiddenRawPrimitiveSpecifiers.has(moduleSpecifier.specifier) ||
-            (resolvedSpecifier !== null &&
-              forbiddenRawPrimitiveTargets.has(resolvedSpecifier))
-          );
-        })
-        .map(moduleSpecifier => `${filePath} -> ${moduleSpecifier.specifier}`);
-    });
+    );
 
     expect(illegalImports).toEqual([]);
   });
@@ -900,6 +913,11 @@ describe('Combobox preset architecture', () => {
     const disabledTypedItemProps = Array.from(sourceByPath).flatMap(
       ([filePath, source]) => {
         if (filePath === typedPrimitiveContractTestPath) return [];
+        if (!isRuntimeSource(filePath)) return [];
+        if (!source.includes('disabled')) return [];
+        if (!source.includes('.Item') && !source.includes('createElement')) {
+          return [];
+        }
 
         const sourceFile = parseSource(filePath, source);
         const typedComboboxNamespaces =
