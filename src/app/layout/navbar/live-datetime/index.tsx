@@ -141,7 +141,7 @@ const DateTimeDisplay = () => {
           <Suspense fallback={dateTrigger}>
             <Calendar
               mode="datepicker"
-              trigger="hover"
+              trigger="click"
               size="md"
               value={selectedDate}
               onChange={setSelectedDate}
