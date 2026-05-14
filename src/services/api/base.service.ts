@@ -220,7 +220,10 @@ export class BaseService<T extends BaseEntity> {
     data: Omit<T, 'id' | 'created_at' | 'updated_at'>[]
   ): Promise<ServiceResponse<T[]>> {
     try {
-      const result = await supabase.from(this.tableName).insert(data).select();
+      const result = await supabase
+        .from(this.tableName)
+        .insert(data as Record<string, unknown>[])
+        .select();
 
       return {
         data: result.data ? (result.data as unknown as T[]) : [],

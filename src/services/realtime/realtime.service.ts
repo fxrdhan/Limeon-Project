@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase';
 import type {
   RealtimeChannel,
   RealtimeChannelOptions,
+  RealtimeChannelSendResponse,
 } from '@supabase/supabase-js';
 
 const getRealtimeTopic = (name: string) => `realtime:${name}`;
@@ -48,7 +49,7 @@ export const realtimeService = {
     // StrictMode, the replacement channel can be created immediately after
     // cleanup starts, and Supabase reuses registered topics synchronously.
     realtimeClient._remove(channel);
-    let status: 'ok' | 'timed out' | 'error' = 'ok';
+    let status: RealtimeChannelSendResponse = 'ok';
 
     try {
       status = await channel.unsubscribe();
