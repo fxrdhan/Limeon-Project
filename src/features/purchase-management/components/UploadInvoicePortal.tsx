@@ -354,14 +354,14 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
   return (
     <>
       {createPortal(
-        <AnimatePresence mode="wait">
+        <AnimatePresence>
           {isOpen && (
             <motion.div
-              initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
-              animate={{ opacity: 1, backdropFilter: 'blur(4px)' }}
-              exit={{ opacity: 0, backdropFilter: 'blur(0px)' }}
-              transition={{ duration: 0.2, ease: 'easeInOut' }}
-              className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50"
               onClick={() => {
                 if (showFullPreview) {
                   setShowFullPreview(false);
@@ -387,22 +387,10 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
               }}
             >
               <motion.div
-                initial={{ scale: 0.8, opacity: 0, y: 30, rotateX: 15 }}
-                animate={{ scale: 1, opacity: 1, y: 0, rotateX: 0 }}
-                exit={{ scale: 0.95, opacity: 0, y: 10, rotateX: -5 }}
-                transition={{
-                  duration: 0.2,
-                  type: 'spring',
-                  damping: 35,
-                  stiffness: 400,
-                  ease: 'easeOut',
-                }}
-                style={{
-                  perspective: '1000px',
-                  backfaceVisibility: 'hidden',
-                  WebkitBackfaceVisibility: 'hidden',
-                  willChange: 'transform, opacity',
-                }}
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
                 onClick={e => {
                   e.stopPropagation();
                   if (!file && uploaderContainerRef.current) {
@@ -792,14 +780,14 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
       )}
 
       {createPortal(
-        <AnimatePresence mode="wait">
+        <AnimatePresence>
           {showFullPreview && previewUrl && (
             <motion.div
-              initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
-              animate={{ opacity: 1, backdropFilter: 'blur(8px)' }}
-              exit={{ opacity: 0, backdropFilter: 'blur(0px)' }}
-              transition={{ duration: 0.15, ease: 'easeInOut' }}
-              className="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="fixed inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center z-50"
               onClick={() => {
                 setShowFullPreview(false);
                 resetZoom();
@@ -815,15 +803,10 @@ const UploadInvoicePortal = ({ isOpen, onClose }: UploadInvoicePortalProps) => {
             >
               <motion.div
                 ref={imageContainerRef}
-                initial={{ scale: 0.7, opacity: 0, rotateY: 15 }}
-                animate={{ scale: 1, opacity: 1, rotateY: 0 }}
-                exit={{ scale: 0.9, opacity: 0, rotateY: -8 }}
-                transition={{
-                  duration: 0.15,
-                  type: 'spring',
-                  damping: 30,
-                  stiffness: 450,
-                }}
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
                 className="p-4 relative overflow-hidden"
                 style={{
                   maxHeight: '100vh',
