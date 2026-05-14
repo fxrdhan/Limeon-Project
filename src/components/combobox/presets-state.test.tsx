@@ -5,8 +5,8 @@ import {
   defaultComboboxLargeListVisibleItemLimit,
   getComboboxSearchEntries,
   getComboboxSearchState,
-  getDuplicateComboboxOptionValue,
-} from './utils/preset-state';
+} from './utils/preset-search';
+import { getDuplicateComboboxOptionValue } from './utils/preset-value';
 
 describe('Combobox app preset state interactions', () => {
   it('ranks searched options by deterministic match quality', () => {

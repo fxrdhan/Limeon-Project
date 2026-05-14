@@ -31,12 +31,14 @@ export type PharmaComboboxRootBoundaryProps<Item> = Pick<
   | 'value'
 >;
 
-type PharmaComboboxRootPropsOptions<Item> = {
-  actualOpen: boolean;
-  disabled: boolean;
-  effectiveHighlightedIndex: number | null;
-  effectiveRequired: boolean;
-  form?: string;
+type PharmaComboboxRootFormatters<Item> = {
+  isItemDisabled: NonNullable<ComboboxRootProps<Item>['isItemDisabled']>;
+  isItemEqualToValue?: ComboboxRootProps<Item>['isItemEqualToValue'];
+  itemToStringLabel: NonNullable<ComboboxRootProps<Item>['itemToStringLabel']>;
+  itemToStringValue: NonNullable<ComboboxRootProps<Item>['itemToStringValue']>;
+};
+
+type PharmaComboboxRootHandlers<Item> = {
   handleInputValueChange: NonNullable<
     ComboboxRootProps<Item>['onInputValueChange']
   >;
@@ -48,27 +50,46 @@ type PharmaComboboxRootPropsOptions<Item> = {
     ComboboxRootProps<Item>['onRequiredInvalid']
   >;
   handleValueChange: NonNullable<ComboboxRootProps<Item>['onValueChange']>;
+};
+
+type PharmaComboboxRootInteraction = {
+  disabled: boolean;
+  readOnly: boolean;
+  searchable: boolean;
+};
+
+type PharmaComboboxRootState<Item> = {
+  actualOpen: boolean;
+  effectiveHighlightedIndex: number | null;
+  effectiveRequired: boolean;
+  form?: string;
   inputValue: string;
-  isItemDisabled: NonNullable<ComboboxRootProps<Item>['isItemDisabled']>;
-  isItemEqualToValue?: ComboboxRootProps<Item>['isItemEqualToValue'];
-  itemToStringLabel: NonNullable<ComboboxRootProps<Item>['itemToStringLabel']>;
-  itemToStringValue: NonNullable<ComboboxRootProps<Item>['itemToStringValue']>;
   items: readonly Item[];
   listboxLabelId?: string;
   name?: string;
-  readOnly: boolean;
-  searchable: boolean;
   selectedValue: Item | null;
   visibleItems: readonly Item[];
 };
 
-type PharmaComboboxViewPropsOptions<Item> = {
+export interface PharmaComboboxRootPropsOptions<Item> {
+  formatters: PharmaComboboxRootFormatters<Item>;
+  handlers: PharmaComboboxRootHandlers<Item>;
+  interaction: PharmaComboboxRootInteraction;
+  state: PharmaComboboxRootState<Item>;
+}
+
+type PharmaComboboxViewAccessibility = {
   ariaLabel?: string;
-  canCreate: boolean;
   controlName: string;
-  createActionLabel: string;
-  effectiveHighlightedIndex: number | null;
   effectiveId?: string;
+  listboxAriaLabel?: string;
+  triggerDescribedBy?: string;
+  triggerLabelledBy?: string;
+  valueId: string;
+  visualHighlightId: string;
+};
+
+type PharmaComboboxViewActions<Item> = {
   handleCreate: () => void;
   handleItemLeave: ComboboxOptionListProps<Item>['onItemLeave'];
   handleListScroll: ComboboxOptionListProps<Item>['onListScrollIntent'];
@@ -79,17 +100,13 @@ type PharmaComboboxViewPropsOptions<Item> = {
   handleTriggerKeyDown: ComboboxTriggerButtonProps['onNavigationKeyDown'];
   handleTriggerMouseEnter: ComboboxTriggerButtonProps['onMouseEnter'];
   handleTriggerMouseLeave: ComboboxTriggerButtonProps['onMouseLeave'];
-  hasHeldHighlightFrame: boolean;
-  hasVisibleItems: boolean;
+  setIsSearchNavigationFocus: ComboboxSearchHeaderProps['onNavigationFocusChange'];
+  setTriggerButtonRef: ComboboxTriggerButtonProps['setTriggerButtonRef'];
+};
+
+type PharmaComboboxViewDisplay<Item> = {
+  createActionLabel: string;
   indicator: ComboboxOptionListProps<Item>['indicator'];
-  inputValue: string;
-  isItemDisabled: ComboboxOptionListProps<Item>['isItemDisabled'];
-  isSearchNavigationFocus: boolean;
-  itemToStringLabel: ComboboxOptionListProps<Item>['itemToStringLabel'];
-  itemToStringValue: ComboboxOptionListProps<Item>['itemToStringValue'];
-  listRef: ComboboxOptionListProps<Item>['listRef'];
-  listboxAriaLabel?: string;
-  normalizedInputValue: string;
   placeholder: string;
   renderOption?: NonNullable<
     PharmaComboboxSelectProps<Item>['display']
@@ -97,188 +114,159 @@ type PharmaComboboxViewPropsOptions<Item> = {
   renderOptionMeta?: NonNullable<
     PharmaComboboxSelectProps<Item>['display']
   >['renderOptionMeta'];
-  searchInputRef: ComboboxSearchHeaderProps['searchInputRef'];
   searchPlaceholder: string;
+};
+
+type PharmaComboboxViewInteraction = {
+  tabIndex?: number;
+};
+
+type PharmaComboboxViewRefs<Item> = {
+  listRef: ComboboxOptionListProps<Item>['listRef'];
+  searchInputRef: ComboboxSearchHeaderProps['searchInputRef'];
+  virtualScrollToIndexRef: ComboboxOptionListProps<Item>['virtualScrollToIndexRef'];
+};
+
+type PharmaComboboxViewState<Item> = {
+  canCreate: boolean;
+  effectiveHighlightedIndex: number | null;
+  hasHeldHighlightFrame: boolean;
+  hasVisibleItems: boolean;
+  inputValue: string;
+  isItemDisabled: ComboboxOptionListProps<Item>['isItemDisabled'];
+  isSearchNavigationFocus: boolean;
+  itemToStringLabel: ComboboxOptionListProps<Item>['itemToStringLabel'];
+  itemToStringValue: ComboboxOptionListProps<Item>['itemToStringValue'];
+  normalizedInputValue: string;
   selectedValue: Item | null;
   selectedVisibleIndex: number;
-  setTriggerButtonRef: ComboboxTriggerButtonProps['setTriggerButtonRef'];
-  setIsSearchNavigationFocus: ComboboxSearchHeaderProps['onNavigationFocusChange'];
+  visibleItems: readonly Item[];
+};
+
+type PharmaComboboxViewValidation<Item> = {
   showValidation: boolean | undefined;
-  tabIndex?: number;
-  triggerDescribedBy?: string;
-  triggerLabelledBy?: string;
   validation?: PharmaComboboxSelectProps<Item>['validation'];
   validationEnabled: boolean;
   validationMessageId: string;
-  valueId: string;
-  visibleItems: readonly Item[];
-  virtualScrollToIndexRef: ComboboxOptionListProps<Item>['virtualScrollToIndexRef'];
-  visualHighlightId: string;
 };
 
+export interface PharmaComboboxViewPropsOptions<Item> {
+  accessibility: PharmaComboboxViewAccessibility;
+  actions: PharmaComboboxViewActions<Item>;
+  display: PharmaComboboxViewDisplay<Item>;
+  interaction: PharmaComboboxViewInteraction;
+  refs: PharmaComboboxViewRefs<Item>;
+  state: PharmaComboboxViewState<Item>;
+  validation: PharmaComboboxViewValidation<Item>;
+}
+
 export const getPharmaComboboxRootProps = <Item>({
-  actualOpen,
-  disabled,
-  effectiveHighlightedIndex,
-  effectiveRequired,
-  form,
-  handleInputValueChange,
-  handleItemHighlighted,
-  handleOpenChange,
-  handleRequiredInvalid,
-  handleValueChange,
-  inputValue,
-  isItemDisabled,
-  isItemEqualToValue,
-  itemToStringLabel,
-  itemToStringValue,
-  items,
-  listboxLabelId,
-  name,
-  readOnly,
-  searchable,
-  selectedValue,
-  visibleItems,
+  formatters,
+  handlers,
+  interaction,
+  state,
 }: PharmaComboboxRootPropsOptions<Item>): PharmaComboboxRootBoundaryProps<Item> => ({
-  items,
-  value: selectedValue,
-  onValueChange: handleValueChange,
-  open: actualOpen,
-  onOpenChange: handleOpenChange,
-  inputValue,
-  onInputValueChange: handleInputValueChange,
-  highlightedIndex: effectiveHighlightedIndex,
-  onItemHighlighted: handleItemHighlighted,
-  onRequiredInvalid: handleRequiredInvalid,
-  itemToStringLabel,
-  itemToStringValue,
-  isItemDisabled,
-  isItemEqualToValue,
-  labelId: listboxLabelId,
-  name,
-  form,
-  disabled,
-  readOnly,
-  required: effectiveRequired,
-  filteredItems: visibleItems,
+  items: state.items,
+  value: state.selectedValue,
+  onValueChange: handlers.handleValueChange,
+  open: state.actualOpen,
+  onOpenChange: handlers.handleOpenChange,
+  inputValue: state.inputValue,
+  onInputValueChange: handlers.handleInputValueChange,
+  highlightedIndex: state.effectiveHighlightedIndex,
+  onItemHighlighted: handlers.handleItemHighlighted,
+  onRequiredInvalid: handlers.handleRequiredInvalid,
+  itemToStringLabel: formatters.itemToStringLabel,
+  itemToStringValue: formatters.itemToStringValue,
+  isItemDisabled: formatters.isItemDisabled,
+  isItemEqualToValue: formatters.isItemEqualToValue,
+  labelId: state.listboxLabelId,
+  name: state.name,
+  form: state.form,
+  disabled: interaction.disabled,
+  readOnly: interaction.readOnly,
+  required: state.effectiveRequired,
+  filteredItems: state.visibleItems,
   filter: null,
-  autoHighlight: searchable,
+  autoHighlight: interaction.searchable,
 });
 
 export const getPharmaComboboxViewProps = <Item>({
-  ariaLabel,
-  canCreate,
-  controlName,
-  createActionLabel,
-  effectiveHighlightedIndex,
-  effectiveId,
-  handleCreate,
-  handleItemLeave,
-  handleListScroll,
-  handleOptionListMouseLeave,
-  handleOptionMouseEnter,
-  handleOptionMouseMove,
-  handleSearchInputKeyDown,
-  handleTriggerKeyDown,
-  handleTriggerMouseEnter,
-  handleTriggerMouseLeave,
-  hasHeldHighlightFrame,
-  hasVisibleItems,
-  indicator,
-  inputValue,
-  isItemDisabled,
-  isSearchNavigationFocus,
-  itemToStringLabel,
-  itemToStringValue,
-  listRef,
-  listboxAriaLabel,
-  normalizedInputValue,
-  placeholder,
-  renderOption,
-  renderOptionMeta,
-  searchInputRef,
-  searchPlaceholder,
-  selectedValue,
-  selectedVisibleIndex,
-  setTriggerButtonRef,
-  setIsSearchNavigationFocus,
-  showValidation,
-  tabIndex,
-  triggerDescribedBy,
-  triggerLabelledBy,
+  accessibility,
+  actions,
+  display,
+  interaction,
+  refs,
+  state,
   validation,
-  validationEnabled,
-  validationMessageId,
-  valueId,
-  visibleItems,
-  virtualScrollToIndexRef,
-  visualHighlightId,
 }: PharmaComboboxViewPropsOptions<Item>) => {
   const selectedLabel =
-    selectedValue == null ? '' : itemToStringLabel(selectedValue);
+    state.selectedValue == null
+      ? ''
+      : state.itemToStringLabel(state.selectedValue);
   const shouldAnimateListItems =
-    normalizedInputValue.length > 0 && hasVisibleItems;
+    state.normalizedInputValue.length > 0 && state.hasVisibleItems;
 
   return {
     emptyAction: {
-      canCreate,
-      label: createActionLabel,
-      onCreate: handleCreate,
+      canCreate: state.canCreate,
+      label: display.createActionLabel,
+      onCreate: actions.handleCreate,
     },
     optionListProps: {
-      effectiveHighlightedIndex,
-      hasHeldHighlightFrame,
-      hasVisibleItems,
-      indicator,
-      inputValue,
-      isItemDisabled,
-      itemToStringLabel,
-      itemToStringValue,
-      listRef,
-      listboxAriaLabel,
-      onItemLeave: handleItemLeave,
-      onListMouseLeave: handleOptionListMouseLeave,
-      onListScrollIntent: handleListScroll,
-      onOptionMouseEnter: handleOptionMouseEnter,
-      onOptionMouseMove: handleOptionMouseMove,
-      renderOption,
-      renderOptionMeta,
-      selectedVisibleIndex,
+      effectiveHighlightedIndex: state.effectiveHighlightedIndex,
+      hasHeldHighlightFrame: state.hasHeldHighlightFrame,
+      hasVisibleItems: state.hasVisibleItems,
+      indicator: display.indicator,
+      inputValue: state.inputValue,
+      isItemDisabled: state.isItemDisabled,
+      itemToStringLabel: state.itemToStringLabel,
+      itemToStringValue: state.itemToStringValue,
+      listRef: refs.listRef,
+      listboxAriaLabel: accessibility.listboxAriaLabel,
+      onItemLeave: actions.handleItemLeave,
+      onListMouseLeave: actions.handleOptionListMouseLeave,
+      onListScrollIntent: actions.handleListScroll,
+      onOptionMouseEnter: actions.handleOptionMouseEnter,
+      onOptionMouseMove: actions.handleOptionMouseMove,
+      renderOption: display.renderOption,
+      renderOptionMeta: display.renderOptionMeta,
+      selectedVisibleIndex: state.selectedVisibleIndex,
       shouldAnimateListItems,
-      visibleItems,
-      virtualScrollToIndexRef,
-      visualHighlightId,
+      visibleItems: state.visibleItems,
+      virtualScrollToIndexRef: refs.virtualScrollToIndexRef,
+      visualHighlightId: accessibility.visualHighlightId,
     },
     searchHeaderProps: {
-      controlName,
-      isSearchNavigationFocus,
-      normalizedInputValue,
-      onNavigationFocusChange: setIsSearchNavigationFocus,
-      onSearchInputKeyDown: handleSearchInputKeyDown,
-      searchInputRef,
-      searchPlaceholder,
+      controlName: accessibility.controlName,
+      isSearchNavigationFocus: state.isSearchNavigationFocus,
+      normalizedInputValue: state.normalizedInputValue,
+      onNavigationFocusChange: actions.setIsSearchNavigationFocus,
+      onSearchInputKeyDown: actions.handleSearchInputKeyDown,
+      searchInputRef: refs.searchInputRef,
+      searchPlaceholder: display.searchPlaceholder,
     },
     triggerButtonProps: {
-      id: effectiveId,
-      ariaLabel,
-      ariaLabelledBy: triggerLabelledBy,
-      ariaDescribedBy: triggerDescribedBy,
-      ariaInvalid: Boolean(showValidation),
-      tabIndex,
-      onMouseEnter: handleTriggerMouseEnter,
-      onMouseLeave: handleTriggerMouseLeave,
-      onNavigationKeyDown: handleTriggerKeyDown,
-      placeholder,
+      id: accessibility.effectiveId,
+      ariaLabel: accessibility.ariaLabel,
+      ariaLabelledBy: accessibility.triggerLabelledBy,
+      ariaDescribedBy: accessibility.triggerDescribedBy,
+      ariaInvalid: Boolean(validation.showValidation),
+      tabIndex: interaction.tabIndex,
+      onMouseEnter: actions.handleTriggerMouseEnter,
+      onMouseLeave: actions.handleTriggerMouseLeave,
+      onNavigationKeyDown: actions.handleTriggerKeyDown,
+      placeholder: display.placeholder,
       selectedLabel,
-      setTriggerButtonRef,
-      valueId,
+      setTriggerButtonRef: actions.setTriggerButtonRef,
+      valueId: accessibility.valueId,
     },
     validationState: {
-      autoHide: validation?.autoHide,
-      autoHideDelay: validation?.autoHideDelay,
-      enabled: validationEnabled,
-      messageId: validationMessageId,
-      show: showValidation,
+      autoHide: validation.validation?.autoHide,
+      autoHideDelay: validation.validation?.autoHideDelay,
+      enabled: validation.validationEnabled,
+      messageId: validation.validationMessageId,
+      show: validation.showValidation,
     },
   };
 };

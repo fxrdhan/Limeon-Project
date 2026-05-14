@@ -122,28 +122,40 @@ export function useComboboxOptionInteraction<Item>({
     selectedValue,
   });
   const keyboardNavigation = useComboboxOptionKeyboardNavigation({
-    actualOpen,
-    canCreate,
-    clearKeyboardScrollHighlight: keyboardScroll.clearKeyboardScrollHighlight,
-    handleCreate,
-    hideHoverDetail: optionHover.hideHoverDetail,
-    isItemDisabled,
-    isKeyboardHoverSuppressed: optionHover.isKeyboardHoverSuppressed,
-    isSameItem,
-    items,
-    normalizedInputValue,
-    requestSelectedOptionScroll,
-    resetKeyboardHoverSuppression: optionHover.resetKeyboardHoverSuppression,
-    scheduleKeyboardHighlightedScroll:
-      keyboardScroll.scheduleKeyboardHighlightedScroll,
-    searchable,
-    searchInputRef,
-    selectedValue,
-    setInputValue,
-    setIsSearchNavigationFocus,
-    suppressPointerHoverForKeyboard:
-      optionHover.suppressPointerHoverForKeyboard,
-    visibleItems,
+    creation: {
+      canCreate,
+      handleCreate,
+    },
+    hoverDetail: {
+      hideHoverDetail: optionHover.hideHoverDetail,
+      isKeyboardHoverSuppressed: optionHover.isKeyboardHoverSuppressed,
+      resetKeyboardHoverSuppression: optionHover.resetKeyboardHoverSuppression,
+      suppressPointerHoverForKeyboard:
+        optionHover.suppressPointerHoverForKeyboard,
+    },
+    interaction: {
+      actualOpen,
+    },
+    scroll: {
+      clearKeyboardScrollHighlight: keyboardScroll.clearKeyboardScrollHighlight,
+      requestSelectedOptionScroll,
+      scheduleKeyboardHighlightedScroll:
+        keyboardScroll.scheduleKeyboardHighlightedScroll,
+    },
+    search: {
+      normalizedInputValue,
+      searchable,
+      searchInputRef,
+      setInputValue,
+      setIsSearchNavigationFocus,
+    },
+    selection: {
+      isItemDisabled,
+      isSameItem,
+      items,
+      selectedValue,
+      visibleItems,
+    },
   });
   const getHighlightedHoverDetailAnchorElement =
     useComboboxHighlightedOptionAnchor({

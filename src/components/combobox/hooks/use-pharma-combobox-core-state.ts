@@ -3,7 +3,7 @@ import { useFormFieldContext } from '@/components/form-field/context';
 import {
   getComboboxSelectedValue,
   type ComboboxValueIsEmpty,
-} from '../utils/preset-state';
+} from '../utils/preset-value';
 import type { ComboboxVirtualScrollToIndex } from './use-combobox-keyboard-highlight-scroll';
 
 type PharmaComboboxCoreStateProps<Item> = {

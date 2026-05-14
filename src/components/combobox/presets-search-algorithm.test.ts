@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vite-plus/test';
 import {
   getComboboxSearchEntries,
   getComboboxSearchState,
-} from './utils/preset-state';
+} from './utils/preset-search';
 
 type TestItem = { id: string; name: string };
 

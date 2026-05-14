@@ -22,52 +22,86 @@ type ComboboxHighlightDetails<Item> = Parameters<
   NonNullable<ComboboxRootProps<Item>['onItemHighlighted']>
 >[1];
 
-export function useComboboxHighlight<Item>({
-  actualOpen,
-  canCreate,
-  clearKeyboardScrollHighlight,
-  handleCreate,
-  hideHoverDetail,
-  isItemDisabled,
-  isKeyboardHoverSuppressed,
-  isSameItem,
-  items,
-  normalizedInputValue,
-  requestSelectedOptionScroll,
-  resetKeyboardHoverSuppression,
-  scheduleKeyboardHighlightedScroll,
-  searchable,
-  searchInputRef,
-  selectedValue,
-  setInputValue,
-  setIsSearchNavigationFocus,
-  suppressPointerHoverForKeyboard,
-  visibleItems,
-}: {
-  actualOpen: boolean;
+type ComboboxHighlightCreation = {
   canCreate: boolean;
-  clearKeyboardScrollHighlight: () => void;
   handleCreate: () => void;
+};
+
+type ComboboxHighlightInteraction = {
+  actualOpen: boolean;
+};
+
+type ComboboxHighlightHoverDetail = {
   hideHoverDetail: () => void;
-  isItemDisabled: (item: Item) => boolean;
   isKeyboardHoverSuppressed: () => boolean;
-  isSameItem: (item: Item, value: Item) => boolean;
-  items: readonly Item[];
-  normalizedInputValue: string;
-  requestSelectedOptionScroll: () => void;
   resetKeyboardHoverSuppression: () => void;
+  suppressPointerHoverForKeyboard: () => void;
+};
+
+type ComboboxHighlightScroll = {
+  clearKeyboardScrollHighlight: () => void;
+  requestSelectedOptionScroll: () => void;
   scheduleKeyboardHighlightedScroll: (
     targetVisibleIndex: number,
     sourceVisibleIndex: number | null
   ) => void;
+};
+
+type ComboboxHighlightSearch = {
+  normalizedInputValue: string;
   searchable: boolean;
   searchInputRef: RefObject<HTMLInputElement | null>;
-  selectedValue: Item | null;
   setInputValue: Dispatch<SetStateAction<string>>;
   setIsSearchNavigationFocus: Dispatch<SetStateAction<boolean>>;
-  suppressPointerHoverForKeyboard: () => void;
+};
+
+type ComboboxHighlightSelection<Item> = {
+  isItemDisabled: (item: Item) => boolean;
+  isSameItem: (item: Item, value: Item) => boolean;
+  items: readonly Item[];
+  selectedValue: Item | null;
   visibleItems: readonly Item[];
-}) {
+};
+
+export interface ComboboxHighlightOptions<Item> {
+  creation: ComboboxHighlightCreation;
+  hoverDetail: ComboboxHighlightHoverDetail;
+  interaction: ComboboxHighlightInteraction;
+  scroll: ComboboxHighlightScroll;
+  search: ComboboxHighlightSearch;
+  selection: ComboboxHighlightSelection<Item>;
+}
+
+export function useComboboxHighlight<Item>({
+  creation,
+  hoverDetail,
+  interaction,
+  scroll,
+  search,
+  selection,
+}: ComboboxHighlightOptions<Item>) {
+  const { canCreate, handleCreate } = creation;
+  const {
+    hideHoverDetail,
+    isKeyboardHoverSuppressed,
+    resetKeyboardHoverSuppression,
+    suppressPointerHoverForKeyboard,
+  } = hoverDetail;
+  const { actualOpen } = interaction;
+  const {
+    clearKeyboardScrollHighlight,
+    requestSelectedOptionScroll,
+    scheduleKeyboardHighlightedScroll,
+  } = scroll;
+  const {
+    normalizedInputValue,
+    searchable,
+    searchInputRef,
+    setInputValue,
+    setIsSearchNavigationFocus,
+  } = search;
+  const { isItemDisabled, isSameItem, items, selectedValue, visibleItems } =
+    selection;
   const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
   const defaultHighlightedValue =
     normalizedInputValue.length === 0 ? selectedValue : null;

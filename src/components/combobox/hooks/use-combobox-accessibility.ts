@@ -1,4 +1,4 @@
-import { getComboboxControlName } from '../utils/preset-state';
+import { getComboboxControlName } from '../utils/preset-value';
 
 export function useComboboxAccessibility({
   ariaDescribedBy,

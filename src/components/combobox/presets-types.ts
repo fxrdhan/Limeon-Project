@@ -3,7 +3,7 @@ import type { HoverDetailData } from '@/types/components';
 import type { ComboboxIndicatorKind } from './components/combobox-selection-indicator';
 import type { ComboboxCreateAction } from './hooks/use-combobox-create-action';
 import type { ComboboxRootProps } from './primitive';
-import type { ComboboxValueIsEmpty } from './utils/preset-state';
+import type { ComboboxValueIsEmpty } from './utils/preset-value';
 
 export type PharmaComboboxChangeDetails<Item> = Parameters<
   NonNullable<ComboboxRootProps<Item>['onValueChange']>

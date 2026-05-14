@@ -312,6 +312,63 @@ describe('Combobox preset architecture', () => {
     expect(legacyAttributes).toEqual([]);
   });
 
+  it('keeps preset boundary mappers grouped by domain', () => {
+    const source = readSource('utils/preset-controller-props.ts');
+    const sourceFile = parseSource('utils/preset-controller-props.ts', source);
+
+    expect(
+      getInterfacePropertyNames(
+        sourceFile,
+        'PharmaComboboxRootPropsOptions'
+      ).sort()
+    ).toEqual(['formatters', 'handlers', 'interaction', 'state']);
+    expect(
+      getInterfacePropertyNames(
+        sourceFile,
+        'PharmaComboboxViewPropsOptions'
+      ).sort()
+    ).toEqual([
+      'accessibility',
+      'actions',
+      'display',
+      'interaction',
+      'refs',
+      'state',
+      'validation',
+    ]);
+  });
+
+  it('keeps highlight controller dependencies grouped by domain', () => {
+    const source = readSource('hooks/use-combobox-highlight.ts');
+    const sourceFile = parseSource('hooks/use-combobox-highlight.ts', source);
+
+    expect(
+      getInterfacePropertyNames(sourceFile, 'ComboboxHighlightOptions').sort()
+    ).toEqual([
+      'creation',
+      'hoverDetail',
+      'interaction',
+      'scroll',
+      'search',
+      'selection',
+    ]);
+  });
+
+  it('keeps preset value and search helpers split by responsibility', () => {
+    const presetSearchSource = readSource('utils/preset-search.ts');
+    const presetValueSource = readSource('utils/preset-value.ts');
+
+    expect(
+      sourcePaths.has('src/components/combobox/utils/preset-state.ts')
+    ).toBe(false);
+    expect(presetSearchSource).toContain('getComboboxSearchState');
+    expect(presetSearchSource).not.toContain('getComboboxControlName');
+    expect(presetSearchSource).not.toContain('getDuplicateComboboxOptionValue');
+    expect(presetValueSource).toContain('getComboboxSelectedValue');
+    expect(presetValueSource).toContain('getDuplicateComboboxOptionValue');
+    expect(presetValueSource).not.toContain('getComboboxSearchState');
+  });
+
   it('keeps the select controller from owning low-level combobox behavior', () => {
     const directImports = getDirectImportSpecifiers(
       'hooks/use-pharma-combobox-select-controller.ts'

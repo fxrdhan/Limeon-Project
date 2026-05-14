@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import {
   getComboboxSearchEntries,
   getComboboxSearchState,
-} from '../utils/preset-state';
+} from '../utils/preset-search';
 
 export function useComboboxSearch<Item>({
   inputValue,
