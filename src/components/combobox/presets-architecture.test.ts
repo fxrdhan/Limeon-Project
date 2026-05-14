@@ -193,6 +193,11 @@ describe('Combobox primitive architecture', () => {
         return [];
       }
 
+      const source = sourceByPath.get(filePath);
+      if (source === undefined || !source.includes('combobox/primitive')) {
+        return [];
+      }
+
       return getModuleSpecifiers(filePath)
         .filter(moduleSpecifier => {
           if (moduleSpecifier.isTypeOnly) return false;
