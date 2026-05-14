@@ -61,6 +61,10 @@ export interface CalendarHeaderSelectRenderProps {
 export interface CalendarPortalProps {
   children: React.ReactNode;
   container?: Element | DocumentFragment;
+  title?: React.ReactNode;
+  'aria-label'?: string;
+  'aria-labelledby'?: string;
+  'aria-describedby'?: string;
 }
 
 export interface CalendarHeaderProps {
@@ -89,10 +93,12 @@ export interface DaysGridProps {
   getDayButtonId: (date: Date) => string;
   gridTabIndex?: number;
   onGridKeyDown?: React.KeyboardEventHandler<HTMLDivElement>;
-  navigationDirection?: 'prev' | 'next' | null;
-  yearNavigationDirection?: 'prev' | 'next' | null;
   readOnly?: boolean;
   disabled?: boolean;
-  animated?: boolean;
   fixedWeekCount?: boolean;
+}
+
+export interface AnimatedDaysGridProps extends DaysGridProps {
+  navigationDirection?: 'prev' | 'next' | null;
+  yearNavigationDirection?: 'prev' | 'next' | null;
 }

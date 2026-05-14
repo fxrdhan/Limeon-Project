@@ -13,15 +13,16 @@ describe('Combobox app preset accessibility', () => {
           Supplier
         </label>
         <PharmaComboboxSelect<EntityItem>
-          id="supplier-trigger"
-          name="supplier_id"
-          aria-labelledby="supplier-label"
           items={[{ id: 'supplier-a', name: 'Supplier A' }]}
           value={null}
           onValueChange={() => {}}
-          itemToStringLabel={item => item.name}
-          itemToStringValue={item => item.id}
-          placeholder="Pilih Supplier"
+          item={{ toLabel: item => item.name, toValue: item => item.id }}
+          field={{
+            id: 'supplier-trigger',
+            name: 'supplier_id',
+            aria: { labelledBy: 'supplier-label' },
+          }}
+          display={{ placeholder: 'Pilih Supplier' }}
         />
       </>
     );
@@ -39,13 +40,19 @@ describe('Combobox app preset accessibility', () => {
 
   it('labels the preset listbox from the effective field label source', () => {
     const baseProps = {
-      name: 'supplier_id',
       items: [{ id: 'supplier-a', name: 'Supplier A' }],
       value: null,
       onValueChange: () => {},
-      itemToStringLabel: (item: EntityItem) => item.name,
-      itemToStringValue: (item: EntityItem) => item.id,
-      placeholder: 'Pilih Supplier',
+      item: {
+        toLabel: (item: EntityItem) => item.name,
+        toValue: (item: EntityItem) => item.id,
+      },
+      field: {
+        name: 'supplier_id',
+      },
+      display: {
+        placeholder: 'Pilih Supplier',
+      },
     };
     const expectListboxLabelledByText = (labelText: string) => {
       const listbox = screen.getByRole('listbox');
@@ -59,7 +66,10 @@ describe('Combobox app preset accessibility', () => {
     };
 
     const standalone = render(
-      <PharmaComboboxSelect<EntityItem> {...baseProps} label="Supplier" />
+      <PharmaComboboxSelect<EntityItem>
+        {...baseProps}
+        field={{ ...baseProps.field, label: 'Supplier' }}
+      />
     );
     fireEvent.click(
       screen.getByRole('combobox', { name: /supplier pilih supplier/i })
@@ -74,8 +84,11 @@ describe('Combobox app preset accessibility', () => {
         </label>
         <PharmaComboboxSelect<EntityItem>
           {...baseProps}
-          id="supplier-external-trigger"
-          aria-labelledby="supplier-external-label"
+          field={{
+            ...baseProps.field,
+            id: 'supplier-external-trigger',
+            aria: { labelledBy: 'supplier-external-label' },
+          }}
         />
       </>
     );
@@ -92,7 +105,10 @@ describe('Combobox app preset accessibility', () => {
     const ariaLabel = render(
       <PharmaComboboxSelect<EntityItem>
         {...baseProps}
-        aria-label="Supplier picker"
+        field={{
+          ...baseProps.field,
+          aria: { label: 'Supplier picker' },
+        }}
       />
     );
     fireEvent.click(
@@ -125,13 +141,12 @@ describe('Combobox app preset accessibility', () => {
   it('keeps empty status outside the listbox in the standard preset composition', () => {
     render(
       <PharmaComboboxSelect<EntityItem>
-        name="category_id"
         items={[]}
         value={null}
         onValueChange={() => {}}
-        itemToStringLabel={item => item.name}
-        itemToStringValue={item => item.id}
-        placeholder="Pilih kategori"
+        item={{ toLabel: item => item.name, toValue: item => item.id }}
+        field={{ name: 'category_id' }}
+        display={{ placeholder: 'Pilih kategori' }}
       />
     );
 
@@ -144,15 +159,16 @@ describe('Combobox app preset accessibility', () => {
   it('uses an explicit preset label as the fallback accessible name', () => {
     render(
       <PharmaComboboxSelect
-        label="Bulan"
-        name="month-selector"
         items={[0, 1]}
         value={0}
         onValueChange={() => {}}
-        itemToStringLabel={value => (value === 0 ? 'Januari' : 'Februari')}
-        itemToStringValue={value => value.toString()}
-        placeholder="Pilih bulan"
-        searchable={false}
+        item={{
+          toLabel: value => (value === 0 ? 'Januari' : 'Februari'),
+          toValue: value => value.toString(),
+        }}
+        field={{ label: 'Bulan', name: 'month-selector' }}
+        display={{ placeholder: 'Pilih bulan' }}
+        search={{ enabled: false }}
       />
     );
 
@@ -164,14 +180,13 @@ describe('Combobox app preset accessibility', () => {
   it('uses the preset name before a generic placeholder for fallback accessible names', () => {
     render(
       <PharmaComboboxSelect
-        name="supplier_id"
         items={['supplier-a']}
         value={null}
         onValueChange={() => {}}
-        itemToStringLabel={value => value}
-        itemToStringValue={value => value}
-        placeholder="Pilih"
-        searchable={false}
+        item={{ toLabel: value => value, toValue: value => value }}
+        field={{ name: 'supplier_id' }}
+        display={{ placeholder: 'Pilih' }}
+        search={{ enabled: false }}
       />
     );
 
@@ -186,11 +201,11 @@ describe('Combobox app preset accessibility', () => {
         items={['active', 'inactive']}
         value={null}
         onValueChange={() => {}}
-        itemToStringLabel={value =>
-          value === 'active' ? 'Aktif' : 'Tidak aktif'
-        }
-        itemToStringValue={value => value}
-        placeholder="Pilih status"
+        item={{
+          toLabel: value => (value === 'active' ? 'Aktif' : 'Tidak aktif'),
+          toValue: value => value,
+        }}
+        display={{ placeholder: 'Pilih status' }}
       />
     );
 

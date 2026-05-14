@@ -1,6 +1,9 @@
 import {
-  ComboboxContext,
-  type ComboboxContextValue,
+  ComboboxActionsContext,
+  ComboboxStateContext,
+  ComboboxStaticContext,
+  type ComboboxActionsContextValue,
+  type ComboboxStateContextValue,
 } from './primitive-context';
 import { ComboboxHiddenInput } from './primitive-hidden-input';
 import { ComboboxInput } from './primitive-input';
@@ -49,10 +52,18 @@ function ComboboxRootComponent<Value>(props: ComboboxRootProps<Value>) {
   const { context, hiddenInputProps } = useComboboxRootState(rootProps);
 
   return (
-    <ComboboxContext.Provider value={context as ComboboxContextValue<unknown>}>
-      {children}
-      <ComboboxHiddenInput {...hiddenInputProps} />
-    </ComboboxContext.Provider>
+    <ComboboxStaticContext.Provider value={context.staticContext}>
+      <ComboboxActionsContext.Provider
+        value={context.actions as ComboboxActionsContextValue<unknown>}
+      >
+        <ComboboxStateContext.Provider
+          value={context.state as ComboboxStateContextValue<unknown>}
+        >
+          {children}
+          <ComboboxHiddenInput {...hiddenInputProps} />
+        </ComboboxStateContext.Provider>
+      </ComboboxActionsContext.Provider>
+    </ComboboxStaticContext.Provider>
   );
 }
 

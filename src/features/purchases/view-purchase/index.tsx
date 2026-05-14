@@ -6,6 +6,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import type { PurchaseData, PurchaseItem } from '@/types';
 import { TbArrowLeft, TbPrinter, TbZoomIn, TbZoomOut } from 'react-icons/tb';
 import { purchasesService } from '@/services/api/purchases.service';
+import { formatDateOnlyDisplayValue } from '@/lib/formatters';
 
 const ViewPurchase = () => {
   const { id } = useParams<{ id: string }>();
@@ -222,18 +223,14 @@ const ViewPurchase = () => {
                   <div className="grid grid-cols-[1fr_auto_1fr] mb-1">
                     <span className="text-left">Tanggal</span>
                     <span className="px-2">:</span>
-                    <span>
-                      {new Date(purchase.date).toLocaleDateString('id-ID')}
-                    </span>
+                    <span>{formatDateOnlyDisplayValue(purchase.date)}</span>
                   </div>
                   <div className="grid grid-cols-[1fr_auto_1fr] mb-1">
                     <span className="text-left">Jatuh Tempo</span>
                     <span className="px-2">:</span>
                     <span>
                       {purchase.due_date
-                        ? new Date(purchase.due_date).toLocaleDateString(
-                            'id-ID'
-                          )
+                        ? formatDateOnlyDisplayValue(purchase.due_date)
                         : '-'}
                     </span>
                   </div>
@@ -284,14 +281,11 @@ const ViewPurchase = () => {
                       </td>
                       <td className="border p-1 text-center">
                         {item.expiry_date
-                          ? new Date(item.expiry_date).toLocaleDateString(
-                              'id-ID',
-                              {
-                                year: 'numeric',
-                                month: '2-digit',
-                                day: '2-digit',
-                              }
-                            )
+                          ? formatDateOnlyDisplayValue(item.expiry_date, {
+                              year: 'numeric',
+                              month: '2-digit',
+                              day: '2-digit',
+                            })
                           : '-'}
                       </td>
                       <td className="border p-1 text-center">

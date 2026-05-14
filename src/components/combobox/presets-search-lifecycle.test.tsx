@@ -13,15 +13,17 @@ describe('Combobox app preset search lifecycle', () => {
   it('resets searchable preset input when the popup closes without a selection', () => {
     render(
       <PharmaComboboxSelect
-        name="supplier_id"
         items={[
           { id: 'a', name: 'Supplier A' },
           { id: 'b', name: 'Supplier B' },
         ]}
         value={null}
         onValueChange={() => {}}
-        itemToStringLabel={supplier => supplier.name}
-        itemToStringValue={supplier => supplier.id}
+        item={{
+          toLabel: supplier => supplier.name,
+          toValue: supplier => supplier.id,
+        }}
+        field={{ name: 'supplier_id' }}
       />
     );
 
@@ -47,17 +49,18 @@ describe('Combobox app preset search lifecycle', () => {
     const onOpenChange = vi.fn();
     render(
       <PharmaComboboxSelect
-        name="supplier_id"
         items={[
           { id: 'a', name: 'Supplier A' },
           { id: 'b', name: 'Supplier B' },
         ]}
         value={null}
         onValueChange={() => {}}
-        itemToStringLabel={supplier => supplier.name}
-        itemToStringValue={supplier => supplier.id}
-        open
-        onOpenChange={onOpenChange}
+        item={{
+          toLabel: supplier => supplier.name,
+          toValue: supplier => supplier.id,
+        }}
+        field={{ name: 'supplier_id' }}
+        interaction={{ open: true, onOpenChange: onOpenChange }}
       />
     );
 
@@ -83,17 +86,18 @@ describe('Combobox app preset search lifecycle', () => {
       return (
         <>
           <PharmaComboboxSelect
-            name="supplier_id"
             items={[
               { id: 'a', name: 'Supplier A' },
               { id: 'b', name: 'Supplier B' },
             ]}
             value={null}
             onValueChange={() => {}}
-            itemToStringLabel={supplier => supplier.name}
-            itemToStringValue={supplier => supplier.id}
-            open={open}
-            onOpenChange={() => {}}
+            item={{
+              toLabel: supplier => supplier.name,
+              toValue: supplier => supplier.id,
+            }}
+            field={{ name: 'supplier_id' }}
+            interaction={{ open: open, onOpenChange: () => {} }}
           />
           <button
             type="button"
@@ -135,15 +139,17 @@ describe('Combobox app preset search lifecycle', () => {
   it('routes trigger typing into the open searchable input', () => {
     render(
       <PharmaComboboxSelect
-        name="supplier_id"
         items={[
           { id: 'a', name: 'Supplier A' },
           { id: 'b', name: 'Branch B' },
         ]}
         value={null}
         onValueChange={() => {}}
-        itemToStringLabel={supplier => supplier.name}
-        itemToStringValue={supplier => supplier.id}
+        item={{
+          toLabel: supplier => supplier.name,
+          toValue: supplier => supplier.id,
+        }}
+        field={{ name: 'supplier_id' }}
       />
     );
 
@@ -163,15 +169,17 @@ describe('Combobox app preset search lifecycle', () => {
 
     render(
       <PharmaComboboxSelect
-        name="supplier_id"
         items={[
           { id: 'a', name: 'Supplier A' },
           { id: 'b', name: 'Supplier B' },
         ]}
         value={null}
         onValueChange={onValueChange}
-        itemToStringLabel={supplier => supplier.name}
-        itemToStringValue={supplier => supplier.id}
+        item={{
+          toLabel: supplier => supplier.name,
+          toValue: supplier => supplier.id,
+        }}
+        field={{ name: 'supplier_id' }}
       />
     );
 
@@ -198,15 +206,17 @@ describe('Combobox app preset search lifecycle', () => {
   it('keeps arrow navigation from visually activating the popup search input', () => {
     render(
       <PharmaComboboxSelect
-        name="supplier_id"
         items={[
           { id: 'a', name: 'Supplier A' },
           { id: 'b', name: 'Supplier B' },
         ]}
         value={null}
         onValueChange={() => {}}
-        itemToStringLabel={supplier => supplier.name}
-        itemToStringValue={supplier => supplier.id}
+        item={{
+          toLabel: supplier => supplier.name,
+          toValue: supplier => supplier.id,
+        }}
+        field={{ name: 'supplier_id' }}
       />
     );
 

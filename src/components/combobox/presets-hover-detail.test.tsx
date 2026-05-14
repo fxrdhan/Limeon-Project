@@ -22,15 +22,24 @@ describe('Combobox app preset hover detail', () => {
 
     render(
       <PharmaComboboxSelect<EntityItem>
-        name="category_id"
         items={[{ id: 'analgesik', name: 'Analgesik' }]}
         value={null}
         onValueChange={() => {}}
-        itemToStringLabel={item => item.name}
-        itemToStringValue={item => item.id}
-        placeholder="Pilih kategori"
-        hoverDetail={{ enabled: true, delay: 0 }}
-        onFetchHoverDetail={onFetchHoverDetail}
+        item={{
+          toLabel: item => item.name,
+          toValue: item => item.id,
+        }}
+        field={{
+          name: 'category_id',
+        }}
+        display={{
+          placeholder: 'Pilih kategori',
+        }}
+        hoverDetail={{
+          enabled: true,
+          delay: 0,
+          fetch: onFetchHoverDetail,
+        }}
       />
     );
 
@@ -61,16 +70,25 @@ describe('Combobox app preset hover detail', () => {
 
     render(
       <PharmaComboboxSelect<EntityItem>
-        name="category_id"
         items={[{ id: 'analgesik', name: 'Analgesik' }]}
         value={null}
         onValueChange={() => {}}
-        itemToStringLabel={item => item.name}
-        itemToStringValue={item => item.id}
-        placeholder="Pilih kategori"
-        hoverDetail={{ enabled: true, delay: 0 }}
-        onFetchHoverDetail={onFetchHoverDetail}
-        onFetchHoverDetailError={onFetchHoverDetailError}
+        item={{
+          toLabel: item => item.name,
+          toValue: item => item.id,
+        }}
+        field={{
+          name: 'category_id',
+        }}
+        display={{
+          placeholder: 'Pilih kategori',
+        }}
+        hoverDetail={{
+          enabled: true,
+          delay: 0,
+          fetch: onFetchHoverDetail,
+          onFetchError: onFetchHoverDetailError,
+        }}
       />
     );
 
@@ -100,14 +118,23 @@ describe('Combobox app preset hover detail', () => {
     try {
       render(
         <PharmaComboboxSelect<EntityItem>
-          name="category_id"
           items={[{ id: 'analgesik', name: 'Analgesik' }]}
           value={null}
           onValueChange={() => {}}
-          itemToStringLabel={item => item.name}
-          itemToStringValue={item => item.id}
-          placeholder="Pilih kategori"
-          hoverDetail={{ enabled: true, delay: 0 }}
+          item={{
+            toLabel: item => item.name,
+            toValue: item => item.id,
+          }}
+          field={{
+            name: 'category_id',
+          }}
+          display={{
+            placeholder: 'Pilih kategori',
+          }}
+          hoverDetail={{
+            enabled: true,
+            delay: 0,
+          }}
         />
       );
 
@@ -194,20 +221,29 @@ describe('Combobox app preset hover detail', () => {
   it('keeps hover detail visible during slow option list scroll', async () => {
     render(
       <PharmaComboboxSelect<EntityItem>
-        name="supplier_id"
         items={[
           { id: 'a', name: 'Supplier A' },
           { id: 'b', name: 'Supplier B' },
         ]}
         value={null}
         onValueChange={() => {}}
-        itemToStringLabel={item => item.name}
-        itemToStringValue={item => item.id}
-        itemToHoverDetailData={item => ({
-          description: `Detail ${item.name}`,
-        })}
-        placeholder="Pilih supplier"
-        hoverDetail={{ enabled: true, delay: 0 }}
+        item={{
+          toLabel: item => item.name,
+          toValue: item => item.id,
+          toHoverDetailData: item => ({
+            description: `Detail ${item.name}`,
+          }),
+        }}
+        field={{
+          name: 'supplier_id',
+        }}
+        display={{
+          placeholder: 'Pilih supplier',
+        }}
+        hoverDetail={{
+          enabled: true,
+          delay: 0,
+        }}
       />
     );
 
@@ -245,20 +281,29 @@ describe('Combobox app preset hover detail', () => {
   it('hides hover detail while fast option list scroll settles', async () => {
     render(
       <PharmaComboboxSelect<EntityItem>
-        name="supplier_id"
         items={[
           { id: 'a', name: 'Supplier A' },
           { id: 'b', name: 'Supplier B' },
         ]}
         value={null}
         onValueChange={() => {}}
-        itemToStringLabel={item => item.name}
-        itemToStringValue={item => item.id}
-        itemToHoverDetailData={item => ({
-          description: `Detail ${item.name}`,
-        })}
-        placeholder="Pilih supplier"
-        hoverDetail={{ enabled: true, delay: 0 }}
+        item={{
+          toLabel: item => item.name,
+          toValue: item => item.id,
+          toHoverDetailData: item => ({
+            description: `Detail ${item.name}`,
+          }),
+        }}
+        field={{
+          name: 'supplier_id',
+        }}
+        display={{
+          placeholder: 'Pilih supplier',
+        }}
+        hoverDetail={{
+          enabled: true,
+          delay: 0,
+        }}
       />
     );
 
@@ -367,20 +412,29 @@ describe('Combobox app preset hover detail', () => {
     try {
       render(
         <PharmaComboboxSelect<EntityItem>
-          name="supplier_id"
           items={[
             { id: 'a', name: 'Supplier A' },
             { id: 'b', name: 'Supplier B' },
           ]}
           value={null}
           onValueChange={() => {}}
-          itemToStringLabel={item => item.name}
-          itemToStringValue={item => item.id}
-          itemToHoverDetailData={item => ({
-            description: `Detail ${item.name}`,
-          })}
-          placeholder="Pilih supplier"
-          hoverDetail={{ enabled: true, delay: 0 }}
+          item={{
+            toLabel: item => item.name,
+            toValue: item => item.id,
+            toHoverDetailData: item => ({
+              description: `Detail ${item.name}`,
+            }),
+          }}
+          field={{
+            name: 'supplier_id',
+          }}
+          display={{
+            placeholder: 'Pilih supplier',
+          }}
+          hoverDetail={{
+            enabled: true,
+            delay: 0,
+          }}
         />
       );
 
@@ -445,20 +499,29 @@ describe('Combobox app preset hover detail', () => {
   it('shows hover detail from keyboard navigation without pointer hover', async () => {
     render(
       <PharmaComboboxSelect<EntityItem>
-        name="supplier_id"
         items={[
           { id: 'a', name: 'Supplier A' },
           { id: 'b', name: 'Supplier B' },
         ]}
         value={null}
         onValueChange={() => {}}
-        itemToStringLabel={item => item.name}
-        itemToStringValue={item => item.id}
-        itemToHoverDetailData={item => ({
-          description: `Detail ${item.name}`,
-        })}
-        placeholder="Pilih supplier"
-        hoverDetail={{ enabled: true, delay: 400 }}
+        item={{
+          toLabel: item => item.name,
+          toValue: item => item.id,
+          toHoverDetailData: item => ({
+            description: `Detail ${item.name}`,
+          }),
+        }}
+        field={{
+          name: 'supplier_id',
+        }}
+        display={{
+          placeholder: 'Pilih supplier',
+        }}
+        hoverDetail={{
+          enabled: true,
+          delay: 400,
+        }}
       />
     );
 
@@ -482,20 +545,29 @@ describe('Combobox app preset hover detail', () => {
   it('hides visible hover detail while keyboard arrow navigation repeats', async () => {
     render(
       <PharmaComboboxSelect<EntityItem>
-        name="supplier_id"
         items={[
           { id: 'a', name: 'Supplier A' },
           { id: 'b', name: 'Supplier B' },
         ]}
         value={null}
         onValueChange={() => {}}
-        itemToStringLabel={item => item.name}
-        itemToStringValue={item => item.id}
-        itemToHoverDetailData={item => ({
-          description: `Detail ${item.name}`,
-        })}
-        placeholder="Pilih supplier"
-        hoverDetail={{ enabled: true, delay: 0 }}
+        item={{
+          toLabel: item => item.name,
+          toValue: item => item.id,
+          toHoverDetailData: item => ({
+            description: `Detail ${item.name}`,
+          }),
+        }}
+        field={{
+          name: 'supplier_id',
+        }}
+        display={{
+          placeholder: 'Pilih supplier',
+        }}
+        hoverDetail={{
+          enabled: true,
+          delay: 0,
+        }}
       />
     );
 
@@ -543,17 +615,26 @@ describe('Combobox app preset hover detail', () => {
 
     render(
       <PharmaComboboxSelect<EntityItem>
-        name="supplier_id"
         items={suppliers}
         value={suppliers[1] ?? null}
         onValueChange={() => {}}
-        itemToStringLabel={item => item.name}
-        itemToStringValue={item => item.id}
-        itemToHoverDetailData={item => ({
-          description: `Detail ${item.name}`,
-        })}
-        placeholder="Pilih supplier"
-        hoverDetail={{ enabled: true, delay: 0 }}
+        item={{
+          toLabel: item => item.name,
+          toValue: item => item.id,
+          toHoverDetailData: item => ({
+            description: `Detail ${item.name}`,
+          }),
+        }}
+        field={{
+          name: 'supplier_id',
+        }}
+        display={{
+          placeholder: 'Pilih supplier',
+        }}
+        hoverDetail={{
+          enabled: true,
+          delay: 0,
+        }}
       />
     );
 
@@ -569,14 +650,23 @@ describe('Combobox app preset hover detail', () => {
   it('keeps hover detail exit animation from intercepting pointer input', async () => {
     render(
       <PharmaComboboxSelect<EntityItem>
-        name="category_id"
         items={[{ id: 'analgesik', name: 'Analgesik' }]}
         value={null}
         onValueChange={() => {}}
-        itemToStringLabel={item => item.name}
-        itemToStringValue={item => item.id}
-        placeholder="Pilih kategori"
-        hoverDetail={{ enabled: true, delay: 0 }}
+        item={{
+          toLabel: item => item.name,
+          toValue: item => item.id,
+        }}
+        field={{
+          name: 'category_id',
+        }}
+        display={{
+          placeholder: 'Pilih kategori',
+        }}
+        hoverDetail={{
+          enabled: true,
+          delay: 0,
+        }}
       />
     );
 
@@ -617,16 +707,25 @@ describe('Combobox app preset hover detail', () => {
     const onFetchHoverDetailError = vi.fn();
     const { unmount } = render(
       <PharmaComboboxSelect<EntityItem>
-        name="category_id"
         items={[{ id: 'analgesik', name: 'Analgesik' }]}
         value={null}
         onValueChange={() => {}}
-        itemToStringLabel={item => item.name}
-        itemToStringValue={item => item.id}
-        placeholder="Pilih kategori"
-        hoverDetail={{ enabled: true, delay: 0 }}
-        onFetchHoverDetail={onFetchHoverDetail}
-        onFetchHoverDetailError={onFetchHoverDetailError}
+        item={{
+          toLabel: item => item.name,
+          toValue: item => item.id,
+        }}
+        field={{
+          name: 'category_id',
+        }}
+        display={{
+          placeholder: 'Pilih kategori',
+        }}
+        hoverDetail={{
+          enabled: true,
+          delay: 0,
+          fetch: onFetchHoverDetail,
+          onFetchError: onFetchHoverDetailError,
+        }}
       />
     );
 
@@ -664,16 +763,27 @@ describe('Combobox app preset hover detail', () => {
             Enable hover detail
           </button>
           <PharmaComboboxSelect<EntityItem>
-            name="category_id"
             items={[{ id: 'analgesik', name: 'Analgesik' }]}
             value={null}
             onValueChange={() => {}}
-            itemToStringLabel={item => item.name}
-            itemToStringValue={item => item.id}
-            placeholder="Pilih kategori"
-            hoverDetail={{ enabled, delay: 0 }}
-            onFetchHoverDetail={onFetchHoverDetail}
-            open
+            item={{
+              toLabel: item => item.name,
+              toValue: item => item.id,
+            }}
+            field={{
+              name: 'category_id',
+            }}
+            interaction={{
+              open: true,
+            }}
+            display={{
+              placeholder: 'Pilih kategori',
+            }}
+            hoverDetail={{
+              enabled,
+              delay: 0,
+              fetch: onFetchHoverDetail,
+            }}
           />
         </>
       );
@@ -716,19 +826,28 @@ describe('Combobox app preset hover detail', () => {
     try {
       render(
         <PharmaComboboxSelect
-          name="supplier_id"
           items={[
             { id: 'a', name: 'Supplier A' },
             { id: 'b', name: 'Supplier B' },
           ]}
           value={null}
           onValueChange={() => {}}
-          itemToStringLabel={supplier => supplier.name}
-          itemToStringValue={supplier => supplier.id}
-          hoverDetail={{ enabled: true, delay: 0 }}
-          onFetchHoverDetail={onFetchHoverDetail}
-          open
-          onOpenChange={onOpenChange}
+          item={{
+            toLabel: supplier => supplier.name,
+            toValue: supplier => supplier.id,
+          }}
+          field={{
+            name: 'supplier_id',
+          }}
+          interaction={{
+            open: true,
+            onOpenChange: onOpenChange,
+          }}
+          hoverDetail={{
+            enabled: true,
+            delay: 0,
+            fetch: onFetchHoverDetail,
+          }}
         />
       );
 
@@ -768,7 +887,6 @@ describe('Combobox app preset hover detail', () => {
     try {
       render(
         <PharmaComboboxSelect<EntityItem>
-          name="supplier_id"
           items={[
             { id: 'a', name: 'Supplier A' },
             { id: 'b', name: 'Supplier B' },
@@ -776,13 +894,23 @@ describe('Combobox app preset hover detail', () => {
           ]}
           value={null}
           onValueChange={() => {}}
-          itemToStringLabel={item => item.name}
-          itemToStringValue={item => item.id}
-          itemToHoverDetailData={item => ({
-            description: `Detail ${item.name}`,
-          })}
-          placeholder="Pilih supplier"
-          hoverDetail={{ enabled: true, delay: 400 }}
+          item={{
+            toLabel: item => item.name,
+            toValue: item => item.id,
+            toHoverDetailData: item => ({
+              description: `Detail ${item.name}`,
+            }),
+          }}
+          field={{
+            name: 'supplier_id',
+          }}
+          display={{
+            placeholder: 'Pilih supplier',
+          }}
+          hoverDetail={{
+            enabled: true,
+            delay: 400,
+          }}
         />
       );
 
@@ -821,20 +949,29 @@ describe('Combobox app preset hover detail', () => {
     try {
       render(
         <PharmaComboboxSelect<EntityItem>
-          name="supplier_id"
           items={[
             { id: 'a', name: 'Supplier A' },
             { id: 'b', name: 'Supplier B' },
           ]}
           value={null}
           onValueChange={() => {}}
-          itemToStringLabel={item => item.name}
-          itemToStringValue={item => item.id}
-          itemToHoverDetailData={item => ({
-            description: `Detail ${item.name}`,
-          })}
-          placeholder="Pilih supplier"
-          hoverDetail={{ enabled: true, delay: 400 }}
+          item={{
+            toLabel: item => item.name,
+            toValue: item => item.id,
+            toHoverDetailData: item => ({
+              description: `Detail ${item.name}`,
+            }),
+          }}
+          field={{
+            name: 'supplier_id',
+          }}
+          display={{
+            placeholder: 'Pilih supplier',
+          }}
+          hoverDetail={{
+            enabled: true,
+            delay: 400,
+          }}
         />
       );
 

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
-  Combobox,
+  createTypedCombobox,
   PharmaComboboxSelect,
 } from '../../../src/components/combobox';
 import '../../../src/App.css';
@@ -14,6 +14,8 @@ type MedicineOption = {
   id: string;
   name: string;
 };
+
+const PrimitiveCombobox = createTypedCombobox<MedicineOption>();
 
 const medicineOptions: MedicineOption[] = [
   { code: 'AMX', id: 'med-amoxicillin', name: 'Amoxicillin 500 mg' },
@@ -87,21 +89,27 @@ function ComboboxRegressionHarness() {
             Obat
           </label>
           <PharmaComboboxSelect<MedicineOption>
-            id="medicine-combobox"
-            name="medicine_id"
             items={medicineOptions}
             value={selectedMedicine}
             onValueChange={setSelectedMedicine}
-            itemToStringLabel={optionLabel}
-            itemToStringValue={optionValue}
-            isItemDisabled={(option: MedicineOption) =>
-              Boolean(option.disabled)
-            }
-            label="Obat"
-            placeholder="Pilih obat"
-            searchPlaceholder="Cari obat"
-            indicator="check"
-            renderOptionMeta={(option: MedicineOption) => option.code}
+            item={{
+              toLabel: optionLabel,
+              toValue: optionValue,
+              isDisabled: (option: MedicineOption) => Boolean(option.disabled),
+            }}
+            field={{
+              id: 'medicine-combobox',
+              name: 'medicine_id',
+              label: 'Obat',
+            }}
+            display={{
+              placeholder: 'Pilih obat',
+              indicator: 'check',
+              renderOptionMeta: (option: MedicineOption) => option.code,
+            }}
+            search={{
+              placeholder: 'Cari obat',
+            }}
           />
         </div>
 
@@ -113,18 +121,26 @@ function ComboboxRegressionHarness() {
             Kategori
           </label>
           <PharmaComboboxSelect<MedicineOption>
-            id="category-combobox"
-            name="category_id"
             items={categoryOptions}
             value={selectedCategory}
             onValueChange={setSelectedCategory}
-            itemToStringLabel={optionLabel}
-            itemToStringValue={optionValue}
-            label="Kategori"
-            placeholder="Pilih kategori"
-            searchPlaceholder="Cari kategori"
-            indicator="check"
-            renderOptionMeta={(option: MedicineOption) => option.code}
+            item={{
+              toLabel: optionLabel,
+              toValue: optionValue,
+            }}
+            field={{
+              id: 'category-combobox',
+              name: 'category_id',
+              label: 'Kategori',
+            }}
+            display={{
+              placeholder: 'Pilih kategori',
+              indicator: 'check',
+              renderOptionMeta: (option: MedicineOption) => option.code,
+            }}
+            search={{
+              placeholder: 'Cari kategori',
+            }}
           />
         </div>
 
@@ -140,60 +156,69 @@ function ComboboxRegressionHarness() {
               Popup lebar
             </label>
             <PharmaComboboxSelect<MedicineOption>
-              id="wide-popup-combobox"
-              name="wide_medicine_id"
               items={medicineOptions}
               value={wideMedicine}
               onValueChange={setWideMedicine}
-              itemToStringLabel={optionLabel}
-              itemToStringValue={optionValue}
-              label="Popup lebar"
-              placeholder="Pilih"
-              searchPlaceholder="Cari popup lebar"
-              popupClassName="w-[420px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl"
-              popupMatchAnchorWidth={false}
-              renderOptionMeta={(option: MedicineOption) => option.code}
+              item={{
+                toLabel: optionLabel,
+                toValue: optionValue,
+              }}
+              field={{
+                id: 'wide-popup-combobox',
+                name: 'wide_medicine_id',
+                label: 'Popup lebar',
+              }}
+              display={{
+                placeholder: 'Pilih',
+                renderOptionMeta: (option: MedicineOption) => option.code,
+              }}
+              search={{
+                placeholder: 'Cari popup lebar',
+              }}
+              popup={{
+                className:
+                  'w-[420px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl',
+                matchAnchorWidth: false,
+              }}
             />
           </div>
         </div>
 
         <div className="space-y-2">
-          <Combobox.Root
+          <PrimitiveCombobox.Root
             items={medicineOptions}
             value={primitiveValue}
             onValueChange={setPrimitiveValue}
             itemToStringLabel={optionLabel}
             itemToStringValue={optionValue}
           >
-            <Combobox.Label className="block text-sm font-semibold">
+            <PrimitiveCombobox.Label className="block text-sm font-semibold">
               Primitive custom trigger
-            </Combobox.Label>
-            <Combobox.Trigger
+            </PrimitiveCombobox.Label>
+            <PrimitiveCombobox.Trigger
               id="primitive-custom-trigger"
               className="flex min-h-10 w-full items-center justify-between rounded-lg border border-slate-300 bg-white px-3 py-2 text-left text-sm"
             >
-              <Combobox.Value placeholder="Primitive value" />
-            </Combobox.Trigger>
-            <Combobox.Portal>
-              <Combobox.Positioner sideOffset={4}>
-                <Combobox.Popup className="w-full overflow-hidden rounded-lg bg-white shadow-thin-md">
-                  <Combobox.List className="max-h-56 overflow-y-auto p-1">
-                    {medicineOptions.map((option, index) => (
-                      <Combobox.Item
+              <PrimitiveCombobox.Value placeholder="Primitive value" />
+            </PrimitiveCombobox.Trigger>
+            <PrimitiveCombobox.Portal>
+              <PrimitiveCombobox.Positioner sideOffset={4}>
+                <PrimitiveCombobox.Popup className="w-full overflow-hidden rounded-lg bg-white shadow-thin-md">
+                  <PrimitiveCombobox.List className="max-h-56 overflow-y-auto p-1">
+                    {option => (
+                      <PrimitiveCombobox.Item
                         key={option.id}
-                        value={option}
-                        index={index}
                         disabled={Boolean(option.disabled)}
                         className="cursor-pointer rounded-md px-3 py-2 text-sm text-slate-800 data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50 data-[highlighted]:bg-emerald-50"
                       >
                         {option.name}
-                      </Combobox.Item>
-                    ))}
-                  </Combobox.List>
-                </Combobox.Popup>
-              </Combobox.Positioner>
-            </Combobox.Portal>
-          </Combobox.Root>
+                      </PrimitiveCombobox.Item>
+                    )}
+                  </PrimitiveCombobox.List>
+                </PrimitiveCombobox.Popup>
+              </PrimitiveCombobox.Positioner>
+            </PrimitiveCombobox.Portal>
+          </PrimitiveCombobox.Root>
         </div>
       </section>
 
@@ -209,20 +234,26 @@ function ComboboxRegressionHarness() {
             Posisi bawah
           </label>
           <PharmaComboboxSelect<MedicineOption>
-            id="bottom-combobox"
-            name="bottom_medicine_id"
             items={medicineOptions}
             value={bottomMedicine}
             onValueChange={setBottomMedicine}
-            itemToStringLabel={optionLabel}
-            itemToStringValue={optionValue}
-            isItemDisabled={(option: MedicineOption) =>
-              Boolean(option.disabled)
-            }
-            label="Posisi bawah"
-            placeholder="Pilih obat"
-            searchable={false}
-            indicator="radio"
+            item={{
+              toLabel: optionLabel,
+              toValue: optionValue,
+              isDisabled: (option: MedicineOption) => Boolean(option.disabled),
+            }}
+            field={{
+              id: 'bottom-combobox',
+              name: 'bottom_medicine_id',
+              label: 'Posisi bawah',
+            }}
+            display={{
+              placeholder: 'Pilih obat',
+              indicator: 'radio',
+            }}
+            search={{
+              enabled: false,
+            }}
           />
         </div>
       </section>

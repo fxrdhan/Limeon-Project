@@ -114,33 +114,35 @@ export default function PackageConversionInput({
       <div className="grid gap-4 md:grid-cols-3 mb-3">
         <FormField label="Unit" className="flex-1" required={true}>
           <PharmaEntityComboboxSelect
-            name="inventory_unit_id"
-            tabIndex={tabIndex}
             items={availableUnitOptions}
             valueId={formData.inventory_unit_id}
             onValueIdChange={handleUnitChange}
-            placeholder="-- Pilih Unit --"
-            required
+            field={{ name: 'inventory_unit_id', required: true }}
+            interaction={{ tabIndex, disabled }}
+            display={{ placeholder: '-- Pilih Unit --' }}
             validation={{ enabled: true, autoHide: true, autoHideDelay: 3000 }}
-            disabled={disabled}
-            hoverDetail={{ enabled: true, delay: 400 }}
-            onFetchHoverDetail={fetchUnitHoverDetail}
+            hoverDetail={{
+              enabled: true,
+              delay: 400,
+              fetch: fetchUnitHoverDetail,
+            }}
           />
         </FormField>
 
         <FormField label="Dalam" className="flex-1" required={true}>
           <PharmaEntityComboboxSelect
-            name="parent_inventory_unit_id"
-            tabIndex={tabIndex + 1}
             items={parentOptions}
             valueId={formData.parent_inventory_unit_id}
             onValueIdChange={handleParentUnitChange}
-            placeholder="-- Pilih Parent --"
-            required
+            field={{ name: 'parent_inventory_unit_id', required: true }}
+            interaction={{ tabIndex: tabIndex + 1, disabled }}
+            display={{ placeholder: '-- Pilih Parent --' }}
             validation={{ enabled: true, autoHide: true, autoHideDelay: 3000 }}
-            disabled={disabled}
-            hoverDetail={{ enabled: true, delay: 400 }}
-            onFetchHoverDetail={fetchUnitHoverDetail}
+            hoverDetail={{
+              enabled: true,
+              delay: 400,
+              fetch: fetchUnitHoverDetail,
+            }}
           />
         </FormField>
 

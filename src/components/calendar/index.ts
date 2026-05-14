@@ -12,6 +12,7 @@ export type {
   CalendarDateValue,
   CalendarHeaderProps,
   CalendarHeaderSelectRenderProps,
+  AnimatedDaysGridProps,
   CalendarMode,
   CalendarPortalProps,
   CalendarProps,

@@ -1,5 +1,8 @@
 import type React from 'react';
-import { useComboboxContext } from './primitive-context';
+import {
+  useComboboxActionsContext,
+  useComboboxStateContext,
+} from './primitive-context';
 
 type ComboboxValueProps = React.ComponentPropsWithoutRef<'span'> & {
   placeholder?: string;
@@ -10,11 +13,10 @@ export function ComboboxValue({
   placeholder,
   ...props
 }: ComboboxValueProps) {
-  const context = useComboboxContext<unknown>();
+  const { selectedValue } = useComboboxStateContext<unknown>();
+  const { itemToStringLabel } = useComboboxActionsContext<unknown>();
   const selectedLabel =
-    context.selectedValue === null
-      ? ''
-      : context.itemToStringLabel(context.selectedValue);
+    selectedValue === null ? '' : itemToStringLabel(selectedValue);
   const isPlaceholder = selectedLabel === '';
 
   return (

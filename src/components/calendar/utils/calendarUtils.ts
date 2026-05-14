@@ -1,4 +1,5 @@
 import type { CalendarDateValue } from '../types';
+export { formatDateOnlyValue, parseDateOnlyValue } from '@/lib/formatters';
 
 export const cloneDate = (date: Date): Date => {
   return new Date(date.getTime());
@@ -203,37 +204,6 @@ export const formatDisplayValue = (
     month: 'short',
     year: 'numeric',
   });
-};
-
-export const formatDateOnlyValue = (value: Date): string => {
-  const year = value.getFullYear();
-  const month = String(value.getMonth() + 1).padStart(2, '0');
-  const day = String(value.getDate()).padStart(2, '0');
-
-  return `${year}-${month}-${day}`;
-};
-
-export const parseDateOnlyValue = (value: string): Date => {
-  const dateOnlyMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  if (!dateOnlyMatch) {
-    throw new Error('Expected a date-only value in YYYY-MM-DD format.');
-  }
-
-  const [, yearText, monthText, dayText] = dateOnlyMatch;
-  const year = Number(yearText);
-  const month = Number(monthText);
-  const day = Number(dayText);
-  const parsedDate = createDateWithTime(year, month - 1, day);
-
-  if (
-    parsedDate.getFullYear() !== year ||
-    parsedDate.getMonth() !== month - 1 ||
-    parsedDate.getDate() !== day
-  ) {
-    throw new Error('Expected a valid date-only value.');
-  }
-
-  return parsedDate;
 };
 
 export const formatAccessibleDate = (

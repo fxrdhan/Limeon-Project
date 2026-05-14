@@ -13,7 +13,7 @@ export type ComboboxSearchEntry<Item> = {
 
 export type ComboboxSearchState<Item> = {
   hasExactItem: boolean;
-  visibleItems: Item[];
+  visibleItems: readonly Item[];
 };
 
 const normalizeComboboxSearchText = (value: string) =>
@@ -35,6 +35,8 @@ const getComboboxConsonantSkeleton = (value: string) =>
 
 const getComboboxAcronym = (words: string[]) =>
   words.map(word => word[0] ?? '').join('');
+
+export const defaultComboboxLargeListVisibleItemLimit = 160;
 
 export const getComboboxControlName = ({
   ariaLabel,
@@ -64,7 +66,7 @@ export const getComboboxSelectedValue = <Item>(
 ) => (isComboboxValueEmpty(value, isValueEmpty) ? null : value);
 
 export const getComboboxSearchEntries = <Item>(
-  items: Item[],
+  items: readonly Item[],
   itemToStringLabel: ItemLabelGetter<Item>
 ): ComboboxSearchEntry<Item>[] =>
   items.map((item, originalIndex) => {
@@ -106,6 +108,21 @@ const getNormalizedComboboxVisibleItemLimit = (limit?: number) => {
   return Math.floor(limit);
 };
 
+export const getEffectiveComboboxVisibleItemLimit = ({
+  itemCount,
+  visibleItemLimit,
+}: {
+  itemCount: number;
+  visibleItemLimit?: number;
+}) => {
+  const explicitLimit = getNormalizedComboboxVisibleItemLimit(visibleItemLimit);
+  if (explicitLimit !== undefined) return explicitLimit;
+
+  return itemCount > defaultComboboxLargeListVisibleItemLimit
+    ? defaultComboboxLargeListVisibleItemLimit
+    : undefined;
+};
+
 const getLimitedComboboxItems = <Item>({
   isSameItem,
   items,
@@ -113,7 +130,7 @@ const getLimitedComboboxItems = <Item>({
   selectedValue,
 }: {
   isSameItem: (item: Item, value: Item) => boolean;
-  items: Item[];
+  items: readonly Item[];
   limit: number | undefined;
   selectedValue: Item | null;
 }) => {
@@ -421,6 +438,95 @@ const hasComboboxSearchMatch = <Item>(result: {
   match: ComboboxSearchMatch | null;
 }): result is ComboboxMatchedSearchEntry<Item> => result.match !== null;
 
+const insertLimitedMatchedEntry = <Item>(
+  matchedEntries: ComboboxMatchedSearchEntry<Item>[],
+  nextEntry: ComboboxMatchedSearchEntry<Item>,
+  limit: number
+) => {
+  matchedEntries.push(nextEntry);
+  matchedEntries.sort((first, second) =>
+    compareComboboxSearchMatches(first.match, second.match)
+  );
+
+  if (matchedEntries.length > limit) {
+    matchedEntries.pop();
+  }
+};
+
+const getLimitedMatchedComboboxSearchState = <Item>({
+  includeTypoFuzzy = false,
+  isSameItem,
+  limit,
+  normalizedSearch,
+  normalizedSearchWords,
+  searchEntries,
+  selectedValue,
+}: {
+  includeTypoFuzzy?: boolean;
+  isSameItem: (item: Item, value: Item) => boolean;
+  limit: number;
+  normalizedSearch: string;
+  normalizedSearchWords: string[];
+  searchEntries: readonly ComboboxSearchEntry<Item>[];
+  selectedValue: Item | null;
+}) => {
+  const matchedEntries: ComboboxMatchedSearchEntry<Item>[] = [];
+  let hasExactItem = false;
+  let hasMatch = false;
+  let selectedMatchedItem: Item | null = null;
+
+  for (const entry of searchEntries) {
+    const match = getComboboxSearchMatch({
+      entry,
+      includeTypoFuzzy,
+      normalizedSearch,
+      normalizedSearchWords,
+    });
+    if (match === null) continue;
+
+    hasMatch = true;
+    if (match.tier === comboboxSearchTier.exact) {
+      hasExactItem = true;
+    }
+    if (
+      selectedValue !== null &&
+      selectedMatchedItem === null &&
+      isSameItem(entry.item, selectedValue)
+    ) {
+      selectedMatchedItem = entry.item;
+    }
+
+    insertLimitedMatchedEntry(matchedEntries, { entry, match }, limit);
+  }
+
+  const visibleItems = matchedEntries.map(({ entry }) => entry.item);
+  if (selectedMatchedItem !== null) {
+    const selectedItem = selectedMatchedItem;
+    const hasVisibleSelectedItem = visibleItems.some(visibleItem =>
+      isSameItem(visibleItem, selectedItem)
+    );
+    if (hasVisibleSelectedItem) {
+      return {
+        hasExactItem,
+        hasMatch,
+        visibleItems,
+      };
+    }
+
+    if (limit === 1) {
+      visibleItems[0] = selectedItem;
+    } else {
+      visibleItems[limit - 1] = selectedItem;
+    }
+  }
+
+  return {
+    hasExactItem,
+    hasMatch,
+    visibleItems,
+  };
+};
+
 export const getComboboxSearchState = <Item>({
   isSameItem,
   items,
@@ -430,13 +536,16 @@ export const getComboboxSearchState = <Item>({
   visibleItemLimit,
 }: {
   isSameItem: (item: Item, value: Item) => boolean;
-  items: Item[];
+  items: readonly Item[];
   normalizedInputValue: string;
-  searchEntries: ComboboxSearchEntry<Item>[];
+  searchEntries: readonly ComboboxSearchEntry<Item>[];
   selectedValue: Item | null;
   visibleItemLimit?: number;
 }): ComboboxSearchState<Item> => {
-  const limit = getNormalizedComboboxVisibleItemLimit(visibleItemLimit);
+  const limit = getEffectiveComboboxVisibleItemLimit({
+    itemCount: items.length,
+    visibleItemLimit,
+  });
 
   if (!normalizedInputValue) {
     return {
@@ -452,6 +561,34 @@ export const getComboboxSearchState = <Item>({
 
   const normalizedSearch = normalizeComboboxSearchText(normalizedInputValue);
   const normalizedSearchWords = splitComboboxSearchWords(normalizedSearch);
+
+  if (limit !== undefined) {
+    const deterministicState = getLimitedMatchedComboboxSearchState({
+      isSameItem,
+      limit,
+      normalizedSearch,
+      normalizedSearchWords,
+      searchEntries,
+      selectedValue,
+    });
+    const searchState = deterministicState.hasMatch
+      ? deterministicState
+      : getLimitedMatchedComboboxSearchState({
+          includeTypoFuzzy: true,
+          isSameItem,
+          limit,
+          normalizedSearch,
+          normalizedSearchWords,
+          searchEntries,
+          selectedValue,
+        });
+
+    return {
+      hasExactItem: searchState.hasExactItem,
+      visibleItems: searchState.visibleItems,
+    };
+  }
+
   const getMatchedEntries = (includeTypoFuzzy = false) =>
     searchEntries.map(entry => ({
       entry,
@@ -472,35 +609,12 @@ export const getComboboxSearchState = <Item>({
   ).sort((first, second) =>
     compareComboboxSearchMatches(first.match, second.match)
   );
-  const visibleItems: Item[] = [];
-  let selectedMatchBeyondLimit: Item | null = null;
   const hasExactItem = matchedEntries.some(
     ({ match }) => match.tier === comboboxSearchTier.exact
   );
 
-  for (const { entry } of matchedEntries) {
-    if (limit === undefined || visibleItems.length < limit) {
-      visibleItems.push(entry.item);
-    } else if (
-      selectedValue !== null &&
-      selectedMatchBeyondLimit === null &&
-      isSameItem(entry.item, selectedValue) &&
-      !visibleItems.some(visibleItem => isSameItem(visibleItem, selectedValue))
-    ) {
-      selectedMatchBeyondLimit = entry.item;
-    }
-  }
-
-  if (selectedMatchBeyondLimit !== null && limit !== undefined) {
-    if (limit === 1) {
-      visibleItems[0] = selectedMatchBeyondLimit;
-    } else {
-      visibleItems[limit - 1] = selectedMatchBeyondLimit;
-    }
-  }
-
   return {
     hasExactItem,
-    visibleItems,
+    visibleItems: matchedEntries.map(({ entry }) => entry.item),
   };
 };

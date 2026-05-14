@@ -1,7 +1,7 @@
 type ComboboxHighlightIndexOptions<Item> = {
   isItemDisabled: (item: Item) => boolean;
   isSameItem: (item: Item, value: Item) => boolean;
-  items: Item[];
+  items: readonly Item[];
   selectedValue: Item | null;
 };
 

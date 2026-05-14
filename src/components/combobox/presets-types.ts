@@ -21,22 +21,44 @@ export interface PharmaComboboxOptionRenderState {
   selected: boolean;
 }
 
-export interface PharmaComboboxSelectProps<Item> {
+export interface PharmaComboboxItemConfig<Item> {
+  toLabel: (item: Item) => string;
+  toValue: (item: Item) => string;
+  isEqualToValue?: (item: Item, value: Item) => boolean;
+  isDisabled?: (item: Item) => boolean;
+  isValueEmpty?: ComboboxValueIsEmpty<Item>;
+  toHoverDetailData?: (item: Item) => Partial<HoverDetailData>;
+}
+
+export interface PharmaComboboxFieldConfig {
   id?: string;
   label?: string;
   name?: string;
-  items: Item[];
-  value: Item | null;
-  onValueChange: (
-    item: Item | null,
-    details: PharmaComboboxChangeDetails<Item>
+  form?: string;
+  required?: boolean;
+  aria?: {
+    label?: string;
+    labelledBy?: string;
+    describedBy?: string;
+  };
+}
+
+export interface PharmaComboboxInteractionConfig<Item> {
+  disabled?: boolean;
+  readOnly?: boolean;
+  tabIndex?: number;
+  open?: boolean;
+  onOpenChange?: (
+    open: boolean,
+    details: PharmaComboboxOpenChangeDetails<Item>
   ) => void;
-  itemToStringLabel: (item: Item) => string;
-  itemToStringValue: (item: Item) => string;
-  isItemEqualToValue?: (item: Item, value: Item) => boolean;
-  isItemDisabled?: (item: Item) => boolean;
-  isValueEmpty?: ComboboxValueIsEmpty<Item>;
-  itemToHoverDetailData?: (item: Item) => Partial<HoverDetailData>;
+}
+
+export interface PharmaComboboxDisplayConfig<Item> {
+  rootClassName?: string;
+  placeholder?: string;
+  emptyText?: string;
+  indicator?: ComboboxIndicatorKind;
   renderOption?: (
     item: Item,
     state: PharmaComboboxOptionRenderState
@@ -45,39 +67,47 @@ export interface PharmaComboboxSelectProps<Item> {
     item: Item,
     state: PharmaComboboxOptionRenderState
   ) => React.ReactNode;
+}
+
+export interface PharmaComboboxSearchConfig {
+  enabled?: boolean;
   placeholder?: string;
-  searchPlaceholder?: string;
-  emptyText?: string;
   visibleItemLimit?: number;
-  searchable?: boolean;
-  indicator?: ComboboxIndicatorKind;
-  required?: boolean;
-  disabled?: boolean;
-  readOnly?: boolean;
-  tabIndex?: number;
-  form?: string;
+}
+
+export interface PharmaComboboxPopupConfig {
   className?: string;
-  popupClassName?: string;
-  popupContainerRef?: React.RefObject<Element | DocumentFragment | null>;
-  popupMatchAnchorWidth?: boolean;
-  validation?: {
-    enabled?: boolean;
-    autoHide?: boolean;
-    autoHideDelay?: number;
-  };
-  createAction?: ComboboxCreateAction;
-  hoverDetail?: {
-    enabled?: boolean;
-    delay?: number;
-  };
-  onFetchHoverDetail?: (id: string) => Promise<HoverDetailData | null>;
-  onFetchHoverDetailError?: (error: unknown, id: string) => void;
-  open?: boolean;
-  onOpenChange?: (
-    open: boolean,
-    details: PharmaComboboxOpenChangeDetails<Item>
+  containerRef?: React.RefObject<Element | DocumentFragment | null>;
+  matchAnchorWidth?: boolean;
+}
+
+export interface PharmaComboboxValidationConfig {
+  enabled?: boolean;
+  autoHide?: boolean;
+  autoHideDelay?: number;
+}
+
+export interface PharmaComboboxHoverDetailConfig {
+  enabled?: boolean;
+  delay?: number;
+  fetch?: (id: string) => Promise<HoverDetailData | null>;
+  onFetchError?: (error: unknown, id: string) => void;
+}
+
+export interface PharmaComboboxSelectProps<Item> {
+  items: readonly Item[];
+  value: Item | null;
+  onValueChange: (
+    item: Item | null,
+    details: PharmaComboboxChangeDetails<Item>
   ) => void;
-  'aria-label'?: string;
-  'aria-labelledby'?: string;
-  'aria-describedby'?: string;
+  item: PharmaComboboxItemConfig<Item>;
+  field?: PharmaComboboxFieldConfig;
+  interaction?: PharmaComboboxInteractionConfig<Item>;
+  display?: PharmaComboboxDisplayConfig<Item>;
+  search?: PharmaComboboxSearchConfig;
+  popup?: PharmaComboboxPopupConfig;
+  validation?: PharmaComboboxValidationConfig;
+  creation?: ComboboxCreateAction;
+  hoverDetail?: PharmaComboboxHoverDetailConfig;
 }

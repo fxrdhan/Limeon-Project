@@ -235,7 +235,7 @@ Submission behavior:
 
 The preset implements accessible names, dialog semantics, focus management, and grid semantics.
 
-- The default display input has `role="combobox"`, `aria-expanded`, and `aria-controls` while the dialog is open.
+- The default display input has `role="combobox"`, `aria-haspopup="dialog"`, `aria-expanded`, and `aria-controls` while the dialog is open.
 - If `label` is provided, it is associated with the display input through `htmlFor`.
 - If no `label` is provided, the placeholder is used as the accessible name unless `aria-label` or `aria-labelledby` is supplied.
 - Datepicker content renders as a `role="dialog"` with the accessible name `Pilih tanggal`.
@@ -279,14 +279,15 @@ import { CalendarPrimitive } from '@/components/calendar';
 
 ### Compound Parts
 
-| Part                        | Description                                                                 |
-| --------------------------- | --------------------------------------------------------------------------- |
-| `CalendarPrimitive.Root`    | Provides shared state, bounds, trigger behavior, portal state, and actions. |
-| `CalendarPrimitive.Trigger` | Wraps or clones custom trigger content and wires open/close interaction.    |
-| `CalendarPrimitive.Button`  | Default display input used by the app preset.                               |
-| `CalendarPrimitive.Portal`  | Renders popup content into `document.body` or a custom container.           |
-| `CalendarPrimitive.Header`  | Month/year selectors and previous/next month navigation buttons.            |
-| `CalendarPrimitive.Grid`    | Calendar day grid. Can be rendered outside root context as a pure grid.     |
+| Part                             | Description                                                                 |
+| -------------------------------- | --------------------------------------------------------------------------- |
+| `CalendarPrimitive.Root`         | Provides shared state, bounds, trigger behavior, portal state, and actions. |
+| `CalendarPrimitive.Trigger`      | Wraps or clones custom trigger content and wires open/close interaction.    |
+| `CalendarPrimitive.Button`       | Default display input used by the app preset.                               |
+| `CalendarPrimitive.Portal`       | Renders popup content into `document.body` or a custom container.           |
+| `CalendarPrimitive.Header`       | Month/year selectors and previous/next month navigation buttons.            |
+| `CalendarPrimitive.Grid`         | Calendar day grid. Can be rendered outside root context as a pure grid.     |
+| `CalendarPrimitive.AnimatedGrid` | Calendar day grid with month/year transition animation.                     |
 
 ### `CalendarPrimitive.Root`
 
@@ -328,6 +329,16 @@ By default, the portal renders into `document.body`. Pass `container` to render 
 
 The portal uses fixed positioning with Floating UI. It flips or shifts when there is not enough viewport space and exposes `drop-down` / `drop-up` classes for styling.
 
+The default dialog label remains `Pilih tanggal`. Custom primitive compositions can provide a more specific accessible name without changing the preset behavior:
+
+```tsx
+<CalendarPrimitive.Portal title="Pilih tanggal faktur">
+  <CustomCalendarContent />
+</CalendarPrimitive.Portal>
+```
+
+Use `aria-label`, `aria-labelledby`, or `aria-describedby` when the dialog label or description is owned by custom content.
+
 ### `CalendarPrimitive.Header`
 
 `CalendarPrimitive.Header` is render-prop based for month and year controls. The preset uses `PharmaComboboxSelect` for both selectors.
@@ -363,23 +374,24 @@ Both render props receive:
 
 `CalendarPrimitive.Grid` renders a semantic day grid for a single displayed month.
 
-| Prop                      | Type                           | Description                                                            |
-| ------------------------- | ------------------------------ | ---------------------------------------------------------------------- |
-| `displayDate`             | `Date`                         | Month and year to display.                                             |
-| `value`                   | `Date \| null`                 | Selected date.                                                         |
-| `highlightedDate`         | `Date \| null`                 | Keyboard or hover-highlighted date.                                    |
-| `minDate` / `maxDate`     | `Date`                         | Inclusive selection bounds.                                            |
-| `onDateSelect`            | `(date: Date) => void`         | Called when an enabled day is selected.                                |
-| `onDateHighlight`         | `(date: Date \| null) => void` | Called on date hover enter/leave.                                      |
-| `getDayButtonId`          | `(date: Date) => string`       | Stable id generator used for day buttons and active descendant wiring. |
-| `gridTabIndex`            | `number`                       | Tab index for the grid root.                                           |
-| `onGridKeyDown`           | `KeyboardEventHandler`         | Keyboard handler for grid navigation.                                  |
-| `navigationDirection`     | `'prev' \| 'next' \| null`     | Horizontal month animation direction.                                  |
-| `yearNavigationDirection` | `'prev' \| 'next' \| null`     | Vertical year animation direction.                                     |
-| `readOnly`                | `boolean`                      | Disables day buttons while preserving selected state.                  |
-| `disabled`                | `boolean`                      | Disables all day interaction.                                          |
-| `animated`                | `boolean`                      | Enables animated month/year transitions.                               |
-| `fixedWeekCount`          | `boolean`                      | Pads the grid to 6 weeks when enabled.                                 |
+| Prop                  | Type                           | Description                                                            |
+| --------------------- | ------------------------------ | ---------------------------------------------------------------------- |
+| `displayDate`         | `Date`                         | Month and year to display.                                             |
+| `value`               | `Date \| null`                 | Selected date.                                                         |
+| `highlightedDate`     | `Date \| null`                 | Keyboard or hover-highlighted date.                                    |
+| `minDate` / `maxDate` | `Date`                         | Inclusive selection bounds.                                            |
+| `onDateSelect`        | `(date: Date) => void`         | Called when an enabled day is selected.                                |
+| `onDateHighlight`     | `(date: Date \| null) => void` | Called on date hover enter/leave.                                      |
+| `getDayButtonId`      | `(date: Date) => string`       | Stable id generator used for day buttons and active descendant wiring. |
+| `gridTabIndex`        | `number`                       | Tab index for the grid root.                                           |
+| `onGridKeyDown`       | `KeyboardEventHandler`         | Keyboard handler for grid navigation.                                  |
+| `readOnly`            | `boolean`                      | Disables day buttons while preserving selected state.                  |
+| `disabled`            | `boolean`                      | Disables all day interaction.                                          |
+| `fixedWeekCount`      | `boolean`                      | Pads the grid to 6 weeks when enabled.                                 |
+
+`CalendarPrimitive.AnimatedGrid` accepts the same grid props plus
+`navigationDirection` for horizontal month animation and
+`yearNavigationDirection` for vertical year animation.
 
 ## Styling
 
@@ -412,6 +424,7 @@ calendar/
 │   ├── CalendarButton.tsx
 │   ├── CalendarHeader.tsx
 │   ├── CalendarPortal.tsx
+│   ├── AnimatedDaysGrid.tsx
 │   ├── DaysGrid.tsx
 │   └── calendarHeaderModel.ts
 ├── hooks/

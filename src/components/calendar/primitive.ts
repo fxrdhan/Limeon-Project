@@ -1,4 +1,5 @@
 import {
+  AnimatedDaysGrid,
   CalendarButton,
   CalendarHeader,
   CalendarPortal,
@@ -9,6 +10,7 @@ import { CalendarRoot, CalendarTrigger } from './primitive-parts';
 export type { CalendarRootProps } from './primitive-parts';
 
 export const CalendarPrimitive = {
+  AnimatedGrid: AnimatedDaysGrid,
   Button: CalendarButton,
   Grid: DaysGrid,
   Header: CalendarHeader,

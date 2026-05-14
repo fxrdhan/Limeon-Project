@@ -6,6 +6,7 @@ import {
   type RefObject,
 } from 'react';
 import { getPharmaComboboxOptionIndexSelector } from '../utils/preset-dom';
+import type { ComboboxVirtualScrollToIndex } from './use-combobox-keyboard-highlight-scroll';
 
 const selectedOptionScrollTopInset = 4;
 
@@ -15,6 +16,7 @@ export function useComboboxSelectedOptionScroll<Item>({
   isSameItem,
   listRef,
   selectedValue,
+  virtualScrollToIndexRef,
   visibleItems,
 }: {
   actualOpen: boolean;
@@ -22,7 +24,8 @@ export function useComboboxSelectedOptionScroll<Item>({
   isSameItem: (item: Item, value: Item) => boolean;
   listRef: RefObject<HTMLDivElement | null>;
   selectedValue: Item | null;
-  visibleItems: Item[];
+  virtualScrollToIndexRef: RefObject<ComboboxVirtualScrollToIndex | null>;
+  visibleItems: readonly Item[];
 }) {
   const [scrollRevision, setScrollRevision] = useState(0);
   const selectedVisibleIndex = useMemo(
@@ -46,7 +49,12 @@ export function useComboboxSelectedOptionScroll<Item>({
       const option = list.querySelector<HTMLElement>(
         getPharmaComboboxOptionIndexSelector(selectedVisibleIndex)
       );
-      if (!option) return;
+      if (!option) {
+        virtualScrollToIndexRef.current?.(selectedVisibleIndex, {
+          align: 'start',
+        });
+        return;
+      }
 
       const listTop = list.getBoundingClientRect().top;
       const optionTop = option.getBoundingClientRect().top;
@@ -54,7 +62,14 @@ export function useComboboxSelectedOptionScroll<Item>({
     });
 
     return () => window.cancelAnimationFrame(frame);
-  }, [actualOpen, enabled, listRef, scrollRevision, selectedVisibleIndex]);
+  }, [
+    actualOpen,
+    enabled,
+    listRef,
+    scrollRevision,
+    selectedVisibleIndex,
+    virtualScrollToIndexRef,
+  ]);
 
   return {
     requestSelectedOptionScroll,

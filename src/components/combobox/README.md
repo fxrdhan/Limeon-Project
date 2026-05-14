@@ -4,18 +4,18 @@
 
 `@/components/combobox` provides the combobox/select implementation used by PharmaSys forms and data-entry flows. The module has a primitive layer and an app preset layer:
 
-- Primitive: `Combobox`, a local compound component for custom combobox compositions.
+- Typed primitive: `createTypedCombobox`, a local compound component factory for custom combobox compositions.
 - App presets: `PharmaComboboxSelect` for arbitrary item types and `PharmaEntityComboboxSelect` for common `{ id, name }` entity options.
 
 The component supports single selection, controlled or uncontrolled open state, controlled or uncontrolled selected value, searchable option lists, keyboard navigation, hidden form submission, portal-based popup positioning, required-state feedback, create actions, and optional hover detail popovers.
 
-Use the app presets for normal product screens. Use the primitive only when a screen needs a custom layout that the preset cannot express.
+Use the app presets for normal product screens. Use the typed primitive only when a screen needs a custom layout that the preset cannot express.
 
 ## Import
 
 ```tsx
 import {
-  Combobox,
+  createTypedCombobox,
   PharmaComboboxSelect,
   PharmaEntityComboboxSelect,
 } from '@/components/combobox';
@@ -31,6 +31,7 @@ Additional exports:
 | `PharmaComboboxSelectProps`       | Props for the generic app preset.                             |
 | `PharmaComboboxOptionRenderState` | State passed to `renderOption` and `renderOptionMeta`.        |
 | `PharmaEntityComboboxSelectProps` | Props for the entity preset.                                  |
+| `createTypedCombobox`             | Typed primitive namespace for custom compositions.            |
 | `findComboboxItemByValue`         | Helper for resolving an item from its submitted string value. |
 
 ## Recommended Usage
@@ -44,13 +45,17 @@ type Category = {
 };
 
 <PharmaEntityComboboxSelect<Category>
-  label="Kategori"
-  name="category_id"
   items={categories}
   valueId={formData.category_id}
   onValueIdChange={valueId => updateField('category_id', valueId)}
-  placeholder="Pilih Kategori"
-  required
+  field={{
+    label: 'Kategori',
+    name: 'category_id',
+    required: true,
+  }}
+  display={{
+    placeholder: 'Pilih Kategori',
+  }}
 />;
 ```
 
@@ -58,14 +63,16 @@ Use `selectedItem` when the saved id can exist before the option list has finish
 
 ```tsx
 <PharmaEntityComboboxSelect
-  label="Supplier"
-  name="supplier_id"
   items={supplierOptions}
   valueId={supplierId}
   selectedItem={selectedSupplier}
   onValueIdChange={(valueId, item) => {
     setSupplierId(valueId);
     setSelectedSupplier(item);
+  }}
+  field={{
+    label: 'Supplier',
+    name: 'supplier_id',
   }}
 />
 ```
@@ -80,15 +87,21 @@ type Supplier = {
 };
 
 <PharmaComboboxSelect<Supplier>
-  label="Supplier"
-  name="supplier_id"
   items={suppliers}
   value={selectedSupplier}
   onValueChange={setSelectedSupplier}
-  itemToStringLabel={supplier => supplier.name}
-  itemToStringValue={supplier => supplier.id}
-  isItemEqualToValue={(item, value) => item.id === value.id}
-  renderOptionMeta={supplier => supplier.code}
+  item={{
+    toLabel: supplier => supplier.name,
+    toValue: supplier => supplier.id,
+    isEqualToValue: (item, value) => item.id === value.id,
+  }}
+  field={{
+    label: 'Supplier',
+    name: 'supplier_id',
+  }}
+  display={{
+    renderOptionMeta: supplier => supplier.code,
+  }}
 />;
 ```
 
@@ -104,20 +117,31 @@ const statusLabels: Record<Status, string> = {
 };
 
 <PharmaComboboxSelect<Status>
-  label="Status"
-  name="status"
   items={[...statusOptions]}
   value={status}
   onValueChange={setStatus}
-  itemToStringLabel={value => statusLabels[value]}
-  itemToStringValue={value => value}
-  searchable={false}
-  indicator="radio"
-  required
+  item={{
+    toLabel: value => statusLabels[value],
+    toValue: value => value,
+  }}
+  field={{
+    label: 'Status',
+    name: 'status',
+    required: true,
+  }}
+  display={{
+    indicator: 'radio',
+  }}
+  search={{
+    enabled: false,
+  }}
 />;
 ```
 
-Use the primitive directly only for custom UI composition.
+Use `createTypedCombobox` only when a screen needs custom UI composition that
+the presets cannot express. The raw primitive is internal; public custom
+composition should use a typed namespace so `Root`, `List`, `Collection`, and
+`Item` share the same value type.
 
 ```tsx
 type Supplier = {
@@ -125,7 +149,9 @@ type Supplier = {
   name: string;
 };
 
-<Combobox.Root<Supplier>
+const SupplierCombobox = createTypedCombobox<Supplier>();
+
+<SupplierCombobox.Root
   items={suppliers}
   value={selectedSupplier}
   onValueChange={setSelectedSupplier}
@@ -134,27 +160,89 @@ type Supplier = {
   name="supplier_id"
   autoHighlight
 >
-  <Combobox.Label>Supplier</Combobox.Label>
-  <Combobox.Trigger>
-    <Combobox.Value placeholder="Pilih Supplier" />
-  </Combobox.Trigger>
-  <Combobox.Portal>
-    <Combobox.Positioner sideOffset={4}>
-      <Combobox.Popup>
-        <Combobox.Input aria-label="Cari supplier" placeholder="Cari..." />
-        <Combobox.List<Supplier>>
-          {(supplier, index) => (
-            <Combobox.Item key={supplier.id} value={supplier} index={index}>
+  <SupplierCombobox.Label>Supplier</SupplierCombobox.Label>
+  <SupplierCombobox.Trigger>
+    <SupplierCombobox.Value placeholder="Pilih Supplier" />
+  </SupplierCombobox.Trigger>
+  <SupplierCombobox.Portal>
+    <SupplierCombobox.Positioner sideOffset={4}>
+      <SupplierCombobox.Popup>
+        <SupplierCombobox.Input
+          aria-label="Cari supplier"
+          placeholder="Cari..."
+        />
+        <SupplierCombobox.List>
+          {supplier => (
+            <SupplierCombobox.Item key={supplier.id}>
               {supplier.name}
-            </Combobox.Item>
+            </SupplierCombobox.Item>
           )}
-        </Combobox.List>
-        <Combobox.Empty>Tidak ada data</Combobox.Empty>
-      </Combobox.Popup>
-    </Combobox.Positioner>
-  </Combobox.Portal>
-</Combobox.Root>;
+        </SupplierCombobox.List>
+        <SupplierCombobox.Empty>Tidak ada data</SupplierCombobox.Empty>
+      </SupplierCombobox.Popup>
+    </SupplierCombobox.Positioner>
+  </SupplierCombobox.Portal>
+</SupplierCombobox.Root>;
 ```
+
+## State Boundary Between Primitive and Presets
+
+The primitive layer owns generic combobox mechanics. `Combobox.Root` is
+responsible for the selected `value`, popup `open` state, search `inputValue`,
+`highlightedIndex`, option registration, item selection, form submission,
+registered labels, ARIA ids, outside-press dismissal, focus-out dismissal, and
+native form reset behavior.
+
+Each primitive state slot can be controlled or uncontrolled:
+
+| State slot         | Controlled props                   | Uncontrolled props                         |
+| ------------------ | ---------------------------------- | ------------------------------------------ |
+| Selected value     | `value`, `onValueChange`           | `defaultValue`                             |
+| Popup visibility   | `open`, `onOpenChange`             | `defaultOpen`                              |
+| Search input       | `inputValue`, `onInputValueChange` | `defaultInputValue`                        |
+| Highlighted option | `highlightedIndex`, callbacks      | `defaultHighlightedIndex`, `autoHighlight` |
+| Filtered options   | `filteredItems`, `filter={null}`   | `items`, optional `filter`                 |
+
+Callbacks receive cancelable details. If a callback calls `details.cancel()`,
+the primitive does not apply its internal transition. Controlled callers still
+own the final state and must update their controlled props when they accept a
+requested transition.
+
+The app preset is a controlled consumer of the primitive, not a second
+independent combobox implementation. `PharmaComboboxSelect` computes
+PharmaSys-specific state before it reaches `Combobox.Root`: ranked search
+results, visible item limits, the effective highlighted index, validation
+feedback, focus restore intent, selected-option scrolling, keyboard scroll
+frames, hover detail state, and create-action availability.
+
+Because the preset owns ranked search, it passes `filteredItems={visibleItems}`
+and `filter={null}` to the primitive. Because the preset owns the search box
+lifecycle, it passes controlled `inputValue` and clears that value after close or
+after an uncanceled selection. Because the preset owns visual highlight policy,
+it passes controlled `highlightedIndex` while the primitive still owns option
+registration, ARIA active-descendant wiring, and selection commits.
+
+Selection remains a primitive transition. The preset can observe and decorate
+selection, but `Combobox.Item` and `Combobox.Root` still perform the actual
+commit, emit `onValueChange`, close the popup, and serialize the hidden form
+value through `itemToStringValue`. After an uncanceled value change, the preset
+resets search, hover detail, keyboard-hover suppression, and search-navigation
+focus.
+
+`PharmaEntityComboboxSelect` is only an id adapter over
+`PharmaComboboxSelect`. It resolves `valueId` to an item, preserves unavailable
+saved ids with a neutral fallback value, and maps selected items back to ids. It
+does not own popup, keyboard, search, validation, or hover behavior.
+
+When adding behavior, use this boundary:
+
+- Put generic, layout-agnostic combobox mechanics in the primitive.
+- Put PharmaSys UI policy in the preset, including ranked search, validation
+  overlays, animated highlights, hover detail, create actions, and virtual-list
+  scroll coordination.
+- Keep entity id resolution in `PharmaEntityComboboxSelect`.
+- Avoid mirroring the same state in both layers unless the preset is
+  intentionally controlling a primitive state slot.
 
 ## App Presets
 
@@ -169,15 +257,21 @@ type EntityComboboxItem = {
 };
 ```
 
-| Prop                 | Type                               | Description                                                         |
-| -------------------- | ---------------------------------- | ------------------------------------------------------------------- |
-| `items`              | `Item[]`                           | Available options.                                                  |
-| `valueId`            | `string`                           | Current submitted id. Use `''` for empty selection.                 |
-| `onValueIdChange`    | `(valueId, item, details) => void` | Called when selection changes.                                      |
-| `selectedItem`       | `Item \| null`                     | Optional item for the current id when it is not present in `items`. |
-| `itemToStringLabel`  | `(item) => string`                 | Optional label formatter. Defaults to `item.name`.                  |
-| `itemToStringValue`  | `(item) => string`                 | Optional submitted-value formatter. Defaults to `item.id`.          |
-| `isItemEqualToValue` | `(item, value) => boolean`         | Optional equality check. Defaults to matching submitted values.     |
+| Prop              | Type                               | Description                                                                                                                        |
+| ----------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `items`           | `readonly Item[]`                  | Available options.                                                                                                                 |
+| `valueId`         | `string`                           | Current submitted id. Use `''` for empty selection.                                                                                |
+| `onValueIdChange` | `(valueId, item, details) => void` | Called when selection changes.                                                                                                     |
+| `selectedItem`    | `Item \| null`                     | Optional item for the current id when it is not present in `items`.                                                                |
+| `item`            | Entity item conversion config      | Optional overrides for label, submitted value, equality, disabled, empty, and hover-detail data behavior. Defaults to `name`/`id`. |
+| `field`           | Field metadata config              | Label, id, name, form, required state, and ARIA overrides.                                                                         |
+| `interaction`     | Interaction config                 | Disabled, read-only, tab order, and controlled open-state behavior.                                                                |
+| `display`         | Display config                     | Placeholder, empty text, root class, indicator, and option renderers.                                                              |
+| `search`          | Search config                      | Search enablement, placeholder, and visible item limit.                                                                            |
+| `popup`           | Popup config                       | Popup class, portal container, and width matching.                                                                                 |
+| `validation`      | Validation config                  | Required-field validation overlay configuration.                                                                                   |
+| `creation`        | Create action config               | Create action rendered when no exact option exists.                                                                                |
+| `hoverDetail`     | Hover-detail config                | Hover-detail behavior, async fetch, and fetch-error handling.                                                                      |
 
 If `valueId` is not empty and neither `items` nor `selectedItem` can resolve it, the preset keeps the hidden form value intact and displays a neutral fallback label.
 
@@ -185,48 +279,35 @@ If `valueId` is not empty and neither `items` nor `selectedItem` can resolve it,
 
 `PharmaComboboxSelect` is the generic app preset. It should be used when the selected value is an object or scalar that needs custom string conversion.
 
-| Prop                      | Type                                                                | Description                                                                       |
-| ------------------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| `items`                   | `Item[]`                                                            | Options displayed by the select.                                                  |
-| `value`                   | `Item \| null`                                                      | Selected item.                                                                    |
-| `onValueChange`           | `(item, details) => void`                                           | Called after the selected item changes.                                           |
-| `itemToStringLabel`       | `(item) => string`                                                  | Human-readable option label.                                                      |
-| `itemToStringValue`       | `(item) => string`                                                  | Stable submitted value. Must be unique within the option list.                    |
-| `isItemEqualToValue`      | `(item, value) => boolean`                                          | Equality check for object values that can be different references.                |
-| `isItemDisabled`          | `(item) => boolean`                                                 | Disables individual options. Defaults to reading `item.disabled` on object items. |
-| `isValueEmpty`            | `(item) => boolean`                                                 | Defines custom empty sentinels such as `''`.                                      |
-| `id`                      | `string`                                                            | Trigger/control id. Inherits `FormField` control id when available.               |
-| `label`                   | `string`                                                            | Visible or accessible label. Inherits `FormField` label when available.           |
-| `name`                    | `string`                                                            | Hidden input name for form submission.                                            |
-| `form`                    | `string`                                                            | Associates the hidden input with a form id.                                       |
-| `placeholder`             | `string`                                                            | Trigger placeholder. Defaults to `'-- Pilih --'`.                                 |
-| `searchPlaceholder`       | `string`                                                            | Search input placeholder. Defaults to `'Cari...'`.                                |
-| `emptyText`               | `string`                                                            | Empty-state text. Defaults to `'Tidak ada data'`.                                 |
-| `searchable`              | `boolean`                                                           | Enables the popup search input. Defaults to `true`.                               |
-| `visibleItemLimit`        | `number`                                                            | Optional render cap for large lists. Filtering still evaluates all items.         |
-| `indicator`               | `'none' \| 'check' \| 'radio' \| 'checkbox'`                        | Selection indicator style.                                                        |
-| `required`                | `boolean`                                                           | Enables required-state semantics and preset validation integration.               |
-| `disabled`                | `boolean`                                                           | Disables the control.                                                             |
-| `readOnly`                | `boolean`                                                           | Prevents selection changes while keeping the current value readable.              |
-| `tabIndex`                | `number`                                                            | Trigger tab order.                                                                |
-| `className`               | `string`                                                            | Root container class.                                                             |
-| `popupClassName`          | `string`                                                            | Popup surface class.                                                              |
-| `popupMatchAnchorWidth`   | `boolean`                                                           | Whether the popup width follows the trigger width. Defaults to `true`.            |
-| `validation`              | `{ enabled?: boolean; autoHide?: boolean; autoHideDelay?: number }` | Required-field validation overlay configuration.                                  |
-| `createAction`            | `{ label?: string; onCreate: (searchTerm?: string) => void }`       | Create action rendered when no exact option exists.                               |
-| `hoverDetail`             | `{ enabled?: boolean; delay?: number }`                             | Hover-detail behavior configuration.                                              |
-| `itemToHoverDetailData`   | `(item) => Partial<HoverDetailData>`                                | Maps an item to local hover-detail data.                                          |
-| `onFetchHoverDetail`      | `(id) => Promise<HoverDetailData \| null>`                          | Loads hover-detail data asynchronously.                                           |
-| `onFetchHoverDetailError` | `(error, id) => void`                                               | Handles hover-detail fetch failures.                                              |
-| `renderOption`            | `(item, state) => ReactNode`                                        | Custom option content.                                                            |
-| `renderOptionMeta`        | `(item, state) => ReactNode`                                        | Secondary option metadata.                                                        |
-| `open`                    | `boolean`                                                           | Controlled popup state.                                                           |
-| `onOpenChange`            | `(open, details) => void`                                           | Called when the primitive requests an open-state change.                          |
-| `aria-label`              | `string`                                                            | Accessible name override.                                                         |
-| `aria-labelledby`         | `string`                                                            | Accessible label reference override.                                              |
-| `aria-describedby`        | `string`                                                            | Accessible description reference.                                                 |
+| Prop            | Type                      | Description                                                                                                                                                  |
+| --------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `items`         | `readonly Item[]`         | Options displayed by the select.                                                                                                                             |
+| `value`         | `Item \| null`            | Selected item.                                                                                                                                               |
+| `onValueChange` | `(item, details) => void` | Called after the selected item changes.                                                                                                                      |
+| `item`          | Item conversion config    | `toLabel`, `toValue`, optional equality, disabled, empty-value, and hover-detail data mapping. `toValue` should be stable and unique within the option list. |
+| `field`         | Field metadata config     | Trigger id, label, hidden input name, form id, required state, and ARIA overrides.                                                                           |
+| `interaction`   | Interaction config        | Disabled, read-only, tab order, controlled popup state, and open-state callback.                                                                             |
+| `display`       | Display config            | Root class, placeholder, empty text, indicator, custom option content, and option metadata.                                                                  |
+| `search`        | Search config             | Search enablement, search placeholder, and visible item limit.                                                                                               |
+| `popup`         | Popup config              | Popup surface class, portal container ref, and anchor-width matching.                                                                                        |
+| `validation`    | Validation config         | Required-field validation overlay configuration.                                                                                                             |
+| `creation`      | Create action config      | Create action rendered when no exact option exists.                                                                                                          |
+| `hoverDetail`   | Hover-detail config       | Hover-detail enablement, delay, async data fetch, and fetch-error callback.                                                                                  |
 
-## Primitive API
+When `required` is set, preset validation is enabled by default. Set
+`validation.enabled` to `false` to opt out of preset overlay feedback and
+`aria-invalid` state.
+
+Required preset fields also render a separate native validation proxy. The
+submitted hidden input remains a plain submitted value, while the proxy lets
+browser form validation block empty required comboboxes and route focus back to
+the trigger. This native required proxy remains active when `required` is true,
+even if `validation.enabled` is `false`.
+
+## Typed Primitive API
+
+The `Combobox` name below refers to a typed namespace returned by
+`createTypedCombobox<Value>()`, not a public raw export.
 
 ### Compound Parts
 
@@ -242,7 +323,7 @@ If `valueId` is not empty and neither `items` nor `selectedItem` can resolve it,
 | `Combobox.Input`         | Search input controlled by `Combobox.Root`.                                                  |
 | `Combobox.List`          | Listbox wrapper. Can map `filteredItems` through a render function.                          |
 | `Combobox.Collection`    | Render-only mapper for `filteredItems`.                                                      |
-| `Combobox.Item`          | Selectable option.                                                                           |
+| `Combobox.Item`          | Selectable option scoped to a `List` or `Collection` item callback.                          |
 | `Combobox.ItemIndicator` | Optional indicator element inside an option.                                                 |
 | `Combobox.Empty`         | Status element rendered only when there are no filtered items.                               |
 | `Combobox.Status`        | Generic status element.                                                                      |
@@ -289,6 +370,7 @@ type ComboboxEventDetails = {
   reason:
     | 'escape-key'
     | 'focus-out'
+    | 'form-reset'
     | 'input-change'
     | 'item-press'
     | 'keyboard'
@@ -309,7 +391,7 @@ Call `details.cancel()` to prevent the primitive from applying the requested tra
 
 ### Render Props
 
-`Combobox.Trigger` and `Combobox.Item` accept `render={element}` or `render={(props, state) => element}`. The generated props include ARIA attributes, event handlers, refs, class names, styles, and data attributes.
+`Combobox.Trigger` and `Combobox.Item` accept `render={element}` or `render={(props, state) => element}`. The generated props include ARIA attributes, event handlers, refs, class names, styles, and data attributes. In the typed primitive, `Combobox.Item` receives its value and index from the surrounding `List` or `Collection` callback; do not pass `value` or `index`.
 
 ```tsx
 <Combobox.Trigger
@@ -351,13 +433,19 @@ The popup search input supports:
 
 ### Forms
 
-Passing `name` renders a hidden input. Its value comes from `itemToStringValue(selectedItem)`. For entity selects, the hidden value is the selected id.
+Passing `field.name` renders a hidden input. Its value comes from `item.toValue(selectedItem)`. For entity selects, the hidden value is the selected id.
 
-`required` is used for accessibility and preset validation state. It is not native hidden-input constraint validation.
+`field.required` is used for accessibility and preset validation state. It is not native hidden-input constraint validation.
+
+Native form reset restores uncontrolled combobox state to the corresponding
+`defaultValue`, `defaultInputValue`, `defaultHighlightedIndex`, and
+`defaultOpen` props. Controlled callers receive `form-reset` change callbacks
+and must update their controlled state when they want native reset buttons to
+change the combobox value.
 
 ### Accessibility
 
-The primitive wires the trigger, input, listbox, option ids, active descendant, selected state, disabled state, and registered labels. When a preset is not wrapped by `FormField`, pass `label`, `aria-label`, or `aria-labelledby` so the control has an accessible name.
+The primitive wires the trigger, input, listbox, option ids, active descendant, selected state, disabled state, and registered labels. When a preset is not wrapped by `FormField`, pass `field.label`, `field.aria.label`, or `field.aria.labelledBy` so the control has an accessible name.
 
 ### Controlled Open State
 
@@ -386,7 +474,7 @@ When `open` is controlled, `onOpenChange(false, details)` is only a close reques
 ## Maintenance Guidelines
 
 - Keep app screens on `PharmaEntityComboboxSelect` or `PharmaComboboxSelect` unless custom markup is required.
-- Keep `itemToStringValue` stable and unique for every option in the same list.
+- Keep `item.toValue` stable and unique for every option in the same list.
 - Prefer `selectedItem` over placeholder-only workarounds when a saved id is loaded before its option list.
 - Add primitive behavior only when a real PharmaSys call site needs it.
 - Keep visual highlight behavior in the preset and submitted value changes in the primitive selection flow.

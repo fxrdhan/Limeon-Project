@@ -135,8 +135,6 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
               >
                 <FormField label="Status" required={true}>
                   <PharmaComboboxSelect
-                    name="is_active"
-                    tabIndex={18}
                     items={['true', 'false']}
                     value={formData.is_active ? 'true' : 'false'}
                     onValueChange={value => {
@@ -144,13 +142,15 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
                         onFieldChange('is_active', value === 'true');
                       }
                     }}
-                    itemToStringLabel={value =>
-                      value === 'true' ? 'Masih dijual' : 'Tidak Dijual'
-                    }
-                    itemToStringValue={value => value}
-                    indicator="radio"
-                    searchable={false}
-                    disabled={disabled}
+                    item={{
+                      toLabel: value =>
+                        value === 'true' ? 'Masih dijual' : 'Tidak Dijual',
+                      toValue: value => value,
+                    }}
+                    field={{ name: 'is_active' }}
+                    interaction={{ tabIndex: 18, disabled }}
+                    display={{ indicator: 'radio' }}
+                    search={{ enabled: false }}
                   />
                 </FormField>
 

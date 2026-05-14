@@ -23,6 +23,10 @@ config_file = "agents/custom-default.toml"
 description = "Codebase explorer for read-heavy tasks."
 config_file = "agents/custom-explorer.toml"
 
+[agents.review-commit]
+description = "Inspect working-tree changes, generate conventional commit messages, and commit without pushing."
+config_file = "agents/review-commit.toml"
+
 [features]
 unified_exec = true
 shell_snapshot = true

@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatDateOnlyDisplayValue } from '@/lib/formatters';
 import type { InvoiceLayoutProps } from '@/types';
 
 const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
@@ -53,16 +54,14 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
               <div className="grid grid-cols-[auto_auto_1fr] mb-1">
                 <span className="text-left w-[100px]">Tanggal</span>
                 <span className="px-2">:</span>
-                <span>
-                  {new Date(purchase.date).toLocaleDateString('id-ID')}
-                </span>
+                <span>{formatDateOnlyDisplayValue(purchase.date)}</span>
               </div>
               <div className="grid grid-cols-[auto_auto_1fr] mb-1">
                 <span className="text-left w-[100px]">Jatuh Tempo</span>
                 <span className="px-2">:</span>
                 <span>
                   {purchase.due_date
-                    ? new Date(purchase.due_date).toLocaleDateString('id-ID')
+                    ? formatDateOnlyDisplayValue(purchase.due_date)
                     : '-'}
                 </span>
               </div>
@@ -123,7 +122,7 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
                   </td>
                   <td className="border p-1 pt-2 pb-2 text-center">
                     {item.expiry_date
-                      ? new Date(item.expiry_date).toLocaleDateString('id-ID', {
+                      ? formatDateOnlyDisplayValue(item.expiry_date, {
                           year: 'numeric',
                           month: '2-digit',
                           day: '2-digit',

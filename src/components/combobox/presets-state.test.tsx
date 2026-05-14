@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vite-plus/test';
 import { PharmaComboboxSelect } from './index';
 import {
+  defaultComboboxLargeListVisibleItemLimit,
   getComboboxSearchEntries,
   getComboboxSearchState,
   getDuplicateComboboxOptionValue,
@@ -48,6 +49,29 @@ describe('Combobox app preset state interactions', () => {
     expect(searchState.visibleItems.map(item => item.id)).toEqual(['b', 'a']);
   });
 
+  it('bounds unconfigured large option lists while preserving ranked order', () => {
+    const items = Array.from({ length: 220 }, (_, index) => ({
+      id: `supplier-${index}`,
+      name: `Supplier ${index.toString().padStart(3, '0')}`,
+    }));
+    const searchState = getComboboxSearchState({
+      isSameItem: (item, value) => item.id === value.id,
+      items,
+      normalizedInputValue: 'Supplier',
+      searchEntries: getComboboxSearchEntries(items, item => item.name),
+      selectedValue: null,
+    });
+
+    expect(searchState.visibleItems).toHaveLength(
+      defaultComboboxLargeListVisibleItemLimit
+    );
+    expect(searchState.visibleItems[0]?.id).toBe('supplier-0');
+    expect(
+      searchState.visibleItems.at(defaultComboboxLargeListVisibleItemLimit - 1)
+        ?.id
+    ).toBe(`supplier-${defaultComboboxLargeListVisibleItemLimit - 1}`);
+  });
+
   it('keeps a matching selected option visible when ranked results are limited', () => {
     const items = [
       { id: 'a', name: 'Supplier A' },
@@ -64,6 +88,24 @@ describe('Combobox app preset state interactions', () => {
     });
 
     expect(searchState.visibleItems.map(item => item.id)).toEqual(['a', 'c']);
+  });
+
+  it('keeps exact-match state when selected matches replace limited results', () => {
+    const items = [
+      { id: 'exact', name: 'Supplier' },
+      { id: 'selected', name: 'Archived Supplier' },
+    ];
+    const searchState = getComboboxSearchState({
+      isSameItem: (item, value) => item.id === value.id,
+      items,
+      normalizedInputValue: 'Supplier',
+      searchEntries: getComboboxSearchEntries(items, item => item.name),
+      selectedValue: items[1],
+      visibleItemLimit: 1,
+    });
+
+    expect(searchState.visibleItems.map(item => item.id)).toEqual(['selected']);
+    expect(searchState.hasExactItem).toBe(true);
   });
 
   it('matches acronyms, consonant skeletons, subsequences, and typo fuzzy fallbacks', () => {
@@ -110,7 +152,6 @@ describe('Combobox app preset state interactions', () => {
 
     render(
       <PharmaComboboxSelect
-        name="supplier_id"
         items={[
           { id: 'a', name: 'Supplier A' },
           { id: 'b', name: 'Supplier B' },
@@ -120,8 +161,11 @@ describe('Combobox app preset state interactions', () => {
           onValueChange(item, details);
           details.cancel();
         }}
-        itemToStringLabel={supplier => supplier.name}
-        itemToStringValue={supplier => supplier.id}
+        item={{
+          toLabel: supplier => supplier.name,
+          toValue: supplier => supplier.id,
+        }}
+        field={{ name: 'supplier_id' }}
       />
     );
 
@@ -146,15 +190,19 @@ describe('Combobox app preset state interactions', () => {
 
     render(
       <PharmaComboboxSelect
-        name="supplier_id"
         items={[{ id: 'a', name: 'Supplier A' }]}
         value={null}
         onValueChange={() => {}}
-        itemToStringLabel={supplier => supplier.name}
-        itemToStringValue={supplier => supplier.id}
-        onOpenChange={(nextOpen, details) => {
-          onOpenChange(nextOpen, details);
-          details.cancel();
+        item={{
+          toLabel: supplier => supplier.name,
+          toValue: supplier => supplier.id,
+        }}
+        field={{ name: 'supplier_id' }}
+        interaction={{
+          onOpenChange: (nextOpen, details) => {
+            onOpenChange(nextOpen, details);
+            details.cancel();
+          },
         }}
       />
     );
@@ -173,16 +221,16 @@ describe('Combobox app preset state interactions', () => {
 
     render(
       <PharmaComboboxSelect
-        name="status"
         items={['active', 'archived']}
         value={null}
         onValueChange={onValueChange}
-        itemToStringLabel={value =>
-          value === 'active' ? 'Aktif' : 'Diarsipkan'
-        }
-        itemToStringValue={value => value}
-        isItemDisabled={value => value === 'archived'}
-        searchable={false}
+        item={{
+          toLabel: value => (value === 'active' ? 'Aktif' : 'Diarsipkan'),
+          toValue: value => value,
+          isDisabled: value => value === 'archived',
+        }}
+        field={{ name: 'status' }}
+        search={{ enabled: false }}
       />
     );
 
@@ -199,15 +247,15 @@ describe('Combobox app preset state interactions', () => {
 
     render(
       <PharmaComboboxSelect
-        name="status"
         items={['active', 'inactive']}
         value={null}
         onValueChange={onValueChange}
-        itemToStringLabel={value =>
-          value === 'active' ? 'Aktif' : 'Tidak aktif'
-        }
-        itemToStringValue={value => value}
-        searchable={false}
+        item={{
+          toLabel: value => (value === 'active' ? 'Aktif' : 'Tidak aktif'),
+          toValue: value => value,
+        }}
+        field={{ name: 'status' }}
+        search={{ enabled: false }}
       />
     );
 
@@ -236,17 +284,19 @@ describe('Combobox app preset state interactions', () => {
 
     render(
       <PharmaComboboxSelect
-        name="status"
         items={['active', 'inactive', 'paused']}
         value="inactive"
         onValueChange={onValueChange}
-        itemToStringLabel={value => {
-          if (value === 'active') return 'Aktif';
-          if (value === 'inactive') return 'Tidak aktif';
-          return 'Ditahan';
+        item={{
+          toLabel: value => {
+            if (value === 'active') return 'Aktif';
+            if (value === 'inactive') return 'Tidak aktif';
+            return 'Ditahan';
+          },
+          toValue: value => value,
         }}
-        itemToStringValue={value => value}
-        searchable={false}
+        field={{ name: 'status' }}
+        search={{ enabled: false }}
       />
     );
 

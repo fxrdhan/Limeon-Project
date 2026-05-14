@@ -1,18 +1,29 @@
-import type { MouseEvent, ReactNode, Ref } from 'react';
-import { motion } from 'motion/react';
-import { cn } from '@/lib/utils';
 import {
-  getPharmaComboboxOptionIndexAttributes,
-  setRef,
-} from '../utils/preset-dom';
+  useCallback,
+  useMemo,
+  useRef,
+  type CSSProperties,
+  type MouseEvent,
+  type ReactNode,
+  type Ref,
+  type RefObject,
+} from 'react';
+import { motion, type HTMLMotionProps } from 'motion/react';
+import type { VirtualItem } from '@tanstack/react-virtual';
+import { cn } from '@/lib/utils';
+import { getPharmaComboboxOptionIndexAttributes } from '../utils/preset-dom';
+import { setRef } from '../utils/primitive-render';
 import { Combobox } from '../primitive';
 import type { PharmaComboboxOptionRenderState } from '../presets-types';
+import { useComboboxOptionVirtualizer } from '../hooks/use-combobox-option-virtualizer';
 import { comboboxHighlightBackgroundTransition } from './combobox-highlight-motion';
+import { getComboboxOptionMotionFrameProps } from './combobox-option-motion';
 import { ComboboxOptionMotionFrame } from './combobox-option-motion-frame';
 import {
   ComboboxSelectionIndicator,
   type ComboboxIndicatorKind,
 } from './combobox-selection-indicator';
+import type { ComboboxVirtualScrollToIndex } from '../hooks/use-combobox-keyboard-highlight-scroll';
 
 const getComboboxOptionKey = (
   optionValue: string,
@@ -22,7 +33,7 @@ const getComboboxOptionKey = (
     ? optionValue
     : `${optionValue}__duplicate-${optionValueOccurrence}`;
 
-interface ComboboxOptionListProps<Item> {
+export interface ComboboxOptionListProps<Item> {
   effectiveHighlightedIndex: number | null;
   hasHeldHighlightFrame: boolean;
   hasVisibleItems: boolean;
@@ -46,8 +57,10 @@ interface ComboboxOptionListProps<Item> {
     item: Item,
     state: PharmaComboboxOptionRenderState
   ) => ReactNode;
+  selectedVisibleIndex: number;
   shouldAnimateListItems: boolean;
-  visibleItems: Item[];
+  visibleItems: readonly Item[];
+  virtualScrollToIndexRef: RefObject<ComboboxVirtualScrollToIndex | null>;
   visualHighlightId: string;
 }
 
@@ -69,15 +82,217 @@ export function ComboboxOptionList<Item>({
   onOptionMouseMove,
   renderOption,
   renderOptionMeta,
+  selectedVisibleIndex,
   shouldAnimateListItems,
   visibleItems,
+  virtualScrollToIndexRef,
   visualHighlightId,
 }: ComboboxOptionListProps<Item>) {
-  const optionValueOccurrences = new Map<string, number>();
+  const listElementRef = useRef<HTMLDivElement | null>(null);
+  const optionKeys = useMemo(() => {
+    const optionValueOccurrences = new Map<string, number>();
+
+    return visibleItems.map(item => {
+      const optionValue = itemToStringValue(item);
+      const optionValueOccurrence =
+        optionValueOccurrences.get(optionValue) ?? 0;
+      optionValueOccurrences.set(optionValue, optionValueOccurrence + 1);
+
+      return getComboboxOptionKey(optionValue, optionValueOccurrence);
+    });
+  }, [itemToStringValue, visibleItems]);
+  const { shouldVirtualize, virtualizer } = useComboboxOptionVirtualizer({
+    effectiveHighlightedIndex,
+    inputValue,
+    listElementRef,
+    optionKeys,
+    selectedVisibleIndex,
+    virtualScrollToIndexRef,
+    visibleItemCount: visibleItems.length,
+  });
+  const setListElementRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      listElementRef.current = node;
+      setRef(listRef, node);
+    },
+    [listRef]
+  );
+
+  const renderOptionContent = (
+    item: Item,
+    index: number,
+    state: {
+      disabled: boolean;
+      selected: boolean;
+    },
+    labelText: string,
+    optionMeta: ReactNode,
+    renderState: PharmaComboboxOptionRenderState
+  ) => {
+    const isVisuallyHighlighted = effectiveHighlightedIndex === index;
+
+    return (
+      <>
+        {isVisuallyHighlighted && !hasHeldHighlightFrame ? (
+          <motion.div
+            key={`${visualHighlightId}-${inputValue}`}
+            layoutId={`${visualHighlightId}-${inputValue}`}
+            initial={false}
+            data-pharma-combobox-highlight=""
+            className="pointer-events-none absolute inset-0 z-0 rounded-lg bg-primary/10"
+            transition={comboboxHighlightBackgroundTransition}
+          />
+        ) : null}
+        <span className="relative z-10 flex min-w-0 flex-1 items-center gap-2">
+          <ComboboxSelectionIndicator
+            kind={indicator}
+            selected={state.selected}
+          />
+          {renderOption ? (
+            <span className="min-w-0 flex-1">
+              {renderOption(item, renderState)}
+            </span>
+          ) : (
+            <span className="min-w-0 flex-1 truncate">{labelText}</span>
+          )}
+          {optionMeta ? (
+            <span className="shrink-0 text-xs font-normal text-slate-500">
+              {optionMeta}
+            </span>
+          ) : null}
+        </span>
+      </>
+    );
+  };
+
+  const renderComboboxItem = (item: Item, index: number) => (
+    <Combobox.Item
+      value={item}
+      index={index}
+      disabled={isItemDisabled(item)}
+      {...getPharmaComboboxOptionIndexAttributes(index)}
+      onMouseEnter={event => {
+        onOptionMouseEnter(event, item);
+      }}
+      onMouseMove={event => {
+        onOptionMouseMove(event, item);
+      }}
+      onMouseLeave={onItemLeave}
+      render={(props, state) => {
+        const { ref, ...itemProps } = props;
+        const labelText = itemToStringLabel(item);
+        const isVisuallyHighlighted = effectiveHighlightedIndex === index;
+        const renderState: PharmaComboboxOptionRenderState = {
+          disabled: state.disabled,
+          highlighted: isVisuallyHighlighted,
+          inputValue,
+          label: labelText,
+          selected: state.selected,
+        };
+        const optionMeta = renderOptionMeta?.(item, renderState);
+
+        return (
+          <div
+            {...itemProps}
+            {...getPharmaComboboxOptionIndexAttributes(index)}
+            ref={node => {
+              setRef(ref, node);
+            }}
+            className={cn(
+              'relative flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-800 outline-hidden',
+              state.selected && 'font-semibold text-primary',
+              state.disabled && 'cursor-not-allowed opacity-50'
+            )}
+          >
+            {renderOptionContent(
+              item,
+              index,
+              state,
+              labelText,
+              optionMeta,
+              renderState
+            )}
+          </div>
+        );
+      }}
+    />
+  );
+
+  const renderVirtualComboboxItem = (virtualItem: VirtualItem) => {
+    const item = visibleItems[virtualItem.index];
+    if (item === undefined) return null;
+
+    return (
+      <Combobox.Item
+        key={virtualItem.key}
+        value={item}
+        index={virtualItem.index}
+        disabled={isItemDisabled(item)}
+        {...getPharmaComboboxOptionIndexAttributes(virtualItem.index)}
+        onMouseEnter={event => {
+          onOptionMouseEnter(event, item);
+        }}
+        onMouseMove={event => {
+          onOptionMouseMove(event, item);
+        }}
+        onMouseLeave={onItemLeave}
+        render={(props, state) => {
+          const { ref, style, ...itemProps } = props;
+          const virtualItemProps = itemProps as HTMLMotionProps<'div'>;
+          const labelText = itemToStringLabel(item);
+          const isVisuallyHighlighted =
+            effectiveHighlightedIndex === virtualItem.index;
+          const renderState: PharmaComboboxOptionRenderState = {
+            disabled: state.disabled,
+            highlighted: isVisuallyHighlighted,
+            inputValue,
+            label: labelText,
+            selected: state.selected,
+          };
+          const optionMeta = renderOptionMeta?.(item, renderState);
+          const virtualStyle: CSSProperties = {
+            ...style,
+            left: 0,
+            position: 'absolute',
+            top: virtualItem.start,
+            width: '100%',
+          };
+
+          return (
+            <motion.div
+              {...virtualItemProps}
+              {...getComboboxOptionMotionFrameProps(shouldAnimateListItems)}
+              {...getPharmaComboboxOptionIndexAttributes(virtualItem.index)}
+              ref={node => {
+                setRef(ref, node);
+                virtualizer.measureElement(node);
+              }}
+              data-index={virtualItem.index}
+              className={cn(
+                'relative flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-800 outline-hidden',
+                state.selected && 'font-semibold text-primary',
+                state.disabled && 'cursor-not-allowed opacity-50'
+              )}
+              style={virtualStyle}
+            >
+              {renderOptionContent(
+                item,
+                virtualItem.index,
+                state,
+                labelText,
+                optionMeta,
+                renderState
+              )}
+            </motion.div>
+          );
+        }}
+      />
+    );
+  };
 
   return (
     <Combobox.List
-      ref={listRef}
+      ref={setListElementRef}
       aria-label={listboxAriaLabel}
       onMouseLeave={onListMouseLeave}
       onScrollCapture={onListScrollIntent}
@@ -88,93 +303,23 @@ export function ComboboxOptionList<Item>({
         hasVisibleItems ? 'max-h-60 flex-1 p-1' : 'max-h-0 p-0'
       )}
     >
-      {visibleItems.map((item, index) => {
-        const optionValue = itemToStringValue(item);
-        const optionValueOccurrence =
-          optionValueOccurrences.get(optionValue) ?? 0;
-        optionValueOccurrences.set(optionValue, optionValueOccurrence + 1);
-
-        return (
+      {shouldVirtualize ? (
+        <div
+          className="relative w-full"
+          style={{ height: virtualizer.getTotalSize() }}
+        >
+          {virtualizer.getVirtualItems().map(renderVirtualComboboxItem)}
+        </div>
+      ) : (
+        visibleItems.map((item, index) => (
           <ComboboxOptionMotionFrame
-            key={getComboboxOptionKey(optionValue, optionValueOccurrence)}
+            key={optionKeys[index]}
             shouldAnimate={shouldAnimateListItems}
           >
-            <Combobox.Item
-              value={item}
-              index={index}
-              disabled={isItemDisabled(item)}
-              {...getPharmaComboboxOptionIndexAttributes(index)}
-              onMouseEnter={event => {
-                onOptionMouseEnter(event, item);
-              }}
-              onMouseMove={event => {
-                onOptionMouseMove(event, item);
-              }}
-              onMouseLeave={onItemLeave}
-              render={(props, state) => {
-                const { ref, ...itemProps } = props;
-                const labelText = itemToStringLabel(item);
-                const isVisuallyHighlighted =
-                  effectiveHighlightedIndex === index;
-                const renderState: PharmaComboboxOptionRenderState = {
-                  disabled: state.disabled,
-                  highlighted: isVisuallyHighlighted,
-                  inputValue,
-                  label: labelText,
-                  selected: state.selected,
-                };
-                const optionMeta = renderOptionMeta?.(item, renderState);
-
-                return (
-                  <div
-                    {...itemProps}
-                    {...getPharmaComboboxOptionIndexAttributes(index)}
-                    ref={node => {
-                      setRef(ref, node);
-                    }}
-                    className={cn(
-                      'relative flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-800 outline-hidden',
-                      state.selected && 'font-semibold text-primary',
-                      state.disabled && 'cursor-not-allowed opacity-50'
-                    )}
-                  >
-                    {isVisuallyHighlighted && !hasHeldHighlightFrame ? (
-                      <motion.div
-                        key={`${visualHighlightId}-${inputValue}`}
-                        layoutId={`${visualHighlightId}-${inputValue}`}
-                        initial={false}
-                        data-pharma-combobox-highlight=""
-                        className="pointer-events-none absolute inset-0 z-0 rounded-lg bg-primary/10"
-                        transition={comboboxHighlightBackgroundTransition}
-                      />
-                    ) : null}
-                    <span className="relative z-10 flex min-w-0 flex-1 items-center gap-2">
-                      <ComboboxSelectionIndicator
-                        kind={indicator}
-                        selected={state.selected}
-                      />
-                      {renderOption ? (
-                        <span className="min-w-0 flex-1">
-                          {renderOption(item, renderState)}
-                        </span>
-                      ) : (
-                        <span className="min-w-0 flex-1 truncate">
-                          {labelText}
-                        </span>
-                      )}
-                      {optionMeta ? (
-                        <span className="shrink-0 text-xs font-normal text-slate-500">
-                          {optionMeta}
-                        </span>
-                      ) : null}
-                    </span>
-                  </div>
-                );
-              }}
-            />
+            {renderComboboxItem(item, index)}
           </ComboboxOptionMotionFrame>
-        );
-      })}
+        ))
+      )}
     </Combobox.List>
   );
 }

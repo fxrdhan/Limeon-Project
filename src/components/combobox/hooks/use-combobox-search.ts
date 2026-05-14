@@ -15,7 +15,7 @@ export function useComboboxSearch<Item>({
   inputValue: string;
   isSameItem: (item: Item, value: Item) => boolean;
   itemToStringLabel: (item: Item) => string;
-  items: Item[];
+  items: readonly Item[];
   selectedValue: Item | null;
   visibleItemLimit?: number;
 }) {

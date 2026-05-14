@@ -5,6 +5,7 @@ import {
   waitFor,
   within,
 } from '@testing-library/react';
+import { useState } from 'react';
 import { describe, expect, it, vi } from 'vite-plus/test';
 import { findComboboxItemByValue, PharmaComboboxSelect } from './index';
 import {
@@ -22,12 +23,14 @@ describe('Combobox app presets', () => {
 
     render(
       <PharmaComboboxSelect
-        name="supplier_id"
         items={suppliers}
         value={suppliers[1]}
         onValueChange={() => {}}
-        itemToStringLabel={supplier => supplier.name}
-        itemToStringValue={supplier => supplier.id}
+        item={{
+          toLabel: supplier => supplier.name,
+          toValue: supplier => supplier.id,
+        }}
+        field={{ name: 'supplier_id' }}
       />
     );
 
@@ -84,12 +87,14 @@ describe('Combobox app presets', () => {
 
     render(
       <PharmaComboboxSelect
-        name="supplier_id"
         items={suppliers}
         value={suppliers[1]}
         onValueChange={() => {}}
-        itemToStringLabel={supplier => supplier.name}
-        itemToStringValue={supplier => supplier.id}
+        item={{
+          toLabel: supplier => supplier.name,
+          toValue: supplier => supplier.id,
+        }}
+        field={{ name: 'supplier_id' }}
       />
     );
 
@@ -154,12 +159,14 @@ describe('Combobox app presets', () => {
 
     render(
       <PharmaComboboxSelect
-        name="category_id"
         items={categories}
         value={categories[1]}
         onValueChange={() => {}}
-        itemToStringLabel={category => category.name}
-        itemToStringValue={category => category.id}
+        item={{
+          toLabel: category => category.name,
+          toValue: category => category.id,
+        }}
+        field={{ name: 'category_id' }}
       />
     );
 
@@ -233,12 +240,14 @@ describe('Combobox app presets', () => {
 
     render(
       <PharmaComboboxSelect
-        name="supplier_id"
         items={suppliers}
         value={suppliers[1]}
         onValueChange={() => {}}
-        itemToStringLabel={supplier => supplier.name}
-        itemToStringValue={supplier => supplier.id}
+        item={{
+          toLabel: supplier => supplier.name,
+          toValue: supplier => supplier.id,
+        }}
+        field={{ name: 'supplier_id' }}
       />
     );
 
@@ -272,13 +281,15 @@ describe('Combobox app presets', () => {
 
     render(
       <PharmaComboboxSelect
-        name="supplier_id"
         items={suppliers}
         value={suppliers[1]}
         onValueChange={() => {}}
-        itemToStringLabel={supplier => supplier.name}
-        itemToStringValue={supplier => supplier.id}
-        isItemDisabled={supplier => Boolean(supplier.disabled)}
+        item={{
+          toLabel: supplier => supplier.name,
+          toValue: supplier => supplier.id,
+          isDisabled: supplier => Boolean(supplier.disabled),
+        }}
+        field={{ name: 'supplier_id' }}
       />
     );
 
@@ -312,13 +323,15 @@ describe('Combobox app presets', () => {
 
     render(
       <PharmaComboboxSelect
-        name="supplier_id"
         items={suppliers}
         value={suppliers[2]}
         onValueChange={() => {}}
-        itemToStringLabel={supplier => supplier.name}
-        itemToStringValue={supplier => supplier.id}
-        isItemDisabled={supplier => Boolean(supplier.disabled)}
+        item={{
+          toLabel: supplier => supplier.name,
+          toValue: supplier => supplier.id,
+          isDisabled: supplier => Boolean(supplier.disabled),
+        }}
+        field={{ name: 'supplier_id' }}
       />
     );
 
@@ -352,12 +365,14 @@ describe('Combobox app presets', () => {
 
     render(
       <PharmaComboboxSelect
-        name="supplier_id"
         items={suppliers}
         value={suppliers[1]}
         onValueChange={onValueChange}
-        itemToStringLabel={supplier => supplier.name}
-        itemToStringValue={supplier => supplier.id}
+        item={{
+          toLabel: supplier => supplier.name,
+          toValue: supplier => supplier.id,
+        }}
+        field={{ name: 'supplier_id' }}
       />
     );
 
@@ -392,14 +407,16 @@ describe('Combobox app presets', () => {
     render(
       <>
         <PharmaComboboxSelect
-          name="supplier_id"
           items={suppliers}
           value={suppliers[0]}
           onValueChange={() => {
             screen.getByLabelText('Next field').focus();
           }}
-          itemToStringLabel={supplier => supplier.name}
-          itemToStringValue={supplier => supplier.id}
+          item={{
+            toLabel: supplier => supplier.name,
+            toValue: supplier => supplier.id,
+          }}
+          field={{ name: 'supplier_id' }}
         />
         <input aria-label="Next field" />
       </>
@@ -418,15 +435,17 @@ describe('Combobox app presets', () => {
   it('removes stale options immediately when search has no results', () => {
     render(
       <PharmaComboboxSelect
-        name="supplier_id"
         items={[
           { id: 'a', name: 'Supplier A' },
           { id: 'b', name: 'Supplier B' },
         ]}
         value={null}
         onValueChange={() => {}}
-        itemToStringLabel={supplier => supplier.name}
-        itemToStringValue={supplier => supplier.id}
+        item={{
+          toLabel: supplier => supplier.name,
+          toValue: supplier => supplier.id,
+        }}
+        field={{ name: 'supplier_id' }}
       />
     );
 
@@ -449,7 +468,6 @@ describe('Combobox app presets', () => {
   it('keeps exact-match create detection in ranked search with limited visible options', () => {
     render(
       <PharmaComboboxSelect
-        name="supplier_id"
         items={[
           { id: 'alpha', name: 'Alpha Supplier' },
           { id: 'supplier', name: 'Supplier' },
@@ -457,10 +475,16 @@ describe('Combobox app presets', () => {
         ]}
         value={null}
         onValueChange={() => {}}
-        itemToStringLabel={supplier => supplier.name}
-        itemToStringValue={supplier => supplier.id}
-        visibleItemLimit={1}
-        createAction={{ onCreate: () => {}, label: 'Tambah supplier' }}
+        item={{
+          toLabel: supplier => supplier.name,
+          toValue: supplier => supplier.id,
+        }}
+        field={{ name: 'supplier_id' }}
+        search={{ visibleItemLimit: 1 }}
+        creation={{
+          onCreate: () => {},
+          label: 'Tambah supplier',
+        }}
       />
     );
 
@@ -478,49 +502,60 @@ describe('Combobox app presets', () => {
     ).toBeNull();
   });
 
-  it('warns when option submitted values are duplicated in development', async () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+  it('warns and keeps duplicate submitted values selectable', async () => {
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const onValueChange = vi.fn();
+    const duplicateSuppliers = [
+      { id: 'duplicate-supplier', name: 'Supplier A' },
+      { id: 'duplicate-supplier', name: 'Supplier B' },
+    ];
+    function DuplicateValueCombobox() {
+      const [value, setValue] = useState<
+        (typeof duplicateSuppliers)[number] | null
+      >(null);
 
-    try {
-      render(
+      return (
         <PharmaComboboxSelect
-          name="supplier_id"
-          items={[
-            { id: 'duplicate', name: 'Supplier A' },
-            { id: 'duplicate', name: 'Supplier B' },
-          ]}
-          value={null}
-          onValueChange={() => {}}
-          itemToStringLabel={supplier => supplier.name}
-          itemToStringValue={supplier => supplier.id}
+          items={duplicateSuppliers}
+          value={value}
+          onValueChange={(nextValue, details) => {
+            setValue(nextValue);
+            onValueChange(nextValue, details);
+          }}
+          item={{
+            toLabel: supplier => supplier.name,
+            toValue: supplier => supplier.id,
+          }}
+          field={{ name: 'duplicate_supplier_id' }}
         />
       );
+    }
+
+    try {
+      render(<DuplicateValueCombobox />);
 
       await waitFor(() => {
-        expect(warn).toHaveBeenCalledWith(
+        expect(warning).toHaveBeenCalledWith(
           expect.stringContaining(
-            'Duplicate itemToStringValue "duplicate" detected'
+            'Duplicate item.toValue "duplicate-supplier" detected'
           )
         );
       });
 
       fireEvent.click(screen.getByRole('combobox', { name: /pilih/i }));
+      fireEvent.click(screen.getByRole('option', { name: /supplier b/i }));
 
-      expect(screen.getByRole('option', { name: /supplier a/i })).toBeTruthy();
-      expect(screen.getByRole('option', { name: /supplier b/i })).toBeTruthy();
+      expect(onValueChange).toHaveBeenCalledWith(
+        duplicateSuppliers[1],
+        expect.objectContaining({ reason: 'item-press' })
+      );
       expect(
-        error.mock.calls.filter(call =>
-          call.some(
-            argument =>
-              typeof argument === 'string' &&
-              argument.includes('Encountered two children with the same key')
-          )
-        )
-      ).toHaveLength(0);
+        document
+          .querySelector('input[name="duplicate_supplier_id"]')
+          ?.getAttribute('value')
+      ).toBe('duplicate-supplier');
     } finally {
-      warn.mockRestore();
-      error.mockRestore();
+      warning.mockRestore();
     }
   });
 
@@ -533,13 +568,15 @@ describe('Combobox app presets', () => {
 
     render(
       <PharmaComboboxSelect
-        name="supplier_id"
         items={suppliers}
         value={suppliers[2]}
         onValueChange={() => {}}
-        itemToStringLabel={supplier => supplier.name}
-        itemToStringValue={supplier => supplier.id}
-        visibleItemLimit={2}
+        item={{
+          toLabel: supplier => supplier.name,
+          toValue: supplier => supplier.id,
+        }}
+        field={{ name: 'supplier_id' }}
+        search={{ visibleItemLimit: 2 }}
       />
     );
 
@@ -550,12 +587,64 @@ describe('Combobox app presets', () => {
     expect(screen.queryByRole('option', { name: /supplier b/i })).toBeNull();
   });
 
+  it('virtualizes long option lists without changing keyboard selection flow', async () => {
+    const longOptions = Array.from({ length: 150 }, (_, index) => {
+      const optionNumber = String(index + 1).padStart(3, '0');
+
+      return {
+        id: `option-${optionNumber}`,
+        name: `Virtual option ${optionNumber}`,
+      };
+    });
+    const onValueChange = vi.fn();
+
+    render(
+      <PharmaComboboxSelect
+        items={longOptions}
+        value={null}
+        onValueChange={onValueChange}
+        item={{ toLabel: option => option.name, toValue: option => option.id }}
+        field={{ name: 'virtualized_option_id' }}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: /pilih/i }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('option', { name: /virtual option 001/i })
+      ).toBeTruthy();
+    });
+    expect(screen.getAllByRole('option').length).toBeLessThan(
+      longOptions.length
+    );
+    expect(
+      screen.queryByRole('option', { name: /virtual option 150/i })
+    ).toBeNull();
+
+    const searchInput = screen.getByPlaceholderText('Cari...');
+    fireEvent.change(searchInput, {
+      target: { value: 'Virtual option 150' },
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('option', { name: /virtual option 150/i })
+      ).toBeTruthy();
+    });
+    fireEvent.keyDown(searchInput, { key: 'Enter' });
+
+    expect(onValueChange).toHaveBeenCalledWith(
+      longOptions[149],
+      expect.objectContaining({ reason: 'item-press' })
+    );
+  });
+
   it('keeps filtered option indices aligned with primitive active descendant', async () => {
     const onValueChange = vi.fn();
 
     render(
       <PharmaComboboxSelect
-        name="supplier_id"
         items={[
           { id: 'a', name: 'Supplier A' },
           { id: 'b', name: 'Supplier B' },
@@ -563,8 +652,11 @@ describe('Combobox app presets', () => {
         ]}
         value={null}
         onValueChange={onValueChange}
-        itemToStringLabel={supplier => supplier.name}
-        itemToStringValue={supplier => supplier.id}
+        item={{
+          toLabel: supplier => supplier.name,
+          toValue: supplier => supplier.id,
+        }}
+        field={{ name: 'supplier_id' }}
       />
     );
 
@@ -599,12 +691,14 @@ describe('Combobox app presets', () => {
 
     render(
       <PharmaComboboxSelect
-        name="supplier_id"
         items={suppliers}
         value={suppliers[1]}
         onValueChange={onValueChange}
-        itemToStringLabel={supplier => supplier.name}
-        itemToStringValue={supplier => supplier.id}
+        item={{
+          toLabel: supplier => supplier.name,
+          toValue: supplier => supplier.id,
+        }}
+        field={{ name: 'supplier_id' }}
       />
     );
 
@@ -636,15 +730,17 @@ describe('Combobox app presets', () => {
 
     render(
       <PharmaComboboxSelect
-        name="supplier_id"
         items={[
           { id: 'a', name: 'Supplier A' },
           { id: 'b', name: 'Supplier B' },
         ]}
         value={null}
         onValueChange={onValueChange}
-        itemToStringLabel={supplier => supplier.name}
-        itemToStringValue={supplier => supplier.id}
+        item={{
+          toLabel: supplier => supplier.name,
+          toValue: supplier => supplier.id,
+        }}
+        field={{ name: 'supplier_id' }}
       />
     );
 
@@ -663,15 +759,17 @@ describe('Combobox app presets', () => {
   it('preserves animated highlight background while pointer focus moves', async () => {
     render(
       <PharmaComboboxSelect
-        name="supplier_id"
         items={[
           { id: 'a', name: 'Supplier A' },
           { id: 'b', name: 'Supplier B' },
         ]}
         value={null}
         onValueChange={() => {}}
-        itemToStringLabel={supplier => supplier.name}
-        itemToStringValue={supplier => supplier.id}
+        item={{
+          toLabel: supplier => supplier.name,
+          toValue: supplier => supplier.id,
+        }}
+        field={{ name: 'supplier_id' }}
       />
     );
 
@@ -702,7 +800,6 @@ describe('Combobox app presets', () => {
   it('continues keyboard navigation from the last pointer-highlighted option', async () => {
     render(
       <PharmaComboboxSelect
-        name="supplier_id"
         items={[
           { id: 'a', name: 'Supplier A' },
           { id: 'b', name: 'Supplier B' },
@@ -710,8 +807,11 @@ describe('Combobox app presets', () => {
         ]}
         value={null}
         onValueChange={() => {}}
-        itemToStringLabel={supplier => supplier.name}
-        itemToStringValue={supplier => supplier.id}
+        item={{
+          toLabel: supplier => supplier.name,
+          toValue: supplier => supplier.id,
+        }}
+        field={{ name: 'supplier_id' }}
       />
     );
 
@@ -738,15 +838,17 @@ describe('Combobox app presets', () => {
   it('keeps list swap animation active while searching', () => {
     render(
       <PharmaComboboxSelect
-        name="supplier_id"
         items={[
           { id: 'a', name: 'Supplier A' },
           { id: 'b', name: 'Branch B' },
         ]}
         value={null}
         onValueChange={() => {}}
-        itemToStringLabel={supplier => supplier.name}
-        itemToStringValue={supplier => supplier.id}
+        item={{
+          toLabel: supplier => supplier.name,
+          toValue: supplier => supplier.id,
+        }}
+        field={{ name: 'supplier_id' }}
       />
     );
 
@@ -766,18 +868,22 @@ describe('Combobox app presets', () => {
   it('renders typed option content and metadata without requiring custom item DOM', () => {
     render(
       <PharmaComboboxSelect
-        name="supplier_id"
         items={[{ id: 'a', name: 'Supplier A', code: 'SUP-A' }]}
         value={null}
         onValueChange={() => {}}
-        itemToStringLabel={supplier => supplier.name}
-        itemToStringValue={supplier => supplier.id}
-        renderOption={(supplier, state) => (
-          <span>
-            {state.label} {state.selected ? 'selected' : 'available'}
-          </span>
-        )}
-        renderOptionMeta={supplier => supplier.code}
+        item={{
+          toLabel: supplier => supplier.name,
+          toValue: supplier => supplier.id,
+        }}
+        field={{ name: 'supplier_id' }}
+        display={{
+          renderOption: (supplier, state) => (
+            <span>
+              {state.label} {state.selected ? 'selected' : 'available'}
+            </span>
+          ),
+          renderOptionMeta: supplier => supplier.code,
+        }}
       />
     );
 
@@ -789,14 +895,17 @@ describe('Combobox app presets', () => {
   it('keeps custom popup classes separate from popup width matching', () => {
     const suppliers = [{ id: 'supplier-a', name: 'Supplier A' }];
     const baseProps = {
-      label: 'Supplier',
-      name: 'supplier_id',
       items: suppliers,
       value: null,
       onValueChange: () => {},
-      itemToStringLabel: (supplier: (typeof suppliers)[number]) =>
-        supplier.name,
-      itemToStringValue: (supplier: (typeof suppliers)[number]) => supplier.id,
+      item: {
+        toLabel: (supplier: (typeof suppliers)[number]) => supplier.name,
+        toValue: (supplier: (typeof suppliers)[number]) => supplier.id,
+      },
+      field: {
+        label: 'Supplier',
+        name: 'supplier_id',
+      },
     };
     const getPositioner = () => {
       const listbox = screen.getByRole('listbox');
@@ -811,7 +920,10 @@ describe('Combobox app presets', () => {
     const defaultPopup = render(
       <PharmaComboboxSelect
         {...baseProps}
-        popupClassName="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl"
+        popup={{
+          className:
+            'overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl',
+        }}
       />
     );
     fireEvent.click(screen.getByRole('combobox', { name: /supplier/i }));
@@ -821,8 +933,11 @@ describe('Combobox app presets', () => {
     render(
       <PharmaComboboxSelect
         {...baseProps}
-        popupClassName="w-[420px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl"
-        popupMatchAnchorWidth={false}
+        popup={{
+          className:
+            'w-[420px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl',
+          matchAnchorWidth: false,
+        }}
       />
     );
     fireEvent.click(screen.getByRole('combobox', { name: /supplier/i }));
@@ -844,30 +959,30 @@ describe('Combobox app presets', () => {
     render(
       <>
         <PharmaComboboxSelect
-          name="payment_status"
           items={['unpaid', 'paid']}
           value="unpaid"
           onValueChange={value => onEnumChange(value)}
-          itemToStringLabel={value =>
-            value === 'unpaid' ? 'Belum Dibayar' : 'Lunas'
-          }
-          itemToStringValue={value => value}
-          searchable={false}
-          indicator="radio"
+          item={{
+            toLabel: value => (value === 'unpaid' ? 'Belum Dibayar' : 'Lunas'),
+            toValue: value => value,
+          }}
+          field={{ name: 'payment_status' }}
+          display={{ indicator: 'radio' }}
+          search={{ enabled: false }}
         />
         <PharmaComboboxSelect
-          label="Bulan"
-          name="month-selector"
           items={[0, 1]}
           value={0}
           onValueChange={value => onMonthChange(value)}
-          itemToStringLabel={value => (value === 0 ? 'Januari' : 'Februari')}
-          itemToStringValue={value => value.toString()}
-          searchable={false}
-          indicator="none"
+          item={{
+            toLabel: value => (value === 0 ? 'Januari' : 'Februari'),
+            toValue: value => value.toString(),
+          }}
+          field={{ label: 'Bulan', name: 'month-selector' }}
+          display={{ indicator: 'none' }}
+          search={{ enabled: false }}
         />
         <PharmaComboboxSelect
-          name="supplier_id"
           items={suppliers}
           value={findComboboxItemByValue(
             suppliers,
@@ -875,8 +990,11 @@ describe('Combobox app presets', () => {
             item => item.id
           )}
           onValueChange={supplier => onSupplierChange(supplier?.id ?? '')}
-          itemToStringLabel={supplier => supplier.name}
-          itemToStringValue={supplier => supplier.id}
+          item={{
+            toLabel: supplier => supplier.name,
+            toValue: supplier => supplier.id,
+          }}
+          field={{ name: 'supplier_id' }}
         />
       </>
     );
