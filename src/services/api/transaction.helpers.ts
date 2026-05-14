@@ -54,7 +54,7 @@ export async function replaceLinkedItems<TItem extends Record<string, unknown>>(
 
     const { data, error } = await supabase
       .from(tableName)
-      .insert(payload)
+      .insert(payload as Record<string, unknown>[])
       .select('*');
 
     if (error) {
