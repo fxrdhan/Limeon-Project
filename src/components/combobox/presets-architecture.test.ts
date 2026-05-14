@@ -193,6 +193,11 @@ describe('Combobox primitive architecture', () => {
         return [];
       }
 
+      const source = sourceByPath.get(filePath);
+      if (source === undefined || !source.includes('combobox/primitive')) {
+        return [];
+      }
+
       return getModuleSpecifiers(filePath)
         .filter(moduleSpecifier => {
           if (moduleSpecifier.isTypeOnly) return false;
@@ -273,6 +278,13 @@ describe('Combobox preset architecture', () => {
     const legacyAttributes: string[] = [];
 
     for (const [filePath, source] of sourceByPath) {
+      if (
+        !source.includes('PharmaComboboxSelect') &&
+        !source.includes('PharmaEntityComboboxSelect')
+      ) {
+        continue;
+      }
+
       const sourceFile = parseSource(filePath, source);
       const visit = (node: ts.Node) => {
         if (ts.isJsxSelfClosingElement(node)) {
