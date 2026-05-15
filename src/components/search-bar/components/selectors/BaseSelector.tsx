@@ -13,6 +13,7 @@ import {
   type ComboboxChangeEventDetails,
   type ComboboxHighlightEventDetails,
   type ComboboxRootProps,
+  type PharmaComboboxClassNames,
   type PharmaComboboxOptionRenderState,
 } from '@/components/combobox';
 import { comboboxHighlightBackgroundTransition } from '@/components/combobox/components/combobox-highlight-motion';
@@ -24,6 +25,9 @@ import { BaseSelectorProps } from '../../types';
 
 const SearchSelectorCombobox = createTypedCombobox<unknown>();
 const searchSelectorHighlightClassName = 'bg-slate-100';
+const searchSelectorClassNames = {
+  optionHighlight: searchSelectorHighlightClassName,
+} satisfies PharmaComboboxClassNames;
 const forwardedSelectorKeys = new Set([
   'ArrowDown',
   'ArrowUp',
@@ -425,7 +429,7 @@ function BaseSelectorContent<T>({
             ) : null}
             <ComboboxOptionList
               {...options.optionListProps}
-              highlightClassName={searchSelectorHighlightClassName}
+              classNames={searchSelectorClassNames}
             />
             {!options.hasVisibleItems ? (
               <SearchSelectorCombobox.Empty className="empty:hidden relative z-10 px-3 py-4 text-center text-sm text-slate-500">

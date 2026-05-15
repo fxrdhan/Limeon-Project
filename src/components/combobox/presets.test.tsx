@@ -13,6 +13,93 @@ import {
 } from './utils/preset-dom';
 
 describe('Combobox app presets', () => {
+  it('applies classNames slots while keeping selection behavior', async () => {
+    const suppliers = [
+      { id: 'supplier-a', name: 'Supplier A' },
+      { id: 'supplier-b', name: 'Supplier B' },
+    ];
+    const onValueChange = vi.fn();
+
+    render(
+      <PharmaComboboxSelect
+        items={suppliers}
+        value={suppliers[0]}
+        onValueChange={onValueChange}
+        item={{
+          toLabel: supplier => supplier.name,
+          toValue: supplier => supplier.id,
+        }}
+        field={{ label: 'Supplier', name: 'supplier_id' }}
+        display={{
+          indicator: 'check',
+          renderOptionMeta: supplier => supplier.id,
+        }}
+        classNames={{
+          root: 'slot-root',
+          trigger: 'slot-trigger',
+          triggerValue: 'slot-trigger-value',
+          positioner: 'slot-positioner',
+          popup: 'slot-popup',
+          popupContent: 'slot-popup-content',
+          searchHeader: 'slot-search-header',
+          searchIcon: 'slot-search-icon',
+          searchInput: 'slot-search-input',
+          list: 'slot-list',
+          option: 'slot-option',
+          optionSelected: 'slot-option-selected',
+          optionLabel: 'slot-option-label',
+          optionMeta: 'slot-option-meta',
+          optionHighlight: 'bg-slate-100',
+          indicator: 'slot-indicator',
+          indicatorSelected: 'slot-indicator-selected',
+        }}
+      />
+    );
+
+    const trigger = screen.getByRole('combobox', { name: /supplier a/i });
+    expect(trigger.className).toContain('slot-trigger');
+
+    fireEvent.click(trigger);
+
+    const searchInput = screen.getByRole('searchbox', {
+      name: /cari supplier/i,
+    });
+    const listbox = screen.getByRole('listbox');
+    const selectedOption = screen.getByRole('option', {
+      name: /supplier a/i,
+    });
+
+    expect(searchInput.className).toContain('slot-search-input');
+    expect(listbox.className).toContain('slot-list');
+    expect(selectedOption.className).toContain('slot-option');
+    expect(selectedOption.className).toContain('slot-option-selected');
+    expect(selectedOption.querySelector('.slot-option-label')).toBeTruthy();
+    expect(selectedOption.querySelector('.slot-option-meta')).toBeTruthy();
+    expect(
+      selectedOption.querySelector('.slot-indicator-selected')
+    ).toBeTruthy();
+    expect(document.querySelector('.slot-root')).toBeTruthy();
+    expect(document.querySelector('.slot-positioner')).toBeTruthy();
+    expect(document.querySelector('.slot-popup')).toBeTruthy();
+    expect(document.querySelector('.slot-popup-content')).toBeTruthy();
+    expect(document.querySelector('.slot-search-header')).toBeTruthy();
+    expect(document.querySelector('.slot-search-icon')).toBeTruthy();
+
+    await waitFor(() => {
+      expect(
+        selectedOption.querySelector('[data-pharma-combobox-highlight]')
+          ?.className
+      ).toContain('bg-slate-100');
+    });
+
+    fireEvent.click(screen.getByRole('option', { name: /supplier b/i }));
+
+    expect(onValueChange).toHaveBeenCalledWith(
+      suppliers[1],
+      expect.objectContaining({ reason: 'item-press' })
+    );
+  });
+
   it('restores the selected visual highlight when search is cleared', async () => {
     const suppliers = [
       { id: 'a', name: 'Supplier A' },

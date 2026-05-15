@@ -1,3 +1,11 @@
+export interface ValidationOverlayClassNames {
+  overlay?: string;
+  container?: string;
+  icon?: string;
+  message?: string;
+  arrow?: string;
+}
+
 export interface ValidationOverlayProps {
   error: string | null;
   showError: boolean;
@@ -8,6 +16,7 @@ export interface ValidationOverlayProps {
   isHovered?: boolean;
   hasAutoHidden?: boolean;
   isOpen?: boolean;
+  classNames?: ValidationOverlayClassNames;
 }
 
 export interface OverlayPosition {
@@ -19,6 +28,7 @@ export interface OverlayPosition {
 export interface ValidationOverlayComponentProps {
   error: string;
   position: OverlayPosition;
+  classNames?: ValidationOverlayClassNames;
 }
 
 export interface ValidationIconProps {
@@ -27,6 +37,7 @@ export interface ValidationIconProps {
 }
 
 export interface ValidationMessageProps {
+  className?: string;
   message: string;
 }
 

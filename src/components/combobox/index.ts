@@ -15,6 +15,7 @@ export { findComboboxItemByValue } from './helpers';
 export {
   PharmaComboboxSelect,
   type PharmaComboboxChangeDetails,
+  type PharmaComboboxClassNames,
   type PharmaComboboxDisplayConfig,
   type PharmaComboboxFieldConfig,
   type PharmaComboboxHoverDetailConfig,

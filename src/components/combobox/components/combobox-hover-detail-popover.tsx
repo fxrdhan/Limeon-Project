@@ -13,6 +13,7 @@ import type {
   ComboboxHoverDetailGeometry,
   ComboboxHoverDetailPosition,
 } from '@/components/combobox/internal-types';
+import type { PharmaComboboxClassNames } from '../presets-types';
 import { ComboboxHoverDetailContent } from './combobox-hover-detail-content';
 import {
   defaultHoverDetailGeometry,
@@ -29,10 +30,12 @@ const hoverDetailSurfaceClassName =
   'group pointer-events-auto rounded-xl p-4 w-fit relative bg-white shadow-thin-md';
 
 const ComboboxHoverDetailPopover = ({
+  classNames,
   data,
   isVisible,
   position,
 }: {
+  classNames?: PharmaComboboxClassNames;
   data: HoverDetailData | null;
   isVisible: boolean;
   position: ComboboxHoverDetailPosition;
@@ -198,11 +201,15 @@ const ComboboxHoverDetailPopover = ({
           data-combobox-hover-detail-sizer=""
           className={cn(
             hoverDetailSurfaceClassName,
+            classNames?.hoverDetail,
             'pointer-events-none fixed left-0 top-0 -z-10 opacity-0'
           )}
           style={{ maxWidth: position.maxWidth, minWidth: hoverDetailMinWidth }}
         >
-          <ComboboxHoverDetailContent data={data} />
+          <ComboboxHoverDetailContent
+            data={data}
+            className={classNames?.hoverDetailContent}
+          />
         </div>
       ) : null}
       <AnimatePresence>
@@ -212,6 +219,7 @@ const ComboboxHoverDetailPopover = ({
             data-combobox-hover-detail-popover=""
             className={cn(
               hoverDetailSurfaceClassName,
+              classNames?.hoverDetail,
               'fixed left-0 top-0 z-[1100] overflow-hidden',
               showContent &&
                 !isPlacementReady &&
@@ -242,6 +250,7 @@ const ComboboxHoverDetailPopover = ({
           >
             {renderedData ? (
               <ComboboxHoverDetailContent
+                className={classNames?.hoverDetailContent}
                 data={renderedData}
                 width={activeContentWidth}
               />

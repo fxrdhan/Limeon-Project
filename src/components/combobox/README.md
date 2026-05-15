@@ -29,6 +29,7 @@ Additional exports:
 | `ComboboxChangeEventDetails`      | Callback details for value, open, and input changes.          |
 | `ComboboxHighlightEventDetails`   | Callback details for highlighted option changes.              |
 | `PharmaComboboxSelectProps`       | Props for the generic app preset.                             |
+| `PharmaComboboxClassNames`        | Slot class names for preset styling overrides.                |
 | `PharmaComboboxOptionRenderState` | State passed to `renderOption` and `renderOptionMeta`.        |
 | `PharmaEntityComboboxSelectProps` | Props for the entity preset.                                  |
 | `createTypedCombobox`             | Typed primitive namespace for custom compositions.            |
@@ -277,6 +278,7 @@ type EntityComboboxItem = {
 | `validation`      | Validation config                  | Required-field validation overlay configuration.                                                                                   |
 | `creation`        | Create action config               | Create action rendered when no exact option exists.                                                                                |
 | `hoverDetail`     | Hover-detail config                | Hover-detail behavior, async fetch, and fetch-error handling.                                                                      |
+| `classNames`      | Preset style slots                 | Optional class names for overriding preset visual slots while keeping built-in behavior.                                           |
 
 If `valueId` is not empty and neither `items` nor `selectedItem` can resolve it, the preset keeps the hidden form value intact and displays a neutral fallback label.
 
@@ -298,6 +300,7 @@ If `valueId` is not empty and neither `items` nor `selectedItem` can resolve it,
 | `validation`    | Validation config         | Required-field validation overlay configuration.                                                                                                             |
 | `creation`      | Create action config      | Create action rendered when no exact option exists.                                                                                                          |
 | `hoverDetail`   | Hover-detail config       | Hover-detail enablement, delay, async data fetch, and fetch-error callback.                                                                                  |
+| `classNames`    | Preset style slots        | Optional class names for overriding preset visual slots while keeping built-in behavior.                                                                     |
 
 When `required` is set, preset validation is enabled by default. Set
 `validation.enabled` to `false` to opt out of preset overlay feedback and
@@ -308,6 +311,69 @@ submitted hidden input remains a plain submitted value, while the proxy lets
 browser form validation block empty required comboboxes and route focus back to
 the trigger. This native required proxy remains active when `required` is true,
 even if `validation.enabled` is `false`.
+
+## Preset Styling
+
+`PharmaComboboxSelect` and `PharmaEntityComboboxSelect` are styled PharmaSys
+presets. Their default classes should remain the normal app look. Use
+`classNames` only when a caller needs a local visual variant while keeping the
+preset behavior: ranked search, keyboard navigation, virtualized options,
+validation, create actions, hover detail, ARIA wiring, and hidden form values.
+
+For most custom option layouts, prefer `display.renderOption` and
+`display.renderOptionMeta` first. Use `classNames` when the surrounding skin
+needs to change.
+
+```tsx
+<PharmaEntityComboboxSelect<Category>
+  items={categories}
+  valueId={categoryId}
+  onValueIdChange={setCategoryId}
+  field={{ label: 'Kategori', name: 'category_id' }}
+  display={{
+    renderOption: (category, state) => (
+      <span className={state.highlighted ? 'text-slate-950' : 'text-slate-700'}>
+        {category.name}
+      </span>
+    ),
+  }}
+  classNames={{
+    trigger: 'rounded-lg',
+    popup: 'rounded-lg shadow-lg',
+    searchHeader: 'px-3 py-2',
+    searchInput: 'rounded-md',
+    option: 'rounded-md px-2 py-1.5',
+    optionHighlight: 'bg-slate-100',
+    optionSelected: 'text-slate-950',
+  }}
+/>
+```
+
+Available preset slots:
+
+| Slot                                                                                                 | Target                                            |
+| ---------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| `root`                                                                                               | Preset root wrapper.                              |
+| `trigger`, `triggerOpen`, `triggerInvalid`                                                           | Trigger button states.                            |
+| `triggerValue`, `triggerPlaceholder`                                                                 | Trigger text.                                     |
+| `triggerIcon`, `triggerIconOpen`                                                                     | Trigger chevron.                                  |
+| `positioner`                                                                                         | Floating positioner around the popup.             |
+| `popup`, `popupContent`                                                                              | Popup surface and inner flex container.           |
+| `searchHeader`, `searchIcon`, `searchInput`, `searchInputNavigationFocus`                            | Search header elements.                           |
+| `list`                                                                                               | Scrollable listbox.                               |
+| `option`, `optionSelected`, `optionDisabled`                                                         | Option row and row states.                        |
+| `optionContent`, `optionLabel`, `optionMeta`                                                         | Option internal content wrappers.                 |
+| `optionHighlight`, `pinnedHighlight`                                                                 | Active/highlight background frames.               |
+| `indicator`, `indicatorSelected`, `indicatorUnselected`                                              | Check/radio/checkbox indicator icons.             |
+| `empty`                                                                                              | Empty-state container.                            |
+| `createAction`, `createActionIcon`, `createActionLabel`                                              | Create action button.                             |
+| `validationOverlay`, `validationContainer`, `validationIcon`, `validationMessage`, `validationArrow` | Required validation overlay.                      |
+| `hoverDetail`, `hoverDetailContent`                                                                  | Hover-detail popover surface and content wrapper. |
+
+If a screen needs a different markup structure, not just different classes,
+compose with `createTypedCombobox` instead of forcing the app preset. This is
+the right boundary for experiences such as command palettes, rich grouped
+menus, or selectors embedded in a custom toolbar.
 
 ## Typed Primitive API
 

@@ -5,8 +5,10 @@ import { ANIMATION_VARIANTS, ANIMATION_TRANSITION, STYLES } from '../constants';
 import ValidationIcon from './ValidationIcon';
 import ValidationMessage from './ValidationMessage';
 import ValidationArrow from './ValidationArrow';
+import { cn } from '@/lib/utils';
 
 const ValidationOverlayContent: React.FC<ValidationOverlayComponentProps> = ({
+  classNames,
   error,
   position,
 }) => {
@@ -16,17 +18,20 @@ const ValidationOverlayContent: React.FC<ValidationOverlayComponentProps> = ({
       animate={ANIMATION_VARIANTS.animate}
       exit={ANIMATION_VARIANTS.exit}
       transition={ANIMATION_TRANSITION}
-      className={STYLES.overlay}
+      className={cn(STYLES.overlay, classNames?.overlay)}
       style={{
         top: position.top,
         left: position.left,
       }}
     >
-      <div className={STYLES.container}>
-        <ValidationIcon />
-        <ValidationMessage message={error} />
+      <div className={cn(STYLES.container, classNames?.container)}>
+        <ValidationIcon className={cn(STYLES.icon, classNames?.icon)} />
+        <ValidationMessage
+          message={error}
+          className={cn(STYLES.message, classNames?.message)}
+        />
       </div>
-      <ValidationArrow />
+      <ValidationArrow className={cn(STYLES.arrow, classNames?.arrow)} />
     </motion.div>
   );
 };

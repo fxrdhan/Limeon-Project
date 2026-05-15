@@ -20,6 +20,7 @@ const ValidationOverlay: React.FC<ValidationOverlayProps> = ({
   isHovered = false,
   hasAutoHidden = false,
   isOpen = false,
+  classNames,
 }) => {
   // Use custom hooks
   const position = useOverlayPosition({
@@ -54,7 +55,11 @@ const ValidationOverlay: React.FC<ValidationOverlayProps> = ({
     <ValidationPortal>
       <AnimatePresence>
         {showOverlay && (
-          <ValidationOverlayContent error={error} position={position} />
+          <ValidationOverlayContent
+            error={error}
+            position={position}
+            classNames={classNames}
+          />
         )}
       </AnimatePresence>
     </ValidationPortal>

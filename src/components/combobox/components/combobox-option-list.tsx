@@ -24,6 +24,7 @@ import {
   type ComboboxIndicatorKind,
 } from './combobox-selection-indicator';
 import type { ComboboxVirtualScrollToIndex } from '../hooks/use-combobox-keyboard-highlight-scroll';
+import type { PharmaComboboxClassNames } from '../presets-types';
 
 const getComboboxOptionKey = (
   optionValue: string,
@@ -35,6 +36,7 @@ const getComboboxOptionKey = (
 
 export interface ComboboxOptionListProps<Item> {
   effectiveHighlightedIndex: number | null;
+  classNames?: PharmaComboboxClassNames;
   hasHeldHighlightFrame: boolean;
   hasVisibleItems: boolean;
   highlightClassName?: string;
@@ -65,10 +67,11 @@ export interface ComboboxOptionListProps<Item> {
 }
 
 export function ComboboxOptionList<Item>({
+  classNames,
   effectiveHighlightedIndex,
   hasHeldHighlightFrame,
   hasVisibleItems,
-  highlightClassName = 'bg-primary/10',
+  highlightClassName,
   indicator,
   inputValue,
   itemToStringLabel,
@@ -117,6 +120,20 @@ export function ComboboxOptionList<Item>({
     },
     [listRef]
   );
+  const optionHighlightClassName =
+    highlightClassName ?? classNames?.optionHighlight;
+  const getOptionClassName = (state: {
+    disabled: boolean;
+    selected: boolean;
+  }) =>
+    cn(
+      'relative flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-800 outline-hidden',
+      classNames?.option,
+      state.selected && 'font-semibold text-primary',
+      state.selected && classNames?.optionSelected,
+      state.disabled && 'cursor-not-allowed opacity-50',
+      state.disabled && classNames?.optionDisabled
+    );
 
   const renderOptionContent = (
     item: Item,
@@ -140,26 +157,41 @@ export function ComboboxOptionList<Item>({
             initial={false}
             data-pharma-combobox-highlight=""
             className={cn(
-              'pointer-events-none absolute inset-0 z-0 rounded-lg',
-              highlightClassName
+              'pointer-events-none absolute inset-0 z-0 rounded-lg bg-primary/10',
+              optionHighlightClassName
             )}
             transition={comboboxHighlightBackgroundTransition}
           />
         ) : null}
-        <span className="relative z-10 flex min-w-0 flex-1 items-center gap-2">
+        <span
+          className={cn(
+            'relative z-10 flex min-w-0 flex-1 items-center gap-2',
+            classNames?.optionContent
+          )}
+        >
           <ComboboxSelectionIndicator
+            classNames={classNames}
             kind={indicator}
             selected={state.selected}
           />
           {renderOption ? (
-            <span className="min-w-0 flex-1">
+            <span className={cn('min-w-0 flex-1', classNames?.optionLabel)}>
               {renderOption(item, renderState)}
             </span>
           ) : (
-            <span className="min-w-0 flex-1 truncate">{labelText}</span>
+            <span
+              className={cn('min-w-0 flex-1 truncate', classNames?.optionLabel)}
+            >
+              {labelText}
+            </span>
           )}
           {optionMeta ? (
-            <span className="shrink-0 text-xs font-normal text-slate-500">
+            <span
+              className={cn(
+                'shrink-0 text-xs font-normal text-slate-500',
+                classNames?.optionMeta
+              )}
+            >
               {optionMeta}
             </span>
           ) : null}
@@ -200,11 +232,7 @@ export function ComboboxOptionList<Item>({
             ref={node => {
               setRef(ref, node);
             }}
-            className={cn(
-              'relative flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-800 outline-hidden',
-              state.selected && 'font-semibold text-primary',
-              state.disabled && 'cursor-not-allowed opacity-50'
-            )}
+            className={getOptionClassName(state)}
           >
             {renderOptionContent(
               item,
@@ -269,11 +297,7 @@ export function ComboboxOptionList<Item>({
                 virtualizer.measureElement(node);
               }}
               data-index={virtualItem.index}
-              className={cn(
-                'relative flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-800 outline-hidden',
-                state.selected && 'font-semibold text-primary',
-                state.disabled && 'cursor-not-allowed opacity-50'
-              )}
+              className={getOptionClassName(state)}
               style={virtualStyle}
             >
               {renderOptionContent(
@@ -301,7 +325,8 @@ export function ComboboxOptionList<Item>({
       onWheel={onListScrollIntent}
       className={cn(
         'relative z-10 min-h-0 overflow-y-auto outline-hidden',
-        hasVisibleItems ? 'max-h-60 flex-1 p-1' : 'max-h-0 p-0'
+        hasVisibleItems ? 'max-h-60 flex-1 p-1' : 'max-h-0 p-0',
+        classNames?.list
       )}
     >
       {shouldVirtualize ? (

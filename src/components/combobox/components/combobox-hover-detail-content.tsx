@@ -23,9 +23,11 @@ const getHoverDetailMetaBadgeVariant = (data?: HoverDetailData | null) => {
 };
 
 export function ComboboxHoverDetailContent({
+  className,
   data,
   width,
 }: {
+  className?: string;
   data: HoverDetailData;
   width?: number;
 }) {
@@ -36,7 +38,10 @@ export function ComboboxHoverDetailContent({
 
   return (
     <div
-      className="pointer-events-auto max-h-[calc(100vh-24px)] min-w-0 overflow-hidden"
+      className={cn(
+        'pointer-events-auto max-h-[calc(100vh-24px)] min-w-0 overflow-hidden',
+        className
+      )}
       style={width ? { width } : undefined}
     >
       <div

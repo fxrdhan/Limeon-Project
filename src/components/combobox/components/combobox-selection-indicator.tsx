@@ -5,13 +5,22 @@ import {
   TbSquare,
   TbSquareCheck,
 } from 'react-icons/tb';
+import { cn } from '@/lib/utils';
 
 export type ComboboxIndicatorKind = 'check' | 'radio' | 'checkbox' | 'none';
 
+type ComboboxSelectionIndicatorClassNames = {
+  indicator?: string;
+  indicatorSelected?: string;
+  indicatorUnselected?: string;
+};
+
 export function ComboboxSelectionIndicator({
+  classNames,
   kind,
   selected,
 }: {
+  classNames?: ComboboxSelectionIndicatorClassNames;
   kind: ComboboxIndicatorKind;
   selected: boolean;
 }) {
@@ -21,12 +30,20 @@ export function ComboboxSelectionIndicator({
     return selected ? (
       <TbCircleCheck
         aria-hidden="true"
-        className="h-4 w-4 shrink-0 text-primary"
+        className={cn(
+          'h-4 w-4 shrink-0 text-primary',
+          classNames?.indicator,
+          classNames?.indicatorSelected
+        )}
       />
     ) : (
       <TbCircle
         aria-hidden="true"
-        className="h-4 w-4 shrink-0 text-slate-300"
+        className={cn(
+          'h-4 w-4 shrink-0 text-slate-300',
+          classNames?.indicator,
+          classNames?.indicatorUnselected
+        )}
       />
     );
   }
@@ -35,20 +52,36 @@ export function ComboboxSelectionIndicator({
     return selected ? (
       <TbSquareCheck
         aria-hidden="true"
-        className="h-4 w-4 shrink-0 text-primary"
+        className={cn(
+          'h-4 w-4 shrink-0 text-primary',
+          classNames?.indicator,
+          classNames?.indicatorSelected
+        )}
       />
     ) : (
       <TbSquare
         aria-hidden="true"
-        className="h-4 w-4 shrink-0 text-slate-300"
+        className={cn(
+          'h-4 w-4 shrink-0 text-slate-300',
+          classNames?.indicator,
+          classNames?.indicatorUnselected
+        )}
       />
     );
   }
 
   return (
-    <span className="flex h-4 w-4 shrink-0 items-center justify-center">
+    <span
+      className={cn(
+        'flex h-4 w-4 shrink-0 items-center justify-center',
+        classNames?.indicator
+      )}
+    >
       {selected ? (
-        <TbCheck aria-hidden="true" className="h-4 w-4 text-primary" />
+        <TbCheck
+          aria-hidden="true"
+          className={cn('h-4 w-4 text-primary', classNames?.indicatorSelected)}
+        />
       ) : null}
     </span>
   );

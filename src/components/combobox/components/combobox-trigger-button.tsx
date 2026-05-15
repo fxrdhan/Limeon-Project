@@ -3,12 +3,14 @@ import { TbChevronDown } from 'react-icons/tb';
 import { cn } from '@/lib/utils';
 import { Combobox } from '../internal/primitive';
 import { setRef } from '../utils/primitive-render';
+import type { PharmaComboboxClassNames } from '../presets-types';
 
 export interface ComboboxTriggerButtonProps {
   ariaDescribedBy?: string;
   ariaInvalid?: boolean;
   ariaLabel?: string;
   ariaLabelledBy?: string;
+  classNames?: PharmaComboboxClassNames;
   id?: string;
   onMouseEnter?: (event: MouseEvent<HTMLButtonElement>) => void;
   onMouseLeave?: () => void;
@@ -25,6 +27,7 @@ export function ComboboxTriggerButton({
   ariaInvalid,
   ariaLabel,
   ariaLabelledBy,
+  classNames,
   id,
   onMouseEnter,
   onMouseLeave,
@@ -70,12 +73,19 @@ export function ComboboxTriggerButton({
                 ? 'border-red-400'
                 : state.open
                   ? 'border-primary'
-                  : 'border-slate-300'
+                  : 'border-slate-300',
+              classNames?.trigger,
+              state.open && classNames?.triggerOpen,
+              ariaInvalid && classNames?.triggerInvalid
             )}
           >
             <span
               id={valueId}
-              className={selectedLabel ? 'truncate' : 'truncate text-slate-400'}
+              className={cn(
+                selectedLabel ? 'truncate' : 'truncate text-slate-400',
+                classNames?.triggerValue,
+                !selectedLabel && classNames?.triggerPlaceholder
+              )}
             >
               {selectedLabel || placeholder}
             </span>
@@ -83,7 +93,9 @@ export function ComboboxTriggerButton({
               aria-hidden="true"
               className={cn(
                 'h-4 w-4 shrink-0 text-slate-500 transition-transform',
-                state.open && 'rotate-180'
+                state.open && 'rotate-180',
+                classNames?.triggerIcon,
+                state.open && classNames?.triggerIconOpen
               )}
             />
           </button>

@@ -94,6 +94,47 @@ export interface PharmaComboboxHoverDetailConfig {
   onFetchError?: (error: unknown, id: string) => void;
 }
 
+export interface PharmaComboboxClassNames {
+  root?: string;
+  trigger?: string;
+  triggerInvalid?: string;
+  triggerOpen?: string;
+  triggerValue?: string;
+  triggerPlaceholder?: string;
+  triggerIcon?: string;
+  triggerIconOpen?: string;
+  positioner?: string;
+  popup?: string;
+  popupContent?: string;
+  pinnedHighlight?: string;
+  searchHeader?: string;
+  searchIcon?: string;
+  searchInput?: string;
+  searchInputNavigationFocus?: string;
+  list?: string;
+  option?: string;
+  optionSelected?: string;
+  optionDisabled?: string;
+  optionContent?: string;
+  optionLabel?: string;
+  optionMeta?: string;
+  optionHighlight?: string;
+  indicator?: string;
+  indicatorSelected?: string;
+  indicatorUnselected?: string;
+  empty?: string;
+  createAction?: string;
+  createActionIcon?: string;
+  createActionLabel?: string;
+  validationOverlay?: string;
+  validationContainer?: string;
+  validationIcon?: string;
+  validationMessage?: string;
+  validationArrow?: string;
+  hoverDetail?: string;
+  hoverDetailContent?: string;
+}
+
 export interface PharmaComboboxSelectProps<Item> {
   items: readonly Item[];
   value: Item | null;
@@ -110,4 +151,5 @@ export interface PharmaComboboxSelectProps<Item> {
   validation?: PharmaComboboxValidationConfig;
   creation?: ComboboxCreateAction;
   hoverDetail?: PharmaComboboxHoverDetailConfig;
+  classNames?: PharmaComboboxClassNames;
 }
