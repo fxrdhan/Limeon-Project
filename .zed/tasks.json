@@ -1,67 +1,85 @@
 [
   {
     "label": "dev",
-    "command": "bun run dev",
-    "use_new_terminal": true,
-    "tags": ["dev"]
-  },
-  {
-    "label": "dev:vite",
-    "command": "bun run dev:vite",
+    "command": "vp dev",
     "use_new_terminal": true,
     "tags": ["dev"]
   },
   {
     "label": "build",
-    "command": "bun run build",
+    "command": "vp build",
     "use_new_terminal": false,
     "tags": ["build"]
   },
   {
     "label": "preview",
-    "command": "bun run preview",
+    "command": "vp preview",
     "use_new_terminal": true,
     "tags": ["dev"]
   },
   {
     "label": "test",
-    "command": "bun run test:run",
+    "command": "vp test run --passWithNoTests",
     "use_new_terminal": false,
     "tags": ["test"]
   },
   {
     "label": "test:watch",
-    "command": "bun run test:watch",
+    "command": "vp test watch",
     "use_new_terminal": true,
     "tags": ["test"]
   },
   {
     "label": "test:ui",
-    "command": "bun run test:ui",
+    "command": "vp test --ui",
     "use_new_terminal": true,
     "tags": ["test"]
   },
   {
     "label": "test:coverage",
-    "command": "bun run test:coverage",
+    "command": "vp test run --coverage",
     "use_new_terminal": false,
     "tags": ["test"]
   },
   {
+    "label": "test:agent",
+    "command": "AI_AGENT=codex vp test run --passWithNoTests",
+    "use_new_terminal": false,
+    "tags": ["test"]
+  },
+  {
+    "label": "check",
+    "command": "vp check",
+    "use_new_terminal": false,
+    "tags": ["check"]
+  },
+  {
+    "label": "check:fix",
+    "command": "vp check --fix .",
+    "use_new_terminal": false,
+    "tags": ["check"]
+  },
+  {
     "label": "lint",
-    "command": "bun run lint",
+    "command": "vp lint . --deny-warnings",
+    "use_new_terminal": false,
+    "tags": ["lint"]
+  },
+  {
+    "label": "lint:fix",
+    "command": "vp lint . --fix --deny-warnings",
     "use_new_terminal": false,
     "tags": ["lint"]
   },
   {
     "label": "format",
-    "command": "bun run format",
+    "command": "vp fmt . --write",
     "use_new_terminal": false,
     "tags": ["format"]
   },
   {
     "label": "format:check",
-    "command": "bun run format:check",
+    "command": "vp fmt . --check",
     "use_new_terminal": false,
     "tags": ["format"]
   }
