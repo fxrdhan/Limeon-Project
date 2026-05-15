@@ -28,6 +28,11 @@ const searchSelectorHighlightClassName = 'bg-slate-100';
 const searchSelectorClassNames = {
   optionHighlight: searchSelectorHighlightClassName,
 } satisfies PharmaComboboxClassNames;
+const selectorPopupTransition = 'transition-[left,top] duration-150 ease-out';
+const selectorContentTransition = {
+  duration: 0.16,
+  ease: 'easeOut' as const,
+};
 const forwardedSelectorKeys = new Set([
   'ArrowDown',
   'ArrowUp',
@@ -159,13 +164,14 @@ function BaseSelectorContent<T>({
   modalPosition,
   searchTerm: externalSearchTerm = '',
   config,
+  contentSlideDirection,
   defaultSelectedIndex,
   onHighlightChange,
   ignoredOutsidePressRefs,
 }: BaseSelectorContentProps<T>) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const inputValueRef = useRef('');
-  const initialSearchAppliedRef = useRef(false);
+  const initializedContentKeyRef = useRef<string | null>(null);
   const selectedValue = useMemo(
     () => getSelectedValue(items, defaultSelectedIndex),
     [defaultSelectedIndex, items]
@@ -282,13 +288,11 @@ function BaseSelectorContent<T>({
   }, [options.optionListProps.inputValue]);
 
   useLayoutEffect(() => {
-    if (initialSearchAppliedRef.current) return;
+    if (initializedContentKeyRef.current === activeContentKey) return;
 
-    initialSearchAppliedRef.current = true;
-    if (!externalSearchTerm) return;
-
+    initializedContentKeyRef.current = activeContentKey;
     setSelectorInputValue(externalSearchTerm);
-  }, [externalSearchTerm, setSelectorInputValue]);
+  }, [activeContentKey, externalSearchTerm, setSelectorInputValue]);
 
   useLayoutEffect(() => {
     inputRef.current?.focus({ preventScroll: true });
@@ -390,6 +394,9 @@ function BaseSelectorContent<T>({
   const contentStyle = {
     maxHeight: popupMaxHeight,
   } satisfies CSSProperties;
+  const slideDirection = contentSlideDirection ?? 0;
+  const contentInitial =
+    slideDirection === 0 ? false : { opacity: 0.86, x: slideDirection * 18 };
 
   return (
     <div
@@ -400,7 +407,10 @@ function BaseSelectorContent<T>({
       <SearchSelectorRoot {...comboboxRootProps}>
         <SearchSelectorCombobox.Popup
           initialFocus={false}
-          className="fixed z-50 w-max min-w-[220px] max-w-[calc(100vw-1rem)] overflow-hidden rounded-xl bg-white shadow-thin-md"
+          className={cn(
+            'fixed z-50 w-max min-w-[220px] max-w-[calc(100vw-1rem)] overflow-hidden rounded-xl bg-white shadow-thin-md',
+            selectorPopupTransition
+          )}
           style={popupStyle}
         >
           <div
@@ -409,33 +419,42 @@ function BaseSelectorContent<T>({
             style={contentStyle}
             onBlur={root.handleComboboxBlur}
           >
-            {highlight.heldFrame ? (
-              <motion.div
-                key={highlight.heldFrameKey}
-                aria-hidden="true"
-                data-pharma-combobox-pinned-highlight=""
-                className={cn(
-                  'pointer-events-none absolute z-0 rounded-lg',
-                  searchSelectorHighlightClassName
-                )}
-                style={highlight.heldFrame}
-                initial={false}
-                animate={highlight.heldFrame}
-                transition={comboboxHighlightBackgroundTransition}
+            <motion.div
+              key={activeContentKey}
+              data-search-selector-content=""
+              className="relative flex min-h-0 flex-col overflow-hidden"
+              initial={contentInitial}
+              animate={{ opacity: 1, x: 0 }}
+              transition={selectorContentTransition}
+            >
+              {highlight.heldFrame ? (
+                <motion.div
+                  key={highlight.heldFrameKey}
+                  aria-hidden="true"
+                  data-pharma-combobox-pinned-highlight=""
+                  className={cn(
+                    'pointer-events-none absolute z-0 rounded-lg',
+                    searchSelectorHighlightClassName
+                  )}
+                  style={highlight.heldFrame}
+                  initial={false}
+                  animate={highlight.heldFrame}
+                  transition={comboboxHighlightBackgroundTransition}
+                />
+              ) : null}
+              {search.searchable ? (
+                <SearchSelectorHeader {...searchHeaderProps} />
+              ) : null}
+              <ComboboxOptionList
+                {...options.optionListProps}
+                classNames={searchSelectorClassNames}
               />
-            ) : null}
-            {search.searchable ? (
-              <SearchSelectorHeader {...searchHeaderProps} />
-            ) : null}
-            <ComboboxOptionList
-              {...options.optionListProps}
-              classNames={searchSelectorClassNames}
-            />
-            {!options.hasVisibleItems ? (
-              <SearchSelectorCombobox.Empty className="empty:hidden relative z-10 px-3 py-4 text-center text-sm text-slate-500">
-                {noResultsMessage}
-              </SearchSelectorCombobox.Empty>
-            ) : null}
+              {!options.hasVisibleItems ? (
+                <SearchSelectorCombobox.Empty className="empty:hidden relative z-10 px-3 py-4 text-center text-sm text-slate-500">
+                  {noResultsMessage}
+                </SearchSelectorCombobox.Empty>
+              ) : null}
+            </motion.div>
           </div>
         </SearchSelectorCombobox.Popup>
       </SearchSelectorRoot>
@@ -454,6 +473,7 @@ function BaseSelector<T>({
   defaultSelectedIndex,
   onHighlightChange,
   contentKey,
+  contentSlideDirection,
   outsideClickIgnoreRef,
   outsideClickIgnoreRefs,
 }: BaseSelectorProps<T>) {
@@ -482,7 +502,6 @@ function BaseSelector<T>({
 
   return (
     <BaseSelectorContent<T>
-      key={activeContentKey}
       activeContentKey={activeContentKey}
       items={items}
       isOpen={isOpen}
@@ -494,6 +513,7 @@ function BaseSelector<T>({
       defaultSelectedIndex={defaultSelectedIndex}
       onHighlightChange={onHighlightChange}
       contentKey={contentKey}
+      contentSlideDirection={contentSlideDirection}
       outsideClickIgnoreRef={outsideClickIgnoreRef}
       outsideClickIgnoreRefs={outsideClickIgnoreRefs}
       ignoredOutsidePressRefs={ignoredOutsidePressRefs}
