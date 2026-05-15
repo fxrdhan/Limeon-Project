@@ -10,6 +10,7 @@ import fuzzysort from 'fuzzysort';
 import { motion } from 'motion/react';
 import { createTypedCombobox } from '@/components/combobox';
 import { comboboxHighlightBackgroundTransition } from '@/components/combobox/components/combobox-highlight-motion';
+import { ComboboxOptionMotionFrame } from '@/components/combobox/components/combobox-option-motion-frame';
 import { BaseSelectorProps } from '../../types';
 import { SEARCH_CONSTANTS } from '../../constants';
 
@@ -190,6 +191,8 @@ function BaseSelector<T>({
   const noResultsMessage = trimmedInputValue
     ? config.noResultsText.replace('{searchTerm}', trimmedInputValue)
     : 'Tidak ditemukan';
+  const shouldAnimateListItems =
+    trimmedInputValue.length > 0 && filteredItems.length > 0;
 
   return (
     <>
@@ -250,6 +253,7 @@ function BaseSelector<T>({
 
             <SearchSelectorCombobox.List
               className="overflow-y-auto overflow-x-hidden py-1"
+              getItemKey={rawItem => config.getItemKey(rawItem as T)}
               style={{ maxHeight: config.maxHeight }}
             >
               {rawItem => {
@@ -258,68 +262,74 @@ function BaseSelector<T>({
                 const highlightIndices = labelIndicesByKey.get(itemKey) ?? null;
 
                 return (
-                  <SearchSelectorCombobox.Item
-                    render={(props, state) => {
-                      const { ref, ...itemProps } = props;
-                      const isSelected = state.highlighted;
+                  <ComboboxOptionMotionFrame
+                    shouldAnimate={shouldAnimateListItems}
+                  >
+                    <SearchSelectorCombobox.Item
+                      render={(props, state) => {
+                        const { ref, ...itemProps } = props;
+                        const isSelected = state.highlighted;
 
-                      return (
-                        <div
-                          {...itemProps}
-                          ref={ref as React.Ref<HTMLDivElement>}
-                          className="relative mx-1 flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden transition-colors duration-150"
-                        >
-                          {state.highlighted && (
-                            <motion.div
-                              key={`search-selector-highlight-${activeContentKey}-${inputValue}`}
-                              layoutId={`search-selector-highlight-${activeContentKey}-${inputValue}`}
-                              aria-hidden="true"
-                              className={`pointer-events-none absolute inset-0 z-0 rounded-lg ${highlightBackgroundClass}`}
-                              initial={false}
-                              transition={comboboxHighlightBackgroundTransition}
-                            />
-                          )}
+                        return (
                           <div
-                            className={`relative z-10 shrink-0 transition-colors duration-150 ${
-                              isSelected
-                                ? config.getItemActiveColor?.(item) ||
-                                  'text-slate-900'
-                                : 'text-slate-500'
-                            }`}
+                            {...itemProps}
+                            ref={ref as React.Ref<HTMLDivElement>}
+                            className="relative mx-1 flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden transition-colors duration-150"
                           >
-                            {config.getItemIcon(item)}
-                          </div>
-                          <div className="relative z-10 min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={`whitespace-nowrap font-medium transition-colors duration-150 ${
-                                  isSelected
-                                    ? selectedTextClass
-                                    : 'text-slate-700'
-                                }`}
-                              >
-                                <HighlightedText
-                                  text={config.getItemLabel(item)}
-                                  indices={highlightIndices}
-                                  theme={config.theme}
-                                />
-                              </span>
-                              {config.getItemSecondaryText && (
-                                <span className="text-xs text-slate-400">
-                                  {config.getItemSecondaryText(item)}
+                            {state.highlighted && (
+                              <motion.div
+                                key={`search-selector-highlight-${activeContentKey}-${inputValue}`}
+                                layoutId={`search-selector-highlight-${activeContentKey}-${inputValue}`}
+                                aria-hidden="true"
+                                className={`pointer-events-none absolute inset-0 z-0 rounded-lg ${highlightBackgroundClass}`}
+                                initial={false}
+                                transition={
+                                  comboboxHighlightBackgroundTransition
+                                }
+                              />
+                            )}
+                            <div
+                              className={`relative z-10 shrink-0 transition-colors duration-150 ${
+                                isSelected
+                                  ? config.getItemActiveColor?.(item) ||
+                                    'text-slate-900'
+                                  : 'text-slate-500'
+                              }`}
+                            >
+                              {config.getItemIcon(item)}
+                            </div>
+                            <div className="relative z-10 min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className={`whitespace-nowrap font-medium transition-colors duration-150 ${
+                                    isSelected
+                                      ? selectedTextClass
+                                      : 'text-slate-700'
+                                  }`}
+                                >
+                                  <HighlightedText
+                                    text={config.getItemLabel(item)}
+                                    indices={highlightIndices}
+                                    theme={config.theme}
+                                  />
                                 </span>
+                                {config.getItemSecondaryText && (
+                                  <span className="text-xs text-slate-400">
+                                    {config.getItemSecondaryText(item)}
+                                  </span>
+                                )}
+                              </div>
+                              {config.getItemDescription?.(item) && (
+                                <p className="mt-0.5 line-clamp-2 text-xs text-slate-500">
+                                  {config.getItemDescription(item)}
+                                </p>
                               )}
                             </div>
-                            {config.getItemDescription?.(item) && (
-                              <p className="mt-0.5 line-clamp-2 text-xs text-slate-500">
-                                {config.getItemDescription(item)}
-                              </p>
-                            )}
                           </div>
-                        </div>
-                      );
-                    }}
-                  />
+                        );
+                      }}
+                    />
+                  </ComboboxOptionMotionFrame>
                 );
               }}
             </SearchSelectorCombobox.List>

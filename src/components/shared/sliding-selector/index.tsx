@@ -93,13 +93,22 @@ const ACTIVE_LABEL_SLIDE_TRANSITION = {
   ease: 'easeOut',
 } as const;
 
-const INACTIVE_LABEL_TRIM_TRANSITION = {
-  duration: 0.32,
-  delay: 0.18,
+const INACTIVE_LABEL_HOLD_DURATION = 0.36;
+const INACTIVE_LABEL_FADE_DURATION = 0.3;
+
+const INACTIVE_LABEL_FADE_TRANSITION = {
+  duration: INACTIVE_LABEL_FADE_DURATION,
+  delay: INACTIVE_LABEL_HOLD_DURATION,
   ease: 'easeInOut',
 } as const;
 
-const VERTICAL_ITEM_ZOOM_EXIT_TRANSITION = {
+const INACTIVE_LABEL_COLLAPSE_TRANSITION = {
+  duration: 0.24,
+  delay: INACTIVE_LABEL_HOLD_DURATION + INACTIVE_LABEL_FADE_DURATION,
+  ease: 'easeInOut',
+} as const;
+
+const VERTICAL_ITEM_FADE_TRANSITION = {
   duration: 0.18,
   ease: 'easeOut',
 } as const;
@@ -203,13 +212,20 @@ const RetiringInactiveLabel = ({
       <span className="inline-flex whitespace-nowrap">
         <motion.span
           aria-hidden="true"
-          className="inline-block overflow-hidden whitespace-pre"
-          initial={{ width: 'auto', x: 0, opacity: 1 }}
-          animate={{ width: 0, x: -10, opacity: 0 }}
-          transition={INACTIVE_LABEL_TRIM_TRANSITION}
+          className="inline-block whitespace-pre"
+          initial={{ width: 'auto' }}
+          animate={{ width: 0 }}
+          transition={INACTIVE_LABEL_COLLAPSE_TRANSITION}
           onAnimationComplete={onComplete}
         >
-          {trimPlan.removedText}
+          <motion.span
+            className="inline-block whitespace-pre"
+            initial={{ opacity: 1 }}
+            animate={{ opacity: 0 }}
+            transition={INACTIVE_LABEL_FADE_TRANSITION}
+          >
+            {trimPlan.removedText}
+          </motion.span>
         </motion.span>
         <span className="inline-block whitespace-nowrap">
           {trimPlan.keptText}
@@ -225,13 +241,20 @@ const RetiringInactiveLabel = ({
       </span>
       <motion.span
         aria-hidden="true"
-        className="inline-block overflow-hidden whitespace-pre"
-        initial={{ width: 'auto', x: 0, opacity: 1 }}
-        animate={{ width: 0, x: 10, opacity: 0 }}
-        transition={INACTIVE_LABEL_TRIM_TRANSITION}
+        className="inline-block whitespace-pre"
+        initial={{ width: 'auto' }}
+        animate={{ width: 0 }}
+        transition={INACTIVE_LABEL_COLLAPSE_TRANSITION}
         onAnimationComplete={onComplete}
       >
-        {trimPlan.removedText}
+        <motion.span
+          className="inline-block whitespace-pre"
+          initial={{ opacity: 1 }}
+          animate={{ opacity: 0 }}
+          transition={INACTIVE_LABEL_FADE_TRANSITION}
+        >
+          {trimPlan.removedText}
+        </motion.span>
       </motion.span>
     </span>
   );
@@ -576,13 +599,12 @@ export const SlidingSelector = <T,>({
     return (
       <motion.button
         key={option.key}
+        layout={verticalItemLayoutId ? 'position' : undefined}
         layoutId={verticalItemLayoutId}
-        initial={isVerticalItem ? { opacity: 0, scale: 0.98 } : false}
-        animate={isVerticalItem ? { opacity: 1, scale: 1 } : undefined}
-        exit={isVerticalItem ? { opacity: 0, scale: 0.72 } : undefined}
-        transition={
-          isVerticalItem ? VERTICAL_ITEM_ZOOM_EXIT_TRANSITION : undefined
-        }
+        initial={isVerticalItem ? { opacity: 0 } : false}
+        animate={isVerticalItem ? { opacity: 1 } : undefined}
+        exit={isVerticalItem ? { opacity: 0 } : undefined}
+        transition={isVerticalItem ? VERTICAL_ITEM_FADE_TRANSITION : undefined}
         ref={el => {
           buttonRefs.current[index] = el;
         }}
@@ -638,7 +660,7 @@ export const SlidingSelector = <T,>({
           />
         )}
         <motion.span
-          layout
+          layout={retiringActiveLabel ? 'position' : true}
           className={classNames(
             'relative z-10 select-none font-medium whitespace-nowrap transition-colors duration-300 ease-in-out',
             sizeClasses.text,
@@ -684,7 +706,7 @@ export const SlidingSelector = <T,>({
         />
       )}
       <motion.button
-        layout
+        layout={swapVerticalItemsOnSelect ? 'position' : true}
         layoutId={
           swapVerticalItemsOnSelect
             ? `${baseLayoutId}-vertical-item-${activeKey}`

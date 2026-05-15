@@ -12,8 +12,14 @@ type TypedComboboxItemScopeValue<Value> = {
   value: Value;
 };
 
+type TypedComboboxItemKeyGetter<Value> = (
+  item: Value,
+  index: number
+) => React.Key;
+
 export type TypedComboboxCollectionProps<Value> = {
   children: (item: Value, index: number) => React.ReactNode;
+  getItemKey?: TypedComboboxItemKeyGetter<Value>;
 };
 
 export type TypedComboboxItemProps<Value> = Omit<
@@ -26,6 +32,7 @@ export type TypedComboboxListProps<Value> = Omit<
   'children'
 > & {
   children: (item: Value, index: number) => React.ReactNode;
+  getItemKey?: TypedComboboxItemKeyGetter<Value>;
 };
 
 export type TypedCombobox<Value> = Omit<
@@ -76,12 +83,18 @@ export const createTypedCombobox = <Value>() => {
 
   const TypedCollection = ({
     children,
+    getItemKey,
   }: TypedComboboxCollectionProps<Value>) => {
     const { filteredItems } = useComboboxStateContext<Value>();
     const { getItemId } = useComboboxStaticContext();
 
     return filteredItems.map((item, index) =>
-      renderScopedItem(item, index, children(item, index), getItemId(index))
+      renderScopedItem(
+        item,
+        index,
+        children(item, index),
+        getItemKey?.(item, index) ?? getItemId(index)
+      )
     );
   };
 
@@ -96,11 +109,16 @@ export const createTypedCombobox = <Value>() => {
   };
 
   const TypedList = forwardRef<HTMLDivElement, TypedComboboxListProps<Value>>(
-    function TypedList({ children, ...props }, ref) {
+    function TypedList({ children, getItemKey, ...props }, ref) {
       const { filteredItems } = useComboboxStateContext<Value>();
       const { getItemId } = useComboboxStaticContext();
       const renderedChildren = filteredItems.map((item, index) =>
-        renderScopedItem(item, index, children(item, index), getItemId(index))
+        renderScopedItem(
+          item,
+          index,
+          children(item, index),
+          getItemKey?.(item, index) ?? getItemId(index)
+        )
       );
 
       return React.createElement(
