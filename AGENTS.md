@@ -7,6 +7,11 @@
 - Legacy script names such as `dev:vite` are wrappers around `vp`, not plain Vite CLI usage.
 - Do not call raw `tsc`, `vite`, or `vitest` unless the user explicitly asks for it.
 
+# Credentials
+
+- Project credentials for local login/debugging are stored in `.credential` at the repository root.
+- Read `.credential` only when credentials are needed, and do not print, log, screenshot, or commit secret values.
+
 # File Sync
 
 - Use `rsync` for local or remote file synchronization when copying directory trees, preserving metadata, or syncing only changed files is useful.
