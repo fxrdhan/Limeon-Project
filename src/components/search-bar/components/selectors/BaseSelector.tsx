@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils';
 import { BaseSelectorProps } from '../../types';
 
 const SearchSelectorCombobox = createTypedCombobox<unknown>();
+const searchSelectorHighlightClassName = 'bg-slate-100';
 const forwardedSelectorKeys = new Set([
   'ArrowDown',
   'ArrowUp',
@@ -409,7 +410,10 @@ function BaseSelectorContent<T>({
                 key={highlight.heldFrameKey}
                 aria-hidden="true"
                 data-pharma-combobox-pinned-highlight=""
-                className="pointer-events-none absolute z-0 rounded-lg bg-primary/10"
+                className={cn(
+                  'pointer-events-none absolute z-0 rounded-lg',
+                  searchSelectorHighlightClassName
+                )}
                 style={highlight.heldFrame}
                 initial={false}
                 animate={highlight.heldFrame}
@@ -419,7 +423,10 @@ function BaseSelectorContent<T>({
             {search.searchable ? (
               <SearchSelectorHeader {...searchHeaderProps} />
             ) : null}
-            <ComboboxOptionList {...options.optionListProps} />
+            <ComboboxOptionList
+              {...options.optionListProps}
+              highlightClassName={searchSelectorHighlightClassName}
+            />
             {!options.hasVisibleItems ? (
               <SearchSelectorCombobox.Empty className="empty:hidden relative z-10 px-3 py-4 text-center text-sm text-slate-500">
                 {noResultsMessage}

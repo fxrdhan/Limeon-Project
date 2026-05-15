@@ -37,6 +37,7 @@ export interface ComboboxOptionListProps<Item> {
   effectiveHighlightedIndex: number | null;
   hasHeldHighlightFrame: boolean;
   hasVisibleItems: boolean;
+  highlightClassName?: string;
   indicator: ComboboxIndicatorKind;
   inputValue: string;
   itemToStringLabel: (item: Item) => string;
@@ -67,6 +68,7 @@ export function ComboboxOptionList<Item>({
   effectiveHighlightedIndex,
   hasHeldHighlightFrame,
   hasVisibleItems,
+  highlightClassName = 'bg-primary/10',
   indicator,
   inputValue,
   itemToStringLabel,
@@ -137,7 +139,10 @@ export function ComboboxOptionList<Item>({
             layoutId={`${visualHighlightId}-${inputValue}`}
             initial={false}
             data-pharma-combobox-highlight=""
-            className="pointer-events-none absolute inset-0 z-0 rounded-lg bg-primary/10"
+            className={cn(
+              'pointer-events-none absolute inset-0 z-0 rounded-lg',
+              highlightClassName
+            )}
             transition={comboboxHighlightBackgroundTransition}
           />
         ) : null}
