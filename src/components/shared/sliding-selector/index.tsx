@@ -31,7 +31,6 @@ export interface SlidingSelectorProps<T = unknown> {
   // Animation options
   layoutId?: string;
   animationPreset?: 'smooth' | 'snappy' | 'fluid';
-  swapVerticalItemsOnSelect?: boolean;
 
   // Additional props
   className?: string;
@@ -93,26 +92,6 @@ const ACTIVE_LABEL_SLIDE_TRANSITION = {
   ease: 'easeOut',
 } as const;
 
-const INACTIVE_LABEL_HOLD_DURATION = 0.36;
-const INACTIVE_LABEL_FADE_DURATION = 0.3;
-
-const INACTIVE_LABEL_FADE_TRANSITION = {
-  duration: INACTIVE_LABEL_FADE_DURATION,
-  delay: INACTIVE_LABEL_HOLD_DURATION,
-  ease: 'easeInOut',
-} as const;
-
-const INACTIVE_LABEL_COLLAPSE_TRANSITION = {
-  duration: 0.24,
-  delay: INACTIVE_LABEL_HOLD_DURATION + INACTIVE_LABEL_FADE_DURATION,
-  ease: 'easeInOut',
-} as const;
-
-const VERTICAL_ITEM_FADE_TRANSITION = {
-  duration: 0.18,
-  ease: 'easeOut',
-} as const;
-
 const canUseHoverPointer = () =>
   typeof window === 'undefined' ||
   window.matchMedia('(hover: hover) and (pointer: fine)').matches;
@@ -151,115 +130,6 @@ const SHAPE_CLASSES = {
   },
 };
 
-type InactiveLabelTrimPlan =
-  | {
-      type: 'prefix';
-      removedText: string;
-      keptText: string;
-    }
-  | {
-      type: 'suffix';
-      removedText: string;
-      keptText: string;
-    };
-
-const getInactiveLabelTrimPlan = (
-  activeLabel: string,
-  defaultLabel: string
-): InactiveLabelTrimPlan | null => {
-  if (!activeLabel || !defaultLabel || activeLabel === defaultLabel) {
-    return null;
-  }
-
-  if (activeLabel.endsWith(defaultLabel)) {
-    return {
-      type: 'prefix',
-      removedText: activeLabel.slice(0, -defaultLabel.length),
-      keptText: defaultLabel,
-    };
-  }
-
-  if (activeLabel.startsWith(defaultLabel)) {
-    return {
-      type: 'suffix',
-      removedText: activeLabel.slice(defaultLabel.length),
-      keptText: defaultLabel,
-    };
-  }
-
-  return null;
-};
-
-interface RetiringInactiveLabelProps {
-  activeLabel: string;
-  defaultLabel: string;
-  onComplete: () => void;
-}
-
-const RetiringInactiveLabel = ({
-  activeLabel,
-  defaultLabel,
-  onComplete,
-}: RetiringInactiveLabelProps) => {
-  const trimPlan = getInactiveLabelTrimPlan(activeLabel, defaultLabel);
-
-  if (!trimPlan) {
-    return defaultLabel;
-  }
-
-  if (trimPlan.type === 'prefix') {
-    return (
-      <span className="inline-flex whitespace-nowrap">
-        <motion.span
-          aria-hidden="true"
-          className="inline-block whitespace-pre"
-          initial={{ width: 'auto' }}
-          animate={{ width: 0 }}
-          transition={INACTIVE_LABEL_COLLAPSE_TRANSITION}
-          onAnimationComplete={onComplete}
-        >
-          <motion.span
-            className="inline-block whitespace-pre"
-            initial={{ opacity: 1 }}
-            animate={{ opacity: 0 }}
-            transition={INACTIVE_LABEL_FADE_TRANSITION}
-          >
-            {trimPlan.removedText}
-          </motion.span>
-        </motion.span>
-        <span className="inline-block whitespace-nowrap">
-          {trimPlan.keptText}
-        </span>
-      </span>
-    );
-  }
-
-  return (
-    <span className="inline-flex whitespace-nowrap">
-      <span className="inline-block whitespace-nowrap">
-        {trimPlan.keptText}
-      </span>
-      <motion.span
-        aria-hidden="true"
-        className="inline-block whitespace-pre"
-        initial={{ width: 'auto' }}
-        animate={{ width: 0 }}
-        transition={INACTIVE_LABEL_COLLAPSE_TRANSITION}
-        onAnimationComplete={onComplete}
-      >
-        <motion.span
-          className="inline-block whitespace-pre"
-          initial={{ opacity: 1 }}
-          animate={{ opacity: 0 }}
-          transition={INACTIVE_LABEL_FADE_TRANSITION}
-        >
-          {trimPlan.removedText}
-        </motion.span>
-      </motion.span>
-    </span>
-  );
-};
-
 export const SlidingSelector = <T,>({
   options,
   activeKey,
@@ -274,7 +144,6 @@ export const SlidingSelector = <T,>({
   expandDirection = 'horizontal',
   layoutId,
   animationPreset = 'smooth',
-  swapVerticalItemsOnSelect = false,
   className,
   disabled = false,
   onExpandedChange,
@@ -285,16 +154,11 @@ export const SlidingSelector = <T,>({
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [isVerticalActiveFillVisible, setIsVerticalActiveFillVisible] =
     useState(defaultExpanded && expandDirection === 'vertical');
-  const [retiringInactiveKey, setRetiringInactiveKey] = useState<string | null>(
-    null
-  );
   const mouseLeaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const previousActiveKeyRef = useRef(activeKey);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   const activeOption = options.find(option => option.key === activeKey);
-  const baseLayoutId = layoutId || variant;
   const animation = ANIMATION_PRESETS[animationPreset];
   const sizeClasses = SIZE_CLASSES[size];
   const shapeClasses = SHAPE_CLASSES[shape];
@@ -303,43 +167,10 @@ export const SlidingSelector = <T,>({
   const showVerticalActiveFill =
     expandDirection === 'vertical' && isVerticalActiveFillVisible;
 
-  const clearRetiringInactiveKey = useCallback((optionKey: string) => {
-    setRetiringInactiveKey(current => (current === optionKey ? null : current));
-  }, []);
-
   // Notify parent whenever expanded state changes
   useEffect(() => {
     onExpandedChange?.(isExpanded);
   }, [isExpanded, onExpandedChange]);
-
-  useEffect(() => {
-    const previousActiveKey = previousActiveKeyRef.current;
-
-    if (previousActiveKey === activeKey) return;
-
-    const previousOption = options.find(
-      option => option.key === previousActiveKey
-    );
-    const trimPlan = previousOption?.activeLabel
-      ? getInactiveLabelTrimPlan(
-          previousOption.activeLabel,
-          previousOption.defaultLabel
-        )
-      : null;
-
-    setRetiringInactiveKey(
-      expandDirection === 'vertical' && isExpanded && trimPlan
-        ? previousActiveKey
-        : null
-    );
-    previousActiveKeyRef.current = activeKey;
-  }, [activeKey, expandDirection, isExpanded, options]);
-
-  useEffect(() => {
-    if (!isExpanded) {
-      setRetiringInactiveKey(null);
-    }
-  }, [isExpanded]);
 
   useEffect(() => {
     if (expandDirection !== 'vertical') {
@@ -577,34 +408,11 @@ export const SlidingSelector = <T,>({
     const isActive = option.key === activeKey;
     const isHovered =
       hoveredIndex === index && !isActive && !disabled && !option.disabled;
-    const inactiveActiveLabel = option.activeLabel;
-    const inactiveLabelTrimPlan = inactiveActiveLabel
-      ? getInactiveLabelTrimPlan(inactiveActiveLabel, option.defaultLabel)
-      : null;
-    let retiringActiveLabel: string | null = null;
-    if (
-      inactiveActiveLabel &&
-      inactiveLabelTrimPlan &&
-      isVerticalItem &&
-      retiringInactiveKey === option.key &&
-      !isActive
-    ) {
-      retiringActiveLabel = inactiveActiveLabel;
-    }
-    const verticalItemLayoutId =
-      isVerticalItem && swapVerticalItemsOnSelect
-        ? `${baseLayoutId}-vertical-item-${option.key}`
-        : undefined;
 
     return (
       <motion.button
         key={option.key}
-        layout={verticalItemLayoutId ? 'position' : undefined}
-        layoutId={verticalItemLayoutId}
-        initial={isVerticalItem ? { opacity: 0 } : false}
-        animate={isVerticalItem ? { opacity: 1 } : undefined}
-        exit={isVerticalItem ? { opacity: 0 } : undefined}
-        transition={isVerticalItem ? VERTICAL_ITEM_FADE_TRANSITION : undefined}
+        initial={false}
         ref={el => {
           buttonRefs.current[index] = el;
         }}
@@ -660,7 +468,7 @@ export const SlidingSelector = <T,>({
           />
         )}
         <motion.span
-          layout={retiringActiveLabel ? 'position' : true}
+          layout={isVerticalItem ? false : true}
           className={classNames(
             'relative z-10 select-none font-medium whitespace-nowrap transition-colors duration-300 ease-in-out',
             sizeClasses.text,
@@ -671,15 +479,7 @@ export const SlidingSelector = <T,>({
             }
           )}
         >
-          {retiringActiveLabel ? (
-            <RetiringInactiveLabel
-              activeLabel={retiringActiveLabel}
-              defaultLabel={option.defaultLabel}
-              onComplete={() => clearRetiringInactiveKey(option.key)}
-            />
-          ) : (
-            getDisplayLabel(option, isActive)
-          )}
+          {getDisplayLabel(option, isActive)}
         </motion.span>
       </motion.button>
     );
@@ -706,12 +506,7 @@ export const SlidingSelector = <T,>({
         />
       )}
       <motion.button
-        layout={swapVerticalItemsOnSelect ? 'position' : true}
-        layoutId={
-          swapVerticalItemsOnSelect
-            ? `${baseLayoutId}-vertical-item-${activeKey}`
-            : undefined
-        }
+        layout
         role="tab"
         aria-selected="true"
         aria-controls={`${layoutId || variant}-panel-${activeKey}`}
@@ -856,11 +651,9 @@ export const SlidingSelector = <T,>({
       initial={false}
       transition={DIRECT_DROPDOWN_TRANSITION}
     >
-      <AnimatePresence initial={false} mode="popLayout">
-        {options.map((option, index) =>
-          option.key === activeKey ? null : renderOption(option, index, true)
-        )}
-      </AnimatePresence>
+      {options.map((option, index) =>
+        option.key === activeKey ? null : renderOption(option, index, true)
+      )}
     </motion.div>
   );
 

@@ -2163,7 +2163,6 @@ const ItemMasterNew = memo(() => {
                 autoCollapseDelay={150}
                 layoutId="item-master-tabs"
                 animationPreset="smooth"
-                swapVerticalItemsOnSelect={true}
               />
             )}
           </div>
