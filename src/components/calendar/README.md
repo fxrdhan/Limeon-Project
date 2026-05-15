@@ -182,6 +182,38 @@ Important rules:
 
 Use `formatDateOnlyValue` for API payloads that expect date-only strings. Avoid serializing selected values with `toISOString()` unless the receiving API explicitly expects timestamps.
 
+## State Boundary Between Primitive and Preset
+
+The calendar has a smaller state surface than the combobox, but it follows the same boundary principle: the primitive owns generic datepicker mechanics, while the app preset owns PharmaSys composition and default visuals.
+
+`CalendarPrimitive.Root` is responsible for date-only normalization, the displayed month, the highlighted date, date selection and clearing requests, mode-specific open behavior, focus movement, popup positioning, bounds-aware navigation, outside-click dismissal, hover-trigger timing, and context values consumed by primitive parts.
+
+The app preset is a controlled consumer of the primitive, not a second calendar implementation. `PharmaCalendar` wraps `CalendarPrimitive.Root`, renders the default input or custom trigger, renders the portal or inline calendar container, wires the header and animated day grid, and serializes the selected date into a hidden form input when `name` is provided.
+
+Calendar state ownership:
+
+| State or behavior       | Owner                        | Notes                                                                                                |
+| ----------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Selected value          | Caller                       | `value` is always controlled by the caller. The primitive emits normalized dates through `onChange`. |
+| Date-only normalization | Primitive root               | Incoming values, bounds, and selected dates are normalized through local date-only utilities.        |
+| Displayed month         | Primitive root               | Synced to the selected value when opening and when controlled values change while open or inline.    |
+| Highlighted date        | Primitive root               | Shared by keyboard navigation, hover state, grid active-descendant wiring, and selection.            |
+| Open/closing/opening    | Primitive root               | Datepicker mode uses internal open state; inline mode is treated as always open.                     |
+| Mode behavior           | Primitive root               | `datepicker` and `inline` differences are centralized in mode behavior, not duplicated in views.     |
+| Bounds                  | Primitive root and utilities | Bounds affect selectable days, highlighted movement, header options, and month/year navigation.      |
+| Positioning and focus   | Primitive root and portal    | Floating UI positioning, focus restoration, and modal trapping are rooted in primitive hooks.        |
+| Header selectors        | Preset composition           | The default header renders `PharmaComboboxSelect` through render props for month and year controls.  |
+| Hidden form value       | Preset and default button    | Form serialization uses `formatDateOnlyValue`; disabled calendars disable the hidden input.          |
+| Styling                 | Preset and SCSS              | Shared visuals live in `style.scss`; primitive parts expose stable classes and structure.            |
+
+When adding behavior, use this boundary:
+
+- Put generic datepicker mechanics in the primitive root or its hooks.
+- Put PharmaSys default composition in `presets.tsx`, including header selector choices, default trigger markup, hidden input placement, and inline-vs-portal layout.
+- Put pure date calculations in `utils/calendarUtils.ts` or `components/calendarHeaderModel.ts`.
+- Keep `CalendarHeader` render-prop based so the preset can use combobox selectors without making the primitive depend on combobox.
+- Avoid mirroring `displayDate`, `highlightedDate`, or open state in the preset unless a primitive state slot is intentionally being made controllable.
+
 ## Selection and Navigation Behavior
 
 In `datepicker` mode:
@@ -443,7 +475,39 @@ calendar/
     └── calendarUtils.ts
 ```
 
-## Testing and Maintenance
+## Change Route
+
+Use this route map before changing calendar behavior:
+
+| Change target                              | Primary files                                                                                            |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| Public preset API                          | `types/components.ts`, `presets.tsx`, `index.ts`                                                         |
+| Primitive root state or state ownership    | `primitive-root-state.ts`, `hooks/useCalendarRoot*`, `types/context.ts`                                  |
+| Date-only parsing, formatting, comparison  | `utils/calendarUtils.ts`, `@/lib/formatters`                                                             |
+| Bounds, month/year options, header disable | `components/calendarHeaderModel.ts`, `hooks/useCalendarBounds.ts`                                        |
+| Month/year navigation behavior             | `hooks/useCalendarNavigation.ts`, `hooks/useCalendarHeaderControls.ts`                                   |
+| Selection, clearing, and controlled sync   | `hooks/useCalendarSelection.ts`, `hooks/useCalendarDisplayState.ts`, `hooks/useCalendarRootLifecycle.ts` |
+| Keyboard behavior and focus trapping       | `hooks/useCalendarKeyboard.ts`, `hooks/useCalendarFocus.ts`                                              |
+| Popup positioning and portal behavior      | `hooks/useCalendarPosition.ts`, `components/CalendarPortal.tsx`                                          |
+| Default trigger and form value             | `components/CalendarButton.tsx`, `presets.tsx`                                                           |
+| Header selector composition                | `presets.tsx`, `components/CalendarHeader.tsx`                                                           |
+| Day grid rendering and animation           | `components/DaysGrid.tsx`, `components/AnimatedDaysGrid.tsx`                                             |
+| Shared visual styling                      | `style.scss`                                                                                             |
+| Behavior regression coverage               | `presets.test.tsx`, `tests/playwright/calendar.spec.ts`                                                  |
+
+When a change crosses more than one row, update the root/context boundary first so the preset and tests fail at a single typed handoff instead of drifting independently.
+
+## Maintenance Guidelines
+
+- Keep product screens on `Calendar` unless they need custom trigger, portal, header, or grid composition.
+- Keep selected values as date-only `Date` objects and store external payloads as `YYYY-MM-DD` strings at the API boundary.
+- Keep `value` controlled by the caller; do not add internal selected-value state to the preset.
+- Keep open, display, highlight, focus, and positioning behavior in primitive hooks.
+- Keep header month/year controls replaceable through render props.
+- Prefer pure utility changes for date math and bounds behavior before changing React components.
+- Add or update regression coverage when changing keyboard interaction, focus restoration, bounds, form serialization, or portal positioning.
+
+## Testing
 
 The component has coverage in `presets.test.tsx` for the important behavior contracts:
 
