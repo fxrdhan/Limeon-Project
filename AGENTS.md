@@ -105,11 +105,12 @@ vp fmt --write [changed files]
 - If the needed port is not active, tell the user to start the server and wait for them to do so.
 - If the needed dev or preview port is already active, you may run tests or browser checks that depend on that existing server.
 
-# Playwright Interactive
+# Playwright MCP
 
-- For Playwright interactive browser debugging, use the preview server URL only, normally `http://127.0.0.1:4173` or the user-provided preview host.
-- Never use the dev server URL, normally `http://127.0.0.1:5173`, for Playwright interactive browser debugging because dev/HMR performance is unstable.
-- Before any Playwright interactive browser test, make sure preview is serving a fresh `dist/` for the current working tree. Run `vp build` first when a fresh build is needed, then use the already-running preview server; if the preview server is not running, ask the user to start it.
+- For Playwright MCP browser debugging, use the preview server URL only, normally `http://localhost:4173/` or the user-provided preview host.
+- Never use the dev server URL, for Playwright MCP browser debugging because dev/HMR performance is unstable.
+- Do not set or change the Playwright MCP browser viewport width unless the user explicitly asks for a specific browser width or viewport size.
+- Before any Playwright browser test, make sure preview is serving a fresh `dist/` for the current working tree. Run `vp build` first when a fresh build is needed, then use the already-running preview server; if the preview server is not running, ask the user to start it.
 - If `vp build` runs while preview is already active, hard-refresh the browser and verify the served app reflects the new build. Ask the user to restart preview only if stale assets or old behavior are still observed.
 
 # React Modules
