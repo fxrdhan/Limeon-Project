@@ -105,6 +105,13 @@ vp fmt --write [changed files]
 - If the needed port is not active, tell the user to start the server and wait for them to do so.
 - If the needed dev or preview port is already active, you may run tests or browser checks that depend on that existing server.
 
+# Playwright Interactive
+
+- For Playwright interactive browser debugging, use the preview server URL only, normally `http://127.0.0.1:4173` or the user-provided preview host.
+- Never use the dev server URL, normally `http://127.0.0.1:5173`, for Playwright interactive browser debugging because dev/HMR performance is unstable.
+- Before any Playwright interactive browser test, make sure preview is serving a fresh `dist/` for the current working tree. Run `vp build` first when a fresh build is needed, then use the already-running preview server; if the preview server is not running, ask the user to start it.
+- If `vp build` runs while preview is already active, hard-refresh the browser and verify the served app reflects the new build. Ask the user to restart preview only if stale assets or old behavior are still observed.
+
 # React Modules
 
 - Respect the React Fast Refresh lint rule `react-refresh/only-export-components`.
@@ -133,7 +140,7 @@ vp fmt --write [changed files]
 - Use `AI_AGENT=codex vp test watch` for agent test watch mode.
 - Use `vp test run --passWithNoTests` for regular local terminal output.
 - You may run repository Playwright E2E tests from the CLI when the required dev or preview port is already active. Do not start the server yourself.
-- Do not use Playwright MCP for UI testing unless the user explicitly asks for interactive browser debugging.
+- Do not use Playwright MCP for UI testing unless the user explicitly asks for interactive browser debugging. When they do, target the preview server rather than the dev server.
 
 # Test Quality
 

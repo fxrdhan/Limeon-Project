@@ -32,6 +32,7 @@ unified_exec = true
 shell_snapshot = true
 collaboration_modes = true
 multi_agent = true
+js_repl = true
 
 [mcp_servers.shadcn]
 command = "npx"
