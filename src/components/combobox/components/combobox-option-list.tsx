@@ -122,6 +122,7 @@ export function ComboboxOptionList<Item>({
   );
   const optionHighlightClassName =
     highlightClassName ?? classNames?.optionHighlight;
+  const shouldTrackOptionLayout = hasVisibleItems;
   const getOptionClassName = (state: {
     disabled: boolean;
     selected: boolean;
@@ -290,7 +291,10 @@ export function ComboboxOptionList<Item>({
           return (
             <motion.div
               {...virtualItemProps}
-              {...getComboboxOptionMotionFrameProps(shouldAnimateListItems)}
+              {...getComboboxOptionMotionFrameProps({
+                shouldAnimate: shouldAnimateListItems,
+                shouldTrackLayout: shouldTrackOptionLayout,
+              })}
               {...getPharmaComboboxOptionIndexAttributes(virtualItem.index)}
               ref={node => {
                 setRef(ref, node);
@@ -341,6 +345,7 @@ export function ComboboxOptionList<Item>({
           <ComboboxOptionMotionFrame
             key={optionKeys[index]}
             shouldAnimate={shouldAnimateListItems}
+            shouldTrackLayout={shouldTrackOptionLayout}
           >
             {renderComboboxItem(item, index)}
           </ComboboxOptionMotionFrame>

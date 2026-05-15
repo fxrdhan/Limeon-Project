@@ -888,7 +888,7 @@ describe('Combobox app presets', () => {
     });
   });
 
-  it('keeps list swap animation active while searching', () => {
+  it('tracks option layout before searching and animates swaps while searching', () => {
     render(
       <PharmaComboboxSelect
         items={[
@@ -906,6 +906,19 @@ describe('Combobox app presets', () => {
     );
 
     fireEvent.click(screen.getByRole('combobox', { name: /pilih/i }));
+    const firstOption = screen.getByRole('option', { name: /supplier a/i });
+
+    expect(
+      firstOption.parentElement?.getAttribute(
+        'data-pharma-combobox-option-layout'
+      )
+    ).toBe('');
+    expect(
+      firstOption.parentElement?.getAttribute(
+        'data-pharma-combobox-option-frame'
+      )
+    ).toBeNull();
+
     fireEvent.change(screen.getByPlaceholderText('Cari...'), {
       target: { value: 'Branch' },
     });
