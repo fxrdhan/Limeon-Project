@@ -6,6 +6,31 @@ import type { FieldConfig, Supplier as SupplierType } from '@/types';
 import { useSuppliers, useSupplierMutations } from '@/hooks/queries';
 import { useSuppliersSync } from '@/hooks/realtime/useSuppliersSync';
 
+const TEXT_ADVANCED_FILTER_COLUMN_PROPS = {
+  filter: 'agTextColumnFilter',
+  filterParams: {
+    filterOptions: [
+      'contains',
+      'notContains',
+      'equals',
+      'notEqual',
+      'startsWith',
+      'endsWith',
+    ],
+    defaultOption: 'contains',
+    suppressAndOrCondition: false,
+    caseSensitive: false,
+  },
+  suppressHeaderFilterButton: true,
+} satisfies Partial<ColDef>;
+
+const createAdvancedTextColumn = (
+  config: Parameters<typeof createTextColumn>[0]
+): ColDef => ({
+  ...createTextColumn(config),
+  ...TEXT_ADVANCED_FILTER_COLUMN_PROPS,
+});
+
 export const useSupplierTab = (options?: { enabled?: boolean }) => {
   const enabled = options?.enabled ?? true;
   useSuppliersSync({ enabled });
@@ -37,32 +62,32 @@ export const useSupplierTab = (options?: { enabled?: boolean }) => {
   const supplierColumnDefs: ColDef[] = useMemo(() => {
     const tablePrefix = 'suppliers';
     return [
-      createTextColumn({
+      createAdvancedTextColumn({
         field: `${tablePrefix}.name`,
         headerName: 'Nama Supplier',
         minWidth: 200,
         valueGetter: params => params.data?.name || '-',
       }),
-      createTextColumn({
+      createAdvancedTextColumn({
         field: `${tablePrefix}.address`,
         headerName: 'Alamat',
         minWidth: 150,
         flex: 1,
         valueGetter: params => params.data?.address || '-',
       }),
-      createTextColumn({
+      createAdvancedTextColumn({
         field: `${tablePrefix}.phone`,
         headerName: 'Telepon',
         minWidth: 120,
         valueGetter: params => params.data?.phone || '-',
       }),
-      createTextColumn({
+      createAdvancedTextColumn({
         field: `${tablePrefix}.email`,
         headerName: 'Email',
         minWidth: 150,
         valueGetter: params => params.data?.email || '-',
       }),
-      createTextColumn({
+      createAdvancedTextColumn({
         field: `${tablePrefix}.contact_person`,
         headerName: 'Kontak Person',
         minWidth: 150,

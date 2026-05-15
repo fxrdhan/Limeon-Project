@@ -336,7 +336,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
   return (
     <div
       ref={badgeRef}
-      className={`inline-flex h-9 items-center whitespace-nowrap rounded-lg text-sm font-medium ${colors.bg} ${colors.text} flex-shrink-0 transition-[box-shadow,background-color] duration-200 ease-out ${selectedClass} ${errorClass}`}
+      className={`inline-flex h-8 items-center whitespace-nowrap rounded-lg text-sm font-medium ${colors.bg} ${colors.text} flex-shrink-0 transition-[box-shadow,background-color] duration-200 ease-out ${selectedClass} ${errorClass}`}
       data-selected={isSelected}
       style={{
         ...shakeStyle,
@@ -382,7 +382,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
           {/* Edit/Cancel button - same position, swaps icon based on mode */}
           {config.canEdit && config.onEdit && (
             <div
-              className={`flex-shrink-0 overflow-hidden transition-[width,opacity,margin] duration-150 ease-out ${
+              className={`flex h-6 flex-shrink-0 items-center justify-center overflow-hidden transition-[width,opacity,margin] duration-150 ease-out ${
                 showEditButtonSpace ? 'w-6 opacity-100' : 'w-0 opacity-0'
               } ${showEditButtonSpace ? 'ml-1' : 'ml-0'}`}
             >
@@ -405,7 +405,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
                         isClearing.current = true;
                       }
                     }}
-                    className={`rounded-md p-1 cursor-pointer ${colors.hoverBg} flex-shrink-0 transition-[opacity,transform] duration-150 ease-out ${
+                    className={`inline-flex h-6 w-6 flex-shrink-0 cursor-pointer items-center justify-center rounded-md leading-none ${colors.hoverBg} transition-[opacity,transform] duration-150 ease-out ${
                       editIconVisible
                         ? 'opacity-100 translate-x-0'
                         : 'pointer-events-none opacity-0 -translate-x-1'
@@ -414,9 +414,9 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
                     aria-label={isEditing ? 'Batal edit' : 'Edit'}
                   >
                     {isEditing ? (
-                      <TbX className="w-3.5 h-3.5 flex-shrink-0" />
+                      <TbX className="block w-3.5 h-3.5 flex-shrink-0" />
                     ) : (
-                      <TbPencil className="w-3.5 h-3.5 flex-shrink-0" />
+                      <TbPencil className="block w-3.5 h-3.5 flex-shrink-0" />
                     )}
                   </button>
                 </TooltipTrigger>
@@ -429,7 +429,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
           {/* Clear/Delete button (Trash) - shown on hover or selected, hidden when editing */}
           {!isEditing && config.canClear && (
             <div
-              className={`flex-shrink-0 overflow-hidden transition-[width,opacity] duration-150 ease-out ${
+              className={`flex h-6 flex-shrink-0 items-center justify-center overflow-hidden transition-[width,opacity] duration-150 ease-out ${
                 showDeleteButtonSpace ? 'w-6 opacity-100' : 'w-0 opacity-0'
               }`}
             >
@@ -445,7 +445,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
                       config.onClear?.();
                     }}
                     onMouseDown={e => e.stopPropagation()}
-                    className={`rounded-md p-1 cursor-pointer ${colors.hoverBg} flex-shrink-0 transition-[opacity,transform] duration-150 ease-out ${
+                    className={`inline-flex h-6 w-6 flex-shrink-0 cursor-pointer items-center justify-center rounded-md leading-none ${colors.hoverBg} transition-[opacity,transform] duration-150 ease-out ${
                       deleteIconVisible
                         ? 'opacity-100 translate-x-0'
                         : 'pointer-events-none opacity-0 -translate-x-1'
@@ -453,7 +453,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
                     type="button"
                     aria-label="Hapus"
                   >
-                    <TbTrash className="w-3.5 h-3.5 flex-shrink-0" />
+                    <TbTrash className="block w-3.5 h-3.5 flex-shrink-0" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent>Hapus</TooltipContent>
@@ -464,7 +464,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
           {/* Insert button (Plus) - only enabled for eligible value badges */}
           {!isEditing && config.canInsert && config.onInsert && (
             <div
-              className={`flex-shrink-0 overflow-hidden transition-[width,opacity] duration-150 ease-out ${
+              className={`flex h-6 flex-shrink-0 items-center justify-center overflow-hidden transition-[width,opacity] duration-150 ease-out ${
                 showInsertButtonSpace ? 'w-6 opacity-100' : 'w-0 opacity-0'
               }`}
             >
@@ -478,7 +478,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
                       config.onInsert?.();
                     }}
                     onMouseDown={e => e.stopPropagation()}
-                    className={`rounded-md p-1 cursor-pointer ${colors.hoverBg} flex-shrink-0 transition-[opacity,transform] duration-150 ease-out ${
+                    className={`inline-flex h-6 w-6 flex-shrink-0 cursor-pointer items-center justify-center rounded-md leading-none ${colors.hoverBg} transition-[opacity,transform] duration-150 ease-out ${
                       insertIconVisible
                         ? 'opacity-100 translate-x-0'
                         : 'pointer-events-none opacity-0 -translate-x-1'
@@ -486,7 +486,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
                     type="button"
                     aria-label="Tambah kondisi"
                   >
-                    <TbCirclePlus className="w-4 h-4 flex-shrink-0" />
+                    <TbCirclePlus className="block w-4 h-4 flex-shrink-0" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent>Tambah kondisi</TooltipContent>

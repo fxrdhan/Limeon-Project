@@ -1,46 +1,34 @@
-import {
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  useMemo,
-  useCallback,
-} from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { TbSearch } from 'react-icons/tb';
 import fuzzysort from 'fuzzysort';
+import { createTypedCombobox } from '@/components/combobox';
 import { BaseSelectorProps } from '../../types';
 import { SEARCH_CONSTANTS } from '../../constants';
-import {
-  getKeyboardPinnedHighlightFrame,
-  getKeyboardScrollTarget,
-  type KeyboardPinnedHighlightFrame,
-} from '@/components/shared/keyboard-pinned-highlight';
 
-// Helper to highlight matched characters
-/* c8 ignore next */
+const SearchSelectorCombobox = createTypedCombobox<unknown>();
+
+type SelectorSearchResult<T> = {
+  item: T;
+  labelIndices: readonly number[] | null;
+  score: number;
+};
+
 const HighlightedText: React.FC<{
   text: string;
   indices: readonly number[] | null;
   theme?: 'purple' | 'blue' | 'orange';
-}> = ({ text, indices, theme = 'purple' }) => {
+}> = ({ text, indices }) => {
   if (!indices || indices.length === 0) {
     return <>{text}</>;
   }
 
-  const themeColor =
-    theme === 'blue'
-      ? 'text-blue-600'
-      : theme === 'orange'
-        ? 'text-orange-600'
-        : 'text-purple-600';
-
   const indexSet = new Set(indices);
   return (
     <>
-      {text.split('').map((char, i) => (
+      {text.split('').map((char, index) => (
         <span
-          key={i}
-          className={indexSet.has(i) ? `font-bold ${themeColor}` : ''}
+          key={index}
+          className={indexSet.has(index) ? 'font-bold text-slate-950' : ''}
         >
           {char}
         </span>
@@ -60,867 +48,281 @@ function BaseSelector<T>({
   defaultSelectedIndex,
   onHighlightChange,
   contentKey,
-  contentSlideDirection = 0,
-  outsideClickIgnoreRef,
 }: BaseSelectorProps<T>) {
-  const [showHeader, setShowHeader] = useState(false);
-  const [showContent, setShowContent] = useState(false);
-  const modalRef = useRef<HTMLDivElement>(null);
-  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const listContainerRef = useRef<HTMLDivElement>(null);
-  const releaseHeldBackgroundTimeoutRef = useRef<number | null>(null);
-  const keyboardBackgroundIndexRef = useRef<number | null>(null);
-  const lastPointerPositionRef = useRef<{ x: number; y: number } | null>(null);
-  const skipNextBackgroundScrollRef = useRef(false);
-  const hoverResumePointerPositionRef = useRef<{
-    x: number;
-    y: number;
-  } | null>(null);
-
-  // Internal search term - captured from keystrokes when modal is open
-  const [internalSearchTerm, setInternalSearchTerm] = useState('');
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const [isHoverDisabled, setIsHoverDisabled] = useState(false);
-  const [heldBackgroundStyle, setHeldBackgroundStyle] =
-    useState<KeyboardPinnedHighlightFrame | null>(null);
-  const [pendingKeyboardScroll, setPendingKeyboardScroll] = useState<{
-    sourceIndex: number;
-    targetIndex: number;
-  } | null>(null);
-
-  // Use internal search term (priority) or external search term
-  const searchTerm = internalSearchTerm || externalSearchTerm;
+  const inputRef = useRef<HTMLInputElement>(null);
   const activeContentKey = contentKey ?? config.headerText;
-  const activeContentKeyRef = useRef(activeContentKey);
-  activeContentKeyRef.current = activeContentKey;
+  const [inputValue, setInputValue] = useState(externalSearchTerm);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (!isOpen) return;
-    setInternalSearchTerm('');
-    setHoveredIndex(null);
-    setIsHoverDisabled(false);
-    keyboardBackgroundIndexRef.current = null;
-    skipNextBackgroundScrollRef.current = false;
-    hoverResumePointerPositionRef.current = null;
-    setPendingKeyboardScroll(null);
-    if (releaseHeldBackgroundTimeoutRef.current !== null) {
-      window.clearTimeout(releaseHeldBackgroundTimeoutRef.current);
-      releaseHeldBackgroundTimeoutRef.current = null;
-    }
-    setHeldBackgroundStyle(null);
-    if (listContainerRef.current) {
-      listContainerRef.current.scrollTop = 0;
-    }
+    setInputValue(externalSearchTerm);
+  }, [activeContentKey, externalSearchTerm, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const frameId = requestAnimationFrame(() => {
+      inputRef.current?.focus({ preventScroll: true });
+      inputRef.current?.select();
+    });
+
+    return () => cancelAnimationFrame(frameId);
   }, [activeContentKey, isOpen]);
 
   useEffect(() => {
-    return () => {
-      if (releaseHeldBackgroundTimeoutRef.current !== null) {
-        window.clearTimeout(releaseHeldBackgroundTimeoutRef.current);
-      }
-      keyboardBackgroundIndexRef.current = null;
-      skipNextBackgroundScrollRef.current = false;
-      hoverResumePointerPositionRef.current = null;
-    };
-  }, []);
+    if (!isOpen) {
+      onHighlightChange?.(null);
+    }
+  }, [isOpen, onHighlightChange]);
 
   const searchFieldsConfig = useMemo(() => {
     if (items.length === 0) return [];
     return config.getSearchFields(items[0]);
   }, [items, config]);
 
-  // Store fuzzy search results with indices for highlighting
-  const searchResults = useMemo(() => {
-    if (searchTerm && items.length > 0) {
-      const searchTargets = items.map(item => {
-        const searchFields = config.getSearchFields(item);
-        return {
-          item,
-          ...searchFields.reduce(
-            (acc, field) => ({ ...acc, [field.key]: field.value }),
-            {}
-          ),
-        };
-      });
-
-      const allResults = new Map<
-        string,
-        { item: T; score: number; labelIndices: readonly number[] | null }
-      >();
-
-      // First pass: collect all matching items with scores
-      searchFieldsConfig.forEach(fieldConfig => {
-        const results = fuzzysort.go(searchTerm, searchTargets, {
-          key: fieldConfig.key,
-          threshold: SEARCH_CONSTANTS.FUZZY_SEARCH_THRESHOLD,
-        });
-
-        results.forEach(result => {
-          const itemKey = config.getItemKey(result.obj.item);
-          const boost = fieldConfig.boost || 0;
-          const currentBest = allResults.get(itemKey);
-
-          if (!currentBest || result.score + boost > currentBest.score) {
-            allResults.set(itemKey, {
-              item: result.obj.item,
-              score: result.score + boost,
-              labelIndices: null, // Will be computed below
-            });
-          }
-        });
-      });
-
-      // Second pass: get label-specific indices for highlighting
-      // This ensures we highlight the correct characters in the label text
-      const labelTargets = Array.from(allResults.values()).map(r => ({
-        item: r.item,
-        label: config.getItemLabel(r.item),
+  const searchResults = useMemo<SelectorSearchResult<T>[]>(() => {
+    const normalizedSearch = inputValue.trim();
+    if (!normalizedSearch || items.length === 0) {
+      return items.map(item => ({
+        item,
+        labelIndices: null,
+        score: 0,
       }));
+    }
 
-      const labelResults = fuzzysort.go(searchTerm, labelTargets, {
-        key: 'label',
-        threshold: -Infinity, // Accept any match since item already qualified
+    const searchTargets = items.map(item => {
+      const searchFields = config.getSearchFields(item);
+      return {
+        item,
+        ...searchFields.reduce(
+          (acc, field) => ({ ...acc, [field.key]: field.value }),
+          {}
+        ),
+      };
+    });
+
+    const rankedResults = new Map<string, SelectorSearchResult<T>>();
+
+    searchFieldsConfig.forEach(fieldConfig => {
+      const results = fuzzysort.go(normalizedSearch, searchTargets, {
+        key: fieldConfig.key,
+        threshold: SEARCH_CONSTANTS.FUZZY_SEARCH_THRESHOLD,
       });
 
-      labelResults.forEach(result => {
+      results.forEach(result => {
         const itemKey = config.getItemKey(result.obj.item);
-        const existing = allResults.get(itemKey);
-        if (existing) {
-          allResults.set(itemKey, {
-            ...existing,
-            labelIndices: result.indexes,
+        const score = result.score + (fieldConfig.boost || 0);
+        const currentBest = rankedResults.get(itemKey);
+
+        if (!currentBest || score > currentBest.score) {
+          rankedResults.set(itemKey, {
+            item: result.obj.item,
+            labelIndices: null,
+            score,
           });
         }
       });
+    });
 
-      return Array.from(allResults.values()).sort((a, b) => b.score - a.score);
-    } else {
-      return items.map(item => ({
-        item,
-        score: 0,
-        labelIndices: null as readonly number[] | null,
-      }));
-    }
-  }, [searchTerm, items, searchFieldsConfig, config]);
+    const labelTargets = Array.from(rankedResults.values()).map(result => ({
+      item: result.item,
+      label: config.getItemLabel(result.item),
+    }));
 
-  // Derive filteredItems from searchResults
+    const labelResults = fuzzysort.go(normalizedSearch, labelTargets, {
+      key: 'label',
+      threshold: -Infinity,
+    });
+
+    labelResults.forEach(result => {
+      const itemKey = config.getItemKey(result.obj.item);
+      const existing = rankedResults.get(itemKey);
+      if (existing) {
+        rankedResults.set(itemKey, {
+          ...existing,
+          labelIndices: result.indexes,
+        });
+      }
+    });
+
+    return Array.from(rankedResults.values()).sort(
+      (first, second) => second.score - first.score
+    );
+  }, [config, inputValue, items, searchFieldsConfig]);
+
   const filteredItems = useMemo(
-    () => searchResults.map(r => r.item),
+    () => searchResults.map(result => result.item),
     [searchResults]
   );
 
-  // Get highlight indices for an item's label
-  const getHighlightIndices = useCallback(
-    (item: T): readonly number[] | null => {
-      const result = searchResults.find(
-        r => config.getItemKey(r.item) === config.getItemKey(item)
-      );
-      return result?.labelIndices || null;
-    },
-    [searchResults, config]
-  );
-
-  // Use getDerivedStateFromProps pattern to manage selectedIndex resets
-  const [indexState, setIndexState] = useState({
-    isOpen: false,
-    contentKey: activeContentKey,
-    filteredLength: 0,
-    selectedIndex: 0,
-    lastDefaultIndex: defaultSelectedIndex,
-  });
-
-  if (
-    isOpen !== indexState.isOpen ||
-    activeContentKey !== indexState.contentKey ||
-    filteredItems.length !== indexState.filteredLength
-  ) {
-    let newIndex = indexState.selectedIndex;
-
-    // Reset to defaultSelectedIndex (or 0) when opening
-    if (
-      isOpen &&
-      (!indexState.isOpen || activeContentKey !== indexState.contentKey)
-    ) {
-      newIndex = defaultSelectedIndex ?? 0;
-    }
-    // Adjust if out of bounds
-    /* c8 ignore start */
-    else if (
-      filteredItems.length > 0 &&
-      indexState.selectedIndex >= filteredItems.length
-    ) {
-      newIndex = Math.max(0, filteredItems.length - 1);
-    } else if (filteredItems.length === 0) {
-      newIndex = 0;
-    }
-    /* c8 ignore end */
-
-    setIndexState({
-      isOpen,
-      contentKey: activeContentKey,
-      filteredLength: filteredItems.length,
-      selectedIndex: newIndex,
-      lastDefaultIndex: defaultSelectedIndex,
+  const labelIndicesByKey = useMemo(() => {
+    const indices = new Map<string, readonly number[] | null>();
+    searchResults.forEach(result => {
+      indices.set(config.getItemKey(result.item), result.labelIndices);
     });
-  }
+    return indices;
+  }, [config, searchResults]);
 
-  const selectedIndex = indexState.selectedIndex;
-  const setSelectedIndex = (value: number | ((prev: number) => number)) => {
-    setIndexState(prev => ({
-      ...prev,
-      selectedIndex:
-        typeof value === 'function' ? value(prev.selectedIndex) : value,
-    }));
+  const defaultHighlightedIndex =
+    filteredItems.length === 0
+      ? null
+      : Math.min(defaultSelectedIndex ?? 0, filteredItems.length - 1);
+
+  const modalPosition = {
+    x: position.left,
+    y: position.top + 5,
   };
-  const backgroundIndex = hoveredIndex ?? selectedIndex;
-  const getBackgroundColorClass = () =>
+
+  const selectedTextClass = 'text-slate-950';
+
+  const highlightBackgroundClass =
     config.theme === 'blue'
       ? 'bg-blue-100'
       : config.theme === 'orange'
         ? 'bg-orange-100'
         : 'bg-purple-100';
 
-  const getRequiredScrollTop = useCallback(
-    (index: number): number | null => {
-      const container = listContainerRef.current;
-      const targetElement = itemRefs.current[index];
-
-      if (!container || !targetElement) return null;
-
-      return (
-        getKeyboardScrollTarget({
-          container,
-          itemCount: filteredItems.length,
-          targetElement,
-          targetIndex: index,
-        })?.scrollTop ?? null
-      );
-    },
-    [filteredItems.length]
-  );
-
-  // Reset internal search term when modal closes
-  useEffect(() => {
-    if (isOpen && !showHeader) {
-      // Move all setState to async to avoid synchronous setState in effect
-      setTimeout(() => {
-        setShowHeader(true);
-      }, 0);
-      setTimeout(() => {
-        setShowContent(true);
-      }, 50); // Reduced from 200ms to 50ms
-    } else if (!isOpen && (showHeader || showContent)) {
-      // Move all setState to async
-      setTimeout(() => {
-        setShowContent(false);
-      }, 0);
-      setTimeout(() => {
-        setShowHeader(false);
-        // Reset internal search term
-        setInternalSearchTerm('');
-      }, 100); // Reduced from 200ms to 100ms
-    }
-  }, [isOpen, showHeader, showContent]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isOpen) return;
-      if (e.defaultPrevented) return;
-
-      switch (e.key) {
-        case 'ArrowDown':
-          e.preventDefault();
-          if (filteredItems.length > 0) {
-            setIsHoverDisabled(true);
-            skipNextBackgroundScrollRef.current = false;
-            hoverResumePointerPositionRef.current =
-              lastPointerPositionRef.current;
-            const baseIndex =
-              keyboardBackgroundIndexRef.current ?? backgroundIndex;
-            const nextIndex =
-              baseIndex + 1 >= filteredItems.length ? 0 : baseIndex + 1;
-            keyboardBackgroundIndexRef.current = nextIndex;
-            if (nextIndex === 0) {
-              if (releaseHeldBackgroundTimeoutRef.current !== null) {
-                window.clearTimeout(releaseHeldBackgroundTimeoutRef.current);
-                releaseHeldBackgroundTimeoutRef.current = null;
-              }
-              keyboardBackgroundIndexRef.current = null;
-              setPendingKeyboardScroll(null);
-              setHeldBackgroundStyle(null);
-            } else if (getRequiredScrollTop(nextIndex) !== null) {
-              setPendingKeyboardScroll({
-                sourceIndex: baseIndex,
-                targetIndex: nextIndex,
-              });
-            } else {
-              setPendingKeyboardScroll(null);
-              keyboardBackgroundIndexRef.current = null;
-            }
-            setHoveredIndex(nextIndex);
-          }
-          break;
-        case 'ArrowUp':
-          e.preventDefault();
-          if (filteredItems.length > 0) {
-            setIsHoverDisabled(true);
-            skipNextBackgroundScrollRef.current = false;
-            hoverResumePointerPositionRef.current =
-              lastPointerPositionRef.current;
-            const baseIndex =
-              keyboardBackgroundIndexRef.current ?? backgroundIndex;
-            const nextIndex =
-              baseIndex === 0 ? filteredItems.length - 1 : baseIndex - 1;
-            keyboardBackgroundIndexRef.current = nextIndex;
-            if (nextIndex === filteredItems.length - 1) {
-              if (releaseHeldBackgroundTimeoutRef.current !== null) {
-                window.clearTimeout(releaseHeldBackgroundTimeoutRef.current);
-                releaseHeldBackgroundTimeoutRef.current = null;
-              }
-              keyboardBackgroundIndexRef.current = null;
-              setPendingKeyboardScroll(null);
-              setHeldBackgroundStyle(null);
-            } else if (getRequiredScrollTop(nextIndex) !== null) {
-              setPendingKeyboardScroll({
-                sourceIndex: baseIndex,
-                targetIndex: nextIndex,
-              });
-            } else {
-              setPendingKeyboardScroll(null);
-              keyboardBackgroundIndexRef.current = null;
-            }
-            setHoveredIndex(nextIndex);
-          }
-          break;
-        case 'Enter':
-          e.preventDefault();
-          if (
-            filteredItems.length > 0 &&
-            backgroundIndex >= 0 &&
-            backgroundIndex < filteredItems.length &&
-            filteredItems[backgroundIndex]
-          ) {
-            onSelect(filteredItems[backgroundIndex]);
-          }
-          break;
-        case 'Escape':
-          e.preventDefault();
-          onClose();
-          break;
-        case 'Backspace':
-          e.preventDefault();
-          setInternalSearchTerm(prev => prev.slice(0, -1));
-          setHoveredIndex(null);
-          setIsHoverDisabled(false);
-          keyboardBackgroundIndexRef.current = null;
-          skipNextBackgroundScrollRef.current = false;
-          hoverResumePointerPositionRef.current = null;
-          setPendingKeyboardScroll(null);
-          setHeldBackgroundStyle(null);
-          // Reset to first item when search changes
-          setSelectedIndex(0);
-          break;
-        default:
-          // Capture alphanumeric and space for search
-          if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-            e.preventDefault();
-            // Skip space if search term is empty (prevents accidental search when SPACE opens selector)
-            if (e.key === ' ' && internalSearchTerm === '') {
-              return;
-            }
-            setInternalSearchTerm(prev => prev + e.key);
-            setHoveredIndex(null);
-            setIsHoverDisabled(false);
-            keyboardBackgroundIndexRef.current = null;
-            skipNextBackgroundScrollRef.current = false;
-            hoverResumePointerPositionRef.current = null;
-            setPendingKeyboardScroll(null);
-            setHeldBackgroundStyle(null);
-            // Reset to first item when search changes
-            setSelectedIndex(0);
-          }
-          break;
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [
-    isOpen,
-    filteredItems,
-    backgroundIndex,
-    getRequiredScrollTop,
-    onSelect,
-    onClose,
-    internalSearchTerm,
-  ]);
-
-  useLayoutEffect(() => {
-    if (!isOpen || !showContent || pendingKeyboardScroll === null) return;
-
-    const container = listContainerRef.current;
-    const targetElement = itemRefs.current[pendingKeyboardScroll.targetIndex];
-    const sourceElement =
-      itemRefs.current[pendingKeyboardScroll.sourceIndex] ?? targetElement;
-    const modalElement = modalRef.current;
-
-    if (!container || !targetElement || !sourceElement || !modalElement) return;
-
-    const scrollTarget = getKeyboardScrollTarget({
-      container,
-      itemCount: filteredItems.length,
-      targetElement,
-      targetIndex: pendingKeyboardScroll.targetIndex,
-    });
-
-    if (scrollTarget === null) {
-      setPendingKeyboardScroll(null);
-      keyboardBackgroundIndexRef.current = null;
-      setHeldBackgroundStyle(null);
-      return;
-    }
-
-    if (releaseHeldBackgroundTimeoutRef.current !== null) {
-      window.clearTimeout(releaseHeldBackgroundTimeoutRef.current);
-    }
-
-    setHeldBackgroundStyle(
-      getKeyboardPinnedHighlightFrame({
-        container,
-        frameRootElement: modalElement,
-        scrollDirection: scrollTarget.direction,
-        sourceElement,
-        targetElement,
-      })
-    );
-    container.scrollTo({ top: scrollTarget.scrollTop, behavior: 'smooth' });
-    releaseHeldBackgroundTimeoutRef.current = window.setTimeout(() => {
-      keyboardBackgroundIndexRef.current = null;
-      setPendingKeyboardScroll(null);
-      setHeldBackgroundStyle(null);
-      releaseHeldBackgroundTimeoutRef.current = null;
-    }, 260);
-  }, [filteredItems.length, isOpen, pendingKeyboardScroll, showContent]);
-
-  useEffect(() => {
-    if (
-      !isOpen ||
-      !showContent ||
-      heldBackgroundStyle ||
-      keyboardBackgroundIndexRef.current !== null
-    )
-      return;
-
-    if (skipNextBackgroundScrollRef.current) {
-      skipNextBackgroundScrollRef.current = false;
-      return;
-    }
-
-    const scrollActiveBackgroundItemIntoView = () => {
-      const container = listContainerRef.current;
-      const selectedElement = itemRefs.current[backgroundIndex];
-
-      if (!container || !selectedElement) return;
-
-      const scrollTarget = getKeyboardScrollTarget({
-        container,
-        itemCount: filteredItems.length,
-        targetElement: selectedElement,
-        targetIndex: backgroundIndex,
-      });
-
-      if (scrollTarget) {
-        container.scrollTo({ top: scrollTarget.scrollTop, behavior: 'smooth' });
-      }
-    };
-
-    const frameIds: number[] = [];
-    const scheduleScroll = (remainingFrames: number) => {
-      const frameId = requestAnimationFrame(() => {
-        scrollActiveBackgroundItemIntoView();
-        if (remainingFrames > 0) {
-          scheduleScroll(remainingFrames - 1);
-        }
-      });
-      frameIds.push(frameId);
-    };
-
-    scheduleScroll(2);
-    return () => {
-      frameIds.forEach(frameId => cancelAnimationFrame(frameId));
-    };
-  }, [
-    activeContentKey,
-    backgroundIndex,
-    isOpen,
-    filteredItems,
-    showContent,
-    heldBackgroundStyle,
-  ]);
-
-  // Notify parent of highlighted item changes for live preview
-  useEffect(() => {
-    if (isOpen && onHighlightChange) {
-      const highlightedItem =
-        filteredItems.length > 0 && selectedIndex < filteredItems.length
-          ? filteredItems[selectedIndex]
-          : null;
-      onHighlightChange(highlightedItem);
-    }
-  }, [isOpen, selectedIndex, filteredItems, onHighlightChange]);
-
-  // Clear highlight when modal closes
-  useEffect(() => {
-    if (!isOpen && onHighlightChange) {
-      onHighlightChange(null);
-    }
-  }, [isOpen, onHighlightChange]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node;
-      if (
-        modalRef.current &&
-        !modalRef.current.contains(target) &&
-        !outsideClickIgnoreRef?.current?.contains(target)
-      ) {
-        if (isOpen) {
-          // Just call onClose, let the useEffect handle the animation
-          onClose();
-        }
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen, onClose, outsideClickIgnoreRef]);
-
-  // Determine header content
-  const headerContent = useMemo(() => {
-    if (internalSearchTerm) {
-      return (
-        <div className="flex items-center text-xs text-slate-600">
-          <span>
-            Searching:{' '}
-            <span
-              className={`font-medium ${
-                config.theme === 'blue'
-                  ? 'text-blue-600'
-                  : config.theme === 'orange'
-                    ? 'text-orange-600'
-                    : 'text-purple-600'
-              }`}
-            >
-              {internalSearchTerm}
-            </span>
-          </span>
-        </div>
-      );
-    }
-    return (
-      <div className="flex items-center text-xs text-slate-600">
-        <span>{config.headerText}</span>
-      </div>
-    );
-  }, [internalSearchTerm, config.headerText, config.theme]);
-
-  const contentSlideDistance = contentSlideDirection * 24;
-  const modalPosition = {
-    x: position.left,
-    y: position.top + 5,
-  };
-  const modalPositionTransition = {
-    type: 'spring',
-    stiffness: 520,
-    damping: 42,
-    mass: 0.7,
-  } as const;
-
   return (
-    <AnimatePresence>
+    <>
       {isOpen && (position.isReady ?? true) && (
-        <motion.div
-          ref={modalRef}
-          layout
-          className="fixed z-50 w-max min-w-[180px] max-w-[calc(100vw-1rem)] bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden"
-          style={{
-            top: 0,
-            left: 0,
+        <SearchSelectorCombobox.Root
+          key={activeContentKey}
+          autoHighlight
+          defaultHighlightedIndex={defaultHighlightedIndex}
+          filter={null}
+          filteredItems={filteredItems as readonly unknown[]}
+          inputValue={inputValue}
+          items={items as readonly unknown[]}
+          itemToStringLabel={item => config.getItemLabel(item as T)}
+          itemToStringValue={item => config.getItemKey(item as T)}
+          open={isOpen}
+          onInputValueChange={setInputValue}
+          onItemHighlighted={item => {
+            onHighlightChange?.((item as T | undefined) ?? null);
           }}
-          initial={{
-            opacity: 0,
-            scale: 0.95,
-            x: modalPosition.x,
-            y: modalPosition.y,
+          onOpenChange={(open, details) => {
+            if (!open && details.reason !== 'item-press') {
+              onClose();
+            }
           }}
-          animate={{
-            opacity: 1,
-            scale: 1,
-            x: modalPosition.x,
-            y: modalPosition.y,
-          }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={{
-            opacity: { duration: 0.15 },
-            scale: { duration: 0.15 },
-            x: modalPositionTransition,
-            y: modalPositionTransition,
-            layout: {
-              duration: 0.18,
-              ease: 'easeOut',
-            },
+          onValueChange={item => {
+            if (item !== null) {
+              onSelect(item as T);
+            }
           }}
         >
-          {heldBackgroundStyle && (
-            <motion.div
-              className={`absolute z-0 rounded-lg pointer-events-none ${getBackgroundColorClass()}`}
-              style={heldBackgroundStyle}
-              initial={false}
-              animate={heldBackgroundStyle}
-              transition={{
-                type: 'spring',
-                stiffness: 400,
-                damping: 30,
-                mass: 0.8,
-              }}
-            />
-          )}
-          <AnimatePresence initial={false} mode="popLayout">
-            <motion.div
-              key={activeContentKey}
-              className="overflow-hidden relative z-10"
-              initial={{
-                opacity: contentSlideDirection === 0 ? 1 : 0,
-                x: contentSlideDistance,
-              }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{
-                opacity: contentSlideDirection === 0 ? 1 : 0,
-                x: -contentSlideDistance,
-              }}
-              transition={{ duration: 0.18, ease: 'easeOut' }}
+          <SearchSelectorCombobox.Popup
+            initialFocus={false}
+            className="fixed z-50 w-max min-w-[220px] max-w-[calc(100vw-1rem)] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg"
+            style={{
+              left: modalPosition.x,
+              top: modalPosition.y,
+            }}
+          >
+            <div className="sticky top-0 z-20 shrink-0 border-b border-slate-100 bg-white px-3 py-2">
+              <div className="flex min-w-0 items-center gap-2">
+                <TbSearch
+                  aria-hidden="true"
+                  className="h-3.5 w-3.5 shrink-0 text-slate-400"
+                />
+                <SearchSelectorCombobox.Input
+                  ref={inputRef}
+                  role="searchbox"
+                  className="min-w-[80px] flex-1 border-none bg-transparent p-0 text-xs text-slate-950 outline-hidden transition placeholder:text-slate-400 focus:text-slate-950 focus:ring-0"
+                  aria-label={config.headerText}
+                  placeholder="Cari..."
+                  tabIndex={0}
+                  onKeyDown={event => {
+                    event.stopPropagation();
+                  }}
+                />
+              </div>
+            </div>
+
+            <SearchSelectorCombobox.List
+              className="overflow-y-auto overflow-x-hidden py-1"
+              style={{ maxHeight: config.maxHeight }}
             >
-              <AnimatePresence>
-                {showHeader && (
-                  <>
-                    <motion.div
-                      className="shrink-0 bg-white border-b border-slate-100 px-3 py-2 rounded-t-lg"
-                      initial={{ opacity: 0, y: -8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                      transition={{ duration: 0.15, ease: 'easeOut' }}
-                    >
-                      {headerContent}
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
+              {rawItem => {
+                const item = rawItem as T;
+                const itemKey = config.getItemKey(item);
+                const highlightIndices = labelIndicesByKey.get(itemKey) ?? null;
 
-              <AnimatePresence>
-                {showContent && (
-                  <motion.div
-                    className="overflow-hidden"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{
-                      duration: 0.1,
-                      ease: 'easeOut',
-                    }}
-                  >
-                    <div
-                      ref={element => {
-                        if (activeContentKey === activeContentKeyRef.current) {
-                          listContainerRef.current = element;
-                        }
-                      }}
-                      className="max-h-65 overflow-y-auto overflow-x-hidden py-1"
-                      onMouseLeave={() => {
-                        if (hoveredIndex !== null) {
-                          skipNextBackgroundScrollRef.current = true;
-                        }
-                        setHoveredIndex(null);
-                        setIsHoverDisabled(false);
-                        keyboardBackgroundIndexRef.current = null;
-                        hoverResumePointerPositionRef.current = null;
-                        setPendingKeyboardScroll(null);
-                        if (releaseHeldBackgroundTimeoutRef.current !== null) {
-                          window.clearTimeout(
-                            releaseHeldBackgroundTimeoutRef.current
-                          );
-                          releaseHeldBackgroundTimeoutRef.current = null;
-                        }
-                        setHeldBackgroundStyle(null);
-                      }}
-                    >
-                      {filteredItems.length === 0 ? (
-                        <div className="px-3 py-4 text-sm text-slate-500 text-center">
-                          {internalSearchTerm
-                            ? `No results for "${internalSearchTerm}"`
-                            : config.noResultsText.replace(
-                                '{searchTerm}',
-                                searchTerm
-                              )}
-                        </div>
-                      ) : (
-                        <div className="relative isolate">
-                          {/* Items */}
-                          {filteredItems.map((item, index) => {
-                            const isSelected = index === selectedIndex;
-                            const hasBackground = index === backgroundIndex;
-                            const highlightIndices = getHighlightIndices(item);
-                            const selectedTextClass =
-                              config.theme === 'blue'
-                                ? 'text-blue-700'
-                                : config.theme === 'orange'
-                                  ? 'text-orange-700'
-                                  : 'text-purple-700';
+                return (
+                  <SearchSelectorCombobox.Item
+                    render={(props, state) => {
+                      const { ref, ...itemProps } = props;
+                      const isSelected = state.highlighted;
 
-                            return (
-                              <div
-                                key={config.getItemKey(item)}
-                                ref={el => {
-                                  if (
-                                    activeContentKey ===
-                                    activeContentKeyRef.current
-                                  ) {
-                                    itemRefs.current[index] = el;
-                                  }
-                                }}
-                                className="px-3 py-2 cursor-pointer flex items-center gap-3 mx-1 rounded-lg relative transition-colors duration-150"
-                                onClick={() => onSelect(item)}
-                                onMouseEnter={event => {
-                                  lastPointerPositionRef.current = {
-                                    x: event.clientX,
-                                    y: event.clientY,
-                                  };
-                                  if (!isHoverDisabled) {
-                                    skipNextBackgroundScrollRef.current = false;
-                                    setHoveredIndex(index);
-                                  }
-                                }}
-                                onMouseMove={event => {
-                                  const pointerPosition = {
-                                    x: event.clientX,
-                                    y: event.clientY,
-                                  };
-
-                                  if (isHoverDisabled) {
-                                    const resumePointerPosition =
-                                      hoverResumePointerPositionRef.current;
-                                    const hasMovedPointer =
-                                      !resumePointerPosition ||
-                                      Math.abs(
-                                        pointerPosition.x -
-                                          resumePointerPosition.x
-                                      ) > 1 ||
-                                      Math.abs(
-                                        pointerPosition.y -
-                                          resumePointerPosition.y
-                                      ) > 1;
-
-                                    lastPointerPositionRef.current =
-                                      pointerPosition;
-
-                                    if (!hasMovedPointer) {
-                                      return;
-                                    }
-
-                                    setIsHoverDisabled(false);
-                                    keyboardBackgroundIndexRef.current = null;
-                                    skipNextBackgroundScrollRef.current = false;
-                                    hoverResumePointerPositionRef.current =
-                                      null;
-                                    setPendingKeyboardScroll(null);
-                                    if (
-                                      releaseHeldBackgroundTimeoutRef.current !==
-                                      null
-                                    ) {
-                                      window.clearTimeout(
-                                        releaseHeldBackgroundTimeoutRef.current
-                                      );
-                                      releaseHeldBackgroundTimeoutRef.current =
-                                        null;
-                                    }
-                                    setHeldBackgroundStyle(null);
-                                    setHoveredIndex(index);
-                                    return;
-                                  }
-
-                                  lastPointerPositionRef.current =
-                                    pointerPosition;
-                                }}
-                                role="button"
+                      return (
+                        <div
+                          {...itemProps}
+                          ref={ref as React.Ref<HTMLDivElement>}
+                          className="relative mx-1 flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden transition-colors duration-150"
+                        >
+                          {state.highlighted && (
+                            <div
+                              aria-hidden="true"
+                              className={`pointer-events-none absolute inset-0 z-0 rounded-lg ${highlightBackgroundClass}`}
+                            />
+                          )}
+                          <div
+                            className={`relative z-10 shrink-0 transition-colors duration-150 ${
+                              isSelected
+                                ? config.getItemActiveColor?.(item) ||
+                                  'text-slate-900'
+                                : 'text-slate-500'
+                            }`}
+                          >
+                            {config.getItemIcon(item)}
+                          </div>
+                          <div className="relative z-10 min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`whitespace-nowrap font-medium transition-colors duration-150 ${
+                                  isSelected
+                                    ? selectedTextClass
+                                    : 'text-slate-700'
+                                }`}
                               >
-                                {hasBackground && !heldBackgroundStyle && (
-                                  <motion.div
-                                    layoutId="base-selector-active-background"
-                                    className={`absolute inset-0 z-0 rounded-lg pointer-events-none ${getBackgroundColorClass()}`}
-                                    transition={{
-                                      type: 'spring',
-                                      stiffness: 400,
-                                      damping: 30,
-                                      mass: 0.8,
-                                    }}
-                                  />
-                                )}
-                                <div
-                                  className={`shrink-0 relative z-10 transition-colors duration-150 ${
-                                    isSelected
-                                      ? config.getItemActiveColor?.(item) ||
-                                        'text-slate-900'
-                                      : 'text-slate-500'
-                                  }`}
-                                >
-                                  {config.getItemIcon(item)}
-                                </div>
-                                <div className="flex-1 min-w-0 relative z-10">
-                                  <div className="flex items-center gap-2">
-                                    <span
-                                      className={`text-sm font-medium whitespace-nowrap transition-colors duration-150 ${
-                                        isSelected
-                                          ? selectedTextClass
-                                          : 'text-slate-700'
-                                      }`}
-                                    >
-                                      <HighlightedText
-                                        text={config.getItemLabel(item)}
-                                        indices={highlightIndices}
-                                        theme={config.theme}
-                                      />
-                                    </span>
-                                    {config.getItemSecondaryText && (
-                                      <span className="text-xs text-slate-400">
-                                        {config.getItemSecondaryText(item)}
-                                      </span>
-                                    )}
-                                  </div>
-                                  {config.getItemDescription &&
-                                    config.getItemDescription(item) && (
-                                      <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
-                                        {config.getItemDescription(item)}
-                                      </p>
-                                    )}
-                                </div>
-                              </div>
-                            );
-                          })}
+                                <HighlightedText
+                                  text={config.getItemLabel(item)}
+                                  indices={highlightIndices}
+                                  theme={config.theme}
+                                />
+                              </span>
+                              {config.getItemSecondaryText && (
+                                <span className="text-xs text-slate-400">
+                                  {config.getItemSecondaryText(item)}
+                                </span>
+                              )}
+                            </div>
+                            {config.getItemDescription?.(item) && (
+                              <p className="mt-0.5 line-clamp-2 text-xs text-slate-500">
+                                {config.getItemDescription(item)}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          </AnimatePresence>
-        </motion.div>
+                      );
+                    }}
+                  />
+                );
+              }}
+            </SearchSelectorCombobox.List>
+
+            <SearchSelectorCombobox.Empty className="px-3 py-4 text-center text-sm text-slate-500">
+              {inputValue.trim()
+                ? config.noResultsText.replace(
+                    '{searchTerm}',
+                    inputValue.trim()
+                  )
+                : config.noResultsText.replace('{searchTerm}', '')}
+            </SearchSelectorCombobox.Empty>
+          </SearchSelectorCombobox.Popup>
+        </SearchSelectorCombobox.Root>
       )}
-    </AnimatePresence>
+    </>
   );
 }
 

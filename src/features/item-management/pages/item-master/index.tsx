@@ -126,6 +126,11 @@ const saveSearchPatternToSession = (
   }
 };
 
+type SearchPatternSnapshot = {
+  pattern: string;
+  columns: SearchColumn[];
+};
+
 const hasFilterValue = (value: string | undefined): boolean => {
   return value !== undefined && value.trim() !== '';
 };
@@ -152,6 +157,41 @@ const shouldApplyRestoredFilter = (
   );
 };
 
+const TEXT_ADVANCED_FILTER_COLUMN_PROPS = {
+  filter: 'agTextColumnFilter',
+  filterParams: {
+    filterOptions: [
+      'contains',
+      'notContains',
+      'equals',
+      'notEqual',
+      'startsWith',
+      'endsWith',
+    ],
+    defaultOption: 'contains',
+    suppressAndOrCondition: false,
+    caseSensitive: false,
+  },
+  suppressHeaderFilterButton: true,
+} satisfies Partial<ColDef>;
+
+const NUMBER_ADVANCED_FILTER_COLUMN_PROPS = {
+  filter: 'agNumberColumnFilter',
+  suppressHeaderFilterButton: true,
+} satisfies Partial<ColDef>;
+
+const DATE_ADVANCED_FILTER_COLUMN_PROPS = {
+  filter: 'agDateColumnFilter',
+  suppressHeaderFilterButton: true,
+} satisfies Partial<ColDef>;
+
+const createAdvancedTextColumn = (
+  config: Parameters<typeof createTextColumn>[0]
+): ColDef => ({
+  ...createTextColumn(config),
+  ...TEXT_ADVANCED_FILTER_COLUMN_PROPS,
+});
+
 const normalizePendingOperatorPattern = (
   pattern: string,
   columns: SearchColumn[]
@@ -171,6 +211,37 @@ const normalizePendingOperatorPattern = (
   }
 
   return pattern;
+};
+
+const saveFilterSearchPatternToSession = (
+  tab: MasterDataType,
+  filterSearch: FilterSearch | null,
+  fallbackSnapshot?: SearchPatternSnapshot
+): void => {
+  if (!filterSearch) {
+    saveSearchPatternToSession(
+      tab,
+      fallbackSnapshot
+        ? normalizePendingOperatorPattern(
+            fallbackSnapshot.pattern,
+            fallbackSnapshot.columns
+          )
+        : ''
+    );
+    return;
+  }
+
+  if (!filterSearch.isConfirmed) {
+    return;
+  }
+
+  saveSearchPatternToSession(
+    tab,
+    restoreConfirmedPattern({
+      ...filterSearch,
+      isExplicitOperator: filterSearch.isExplicitOperator ?? true,
+    } as unknown as import('@/components/search-bar/types').FilterSearch)
+  );
 };
 
 const ItemMasterNew = memo(() => {
@@ -347,6 +418,9 @@ const ItemMasterNew = memo(() => {
 
   // 🔒 Flag to block SearchBar from clearing grid filters during tab switch
   const isTabSwitchingRef = useRef(false);
+  const searchSnapshotsByTabRef = useRef<
+    Partial<Record<MasterDataType, SearchPatternSnapshot>>
+  >({});
 
   // Enhanced row grouping state with multi-grouping support (client-side only, no persistence)
   const [isRowGroupingEnabled] = useState(true);
@@ -625,32 +699,32 @@ const ItemMasterNew = memo(() => {
 
   const customerColumnDefs: ColDef[] = useMemo(() => {
     const columns: ColDef[] = [
-      createTextColumn({
+      createAdvancedTextColumn({
         field: 'name',
         headerName: 'Nama Pelanggan',
         minWidth: 200,
         flex: 1,
       }),
-      createTextColumn({
+      createAdvancedTextColumn({
         field: 'customer_level_id',
         headerName: 'Level',
         minWidth: 140,
         valueGetter: params =>
           customerLevelById.get(params.data.customer_level_id) || '-',
       }),
-      createTextColumn({
+      createAdvancedTextColumn({
         field: 'phone',
         headerName: 'Telepon',
         minWidth: 120,
         valueGetter: params => params.data.phone || '-',
       }),
-      createTextColumn({
+      createAdvancedTextColumn({
         field: 'email',
         headerName: 'Email',
         minWidth: 150,
         valueGetter: params => params.data.email || '-',
       }),
-      createTextColumn({
+      createAdvancedTextColumn({
         field: 'address',
         headerName: 'Alamat',
         minWidth: 180,
@@ -664,43 +738,47 @@ const ItemMasterNew = memo(() => {
 
   const patientColumnDefs: ColDef[] = useMemo(() => {
     const columns: ColDef[] = [
-      createTextColumn({
+      createAdvancedTextColumn({
         field: 'name',
         headerName: 'Nama Pasien',
         minWidth: 200,
         flex: 1,
       }),
-      createTextColumn({
+      createAdvancedTextColumn({
         field: 'gender',
         headerName: 'Jenis Kelamin',
         minWidth: 120,
         valueGetter: params => params.data.gender || '-',
       }),
-      createTextColumn({
-        field: 'birth_date',
-        headerName: 'Tanggal Lahir',
-        minWidth: 120,
-        valueGetter: params => {
-          const value = params.data.birth_date;
-          return value && typeof value === 'string'
-            ? formatDateOnlyDisplayValue(value)
-            : '-';
-        },
-      }),
-      createTextColumn({
+      {
+        ...createTextColumn({
+          field: 'birth_date',
+          headerName: 'Tanggal Lahir',
+          minWidth: 120,
+          valueGetter: params => {
+            const value = params.data.birth_date;
+            return value && typeof value === 'string'
+              ? formatDateOnlyDisplayValue(value)
+              : '-';
+          },
+        }),
+        ...DATE_ADVANCED_FILTER_COLUMN_PROPS,
+        filterValueGetter: params => params.data?.birth_date ?? null,
+      },
+      createAdvancedTextColumn({
         field: 'address',
         headerName: 'Alamat',
         minWidth: 150,
         flex: 1,
         valueGetter: params => params.data.address || '-',
       }),
-      createTextColumn({
+      createAdvancedTextColumn({
         field: 'phone',
         headerName: 'Telepon',
         minWidth: 120,
         valueGetter: params => params.data.phone || '-',
       }),
-      createTextColumn({
+      createAdvancedTextColumn({
         field: 'email',
         headerName: 'Email',
         minWidth: 150,
@@ -713,13 +791,13 @@ const ItemMasterNew = memo(() => {
 
   const doctorColumnDefs: ColDef[] = useMemo(() => {
     const columns: ColDef[] = [
-      createTextColumn({
+      createAdvancedTextColumn({
         field: 'name',
         headerName: 'Nama Dokter',
         minWidth: 200,
         flex: 1,
       }),
-      createTextColumn({
+      createAdvancedTextColumn({
         field: 'gender',
         headerName: 'Jenis Kelamin',
         minWidth: 120,
@@ -732,34 +810,38 @@ const ItemMasterNew = memo(() => {
               : value || '-';
         },
       }),
-      createTextColumn({
+      createAdvancedTextColumn({
         field: 'specialization',
         headerName: 'Spesialisasi',
         minWidth: 150,
         valueGetter: params => params.data.specialization || '-',
       }),
-      createTextColumn({
+      createAdvancedTextColumn({
         field: 'license_number',
         headerName: 'Nomor Lisensi',
         minWidth: 120,
         valueGetter: params => params.data.license_number || '-',
       }),
-      createTextColumn({
-        field: 'experience_years',
-        headerName: 'Pengalaman',
-        minWidth: 100,
-        valueGetter: params => {
-          const years = params.data.experience_years;
-          return years ? `${years} tahun` : '-';
-        },
-      }),
-      createTextColumn({
+      {
+        ...createTextColumn({
+          field: 'experience_years',
+          headerName: 'Pengalaman',
+          minWidth: 100,
+          valueGetter: params => {
+            const years = params.data.experience_years;
+            return years ? `${years} tahun` : '-';
+          },
+        }),
+        ...NUMBER_ADVANCED_FILTER_COLUMN_PROPS,
+        filterValueGetter: params => params.data?.experience_years ?? null,
+      },
+      createAdvancedTextColumn({
         field: 'phone',
         headerName: 'Telepon',
         minWidth: 120,
         valueGetter: params => params.data.phone || '-',
       }),
-      createTextColumn({
+      createAdvancedTextColumn({
         field: 'email',
         headerName: 'Email',
         minWidth: 150,
@@ -954,23 +1036,11 @@ const ItemMasterNew = memo(() => {
       // Apply the Advanced Filter model
       unifiedGridApi.setAdvancedFilterModel(advancedFilterModel);
 
-      // Persist confirmed badge pattern per tab (session only)
-      try {
-        const sessionKey = getItemMasterSearchSessionKey('items');
-        if (!filterSearch) {
-          sessionStorage.removeItem(sessionKey);
-        } else if (filterSearch.isConfirmed) {
-          sessionStorage.setItem(
-            sessionKey,
-            restoreConfirmedPattern({
-              ...filterSearch,
-              isExplicitOperator: filterSearch.isExplicitOperator ?? true,
-            } as unknown as import('@/components/search-bar/types').FilterSearch)
-          );
-        }
-      } catch {
-        // ignore
-      }
+      saveFilterSearchPatternToSession(
+        'items',
+        filterSearch,
+        searchSnapshotsByTabRef.current.items
+      );
     },
     [unifiedGridApi]
   );
@@ -1208,23 +1278,11 @@ const ItemMasterNew = memo(() => {
       const advancedFilterModel = buildAdvancedFilterModel(filterSearch);
       unifiedGridApi.setAdvancedFilterModel(advancedFilterModel);
 
-      // Persist confirmed badge pattern per tab (session only)
-      try {
-        const sessionKey = getItemMasterSearchSessionKey(activeTab);
-        if (!filterSearch) {
-          sessionStorage.removeItem(sessionKey);
-        } else if (filterSearch.isConfirmed) {
-          sessionStorage.setItem(
-            sessionKey,
-            restoreConfirmedPattern({
-              ...filterSearch,
-              isExplicitOperator: filterSearch.isExplicitOperator ?? true,
-            } as unknown as import('@/components/search-bar/types').FilterSearch)
-          );
-        }
-      } catch {
-        // ignore
-      }
+      saveFilterSearchPatternToSession(
+        activeTab,
+        filterSearch,
+        searchSnapshotsByTabRef.current[activeTab]
+      );
     },
     [activeTab, isSupplierTab, unifiedGridApi]
   );
@@ -1252,23 +1310,11 @@ const ItemMasterNew = memo(() => {
       // Apply the Advanced Filter model
       unifiedGridApi.setAdvancedFilterModel(advancedFilterModel);
 
-      // Persist confirmed badge pattern per tab (session only)
-      try {
-        const sessionKey = getItemMasterSearchSessionKey(activeTab);
-        if (!filterSearch) {
-          sessionStorage.removeItem(sessionKey);
-        } else if (filterSearch.isConfirmed) {
-          sessionStorage.setItem(
-            sessionKey,
-            restoreConfirmedPattern({
-              ...filterSearch,
-              isExplicitOperator: filterSearch.isExplicitOperator ?? true,
-            } as unknown as import('@/components/search-bar/types').FilterSearch)
-          );
-        }
-      } catch {
-        // ignore
-      }
+      saveFilterSearchPatternToSession(
+        activeTab,
+        filterSearch,
+        searchSnapshotsByTabRef.current[activeTab]
+      );
     },
     [activeTab, isItemEntityTab, unifiedGridApi]
   );
@@ -1290,22 +1336,11 @@ const ItemMasterNew = memo(() => {
       const advancedFilterModel = buildAdvancedFilterModel(filterSearch);
       unifiedGridApi.setAdvancedFilterModel(advancedFilterModel);
 
-      try {
-        const sessionKey = getItemMasterSearchSessionKey(activeTab);
-        if (!filterSearch) {
-          sessionStorage.removeItem(sessionKey);
-        } else if (filterSearch.isConfirmed) {
-          sessionStorage.setItem(
-            sessionKey,
-            restoreConfirmedPattern({
-              ...filterSearch,
-              isExplicitOperator: filterSearch.isExplicitOperator ?? true,
-            } as unknown as import('@/components/search-bar/types').FilterSearch)
-          );
-        }
-      } catch {
-        // ignore
-      }
+      saveFilterSearchPatternToSession(
+        activeTab,
+        filterSearch,
+        searchSnapshotsByTabRef.current[activeTab]
+      );
     },
     [activeTab, isOtherMasterTab, unifiedGridApi]
   );
@@ -1839,29 +1874,22 @@ const ItemMasterNew = memo(() => {
             ? doctorSearch
             : entitySearch;
 
-  const latestSearchSnapshotRef = useRef<{
-    tab: MasterDataType;
-    pattern: string;
-    columns: SearchColumn[];
-  } | null>(null);
+  searchSnapshotsByTabRef.current[activeTab] = {
+    pattern: activeSearchValue,
+    columns: activeSearchColumns,
+  };
 
   useEffect(() => {
-    latestSearchSnapshotRef.current = {
-      tab: activeTab,
-      pattern: activeSearchValue,
-      columns: activeSearchColumns,
-    };
-  }, [activeSearchColumns, activeSearchValue, activeTab]);
+    const snapshotsByTab = searchSnapshotsByTabRef.current;
 
-  useEffect(() => {
     return () => {
-      const snapshot = latestSearchSnapshotRef.current;
-      if (!snapshot || snapshot.tab !== activeTab) {
+      const snapshot = snapshotsByTab[activeTab];
+      if (!snapshot) {
         return;
       }
 
       saveSearchPatternToSession(
-        snapshot.tab,
+        activeTab,
         normalizePendingOperatorPattern(snapshot.pattern, snapshot.columns)
       );
     };
