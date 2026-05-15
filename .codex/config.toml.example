@@ -4,9 +4,9 @@
 # Generate the local project config with `bun run codex:seed`.
 
 model = "gpt-5.5"
-model_context_window = 1000000
-model_auto_compact_token_limit = 900000
-model_reasoning_effort = "high"
+model_context_window = 900000
+model_auto_compact_token_limit = 800000
+model_reasoning_effort = "xhigh"
 plan_mode_reasoning_effort = "xhigh"
 personality = "pragmatic"
 steer = true
@@ -32,12 +32,14 @@ unified_exec = true
 shell_snapshot = true
 collaboration_modes = true
 multi_agent = true
+goal = true
 js_repl = true
 
 [mcp_servers.shadcn]
 command = "npx"
 args = ["shadcn@latest", "mcp"]
 startup_timeout_sec = 20
+enabled = false
 
 [mcp_servers.supabase]
 command = "npx"
@@ -53,7 +55,7 @@ env_vars = ["SUPABASE_ACCESS_TOKEN"]
 [mcp_servers."ag-mcp"]
 command = "npx"
 args = ["ag-mcp"]
-enabled = false
+enabled = true
 
 [mcp_servers.chrome-devtools]
 command = "npx"
@@ -61,7 +63,7 @@ args = ["chrome-devtools-mcp@latest", "--headless=true"]
 enabled = false
 
 [mcp_servers.exa]
-url = __EXA_MCP_URL__
+url = "https://mcp.exa.ai/mcp?tools=web_search_exa,web_search_advanced_exa,get_code_context_exa,crawling_exa,company_research_exa,people_search_exa,deep_researcher_start,deep_researcher_check,deep_search_exa"
 enabled = true
 
 [mcp_servers.notion]
