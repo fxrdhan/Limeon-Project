@@ -56,6 +56,8 @@ export const QueryKeys = {
     lists: () => [...QueryKeys.sales.all, 'list'] as const,
     list: (filters?: Record<string, unknown>) =>
       [...QueryKeys.sales.lists(), { filters }] as const,
+    paginated: (page: number, searchTerm: string, limit: number) =>
+      [...QueryKeys.sales.all, page, searchTerm, limit] as const,
     details: () => [...QueryKeys.sales.all, 'detail'] as const,
     detail: (id: string) => [...QueryKeys.sales.details(), id] as const,
     items: (saleId: string) =>

@@ -1,21 +1,144 @@
-import React from 'react';
+import React, { Suspense, lazy, useRef, useState } from 'react';
+import { Card, CardContent, CardFooter } from '@/components/card';
+import FormAction from '@/components/form-action';
+import PageTitle from '@/components/page-title';
+import SaleInfoSection from '@/features/sales/components/SaleInfoSection';
+import SaleItemsSection from '@/features/sales/components/SaleItemsSection';
+import { useSaleForm } from '@/features/sales/hooks/useSaleForm';
+import { useSaleItemSelectionEffect } from '@/features/sales/hooks/useSaleItemSelectionEffect';
+import { useItemSelection } from '@/hooks/items/useItemSelection';
+import type { ItemSearchBarRef } from '@/types';
+import { useNavigate } from 'react-router-dom';
 
-const ComingSoon = ({ title }: { title: string }) => {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[50vh] text-slate-500">
-      <h2 className="text-2xl font-bold mb-4">{title}</h2>
-      <p className="text-xl">Fitur ini akan segera hadir!</p>
-      <div className="mt-8 p-4 border border-blue-300 rounded-xl bg-blue-50 max-w-md">
-        <p className="text-blue-600 text-center">
-          Halaman ini sedang dalam pengembangan.
-        </p>
-      </div>
-    </div>
-  );
-};
+const ItemModal = lazy(() => import('@/components/item-management/ItemModal'));
 
 const CreateSalePage: React.FC = () => {
-  return <ComingSoon title="Tambah Penjualan" />;
+  const navigate = useNavigate();
+  const [isAddItemPortalOpen, setIsAddItemPortalOpen] = useState(false);
+  const [isAddItemClosing, setIsAddItemClosing] = useState(false);
+  const [portalRenderId, setPortalRenderId] = useState(0);
+  const itemSearchBarRef = useRef<ItemSearchBarRef>(null);
+
+  const {
+    formData,
+    customers,
+    patients,
+    doctors,
+    saleItems,
+    total,
+    loading,
+    handleChange,
+    addItem,
+    updateItem,
+    handleUnitChange,
+    removeItem,
+    handleSubmit,
+  } = useSaleForm();
+
+  const {
+    searchItem,
+    selectedItem,
+    items,
+    handleItemSearchChange,
+    handleSelectItem,
+    getItemById,
+    refetchItems,
+  } = useItemSelection();
+
+  const isAddNewItemDisabled = !(
+    searchItem.trim() !== '' && items.length === 0
+  );
+
+  useSaleItemSelectionEffect({
+    selectedItem,
+    addItem,
+    onSelectItem: handleSelectItem,
+    onSearchItemChange: handleItemSearchChange,
+    getItemById,
+  });
+
+  const onHandleUnitChange = (id: string, unitName: string) => {
+    handleUnitChange(id, unitName, getItemById);
+  };
+
+  const handleCloseAddItemPortal = () => {
+    setIsAddItemClosing(true);
+    setTimeout(() => {
+      setIsAddItemPortalOpen(false);
+      setIsAddItemClosing(false);
+      void refetchItems();
+      setTimeout(() => {
+        itemSearchBarRef.current?.focus();
+      }, 100);
+    }, 300);
+  };
+
+  return (
+    <>
+      <Card>
+        <div className="mb-6">
+          <PageTitle title="Tambah Penjualan" />
+        </div>
+
+        <form
+          onSubmit={event => void handleSubmit(event, getItemById)}
+          className="flex flex-col"
+        >
+          <CardContent className="space-y-6">
+            <SaleInfoSection
+              formData={formData}
+              customers={customers}
+              patients={patients}
+              doctors={doctors}
+              handleChange={handleChange}
+            />
+
+            <SaleItemsSection
+              searchItem={searchItem}
+              onSearchItemChange={handleItemSearchChange}
+              items={items}
+              selectedItem={selectedItem}
+              onSelectItem={handleSelectItem}
+              saleItems={saleItems}
+              isAddNewItemDisabled={isAddNewItemDisabled}
+              onOpenAddItemPortal={() => {
+                setIsAddItemPortalOpen(true);
+                setPortalRenderId(prev => prev + 1);
+              }}
+              itemSearchBarRef={itemSearchBarRef}
+              total={total}
+              getItemById={getItemById}
+              updateItem={updateItem}
+              onHandleUnitChange={onHandleUnitChange}
+              removeItem={removeItem}
+            />
+          </CardContent>
+
+          <CardFooter className="mt-6">
+            <FormAction
+              onCancel={() => navigate('/sales')}
+              isSaving={loading}
+              isDisabled={saleItems.length === 0}
+            />
+          </CardFooter>
+        </form>
+      </Card>
+
+      {isAddItemPortalOpen ? (
+        <Suspense fallback={null}>
+          <ItemModal
+            key={`${searchItem ?? ''}-${portalRenderId}`}
+            isOpen={isAddItemPortalOpen}
+            onClose={handleCloseAddItemPortal}
+            initialSearchQuery={searchItem}
+            isClosing={isAddItemClosing}
+            setIsClosing={setIsAddItemClosing}
+            refetchItems={refetchItems}
+          />
+        </Suspense>
+      ) : null}
+    </>
+  );
 };
 
 export default CreateSalePage;

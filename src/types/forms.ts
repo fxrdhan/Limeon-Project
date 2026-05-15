@@ -37,19 +37,12 @@ export interface PurchaseFormData {
 }
 
 export interface SaleFormData {
-  customer_id?: string;
+  customer_id: string;
   patient_id: string;
   doctor_id: string;
+  invoice_number: string;
+  date: string;
   payment_method: string;
-  items: {
-    item_id: string;
-    quantity: number;
-    price: number;
-    subtotal: number;
-    unit_name?: string;
-    unit_id?: string;
-    unit_conversion_rate?: number;
-  }[];
 }
 
 export interface FormActionProps {

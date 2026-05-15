@@ -23,6 +23,8 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
       onSelectItem,
       onOpenAddItemPortal,
       isAddItemButtonDisabled = true,
+      getItemPrice = item => item.base_price,
+      itemPriceLabel = 'Harga',
     },
     ref
   ) => {
@@ -412,8 +414,8 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
                           {item.display_name || item.name}
                         </div>
                         <div className="text-xs text-slate-500">
-                          Harga:{' '}
-                          {item.base_price.toLocaleString('id-ID', {
+                          {itemPriceLabel}:{' '}
+                          {getItemPrice(item).toLocaleString('id-ID', {
                             style: 'currency',
                             currency: 'IDR',
                           })}

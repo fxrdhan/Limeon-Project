@@ -46,6 +46,7 @@ interface SaleWithDetails {
   id: string;
   patient_id?: string;
   doctor_id?: string;
+  customer_id?: string;
   invoice_number?: string;
   date: string;
   total: number;
@@ -62,6 +63,11 @@ interface SaleWithDetails {
     id: string;
     name: string;
     specialization?: string;
+  };
+  customer?: {
+    id: string;
+    name: string;
+    phone?: string | null;
   };
   created_by_user?: {
     id: string;
@@ -90,9 +96,98 @@ interface SaleItemWithDetails {
   };
 }
 
+export interface SalesListItem {
+  id: string;
+  invoice_number: string | null;
+  date: string;
+  total: number;
+  payment_method: string;
+  patient: { id: string; name: string; phone?: string | null } | null;
+  doctor: { id: string; name: string; specialization?: string | null } | null;
+  customer: { id: string; name: string; phone?: string | null } | null;
+}
+
+type RelationValue<T> = T | T[] | null | undefined;
+
+const getSingleRelation = <T>(value: RelationValue<T>): T | null => {
+  if (Array.isArray(value)) {
+    return value[0] ?? null;
+  }
+
+  return value ?? null;
+};
+
 export class SalesService extends BaseService<DBSale> {
   constructor() {
     super('sales');
+  }
+
+  async getPaginatedSales(params: {
+    page: number;
+    limit: number;
+    searchTerm?: string;
+  }): Promise<ServiceResponse<{ sales: SalesListItem[]; totalItems: number }>> {
+    try {
+      const { page, limit, searchTerm } = params;
+
+      let query = supabase.from('sales').select(`
+          id,
+          invoice_number,
+          date,
+          total,
+          payment_method,
+          patient:patients(id, name, phone),
+          doctor:doctors(id, name, specialization),
+          customer:customers(id, name, phone)
+        `);
+
+      let countQuery = supabase.from('sales').select('id', { count: 'exact' });
+
+      if (searchTerm) {
+        query = query.ilike('invoice_number', `%${searchTerm}%`);
+        countQuery = countQuery.ilike('invoice_number', `%${searchTerm}%`);
+      }
+
+      const { count, error: countError } = await countQuery;
+      if (countError) {
+        return { data: null, error: countError };
+      }
+
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
+
+      const { data, error } = await query
+        .order('date', { ascending: false })
+        .range(from, to);
+
+      if (error) {
+        return { data: null, error };
+      }
+
+      type SalesListRecord = Omit<
+        SalesListItem,
+        'patient' | 'doctor' | 'customer'
+      > & {
+        patient: RelationValue<SalesListItem['patient']>;
+        doctor: RelationValue<SalesListItem['doctor']>;
+        customer: RelationValue<SalesListItem['customer']>;
+      };
+
+      const sales =
+        data?.map(item => {
+          const sale = item as SalesListRecord;
+          return {
+            ...sale,
+            patient: getSingleRelation(sale.patient),
+            doctor: getSingleRelation(sale.doctor),
+            customer: getSingleRelation(sale.customer),
+          };
+        }) || [];
+
+      return { data: { sales, totalItems: count || 0 }, error: null };
+    } catch (error) {
+      return { data: null, error: error as PostgrestError };
+    }
   }
 
   // Get all sales with related data
@@ -111,6 +206,11 @@ export class SalesService extends BaseService<DBSale> {
           id,
           name,
           specialization
+        ),
+        customers (
+          id,
+          name,
+          phone
         ),
         users!sales_created_by_fkey (
           id,
@@ -137,6 +237,9 @@ export class SalesService extends BaseService<DBSale> {
             | undefined,
           doctor: saleData.doctors as
             | { id: string; name: string; specialization?: string }
+            | undefined,
+          customer: saleData.customers as
+            | { id: string; name: string; phone?: string | null }
             | undefined,
           created_by_user: saleData.users as
             | { id: string; name: string }
@@ -174,6 +277,11 @@ export class SalesService extends BaseService<DBSale> {
             name,
             specialization
           ),
+          customers (
+            id,
+            name,
+            phone
+          ),
           users!sales_created_by_fkey (
             id,
             name
@@ -192,6 +300,7 @@ export class SalesService extends BaseService<DBSale> {
         ...sale,
         patient: sale.patients,
         doctor: sale.doctors,
+        customer: sale.customers,
         created_by_user: sale.users,
       };
 

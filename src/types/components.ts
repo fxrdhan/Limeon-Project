@@ -208,6 +208,8 @@ export interface ItemSearchBarProps {
   onSelectItem: (item: Item | null) => void;
   onOpenAddItemPortal: () => void;
   isAddItemButtonDisabled?: boolean;
+  getItemPrice?: (item: Item) => number;
+  itemPriceLabel?: string;
 }
 
 export interface ItemSearchBarRef {
