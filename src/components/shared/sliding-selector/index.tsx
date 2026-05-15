@@ -1,5 +1,5 @@
 import classNames from 'classnames';
-import { AnimatePresence, LayoutGroup, motion } from 'motion/react';
+import { LayoutGroup, motion } from 'motion/react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { TbChevronDown } from 'react-icons/tb';
 
@@ -31,6 +31,7 @@ export interface SlidingSelectorProps<T = unknown> {
   // Animation options
   layoutId?: string;
   animationPreset?: 'smooth' | 'snappy' | 'fluid';
+  collapseSignal?: number;
 
   // Additional props
   className?: string;
@@ -87,11 +88,6 @@ const ACTIVE_FILL_COLLAPSE_TRANSITION = {
   ease: 'easeInOut',
 } as const;
 
-const ACTIVE_LABEL_SLIDE_TRANSITION = {
-  duration: 0.22,
-  ease: 'easeOut',
-} as const;
-
 const canUseHoverPointer = () =>
   typeof window === 'undefined' ||
   window.matchMedia('(hover: hover) and (pointer: fine)').matches;
@@ -144,6 +140,7 @@ export const SlidingSelector = <T,>({
   expandDirection = 'horizontal',
   layoutId,
   animationPreset = 'smooth',
+  collapseSignal,
   className,
   disabled = false,
   onExpandedChange,
@@ -155,6 +152,7 @@ export const SlidingSelector = <T,>({
   const [isVerticalActiveFillVisible, setIsVerticalActiveFillVisible] =
     useState(defaultExpanded && expandDirection === 'vertical');
   const mouseLeaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const previousCollapseSignalRef = useRef(collapseSignal);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
@@ -171,6 +169,18 @@ export const SlidingSelector = <T,>({
   useEffect(() => {
     onExpandedChange?.(isExpanded);
   }, [isExpanded, onExpandedChange]);
+
+  useEffect(() => {
+    if (!collapsible || collapseSignal === undefined) return;
+    if (previousCollapseSignalRef.current === collapseSignal) return;
+
+    previousCollapseSignalRef.current = collapseSignal;
+    setIsExpanded(false);
+    setIsMouseOver(false);
+    setHoveredIndex(null);
+    setFocusedIndex(-1);
+    buttonRefs.current.forEach(button => button?.blur());
+  }, [collapseSignal, collapsible]);
 
   useEffect(() => {
     if (expandDirection !== 'vertical') {
@@ -556,18 +566,9 @@ export const SlidingSelector = <T,>({
             },
           }}
         >
-          <AnimatePresence initial={false} mode="popLayout">
-            <motion.span
-              key={activeKey}
-              className="col-start-1 row-start-1 inline-block justify-self-start whitespace-nowrap text-left"
-              initial={{ opacity: 0, y: '110%' }}
-              animate={{ opacity: 1, y: '0%' }}
-              exit={{ opacity: 0, y: '-110%' }}
-              transition={ACTIVE_LABEL_SLIDE_TRANSITION}
-            >
-              {activeOption && getDisplayLabel(activeOption, true)}
-            </motion.span>
-          </AnimatePresence>
+          <span className="col-start-1 row-start-1 inline-block justify-self-start whitespace-nowrap text-left">
+            {activeOption && getDisplayLabel(activeOption, true)}
+          </span>
         </motion.span>
       </motion.button>
       {collapsible && (

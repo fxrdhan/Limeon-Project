@@ -39,6 +39,7 @@ export interface BaseSelectorProps<T> {
   contentKey?: string;
   contentSlideDirection?: -1 | 0 | 1;
   outsideClickIgnoreRef?: React.RefObject<HTMLElement | null>;
+  outsideClickIgnoreRefs?: React.RefObject<HTMLElement | null>[];
 }
 
 export interface ColumnSelectorProps {

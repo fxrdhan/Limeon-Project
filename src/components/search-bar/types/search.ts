@@ -7,6 +7,7 @@ import type {
   FilterSearch as CoreFilterSearch,
   SearchColumn as CoreSearchColumn,
 } from '@/types/search';
+import type React from 'react';
 import { SearchState } from '../constants';
 
 export type SearchColumn = CoreSearchColumn & {
@@ -63,6 +64,10 @@ export interface EnhancedSearchBarProps
   columns: SearchColumn[];
   onGlobalSearch?: (term: string) => void;
   onFilterSearch?: (filter: FilterSearch | null) => void;
+  closeSelectorsSignal?: number;
+  onSelectorOpenChange?: (isOpen: boolean) => void;
+  suppressSelectors?: boolean;
+  selectorOutsideIgnoreRefs?: React.RefObject<HTMLElement | null>[];
 }
 
 /**

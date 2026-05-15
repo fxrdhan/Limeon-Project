@@ -25,6 +25,10 @@ interface SearchToolbarProps<T = unknown> {
     placeholder?: string;
     onFocus?: (e: React.FocusEvent<HTMLInputElement>) => void;
     onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
+    closeSelectorsSignal?: number;
+    onSelectorOpenChange?: (isOpen: boolean) => void;
+    suppressSelectors?: boolean;
+    selectorOutsideIgnoreRefs?: React.RefObject<HTMLElement | null>[];
   };
   search?: string;
   placeholder?: string;

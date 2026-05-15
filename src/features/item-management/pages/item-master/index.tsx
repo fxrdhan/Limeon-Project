@@ -291,8 +291,18 @@ const ItemMasterNew = memo(() => {
     saveLastTabToSession(activeTab);
   }, [activeTab]);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const tabSelectorContainerRef = useRef<HTMLDivElement>(null);
 
-  const [, setIsTabSelectorExpanded] = useState(false);
+  const [isTabSelectorExpanded, setIsTabSelectorExpanded] = useState(false);
+  const [tabSelectorCollapseSignal, setTabSelectorCollapseSignal] = useState(0);
+  const handleTabSelectorExpandedChange = useCallback((expanded: boolean) => {
+    setIsTabSelectorExpanded(expanded);
+  }, []);
+  const handleSearchSelectorOpenChange = useCallback((isOpen: boolean) => {
+    if (isOpen) {
+      setTabSelectorCollapseSignal(signal => signal + 1);
+    }
+  }, []);
 
   // 🚦 Hybrid tab change protection: immediate first click, debounced rapid clicks
   // Smart detection: single click = instant navigation, rapid clicks = debounced to final tab
@@ -1860,6 +1870,19 @@ const ItemMasterNew = memo(() => {
           : isDoctorTab
             ? doctorSearchBarProps
             : entitySearchBarProps;
+  const coordinatedSearchBarProps = useMemo(
+    () => ({
+      ...activeSearchBarProps,
+      onSelectorOpenChange: handleSearchSelectorOpenChange,
+      suppressSelectors: isTabSelectorExpanded,
+      selectorOutsideIgnoreRefs: [tabSelectorContainerRef],
+    }),
+    [
+      activeSearchBarProps,
+      handleSearchSelectorOpenChange,
+      isTabSelectorExpanded,
+    ]
+  );
   const activeSearchColumns = activeSearchBarProps.columns;
 
   const activeSearchValue = isItemTab
@@ -2145,7 +2168,10 @@ const ItemMasterNew = memo(() => {
     <>
       <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden p-6">
         <div className="relative flex items-center justify-center mb-0 pt-0">
-          <div className="absolute left-0 pb-4 pt-6">
+          <div
+            ref={tabSelectorContainerRef}
+            className="absolute left-0 pb-4 pt-6"
+          >
             {showTabSelector && (
               <SlidingSelector
                 options={ITEM_MASTER_SWITCHER_TAB_OPTIONS}
@@ -2159,7 +2185,8 @@ const ItemMasterNew = memo(() => {
                 defaultExpanded={false}
                 expandOnHover={true}
                 expandDirection="vertical"
-                onExpandedChange={setIsTabSelectorExpanded}
+                onExpandedChange={handleTabSelectorExpandedChange}
+                collapseSignal={tabSelectorCollapseSignal}
                 autoCollapseDelay={150}
                 layoutId="item-master-tabs"
                 animationPreset="smooth"
@@ -2178,7 +2205,7 @@ const ItemMasterNew = memo(() => {
               searchInputRef={
                 searchInputRef as React.RefObject<HTMLInputElement>
               }
-              searchBarProps={activeSearchBarProps}
+              searchBarProps={coordinatedSearchBarProps}
               search={activeSearchValue}
               placeholder={activePlaceholder}
               onAdd={activeOnAdd}

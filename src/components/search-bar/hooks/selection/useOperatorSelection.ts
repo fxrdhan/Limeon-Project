@@ -151,10 +151,6 @@ export function handleOperatorSelectEditSecond(
 
   setIsEditingSecondOperator(false);
   setFilterValue(newValue, onChange, inputRef);
-
-  setTimeout(() => {
-    inputRef?.current?.focus();
-  }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
 }
 
 /**
@@ -275,10 +271,6 @@ export function handleOperatorSelectEditFirst(
   preservedFilterRef.current = null;
   setPreservedSearchMode(null);
   setFilterValue(newValue, onChange, inputRef);
-
-  setTimeout(() => {
-    inputRef?.current?.focus();
-  }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
 }
 
 /**
@@ -332,10 +324,6 @@ export function handleOperatorSelectSecond(
   }
 
   setFilterValue(newValue, onChange, inputRef);
-
-  setTimeout(() => {
-    inputRef?.current?.focus();
-  }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
 }
 
 /**
@@ -349,8 +337,4 @@ export function handleOperatorSelectNormal(
 ): void {
   const newValue = PatternBuilder.columnOperator(columnName, operator.value);
   setFilterValue(newValue, onChange, inputRef);
-
-  setTimeout(() => {
-    inputRef?.current?.focus();
-  }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
 }

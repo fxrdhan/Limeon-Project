@@ -6,7 +6,6 @@
  */
 
 import type { RefObject } from 'react';
-import { SEARCH_CONSTANTS } from '../../constants';
 import type { EnhancedSearchState, SearchColumn } from '../../types';
 import type { PreservedFilter } from '../../utils/handlerHelpers';
 import { setFilterValue } from '../../utils/handlerHelpers';
@@ -113,10 +112,6 @@ export function handleColumnSelectMultiColumn(
         preservedFilterRef.current = null;
         setPreservedSearchMode(null);
         setFilterValue(newValue, onChange, inputRef);
-
-        setTimeout(() => {
-          inputRef?.current?.focus();
-        }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
         return;
       } else {
         if (firstValTo) {
@@ -192,10 +187,6 @@ export function handleColumnSelectMultiColumn(
   }
 
   setFilterValue(newValue, onChange, inputRef);
-
-  setTimeout(() => {
-    inputRef?.current?.focus();
-  }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
 }
 
 /**
@@ -368,8 +359,4 @@ export function handleColumnSelectWithPreservedFilter(
   }
 
   setFilterValue(newValue, onChange, inputRef);
-
-  setTimeout(() => {
-    inputRef?.current?.focus();
-  }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
 }

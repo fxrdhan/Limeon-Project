@@ -7,7 +7,6 @@
  */
 
 import { useCallback, type RefObject } from 'react';
-import { SEARCH_CONSTANTS } from '../constants';
 import type { JoinOperator } from '../operators';
 import type {
   EnhancedSearchState,
@@ -176,9 +175,6 @@ export function useSelectionHandlers(
           setFilterValue(newValue, onChange, inputRef);
         }
 
-        setTimeout(() => {
-          inputRef?.current?.focus();
-        }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
         return;
       }
 
@@ -247,9 +243,6 @@ export function useSelectionHandlers(
 
         setFilterValue(newValue, onChange, inputRef);
 
-        setTimeout(() => {
-          inputRef?.current?.focus();
-        }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
         return;
       }
 
@@ -291,10 +284,6 @@ export function useSelectionHandlers(
       const newValue = PatternBuilder.columnWithOperatorSelector(column.field);
       setPreservedSearchMode(null);
       setFilterValue(newValue, onChange, inputRef);
-
-      setTimeout(() => {
-        inputRef?.current?.focus();
-      }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
     },
     [
       onChange,
@@ -395,10 +384,6 @@ export function useSelectionHandlers(
         preservedFilterRef.current = null;
         setPreservedSearchMode(null);
         setFilterValue(newValue, onChange, inputRef);
-
-        setTimeout(() => {
-          inputRef?.current?.focus();
-        }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
         return;
       }
 
@@ -485,10 +470,6 @@ export function useSelectionHandlers(
           setIsEditingSecondOperator(false);
 
           setFilterValue(newValue, onChange, inputRef);
-
-          setTimeout(() => {
-            inputRef?.current?.focus();
-          }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
           return;
         }
       }
@@ -651,10 +632,6 @@ export function useSelectionHandlers(
       }
 
       setFilterValue(newValue, onChange, inputRef);
-
-      setTimeout(() => {
-        inputRef?.current?.focus();
-      }, SEARCH_CONSTANTS.INPUT_FOCUS_DELAY);
     },
     [
       onChange,

@@ -408,6 +408,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   onClearSearch,
   onFilterSearch,
   autoFocusOnType = true,
+  closeSelectorsSignal,
+  onSelectorOpenChange,
+  suppressSelectors = false,
+  selectorOutsideIgnoreRefs,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -421,6 +425,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   // This lets users step back through a confirmed expression and end up with a
   // still-confirmed prefix once they finish deleting trailing badges.
   const deleteConfirmationCarryRef = useRef(false);
+  const previousCloseSelectorsSignalRef = useRef(closeSelectorsSignal);
   useEffect(() => {
     latestValueRef.current = value;
   }, [value]);
@@ -434,6 +439,14 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   // State to preserve searchMode during edit (to keep badges visible)
   const [preservedSearchMode, setPreservedSearchMode] =
     useState<EnhancedSearchState | null>(null);
+  const [dismissedSelectorValue, setDismissedSelectorValue] = useState<
+    string | null
+  >(null);
+  useEffect(() => {
+    if (dismissedSelectorValue !== null && dismissedSelectorValue !== value) {
+      setDismissedSelectorValue(null);
+    }
+  }, [dismissedSelectorValue, value]);
   const latestPreservedSearchModeRef = useRef<EnhancedSearchState | null>(null);
   useEffect(() => {
     latestPreservedSearchModeRef.current = preservedSearchMode;
@@ -1711,6 +1724,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       setSelectedBadgeIndex(null);
     }
   }, [selectedBadgeIndex]);
+  const dismissCurrentSelector = useCallback(() => {
+    setDismissedSelectorValue(value);
+  }, [value]);
+
   const handleCloseColumnSelector = useCallback(() => {
     // CASE 1: Edit mode with confirmed filter - restore the original pattern
     if (tryRestorePreservedPattern()) return;
@@ -1734,6 +1751,11 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       return;
     }
 
+    if (searchMode.partialJoin) {
+      dismissCurrentSelector();
+      return;
+    }
+
     // CASE 3: Normal close (not in edit mode)
     // searchMode is derived, so we close by clearing the value
     if (value.startsWith('#') && !searchMode.selectedColumn) {
@@ -1753,6 +1775,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
   }, [
     value,
     searchMode.selectedColumn,
+    searchMode.partialJoin,
+    dismissCurrentSelector,
     memoizedColumns,
     onClearSearch,
     onChange,
@@ -1794,9 +1818,14 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     // If in edit mode, restore the original pattern instead of clearing
     if (tryRestorePreservedPattern()) return;
 
-    // GUARD: Don't interfere if value is already confirmed (has ##) or in partial join state
+    if (searchMode.partialJoin) {
+      dismissCurrentSelector();
+      return;
+    }
+
+    // GUARD: Don't interfere if value is already confirmed (has ##)
     // This prevents this handler from clearing value when other handlers set it correctly
-    if (value.includes('##') || searchMode.partialJoin) {
+    if (value.includes('##')) {
       return;
     }
 
@@ -1822,6 +1851,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     searchMode.selectedColumn,
     searchMode.partialJoin,
     value,
+    dismissCurrentSelector,
     onChange,
     onClearSearch,
     tryRestorePreservedPattern,
@@ -1862,6 +1892,37 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     tryRestorePreservedPattern,
     setCurrentJoinOperator,
     setEditingSelectorTarget,
+  ]);
+
+  useEffect(() => {
+    if (closeSelectorsSignal === undefined) return;
+    if (previousCloseSelectorsSignalRef.current === closeSelectorsSignal) {
+      return;
+    }
+
+    previousCloseSelectorsSignalRef.current = closeSelectorsSignal;
+
+    if (searchMode.showColumnSelector) {
+      handleCloseColumnSelector();
+      return;
+    }
+
+    if (searchMode.showOperatorSelector) {
+      handleCloseOperatorSelector();
+      return;
+    }
+
+    if (searchMode.showJoinOperatorSelector) {
+      handleCloseJoinOperatorSelector();
+    }
+  }, [
+    closeSelectorsSignal,
+    handleCloseColumnSelector,
+    handleCloseJoinOperatorSelector,
+    handleCloseOperatorSelector,
+    searchMode.showColumnSelector,
+    searchMode.showJoinOperatorSelector,
+    searchMode.showOperatorSelector,
   ]);
 
   // Handle inline value change (user typing in inline input)
@@ -2922,6 +2983,60 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     [clearBadgeSelection, handleInputChange]
   );
 
+  const openOperatorSelectorFromPlainColumn = useCallback(() => {
+    if (
+      suppressSelectors ||
+      !searchMode.selectedColumn ||
+      searchMode.showColumnSelector ||
+      searchMode.showOperatorSelector ||
+      searchMode.showJoinOperatorSelector ||
+      searchMode.filterSearch ||
+      searchMode.partialJoin
+    ) {
+      return;
+    }
+
+    const columnName = searchMode.selectedColumn.field;
+    const plainColumnValue = buildColumnValue(columnName, 'plain');
+    if (value.trim() !== plainColumnValue) {
+      return;
+    }
+
+    onChange({
+      target: {
+        value: PatternBuilder.columnWithOperatorSelector(columnName),
+      },
+    } as React.ChangeEvent<HTMLInputElement>);
+  }, [
+    onChange,
+    searchMode.filterSearch,
+    searchMode.partialJoin,
+    searchMode.selectedColumn,
+    searchMode.showColumnSelector,
+    searchMode.showJoinOperatorSelector,
+    searchMode.showOperatorSelector,
+    suppressSelectors,
+    value,
+  ]);
+
+  const handleInputFocus = useCallback(
+    (e: React.FocusEvent<HTMLInputElement>) => {
+      onFocus?.(e);
+      if (!suppressSelectors) {
+        setDismissedSelectorValue(null);
+      }
+      openOperatorSelectorFromPlainColumn();
+    },
+    [onFocus, openOperatorSelectorFromPlainColumn, suppressSelectors]
+  );
+
+  const handleInputClick = useCallback(() => {
+    if (!suppressSelectors) {
+      setDismissedSelectorValue(null);
+    }
+    openOperatorSelectorFromPlainColumn();
+  }, [openOperatorSelectorFromPlainColumn, suppressSelectors]);
+
   const searchTerm = useMemo(() => {
     // For condition[1] column selection, extract search term after #and/or #
     if (isSelectingConditionNColumn) {
@@ -3394,8 +3509,16 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     order: number;
     left: number;
   } | null>(null);
+  const selectorIgnoredOutsidePressRefs = useMemo(
+    () => [containerRef, ...(selectorOutsideIgnoreRefs ?? [])],
+    [selectorOutsideIgnoreRefs]
+  );
+  const isSelectorPopupVisible =
+    activeSelector !== null &&
+    !suppressSelectors &&
+    dismissedSelectorValue !== value;
   let selectorContentSlideDirection: -1 | 0 | 1 = 0;
-  if (activeSelector) {
+  if (isSelectorPopupVisible) {
     const previous = selectorSlideStateRef.current;
     if (previous && previous.contentKey !== activeSelector.contentKey) {
       const hasMeasuredPositions =
@@ -3424,6 +3547,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     selectorSlideStateRef.current = null;
   }
 
+  useEffect(() => {
+    onSelectorOpenChange?.(isSelectorPopupVisible);
+  }, [isSelectorPopupVisible, onSelectorOpenChange]);
+
   // Determine if icon should be on the left (active state) // Show active animated mode when typing or focused filters exist
   const hasExplicitOperator =
     searchMode.isFilterMode ||
@@ -3432,7 +3559,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     searchMode.showOperatorSelector ||
     searchMode.showJoinOperatorSelector ||
     searchMode.partialJoin ||
-    searchMode.partialConditions?.[1]?.operator;
+    searchMode.partialConditions?.[1]?.operator ||
+    (!!searchMode.selectedColumn && !searchMode.showColumnSelector);
 
   const shouldShowLeftIcon =
     (((displayValue && !displayValue.startsWith('#')) || hasExplicitOperator) &&
@@ -3542,7 +3670,8 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               value={displayValue}
               onChange={wrappedInputChangeHandler}
               onKeyDown={wrappedKeyDownHandler}
-              onFocus={onFocus}
+              onFocus={handleInputFocus}
+              onClick={handleInputClick}
               onBlur={onBlur}
             />
           </div>
@@ -3556,7 +3685,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
         )}
       </div>
 
-      {activeSelector && (
+      {isSelectorPopupVisible && (
         <BaseSelector<ActiveSelectorItem>
           items={activeSelector.items}
           isOpen={true}
@@ -3569,7 +3698,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           onHighlightChange={activeSelector.onHighlightChange}
           contentKey={activeSelector.contentKey}
           contentSlideDirection={selectorContentSlideDirection}
-          outsideClickIgnoreRef={containerRef}
+          outsideClickIgnoreRefs={selectorIgnoredOutsidePressRefs}
         />
       )}
     </TooltipProvider>

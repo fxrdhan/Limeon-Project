@@ -41,6 +41,11 @@ export interface SetValueOptions {
   cursorAtEnd?: boolean;
 }
 
+const opensSelectorPattern = (value: string): boolean => {
+  const trimmedValue = value.trimEnd();
+  return trimmedValue.endsWith('#') && !trimmedValue.endsWith('##');
+};
+
 /**
  * Helper to set filter value with auto-focus
  *
@@ -66,7 +71,7 @@ export function setFilterValue(
   } as React.ChangeEvent<HTMLInputElement>);
 
   // Use double requestAnimationFrame to ensure DOM is fully ready after React render and browser paint
-  if (options.focus && inputRef) {
+  if (options.focus && inputRef && !opensSelectorPattern(newValue)) {
     // First RAF: schedule after current frame (allows React to process state update)
     requestAnimationFrame(() => {
       // Second RAF: schedule after browser paint (ensures DOM is fully updated)

@@ -1,50 +1,395 @@
 import React, {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
-  useState,
+  type CSSProperties,
 } from 'react';
-import { TbSearch } from 'react-icons/tb';
-import fuzzysort from 'fuzzysort';
 import { motion } from 'motion/react';
-import { createTypedCombobox } from '@/components/combobox';
+import {
+  createTypedCombobox,
+  type ComboboxChangeEventDetails,
+  type ComboboxHighlightEventDetails,
+  type ComboboxRootProps,
+  type PharmaComboboxOptionRenderState,
+} from '@/components/combobox';
 import { comboboxHighlightBackgroundTransition } from '@/components/combobox/components/combobox-highlight-motion';
-import { ComboboxOptionMotionFrame } from '@/components/combobox/components/combobox-option-motion-frame';
+import { ComboboxOptionList } from '@/components/combobox/components/combobox-option-list';
+import { ComboboxSearchHeader } from '@/components/combobox/components/combobox-search-header';
+import { usePharmaComboboxSelectController } from '@/components/combobox/hooks/use-pharma-combobox-select-controller';
+import { cn } from '@/lib/utils';
 import { BaseSelectorProps } from '../../types';
-import { SEARCH_CONSTANTS } from '../../constants';
 
 const SearchSelectorCombobox = createTypedCombobox<unknown>();
+const forwardedSelectorKeys = new Set([
+  'ArrowDown',
+  'ArrowUp',
+  'PageDown',
+  'PageUp',
+  'Enter',
+  'Escape',
+]);
 
-type SelectorSearchResult<T> = {
-  item: T;
-  labelIndices: readonly number[] | null;
-  score: number;
+const isPlainCharacterKey = (event: KeyboardEvent) =>
+  event.key.length === 1 &&
+  !event.altKey &&
+  !event.ctrlKey &&
+  !event.metaKey &&
+  !event.isComposing;
+
+const blockOriginalKeyEvent = (event: KeyboardEvent) => {
+  event.preventDefault();
+  event.stopPropagation();
+  event.stopImmediatePropagation();
 };
 
-const HighlightedText: React.FC<{
-  text: string;
-  indices: readonly number[] | null;
-  theme?: 'purple' | 'blue' | 'orange';
-}> = ({ text, indices }) => {
-  if (!indices || indices.length === 0) {
-    return <>{text}</>;
+const createSelectorComboboxDetails = (
+  reason: ComboboxChangeEventDetails['reason'],
+  event?: Event
+): ComboboxChangeEventDetails => {
+  let canceled = false;
+
+  return {
+    cancel: () => {
+      canceled = true;
+    },
+    event,
+    get isCanceled() {
+      return canceled;
+    },
+    reason,
+  };
+};
+
+const setReactRef = <Element,>(
+  ref: React.Ref<Element> | undefined,
+  value: Element | null
+) => {
+  if (!ref) return;
+
+  if (typeof ref === 'function') {
+    ref(value);
+    return;
   }
 
-  const indexSet = new Set(indices);
-  return (
-    <>
-      {text.split('').map((char, index) => (
-        <span
-          key={index}
-          className={indexSet.has(index) ? 'font-bold text-slate-950' : ''}
-        >
-          {char}
-        </span>
-      ))}
-    </>
-  );
+  (ref as React.MutableRefObject<Element | null>).current = value;
 };
+
+const getSelectedValue = <T,>(
+  items: readonly T[],
+  defaultSelectedIndex: number | undefined
+) => {
+  if (defaultSelectedIndex === undefined || items.length === 0) return null;
+
+  const boundedIndex = Math.min(
+    Math.max(defaultSelectedIndex, 0),
+    items.length - 1
+  );
+
+  return items[boundedIndex] ?? null;
+};
+
+type BaseSelectorContentProps<T> = BaseSelectorProps<T> & {
+  activeContentKey: string;
+  ignoredOutsidePressRefs: React.RefObject<HTMLElement | null>[];
+  modalPosition: {
+    x: number;
+    y: number;
+  };
+};
+
+function BaseSelectorContent<T>({
+  activeContentKey,
+  items,
+  onSelect,
+  onClose,
+  modalPosition,
+  searchTerm: externalSearchTerm = '',
+  config,
+  defaultSelectedIndex,
+  onHighlightChange,
+  ignoredOutsidePressRefs,
+}: BaseSelectorContentProps<T>) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const inputValueRef = useRef('');
+  const initialSearchAppliedRef = useRef(false);
+  const selectedValue = useMemo(
+    () => getSelectedValue(items, defaultSelectedIndex),
+    [defaultSelectedIndex, items]
+  );
+  const popupMaxHeight = `min(${config.maxHeight}, calc(100vh - ${Math.max(
+    modalPosition.y + 8,
+    0
+  )}px))`;
+
+  const isInsideIgnoredOutsidePressTarget = useCallback(
+    (event?: Event) => {
+      const target = event?.target;
+      if (!(target instanceof Node)) return false;
+
+      return ignoredOutsidePressRefs.some(ref => ref.current?.contains(target));
+    },
+    [ignoredOutsidePressRefs]
+  );
+
+  const renderOption = useCallback(
+    (item: T, state: PharmaComboboxOptionRenderState) => {
+      const secondaryText = config.getItemSecondaryText?.(item);
+      const description = config.getItemDescription?.(item);
+
+      return (
+        <span className="flex min-w-0 items-center gap-3">
+          <span
+            className={cn(
+              'shrink-0 transition-colors duration-150',
+              state.highlighted
+                ? (config.getItemActiveColor?.(item) ?? 'text-slate-900')
+                : 'text-slate-500'
+            )}
+          >
+            {config.getItemIcon(item)}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="flex min-w-0 items-center gap-2">
+              <span className="truncate font-medium">
+                {config.getItemLabel(item)}
+              </span>
+              {secondaryText ? (
+                <span className="shrink-0 text-xs text-slate-400">
+                  {secondaryText}
+                </span>
+              ) : null}
+            </span>
+            {description ? (
+              <span className="mt-0.5 line-clamp-2 block text-xs text-slate-500">
+                {description}
+              </span>
+            ) : null}
+          </span>
+        </span>
+      );
+    },
+    [config]
+  );
+
+  const { highlight, options, popup, root, search } =
+    usePharmaComboboxSelectController<T>({
+      items,
+      value: selectedValue,
+      onValueChange: item => {
+        if (item !== null) onSelect(item);
+      },
+      item: {
+        toLabel: config.getItemLabel,
+        toValue: config.getItemKey,
+        isEqualToValue: (item, value) =>
+          config.getItemKey(item) === config.getItemKey(value),
+      },
+      field: {
+        label: config.headerText,
+        aria: {
+          label: config.headerText,
+        },
+      },
+      interaction: {
+        open: true,
+        onOpenChange: (open, details) => {
+          if (open || details.reason === 'item-press') return;
+
+          if (isInsideIgnoredOutsidePressTarget(details.event)) {
+            details.cancel();
+            return;
+          }
+
+          onClose();
+        },
+      },
+      display: {
+        indicator: 'none',
+        renderOption,
+      },
+      search: {
+        enabled: true,
+        placeholder: 'Cari...',
+      },
+    });
+
+  const setSelectorInputValue = useCallback(
+    (nextValue: string, event?: Event) => {
+      root.comboboxRootProps.onInputValueChange?.(
+        nextValue,
+        createSelectorComboboxDetails('input-change', event)
+      );
+    },
+    [root.comboboxRootProps]
+  );
+
+  useEffect(() => {
+    inputValueRef.current = options.optionListProps.inputValue;
+  }, [options.optionListProps.inputValue]);
+
+  useLayoutEffect(() => {
+    if (initialSearchAppliedRef.current) return;
+
+    initialSearchAppliedRef.current = true;
+    if (!externalSearchTerm) return;
+
+    setSelectorInputValue(externalSearchTerm);
+  }, [externalSearchTerm, setSelectorInputValue]);
+
+  useLayoutEffect(() => {
+    inputRef.current?.focus({ preventScroll: true });
+    inputRef.current?.select();
+  }, [activeContentKey]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+
+    const handleDocumentKeyDown = (event: KeyboardEvent) => {
+      const selectorInput = inputRef.current;
+      if (!selectorInput || event.target === selectorInput) return;
+
+      if (isPlainCharacterKey(event)) {
+        blockOriginalKeyEvent(event);
+        selectorInput.focus({ preventScroll: true });
+        setSelectorInputValue(`${inputValueRef.current}${event.key}`, event);
+        return;
+      }
+
+      if (event.key === 'Backspace') {
+        blockOriginalKeyEvent(event);
+        selectorInput.focus({ preventScroll: true });
+        setSelectorInputValue(inputValueRef.current.slice(0, -1), event);
+        return;
+      }
+
+      if (event.key === 'Delete') {
+        blockOriginalKeyEvent(event);
+        selectorInput.focus({ preventScroll: true });
+        return;
+      }
+
+      if (!forwardedSelectorKeys.has(event.key)) return;
+
+      blockOriginalKeyEvent(event);
+      selectorInput.focus({ preventScroll: true });
+      selectorInput.dispatchEvent(
+        new KeyboardEvent('keydown', {
+          altKey: event.altKey,
+          bubbles: true,
+          cancelable: true,
+          code: event.code,
+          ctrlKey: event.ctrlKey,
+          key: event.key,
+          metaKey: event.metaKey,
+          repeat: event.repeat,
+          shiftKey: event.shiftKey,
+        })
+      );
+    };
+
+    document.addEventListener('keydown', handleDocumentKeyDown, true);
+    return () => {
+      document.removeEventListener('keydown', handleDocumentKeyDown, true);
+    };
+  }, [setSelectorInputValue]);
+
+  useEffect(
+    () => () => {
+      onHighlightChange?.(null);
+    },
+    [onHighlightChange]
+  );
+
+  const setSearchInputRef = useCallback(
+    (node: HTMLInputElement | null) => {
+      inputRef.current = node;
+      setReactRef(search.searchHeaderProps.searchInputRef, node);
+    },
+    [search.searchHeaderProps.searchInputRef]
+  );
+
+  const handleItemHighlighted = useCallback(
+    (item: T | undefined, details: ComboboxHighlightEventDetails) => {
+      root.comboboxRootProps.onItemHighlighted?.(item, details);
+
+      if (!details.isCanceled) {
+        onHighlightChange?.(item ?? null);
+      }
+    },
+    [onHighlightChange, root.comboboxRootProps]
+  );
+
+  const SearchSelectorRoot = SearchSelectorCombobox.Root as unknown as (
+    props: ComboboxRootProps<T>
+  ) => React.ReactElement | null;
+  const comboboxRootProps = {
+    ...root.comboboxRootProps,
+    onItemHighlighted: handleItemHighlighted,
+  } satisfies ComboboxRootProps<T>;
+
+  const searchHeaderProps = {
+    ...search.searchHeaderProps,
+    searchInputRef: setSearchInputRef,
+  };
+  const trimmedInputValue = options.optionListProps.inputValue.trim();
+  const noResultsMessage = trimmedInputValue
+    ? config.noResultsText.replace('{searchTerm}', trimmedInputValue)
+    : 'Tidak ditemukan';
+  const popupStyle = {
+    left: modalPosition.x,
+    top: modalPosition.y,
+  } satisfies CSSProperties;
+  const contentStyle = {
+    maxHeight: popupMaxHeight,
+  } satisfies CSSProperties;
+
+  return (
+    <div
+      ref={root.rootRef}
+      className={root.className}
+      onBlur={root.handleComboboxBlur}
+    >
+      <SearchSelectorRoot {...comboboxRootProps}>
+        <SearchSelectorCombobox.Popup
+          initialFocus={false}
+          className="fixed z-50 w-max min-w-[220px] max-w-[calc(100vw-1rem)] overflow-hidden rounded-xl bg-white shadow-thin-md"
+          style={popupStyle}
+        >
+          <div
+            ref={popup.contentRef}
+            className="relative flex flex-col overflow-hidden"
+            style={contentStyle}
+            onBlur={root.handleComboboxBlur}
+          >
+            {highlight.heldFrame ? (
+              <motion.div
+                key={highlight.heldFrameKey}
+                aria-hidden="true"
+                data-pharma-combobox-pinned-highlight=""
+                className="pointer-events-none absolute z-0 rounded-lg bg-primary/10"
+                style={highlight.heldFrame}
+                initial={false}
+                animate={highlight.heldFrame}
+                transition={comboboxHighlightBackgroundTransition}
+              />
+            ) : null}
+            {search.searchable ? (
+              <ComboboxSearchHeader {...searchHeaderProps} />
+            ) : null}
+            <ComboboxOptionList {...options.optionListProps} />
+            {!options.hasVisibleItems ? (
+              <SearchSelectorCombobox.Empty className="empty:hidden relative z-10 px-3 py-4 text-center text-sm text-slate-500">
+                {noResultsMessage}
+              </SearchSelectorCombobox.Empty>
+            ) : null}
+          </div>
+        </SearchSelectorCombobox.Popup>
+      </SearchSelectorRoot>
+    </div>
+  );
+}
 
 function BaseSelector<T>({
   items,
@@ -52,295 +397,56 @@ function BaseSelector<T>({
   onSelect,
   onClose,
   position,
-  searchTerm: externalSearchTerm = '',
+  searchTerm,
   config,
   defaultSelectedIndex,
   onHighlightChange,
   contentKey,
+  outsideClickIgnoreRef,
+  outsideClickIgnoreRefs,
 }: BaseSelectorProps<T>) {
-  const inputRef = useRef<HTMLInputElement>(null);
   const activeContentKey = contentKey ?? config.headerText;
   const isSelectorVisible = isOpen && (position.isReady ?? true);
-  const [inputValue, setInputValue] = useState(externalSearchTerm);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    setInputValue(externalSearchTerm);
-  }, [activeContentKey, externalSearchTerm, isOpen]);
-
-  useLayoutEffect(() => {
-    if (!isSelectorVisible) return;
-
-    inputRef.current?.focus({ preventScroll: true });
-    inputRef.current?.select();
-  }, [activeContentKey, isSelectorVisible]);
-
-  useEffect(() => {
-    if (!isOpen) {
-      onHighlightChange?.(null);
-    }
-  }, [isOpen, onHighlightChange]);
-
-  const searchFieldsConfig = useMemo(() => {
-    if (items.length === 0) return [];
-    return config.getSearchFields(items[0]);
-  }, [items, config]);
-
-  const searchResults = useMemo<SelectorSearchResult<T>[]>(() => {
-    const normalizedSearch = inputValue.trim();
-    if (!normalizedSearch || items.length === 0) {
-      return items.map(item => ({
-        item,
-        labelIndices: null,
-        score: 0,
-      }));
-    }
-
-    const searchTargets = items.map(item => {
-      const searchFields = config.getSearchFields(item);
-      return {
-        item,
-        ...searchFields.reduce(
-          (acc, field) => ({ ...acc, [field.key]: field.value }),
-          {}
-        ),
-      };
-    });
-
-    const rankedResults = new Map<string, SelectorSearchResult<T>>();
-
-    searchFieldsConfig.forEach(fieldConfig => {
-      const results = fuzzysort.go(normalizedSearch, searchTargets, {
-        key: fieldConfig.key,
-        threshold: SEARCH_CONSTANTS.FUZZY_SEARCH_THRESHOLD,
-      });
-
-      results.forEach(result => {
-        const itemKey = config.getItemKey(result.obj.item);
-        const score = result.score + (fieldConfig.boost || 0);
-        const currentBest = rankedResults.get(itemKey);
-
-        if (!currentBest || score > currentBest.score) {
-          rankedResults.set(itemKey, {
-            item: result.obj.item,
-            labelIndices: null,
-            score,
-          });
-        }
-      });
-    });
-
-    const labelTargets = Array.from(rankedResults.values()).map(result => ({
-      item: result.item,
-      label: config.getItemLabel(result.item),
-    }));
-
-    const labelResults = fuzzysort.go(normalizedSearch, labelTargets, {
-      key: 'label',
-      threshold: -Infinity,
-    });
-
-    labelResults.forEach(result => {
-      const itemKey = config.getItemKey(result.obj.item);
-      const existing = rankedResults.get(itemKey);
-      if (existing) {
-        rankedResults.set(itemKey, {
-          ...existing,
-          labelIndices: result.indexes,
-        });
-      }
-    });
-
-    return Array.from(rankedResults.values()).sort(
-      (first, second) => second.score - first.score
-    );
-  }, [config, inputValue, items, searchFieldsConfig]);
-
-  const filteredItems = useMemo(
-    () => searchResults.map(result => result.item),
-    [searchResults]
+  const ignoredOutsidePressRefs = useMemo(
+    () => [
+      ...(outsideClickIgnoreRef ? [outsideClickIgnoreRef] : []),
+      ...(outsideClickIgnoreRefs ?? []),
+    ],
+    [outsideClickIgnoreRef, outsideClickIgnoreRefs]
+  );
+  const modalPosition = useMemo(
+    () => ({
+      x: position.left,
+      y: position.top + 5,
+    }),
+    [position.left, position.top]
   );
 
-  const labelIndicesByKey = useMemo(() => {
-    const indices = new Map<string, readonly number[] | null>();
-    searchResults.forEach(result => {
-      indices.set(config.getItemKey(result.item), result.labelIndices);
-    });
-    return indices;
-  }, [config, searchResults]);
+  useEffect(() => {
+    if (!isOpen) onHighlightChange?.(null);
+  }, [isOpen, onHighlightChange]);
 
-  const defaultHighlightedIndex =
-    filteredItems.length === 0
-      ? null
-      : Math.min(defaultSelectedIndex ?? 0, filteredItems.length - 1);
-
-  const modalPosition = {
-    x: position.left,
-    y: position.top + 5,
-  };
-
-  const selectedTextClass = 'text-slate-950';
-
-  const highlightBackgroundClass =
-    config.theme === 'blue'
-      ? 'bg-blue-100'
-      : config.theme === 'orange'
-        ? 'bg-orange-100'
-        : 'bg-purple-100';
-  const trimmedInputValue = inputValue.trim();
-  const noResultsMessage = trimmedInputValue
-    ? config.noResultsText.replace('{searchTerm}', trimmedInputValue)
-    : 'Tidak ditemukan';
-  const shouldAnimateListItems =
-    trimmedInputValue.length > 0 && filteredItems.length > 0;
+  if (!isSelectorVisible) return null;
 
   return (
-    <>
-      {isSelectorVisible && (
-        <SearchSelectorCombobox.Root
-          key={activeContentKey}
-          autoHighlight
-          defaultHighlightedIndex={defaultHighlightedIndex}
-          filter={null}
-          filteredItems={filteredItems as readonly unknown[]}
-          inputValue={inputValue}
-          items={items as readonly unknown[]}
-          itemToStringLabel={item => config.getItemLabel(item as T)}
-          itemToStringValue={item => config.getItemKey(item as T)}
-          open={isOpen}
-          onInputValueChange={setInputValue}
-          onItemHighlighted={item => {
-            onHighlightChange?.((item as T | undefined) ?? null);
-          }}
-          onOpenChange={(open, details) => {
-            if (!open && details.reason !== 'item-press') {
-              onClose();
-            }
-          }}
-          onValueChange={item => {
-            if (item !== null) {
-              onSelect(item as T);
-            }
-          }}
-        >
-          <SearchSelectorCombobox.Popup
-            initialFocus={false}
-            className="fixed z-50 w-max min-w-[220px] max-w-[calc(100vw-1rem)] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg"
-            style={{
-              left: modalPosition.x,
-              top: modalPosition.y,
-            }}
-          >
-            <div className="sticky top-0 z-20 shrink-0 border-b border-slate-100 bg-white px-3 py-2.5">
-              <div className="flex min-w-0 items-center gap-2">
-                <TbSearch
-                  aria-hidden="true"
-                  className="h-4 w-4 shrink-0 text-slate-400"
-                />
-                <SearchSelectorCombobox.Input
-                  ref={inputRef}
-                  role="searchbox"
-                  className="min-w-[90px] flex-1 border-none bg-transparent p-0 text-[13px] leading-5 text-slate-950 outline-hidden transition placeholder:text-slate-400 focus:text-slate-950 focus:ring-0"
-                  aria-label={config.headerText}
-                  placeholder="Cari..."
-                  tabIndex={0}
-                  onKeyDown={event => {
-                    event.stopPropagation();
-                  }}
-                />
-              </div>
-            </div>
-
-            <SearchSelectorCombobox.List
-              className="overflow-y-auto overflow-x-hidden py-1"
-              getItemKey={rawItem => config.getItemKey(rawItem as T)}
-              style={{ maxHeight: config.maxHeight }}
-            >
-              {rawItem => {
-                const item = rawItem as T;
-                const itemKey = config.getItemKey(item);
-                const highlightIndices = labelIndicesByKey.get(itemKey) ?? null;
-
-                return (
-                  <ComboboxOptionMotionFrame
-                    shouldAnimate={shouldAnimateListItems}
-                  >
-                    <SearchSelectorCombobox.Item
-                      render={(props, state) => {
-                        const { ref, ...itemProps } = props;
-                        const isSelected = state.highlighted;
-
-                        return (
-                          <div
-                            {...itemProps}
-                            ref={ref as React.Ref<HTMLDivElement>}
-                            className="relative mx-1 flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden transition-colors duration-150"
-                          >
-                            {state.highlighted && (
-                              <motion.div
-                                key={`search-selector-highlight-${activeContentKey}-${inputValue}`}
-                                layoutId={`search-selector-highlight-${activeContentKey}-${inputValue}`}
-                                aria-hidden="true"
-                                className={`pointer-events-none absolute inset-0 z-0 rounded-lg ${highlightBackgroundClass}`}
-                                initial={false}
-                                transition={
-                                  comboboxHighlightBackgroundTransition
-                                }
-                              />
-                            )}
-                            <div
-                              className={`relative z-10 shrink-0 transition-colors duration-150 ${
-                                isSelected
-                                  ? config.getItemActiveColor?.(item) ||
-                                    'text-slate-900'
-                                  : 'text-slate-500'
-                              }`}
-                            >
-                              {config.getItemIcon(item)}
-                            </div>
-                            <div className="relative z-10 min-w-0 flex-1">
-                              <div className="flex items-center gap-2">
-                                <span
-                                  className={`whitespace-nowrap font-medium transition-colors duration-150 ${
-                                    isSelected
-                                      ? selectedTextClass
-                                      : 'text-slate-700'
-                                  }`}
-                                >
-                                  <HighlightedText
-                                    text={config.getItemLabel(item)}
-                                    indices={highlightIndices}
-                                    theme={config.theme}
-                                  />
-                                </span>
-                                {config.getItemSecondaryText && (
-                                  <span className="text-xs text-slate-400">
-                                    {config.getItemSecondaryText(item)}
-                                  </span>
-                                )}
-                              </div>
-                              {config.getItemDescription?.(item) && (
-                                <p className="mt-0.5 line-clamp-2 text-xs text-slate-500">
-                                  {config.getItemDescription(item)}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      }}
-                    />
-                  </ComboboxOptionMotionFrame>
-                );
-              }}
-            </SearchSelectorCombobox.List>
-
-            <SearchSelectorCombobox.Empty className="px-3 py-4 text-center text-sm text-slate-500">
-              {noResultsMessage}
-            </SearchSelectorCombobox.Empty>
-          </SearchSelectorCombobox.Popup>
-        </SearchSelectorCombobox.Root>
-      )}
-    </>
+    <BaseSelectorContent<T>
+      key={activeContentKey}
+      activeContentKey={activeContentKey}
+      items={items}
+      isOpen={isOpen}
+      onSelect={onSelect}
+      onClose={onClose}
+      position={position}
+      searchTerm={searchTerm}
+      config={config}
+      defaultSelectedIndex={defaultSelectedIndex}
+      onHighlightChange={onHighlightChange}
+      contentKey={contentKey}
+      outsideClickIgnoreRef={outsideClickIgnoreRef}
+      outsideClickIgnoreRefs={outsideClickIgnoreRefs}
+      ignoredOutsidePressRefs={ignoredOutsidePressRefs}
+      modalPosition={modalPosition}
+    />
   );
 }
 
