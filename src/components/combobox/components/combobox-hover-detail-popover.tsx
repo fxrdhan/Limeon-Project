@@ -46,6 +46,7 @@ const ComboboxHoverDetailPopover = ({
     defaultHoverDetailGeometry
   );
   const visibleRef = useRef(false);
+  const wasShowingContentRef = useRef(false);
   const animationFrameRef = useRef<number | null>(null);
   const controls = useAnimationControls();
   const [isPlacementReady, setIsPlacementReady] = useState(false);
@@ -129,9 +130,11 @@ const ComboboxHoverDetailPopover = ({
   );
 
   useLayoutEffect(() => {
+    const shouldForceAppear = !wasShowingContentRef.current;
+    wasShowingContentRef.current = showContent;
     if (!showContent) return;
 
-    animateToMeasuredGeometry(!visibleRef.current);
+    animateToMeasuredGeometry(shouldForceAppear);
   }, [animateToMeasuredGeometry, showContent]);
 
   useEffect(() => {
@@ -160,7 +163,8 @@ const ComboboxHoverDetailPopover = ({
     setIsPlacementReady(false);
 
     if (!visibleRef.current) {
-      setRenderedData(data);
+      setActiveGeometry(null);
+      setRenderedData(null);
       return;
     }
 
