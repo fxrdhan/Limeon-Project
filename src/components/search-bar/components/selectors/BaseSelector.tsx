@@ -264,12 +264,6 @@ function BaseSelectorContent<T>({
         return;
       }
 
-      if (event.key === 'Delete') {
-        blockOriginalKeyEvent(event);
-        selectorInput.focus({ preventScroll: true });
-        return;
-      }
-
       if (!forwardedSelectorKeys.has(event.key)) return;
 
       blockOriginalKeyEvent(event);

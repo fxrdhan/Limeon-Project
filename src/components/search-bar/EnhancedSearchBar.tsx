@@ -2618,6 +2618,18 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     resolvedInputRef,
   ]);
 
+  const focusSearchInputAfterDelete = useCallback(() => {
+    const input = resolvedInputRef.current;
+    input?.focus({ preventScroll: true });
+
+    window.requestAnimationFrame(() => {
+      const latestInput = resolvedInputRef.current;
+      if (latestInput && document.activeElement === document.body) {
+        latestInput.focus({ preventScroll: true });
+      }
+    });
+  }, [resolvedInputRef]);
+
   // Wrap onChange to reconstruct multi-condition pattern when confirming first value edit
   const handleOnChangeWithReconstruction = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -2845,8 +2857,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       target: { value: result.nextValue },
     } as React.ChangeEvent<HTMLInputElement>);
     deleteConfirmationCarryRef.current = result.nextCarry;
+    focusSearchInputAfterDelete();
     return true;
-  }, [handleClearPreservedState, onChange]);
+  }, [focusSearchInputAfterDelete, handleClearPreservedState, onChange]);
 
   const { handleInputKeyDown } = useSearchKeyboard({
     value,
