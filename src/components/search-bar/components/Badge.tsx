@@ -42,9 +42,10 @@ const formatCurrencyDisplay = (value: string): string => {
 
 interface BadgeProps {
   config: BadgeConfig;
+  onSelect?: () => void;
 }
 
-const Badge: React.FC<BadgeProps> = ({ config }) => {
+const Badge: React.FC<BadgeProps> = ({ config, onSelect }) => {
   const colors = BADGE_COLORS[config.type];
   const badgeRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -364,6 +365,8 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
       {...(hasMenuAction
         ? {
             onClick: () => {
+              badgeRef.current?.focus({ preventScroll: true });
+              onSelect?.();
               setIsMenuOpen(prev => !prev);
               onHoverChange?.(true);
             },
@@ -388,6 +391,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
               }
             },
             onFocus: () => {
+              onSelect?.();
               setHasFocusWithin(true);
               onHoverChange?.(true);
             },

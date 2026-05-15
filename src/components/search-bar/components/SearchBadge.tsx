@@ -39,6 +39,7 @@ interface SearchBadgeProps {
   onFocusInput?: () => void; // Ctrl+I to exit edit and focus main input
   // Keyboard navigation props
   selectedBadgeIndex?: number | null;
+  onBadgeSelect?: (index: number) => void;
   onBadgeCountChange?: (count: number) => void;
   onBadgesChange?: (badges: BadgeConfig[]) => void;
   // Live preview props - show highlighted selector item in badge
@@ -94,6 +95,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   onNavigateEdit,
   onFocusInput,
   selectedBadgeIndex,
+  onBadgeSelect,
   onBadgeCountChange,
   onBadgesChange,
   previewColumn,
@@ -336,7 +338,7 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
   return (
     <div ref={badgesContainerRef} className="contents">
       <AnimatePresence initial={false}>
-        {finalBadges.map(badge => {
+        {finalBadges.map((badge, index) => {
           // Callback ref that updates the dynamic ref map for N-condition support
           const handleRef = (element: HTMLDivElement | null) => {
             setBadgeRef?.(badge.id, element);
@@ -350,6 +352,11 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
           const badgeWithErrorHandler = onInvalidValue
             ? { ...badgeWithGlow, onInvalidValue }
             : badgeWithGlow;
+
+          const isSelectable =
+            badge.type !== 'separator' &&
+            badge.type !== 'groupOpen' &&
+            badge.type !== 'groupClose';
 
           return (
             <motion.div
@@ -366,7 +373,12 @@ const SearchBadge: React.FC<SearchBadgeProps> = ({
               }}
               className="origin-left flex-shrink-0"
             >
-              <Badge config={badgeWithErrorHandler} />
+              <Badge
+                config={badgeWithErrorHandler}
+                onSelect={
+                  isSelectable ? () => onBadgeSelect?.(index) : undefined
+                }
+              />
             </motion.div>
           );
         })}

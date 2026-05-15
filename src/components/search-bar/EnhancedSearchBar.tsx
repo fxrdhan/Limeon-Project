@@ -1493,6 +1493,10 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     []
   );
 
+  const handleBadgeSelect = useCallback((index: number) => {
+    setSelectedBadgeIndex(index);
+  }, []);
+
   const scrollBadgesToEnd = useCallback(() => {
     const el = scrollAreaRef.current;
     if (!el) return;
@@ -3591,6 +3595,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
               onNavigateEdit={handleNavigateEdit}
               onFocusInput={handleFocusInputFromBadge}
               selectedBadgeIndex={selectedBadgeIndex}
+              onBadgeSelect={handleBadgeSelect}
               onBadgeCountChange={handleBadgeCountChange}
               onBadgesChange={handleBadgesChange}
               previewColumn={previewColumn}

@@ -56,4 +56,34 @@ describe('Badge accessibility', () => {
 
     expect(onClear).toHaveBeenCalledTimes(1);
   });
+
+  it('deletes a clicked badge with Backspace', () => {
+    const onClear = vi.fn();
+    render(<Badge config={createValueBadgeConfig({ onClear })} />);
+
+    const badge = screen.getByRole('button', {
+      name: /^Value Acetyl\./,
+    });
+
+    fireEvent.click(badge);
+
+    expect(document.activeElement).toBe(badge);
+
+    fireEvent.keyDown(badge, { key: 'Backspace' });
+
+    expect(onClear).toHaveBeenCalledTimes(1);
+  });
+
+  it('selects a clicked badge', () => {
+    const onSelect = vi.fn();
+    render(<Badge config={createValueBadgeConfig()} onSelect={onSelect} />);
+
+    const badge = screen.getByRole('button', {
+      name: /^Value Acetyl\./,
+    });
+
+    fireEvent.click(badge);
+
+    expect(onSelect).toHaveBeenCalled();
+  });
 });
