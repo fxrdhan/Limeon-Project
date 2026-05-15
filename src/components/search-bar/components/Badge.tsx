@@ -4,6 +4,17 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/tooltip';
 import { BADGE_COLORS, BadgeConfig } from '../types/badge';
 import { validateFilterValue } from '../utils/validationUtils';
 
+const BADGE_TYPE_LABELS: Record<BadgeConfig['type'], string> = {
+  column: 'Column',
+  operator: 'Operator',
+  value: 'Value',
+  separator: 'Separator',
+  valueTo: 'End value',
+  join: 'Join',
+  groupOpen: 'Open group',
+  groupClose: 'Close group',
+};
+
 // Format currency value for display (e.g., "500" -> "Rp 500")
 const formatCurrencyDisplay = (value: string): string => {
   // Extract numeric value, handling existing currency symbols and formatting
@@ -44,6 +55,8 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
   // Shake animation state for validation feedback
   const [isShaking, setIsShaking] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isPointerInside, setIsPointerInside] = useState(false);
+  const [hasFocusWithin, setHasFocusWithin] = useState(false);
 
   const isEditing = config.isEditing || false;
   const editingValue = config.editingValue || '';
@@ -54,6 +67,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
   const onHoverChange = config.onHoverChange;
   const hasActionMenu =
     !!config.canEdit || !!config.canClear || !!config.canInsert;
+  const badgeTypeLabel = BADGE_TYPE_LABELS[config.type];
 
   // Format display label for currency columns (only for value badges)
   const displayLabel = useMemo(() => {
@@ -275,10 +289,12 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
   // Error state styles - persistent for invalid values, temporary during shake
   const errorClass =
     isShaking || hasInvalidValue ? '!bg-rose-200 !text-rose-800' : '';
-  const wantsEditButton = isEditing || isSelected || isMenuOpen;
-  const wantsDeleteButton = !isEditing && (isSelected || isMenuOpen);
+  const shouldExposeActions =
+    isSelected || isMenuOpen || isPointerInside || hasFocusWithin;
+  const wantsEditButton = isEditing || shouldExposeActions;
+  const wantsDeleteButton = !isEditing && shouldExposeActions;
   const wantsInsertButton =
-    !isEditing && !!config.canInsert && (isSelected || isMenuOpen);
+    !isEditing && !!config.canInsert && shouldExposeActions;
   const [editIconVisible, setEditIconVisible] = useState(wantsEditButton);
   const [deleteIconVisible, setDeleteIconVisible] = useState(wantsDeleteButton);
   const [insertIconVisible, setInsertIconVisible] = useState(wantsInsertButton);
@@ -332,6 +348,10 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
   const showDeleteButtonSpace = wantsDeleteButton || deleteIconVisible;
   const showInsertButtonSpace = wantsInsertButton || insertIconVisible;
   const hasMenuAction = hasActionMenu && !isEditing;
+  const actionTargetLabel = `${badgeTypeLabel.toLowerCase()} ${displayLabel}`;
+  const badgeAriaLabel = config.canClear
+    ? `${badgeTypeLabel} ${displayLabel}. Press Delete or Backspace to remove.`
+    : `${badgeTypeLabel} ${displayLabel}`;
 
   return (
     <div
@@ -348,12 +368,50 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
               onHoverChange?.(true);
             },
             onKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => {
+              if (event.target !== event.currentTarget) return;
+
+              if (
+                config.canClear &&
+                (event.key === 'Delete' || event.key === 'Backspace')
+              ) {
+                event.preventDefault();
+                event.stopPropagation();
+                setIsMenuOpen(false);
+                config.onClear?.();
+                return;
+              }
+
               if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
                 setIsMenuOpen(prev => !prev);
                 onHoverChange?.(true);
               }
             },
+            onFocus: () => {
+              setHasFocusWithin(true);
+              onHoverChange?.(true);
+            },
+            onBlur: (event: React.FocusEvent<HTMLDivElement>) => {
+              if (
+                event.relatedTarget instanceof Node &&
+                event.currentTarget.contains(event.relatedTarget)
+              ) {
+                return;
+              }
+              setHasFocusWithin(false);
+              setIsMenuOpen(false);
+              onHoverChange?.(false);
+            },
+            onMouseEnter: () => {
+              setIsPointerInside(true);
+            },
+            onMouseLeave: () => {
+              setIsPointerInside(false);
+            },
+            'aria-keyshortcuts': config.canClear
+              ? 'Delete Backspace'
+              : undefined,
+            'aria-label': badgeAriaLabel,
             role: 'button' as const,
             tabIndex: 0,
           }
@@ -411,7 +469,13 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
                         : 'pointer-events-none opacity-0 -translate-x-1'
                     }`}
                     type="button"
-                    aria-label={isEditing ? 'Batal edit' : 'Edit'}
+                    aria-label={
+                      isEditing
+                        ? `Finish editing ${actionTargetLabel}`
+                        : `Edit ${actionTargetLabel}`
+                    }
+                    aria-hidden={!wantsEditButton}
+                    tabIndex={wantsEditButton ? 0 : -1}
                   >
                     {isEditing ? (
                       <TbX className="block w-3.5 h-3.5 flex-shrink-0" />
@@ -421,7 +485,7 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
                   </button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  {isEditing ? 'Batal edit' : 'Edit'}
+                  {isEditing ? 'Finish editing' : 'Edit'}
                 </TooltipContent>
               </Tooltip>
             </div>
@@ -451,12 +515,14 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
                         : 'pointer-events-none opacity-0 -translate-x-1'
                     }`}
                     type="button"
-                    aria-label="Hapus"
+                    aria-label={`Remove ${actionTargetLabel}`}
+                    aria-hidden={!wantsDeleteButton}
+                    tabIndex={wantsDeleteButton ? 0 : -1}
                   >
                     <TbTrash className="block w-3.5 h-3.5 flex-shrink-0" />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent>Hapus</TooltipContent>
+                <TooltipContent>Remove</TooltipContent>
               </Tooltip>
             </div>
           )}
@@ -484,12 +550,14 @@ const Badge: React.FC<BadgeProps> = ({ config }) => {
                         : 'pointer-events-none opacity-0 -translate-x-1'
                     }`}
                     type="button"
-                    aria-label="Tambah kondisi"
+                    aria-label={`Add condition after ${actionTargetLabel}`}
+                    aria-hidden={!wantsInsertButton}
+                    tabIndex={wantsInsertButton ? 0 : -1}
                   >
                     <TbCirclePlus className="block w-4 h-4 flex-shrink-0" />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent>Tambah kondisi</TooltipContent>
+                <TooltipContent>Add condition</TooltipContent>
               </Tooltip>
             </div>
           )}
