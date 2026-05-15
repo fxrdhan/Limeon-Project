@@ -22,6 +22,8 @@ import {
   TbShoppingCart,
 } from 'react-icons/tb';
 
+import { MASTER_DATA_TAB_PATHS } from '@/features/item-management/shared/masterDataNavigation';
+
 const ITEM_MASTER_PATH = '/master-data/item-master';
 const BRAND_NAME = 'PharmaSys';
 const SUBMENU_ITEM_HEIGHT = 48;
@@ -100,10 +102,10 @@ const MENU_ITEMS: MenuItem[] = [
     icon: <DatabaseIcon />,
     children: [
       { name: 'Item Master', path: ITEM_MASTER_PATH },
-      { name: 'Supplier', path: '/master-data/suppliers' },
-      { name: 'Pelanggan', path: '/master-data/customers' },
-      { name: 'Pasien', path: '/master-data/patients' },
-      { name: 'Dokter', path: '/master-data/doctors' },
+      { name: 'Supplier', path: MASTER_DATA_TAB_PATHS.suppliers },
+      { name: 'Pelanggan', path: MASTER_DATA_TAB_PATHS.customers },
+      { name: 'Pasien', path: MASTER_DATA_TAB_PATHS.patients },
+      { name: 'Dokter', path: MASTER_DATA_TAB_PATHS.doctors },
     ],
   },
   {

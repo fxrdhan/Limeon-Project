@@ -1,5 +1,6 @@
 import ErrorBoundary from '@/components/error-boundary';
 import { TableLoadingFallback } from '@/components/loading-fallback';
+import { MASTER_DATA_UNIFIED_GRID_ROUTE_PREFIXES } from '@/features/item-management/shared/masterDataNavigation';
 import { Suspense, lazy, memo } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 
@@ -10,12 +11,9 @@ const ItemMaster = lazy(
 const MasterDataLayout = memo(function MasterDataLayout() {
   const location = useLocation();
 
-  const isUnifiedGridRoute =
-    location.pathname.startsWith('/master-data/item-master') ||
-    location.pathname.startsWith('/master-data/suppliers') ||
-    location.pathname.startsWith('/master-data/customers') ||
-    location.pathname.startsWith('/master-data/patients') ||
-    location.pathname.startsWith('/master-data/doctors');
+  const isUnifiedGridRoute = MASTER_DATA_UNIFIED_GRID_ROUTE_PREFIXES.some(
+    path => location.pathname.startsWith(path)
+  );
 
   if (!isUnifiedGridRoute) {
     return <Outlet />;

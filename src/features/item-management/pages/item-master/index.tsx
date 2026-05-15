@@ -15,10 +15,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 // Components
 import PageTitle from '@/components/page-title';
-import {
-  SlidingSelector,
-  SlidingSelectorOption,
-} from '@/components/shared/sliding-selector';
+import { SlidingSelector } from '@/components/shared/sliding-selector';
 import EntityGrid from '@/features/item-management/presentation/organisms/EntityGrid';
 import SearchToolbar from '@/components/SearchToolbar';
 
@@ -44,12 +41,17 @@ import { useCustomerLevels } from '@/features/item-management/application/hooks/
 import {
   LAST_ITEM_MASTER_TAB_SESSION_KEY,
   MasterDataType,
-  OtherMasterDataTab,
   getItemMasterSearchSessionKey,
   isItemMasterEntityTab,
   isItemMasterTab,
   isOtherMasterDataTab,
 } from '@/features/item-management/shared/types';
+import {
+  ITEM_MASTER_SWITCHER_TAB_OPTIONS,
+  OTHER_MASTER_DATA_CONFIG,
+  getMasterDataPathForTab,
+  getMasterDataTabFromUrlSegment,
+} from './config';
 
 // Entity management hooks
 import {
@@ -84,116 +86,6 @@ const EntityModal = lazy(
 );
 const SupplierModals = lazy(() => import('./components/SupplierModals'));
 const IdentityDataModal = lazy(() => import('@/components/IdentityDataModal'));
-
-// Transform to SlidingSelector format
-const TAB_OPTIONS: SlidingSelectorOption<MasterDataType>[] = [
-  {
-    key: 'items',
-    value: 'items',
-    defaultLabel: 'Item',
-    activeLabel: 'Daftar Item',
-  },
-  {
-    key: 'categories',
-    value: 'categories',
-    defaultLabel: 'Kategori',
-    activeLabel: 'Kategori Item',
-  },
-  {
-    key: 'types',
-    value: 'types',
-    defaultLabel: 'Jenis',
-    activeLabel: 'Jenis Item',
-  },
-  {
-    key: 'packages',
-    value: 'packages',
-    defaultLabel: 'Kemasan',
-    activeLabel: 'Kemasan Item',
-  },
-  {
-    key: 'dosages',
-    value: 'dosages',
-    defaultLabel: 'Sediaan',
-    activeLabel: 'Sediaan Item',
-  },
-  {
-    key: 'manufacturers',
-    value: 'manufacturers',
-    defaultLabel: 'Produsen',
-    activeLabel: 'Produsen Item',
-  },
-  {
-    key: 'units',
-    value: 'units',
-    defaultLabel: 'Satuan Ukur',
-    activeLabel: 'Satuan Ukur',
-  },
-  {
-    key: 'suppliers',
-    value: 'suppliers',
-    defaultLabel: 'Supplier',
-    activeLabel: 'Daftar Supplier',
-  },
-];
-
-const SWITCHER_TAB_OPTIONS = TAB_OPTIONS.filter(
-  option => option.value !== 'suppliers'
-);
-
-const URL_TO_TAB_MAP: Record<string, MasterDataType> = {
-  items: 'items',
-  categories: 'categories',
-  types: 'types',
-  packages: 'packages',
-  dosages: 'dosages',
-  manufacturers: 'manufacturers',
-  units: 'units',
-  suppliers: 'suppliers',
-  customers: 'customers',
-  patients: 'patients',
-  doctors: 'doctors',
-};
-
-const OTHER_MASTER_DATA_CONFIG: Record<
-  OtherMasterDataTab,
-  {
-    title: string;
-    entityName: string;
-    searchPlaceholder: string;
-    exportFilename: string;
-    noDataMessage: string;
-    searchNoDataMessage: string;
-  }
-> = {
-  customers: {
-    title: 'Daftar Pelanggan',
-    entityName: 'Pelanggan',
-    searchPlaceholder:
-      'Cari pelanggan atau ketik # untuk pencarian kolom spesifik',
-    exportFilename: 'daftar-pelanggan',
-    noDataMessage: 'Tidak ada data pelanggan yang ditemukan',
-    searchNoDataMessage: 'Tidak ada pelanggan dengan kata kunci',
-  },
-  patients: {
-    title: 'Daftar Pasien',
-    entityName: 'Pasien',
-    searchPlaceholder:
-      'Cari pasien atau ketik # untuk pencarian kolom spesifik',
-    exportFilename: 'daftar-pasien',
-    noDataMessage: 'Tidak ada data pasien yang ditemukan',
-    searchNoDataMessage: 'Tidak ada pasien dengan kata kunci',
-  },
-  doctors: {
-    title: 'Daftar Dokter',
-    entityName: 'Dokter',
-    searchPlaceholder:
-      'Cari dokter atau ketik # untuk pencarian kolom spesifik',
-    exportFilename: 'daftar-dokter',
-    noDataMessage: 'Tidak ada data dokter yang ditemukan',
-    searchNoDataMessage: 'Tidak ada dokter dengan kata kunci',
-  },
-};
 
 // Session storage utility
 const saveLastTabToSession = (tab: MasterDataType): void => {
@@ -294,7 +186,7 @@ const ItemMasterNew = memo(() => {
     }
     const pathSegments = normalizedPath.split('/');
     const lastSegment = pathSegments[pathSegments.length - 1];
-    return URL_TO_TAB_MAP[lastSegment] || 'items';
+    return getMasterDataTabFromUrlSegment(lastSegment) || 'items';
   }, []);
 
   // Use getDerivedStateFromProps to sync activeTab with URL changes
@@ -320,7 +212,7 @@ const ItemMasterNew = memo(() => {
     if (normalizedPath !== '/master-data/item-master') return;
 
     const lastTab = getLastTabFromSession();
-    void navigate(`/master-data/item-master/${lastTab}`, { replace: true });
+    void navigate(getMasterDataPathForTab(lastTab), { replace: true });
   }, [location.pathname, navigate]);
 
   // Persist last tab as a side-effect (no derived React state needed).
@@ -1663,17 +1555,7 @@ const ItemMasterNew = memo(() => {
         )
       );
 
-      void navigate(
-        targetTab === 'suppliers'
-          ? '/master-data/suppliers'
-          : targetTab === 'customers'
-            ? '/master-data/customers'
-            : targetTab === 'patients'
-              ? '/master-data/patients'
-              : targetTab === 'doctors'
-                ? '/master-data/doctors'
-                : `/master-data/item-master/${targetTab}`
-      );
+      void navigate(getMasterDataPathForTab(targetTab));
 
       // Save selected tab to session storage for future visits
       saveLastTabToSession(targetTab);
@@ -1826,24 +1708,28 @@ const ItemMasterNew = memo(() => {
 
   // Tab navigation handlers for keyboard shortcuts
   const handleTabNext = useCallback(() => {
-    const currentIndex = SWITCHER_TAB_OPTIONS.findIndex(
+    const currentIndex = ITEM_MASTER_SWITCHER_TAB_OPTIONS.findIndex(
       opt => opt.value === activeTab
     );
     const safeIndex = currentIndex === -1 ? 0 : currentIndex;
     const nextIndex =
-      safeIndex < SWITCHER_TAB_OPTIONS.length - 1 ? safeIndex + 1 : 0;
-    const nextTab = SWITCHER_TAB_OPTIONS[nextIndex];
+      safeIndex < ITEM_MASTER_SWITCHER_TAB_OPTIONS.length - 1
+        ? safeIndex + 1
+        : 0;
+    const nextTab = ITEM_MASTER_SWITCHER_TAB_OPTIONS[nextIndex];
     handleTabChange(nextTab.key, nextTab.value);
   }, [activeTab, handleTabChange]);
 
   const handleTabPrevious = useCallback(() => {
-    const currentIndex = SWITCHER_TAB_OPTIONS.findIndex(
+    const currentIndex = ITEM_MASTER_SWITCHER_TAB_OPTIONS.findIndex(
       opt => opt.value === activeTab
     );
     const safeIndex = currentIndex === -1 ? 0 : currentIndex;
     const prevIndex =
-      safeIndex > 0 ? safeIndex - 1 : SWITCHER_TAB_OPTIONS.length - 1;
-    const prevTab = SWITCHER_TAB_OPTIONS[prevIndex];
+      safeIndex > 0
+        ? safeIndex - 1
+        : ITEM_MASTER_SWITCHER_TAB_OPTIONS.length - 1;
+    const prevTab = ITEM_MASTER_SWITCHER_TAB_OPTIONS[prevIndex];
     handleTabChange(prevTab.key, prevTab.value);
   }, [activeTab, handleTabChange]);
 
@@ -1952,6 +1838,34 @@ const ItemMasterNew = memo(() => {
           : isDoctorTab
             ? doctorSearch
             : entitySearch;
+
+  const latestSearchSnapshotRef = useRef<{
+    tab: MasterDataType;
+    pattern: string;
+    columns: SearchColumn[];
+  } | null>(null);
+
+  useEffect(() => {
+    latestSearchSnapshotRef.current = {
+      tab: activeTab,
+      pattern: activeSearchValue,
+      columns: activeSearchColumns,
+    };
+  }, [activeSearchColumns, activeSearchValue, activeTab]);
+
+  useEffect(() => {
+    return () => {
+      const snapshot = latestSearchSnapshotRef.current;
+      if (!snapshot || snapshot.tab !== activeTab) {
+        return;
+      }
+
+      saveSearchPatternToSession(
+        snapshot.tab,
+        normalizePendingOperatorPattern(snapshot.pattern, snapshot.columns)
+      );
+    };
+  }, [activeTab]);
 
   // Restore SearchBar badge UI per tab from its dedicated session key.
   // Using the explicit search key as the source of truth avoids badge leakage
@@ -2206,7 +2120,7 @@ const ItemMasterNew = memo(() => {
           <div className="absolute left-0 pb-4 pt-6">
             {showTabSelector && (
               <SlidingSelector
-                options={SWITCHER_TAB_OPTIONS}
+                options={ITEM_MASTER_SWITCHER_TAB_OPTIONS}
                 activeKey={activeTab}
                 onSelectionChange={handleTabChange}
                 variant="tabs"

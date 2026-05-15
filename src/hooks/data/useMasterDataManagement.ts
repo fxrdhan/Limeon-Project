@@ -148,7 +148,7 @@ export const useMasterDataManagement = (
   // Get mutations
   const mutations = hooks.useMutations();
 
-  // Filter and paginate data locally
+  // Filter locally; AG Grid owns pagination and page-size state.
   const { currentData, totalItems: totalEntities } = useMemo(() => {
     let filteredData = allData as MasterDataIdentity[];
 
@@ -294,17 +294,13 @@ export const useMasterDataManagement = (
       });
     }
 
-    // Apply pagination
     const totalEntities = filteredData.length;
-    const startIndex = (currentPage - 1) * identitiesPerPage;
-    const endIndex = startIndex + identitiesPerPage;
-    const paginatedData = filteredData.slice(startIndex, endIndex);
 
     return {
-      currentData: paginatedData,
+      currentData: filteredData,
       totalItems: totalEntities,
     };
-  }, [allData, debouncedSearch, currentPage, identitiesPerPage, tableName]);
+  }, [allData, debouncedSearch, tableName]);
 
   const queryError = error instanceof Error ? error : null;
 

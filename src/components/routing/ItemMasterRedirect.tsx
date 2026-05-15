@@ -1,32 +1,18 @@
 import { Navigate } from 'react-router-dom';
 
-const LAST_TAB_SESSION_KEY = 'item_master_last_tab';
+import { getMasterDataPathForTab } from '@/features/item-management/shared/masterDataNavigation';
+import {
+  ITEM_MASTER_TABS,
+  LAST_ITEM_MASTER_TAB_SESSION_KEY,
+  type ItemMasterTab,
+} from '@/features/item-management/shared/types';
 
-type MasterDataType =
-  | 'items'
-  | 'categories'
-  | 'types'
-  | 'packages'
-  | 'dosages'
-  | 'manufacturers'
-  | 'units';
-
-const VALID_TABS: MasterDataType[] = [
-  'items',
-  'categories',
-  'types',
-  'packages',
-  'dosages',
-  'manufacturers',
-  'units',
-];
-
-const getLastTabFromSession = (): MasterDataType => {
+const getLastTabFromSession = (): ItemMasterTab => {
   try {
-    const savedTab = sessionStorage.getItem(LAST_TAB_SESSION_KEY);
+    const savedTab = sessionStorage.getItem(LAST_ITEM_MASTER_TAB_SESSION_KEY);
 
-    if (savedTab && VALID_TABS.includes(savedTab as MasterDataType)) {
-      return savedTab as MasterDataType;
+    if (savedTab && ITEM_MASTER_TABS.includes(savedTab as ItemMasterTab)) {
+      return savedTab as ItemMasterTab;
     }
   } catch {
     // Session storage error, fallback to default
@@ -43,7 +29,7 @@ const getLastTabFromSession = (): MasterDataType => {
  */
 export const ItemMasterRedirect = () => {
   const targetTab = getLastTabFromSession();
-  const redirectPath = `/master-data/item-master/${targetTab}`;
+  const redirectPath = getMasterDataPathForTab(targetTab);
 
   return <Navigate to={redirectPath} replace />;
 };
