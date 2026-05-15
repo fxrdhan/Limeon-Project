@@ -1654,6 +1654,47 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     };
   }, [selectedBadgeIndex]);
 
+  // Plain Backspace/Delete should remove the selected badge even when focus has
+  // moved into an empty selector searchbox.
+  useEffect(() => {
+    if (selectedBadgeIndex === null) return;
+
+    const handleGlobalSelectedBadgeDelete = (e: KeyboardEvent) => {
+      if (e.key !== 'Backspace' && e.key !== 'Delete') return;
+      if (e.altKey || e.ctrlKey || e.metaKey) return;
+
+      const target = e.target;
+      if (target instanceof HTMLInputElement) {
+        if (target.classList.contains('badge-edit-input')) return;
+        if (target.value.length > 0) return;
+      } else if (target instanceof HTMLTextAreaElement) {
+        if (target.value.length > 0) return;
+      } else if (target instanceof HTMLElement && target.isContentEditable) {
+        return;
+      }
+
+      const badge = badgesRef.current[selectedBadgeIndex];
+      if (!badge || !badge.canClear || !badge.onClear) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+
+      setSelectedBadgeIndex(null);
+      badge.onClear();
+    };
+
+    window.addEventListener('keydown', handleGlobalSelectedBadgeDelete, {
+      capture: true,
+    });
+
+    return () => {
+      window.removeEventListener('keydown', handleGlobalSelectedBadgeDelete, {
+        capture: true,
+      });
+    };
+  }, [selectedBadgeIndex]);
+
   // Handler for Ctrl+Arrow keyboard navigation
   const handleBadgeNavigation = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {

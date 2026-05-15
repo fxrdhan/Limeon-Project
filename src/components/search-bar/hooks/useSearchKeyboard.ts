@@ -219,7 +219,22 @@ export const useSearchKeyboard = ({
     if (!isAnySelectorOpen) return;
 
     const onGlobalKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== KEY_CODES.DELETE) return;
+      const isDeleteKey = e.key === KEY_CODES.DELETE;
+      const isBackspaceKey = e.key === KEY_CODES.BACKSPACE;
+      if (!isDeleteKey && !isBackspaceKey) return;
+
+      if (isBackspaceKey) {
+        const target = e.target;
+        if (target instanceof HTMLInputElement && target.value.length > 0) {
+          return;
+        }
+        if (target instanceof HTMLTextAreaElement && target.value.length > 0) {
+          return;
+        }
+        if (target instanceof HTMLElement && target.isContentEditable) {
+          return;
+        }
+      }
 
       if (onStepBackDelete?.()) {
         e.preventDefault();
