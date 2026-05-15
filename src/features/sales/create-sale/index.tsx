@@ -70,7 +70,7 @@ const CreateSalePage: React.FC = () => {
       setTimeout(() => {
         itemSearchBarRef.current?.focus();
       }, 100);
-    }, 300);
+    }, 200);
   };
 
   return (

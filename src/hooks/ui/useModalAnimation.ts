@@ -22,6 +22,9 @@ export const useModalAnimation = ({
     visible: {
       opacity: 1,
     },
+    exit: {
+      opacity: 0,
+    },
   };
 
   const modalVariants = {
@@ -33,6 +36,10 @@ export const useModalAnimation = ({
       scale: 1,
       opacity: 1,
     },
+    exit: {
+      scale: 0.95,
+      opacity: 0,
+    },
   };
 
   const contentVariants = {
@@ -41,6 +48,9 @@ export const useModalAnimation = ({
     },
     visible: {
       opacity: 1,
+    },
+    exit: {
+      opacity: 0,
     },
   };
 

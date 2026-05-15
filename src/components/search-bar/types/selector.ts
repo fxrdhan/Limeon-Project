@@ -37,7 +37,6 @@ export interface BaseSelectorProps<T> {
   defaultSelectedIndex?: number; // Pre-select item at this index when opening
   onHighlightChange?: (item: T | null) => void; // Called when highlighted item changes (for live preview)
   contentKey?: string;
-  contentSlideDirection?: -1 | 0 | 1;
   outsideClickIgnoreRef?: React.RefObject<HTMLElement | null>;
   outsideClickIgnoreRefs?: React.RefObject<HTMLElement | null>[];
 }

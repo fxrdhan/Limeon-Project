@@ -378,7 +378,7 @@ const PurchaseList = () => {
             void queryClient.invalidateQueries({
               queryKey: QueryKeys.purchases.all,
             });
-          }, 100);
+          }, 200);
         }}
         isClosing={isAddPurchaseClosing}
         setIsClosing={setIsAddPurchaseClosing}

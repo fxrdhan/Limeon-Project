@@ -987,7 +987,7 @@ const ItemMasterNew = memo(() => {
       setEditingItemId(undefined);
       setEditingItemData(undefined);
       setCurrentSearchQueryForModal(undefined);
-    }, 100);
+    }, 200);
   }, []);
 
   // Memoize item handlers

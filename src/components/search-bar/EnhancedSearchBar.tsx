@@ -63,7 +63,6 @@ const withFallback = <T,>(value: T | undefined, fallback: T): T =>
 const withEmptyString = (value: string | undefined): string =>
   withFallback(value, '');
 
-type ActiveSelectorKind = 'column' | 'operator' | 'join';
 type ActiveSelectorItem = SearchColumn | FilterOperator | JoinOperator;
 
 const getColumnSelectorIcon = (column: SearchColumn) => {
@@ -3413,21 +3412,9 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
       : editingSelectorTarget
         ? `edit:${editingSelectorTarget.target}:${editingSelectorTarget.conditionIndex}`
         : `active:${activeConditionIndex}`;
-    const targetOrder =
-      groupEditingSelectorTarget?.path[
-        groupEditingSelectorTarget.path.length - 1
-      ] ??
-      editingSelectorTarget?.conditionIndex ??
-      activeConditionIndex;
-
-    const buildOrder = (kind: ActiveSelectorKind) =>
-      targetOrder * 3 + (kind === 'column' ? 0 : kind === 'operator' ? 1 : 2);
-
     if (searchMode.showColumnSelector) {
       return {
-        kind: 'column' as const,
         contentKey: `column:${targetKey}`,
-        order: buildOrder('column'),
         items: sortedColumns as readonly ActiveSelectorItem[],
         onSelect: handleColumnSelectWithGroups as (
           item: ActiveSelectorItem
@@ -3446,9 +3433,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
     if (searchMode.showOperatorSelector) {
       return {
-        kind: 'operator' as const,
         contentKey: `operator:${targetKey}`,
-        order: buildOrder('operator'),
         items: operators as readonly ActiveSelectorItem[],
         onSelect: handleOperatorSelectWithGroups as (
           item: ActiveSelectorItem
@@ -3468,9 +3453,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
 
     if (searchMode.showJoinOperatorSelector) {
       return {
-        kind: 'join' as const,
         contentKey: `join:${targetKey}`,
-        order: buildOrder('join'),
         items: restrictedJoinOperators as readonly ActiveSelectorItem[],
         onSelect: handleJoinOperatorSelectWithGroups as (
           item: ActiveSelectorItem
@@ -3517,11 +3500,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     sortedColumns,
   ]);
 
-  const selectorSlideStateRef = useRef<{
-    contentKey: string;
-    order: number;
-    left: number;
-  } | null>(null);
   const selectorIgnoredOutsidePressRefs = useMemo(
     () => [containerRef, ...(selectorOutsideIgnoreRefs ?? [])],
     [selectorOutsideIgnoreRefs]
@@ -3530,35 +3508,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
     activeSelector !== null &&
     !suppressSelectors &&
     dismissedSelectorValue !== value;
-  let selectorContentSlideDirection: -1 | 0 | 1 = 0;
-  if (isSelectorPopupVisible) {
-    const previous = selectorSlideStateRef.current;
-    if (previous && previous.contentKey !== activeSelector.contentKey) {
-      const hasMeasuredPositions =
-        previous.left > 0 && activeSelector.position.left > 0;
-      if (
-        hasMeasuredPositions &&
-        Math.abs(activeSelector.position.left - previous.left) > 2
-      ) {
-        selectorContentSlideDirection =
-          activeSelector.position.left > previous.left ? 1 : -1;
-      } else {
-        selectorContentSlideDirection =
-          activeSelector.order > previous.order
-            ? 1
-            : activeSelector.order < previous.order
-              ? -1
-              : 0;
-      }
-    }
-    selectorSlideStateRef.current = {
-      contentKey: activeSelector.contentKey,
-      order: activeSelector.order,
-      left: activeSelector.position.left,
-    };
-  } else {
-    selectorSlideStateRef.current = null;
-  }
 
   useEffect(() => {
     onSelectorOpenChange?.(isSelectorPopupVisible);
@@ -3710,7 +3659,6 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
           defaultSelectedIndex={activeSelector.defaultSelectedIndex}
           onHighlightChange={activeSelector.onHighlightChange}
           contentKey={activeSelector.contentKey}
-          contentSlideDirection={selectorContentSlideDirection}
           outsideClickIgnoreRefs={selectorIgnoredOutsidePressRefs}
         />
       )}

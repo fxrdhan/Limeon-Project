@@ -1,6 +1,13 @@
-import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import type React from 'react';
 import { createPortal } from 'react-dom';
+import { motion, type HTMLMotionProps } from 'motion/react';
 import {
   useComboboxStateContext,
   useComboboxStaticContext,
@@ -22,8 +29,24 @@ type ComboboxPositionerProps = React.ComponentPropsWithoutRef<'div'> & {
   sideOffset?: number;
 };
 
-type ComboboxPopupProps = React.ComponentPropsWithoutRef<'div'> & {
+type ComboboxPopupProps = Omit<
+  HTMLMotionProps<'div'>,
+  'animate' | 'initial' | 'transition' | 'variants'
+> & {
   initialFocus?: boolean;
+};
+
+const comboboxPopupCloseAnimationMs = 200;
+
+const comboboxPopupVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1 },
+  exit: { opacity: 0 },
+};
+
+const comboboxPopupTransition = {
+  duration: 0.2,
+  ease: 'easeOut' as const,
 };
 
 const popupFocusableSelector = [
@@ -35,12 +58,46 @@ const popupFocusableSelector = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(',');
 
+function useComboboxOpenPresence(open: boolean) {
+  const [present, setPresent] = useState(open);
+  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+
+    if (open) {
+      setPresent(true);
+      return;
+    }
+
+    if (!present) return;
+
+    closeTimeoutRef.current = setTimeout(() => {
+      setPresent(false);
+      closeTimeoutRef.current = null;
+    }, comboboxPopupCloseAnimationMs);
+
+    return () => {
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+        closeTimeoutRef.current = null;
+      }
+    };
+  }, [open, present]);
+
+  return present;
+}
+
 export function ComboboxPortal({
   children,
   container,
   containerRef,
 }: ComboboxPortalProps) {
   const { open } = useComboboxStateContext<unknown>();
+  const present = useComboboxOpenPresence(open);
   const [resolvedRefContainer, setResolvedRefContainer] = useState<
     Element | DocumentFragment | null
   >(null);
@@ -57,7 +114,7 @@ export function ComboboxPortal({
     );
   }, [container, containerRef, open]);
 
-  if (!open || typeof document === 'undefined') return null;
+  if (!present || typeof document === 'undefined') return null;
 
   const portalContainer =
     container !== undefined
@@ -79,15 +136,16 @@ export function ComboboxPositioner({
   ...props
 }: ComboboxPositionerProps) {
   const { open } = useComboboxStateContext<unknown>();
+  const present = useComboboxOpenPresence(open);
   const { triggerRef } = useComboboxStaticContext();
   const { floatingStyles, setFloating } = useComboboxFloatingPositioner({
-    open,
+    open: present,
     placement,
     sideOffset,
     triggerRef,
   });
 
-  if (!open) return null;
+  if (!present) return null;
 
   return (
     <div
@@ -100,6 +158,7 @@ export function ComboboxPositioner({
         maxWidth: 'var(--available-width)',
         minWidth: matchAnchorWidth ? undefined : 'var(--anchor-width)',
         overflow: 'visible',
+        pointerEvents: open ? undefined : 'none',
         width: matchAnchorWidth ? 'var(--anchor-width)' : 'max-content',
         ...style,
       }}
@@ -112,9 +171,11 @@ export function ComboboxPositioner({
 export function ComboboxPopup({
   children,
   initialFocus = false,
+  style,
   ...props
 }: ComboboxPopupProps) {
   const { open } = useComboboxStateContext<unknown>();
+  const present = useComboboxOpenPresence(open);
   const { popupRef } = useComboboxStaticContext();
 
   const setPopupRef = useCallback(
@@ -133,11 +194,22 @@ export function ComboboxPopup({
     focusTarget?.focus({ preventScroll: true });
   }, [initialFocus, open, popupRef]);
 
-  if (!open) return null;
+  if (!present) return null;
 
   return (
-    <div data-combobox-popup="" {...props} ref={setPopupRef}>
+    <motion.div
+      {...props}
+      data-combobox-popup=""
+      data-state={open ? 'open' : 'closed'}
+      aria-hidden={open ? undefined : true}
+      ref={setPopupRef}
+      initial="hidden"
+      animate={open ? 'visible' : 'exit'}
+      variants={comboboxPopupVariants}
+      transition={comboboxPopupTransition}
+      style={style}
+    >
       {children}
-    </div>
+    </motion.div>
   );
 }

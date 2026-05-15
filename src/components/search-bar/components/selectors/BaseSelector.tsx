@@ -4,6 +4,7 @@ import React, {
   useLayoutEffect,
   useMemo,
   useRef,
+  useState,
   type CSSProperties,
 } from 'react';
 import { motion } from 'motion/react';
@@ -29,10 +30,6 @@ const searchSelectorClassNames = {
   optionHighlight: searchSelectorHighlightClassName,
 } satisfies PharmaComboboxClassNames;
 const selectorPopupTransition = 'transition-[left,top] duration-150 ease-out';
-const selectorContentTransition = {
-  duration: 0.16,
-  ease: 'easeOut' as const,
-};
 const forwardedSelectorKeys = new Set([
   'ArrowDown',
   'ArrowUp',
@@ -164,7 +161,6 @@ function BaseSelectorContent<T>({
   modalPosition,
   searchTerm: externalSearchTerm = '',
   config,
-  contentSlideDirection,
   defaultSelectedIndex,
   onHighlightChange,
   ignoredOutsidePressRefs,
@@ -394,9 +390,6 @@ function BaseSelectorContent<T>({
   const contentStyle = {
     maxHeight: popupMaxHeight,
   } satisfies CSSProperties;
-  const slideDirection = contentSlideDirection ?? 0;
-  const contentInitial =
-    slideDirection === 0 ? false : { opacity: 0.86, x: slideDirection * 18 };
 
   return (
     <div
@@ -419,13 +412,9 @@ function BaseSelectorContent<T>({
             style={contentStyle}
             onBlur={root.handleComboboxBlur}
           >
-            <motion.div
-              key={activeContentKey}
+            <div
               data-search-selector-content=""
               className="relative flex min-h-0 flex-col overflow-hidden"
-              initial={contentInitial}
-              animate={{ opacity: 1, x: 0 }}
-              transition={selectorContentTransition}
             >
               {highlight.heldFrame ? (
                 <motion.div
@@ -454,7 +443,7 @@ function BaseSelectorContent<T>({
                   {noResultsMessage}
                 </SearchSelectorCombobox.Empty>
               ) : null}
-            </motion.div>
+            </div>
           </div>
         </SearchSelectorCombobox.Popup>
       </SearchSelectorRoot>
@@ -473,12 +462,25 @@ function BaseSelector<T>({
   defaultSelectedIndex,
   onHighlightChange,
   contentKey,
-  contentSlideDirection,
   outsideClickIgnoreRef,
   outsideClickIgnoreRefs,
 }: BaseSelectorProps<T>) {
   const activeContentKey = contentKey ?? config.headerText;
-  const isSelectorVisible = isOpen && (position.isReady ?? true);
+  const isPositionReady = position.isReady ?? true;
+  const currentModalPosition = useMemo(
+    () => ({
+      x: position.left,
+      y: position.top + 5,
+    }),
+    [position.left, position.top]
+  );
+  const [lastReadyModalPosition, setLastReadyModalPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+  const modalPosition = isPositionReady
+    ? currentModalPosition
+    : lastReadyModalPosition;
   const ignoredOutsidePressRefs = useMemo(
     () => [
       ...(outsideClickIgnoreRef ? [outsideClickIgnoreRef] : []),
@@ -486,19 +488,32 @@ function BaseSelector<T>({
     ],
     [outsideClickIgnoreRef, outsideClickIgnoreRefs]
   );
-  const modalPosition = useMemo(
-    () => ({
-      x: position.left,
-      y: position.top + 5,
-    }),
-    [position.left, position.top]
-  );
-
   useEffect(() => {
     if (!isOpen) onHighlightChange?.(null);
   }, [isOpen, onHighlightChange]);
 
-  if (!isSelectorVisible) return null;
+  useLayoutEffect(() => {
+    if (!isOpen) {
+      setLastReadyModalPosition(null);
+      return;
+    }
+
+    if (!isPositionReady) return;
+
+    setLastReadyModalPosition(previous => {
+      if (
+        previous &&
+        Math.abs(previous.x - currentModalPosition.x) < 0.5 &&
+        Math.abs(previous.y - currentModalPosition.y) < 0.5
+      ) {
+        return previous;
+      }
+
+      return currentModalPosition;
+    });
+  }, [currentModalPosition, isOpen, isPositionReady]);
+
+  if (!isOpen || modalPosition === null) return null;
 
   return (
     <BaseSelectorContent<T>
@@ -513,7 +528,6 @@ function BaseSelector<T>({
       defaultSelectedIndex={defaultSelectedIndex}
       onHighlightChange={onHighlightChange}
       contentKey={contentKey}
-      contentSlideDirection={contentSlideDirection}
       outsideClickIgnoreRef={outsideClickIgnoreRef}
       outsideClickIgnoreRefs={outsideClickIgnoreRefs}
       ignoredOutsidePressRefs={ignoredOutsidePressRefs}

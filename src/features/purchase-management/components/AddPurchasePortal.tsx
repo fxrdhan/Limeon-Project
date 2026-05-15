@@ -100,7 +100,7 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
       setTimeout(() => {
         itemSearchBarRef.current?.focus();
       }, 100);
-    }, 300);
+    }, 200);
   };
 
   return createPortal(
