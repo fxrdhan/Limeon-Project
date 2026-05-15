@@ -27,7 +27,7 @@ const JoinOperatorSelector: React.FC<JoinOperatorSelectorProps> = ({
       headerText: 'Pilih operator join',
       footerSingular: 'operator',
       maxHeight: '200px',
-      noResultsText: 'Tidak ada operator yang ditemukan untuk "{searchTerm}"',
+      noResultsText: "'{searchTerm}' tidak ditemukan",
       getItemKey: operator => operator.value,
       getItemLabel: operator => operator.label,
       getItemIcon: operator => operator.icon,

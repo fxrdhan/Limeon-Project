@@ -93,6 +93,12 @@ const ACTIVE_LABEL_SLIDE_TRANSITION = {
   ease: 'easeOut',
 } as const;
 
+const INACTIVE_LABEL_TRIM_TRANSITION = {
+  duration: 0.32,
+  delay: 0.18,
+  ease: 'easeInOut',
+} as const;
+
 const VERTICAL_ITEM_ZOOM_EXIT_TRANSITION = {
   duration: 0.18,
   ease: 'easeOut',
@@ -136,6 +142,101 @@ const SHAPE_CLASSES = {
   },
 };
 
+type InactiveLabelTrimPlan =
+  | {
+      type: 'prefix';
+      removedText: string;
+      keptText: string;
+    }
+  | {
+      type: 'suffix';
+      removedText: string;
+      keptText: string;
+    };
+
+const getInactiveLabelTrimPlan = (
+  activeLabel: string,
+  defaultLabel: string
+): InactiveLabelTrimPlan | null => {
+  if (!activeLabel || !defaultLabel || activeLabel === defaultLabel) {
+    return null;
+  }
+
+  if (activeLabel.endsWith(defaultLabel)) {
+    return {
+      type: 'prefix',
+      removedText: activeLabel.slice(0, -defaultLabel.length),
+      keptText: defaultLabel,
+    };
+  }
+
+  if (activeLabel.startsWith(defaultLabel)) {
+    return {
+      type: 'suffix',
+      removedText: activeLabel.slice(defaultLabel.length),
+      keptText: defaultLabel,
+    };
+  }
+
+  return null;
+};
+
+interface RetiringInactiveLabelProps {
+  activeLabel: string;
+  defaultLabel: string;
+  onComplete: () => void;
+}
+
+const RetiringInactiveLabel = ({
+  activeLabel,
+  defaultLabel,
+  onComplete,
+}: RetiringInactiveLabelProps) => {
+  const trimPlan = getInactiveLabelTrimPlan(activeLabel, defaultLabel);
+
+  if (!trimPlan) {
+    return defaultLabel;
+  }
+
+  if (trimPlan.type === 'prefix') {
+    return (
+      <span className="inline-flex whitespace-nowrap">
+        <motion.span
+          aria-hidden="true"
+          className="inline-block overflow-hidden whitespace-pre"
+          initial={{ width: 'auto', x: 0, opacity: 1 }}
+          animate={{ width: 0, x: -10, opacity: 0 }}
+          transition={INACTIVE_LABEL_TRIM_TRANSITION}
+          onAnimationComplete={onComplete}
+        >
+          {trimPlan.removedText}
+        </motion.span>
+        <span className="inline-block whitespace-nowrap">
+          {trimPlan.keptText}
+        </span>
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex whitespace-nowrap">
+      <span className="inline-block whitespace-nowrap">
+        {trimPlan.keptText}
+      </span>
+      <motion.span
+        aria-hidden="true"
+        className="inline-block overflow-hidden whitespace-pre"
+        initial={{ width: 'auto', x: 0, opacity: 1 }}
+        animate={{ width: 0, x: 10, opacity: 0 }}
+        transition={INACTIVE_LABEL_TRIM_TRANSITION}
+        onAnimationComplete={onComplete}
+      >
+        {trimPlan.removedText}
+      </motion.span>
+    </span>
+  );
+};
+
 export const SlidingSelector = <T,>({
   options,
   activeKey,
@@ -161,7 +262,11 @@ export const SlidingSelector = <T,>({
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [isVerticalActiveFillVisible, setIsVerticalActiveFillVisible] =
     useState(defaultExpanded && expandDirection === 'vertical');
+  const [retiringInactiveKey, setRetiringInactiveKey] = useState<string | null>(
+    null
+  );
   const mouseLeaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const previousActiveKeyRef = useRef(activeKey);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
@@ -175,10 +280,43 @@ export const SlidingSelector = <T,>({
   const showVerticalActiveFill =
     expandDirection === 'vertical' && isVerticalActiveFillVisible;
 
+  const clearRetiringInactiveKey = useCallback((optionKey: string) => {
+    setRetiringInactiveKey(current => (current === optionKey ? null : current));
+  }, []);
+
   // Notify parent whenever expanded state changes
   useEffect(() => {
     onExpandedChange?.(isExpanded);
   }, [isExpanded, onExpandedChange]);
+
+  useEffect(() => {
+    const previousActiveKey = previousActiveKeyRef.current;
+
+    if (previousActiveKey === activeKey) return;
+
+    const previousOption = options.find(
+      option => option.key === previousActiveKey
+    );
+    const trimPlan = previousOption?.activeLabel
+      ? getInactiveLabelTrimPlan(
+          previousOption.activeLabel,
+          previousOption.defaultLabel
+        )
+      : null;
+
+    setRetiringInactiveKey(
+      expandDirection === 'vertical' && isExpanded && trimPlan
+        ? previousActiveKey
+        : null
+    );
+    previousActiveKeyRef.current = activeKey;
+  }, [activeKey, expandDirection, isExpanded, options]);
+
+  useEffect(() => {
+    if (!isExpanded) {
+      setRetiringInactiveKey(null);
+    }
+  }, [isExpanded]);
 
   useEffect(() => {
     if (expandDirection !== 'vertical') {
@@ -416,6 +554,20 @@ export const SlidingSelector = <T,>({
     const isActive = option.key === activeKey;
     const isHovered =
       hoveredIndex === index && !isActive && !disabled && !option.disabled;
+    const inactiveActiveLabel = option.activeLabel;
+    const inactiveLabelTrimPlan = inactiveActiveLabel
+      ? getInactiveLabelTrimPlan(inactiveActiveLabel, option.defaultLabel)
+      : null;
+    let retiringActiveLabel: string | null = null;
+    if (
+      inactiveActiveLabel &&
+      inactiveLabelTrimPlan &&
+      isVerticalItem &&
+      retiringInactiveKey === option.key &&
+      !isActive
+    ) {
+      retiringActiveLabel = inactiveActiveLabel;
+    }
     const verticalItemLayoutId =
       isVerticalItem && swapVerticalItemsOnSelect
         ? `${baseLayoutId}-vertical-item-${option.key}`
@@ -497,7 +649,15 @@ export const SlidingSelector = <T,>({
             }
           )}
         >
-          {getDisplayLabel(option, isActive)}
+          {retiringActiveLabel ? (
+            <RetiringInactiveLabel
+              activeLabel={retiringActiveLabel}
+              defaultLabel={option.defaultLabel}
+              onComplete={() => clearRetiringInactiveKey(option.key)}
+            />
+          ) : (
+            getDisplayLabel(option, isActive)
+          )}
         </motion.span>
       </motion.button>
     );
@@ -689,6 +849,7 @@ export const SlidingSelector = <T,>({
           ref={rootRef}
           role="tablist"
           aria-label="Navigation tabs"
+          tabIndex={-1}
           className={classNames(
             'relative z-50 inline-block select-none',
             className
@@ -749,6 +910,7 @@ export const SlidingSelector = <T,>({
         layout
         role="tablist"
         aria-label="Navigation tabs"
+        tabIndex={-1}
         className={classNames(
           'bg-white shadow-thin text-slate-700 overflow-hidden select-none relative w-fit',
           isVerticalExpanded

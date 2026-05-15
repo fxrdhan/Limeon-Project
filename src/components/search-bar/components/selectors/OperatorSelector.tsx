@@ -21,7 +21,7 @@ const OperatorSelector: React.FC<OperatorSelectorProps> = ({
       headerText: 'Pilih operator filter',
       footerSingular: 'operator',
       maxHeight: '320px',
-      noResultsText: 'Tidak ada operator yang ditemukan untuk "{searchTerm}"',
+      noResultsText: "'{searchTerm}' tidak ditemukan",
       getItemKey: operator => operator.value,
       getItemLabel: operator => operator.label,
       getItemIcon: operator => operator.icon,

@@ -1,7 +1,15 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { TbSearch } from 'react-icons/tb';
 import fuzzysort from 'fuzzysort';
+import { motion } from 'motion/react';
 import { createTypedCombobox } from '@/components/combobox';
+import { comboboxHighlightBackgroundTransition } from '@/components/combobox/components/combobox-highlight-motion';
 import { BaseSelectorProps } from '../../types';
 import { SEARCH_CONSTANTS } from '../../constants';
 
@@ -51,6 +59,7 @@ function BaseSelector<T>({
 }: BaseSelectorProps<T>) {
   const inputRef = useRef<HTMLInputElement>(null);
   const activeContentKey = contentKey ?? config.headerText;
+  const isSelectorVisible = isOpen && (position.isReady ?? true);
   const [inputValue, setInputValue] = useState(externalSearchTerm);
 
   useEffect(() => {
@@ -58,16 +67,12 @@ function BaseSelector<T>({
     setInputValue(externalSearchTerm);
   }, [activeContentKey, externalSearchTerm, isOpen]);
 
-  useEffect(() => {
-    if (!isOpen) return;
+  useLayoutEffect(() => {
+    if (!isSelectorVisible) return;
 
-    const frameId = requestAnimationFrame(() => {
-      inputRef.current?.focus({ preventScroll: true });
-      inputRef.current?.select();
-    });
-
-    return () => cancelAnimationFrame(frameId);
-  }, [activeContentKey, isOpen]);
+    inputRef.current?.focus({ preventScroll: true });
+    inputRef.current?.select();
+  }, [activeContentKey, isSelectorVisible]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -181,10 +186,14 @@ function BaseSelector<T>({
       : config.theme === 'orange'
         ? 'bg-orange-100'
         : 'bg-purple-100';
+  const trimmedInputValue = inputValue.trim();
+  const noResultsMessage = trimmedInputValue
+    ? config.noResultsText.replace('{searchTerm}', trimmedInputValue)
+    : 'Tidak ditemukan';
 
   return (
     <>
-      {isOpen && (position.isReady ?? true) && (
+      {isSelectorVisible && (
         <SearchSelectorCombobox.Root
           key={activeContentKey}
           autoHighlight
@@ -219,16 +228,16 @@ function BaseSelector<T>({
               top: modalPosition.y,
             }}
           >
-            <div className="sticky top-0 z-20 shrink-0 border-b border-slate-100 bg-white px-3 py-2">
+            <div className="sticky top-0 z-20 shrink-0 border-b border-slate-100 bg-white px-3 py-2.5">
               <div className="flex min-w-0 items-center gap-2">
                 <TbSearch
                   aria-hidden="true"
-                  className="h-3.5 w-3.5 shrink-0 text-slate-400"
+                  className="h-4 w-4 shrink-0 text-slate-400"
                 />
                 <SearchSelectorCombobox.Input
                   ref={inputRef}
                   role="searchbox"
-                  className="min-w-[80px] flex-1 border-none bg-transparent p-0 text-xs text-slate-950 outline-hidden transition placeholder:text-slate-400 focus:text-slate-950 focus:ring-0"
+                  className="min-w-[90px] flex-1 border-none bg-transparent p-0 text-[13px] leading-5 text-slate-950 outline-hidden transition placeholder:text-slate-400 focus:text-slate-950 focus:ring-0"
                   aria-label={config.headerText}
                   placeholder="Cari..."
                   tabIndex={0}
@@ -261,9 +270,13 @@ function BaseSelector<T>({
                           className="relative mx-1 flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm outline-hidden transition-colors duration-150"
                         >
                           {state.highlighted && (
-                            <div
+                            <motion.div
+                              key={`search-selector-highlight-${activeContentKey}-${inputValue}`}
+                              layoutId={`search-selector-highlight-${activeContentKey}-${inputValue}`}
                               aria-hidden="true"
                               className={`pointer-events-none absolute inset-0 z-0 rounded-lg ${highlightBackgroundClass}`}
+                              initial={false}
+                              transition={comboboxHighlightBackgroundTransition}
                             />
                           )}
                           <div
@@ -312,12 +325,7 @@ function BaseSelector<T>({
             </SearchSelectorCombobox.List>
 
             <SearchSelectorCombobox.Empty className="px-3 py-4 text-center text-sm text-slate-500">
-              {inputValue.trim()
-                ? config.noResultsText.replace(
-                    '{searchTerm}',
-                    inputValue.trim()
-                  )
-                : config.noResultsText.replace('{searchTerm}', '')}
+              {noResultsMessage}
             </SearchSelectorCombobox.Empty>
           </SearchSelectorCombobox.Popup>
         </SearchSelectorCombobox.Root>

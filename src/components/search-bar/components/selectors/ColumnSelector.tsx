@@ -46,7 +46,7 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
       headerText: 'Pilih kolom',
       footerSingular: 'kolom',
       maxHeight: '320px',
-      noResultsText: 'Tidak ada kolom yang ditemukan untuk "{searchTerm}"',
+      noResultsText: "'{searchTerm}' tidak ditemukan",
       getItemKey: column => column.field,
       getItemLabel: column => column.headerName,
       getItemIcon: getColumnIcon,
