@@ -39,6 +39,7 @@ export interface BaseSelectorProps<T> {
   contentKey?: string;
   outsideClickIgnoreRef?: React.RefObject<HTMLElement | null>;
   outsideClickIgnoreRefs?: React.RefObject<HTMLElement | null>[];
+  isVisuallyReady?: boolean;
 }
 
 export interface ColumnSelectorProps {

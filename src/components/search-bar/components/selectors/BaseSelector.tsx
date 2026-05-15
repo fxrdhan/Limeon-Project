@@ -147,6 +147,7 @@ function SearchSelectorHeader({
 type BaseSelectorContentProps<T> = BaseSelectorProps<T> & {
   activeContentKey: string;
   ignoredOutsidePressRefs: React.RefObject<HTMLElement | null>[];
+  isVisuallyReady: boolean;
   modalPosition: {
     x: number;
     y: number;
@@ -164,6 +165,7 @@ function BaseSelectorContent<T>({
   defaultSelectedIndex,
   onHighlightChange,
   ignoredOutsidePressRefs,
+  isVisuallyReady,
 }: BaseSelectorContentProps<T>) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const inputValueRef = useRef('');
@@ -402,7 +404,8 @@ function BaseSelectorContent<T>({
           initialFocus={false}
           className={cn(
             'fixed z-50 w-max min-w-[220px] max-w-[calc(100vw-1rem)] overflow-hidden rounded-xl bg-white shadow-thin-md',
-            selectorPopupTransition
+            selectorPopupTransition,
+            isVisuallyReady ? 'visible' : 'pointer-events-none invisible'
           )}
           style={popupStyle}
         >
@@ -464,6 +467,7 @@ function BaseSelector<T>({
   contentKey,
   outsideClickIgnoreRef,
   outsideClickIgnoreRefs,
+  isVisuallyReady = true,
 }: BaseSelectorProps<T>) {
   const activeContentKey = contentKey ?? config.headerText;
   const isPositionReady = position.isReady ?? true;
@@ -531,6 +535,7 @@ function BaseSelector<T>({
       outsideClickIgnoreRef={outsideClickIgnoreRef}
       outsideClickIgnoreRefs={outsideClickIgnoreRefs}
       ignoredOutsidePressRefs={ignoredOutsidePressRefs}
+      isVisuallyReady={isVisuallyReady}
       modalPosition={modalPosition}
     />
   );
