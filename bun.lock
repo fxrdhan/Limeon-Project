@@ -5,7 +5,7 @@
     "": {
       "name": "pharmasys",
       "dependencies": {
-        "@ag-grid-community/locale": "35.2.1",
+        "@ag-grid-community/locale": "35.3.0",
         "@floating-ui/react-dom": "^2.1.8",
         "@headlessui/react": "^2.2.10",
         "@supabase/supabase-js": "^2.105.4",
@@ -81,7 +81,7 @@
   "packages": {
     "@adobe/css-tools": ["@adobe/css-tools@4.4.4", "", {}, "sha512-Elp+iwUx5rN5+Y8xLt5/GRoG20WGoDCQ/1Fb+1LiGtvwbDavuSk0jhD/eZdckHAuzcDzccnkv+rEjyWfRx18gg=="],
 
-    "@ag-grid-community/locale": ["@ag-grid-community/locale@35.2.1", "", {}, "sha512-wZHO08v/Yysa2FuSbuEc4TulTqths5iwCDaIogLhykYdQSMF3yetpL6dswtn69mdvRT0C2YBqIZOq4BS1ztnvA=="],
+    "@ag-grid-community/locale": ["@ag-grid-community/locale@35.3.0", "", {}, "sha512-PM1JLyvX3gdAYOKFXfsJODY1nf+AN/uEfGnNbSMgfA5QVkWY9ImdZln+E2odpfOckt2j+N/KQDxaNtFgZ0GrgQ=="],
 
     "@alloc/quick-lru": ["@alloc/quick-lru@5.2.0", "", {}, "sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw=="],
 

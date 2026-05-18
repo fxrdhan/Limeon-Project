@@ -59,7 +59,7 @@
     "prepare": "husky && bun run codex:seed"
   },
   "dependencies": {
-    "@ag-grid-community/locale": "35.2.1",
+    "@ag-grid-community/locale": "35.3.0",
     "@floating-ui/react-dom": "^2.1.8",
     "@headlessui/react": "^2.2.10",
     "@supabase/supabase-js": "^2.105.4",
