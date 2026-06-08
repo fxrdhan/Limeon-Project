@@ -63,7 +63,7 @@
     "@floating-ui/react-dom": "^2.1.8",
     "@headlessui/react": "^2.2.10",
     "@supabase/supabase-js": "^2.105.4",
-    "@tanstack/react-query": "^5.100.14",
+    "@tanstack/react-query": "^5.101.0",
     "@tanstack/react-virtual": "^3.13.26",
     "ag-grid-community": "35.3.0",
     "ag-grid-enterprise": "35.3.0",
