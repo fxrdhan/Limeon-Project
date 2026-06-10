@@ -411,7 +411,12 @@ function BaseSelectorContent<T>({
         >
           <div
             ref={popup.contentRef}
-            className="relative flex flex-col overflow-hidden"
+            className={cn(
+              'relative flex flex-col overflow-hidden transition-[opacity,transform] duration-150 ease-out',
+              isVisuallyReady
+                ? 'translate-y-0 scale-100 opacity-100'
+                : '-translate-y-1 scale-[0.98] opacity-0'
+            )}
             style={contentStyle}
             onBlur={root.handleComboboxBlur}
           >

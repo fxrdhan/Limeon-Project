@@ -10,9 +10,9 @@ import React, {
 } from 'react';
 import {
   TbFilter,
+  TbLetterCase,
   TbNumber12Small,
   TbSearch,
-  TbTypography,
 } from 'react-icons/tb';
 import SearchBadge from './components/SearchBadge';
 import SearchIcon from './components/SearchIcon';
@@ -78,7 +78,7 @@ const getColumnSelectorIcon = (column: SearchColumn) => {
     case 'date':
       return <TbFilter className="w-4 h-4" />;
     default:
-      return <TbTypography className="w-4 h-4" />;
+      return <TbLetterCase className="w-4 h-4" />;
   }
 };
 
@@ -3763,6 +3763,7 @@ const EnhancedSearchBar: React.FC<EnhancedSearchBarProps> = ({
             <input
               ref={resolvedInputRef}
               type="text"
+              aria-label="Search"
               placeholder={getPlaceholder()}
               className="text-sm outline-none tracking-normal flex-[1_0_120px] min-w-[40px] bg-transparent border-none focus:ring-0 py-1 pr-1 pl-2 placeholder-slate-400"
               value={displayValue}

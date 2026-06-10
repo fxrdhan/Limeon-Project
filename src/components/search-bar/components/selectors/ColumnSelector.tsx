@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { TbFilter, TbNumber12Small, TbTypography } from 'react-icons/tb';
+import { TbFilter, TbLetterCase, TbNumber12Small } from 'react-icons/tb';
 import BaseSelector from './BaseSelector';
 import {
   SearchColumn,
@@ -25,7 +25,7 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
       case 'date':
         return <TbFilter className="w-4 h-4" />;
       default:
-        return <TbTypography className="w-4 h-4" />;
+        return <TbLetterCase className="w-4 h-4" />;
     }
   };
 
