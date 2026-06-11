@@ -135,13 +135,13 @@ Schemas are automatically generated from TypeScript types. When you update types
 
 ```bash
 # Regenerate all schemas
-yarn gen:schemas
+bun run gen:schemas
 
 # Regenerate specific schema
-yarn gen:schemas:db        # Database types
-yarn gen:schemas:forms     # Form types
-yarn gen:schemas:invoice   # Invoice types
-yarn gen:schemas:purchase  # Purchase types
+bun run gen:schemas:db        # Database types
+bun run gen:schemas:forms     # Form types
+bun run gen:schemas:invoice   # Invoice types
+bun run gen:schemas:purchase  # Purchase types
 ```
 
 ## Configuration
@@ -205,7 +205,7 @@ All generated schemas are tested in `__tests__/generated-schemas.test.ts`.
 Run tests:
 
 ```bash
-yarn test:run src/schemas/__tests__/generated-schemas.test.ts
+vp test run src/schemas/__tests__/generated-schemas.test.ts --passWithNoTests
 ```
 
 ## Migration Notes
@@ -243,7 +243,7 @@ If schema generation fails with React/JSX errors:
 
 If you see "Cannot find module" errors:
 
-1. Regenerate schemas: `yarn gen:schemas`
+1. Regenerate schemas: `bun run gen:schemas`
 2. Check the import path in generated files
 3. Verify the type is exported in the source file
 

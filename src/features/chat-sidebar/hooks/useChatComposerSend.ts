@@ -16,9 +16,9 @@ import {
 } from '../utils/attachment-send';
 import {
   useChatAttachmentSend,
-  type PreparedComposerAttachmentOptimisticState,
   type SendableComposerAttachment,
 } from './useChatAttachmentSend';
+import type { PreparedComposerAttachmentOptimisticState } from './useAttachmentMessageTransaction';
 import { sendTextChatMessage } from '../utils/text-message-send';
 import type {
   ChatSidebarPanelTargetUser,

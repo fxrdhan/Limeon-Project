@@ -1,6 +1,6 @@
 import ErrorBoundary from '@/components/error-boundary';
 import { TableLoadingFallback } from '@/components/loading-fallback';
-import { MASTER_DATA_UNIFIED_GRID_ROUTE_PREFIXES } from '@/features/item-management/shared/masterDataNavigation';
+import { MASTER_DATA_UNIFIED_GRID_ROUTE_PREFIXES } from '@/features/item-management/public/masterDataNavigation';
 import { Suspense, lazy, memo } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 

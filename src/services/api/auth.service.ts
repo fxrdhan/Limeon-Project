@@ -8,6 +8,17 @@ export interface AuthServiceResponse<T> {
   error: AuthError | PostgrestError | Error | null;
 }
 
+export type UserPublicFields = Pick<
+  UserDetails,
+  | 'id'
+  | 'name'
+  | 'email'
+  | 'role'
+  | 'profilephoto'
+  | 'profilephoto_thumb'
+  | 'profilephoto_path'
+>;
+
 const USER_PROFILE_SELECT_COLUMNS =
   'id, name, email, role, profilephoto, profilephoto_thumb, profilephoto_path';
 
@@ -281,3 +292,111 @@ export class AuthService {
 }
 
 export const authService = new AuthService();
+
+export async function getCurrentSession(): Promise<Session | null> {
+  const { data, error } = await authService.getSession();
+  if (error) throw error;
+  return data ?? null;
+}
+
+export async function signInWithEmailPassword(
+  email: string,
+  password: string
+): Promise<{
+  session: Session;
+  user: UserPublicFields | null;
+}> {
+  const { data, error } = await authService.signInWithPassword(email, password);
+
+  if (error || !data?.session) {
+    throw error ?? new Error('Authentication succeeded but session is missing');
+  }
+
+  return { session: data.session, user: null };
+}
+
+export async function signOut(): Promise<void> {
+  const { error } = await authService.signOut();
+  if (error) throw error;
+}
+
+export async function fetchUserById(
+  userId: string
+): Promise<UserPublicFields | null> {
+  const { data, error } = await authService.getUserProfile(userId);
+
+  if (error) {
+    const errorCode =
+      typeof error === 'object' && error !== null && 'code' in error
+        ? (error as { code?: string }).code
+        : undefined;
+    const errorDetails =
+      typeof error === 'object' && error !== null && 'details' in error
+        ? (error as { details?: string }).details
+        : undefined;
+
+    if (
+      errorCode === 'PGRST116' ||
+      (typeof errorDetails === 'string' &&
+        errorDetails.includes('Results contain 0 rows'))
+    ) {
+      return null;
+    }
+    throw error;
+  }
+
+  return (data as UserPublicFields) ?? null;
+}
+
+export async function updateUserProfilePhotoAssets(
+  userId: string,
+  assets: {
+    profilephoto: string;
+    profilephoto_thumb: string | null;
+    profilephoto_path: string;
+  }
+): Promise<UserPublicFields | null> {
+  const { data, error } = await authService.updateUserProfile(userId, {
+    profilephoto: assets.profilephoto,
+    profilephoto_thumb: assets.profilephoto_thumb,
+    profilephoto_path: assets.profilephoto_path,
+  });
+  if (error) throw error;
+  return (data as UserPublicFields) ?? null;
+}
+
+export async function clearUserProfilePhoto(userId: string): Promise<void> {
+  const { error } = await authService.updateUserProfile(userId, {
+    profilephoto: null,
+    profilephoto_thumb: null,
+    profilephoto_path: null,
+  });
+  if (error) throw error;
+}
+
+export async function initializeAuth(): Promise<{
+  session: Session | null;
+  user: UserPublicFields | null;
+}> {
+  const session = await getCurrentSession();
+
+  if (session?.user?.id) {
+    const user = await fetchUserById(session.user.id);
+    return { session, user };
+  }
+
+  return { session: null, user: null };
+}
+
+export const authSessionService = {
+  getCurrentSession,
+  signInWithEmailPassword,
+  signOut,
+  fetchUserById,
+  updateUserProfilePhotoAssets,
+  clearUserProfilePhoto,
+  initializeAuth,
+  onAuthStateChange: authService.onAuthStateChange.bind(authService),
+};
+
+export default authSessionService;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { IdentityModalProvider } from '@/contexts/IdentityModalContext';
 import { useIdentityModalLogic } from './hooks/useIdentityModalLogic';
-import IdentityModalTemplate from '@/features/identity/components/IdentitylModalTemplate';
+import IdentityModalTemplate from './components/IdentitylModalTemplate';
 import IdentityModalContent from './components/IdentityModalContent';
 import type { GenericIdentityModalProps } from '@/types';
 

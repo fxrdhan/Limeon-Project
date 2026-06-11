@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { PROFILE_PHOTO_BUCKET } from '../../shared/profilePhotoPaths';
-import type { UserPublicFields } from '@/services/authService';
+import type { UserPublicFields } from '@/services/api/auth.service';
 import type { AuthState } from '@/types';
 import { syncSupabaseRealtimeAuthToken } from '@/lib/supabaseRealtimeAuth';
 import type { Session } from '@supabase/supabase-js';
@@ -17,13 +17,13 @@ let authStateSubscription: {
   unsubscribe: () => void;
 } | null = null;
 let authServicePromise: Promise<
-  typeof import('@/services/authService').default
+  typeof import('@/services/api/auth.service').default
 > | null = null;
 const pendingUserProfiles = new Map<string, Promise<UserPublicFields | null>>();
 
 const loadAuthService = async () => {
   if (!authServicePromise) {
-    authServicePromise = import('@/services/authService').then(
+    authServicePromise = import('@/services/api/auth.service').then(
       module => module.default
     );
   }

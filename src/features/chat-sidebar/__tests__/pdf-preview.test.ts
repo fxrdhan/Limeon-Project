@@ -14,6 +14,7 @@ import {
 const {
   mockCanvas,
   mockRender,
+  mockDestroy,
   mockGetPage,
   mockGetDocument,
   mockGlobalWorkerOptions,
@@ -29,6 +30,7 @@ const {
   };
 
   const render = vi.fn(() => ({ promise: Promise.resolve() }));
+  const destroy = vi.fn(() => Promise.resolve());
   const getPage = vi.fn(async () => ({
     getViewport: ({ scale }: { scale: number }) => ({
       width: 100 * scale,
@@ -41,13 +43,14 @@ const {
       numPages: 4,
       getPage,
       cleanup: vi.fn(),
-      destroy: vi.fn(),
     }),
+    destroy,
   }));
 
   return {
     mockCanvas: canvas,
     mockRender: render,
+    mockDestroy: destroy,
     mockGetPage: getPage,
     mockGetDocument: getDocument,
     mockGlobalWorkerOptions: { workerSrc: '' },
@@ -97,6 +100,7 @@ describe('pdf-preview utils', () => {
     expect(mockGetDocument).toHaveBeenCalledOnce();
     expect(mockGetPage).toHaveBeenCalledWith(1);
     expect(mockRender).toHaveBeenCalledOnce();
+    expect(mockDestroy).toHaveBeenCalledOnce();
   });
 
   it('renders a PDF cover as blob through the shared renderer', async () => {

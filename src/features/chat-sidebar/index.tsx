@@ -1,3 +1,4 @@
+import './utils/registerChatRuntimeLogoutCleanup';
 import { motion } from 'motion/react';
 import { memo } from 'react';
 import { Toaster } from 'react-hot-toast';

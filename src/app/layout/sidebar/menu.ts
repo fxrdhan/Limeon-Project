@@ -8,7 +8,7 @@ import {
   TbShoppingBag,
   TbShoppingCart,
 } from 'react-icons/tb';
-import { MASTER_DATA_TAB_PATHS } from '@/features/item-management/shared/masterDataNavigation';
+import { MASTER_DATA_TAB_PATHS } from '@/features/item-management/public/masterDataNavigation';
 import { ITEM_MASTER_PATH } from './constants';
 import type { MenuGroup, MenuItem } from './types';
 

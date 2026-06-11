@@ -12,7 +12,9 @@ import { useItemSelection } from '@/hooks/items/useItemSelection';
 import { useItemSelectionEffect } from '@/features/purchase-management/hooks/useItemSelectionEffect';
 import { usePurchaseModalAnimation } from '@/features/purchase-management/hooks/usePurchaseModalAnimation';
 
-const ItemModal = lazy(() => import('@/components/item-management/ItemModal'));
+const ItemModal = lazy(
+  () => import('@/features/item-management/public/ItemModal')
+);
 
 const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
   isOpen,

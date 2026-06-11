@@ -120,16 +120,16 @@ async function updateUserPassword(): Promise<void> {
 // Show usage help
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
   console.log(`
-Usage: yarn update-password [user-id] [new-password]
+Usage: bun run update-password [user-id] [new-password]
 
 Arguments:
   user-id       UUID of the user to update
   new-password  New password for the user
 
 Examples:
-  yarn update-password                                    # Interactive mode
-  yarn update-password 18babd2b-1621-4b8f-bb2c-e4de266d8a55 newpass123
-  yarn update-password "user-uuid" "my-new-password"
+  bun run update-password                                    # Interactive mode
+  bun run update-password 18babd2b-1621-4b8f-bb2c-e4de266d8a55 newpass123
+  bun run update-password "user-uuid" "my-new-password"
 
 Options:
   -h, --help    Show this help message

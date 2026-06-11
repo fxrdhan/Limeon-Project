@@ -143,6 +143,7 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
     if (field.type === 'textarea') {
       return (
         <textarea
+          aria-label={field.label}
           ref={el => setInputRef(field.key, el as HTMLTextAreaElement)}
           id={field.key}
           className="text-sm w-full p-2 border border-slate-300 rounded-xl focus:outline-hidden focus:border-primary focus:ring-3 focus:ring-emerald-100 transition duration-200 ease-in-out"

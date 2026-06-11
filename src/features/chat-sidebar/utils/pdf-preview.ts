@@ -1,4 +1,7 @@
 type PdfJsModule = typeof import('pdfjs-dist/legacy/build/pdf.mjs');
+type PDFDocumentProxy =
+  import('pdfjs-dist/types/src/display/api').PDFDocumentProxy;
+type PDFDocumentLoadingTask = ReturnType<PdfJsModule['getDocument']>;
 
 type RenderedPdfPreviewCanvas = {
   canvas: HTMLCanvasElement;
@@ -31,16 +34,14 @@ const renderPdfPreviewCanvas = async (
   }
 
   const pdfjsLib = await loadPdfJsModule();
-  let pdfDocument: {
-    numPages: number;
-    getPage: (pageNumber: number) => Promise<any>;
-    cleanup: () => void;
-    destroy: () => void;
-  } | null = null;
+  let pdfDocument: PDFDocumentProxy | null = null;
+  let loadingTask: PDFDocumentLoadingTask | null = null;
 
   try {
     const fileBuffer = await file.arrayBuffer();
-    const loadingTask = pdfjsLib.getDocument(new Uint8Array(fileBuffer));
+    loadingTask = pdfjsLib.getDocument({
+      data: new Uint8Array(fileBuffer),
+    });
     const loadedPdfDocument = await loadingTask.promise;
     pdfDocument = loadedPdfDocument;
 
@@ -70,8 +71,8 @@ const renderPdfPreviewCanvas = async (
       pageCount: Math.max(loadedPdfDocument.numPages ?? 1, 1),
     };
   } finally {
-    pdfDocument?.cleanup();
-    pdfDocument?.destroy();
+    await pdfDocument?.cleanup();
+    await loadingTask?.destroy();
   }
 };
 

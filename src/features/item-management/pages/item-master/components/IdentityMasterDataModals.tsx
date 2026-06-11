@@ -8,7 +8,9 @@ import type {
 } from '@/types';
 import { lazy, Suspense } from 'react';
 
-const IdentityDataModal = lazy(() => import('@/components/IdentityDataModal'));
+const IdentityDataModal = lazy(
+  () => import('@/components/identity-data-modal')
+);
 
 type IdentityFormData = Record<string, string | number | boolean | null>;
 type IdentityPayload = Record<string, unknown>;

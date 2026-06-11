@@ -42,9 +42,8 @@ const spawnManagedProcess = (
 
 const managedProcesses = [
   spawnManagedProcess('dev server', 'vp', ['dev'], devServerEnv),
-  spawnManagedProcess('typecheck watch', 'bun', [
-    'x',
-    '--bun',
+  spawnManagedProcess('typecheck watch', 'vp', [
+    'exec',
     'tsc',
     '-b',
     '--noEmit',

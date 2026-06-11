@@ -309,7 +309,9 @@ export default defineConfig({
         },
       },
     },
-    chunkSizeWarningLimit: 1000, // Keep warning for unusually large chunks only
+    // AG Grid community ships as a single ESM bundle and lands just over 1000 kB
+    // after minification; keep the warning above that known vendor baseline.
+    chunkSizeWarningLimit: 1100,
 
     // Optimize for better performance
     target: ['chrome107', 'firefox104', 'safari16', 'edge107'],

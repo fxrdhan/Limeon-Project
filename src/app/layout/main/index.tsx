@@ -3,14 +3,15 @@ import { Outlet } from 'react-router-dom';
 import Navbar from '@/app/layout/navbar';
 import Sidebar from '@/app/layout/sidebar';
 import ChatSidebar from '@/app/layout/chat-sidebar';
+import { preloadChatSidebarPanels } from '@/app/layout/chat-sidebar/panelLoaders';
 import { usePageFocusBlockStore } from '@/store/pageFocusBlockStore';
 import { useChatSidebarStore } from '@/store/chatSidebarStore';
 
 const PresenceRuntimeHost = lazy(
-  () => import('@/features/chat-sidebar/presence-host')
+  () => import('@/features/chat-sidebar/public/PresenceRuntimeHost')
 );
 const ChatRuntimeHost = lazy(
-  () => import('@/features/chat-sidebar/runtime-host')
+  () => import('@/features/chat-sidebar/public/ChatRuntimeHost')
 );
 
 const SIDEBAR_LOCK_STORAGE_KEY = 'pharmasys.sidebar.locked';
@@ -79,6 +80,10 @@ const MainLayout = () => {
     },
     [setPageFocusBlocked]
   );
+
+  useEffect(() => {
+    preloadChatSidebarPanels();
+  }, []);
 
   const loadPresenceRuntime = useCallback(() => {
     setShouldLoadPresenceRuntime(true);

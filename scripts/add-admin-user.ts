@@ -150,7 +150,7 @@ async function addAdminUser(): Promise<void> {
 // Show usage help
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
   console.log(`
-Usage: yarn add-admin [email] [password] [name] [role]
+Usage: bun run add-admin [email] [password] [name] [role]
 
 Arguments:
   email     User email address
@@ -159,10 +159,10 @@ Arguments:
   role      User role (optional, default: "admin")
 
 Examples:
-  yarn add-admin                                    # Interactive mode
-  yarn add-admin user@email.com mypassword          # With email and password
-  yarn add-admin user@email.com mypass "John Doe"   # With name
-  yarn add-admin user@email.com mypass "John" admin # Full arguments
+  bun run add-admin                                    # Interactive mode
+  bun run add-admin user@email.com mypassword          # With email and password
+  bun run add-admin user@email.com mypass "John Doe"   # With name
+  bun run add-admin user@email.com mypass "John" admin # Full arguments
 
 Options:
   -h, --help    Show this help message

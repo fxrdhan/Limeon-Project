@@ -1,13 +1,13 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { useSmartFormSync } from './useSmartFormSync';
+import { useSmartFormSync } from '@/hooks/realtime/useSmartFormSync';
 import { logger } from '@/utils/logger';
 import type { CustomerLevelDiscount } from '@/types/database';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { realtimeService } from '@/services/realtime/realtime.service';
-import { itemDataService } from '@/features/item-management/infrastructure/itemData.service';
 import { QueryKeys, getInvalidationKeys } from '@/constants/queryKeys';
+import { itemDataService } from '../../../infrastructure/itemData.service';
 
 interface UseItemModalRealtimeProps {
   itemId?: string;

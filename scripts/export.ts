@@ -257,7 +257,7 @@ async function main() {
 
   if (!exportType) {
     console.error(
-      '🔴 Please specify what to export. Usage: yarn export [triggers|functions|tables|data|all]'
+      '🔴 Please specify what to export. Usage: bun run export [triggers|functions|tables|data|all]'
     );
     process.exit(1);
   }

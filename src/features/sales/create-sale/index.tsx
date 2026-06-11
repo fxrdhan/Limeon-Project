@@ -10,7 +10,9 @@ import { useItemSelection } from '@/hooks/items/useItemSelection';
 import type { ItemSearchBarRef } from '@/types';
 import { useNavigate } from 'react-router-dom';
 
-const ItemModal = lazy(() => import('@/components/item-management/ItemModal'));
+const ItemModal = lazy(
+  () => import('@/features/item-management/public/ItemModal')
+);
 
 const CreateSalePage: React.FC = () => {
   const navigate = useNavigate();

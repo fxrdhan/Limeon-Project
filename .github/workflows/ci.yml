@@ -121,7 +121,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Check TypeScript
-        run: bunx --bun tsc -b --noEmit
+        run: bun run typecheck
 
       - name: Check chat schema drift
         run: bun run check:chat-schema

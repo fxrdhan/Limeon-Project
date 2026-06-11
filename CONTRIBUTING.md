@@ -77,20 +77,20 @@ We use a feature branch workflow:
 3. **Run quality checks**
 
    ```bash
-   # Type checking
-   bunx --bun tsc -b --noEmit
+   # Canonical check: lint, format, types, and supported static checks
+   vp check
 
    # Linting
-   bun run lint
+   vp lint . --deny-warnings
 
    # Formatting
-   bun run format
+   vp fmt . --write
 
    # Tests
-   bun run test
+   vp test run --passWithNoTests
 
    # Build
-   bun run build
+   vp build
    ```
 
 4. **Commit your changes**
@@ -139,11 +139,12 @@ We use a feature branch workflow:
 ### PR Requirements
 
 - [ ] Code follows the project's style guidelines
-- [ ] Tests pass locally (`bun run test`)
-- [ ] Type checking passes (`bunx --bun tsc -b --noEmit`)
-- [ ] Linting passes (`bun run lint`)
-- [ ] Build succeeds (`bun run build`)
-- [ ] No cross-feature imports (use `src/components/`, `src/utils/`, `src/hooks/`)
+- [ ] Canonical project check passes (`vp check`)
+- [ ] Tests pass locally (`vp test run --passWithNoTests`)
+- [ ] Linting passes (`vp lint . --deny-warnings`)
+- [ ] Build succeeds (`vp build`)
+- [ ] Cross-feature imports only target explicit feature public APIs (`src/features/*/public/`)
+- [ ] Shared runtime modules (`src/components/`, `src/hooks/`, `src/lib/`, `src/store/`, `src/utils/`) do not import feature internals
 - [ ] All React Query keys use `src/constants/queryKeys.ts`
 - [ ] No direct Supabase calls in hooks/components (use services/infrastructure)
 - [ ] PR title follows conventional commit format
@@ -203,6 +204,8 @@ We use a feature branch workflow:
 - Separate concerns (presentation, domain, infrastructure)
 - Use index files for clean imports
 - Avoid deep nesting (max 3-4 levels)
+- Put intentionally shared feature capabilities behind `src/features/[feature-name]/public/`
+- Do not import another feature's presentation/application/infrastructure internals directly
 
 ## Testing Guidelines
 
@@ -218,16 +221,16 @@ We use a feature branch workflow:
 
 ```bash
 # Run all tests
-bun run test
+vp test run --passWithNoTests
 
 # Run tests in watch mode
-bun run test:watch
+vp test watch
 
 # Run tests with coverage
-bun run test:coverage
+vp test run --coverage
 
 # Run specific test file
-bun run test -- ItemForm.test.ts
+vp test run ItemForm.test.ts --passWithNoTests
 ```
 
 ## Database Changes

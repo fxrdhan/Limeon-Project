@@ -1,0 +1,313 @@
+/// <reference types="vite-plus/client" />
+
+import ts from 'typescript';
+import { describe, expect, it } from 'vite-plus/test';
+
+const sourceModules = import.meta.glob('../**/*.{ts,tsx}', {
+  eager: true,
+  import: 'default',
+  query: '?raw',
+});
+
+const normalizeSegments = (path: string) => {
+  const segments: string[] = [];
+
+  for (const segment of path.split('/')) {
+    if (!segment || segment === '.') continue;
+    if (segment === '..') {
+      segments.pop();
+      continue;
+    }
+
+    segments.push(segment);
+  }
+
+  return segments.join('/');
+};
+
+const normalizeSourcePath = (moduleKey: string) => {
+  const normalizedKey = moduleKey.replaceAll('\\', '/');
+  const srcIndex = normalizedKey.indexOf('/src/');
+
+  if (srcIndex >= 0) return normalizedKey.slice(srcIndex + 1);
+  if (normalizedKey.startsWith('/src/')) return normalizedKey.slice(1);
+  if (normalizedKey.startsWith('src/')) return normalizedKey;
+
+  return normalizeSegments(`src/test/${normalizedKey}`);
+};
+
+const sourceByPath = new Map(
+  Object.entries(sourceModules)
+    .filter((entry): entry is [string, string] => typeof entry[1] === 'string')
+    .map(([moduleKey, source]) => [normalizeSourcePath(moduleKey), source])
+);
+const sourcePaths = new Set(sourceByPath.keys());
+
+const aliasRoots: Record<string, string> = {
+  '@': 'src',
+  '@assets': 'src/assets',
+  '@components': 'src/components',
+  '@hooks': 'src/hooks',
+  '@lib': 'src/lib',
+  '@services': 'src/services',
+  '@store': 'src/store',
+  '@types': 'src/types',
+};
+
+const isRuntimeSource = (filePath: string) =>
+  filePath.startsWith('src/') &&
+  !filePath.endsWith('.d.ts') &&
+  !filePath.includes('/__tests__/') &&
+  !filePath.includes('/test/') &&
+  !filePath.endsWith('.test.ts') &&
+  !filePath.endsWith('.test.tsx') &&
+  !filePath.endsWith('.spec.ts') &&
+  !filePath.endsWith('.spec.tsx') &&
+  !filePath.startsWith('src/schemas/generated/');
+
+const parseSource = (fileName: string, source: string) =>
+  ts.createSourceFile(
+    fileName,
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    fileName.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS
+  );
+
+const getModuleSpecifiers = (filePath: string, source: string) => {
+  const sourceFile = parseSource(filePath, source);
+  const moduleSpecifiers: string[] = [];
+
+  sourceFile.forEachChild(node => {
+    if (
+      (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
+      node.moduleSpecifier &&
+      ts.isStringLiteral(node.moduleSpecifier)
+    ) {
+      moduleSpecifiers.push(node.moduleSpecifier.text);
+    }
+  });
+
+  return moduleSpecifiers;
+};
+
+const resolveKnownPath = (pathWithoutExtension: string) => {
+  const candidates = [
+    pathWithoutExtension,
+    `${pathWithoutExtension}.ts`,
+    `${pathWithoutExtension}.tsx`,
+    `${pathWithoutExtension}/index.ts`,
+    `${pathWithoutExtension}/index.tsx`,
+  ];
+
+  return candidates.find(candidate => sourcePaths.has(candidate)) ?? null;
+};
+
+const resolveAliasSpecifier = (specifier: string) => {
+  for (const [alias, root] of Object.entries(aliasRoots)) {
+    if (specifier === alias) return resolveKnownPath(root) ?? root;
+    if (specifier.startsWith(`${alias}/`)) {
+      const resolvedPath = `${root}/${specifier.slice(alias.length + 1)}`;
+      return resolveKnownPath(resolvedPath) ?? resolvedPath;
+    }
+  }
+
+  return null;
+};
+
+const resolveRelativeSpecifier = (fromFile: string, specifier: string) => {
+  if (!specifier.startsWith('.')) return null;
+
+  const directory = fromFile.split('/').slice(0, -1).join('/');
+  return resolveKnownPath(normalizeSegments(`${directory}/${specifier}`));
+};
+
+const resolveImportTarget = (fromFile: string, specifier: string) =>
+  resolveAliasSpecifier(specifier) ??
+  resolveRelativeSpecifier(fromFile, specifier) ??
+  specifier;
+
+const getFeatureName = (filePath: string) => {
+  const match = /^src\/features\/([^/]+)\//.exec(filePath);
+  return match?.[1] ?? null;
+};
+
+const isFeaturePublicApiTarget = (filePath: string) =>
+  /^src\/features\/[^/]+\/public\//.test(filePath);
+
+const isDataAccessLayer = (filePath: string) =>
+  filePath.startsWith('src/services/') ||
+  filePath.startsWith('src/lib/') ||
+  /^src\/features\/[^/]+\/infrastructure\//.test(filePath);
+
+const isTestingUtility = (filePath: string) =>
+  filePath.startsWith('src/utils/testing/');
+
+const isTestSource = (filePath: string) =>
+  filePath.includes('/__tests__/') ||
+  filePath.includes('/test/') ||
+  filePath.endsWith('.test.ts') ||
+  filePath.endsWith('.test.tsx') ||
+  filePath.endsWith('.spec.ts') ||
+  filePath.endsWith('.spec.tsx');
+
+const isSharedLayerSource = (filePath: string) =>
+  filePath.startsWith('src/components/') ||
+  filePath.startsWith('src/hooks/') ||
+  filePath.startsWith('src/lib/') ||
+  filePath.startsWith('src/utils/') ||
+  filePath.startsWith('src/store/');
+
+const isAppLayoutSource = (filePath: string) =>
+  filePath.startsWith('src/app/layout/');
+
+const formatViolations = (violations: string[]) =>
+  violations.length === 0 ? 'none' : violations.sort().join('\n');
+
+describe('architecture boundaries', () => {
+  it('keeps feature modules from importing other feature modules directly', () => {
+    const violations = [...sourceByPath.entries()].flatMap(
+      ([filePath, source]) => {
+        if (!isRuntimeSource(filePath)) return [];
+
+        const sourceFeature = getFeatureName(filePath);
+        if (!sourceFeature) return [];
+
+        return getModuleSpecifiers(filePath, source).flatMap(specifier => {
+          const target = resolveImportTarget(filePath, specifier);
+          const targetFeature = getFeatureName(target);
+
+          return targetFeature &&
+            targetFeature !== sourceFeature &&
+            !isFeaturePublicApiTarget(target)
+            ? [
+                `${filePath} imports ${specifier} (${targetFeature}) from ${sourceFeature}`,
+              ]
+            : [];
+        });
+      }
+    );
+
+    expect(formatViolations(violations)).toBe('none');
+  });
+
+  it('keeps Supabase clients behind data access layers', () => {
+    const supabaseClientSpecifiers = new Set([
+      '@/lib/authSupabase',
+      '@/lib/supabase',
+      '@lib/authSupabase',
+      '@lib/supabase',
+    ]);
+    const violations = [...sourceByPath.entries()].flatMap(
+      ([filePath, source]) => {
+        if (!isRuntimeSource(filePath) || isDataAccessLayer(filePath)) {
+          return [];
+        }
+
+        return getModuleSpecifiers(filePath, source).flatMap(specifier =>
+          supabaseClientSpecifiers.has(specifier)
+            ? [`${filePath} imports ${specifier}`]
+            : []
+        );
+      }
+    );
+
+    expect(formatViolations(violations)).toBe('none');
+  });
+
+  it('keeps shared runtime modules from depending on features by default', () => {
+    const violations = [...sourceByPath.entries()].flatMap(
+      ([filePath, source]) => {
+        if (
+          !isRuntimeSource(filePath) ||
+          !isSharedLayerSource(filePath) ||
+          isTestingUtility(filePath)
+        ) {
+          return [];
+        }
+
+        return getModuleSpecifiers(filePath, source).flatMap(specifier => {
+          const target = resolveImportTarget(filePath, specifier);
+
+          return getFeatureName(target)
+            ? [`${filePath} imports feature module ${specifier}`]
+            : [];
+        });
+      }
+    );
+
+    expect(formatViolations(violations)).toBe('none');
+  });
+
+  it('keeps app layout integration on feature public APIs', () => {
+    const violations = [...sourceByPath.entries()].flatMap(
+      ([filePath, source]) => {
+        if (!isRuntimeSource(filePath) || !isAppLayoutSource(filePath)) {
+          return [];
+        }
+
+        return getModuleSpecifiers(filePath, source).flatMap(specifier => {
+          const target = resolveImportTarget(filePath, specifier);
+
+          return getFeatureName(target) && !isFeaturePublicApiTarget(target)
+            ? [`${filePath} imports feature internal ${specifier}`]
+            : [];
+        });
+      }
+    );
+
+    expect(formatViolations(violations)).toBe('none');
+  });
+
+  it('keeps runtime React Query keys out of ad-hoc string literals', () => {
+    const violations = [...sourceByPath.entries()].flatMap(
+      ([filePath, source]) => {
+        if (!isRuntimeSource(filePath)) return [];
+
+        const sourceFile = parseSource(filePath, source);
+        const fileViolations: string[] = [];
+
+        const visit = (node: ts.Node) => {
+          if (
+            ts.isPropertyAssignment(node) &&
+            ts.isIdentifier(node.name) &&
+            node.name.text === 'queryKey' &&
+            ts.isArrayLiteralExpression(node.initializer)
+          ) {
+            const firstElement = node.initializer.elements[0];
+            if (firstElement && ts.isStringLiteral(firstElement)) {
+              const { line, character } =
+                sourceFile.getLineAndCharacterOfPosition(
+                  node.initializer.getStart(sourceFile)
+                );
+              fileViolations.push(
+                `${filePath}:${line + 1}:${character + 1} uses queryKey string literal "${firstElement.text}"`
+              );
+            }
+          }
+
+          ts.forEachChild(node, visit);
+        };
+
+        visit(sourceFile);
+        return fileViolations;
+      }
+    );
+
+    expect(formatViolations(violations)).toBe('none');
+  });
+
+  it('keeps test API imports on the VitePlus test entrypoint', () => {
+    const violations = [...sourceByPath.entries()].flatMap(
+      ([filePath, source]) => {
+        if (!isTestSource(filePath)) return [];
+
+        return getModuleSpecifiers(filePath, source).flatMap(specifier =>
+          specifier === 'vitest' ? [`${filePath} imports vitest directly`] : []
+        );
+      }
+    );
+
+    expect(formatViolations(violations)).toBe('none');
+  });
+});

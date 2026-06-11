@@ -3,7 +3,7 @@ import type { FieldConfig, Supplier as SupplierType } from '@/types';
 import type { useConfirmDialog } from '@/components/dialog-box';
 import type { useSupplierMutations } from '@/hooks/queries';
 
-import IdentityDataModal from '@/components/IdentityDataModal';
+import IdentityDataModal from '@/components/identity-data-modal';
 import { StorageService } from '@/services/api/storage.service';
 
 const SUPPLIER_IMAGE_BUCKET = 'profiles';

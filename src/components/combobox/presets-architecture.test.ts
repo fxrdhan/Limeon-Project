@@ -1,7 +1,7 @@
 /// <reference types="vite-plus/client" />
 
 import ts from 'typescript';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 const comboboxSourceModules = import.meta.glob('../../**/*.{ts,tsx}', {
   eager: true,

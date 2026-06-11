@@ -1,5 +1,5 @@
 import { Route, Navigate } from 'react-router-dom';
-import { MASTER_DATA_TAB_PATHS } from '@/features/item-management/shared/masterDataNavigation';
+import { MASTER_DATA_TAB_PATHS } from '@/features/item-management/public/masterDataNavigation';
 import MasterDataLayout from './layout';
 
 // Master Data Routes

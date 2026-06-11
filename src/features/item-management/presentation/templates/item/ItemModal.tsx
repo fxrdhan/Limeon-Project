@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useItemModalRealtime } from '@/hooks/realtime/useItemModalRealtime';
 import type { DBPackageConversion, ItemInventoryUnit } from '@/types/database';
 import { logger } from '@/utils/logger';
 import { useAddItemPageHandlers } from '../../../application/hooks/form/useItemPageHandlers';
@@ -11,6 +10,7 @@ import type {
   ItemModalProps,
 } from '../../../shared/types';
 import ItemManagementContent from './ItemManagementContent';
+import { useItemModalRealtime } from './useItemModalRealtime';
 
 const ItemModal: React.FC<ItemModalProps> = ({
   isOpen,

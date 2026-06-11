@@ -1,4 +1,5 @@
-import { chatRuntimePersistenceRegistry } from '@/features/chat-sidebar/utils/chatRuntimePersistenceRegistry';
+import { CHAT_RUNTIME_INDEXED_DB_NAME_LIST } from '@/lib/chatRuntimePersistence';
+import { getBrowserLogoutCleanupContributors } from '@/lib/browserLogoutCleanupRegistry';
 import { resetPharmacyQueryPersistence } from '@/lib/indexedDBPersistence';
 import { queryClient } from '@/lib/queryClient';
 import { supabase } from '@/lib/supabase';
@@ -7,7 +8,14 @@ import { resetImageCache } from '@/utils/imageCache';
 
 const KNOWN_INDEXED_DB_NAMES = [
   'pharmasys-cache',
-  ...chatRuntimePersistenceRegistry.indexedDbNames,
+  ...CHAT_RUNTIME_INDEXED_DB_NAME_LIST,
+];
+
+const getKnownIndexedDbNames = () => [
+  ...KNOWN_INDEXED_DB_NAMES,
+  ...getBrowserLogoutCleanupContributors().flatMap(
+    contributor => contributor.indexedDbNames ?? []
+  ),
 ];
 
 const getIndexedDbFactory = () => {
@@ -72,7 +80,17 @@ const clearCacheStorage = async () => {
 
 const resetRuntimeStores = () => {
   useInvoiceUploadStore.getState().clearCachedInvoiceFile();
-  chatRuntimePersistenceRegistry.resetRuntimeState();
+  getBrowserLogoutCleanupContributors().forEach(contributor => {
+    contributor.resetRuntimeState?.();
+  });
+};
+
+const resetRegisteredPersistentState = async () => {
+  await Promise.all(
+    getBrowserLogoutCleanupContributors().map(
+      async contributor => await contributor.resetPersistentState?.()
+    )
+  );
 };
 
 export const clearClientBrowserState = async () => {
@@ -97,7 +115,7 @@ export const clearClientBrowserState = async () => {
 
   queryClient.clear();
   const indexedDbNames = new Set([
-    ...KNOWN_INDEXED_DB_NAMES,
+    ...getKnownIndexedDbNames(),
     ...(await listIndexedDbNames()),
   ]);
 
@@ -116,7 +134,7 @@ export const clearClientBrowserState = async () => {
   await Promise.all([
     resetImageCache(),
     resetPharmacyQueryPersistence(),
-    chatRuntimePersistenceRegistry.resetPersistentState(),
+    resetRegisteredPersistentState(),
     clearCacheStorage(),
   ]);
 

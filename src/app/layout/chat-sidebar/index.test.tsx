@@ -3,7 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vite-plus/test';
 import ChatSidebar from './index';
 
-vi.mock('@/features/chat-sidebar', () => ({
+vi.mock('@/features/chat-sidebar/public/ChatSidebarPanel', () => ({
   default: ({
     isOpen,
     targetUser,
@@ -15,6 +15,10 @@ vi.mock('@/features/chat-sidebar', () => ({
       {isOpen ? 'open' : 'closing'}:{targetUser?.name ?? 'none'}
     </div>
   ),
+}));
+
+vi.mock('@/features/chat-sidebar/public/ContactListPanel', () => ({
+  default: () => <div data-testid="chat-contact-list-panel" />,
 }));
 
 describe('ChatSidebar', () => {

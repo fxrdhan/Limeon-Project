@@ -1,3 +1,4 @@
+import './utils/registerChatRuntimeLogoutCleanup';
 import { useChatRuntime } from './hooks/useChatRuntime';
 
 const ChatRuntimeHost = () => {

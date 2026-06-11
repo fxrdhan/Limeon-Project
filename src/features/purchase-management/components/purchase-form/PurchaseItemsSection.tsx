@@ -1,6 +1,6 @@
 import React from 'react';
 import FormSection from '@/components/form-section';
-import ItemSearchBar from '@/features/purchase-management/components/item-search';
+import ItemSearchBar from '@/components/item-search';
 import Checkbox from '@/components/checkbox';
 import DataGrid from '@/components/ag-grid/DataGrid';
 import VatPercentageEditor from '@/features/purchase-management/components/purchase-form/VatPercentageEditor';
@@ -186,6 +186,7 @@ const PurchaseItemsSection: React.FC<PurchaseItemsSectionProps> = ({
 
           return (
             <input
+              aria-label={`Batch ${item.item_name}`}
               type="text"
               value={item.batch_no || ''}
               onChange={e => updateItemBatchNo(item.id, e.target.value)}
@@ -237,6 +238,7 @@ const PurchaseItemsSection: React.FC<PurchaseItemsSectionProps> = ({
 
           return (
             <input
+              aria-label={`Jumlah ${item.item_name}`}
               type="number"
               onFocus={e => e.target.select()}
               onClick={e => (e.target as HTMLInputElement).select()}
@@ -277,6 +279,7 @@ const PurchaseItemsSection: React.FC<PurchaseItemsSectionProps> = ({
 
           return (
             <select
+              aria-label={`Unit ${item.item_name}`}
               value={item.unit}
               onChange={e => onHandleUnitChange(item.id, e.target.value)}
               onKeyDown={e => e.stopPropagation()}
@@ -302,6 +305,7 @@ const PurchaseItemsSection: React.FC<PurchaseItemsSectionProps> = ({
 
           return (
             <input
+              aria-label={`Harga ${item.item_name}`}
               type="text"
               value={item.price === 0 ? '' : formatRupiah(item.price)}
               onChange={e => {
@@ -326,6 +330,7 @@ const PurchaseItemsSection: React.FC<PurchaseItemsSectionProps> = ({
 
           return (
             <input
+              aria-label={`Diskon ${item.item_name}`}
               type="text"
               value={item.discount === 0 ? '' : `${item.discount}%`}
               onChange={e =>
@@ -361,6 +366,7 @@ const PurchaseItemsSection: React.FC<PurchaseItemsSectionProps> = ({
 
           return (
             <input
+              aria-label={`VAT ${item.item_name}`}
               type="text"
               value={item.vat_percentage === 0 ? '' : `${item.vat_percentage}%`}
               onChange={e =>

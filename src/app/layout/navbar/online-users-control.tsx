@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'motion/react';
 import { TbLayoutSidebarLeftCollapse } from 'react-icons/tb';
-import { useChatSidebarLauncher } from '@/features/chat-sidebar/hooks/useChatSidebarLauncher';
+import { useChatSidebarLauncher } from '@/features/chat-sidebar/public/useChatSidebarLauncher';
 import { useChatSidebarStore } from '@/store/chatSidebarStore';
 import UserPresenceAvatar from '@/components/shared/user-presence-avatar';
 
