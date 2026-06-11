@@ -1,54 +1,9 @@
 import { motion } from 'motion/react';
-import {
-  forwardRef,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type RefObject,
-} from 'react';
-import { TbFileTypeJpg, TbFileTypePng, TbMusic, TbX } from 'react-icons/tb';
-import type {
-  ComposerAttachmentPreviewItem,
-  PendingComposerAttachment,
-} from '../../types';
-import { resolveComposerAttachmentExtension } from '../../utils/composer-attachment';
-import { formatFileSize } from '../../utils/message-file';
-
-const COMPOSER_ATTACHMENT_FOG_CLEARANCE = 56;
-const MENU_REPOSITION_RESUME_DELAY_MS = 150;
-
-interface ComposerAttachmentPreviewListProps {
-  attachments: ComposerAttachmentPreviewItem[];
-  openImageActionsAttachmentId: string | null;
-  isSelectionMode: boolean;
-  selectedAttachmentIds: string[];
-  imageActionsButtonRef: RefObject<HTMLButtonElement | null>;
-  transition: {
-    duration: number;
-    ease:
-      | 'easeIn'
-      | 'easeOut'
-      | 'easeInOut'
-      | readonly [number, number, number, number];
-    layout: {
-      type: 'tween';
-      ease: readonly [number, number, number, number];
-      duration: number;
-    };
-  };
-  onToggleImageActionsMenu: (attachmentId: string) => void;
-  onCloseImageActionsMenu?: () => void;
-  onMenuRepositionPauseChange?: (isPaused: boolean) => void;
-  onToggleAttachmentSelection: (attachmentId: string) => void;
-  onCancelLoadingComposerAttachment: (attachmentId: string) => void;
-  onRemovePendingComposerAttachment: (attachmentId: string) => void;
-  onScrollStateChange?: (state: {
-    hasOverflow: boolean;
-    isAtTop: boolean;
-    isAtBottom: boolean;
-  }) => void;
-}
+import { forwardRef, useEffect, useState } from 'react';
+import { ComposerAttachmentLoadingPreview } from './attachment-preview-list/ComposerAttachmentLoadingPreview';
+import { ComposerAttachmentPreviewRow } from './attachment-preview-list/ComposerAttachmentPreviewRow';
+import type { ComposerAttachmentPreviewListProps } from './attachment-preview-list/types';
+import { useComposerAttachmentPreviewScroll } from './attachment-preview-list/useComposerAttachmentPreviewScroll';
 
 const ComposerAttachmentPreviewList = forwardRef<
   HTMLDivElement,
@@ -59,7 +14,7 @@ const ComposerAttachmentPreviewList = forwardRef<
       attachments,
       openImageActionsAttachmentId,
       isSelectionMode,
-      selectedAttachmentIds = [],
+      selectedAttachmentIds,
       imageActionsButtonRef,
       transition,
       onToggleImageActionsMenu,
@@ -73,217 +28,27 @@ const ComposerAttachmentPreviewList = forwardRef<
     ref
   ) => {
     const [loadingDotCount, setLoadingDotCount] = useState(1);
-    const scrollContainerRef = useRef<HTMLDivElement | null>(null);
-    const attachmentRowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
-    const isMenuRepositionPausedRef = useRef(false);
-    const menuRepositionResumeTimeoutRef = useRef<number | null>(null);
     const hasPdfCompressionLoading = attachments.some(
       attachment =>
         'status' in attachment &&
         attachment.status === 'loading' &&
         attachment.loadingKind === 'pdf-compression'
     );
-
-    const updateScrollState = useCallback(() => {
-      const scrollContainer = scrollContainerRef.current;
-      if (!scrollContainer || !onScrollStateChange) {
-        return;
-      }
-
-      const hasOverflow =
-        scrollContainer.scrollHeight - scrollContainer.clientHeight > 1;
-      const remainingScrollDistance =
-        scrollContainer.scrollHeight -
-        scrollContainer.clientHeight -
-        scrollContainer.scrollTop;
-
-      onScrollStateChange({
-        hasOverflow,
-        isAtTop: scrollContainer.scrollTop <= 2,
-        isAtBottom: !hasOverflow || remainingScrollDistance <= 2,
-      });
-    }, [onScrollStateChange]);
-
-    const updateOpenAttachmentMenuVisibility = useCallback(() => {
-      if (!openImageActionsAttachmentId || !onCloseImageActionsMenu) {
-        return;
-      }
-
-      const scrollContainer = scrollContainerRef.current;
-      const actionTriggerButton = imageActionsButtonRef.current;
-      if (!scrollContainer || !actionTriggerButton) {
-        return;
-      }
-
-      const scrollContainerRect = scrollContainer.getBoundingClientRect();
-      const triggerRect = actionTriggerButton.getBoundingClientRect();
-      const isTriggerVisible =
-        triggerRect.bottom > scrollContainerRect.top &&
-        triggerRect.top < scrollContainerRect.bottom;
-
-      if (!isTriggerVisible) {
-        onCloseImageActionsMenu();
-      }
-    }, [
+    const {
+      handleAttachmentMenuIntent,
+      scrollContainerRef,
+      setAttachmentRowRef,
+    } = useComposerAttachmentPreviewScroll({
+      attachments,
       imageActionsButtonRef,
+      isSelectionMode,
       onCloseImageActionsMenu,
+      onMenuRepositionPauseChange,
+      onScrollStateChange,
+      onToggleImageActionsMenu,
       openImageActionsAttachmentId,
-    ]);
-
-    const setAttachmentRowRef = useCallback(
-      (attachmentId: string, node: HTMLDivElement | null) => {
-        if (node) {
-          attachmentRowRefs.current.set(attachmentId, node);
-          return;
-        }
-
-        attachmentRowRefs.current.delete(attachmentId);
-      },
-      []
-    );
-
-    const getAttachmentFogAwareScrollTarget = useCallback(
-      (attachmentId: string) => {
-        const scrollContainer = scrollContainerRef.current;
-        const attachmentRow = attachmentRowRefs.current.get(attachmentId);
-        if (!scrollContainer || !attachmentRow) {
-          return null;
-        }
-
-        const currentScrollTop = scrollContainer.scrollTop;
-        const hasOverflow =
-          scrollContainer.scrollHeight - scrollContainer.clientHeight > 1;
-        const remainingScrollDistance =
-          scrollContainer.scrollHeight -
-          scrollContainer.clientHeight -
-          currentScrollTop;
-        const topClearance =
-          isSelectionMode || currentScrollTop > 2
-            ? COMPOSER_ATTACHMENT_FOG_CLEARANCE
-            : 0;
-        const bottomClearance =
-          isSelectionMode || (hasOverflow && remainingScrollDistance > 2)
-            ? COMPOSER_ATTACHMENT_FOG_CLEARANCE
-            : 0;
-        const visibleTop = currentScrollTop + topClearance;
-        const visibleBottom =
-          currentScrollTop + scrollContainer.clientHeight - bottomClearance;
-        const attachmentTop = attachmentRow.offsetTop;
-        const attachmentBottom = attachmentTop + attachmentRow.offsetHeight;
-
-        if (attachmentTop < visibleTop) {
-          return attachmentTop - topClearance;
-        }
-
-        if (attachmentBottom > visibleBottom) {
-          return (
-            attachmentBottom - scrollContainer.clientHeight + bottomClearance
-          );
-        }
-
-        return null;
-      },
-      [isSelectionMode]
-    );
-
-    const setMenuRepositionPaused = useCallback(
-      (isPaused: boolean) => {
-        if (
-          !openImageActionsAttachmentId ||
-          !onMenuRepositionPauseChange ||
-          isMenuRepositionPausedRef.current === isPaused
-        ) {
-          return;
-        }
-
-        isMenuRepositionPausedRef.current = isPaused;
-        onMenuRepositionPauseChange(isPaused);
-      },
-      [onMenuRepositionPauseChange, openImageActionsAttachmentId]
-    );
-
-    const scheduleMenuRepositionResume = useCallback(() => {
-      if (!isMenuRepositionPausedRef.current) {
-        return;
-      }
-
-      if (menuRepositionResumeTimeoutRef.current !== null) {
-        window.clearTimeout(menuRepositionResumeTimeoutRef.current);
-      }
-
-      menuRepositionResumeTimeoutRef.current = window.setTimeout(() => {
-        menuRepositionResumeTimeoutRef.current = null;
-        setMenuRepositionPaused(false);
-      }, MENU_REPOSITION_RESUME_DELAY_MS);
-    }, [setMenuRepositionPaused]);
-
-    const ensureAttachmentVisibleOutsideFog = useCallback(
-      (attachmentId: string) => {
-        const scrollContainer = scrollContainerRef.current;
-        if (!scrollContainer) {
-          return;
-        }
-
-        const currentScrollTop = scrollContainer.scrollTop;
-        const targetScrollTop = getAttachmentFogAwareScrollTarget(attachmentId);
-        if (targetScrollTop === null) {
-          return;
-        }
-
-        const nextScrollTop = Math.min(
-          Math.max(targetScrollTop, 0),
-          Math.max(
-            0,
-            scrollContainer.scrollHeight - scrollContainer.clientHeight
-          )
-        );
-
-        if (Math.abs(nextScrollTop - currentScrollTop) < 1) {
-          return;
-        }
-
-        if (openImageActionsAttachmentId === attachmentId) {
-          setMenuRepositionPaused(true);
-          scheduleMenuRepositionResume();
-        }
-
-        if (typeof scrollContainer.scrollTo === 'function') {
-          scrollContainer.scrollTo({
-            top: nextScrollTop,
-            behavior: 'smooth',
-          });
-          return;
-        }
-
-        scrollContainer.scrollTop = nextScrollTop;
-      },
-      [
-        getAttachmentFogAwareScrollTarget,
-        openImageActionsAttachmentId,
-        scheduleMenuRepositionResume,
-        setMenuRepositionPaused,
-      ]
-    );
-
-    const handleAttachmentMenuIntent = useCallback(
-      (attachmentId: string) => {
-        const shouldPauseBeforeOpen =
-          openImageActionsAttachmentId !== attachmentId &&
-          getAttachmentFogAwareScrollTarget(attachmentId) !== null;
-
-        if (shouldPauseBeforeOpen) {
-          onMenuRepositionPauseChange?.(true);
-        }
-
-        onToggleImageActionsMenu(attachmentId);
-      },
-      [
-        getAttachmentFogAwareScrollTarget,
-        onMenuRepositionPauseChange,
-        onToggleImageActionsMenu,
-        openImageActionsAttachmentId,
-      ]
-    );
+      selectedAttachmentIds,
+    });
 
     useEffect(() => {
       if (!hasPdfCompressionLoading) {
@@ -300,130 +65,7 @@ const ComposerAttachmentPreviewList = forwardRef<
       };
     }, [hasPdfCompressionLoading]);
 
-    useEffect(() => {
-      if (!onScrollStateChange) {
-        return;
-      }
-
-      const scrollContainer = scrollContainerRef.current;
-      if (!scrollContainer) {
-        return;
-      }
-
-      updateScrollState();
-      updateOpenAttachmentMenuVisibility();
-
-      const handleScroll = () => {
-        updateScrollState();
-        updateOpenAttachmentMenuVisibility();
-        scheduleMenuRepositionResume();
-      };
-
-      scrollContainer.addEventListener('scroll', handleScroll, {
-        passive: true,
-      });
-
-      if (typeof ResizeObserver === 'undefined') {
-        return () => {
-          scrollContainer.removeEventListener('scroll', handleScroll);
-        };
-      }
-
-      const resizeObserver = new ResizeObserver(() => {
-        updateScrollState();
-        updateOpenAttachmentMenuVisibility();
-      });
-      resizeObserver.observe(scrollContainer);
-
-      return () => {
-        scrollContainer.removeEventListener('scroll', handleScroll);
-        resizeObserver.disconnect();
-      };
-    }, [
-      attachments,
-      isSelectionMode,
-      onScrollStateChange,
-      updateOpenAttachmentMenuVisibility,
-      updateScrollState,
-      scheduleMenuRepositionResume,
-    ]);
-
-    useEffect(() => {
-      updateOpenAttachmentMenuVisibility();
-    }, [updateOpenAttachmentMenuVisibility]);
-
-    useEffect(() => {
-      if (openImageActionsAttachmentId) {
-        return;
-      }
-
-      if (menuRepositionResumeTimeoutRef.current !== null) {
-        window.clearTimeout(menuRepositionResumeTimeoutRef.current);
-        menuRepositionResumeTimeoutRef.current = null;
-      }
-
-      if (!isMenuRepositionPausedRef.current) {
-        return;
-      }
-
-      isMenuRepositionPausedRef.current = false;
-      onMenuRepositionPauseChange?.(false);
-    }, [onMenuRepositionPauseChange, openImageActionsAttachmentId]);
-
-    useEffect(() => {
-      return () => {
-        if (menuRepositionResumeTimeoutRef.current !== null) {
-          window.clearTimeout(menuRepositionResumeTimeoutRef.current);
-          menuRepositionResumeTimeoutRef.current = null;
-        }
-
-        if (!isMenuRepositionPausedRef.current) {
-          return;
-        }
-
-        isMenuRepositionPausedRef.current = false;
-        onMenuRepositionPauseChange?.(false);
-      };
-    }, [onMenuRepositionPauseChange]);
-
-    useEffect(() => {
-      const activeAttachmentId =
-        openImageActionsAttachmentId ??
-        (isSelectionMode
-          ? (selectedAttachmentIds[selectedAttachmentIds.length - 1] ?? null)
-          : null);
-
-      if (!activeAttachmentId) {
-        return;
-      }
-
-      const rafId = window.requestAnimationFrame(() => {
-        ensureAttachmentVisibleOutsideFog(activeAttachmentId);
-      });
-
-      return () => {
-        window.cancelAnimationFrame(rafId);
-      };
-    }, [
-      attachments,
-      ensureAttachmentVisibleOutsideFog,
-      isSelectionMode,
-      openImageActionsAttachmentId,
-      selectedAttachmentIds,
-    ]);
-
     const animatedDots = '.'.repeat(loadingDotCount);
-    const resolveCompressionStatusLabel = (
-      phase: 'uploading' | 'processing' | 'done' | undefined
-    ) => {
-      if (phase === 'done') {
-        return 'Selesai';
-      }
-      if (phase === 'processing') {
-        return 'Memproses';
-      }
-      return 'Mengunggah';
-    };
 
     return (
       <motion.div
@@ -442,256 +84,36 @@ const ComposerAttachmentPreviewList = forwardRef<
           }`}
         >
           {attachments.map(attachment => {
-            if ('status' in attachment && attachment.status === 'loading') {
-              const isPdfCompressionLoading =
-                attachment.loadingKind === 'pdf-compression';
-
+            if ('status' in attachment) {
               return (
-                <div
+                <ComposerAttachmentLoadingPreview
                   key={attachment.id}
-                  className="h-[54px]"
-                  style={{
-                    contentVisibility: 'auto',
-                    containIntrinsicSize: '54px',
-                  }}
-                >
-                  <div className="flex h-full w-full items-center gap-2 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-1">
-                    <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl">
-                      <div className="h-11 w-11 shrink-0 animate-pulse rounded-lg bg-slate-200" />
-                      <div className="min-w-0 flex-1">
-                        {isPdfCompressionLoading ? (
-                          <>
-                            <p className="text-sm font-medium text-slate-700">
-                              {resolveCompressionStatusLabel(
-                                attachment.loadingPhase
-                              )}
-                              {animatedDots}
-                            </p>
-                            <p className="text-xs text-slate-500">
-                              Kompres PDF
-                            </p>
-                          </>
-                        ) : (
-                          <>
-                            <div className="h-4 w-32 animate-pulse rounded bg-slate-200" />
-                            <div className="mt-1 h-3 w-14 animate-pulse rounded bg-slate-200" />
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    {isPdfCompressionLoading ? (
-                      <button
-                        type="button"
-                        aria-label="Batalkan kompres PDF"
-                        onClick={() => {
-                          onCancelLoadingComposerAttachment(attachment.id);
-                        }}
-                        className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-xl text-black transition-colors hover:bg-slate-200 hover:text-black"
-                      >
-                        <TbX className="h-4 w-4" />
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
+                  animatedDots={animatedDots}
+                  attachment={attachment}
+                  onCancelLoadingComposerAttachment={
+                    onCancelLoadingComposerAttachment
+                  }
+                />
               );
             }
 
-            const resolvedAttachment = attachment as PendingComposerAttachment;
-            const isImageAttachment = resolvedAttachment.fileKind === 'image';
-            const isAudioAttachment = resolvedAttachment.fileKind === 'audio';
-            const isDocumentAttachment =
-              resolvedAttachment.fileKind === 'document';
-            const attachmentExtension =
-              resolveComposerAttachmentExtension(resolvedAttachment);
-            const isJpgDocumentAttachment =
-              attachmentExtension === 'jpg' || attachmentExtension === 'jpeg';
-            const isPngDocumentAttachment = attachmentExtension === 'png';
-            const isMenuOpen = openImageActionsAttachmentId === attachment.id;
-            const isSelectedAttachment = selectedAttachmentIds.includes(
-              attachment.id
-            );
-            const fileSizeLabel = formatFileSize(resolvedAttachment.file.size);
-            const fileSecondaryLabel =
-              [resolvedAttachment.fileTypeLabel, fileSizeLabel]
-                .filter(Boolean)
-                .join(' · ') || resolvedAttachment.fileTypeLabel;
-
             return (
-              <div
+              <ComposerAttachmentPreviewRow
                 key={attachment.id}
-                ref={node => {
-                  setAttachmentRowRef(attachment.id, node);
-                }}
-                data-chat-composer-attachment-id={attachment.id}
-                className="h-[54px]"
-                style={{
-                  contentVisibility: 'auto',
-                  containIntrinsicSize: '54px',
-                }}
-              >
-                <div
-                  className={`flex h-full w-full items-center gap-2 overflow-hidden rounded-xl border bg-slate-50 p-1 ${
-                    isSelectionMode && isSelectedAttachment
-                      ? 'border-emerald-400'
-                      : 'border-slate-200'
-                  }`}
-                >
-                  {isImageAttachment ? (
-                    <button
-                      ref={isMenuOpen ? imageActionsButtonRef : undefined}
-                      type="button"
-                      aria-label={
-                        isSelectionMode
-                          ? isSelectedAttachment
-                            ? 'Batal pilih gambar'
-                            : 'Pilih gambar'
-                          : 'Aksi gambar'
-                      }
-                      title={
-                        isSelectionMode
-                          ? isSelectedAttachment
-                            ? 'Batal pilih gambar'
-                            : 'Pilih gambar'
-                          : 'Aksi gambar'
-                      }
-                      aria-haspopup={isSelectionMode ? undefined : 'menu'}
-                      aria-expanded={isSelectionMode ? undefined : isMenuOpen}
-                      aria-pressed={
-                        isSelectionMode ? isSelectedAttachment : undefined
-                      }
-                      data-chat-composer-attachment-action-trigger="true"
-                      className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-xl text-left transition-colors hover:bg-slate-100/90"
-                      onClick={event => {
-                        event.stopPropagation();
-                        if (isSelectionMode) {
-                          onToggleAttachmentSelection(attachment.id);
-                          return;
-                        }
-                        handleAttachmentMenuIntent(attachment.id);
-                      }}
-                    >
-                      <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg">
-                        <img
-                          src={resolvedAttachment.previewUrl ?? ''}
-                          alt={resolvedAttachment.fileName}
-                          loading="lazy"
-                          decoding="async"
-                          className="block h-full w-full object-cover"
-                          draggable={false}
-                        />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-slate-800">
-                          {attachment.fileName}
-                        </p>
-                        <p className="truncate text-xs text-slate-500">
-                          {fileSecondaryLabel}
-                        </p>
-                      </div>
-                    </button>
-                  ) : isDocumentAttachment ? (
-                    <button
-                      ref={isMenuOpen ? imageActionsButtonRef : undefined}
-                      type="button"
-                      aria-label={
-                        isSelectionMode
-                          ? isSelectedAttachment
-                            ? 'Batal pilih dokumen'
-                            : 'Pilih dokumen'
-                          : 'Aksi dokumen'
-                      }
-                      title={
-                        isSelectionMode
-                          ? isSelectedAttachment
-                            ? 'Batal pilih dokumen'
-                            : 'Pilih dokumen'
-                          : 'Aksi dokumen'
-                      }
-                      aria-haspopup={isSelectionMode ? undefined : 'menu'}
-                      aria-expanded={isSelectionMode ? undefined : isMenuOpen}
-                      aria-pressed={
-                        isSelectionMode ? isSelectedAttachment : undefined
-                      }
-                      data-chat-composer-attachment-action-trigger="true"
-                      className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-xl text-left transition-colors hover:bg-slate-100/90"
-                      onClick={event => {
-                        event.stopPropagation();
-                        if (isSelectionMode) {
-                          onToggleAttachmentSelection(attachment.id);
-                          return;
-                        }
-                        handleAttachmentMenuIntent(attachment.id);
-                      }}
-                    >
-                      {resolvedAttachment.pdfCoverUrl ? (
-                        <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-slate-300 bg-white">
-                          <img
-                            src={resolvedAttachment.pdfCoverUrl}
-                            alt="PDF cover preview"
-                            loading="lazy"
-                            decoding="async"
-                            className="block h-full w-full object-cover"
-                            draggable={false}
-                          />
-                        </div>
-                      ) : isJpgDocumentAttachment ? (
-                        <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white">
-                          <TbFileTypeJpg className="h-5 w-5 text-slate-600" />
-                        </div>
-                      ) : isPngDocumentAttachment ? (
-                        <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white">
-                          <TbFileTypePng className="h-5 w-5 text-slate-600" />
-                        </div>
-                      ) : (
-                        <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-[11px] font-semibold tracking-wide text-slate-700">
-                          {(
-                            resolvedAttachment.fileName
-                              .split('.')
-                              .pop()
-                              ?.toUpperCase() ||
-                            resolvedAttachment.fileTypeLabel
-                          ).slice(0, 4)}
-                        </div>
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-slate-800">
-                          {attachment.fileName}
-                        </p>
-                        <p className="truncate text-xs text-slate-500">
-                          {fileSecondaryLabel}
-                        </p>
-                      </div>
-                    </button>
-                  ) : (
-                    <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl">
-                      <TbMusic className="h-5 w-5 shrink-0 text-slate-600" />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-slate-800">
-                          {attachment.fileName}
-                        </p>
-                        <p className="truncate text-xs text-slate-500">
-                          {fileSecondaryLabel}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {isImageAttachment || isDocumentAttachment ? null : (
-                    <button
-                      type="button"
-                      aria-label={
-                        isAudioAttachment ? 'Hapus audio' : 'Hapus dokumen'
-                      }
-                      onClick={() => {
-                        onRemovePendingComposerAttachment(attachment.id);
-                      }}
-                      className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-xl text-black transition-colors hover:bg-slate-200 hover:text-black"
-                    >
-                      <TbX className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
+                attachment={attachment}
+                imageActionsButtonRef={imageActionsButtonRef}
+                isMenuOpen={openImageActionsAttachmentId === attachment.id}
+                isSelectedAttachment={selectedAttachmentIds.includes(
+                  attachment.id
+                )}
+                isSelectionMode={isSelectionMode}
+                onAttachmentMenuIntent={handleAttachmentMenuIntent}
+                onRemovePendingComposerAttachment={
+                  onRemovePendingComposerAttachment
+                }
+                onSetAttachmentRowRef={setAttachmentRowRef}
+                onToggleAttachmentSelection={onToggleAttachmentSelection}
+              />
             );
           })}
         </div>

@@ -1,54 +1,39 @@
 import type { ChatMessage } from '../data/chatSidebarGateway';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type PdfMessagePreviewCacheEntry } from '../utils/chatRuntimeCache';
 import { chatRuntime } from '../utils/chatRuntime';
 import {
   buildPdfMessagePreviewCacheKey,
   type ResolvedPdfMessagePreviewAssetEntry,
   isResolvedPdfMessagePreviewAssetFresh,
-  isPdfPreviewableMessage,
   renderPdfMessagePreview,
   resolvePersistedPdfMessagePreview,
 } from '../utils/pdf-message-preview';
 import { resolveChatAssetUrlWithExpiry } from '../utils/message-file';
+import {
+  PDF_PREVIEW_MAX_RETRY_ATTEMPTS,
+  PDF_PREVIEW_RETRY_BASE_DELAY_MS,
+} from './message-pdf-previews/constants';
+import { runConcurrentPdfPreviewTasks } from './message-pdf-previews/concurrency';
+import {
+  getPendingPdfPreviewAssetMessages,
+  getPendingPdfRenderMessages,
+} from './message-pdf-previews/pdfPreviewCandidates';
+import {
+  getActivePdfMessageIds,
+  type PdfPreviewMessageAccessors,
+} from './message-pdf-previews/pdfPreviewMessages';
+import {
+  getPdfMessagePreviewFromState,
+  prunePdfMessagePreviews,
+  pruneResolvedPdfPreviewAssetEntries,
+} from './message-pdf-previews/pdfPreviewState';
 
 export type { PdfMessagePreview } from '../utils/pdf-message-preview';
 
-const PDF_PREVIEW_MAX_RETRY_ATTEMPTS = 3;
-const PDF_PREVIEW_RETRY_BASE_DELAY_MS = 900;
-const PDF_PREVIEW_BACKGROUND_CONCURRENCY = 3;
-
-interface UseMessagePdfPreviewsProps {
+interface UseMessagePdfPreviewsProps extends PdfPreviewMessageAccessors {
   messages: ChatMessage[];
-  getAttachmentFileName: (message: ChatMessage) => string;
-  getAttachmentFileKind: (message: ChatMessage) => 'audio' | 'document';
 }
-
-const runConcurrentPdfPreviewTasks = async <T>(
-  items: T[],
-  worker: (item: T) => Promise<void>
-) => {
-  let currentIndex = 0;
-  const workerCount = Math.min(
-    PDF_PREVIEW_BACKGROUND_CONCURRENCY,
-    items.length
-  );
-
-  await Promise.all(
-    Array.from({ length: workerCount }, async () => {
-      while (currentIndex < items.length) {
-        const item = items[currentIndex];
-        currentIndex += 1;
-
-        if (!item) {
-          return;
-        }
-
-        await worker(item);
-      }
-    })
-  );
-};
 
 export const useMessagePdfPreviews = ({
   messages,
@@ -65,6 +50,13 @@ export const useMessagePdfPreviews = ({
   const pdfPreviewRetryAttemptsRef = useRef<Map<string, number>>(new Map());
   const pdfPreviewRetryTimersRef = useRef<Map<string, number>>(new Map());
   const pdfPreviewAssetExpiryTimerRef = useRef<number | null>(null);
+  const pdfPreviewAccessors = useMemo<PdfPreviewMessageAccessors>(
+    () => ({
+      getAttachmentFileKind,
+      getAttachmentFileName,
+    }),
+    [getAttachmentFileKind, getAttachmentFileName]
+  );
 
   const clearPdfPreviewRetryTimer = useCallback((messageId: string) => {
     const existingTimerId = pdfPreviewRetryTimersRef.current.get(messageId);
@@ -107,101 +99,24 @@ export const useMessagePdfPreviews = ({
 
   useEffect(() => {
     setPdfMessagePreviews(previousPreviews => {
-      let hasChanges = false;
-      const nextPreviews: Record<string, PdfMessagePreviewCacheEntry> = {};
-
-      for (const message of messages) {
-        if (message.message_type !== 'file') continue;
-        if (getAttachmentFileKind(message) !== 'document') continue;
-
-        const fileName = getAttachmentFileName(message);
-        if (!isPdfPreviewableMessage(message, fileName)) continue;
-
-        const cacheKey = buildPdfMessagePreviewCacheKey(message, fileName);
-        const existingPreview = previousPreviews[message.id];
-
-        if (existingPreview?.cacheKey === cacheKey) {
-          nextPreviews[message.id] = existingPreview;
-          continue;
-        }
-
-        const cachedPreview = chatRuntime.pdfPreviews.get(cacheKey);
-        if (cachedPreview) {
-          nextPreviews[message.id] = cachedPreview;
-          hasChanges = true;
-          continue;
-        }
-
-        if (existingPreview) {
-          hasChanges = true;
-        }
-      }
-
-      if (
-        Object.keys(nextPreviews).length !==
-        Object.keys(previousPreviews).length
-      ) {
-        hasChanges = true;
-      }
-
-      return hasChanges ? nextPreviews : previousPreviews;
+      return prunePdfMessagePreviews({
+        accessors: pdfPreviewAccessors,
+        messages,
+        previousPreviews,
+      });
     });
-  }, [getAttachmentFileKind, getAttachmentFileName, messages]);
+  }, [messages, pdfPreviewAccessors]);
 
   useEffect(() => {
     setResolvedPdfPreviewAssetEntries(previousEntries => {
-      let hasChanges = false;
-      const nextEntries: Record<string, ResolvedPdfMessagePreviewAssetEntry> =
-        {};
-
-      for (const message of messages) {
-        if (message.message_type !== 'file') continue;
-        if (getAttachmentFileKind(message) !== 'document') continue;
-
-        const fileName = getAttachmentFileName(message);
-        if (!isPdfPreviewableMessage(message, fileName)) continue;
-
-        const cacheKey = buildPdfMessagePreviewCacheKey(message, fileName);
-        const existingEntry = previousEntries[message.id];
-        if (!existingEntry || existingEntry.cacheKey !== cacheKey) {
-          if (existingEntry) {
-            hasChanges = true;
-          }
-          continue;
-        }
-
-        if (pdfMessagePreviews[message.id]?.cacheKey === cacheKey) {
-          hasChanges = true;
-          continue;
-        }
-
-        if (chatRuntime.pdfPreviews.get(cacheKey)) {
-          hasChanges = true;
-          continue;
-        }
-
-        if (!isResolvedPdfMessagePreviewAssetFresh(existingEntry)) {
-          hasChanges = true;
-          continue;
-        }
-
-        nextEntries[message.id] = existingEntry;
-      }
-
-      if (
-        Object.keys(nextEntries).length !== Object.keys(previousEntries).length
-      ) {
-        hasChanges = true;
-      }
-
-      return hasChanges ? nextEntries : previousEntries;
+      return pruneResolvedPdfPreviewAssetEntries({
+        accessors: pdfPreviewAccessors,
+        messages,
+        pdfMessagePreviews,
+        previousEntries,
+      });
     });
-  }, [
-    getAttachmentFileKind,
-    getAttachmentFileName,
-    messages,
-    pdfMessagePreviews,
-  ]);
+  }, [messages, pdfMessagePreviews, pdfPreviewAccessors]);
 
   useEffect(() => {
     if (pdfPreviewAssetExpiryTimerRef.current !== null) {
@@ -266,17 +181,10 @@ export const useMessagePdfPreviews = ({
   }, [resolvedPdfPreviewAssetEntries]);
 
   useEffect(() => {
-    const activePdfMessageIds = new Set<string>();
-
-    for (const message of messages) {
-      if (message.message_type !== 'file') continue;
-      if (getAttachmentFileKind(message) !== 'document') continue;
-
-      const fileName = getAttachmentFileName(message);
-      if (!isPdfPreviewableMessage(message, fileName)) continue;
-
-      activePdfMessageIds.add(message.id);
-    }
+    const activePdfMessageIds = getActivePdfMessageIds(
+      messages,
+      pdfPreviewAccessors
+    );
 
     for (const [messageId] of pdfPreviewRetryAttemptsRef.current) {
       if (activePdfMessageIds.has(messageId)) continue;
@@ -286,38 +194,17 @@ export const useMessagePdfPreviews = ({
     }
 
     chatRuntime.pdfPreviews.pruneInactiveMessageIds(activePdfMessageIds);
-  }, [
-    clearPdfPreviewRetryTimer,
-    getAttachmentFileKind,
-    getAttachmentFileName,
-    messages,
-  ]);
+  }, [clearPdfPreviewRetryTimer, messages, pdfPreviewAccessors]);
 
   useEffect(() => {
     let isCancelled = false;
 
-    const pendingPreviewAssetMessages = messages
-      .filter(message => {
-        if (message.message_type !== 'file') return false;
-        if (getAttachmentFileKind(message) !== 'document') return false;
-
-        const fileName = getAttachmentFileName(message);
-        if (!isPdfPreviewableMessage(message, fileName)) return false;
-        if (!message.file_preview_url?.trim()) return false;
-
-        const cacheKey = buildPdfMessagePreviewCacheKey(message, fileName);
-        if (pdfMessagePreviews[message.id]?.cacheKey === cacheKey) return false;
-        if (chatRuntime.pdfPreviews.get(cacheKey)) return false;
-
-        return (
-          resolvedPdfPreviewAssetEntries[message.id]?.cacheKey !== cacheKey ||
-          !isResolvedPdfMessagePreviewAssetFresh(
-            resolvedPdfPreviewAssetEntries[message.id]
-          )
-        );
-      })
-      .slice()
-      .reverse();
+    const pendingPreviewAssetMessages = getPendingPdfPreviewAssetMessages({
+      accessors: pdfPreviewAccessors,
+      messages,
+      pdfMessagePreviews,
+      resolvedPdfPreviewAssetEntries,
+    });
 
     if (pendingPreviewAssetMessages.length === 0) {
       return;
@@ -381,40 +268,24 @@ export const useMessagePdfPreviews = ({
       isCancelled = true;
     };
   }, [
-    getAttachmentFileKind,
     getAttachmentFileName,
     messages,
     pdfMessagePreviews,
+    pdfPreviewAccessors,
     resolvedPdfPreviewAssetEntries,
   ]);
 
   useEffect(() => {
     let isCancelled = false;
 
-    const pendingPdfMessages = messages
-      .filter(message => {
-        if (message.message_type !== 'file') return false;
-        if (getAttachmentFileKind(message) !== 'document') return false;
-
-        const fileName = getAttachmentFileName(message);
-        if (!isPdfPreviewableMessage(message, fileName)) return false;
-
-        const cacheKey = buildPdfMessagePreviewCacheKey(message, fileName);
-        if (pdfMessagePreviews[message.id]?.cacheKey === cacheKey) return false;
-        if (chatRuntime.pdfPreviews.get(cacheKey)) return false;
-        if (pdfPreviewRenderingIdsRef.current.has(message.id)) return false;
-        if (pdfPreviewRetryTimersRef.current.has(message.id)) return false;
-        if (
-          (pdfPreviewRetryAttemptsRef.current.get(message.id) ?? 0) >=
-          PDF_PREVIEW_MAX_RETRY_ATTEMPTS
-        ) {
-          return false;
-        }
-
-        return true;
-      })
-      .slice()
-      .reverse();
+    const pendingPdfMessages = getPendingPdfRenderMessages({
+      accessors: pdfPreviewAccessors,
+      messages,
+      pdfMessagePreviews,
+      renderingMessageIds: pdfPreviewRenderingIdsRef.current,
+      retryAttemptsByMessageId: pdfPreviewRetryAttemptsRef.current,
+      retryTimersByMessageId: pdfPreviewRetryTimersRef.current,
+    });
 
     if (pendingPdfMessages.length === 0) return;
 
@@ -484,10 +355,10 @@ export const useMessagePdfPreviews = ({
     };
   }, [
     clearPdfPreviewRetryTimer,
-    getAttachmentFileKind,
     getAttachmentFileName,
     messages,
     pdfMessagePreviews,
+    pdfPreviewAccessors,
     pdfPreviewRetryNonce,
     schedulePdfPreviewRetry,
   ]);
@@ -495,28 +366,12 @@ export const useMessagePdfPreviews = ({
   return {
     pdfMessagePreviews,
     getPdfMessagePreview: (message: ChatMessage, fileName: string | null) => {
-      const cacheKey = buildPdfMessagePreviewCacheKey(message, fileName);
-      const localPreview = pdfMessagePreviews[message.id];
-      if (localPreview?.cacheKey === cacheKey) {
-        return localPreview;
-      }
-
-      const cachedPreview = cacheKey
-        ? chatRuntime.pdfPreviews.get(cacheKey)
-        : undefined;
-      if (cachedPreview) {
-        return cachedPreview;
-      }
-
-      const resolvedPreviewAsset = resolvedPdfPreviewAssetEntries[message.id];
-      if (
-        resolvedPreviewAsset?.cacheKey === cacheKey &&
-        isResolvedPdfMessagePreviewAssetFresh(resolvedPreviewAsset)
-      ) {
-        return resolvedPreviewAsset;
-      }
-
-      return undefined;
+      return getPdfMessagePreviewFromState({
+        fileName,
+        message,
+        pdfMessagePreviews,
+        resolvedPdfPreviewAssetEntries,
+      });
     },
   };
 };

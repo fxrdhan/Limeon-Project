@@ -10,43 +10,17 @@ import type { ChatMessage } from '../data/chatSidebarGateway';
 import { chatRuntime } from '../utils/chatRuntime';
 import {
   getFreshResolvedChatAssetUrl,
-  getCachedResolvedChatAssetUrl,
-  isDirectChatAssetUrl,
   resolveChatAssetUrlWithExpiry,
   type ResolvedChatAssetUrlEntry,
 } from '../utils/message-file';
+import type { VisibleBounds } from '../utils/viewport-visibility';
+import { runTasksWithConcurrency } from './message-image-previews/concurrency';
 import {
-  getVerticalVisibilityBounds,
-  type VisibleBounds,
-} from '../utils/viewport-visibility';
-
-const IMAGE_PREFETCH_DEBOUNCE_MS = 16;
-const FULL_IMAGE_PREFETCH_DELAY_MS = 420;
-const MIN_PARTIAL_VISIBLE_READ_HEIGHT_PX = 48;
-
-const runTasksWithConcurrency = async <T>(
-  items: T[],
-  limit: number,
-  task: (item: T) => Promise<void>
-) => {
-  const boundedLimit = Math.max(1, limit);
-  const taskQueue = [...items];
-
-  await Promise.all(
-    Array.from({
-      length: Math.min(boundedLimit, taskQueue.length),
-    }).map(async () => {
-      while (taskQueue.length > 0) {
-        const nextItem = taskQueue.shift();
-        if (!nextItem) {
-          return;
-        }
-
-        await task(nextItem);
-      }
-    })
-  );
-};
+  FULL_IMAGE_PREFETCH_DELAY_MS,
+  IMAGE_PREFETCH_DEBOUNCE_MS,
+} from './message-image-previews/constants';
+import { resolveImageMessageUrl } from './message-image-previews/imageMessageUrl';
+import { collectVisibleImageMessages as collectVisibleImageMessagesForPreview } from './message-image-previews/visibleImageMessages';
 
 export const useMessageImagePreviews = ({
   messages,
@@ -122,59 +96,13 @@ export const useMessageImagePreviews = ({
   );
 
   const collectVisibleImageMessages = useCallback(() => {
-    const normalizedChannelId = currentChannelId?.trim() || '';
-    if (!normalizedChannelId) {
-      return [];
-    }
-
-    const bounds = getVisibleMessagesBounds();
-    if (!bounds) {
-      return [];
-    }
-
-    const verticalVisibilityBounds = getVerticalVisibilityBounds(
-      bounds,
-      chatHeaderContainerRef.current?.getBoundingClientRect(),
-      0
-    );
-
-    return messages.filter(messageItem => {
-      if (
-        messageItem.channel_id !== normalizedChannelId ||
-        messageItem.id.startsWith('temp_') ||
-        !chatRuntime.imageAssets.isPreviewableMessage(messageItem) ||
-        (viewportPrefetchableImageMessageIds &&
-          !viewportPrefetchableImageMessageIds.has(messageItem.id))
-      ) {
-        return false;
-      }
-
-      const bubbleElement = messageBubbleRefs.current.get(messageItem.id);
-      if (!bubbleElement) {
-        return false;
-      }
-
-      const bubbleRect = bubbleElement.getBoundingClientRect();
-      const visibleTop = Math.max(
-        bubbleRect.top,
-        verticalVisibilityBounds.minVisibleTop
-      );
-      const visibleBottom = Math.min(
-        bubbleRect.bottom,
-        verticalVisibilityBounds.maxVisibleBottom
-      );
-      const visibleHeight = visibleBottom - visibleTop;
-      const isTopEdgeVisible =
-        bubbleRect.top >= verticalVisibilityBounds.minVisibleTop &&
-        bubbleRect.top < verticalVisibilityBounds.maxVisibleBottom;
-      const isMeaningfullyVisibleBelowHeader =
-        bubbleRect.top < verticalVisibilityBounds.minVisibleTop &&
-        visibleHeight >= MIN_PARTIAL_VISIBLE_READ_HEIGHT_PX;
-
-      return (
-        visibleHeight > 0 &&
-        (isTopEdgeVisible || isMeaningfullyVisibleBelowHeader)
-      );
+    return collectVisibleImageMessagesForPreview({
+      chatHeaderElement: chatHeaderContainerRef.current,
+      currentChannelId,
+      getVisibleMessagesBounds,
+      messageBubbleElements: messageBubbleRefs.current,
+      messages,
+      viewportPrefetchableImageMessageIds,
     });
   }, [
     chatHeaderContainerRef,
@@ -478,64 +406,12 @@ export const useMessageImagePreviews = ({
         | 'file_preview_url'
       >
     ) => {
-      if (!chatRuntime.imageAssets.isPreviewableMessage(message)) {
-        return null;
-      }
-
-      const normalizedChannelId = currentChannelId?.trim() || null;
-      const runtimeFullUrl =
-        normalizedChannelId &&
-        chatRuntime.imageAssets.getUrl(normalizedChannelId, message.id, 'full');
-      if (runtimeFullUrl) {
-        return runtimeFullUrl;
-      }
-
-      const resolvedFullAssetUrl = resolvedFullAssetUrlsByMessageId[message.id];
-      if (resolvedFullAssetUrl) {
-        return resolvedFullAssetUrl;
-      }
-
-      const runtimeThumbnailUrl =
-        normalizedChannelId &&
-        chatRuntime.imageAssets.getUrl(
-          normalizedChannelId,
-          message.id,
-          'thumbnail'
-        );
-      if (runtimeThumbnailUrl) {
-        return runtimeThumbnailUrl;
-      }
-
-      const resolvedPreviewAssetUrl = getFreshResolvedChatAssetUrl(
-        resolvedPreviewAssetEntriesByMessageId[message.id]
-      );
-      if (resolvedPreviewAssetUrl) {
-        return resolvedPreviewAssetUrl;
-      }
-
-      const persistedPreviewUrl = message.file_preview_url?.trim() || null;
-      const cachedResolvedPreviewUrl = persistedPreviewUrl
-        ? getCachedResolvedChatAssetUrl(
-            persistedPreviewUrl,
-            persistedPreviewUrl
-          )
-        : null;
-      if (cachedResolvedPreviewUrl) {
-        return cachedResolvedPreviewUrl;
-      }
-
-      if (persistedPreviewUrl && isDirectChatAssetUrl(persistedPreviewUrl)) {
-        return persistedPreviewUrl;
-      }
-
-      if (
-        message.id.startsWith('temp_') ||
-        isDirectChatAssetUrl(message.message)
-      ) {
-        return message.message;
-      }
-
-      return null;
+      return resolveImageMessageUrl({
+        currentChannelId,
+        message,
+        resolvedFullAssetUrlsByMessageId,
+        resolvedPreviewAssetEntriesByMessageId,
+      });
     },
     [
       currentChannelId,

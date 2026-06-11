@@ -1,69 +1,33 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  type KeyboardEvent,
+} from 'react';
 import { useConfirmDialog } from '@/components/dialog-box';
-import { fuzzyMatch } from '@/utils/search';
-import { filterAndRank } from './searchCore';
 import { useAlert } from '@/components/alert/hooks';
 import { StorageService } from '@/services/api/storage.service';
-import type { PostgrestError } from '@supabase/supabase-js';
-import type {
-  Supplier,
-  Patient,
-  Doctor,
-  Customer,
-  UseMasterDataManagementOptions,
-} from '@/types';
-
-// Import regular query hooks (realtime handled at page level)
-
-// Import other hooks
+import type { UseMasterDataManagementOptions } from '@/types';
+import { normalizeMasterDataAutosaveField } from './master-data-management/autosave';
 import {
-  useSuppliers,
-  useSupplierMutations,
-  usePatientMutations,
-  useDoctorMutations,
-  usePatients,
-  useDoctors,
-  useCustomers,
-  useCustomerMutations,
-} from '@/hooks/queries';
-
-type MasterDataIdentity = Supplier | Patient | Doctor | Customer;
-const IDENTITY_IMAGE_BUCKET = 'profiles';
-const IMAGE_ENABLED_TABLES = new Set(['suppliers', 'patients', 'doctors']);
-
-// Simplified hook selector - realtime always enabled for simplicity
-const getHooksForTable = (tableName: string) => {
-  interface QueryOptions {
-    enabled?: boolean;
-    filters?: Record<string, unknown>;
-    orderBy?: { column: string; ascending?: boolean };
-  }
-
-  switch (tableName) {
-    case 'suppliers':
-      return {
-        useData: useSuppliers, // No realtime for suppliers yet
-        useMutations: useSupplierMutations,
-      };
-    case 'patients':
-      return {
-        useData: (options: QueryOptions) => usePatients(options),
-        useMutations: usePatientMutations,
-      };
-    case 'doctors':
-      return {
-        useData: (options: QueryOptions) => useDoctors(options),
-        useMutations: useDoctorMutations,
-      };
-    case 'customers':
-      return {
-        useData: (options: QueryOptions) => useCustomers(options),
-        useMutations: useCustomerMutations,
-      };
-    default:
-      throw new Error(`Unsupported table: ${tableName}`);
-  }
-};
+  getMasterDataErrorMessage,
+  isDuplicateCodeError,
+  isForeignKeyDeleteError,
+} from './master-data-management/errors';
+import { filterMasterDataIdentities } from './master-data-management/filtering';
+import {
+  getIdentityImageUrl,
+  IDENTITY_IMAGE_BUCKET,
+  IMAGE_ENABLED_TABLES,
+} from './master-data-management/identityImages';
+import {
+  getMasterDataCreateMutation,
+  getMasterDataDeleteMutation,
+  getMasterDataUpdateMutation,
+} from './master-data-management/mutations';
+import { getHooksForTable } from './master-data-management/tableHooks';
+import type { MasterDataIdentity } from './master-data-management/types';
 
 export const useMasterDataManagement = (
   tableName: string,
@@ -150,149 +114,11 @@ export const useMasterDataManagement = (
 
   // Filter locally; AG Grid owns pagination and page-size state.
   const { currentData, totalItems: totalEntities } = useMemo(() => {
-    let filteredData = allData as MasterDataIdentity[];
-
-    // Apply search filter
-    if (debouncedSearch) {
-      // Standard filtering for master data (suppliers, patients, doctors)
-      filteredData = filterAndRank<MasterDataIdentity>({
-        data: filteredData,
-        searchTerm: debouncedSearch,
-        matcher: (identity, searchTermLower) => {
-          // Check for code field if it exists (all master data now uses 'code')
-          if (
-            'code' in identity &&
-            typeof identity.code === 'string' &&
-            fuzzyMatch(identity.code.toLowerCase(), searchTermLower)
-          )
-            return true;
-          if (identity.name && fuzzyMatch(identity.name, searchTermLower))
-            return true;
-          if (
-            'description' in identity &&
-            typeof identity.description === 'string' &&
-            fuzzyMatch(identity.description, searchTermLower)
-          )
-            return true;
-          if (
-            'address' in identity &&
-            typeof identity.address === 'string' &&
-            fuzzyMatch(identity.address, searchTermLower)
-          )
-            return true;
-
-          if (tableName === 'suppliers') {
-            const supplier = identity as Supplier;
-            if (
-              supplier.address &&
-              fuzzyMatch(supplier.address, searchTermLower)
-            )
-              return true;
-            if (supplier.phone && fuzzyMatch(supplier.phone, searchTermLower))
-              return true;
-            if (supplier.email && fuzzyMatch(supplier.email, searchTermLower))
-              return true;
-            if (
-              supplier.contact_person &&
-              fuzzyMatch(supplier.contact_person, searchTermLower)
-            )
-              return true;
-          } else if (tableName === 'patients') {
-            const patient = identity as Patient;
-            if (patient.gender && fuzzyMatch(patient.gender, searchTermLower))
-              return true;
-            if (patient.address && fuzzyMatch(patient.address, searchTermLower))
-              return true;
-            if (patient.phone && fuzzyMatch(patient.phone, searchTermLower))
-              return true;
-            if (patient.email && fuzzyMatch(patient.email, searchTermLower))
-              return true;
-            if (
-              patient.birth_date &&
-              fuzzyMatch(patient.birth_date.toString(), searchTermLower)
-            )
-              return true;
-          } else if (tableName === 'doctors') {
-            const doctor = identity as Doctor;
-            if (
-              doctor.specialization &&
-              fuzzyMatch(doctor.specialization, searchTermLower)
-            )
-              return true;
-            if (
-              doctor.license_number &&
-              fuzzyMatch(doctor.license_number, searchTermLower)
-            )
-              return true;
-            if (doctor.phone && fuzzyMatch(doctor.phone, searchTermLower))
-              return true;
-            if (doctor.email && fuzzyMatch(doctor.email, searchTermLower))
-              return true;
-            if (
-              doctor.experience_years &&
-              fuzzyMatch(doctor.experience_years.toString(), searchTermLower)
-            )
-              return true;
-          } else if (tableName === 'customers') {
-            const customer = identity as Customer;
-            if (customer.phone && fuzzyMatch(customer.phone, searchTermLower))
-              return true;
-            if (customer.email && fuzzyMatch(customer.email, searchTermLower))
-              return true;
-            if (
-              customer.address &&
-              fuzzyMatch(customer.address, searchTermLower)
-            )
-              return true;
-          }
-          return false;
-        },
-        scorer: (identityToSort, searchTermLower) => {
-          // Check code field (all master data tables now use 'code')
-          if (
-            'code' in identityToSort &&
-            typeof identityToSort.code === 'string' &&
-            identityToSort.code.toLowerCase().startsWith(searchTermLower)
-          )
-            return 5;
-          if (
-            'code' in identityToSort &&
-            typeof identityToSort.code === 'string' &&
-            identityToSort.code.toLowerCase().includes(searchTermLower)
-          )
-            return 4;
-          // Then check name
-          if (
-            identityToSort.name &&
-            identityToSort.name.toLowerCase().startsWith(searchTermLower)
-          )
-            return 3;
-          if (
-            identityToSort.name &&
-            identityToSort.name.toLowerCase().includes(searchTermLower)
-          )
-            return 2;
-          if (
-            identityToSort.name &&
-            fuzzyMatch(identityToSort.name, searchTermLower)
-          )
-            return 1;
-          return 0;
-        },
-        tieBreaker: (a, b) => {
-          // Secondary sort by code if available, then name
-          if (
-            'code' in a &&
-            'code' in b &&
-            typeof a.code === 'string' &&
-            typeof b.code === 'string'
-          ) {
-            return a.code.localeCompare(b.code);
-          }
-          return a.name.localeCompare(b.name);
-        },
-      });
-    }
+    const filteredData = filterMasterDataIdentities({
+      data: allData as MasterDataIdentity[],
+      searchTerm: debouncedSearch,
+      tableName,
+    });
 
     const totalEntities = filteredData.length;
 
@@ -310,125 +136,8 @@ export const useMasterDataManagement = (
   }, []);
 
   const getUpdateMutation = useCallback(() => {
-    return (
-      ('updateSupplier' in mutations && mutations.updateSupplier) ||
-      ('updatePatient' in mutations && mutations.updatePatient) ||
-      ('updateDoctor' in mutations && mutations.updateDoctor) ||
-      ('updateCustomer' in mutations && mutations.updateCustomer)
-    );
+    return getMasterDataUpdateMutation(mutations);
   }, [mutations]);
-
-  const normalizeAutosaveField = useCallback(
-    (
-      fieldKey: string,
-      value: unknown
-    ): { key: string; value: unknown } | null => {
-      const requiredFieldsByTable: Record<string, Set<string>> = {
-        suppliers: new Set(['name']),
-        patients: new Set(['name']),
-        doctors: new Set(['name']),
-        customers: new Set(['name', 'customer_level_id']),
-      };
-
-      const nullableFieldsByTable: Record<string, Set<string>> = {
-        suppliers: new Set([
-          'address',
-          'phone',
-          'email',
-          'contact_person',
-          'image_url',
-        ]),
-        patients: new Set([
-          'gender',
-          'birth_date',
-          'address',
-          'phone',
-          'email',
-        ]),
-        doctors: new Set([
-          'gender',
-          'specialization',
-          'license_number',
-          'experience_years',
-          'qualification',
-          'phone',
-          'email',
-          'address',
-          'birth_date',
-          'image_url',
-        ]),
-        customers: new Set(['phone', 'email', 'address']),
-      };
-
-      const mappedKey =
-        tableName === 'doctors' && fieldKey === 'education'
-          ? 'qualification'
-          : fieldKey;
-
-      const toNormalizedText = (input: unknown): string => {
-        if (input === null || input === undefined) return '';
-        if (
-          typeof input === 'string' ||
-          typeof input === 'number' ||
-          typeof input === 'boolean' ||
-          typeof input === 'bigint'
-        ) {
-          return String(input).trim();
-        }
-        if (input instanceof Date) {
-          return input.toISOString().trim();
-        }
-        return '';
-      };
-
-      if (mappedKey === 'experience_years') {
-        const normalizedValue = toNormalizedText(value);
-        if (normalizedValue === '') {
-          return { key: mappedKey, value: null };
-        }
-        const parsed = Number(normalizedValue);
-        return Number.isFinite(parsed)
-          ? { key: mappedKey, value: parsed }
-          : null;
-      }
-
-      const requiredFields =
-        requiredFieldsByTable[tableName] ?? new Set(['name']);
-      if (requiredFields.has(mappedKey)) {
-        const normalizedValue = toNormalizedText(value);
-        if (normalizedValue === '') {
-          return null;
-        }
-        return { key: mappedKey, value: normalizedValue };
-      }
-
-      const nullableFields =
-        nullableFieldsByTable[tableName] ?? new Set<string>();
-      if (nullableFields.has(mappedKey)) {
-        const normalizedValue = toNormalizedText(value);
-        if (normalizedValue === '') {
-          return { key: mappedKey, value: null };
-        }
-        return { key: mappedKey, value: normalizedValue };
-      }
-
-      return { key: mappedKey, value };
-    },
-    [tableName]
-  );
-
-  const getIdentityImageUrl = useCallback(
-    (identity: MasterDataIdentity | null | undefined): string | null => {
-      if (!identity || !('image_url' in identity)) {
-        return null;
-      }
-      const imageUrl = identity.image_url;
-      return typeof imageUrl === 'string' && imageUrl.trim() !== ''
-        ? imageUrl
-        : null;
-    },
-    []
-  );
 
   const handleFieldAutosave = useCallback(
     async (
@@ -439,26 +148,18 @@ export const useMasterDataManagement = (
       if (!identityId) return;
 
       const updateMutation = getUpdateMutation();
-      if (
-        !updateMutation ||
-        typeof updateMutation !== 'object' ||
-        !('mutateAsync' in updateMutation)
-      ) {
+      if (!updateMutation) {
         return;
       }
 
-      const normalizedField = normalizeAutosaveField(fieldKey, value);
+      const normalizedField = normalizeMasterDataAutosaveField(
+        tableName,
+        fieldKey,
+        value
+      );
       if (!normalizedField) return;
 
-      await (
-        updateMutation as unknown as {
-          mutateAsync: (params: {
-            id: string;
-            data: Record<string, unknown>;
-            options?: { silent?: boolean };
-          }) => Promise<unknown>;
-        }
-      ).mutateAsync({
+      await updateMutation.mutateAsync({
         id: identityId,
         data: { [normalizedField.key]: normalizedField.value },
         options: { silent: true },
@@ -475,7 +176,7 @@ export const useMasterDataManagement = (
         };
       });
     },
-    [getUpdateMutation, normalizeAutosaveField]
+    [getUpdateMutation, tableName]
   );
 
   const handleImageSave = useCallback(
@@ -489,11 +190,7 @@ export const useMasterDataManagement = (
       if (!entityId || !IMAGE_ENABLED_TABLES.has(tableName)) return;
 
       const updateMutation = getUpdateMutation();
-      if (
-        !updateMutation ||
-        typeof updateMutation !== 'object' ||
-        !('mutateAsync' in updateMutation)
-      ) {
+      if (!updateMutation) {
         return;
       }
 
@@ -534,15 +231,7 @@ export const useMasterDataManagement = (
         );
       }
 
-      await (
-        updateMutation as unknown as {
-          mutateAsync: (params: {
-            id: string;
-            data: Record<string, unknown>;
-            options?: { silent?: boolean };
-          }) => Promise<unknown>;
-        }
-      ).mutateAsync({
+      await updateMutation.mutateAsync({
         id: entityId,
         data: { image_url: publicUrl },
         options: { silent: true },
@@ -561,14 +250,7 @@ export const useMasterDataManagement = (
       await refetch();
       return publicUrl;
     },
-    [
-      tableName,
-      getUpdateMutation,
-      editingIdentity,
-      allData,
-      refetch,
-      getIdentityImageUrl,
-    ]
+    [tableName, getUpdateMutation, editingIdentity, allData, refetch]
   );
 
   const handleImageDelete = useCallback(
@@ -576,11 +258,7 @@ export const useMasterDataManagement = (
       if (!entityId || !IMAGE_ENABLED_TABLES.has(tableName)) return;
 
       const updateMutation = getUpdateMutation();
-      if (
-        !updateMutation ||
-        typeof updateMutation !== 'object' ||
-        !('mutateAsync' in updateMutation)
-      ) {
+      if (!updateMutation) {
         return;
       }
 
@@ -607,15 +285,7 @@ export const useMasterDataManagement = (
         );
       }
 
-      await (
-        updateMutation as unknown as {
-          mutateAsync: (params: {
-            id: string;
-            data: Record<string, unknown>;
-            options?: { silent?: boolean };
-          }) => Promise<unknown>;
-        }
-      ).mutateAsync({
+      await updateMutation.mutateAsync({
         id: entityId,
         data: { image_url: null },
         options: { silent: true },
@@ -633,14 +303,7 @@ export const useMasterDataManagement = (
 
       await refetch();
     },
-    [
-      tableName,
-      getUpdateMutation,
-      editingIdentity,
-      allData,
-      refetch,
-      getIdentityImageUrl,
-    ]
+    [tableName, getUpdateMutation, editingIdentity, allData, refetch]
   );
 
   const handleModalSubmit = useCallback(
@@ -672,48 +335,19 @@ export const useMasterDataManagement = (
         let mutationResult: unknown;
 
         if (identityData.id) {
-          // Update existing identity
           const updateMutation = getUpdateMutation();
 
-          if (
-            updateMutation &&
-            typeof updateMutation === 'object' &&
-            'mutateAsync' in updateMutation
-          ) {
-            // For specific mutations (suppliers, patients, doctors), use nested data structure
-            mutationResult = await (
-              updateMutation as unknown as {
-                mutateAsync: (params: {
-                  id: string;
-                  data: Record<string, unknown>;
-                }) => Promise<unknown>;
-              }
-            ).mutateAsync({
+          if (updateMutation) {
+            mutationResult = await updateMutation.mutateAsync({
               id: identityData.id!,
               data: payloadData,
             });
           }
         } else {
-          // Create new identity
-          const createMutation =
-            ('createSupplier' in mutations && mutations.createSupplier) ||
-            ('createPatient' in mutations && mutations.createPatient) ||
-            ('createDoctor' in mutations && mutations.createDoctor) ||
-            ('createCustomer' in mutations && mutations.createCustomer);
+          const createMutation = getMasterDataCreateMutation(mutations);
 
-          if (
-            createMutation &&
-            typeof createMutation === 'object' &&
-            'mutateAsync' in createMutation
-          ) {
-            // Cast to unknown first to avoid type conflicts, then cast to mutation interface
-            mutationResult = await (
-              createMutation as unknown as {
-                mutateAsync: (
-                  data: Record<string, unknown>
-                ) => Promise<unknown>;
-              }
-            ).mutateAsync(payloadData);
+          if (createMutation) {
+            mutationResult = await createMutation.mutateAsync(payloadData);
           }
         }
 
@@ -725,39 +359,11 @@ export const useMasterDataManagement = (
         await refetch();
         return mutationResult;
       } catch (error: unknown) {
-        // Check for duplicate code constraint error (409 Conflict)
-        // PostgrestError structure: {message: string, details: string, hint: string, code: string}
-        const isPostgrestError = (err: unknown): err is PostgrestError => {
-          return (
-            typeof err === 'object' &&
-            err !== null &&
-            'message' in err &&
-            'code' in err
-          );
-        };
-
-        const errorMessage = isPostgrestError(error)
-          ? error.message
-          : (typeof error === 'string' ? error : String(error)) ||
-            'Unknown error';
-        const errorDetails = isPostgrestError(error)
-          ? (error.details ?? '')
-          : '';
-        const errorCode = isPostgrestError(error) ? (error.code ?? '') : '';
-
-        const isDuplicateCodeError =
-          errorCode === '23505' || // PostgreSQL unique violation code
-          errorMessage.includes('unique constraint') ||
-          errorMessage.includes('duplicate key value') ||
-          errorMessage.includes('violates unique constraint') ||
-          errorDetails.includes('already exists') ||
-          errorMessage.includes('already exists') ||
-          (errorMessage.includes('409') && errorMessage.includes('conflict'));
-
+        const errorMessage = getMasterDataErrorMessage(error);
         const action = identityData.id ? 'memperbarui' : 'menambahkan';
         const codeValue = identityData.code;
 
-        if (isDuplicateCodeError && codeValue) {
+        if (isDuplicateCodeError(error) && codeValue) {
           alert.error(
             `Kode "${codeValue}" sudah digunakan oleh ${entityNameLabel.toLowerCase()} lain. ` +
               `Silakan gunakan kode yang berbeda.`
@@ -774,23 +380,10 @@ export const useMasterDataManagement = (
   const handleDelete = useCallback(
     async (identityId: string) => {
       try {
-        const deleteMutation =
-          ('deleteSupplier' in mutations && mutations.deleteSupplier) ||
-          ('deletePatient' in mutations && mutations.deletePatient) ||
-          ('deleteDoctor' in mutations && mutations.deleteDoctor) ||
-          ('deleteCustomer' in mutations && mutations.deleteCustomer);
+        const deleteMutation = getMasterDataDeleteMutation(mutations);
 
-        if (
-          deleteMutation &&
-          typeof deleteMutation === 'object' &&
-          'mutateAsync' in deleteMutation
-        ) {
-          // Cast to unknown first to avoid type conflicts, then cast to mutation interface
-          await (
-            deleteMutation as unknown as {
-              mutateAsync: (id: string) => Promise<unknown>;
-            }
-          ).mutateAsync(identityId);
+        if (deleteMutation) {
+          await deleteMutation.mutateAsync(identityId);
         }
 
         setIsEditModalOpen(false);
@@ -799,21 +392,13 @@ export const useMasterDataManagement = (
         // Manually refetch to ensure current tab updates immediately after mutation
         await refetch();
       } catch (error) {
-        // Check for foreign key constraint error for delete operations
-        const isForeignKeyError =
-          error instanceof Error &&
-          (error.message.includes('foreign key constraint') ||
-            error.message.includes('violates foreign key') ||
-            error.message.includes('still referenced'));
-
-        if (isForeignKeyError) {
+        if (isForeignKeyDeleteError(error)) {
           alert.error(
             `Tidak dapat menghapus ${entityNameLabel.toLowerCase()} karena masih digunakan di data lain. ` +
               `Hapus terlebih dahulu data yang menggunakannya.`
           );
         } else {
-          const errorMessage =
-            error instanceof Error ? error.message : 'Unknown error';
+          const errorMessage = getMasterDataErrorMessage(error);
           alert.error(`Gagal menghapus ${entityNameLabel}: ${errorMessage}`);
         }
       }
@@ -829,7 +414,7 @@ export const useMasterDataManagement = (
   };
 
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
+    (e: KeyboardEvent<HTMLInputElement>) => {
       if (e.key === 'Enter') {
         e.preventDefault();
 

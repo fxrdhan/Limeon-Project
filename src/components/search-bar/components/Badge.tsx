@@ -1,44 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { TbCirclePlus, TbPencil, TbTrash, TbX } from 'react-icons/tb';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/tooltip';
 import { BADGE_COLORS, BadgeConfig } from '../types/badge';
 import { validateFilterValue } from '../utils/validationUtils';
-
-const BADGE_TYPE_LABELS: Record<BadgeConfig['type'], string> = {
-  column: 'Column',
-  operator: 'Operator',
-  value: 'Value',
-  separator: 'Separator',
-  valueTo: 'End value',
-  join: 'Join',
-  groupOpen: 'Open group',
-  groupClose: 'Close group',
-};
-
-// Format currency value for display (e.g., "500" -> "Rp 500")
-const formatCurrencyDisplay = (value: string): string => {
-  // Extract numeric value, handling existing currency symbols and formatting
-  const cleanValue = value
-    .replace(/^(Rp\.?\s*|\$\s*|€\s*|¥\s*|£\s*|IDR\s*|USD\s*|EUR\s*)/i, '')
-    .replace(/[.,]/g, '') // Remove thousand separators
-    .trim();
-
-  // If value contains space (e.g. "500 600"), don't format it
-  // This prevents formatting partial/multiple values as a single currency
-  if (cleanValue.includes(' ')) {
-    return value;
-  }
-
-  const numericValue = parseInt(cleanValue, 10);
-
-  if (isNaN(numericValue)) {
-    return value; // Return original if can't parse
-  }
-
-  // Format with thousand separators (Indonesian style: 1.000.000)
-  const formatted = numericValue.toLocaleString('id-ID');
-  return `Rp ${formatted}`;
-};
+import { BadgeActionButton } from './badge/BadgeActionButton';
+import { BADGE_TYPE_LABELS, formatCurrencyDisplay } from './badge/badgeDisplay';
+import { useBadgeActionVisibility } from './badge/useBadgeActionVisibility';
 
 interface BadgeProps {
   config: BadgeConfig;
@@ -296,58 +262,19 @@ const Badge: React.FC<BadgeProps> = ({ config, onSelect }) => {
   const wantsDeleteButton = !isEditing && shouldExposeActions;
   const wantsInsertButton =
     !isEditing && !!config.canInsert && shouldExposeActions;
-  const [editIconVisible, setEditIconVisible] = useState(wantsEditButton);
-  const [deleteIconVisible, setDeleteIconVisible] = useState(wantsDeleteButton);
-  const [insertIconVisible, setInsertIconVisible] = useState(wantsInsertButton);
-
-  useEffect(() => {
-    if (wantsEditButton) {
-      const rafId = requestAnimationFrame(() => {
-        onHoverChange?.(true);
-        setEditIconVisible(true);
-      });
-      return () => cancelAnimationFrame(rafId);
-    }
-    const timeoutId = setTimeout(() => {
-      onHoverChange?.(false);
-      setEditIconVisible(false);
-    }, 120);
-    return () => clearTimeout(timeoutId);
-  }, [wantsEditButton, onHoverChange]);
-
-  useEffect(() => {
-    if (wantsDeleteButton) {
-      const rafId = requestAnimationFrame(() => {
-        onHoverChange?.(true);
-        setDeleteIconVisible(true);
-      });
-      return () => cancelAnimationFrame(rafId);
-    }
-    const timeoutId = setTimeout(() => {
-      onHoverChange?.(false);
-      setDeleteIconVisible(false);
-    }, 120);
-    return () => clearTimeout(timeoutId);
-  }, [wantsDeleteButton, onHoverChange]);
-
-  useEffect(() => {
-    if (wantsInsertButton) {
-      const rafId = requestAnimationFrame(() => {
-        onHoverChange?.(true);
-        setInsertIconVisible(true);
-      });
-      return () => cancelAnimationFrame(rafId);
-    }
-    const timeoutId = setTimeout(() => {
-      onHoverChange?.(false);
-      setInsertIconVisible(false);
-    }, 120);
-    return () => clearTimeout(timeoutId);
-  }, [wantsInsertButton, onHoverChange]);
-
-  const showEditButtonSpace = wantsEditButton || editIconVisible;
-  const showDeleteButtonSpace = wantsDeleteButton || deleteIconVisible;
-  const showInsertButtonSpace = wantsInsertButton || insertIconVisible;
+  const {
+    deleteIconVisible,
+    editIconVisible,
+    insertIconVisible,
+    showDeleteButtonSpace,
+    showEditButtonSpace,
+    showInsertButtonSpace,
+  } = useBadgeActionVisibility({
+    onHoverChange,
+    wantsDeleteButton,
+    wantsEditButton,
+    wantsInsertButton,
+  });
   const hasMenuAction = hasActionMenu && !isEditing;
   const actionTargetLabel = `${badgeTypeLabel.toLowerCase()} ${displayLabel}`;
   const badgeAriaLabel = config.canClear
@@ -431,6 +358,7 @@ const Badge: React.FC<BadgeProps> = ({ config, onSelect }) => {
               onChange={handleChange}
               onKeyDown={handleKeyDown}
               onBlur={handleBlur}
+              aria-label={`Edit ${actionTargetLabel}`}
               className={`bg-transparent border-none outline-none text-sm font-medium ${colors.text} max-w-[200px] p-0 badge-edit-input transition-[width] duration-150 ease-out`}
               style={{ width: `${Math.max(editingValue.length * 8, 20)}px` }}
             />
@@ -443,127 +371,87 @@ const Badge: React.FC<BadgeProps> = ({ config, onSelect }) => {
         <div className="flex items-center pr-1">
           {/* Edit/Cancel button - same position, swaps icon based on mode */}
           {config.canEdit && config.onEdit && (
-            <div
-              className={`flex h-6 flex-shrink-0 items-center justify-center overflow-hidden transition-[width,opacity,margin] duration-150 ease-out ${
-                showEditButtonSpace ? 'w-6 opacity-100' : 'w-0 opacity-0'
-              } ${showEditButtonSpace ? 'ml-1' : 'ml-0'}`}
+            <BadgeActionButton
+              ariaHidden={!wantsEditButton}
+              ariaLabel={
+                isEditing
+                  ? `Finish editing ${actionTargetLabel}`
+                  : `Edit ${actionTargetLabel}`
+              }
+              hoverBgClassName={colors.hoverBg}
+              iconVisible={editIconVisible}
+              onClick={e => {
+                e.stopPropagation();
+                if (isEditing) {
+                  onEditComplete?.(editingValue);
+                  return;
+                }
+                setIsMenuOpen(false);
+                config.onEdit?.();
+              }}
+              onMouseDown={e => {
+                e.stopPropagation();
+                // Set flag to prevent blur validation when clicking X to cancel edit
+                if (isEditing) {
+                  isClearing.current = true;
+                }
+              }}
+              showButtonSpace={showEditButtonSpace}
+              tabIndex={wantsEditButton ? 0 : -1}
+              tooltipLabel={isEditing ? 'Finish editing' : 'Edit'}
+              withLeadingMargin={true}
             >
-              <Tooltip side="bottom">
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={e => {
-                      e.stopPropagation();
-                      if (isEditing) {
-                        onEditComplete?.(editingValue);
-                        return;
-                      }
-                      setIsMenuOpen(false);
-                      config.onEdit?.();
-                    }}
-                    onMouseDown={e => {
-                      e.stopPropagation();
-                      // Set flag to prevent blur validation when clicking X to cancel edit
-                      if (isEditing) {
-                        isClearing.current = true;
-                      }
-                    }}
-                    className={`inline-flex h-6 w-6 flex-shrink-0 cursor-pointer items-center justify-center rounded-md leading-none ${colors.hoverBg} transition-[opacity,transform] duration-150 ease-out ${
-                      editIconVisible
-                        ? 'opacity-100 translate-x-0'
-                        : 'pointer-events-none opacity-0 -translate-x-1'
-                    }`}
-                    type="button"
-                    aria-label={
-                      isEditing
-                        ? `Finish editing ${actionTargetLabel}`
-                        : `Edit ${actionTargetLabel}`
-                    }
-                    aria-hidden={!wantsEditButton}
-                    tabIndex={wantsEditButton ? 0 : -1}
-                  >
-                    {isEditing ? (
-                      <TbX className="block w-3.5 h-3.5 flex-shrink-0" />
-                    ) : (
-                      <TbPencil className="block w-3.5 h-3.5 flex-shrink-0" />
-                    )}
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {isEditing ? 'Finish editing' : 'Edit'}
-                </TooltipContent>
-              </Tooltip>
-            </div>
+              {isEditing ? (
+                <TbX className="block w-3.5 h-3.5 flex-shrink-0" />
+              ) : (
+                <TbPencil className="block w-3.5 h-3.5 flex-shrink-0" />
+              )}
+            </BadgeActionButton>
           )}
           {/* Clear/Delete button (Trash) - shown on hover or selected, hidden when editing */}
           {!isEditing && config.canClear && (
-            <div
-              className={`flex h-6 flex-shrink-0 items-center justify-center overflow-hidden transition-[width,opacity] duration-150 ease-out ${
-                showDeleteButtonSpace ? 'w-6 opacity-100' : 'w-0 opacity-0'
-              }`}
+            <BadgeActionButton
+              ariaHidden={!wantsDeleteButton}
+              ariaLabel={`Remove ${actionTargetLabel}`}
+              hoverBgClassName={colors.hoverBg}
+              iconVisible={deleteIconVisible}
+              onClick={e => {
+                e.stopPropagation();
+                // Blur the button to release focus before clearing
+                // This allows the parent handler to focus the input
+                e.currentTarget.blur();
+                setIsMenuOpen(false);
+                config.onClear?.();
+              }}
+              onMouseDown={e => e.stopPropagation()}
+              showButtonSpace={showDeleteButtonSpace}
+              tabIndex={wantsDeleteButton ? 0 : -1}
+              tooltipLabel="Remove"
             >
-              <Tooltip side="bottom">
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={e => {
-                      e.stopPropagation();
-                      // Blur the button to release focus before clearing
-                      // This allows the parent handler to focus the input
-                      e.currentTarget.blur();
-                      setIsMenuOpen(false);
-                      config.onClear?.();
-                    }}
-                    onMouseDown={e => e.stopPropagation()}
-                    className={`inline-flex h-6 w-6 flex-shrink-0 cursor-pointer items-center justify-center rounded-md leading-none ${colors.hoverBg} transition-[opacity,transform] duration-150 ease-out ${
-                      deleteIconVisible
-                        ? 'opacity-100 translate-x-0'
-                        : 'pointer-events-none opacity-0 -translate-x-1'
-                    }`}
-                    type="button"
-                    aria-label={`Remove ${actionTargetLabel}`}
-                    aria-hidden={!wantsDeleteButton}
-                    tabIndex={wantsDeleteButton ? 0 : -1}
-                  >
-                    <TbTrash className="block w-3.5 h-3.5 flex-shrink-0" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>Remove</TooltipContent>
-              </Tooltip>
-            </div>
+              <TbTrash className="block w-3.5 h-3.5 flex-shrink-0" />
+            </BadgeActionButton>
           )}
 
           {/* Insert button (Plus) - only enabled for eligible value badges */}
           {!isEditing && config.canInsert && config.onInsert && (
-            <div
-              className={`flex h-6 flex-shrink-0 items-center justify-center overflow-hidden transition-[width,opacity] duration-150 ease-out ${
-                showInsertButtonSpace ? 'w-6 opacity-100' : 'w-0 opacity-0'
-              }`}
+            <BadgeActionButton
+              ariaHidden={!wantsInsertButton}
+              ariaLabel={`Add condition after ${actionTargetLabel}`}
+              hoverBgClassName={colors.hoverBg}
+              iconVisible={insertIconVisible}
+              onClick={e => {
+                e.stopPropagation();
+                e.currentTarget.blur();
+                setIsMenuOpen(false);
+                config.onInsert?.();
+              }}
+              onMouseDown={e => e.stopPropagation()}
+              showButtonSpace={showInsertButtonSpace}
+              tabIndex={wantsInsertButton ? 0 : -1}
+              tooltipLabel="Add condition"
             >
-              <Tooltip side="bottom">
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={e => {
-                      e.stopPropagation();
-                      e.currentTarget.blur();
-                      setIsMenuOpen(false);
-                      config.onInsert?.();
-                    }}
-                    onMouseDown={e => e.stopPropagation()}
-                    className={`inline-flex h-6 w-6 flex-shrink-0 cursor-pointer items-center justify-center rounded-md leading-none ${colors.hoverBg} transition-[opacity,transform] duration-150 ease-out ${
-                      insertIconVisible
-                        ? 'opacity-100 translate-x-0'
-                        : 'pointer-events-none opacity-0 -translate-x-1'
-                    }`}
-                    type="button"
-                    aria-label={`Add condition after ${actionTargetLabel}`}
-                    aria-hidden={!wantsInsertButton}
-                    tabIndex={wantsInsertButton ? 0 : -1}
-                  >
-                    <TbCirclePlus className="block w-4 h-4 flex-shrink-0" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>Add condition</TooltipContent>
-              </Tooltip>
-            </div>
+              <TbCirclePlus className="block w-4 h-4 flex-shrink-0" />
+            </BadgeActionButton>
           )}
         </div>
       </div>

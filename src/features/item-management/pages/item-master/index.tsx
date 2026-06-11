@@ -1,21 +1,5 @@
-import { createTextColumn } from '@/components/ag-grid/columns';
-import type { ColDef, GridApi, GridReadyEvent } from 'ag-grid-community';
-import {
-  memo,
-  Suspense,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  lazy,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { memo, useMemo, useState } from 'react';
 
-// Components
-import PageTitle from '@/components/page-title';
-import { SlidingSelector } from '@/components/shared/sliding-selector';
 import EntityGrid from '@/features/item-management/presentation/organisms/EntityGrid';
 import SearchToolbar from '@/components/SearchToolbar';
 
@@ -25,33 +9,16 @@ import { useItemsSync } from '@/hooks/realtime/useItemsSync';
 // Hooks and utilities
 import { useItemGridColumns } from '@/features/item-management/application/hooks/ui';
 import { useItemsManagement } from '@/hooks/data/useItemsManagement';
-import { useMasterDataManagement } from '@/hooks/data/useMasterDataManagement';
-import { useUnifiedSearch } from '@/hooks/data/useUnifiedSearch';
-import { restoreConfirmedPattern } from '@/components/search-bar/utils/patternRestoration';
-import { parseSearchValue } from '@/components/search-bar/utils/searchUtils';
-import { buildAdvancedFilterModel } from '@/utils/advancedFilterBuilder';
-import { formatDateOnlyDisplayValue } from '@/lib/formatters';
 import { useConfirmDialog } from '@/components/dialog-box';
-import {
-  getOrderedSearchColumnsByEntity,
-  getSearchColumnsByEntity,
-} from '@/utils/searchColumns';
 import { useSupplierTab } from './hooks/useSupplierTab';
-import { useCustomerLevels } from '@/features/item-management/application/hooks/data/useCustomerLevels';
+import { ItemMasterHeader } from './components/ItemMasterHeader';
+import { ItemMasterModalStack } from './components/ItemMasterModalStack';
 import {
-  LAST_ITEM_MASTER_TAB_SESSION_KEY,
-  MasterDataType,
-  getItemMasterSearchSessionKey,
   isItemMasterEntityTab,
   isItemMasterTab,
   isOtherMasterDataTab,
 } from '@/features/item-management/shared/types';
-import {
-  ITEM_MASTER_SWITCHER_TAB_OPTIONS,
-  OTHER_MASTER_DATA_CONFIG,
-  getMasterDataPathForTab,
-  getMasterDataTabFromUrlSegment,
-} from './config';
+import { OTHER_MASTER_DATA_CONFIG } from './config';
 
 // Entity management hooks
 import {
@@ -60,211 +27,25 @@ import {
 } from '@/features/item-management/application/hooks/collections';
 
 // Types
-import {
-  EntityData,
-  EntityType,
-} from '@/features/item-management/application/hooks/collections/useEntityManager';
+import { EntityType } from '@/features/item-management/application/hooks/collections/useEntityManager';
 import type { Item as ItemDataType } from '@/types/database';
-import type {
-  Customer as CustomerType,
-  Doctor as DoctorType,
-  FieldConfig,
-  Patient as PatientType,
-  Supplier as SupplierType,
-} from '@/types';
-import type { FilterSearch, SearchColumn } from '@/types/search';
 
-import { fuzzyMatch } from '@/utils/search';
-
-const ItemModal = lazy(
-  () =>
-    import('@/features/item-management/presentation/templates/item/ItemModal')
-);
-const EntityModal = lazy(
-  () =>
-    import('@/features/item-management/presentation/templates/entity/EntityModal')
-);
-const SupplierModals = lazy(() => import('./components/SupplierModals'));
-const IdentityDataModal = lazy(() => import('@/components/IdentityDataModal'));
-
-// Session storage utility
-const saveLastTabToSession = (tab: MasterDataType): void => {
-  if (!isItemMasterTab(tab)) return;
-  try {
-    sessionStorage.setItem(LAST_ITEM_MASTER_TAB_SESSION_KEY, tab);
-  } catch (error) {
-    console.warn('Failed to save last tab to session storage:', error);
-  }
-};
-
-const getLastTabFromSession = (): MasterDataType => {
-  try {
-    const savedTab = sessionStorage.getItem(LAST_ITEM_MASTER_TAB_SESSION_KEY);
-    if (savedTab && isItemMasterTab(savedTab)) {
-      return savedTab;
-    }
-  } catch {
-    // ignore
-  }
-  return 'items';
-};
-
-const saveSearchPatternToSession = (
-  tab: MasterDataType,
-  pattern: string
-): void => {
-  const sessionKey = getItemMasterSearchSessionKey(tab);
-  try {
-    if (pattern.trim() === '') {
-      sessionStorage.removeItem(sessionKey);
-      return;
-    }
-
-    sessionStorage.setItem(sessionKey, pattern);
-  } catch {
-    // ignore
-  }
-};
-
-type SearchPatternSnapshot = {
-  pattern: string;
-  columns: SearchColumn[];
-};
-
-const hasFilterValue = (value: string | undefined): boolean => {
-  return value !== undefined && value.trim() !== '';
-};
-
-const shouldApplyRestoredFilter = (
-  filterSearch: FilterSearch | null
-): filterSearch is FilterSearch => {
-  if (!filterSearch?.isConfirmed) return false;
-
-  if (filterSearch.filterGroup) return true;
-
-  if (filterSearch.isMultiCondition && filterSearch.conditions) {
-    return filterSearch.conditions.every(
-      condition =>
-        hasFilterValue(condition.value) &&
-        (condition.operator !== 'inRange' || hasFilterValue(condition.valueTo))
-    );
-  }
-
-  return (
-    hasFilterValue(filterSearch.value) &&
-    (filterSearch.operator !== 'inRange' ||
-      hasFilterValue(filterSearch.valueTo))
-  );
-};
-
-const TEXT_ADVANCED_FILTER_COLUMN_PROPS = {
-  filter: 'agTextColumnFilter',
-  filterParams: {
-    filterOptions: [
-      'contains',
-      'notContains',
-      'equals',
-      'notEqual',
-      'startsWith',
-      'endsWith',
-    ],
-    defaultOption: 'contains',
-    suppressAndOrCondition: false,
-    caseSensitive: false,
-  },
-  suppressHeaderFilterButton: true,
-} satisfies Partial<ColDef>;
-
-const NUMBER_ADVANCED_FILTER_COLUMN_PROPS = {
-  filter: 'agNumberColumnFilter',
-  suppressHeaderFilterButton: true,
-} satisfies Partial<ColDef>;
-
-const DATE_ADVANCED_FILTER_COLUMN_PROPS = {
-  filter: 'agDateColumnFilter',
-  suppressHeaderFilterButton: true,
-} satisfies Partial<ColDef>;
-
-const createAdvancedTextColumn = (
-  config: Parameters<typeof createTextColumn>[0]
-): ColDef => ({
-  ...createTextColumn(config),
-  ...TEXT_ADVANCED_FILTER_COLUMN_PROPS,
-});
-
-const normalizePendingOperatorPattern = (
-  pattern: string,
-  columns: SearchColumn[]
-): string => {
-  if (pattern.trim() === '') return pattern;
-
-  const parsedSearch = parseSearchValue(pattern, columns);
-  if (
-    parsedSearch.selectedColumn &&
-    !parsedSearch.isFilterMode &&
-    !parsedSearch.showColumnSelector &&
-    !parsedSearch.showOperatorSelector &&
-    pattern.trimStart().startsWith('#') &&
-    !pattern.includes(':')
-  ) {
-    return `#${parsedSearch.selectedColumn.field} #`;
-  }
-
-  return pattern;
-};
-
-const saveFilterSearchPatternToSession = (
-  tab: MasterDataType,
-  filterSearch: FilterSearch | null,
-  fallbackSnapshot?: SearchPatternSnapshot
-): void => {
-  if (!filterSearch) {
-    saveSearchPatternToSession(
-      tab,
-      fallbackSnapshot
-        ? normalizePendingOperatorPattern(
-            fallbackSnapshot.pattern,
-            fallbackSnapshot.columns
-          )
-        : ''
-    );
-    return;
-  }
-
-  if (!filterSearch.isConfirmed) {
-    return;
-  }
-
-  saveSearchPatternToSession(
-    tab,
-    restoreConfirmedPattern({
-      ...filterSearch,
-      isExplicitOperator: filterSearch.isExplicitOperator ?? true,
-    } as unknown as import('@/components/search-bar/types').FilterSearch)
-  );
-};
+import { buildEntityColumnDefs } from './entityColumnDefs';
+import { useIdentityMasterDataTabs } from './hooks/useIdentityMasterDataTabs';
+import { useItemMasterActiveView } from './hooks/useItemMasterActiveView';
+import { useItemMasterItemActions } from './hooks/useItemMasterItemActions';
+import { useItemMasterItemsGridSync } from './hooks/useItemMasterItemsGridSync';
+import { useItemMasterSearches } from './hooks/useItemMasterSearches';
+import { useItemMasterRouting } from './hooks/useItemMasterRouting';
+import { useItemMasterRowClickHandler } from './hooks/useItemMasterRowClickHandler';
+import { useItemMasterTabSelectorState } from './hooks/useItemMasterTabSelectorState';
+import { useItemMasterTabNavigation } from './hooks/useItemMasterTabNavigation';
+import { useItemModalState } from './hooks/useItemModalState';
+import { useVisibleGridColumns } from './hooks/useVisibleGridColumns';
 
 const ItemMasterNew = memo(() => {
-  const location = useLocation();
-  const navigate = useNavigate();
+  const { activeTab, navigate } = useItemMasterRouting();
   const { openConfirmDialog } = useConfirmDialog();
-
-  // Memoize tab detection function
-  const getTabFromPath = useCallback((pathname: string): MasterDataType => {
-    const normalizedPath = pathname.replace(/\/+$/, '');
-    if (normalizedPath === '/master-data/item-master') {
-      return getLastTabFromSession();
-    }
-    const pathSegments = normalizedPath.split('/');
-    const lastSegment = pathSegments[pathSegments.length - 1];
-    return getMasterDataTabFromUrlSegment(lastSegment) || 'items';
-  }, []);
-
-  // Use getDerivedStateFromProps to sync activeTab with URL changes
-  const activeTab = useMemo(
-    () => getTabFromPath(location.pathname),
-    [getTabFromPath, location.pathname]
-  );
 
   const isItemTab = activeTab === 'items';
   const isSupplierTab = activeTab === 'suppliers';
@@ -277,160 +58,91 @@ const ItemMasterNew = memo(() => {
     ? OTHER_MASTER_DATA_CONFIG[activeTab]
     : null;
 
-  // Ensure /master-data/item-master lands on a concrete tab (preserve last visit).
-  useEffect(() => {
-    const normalizedPath = location.pathname.replace(/\/+$/, '');
-    if (normalizedPath !== '/master-data/item-master') return;
+  const {
+    searchInputRef,
+    tabSelectorContainerRef,
+    isTabSwitchingRef,
+    isTabSelectorExpanded,
+    tabSelectorCollapseSignal,
+    handleTabSelectorExpandedChange,
+    handleSearchSelectorOpenChange,
+  } = useItemMasterTabSelectorState();
 
-    const lastTab = getLastTabFromSession();
-    void navigate(getMasterDataPathForTab(lastTab), { replace: true });
-  }, [location.pathname, navigate]);
-
-  // Persist last tab as a side-effect (no derived React state needed).
-  useEffect(() => {
-    saveLastTabToSession(activeTab);
-  }, [activeTab]);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const tabSelectorContainerRef = useRef<HTMLDivElement>(null);
-
-  const [isTabSelectorExpanded, setIsTabSelectorExpanded] = useState(false);
-  const [tabSelectorCollapseSignal, setTabSelectorCollapseSignal] = useState(0);
-  const handleTabSelectorExpandedChange = useCallback((expanded: boolean) => {
-    setIsTabSelectorExpanded(expanded);
-  }, []);
-  const handleSearchSelectorOpenChange = useCallback((isOpen: boolean) => {
-    if (isOpen) {
-      setTabSelectorCollapseSignal(signal => signal + 1);
-    }
-  }, []);
-
-  // 🚦 Hybrid tab change protection: immediate first click, debounced rapid clicks
-  // Smart detection: single click = instant navigation, rapid clicks = debounced to final tab
-  const lastNavigationTimeRef = useRef<number>(0);
-  const pendingTabRef = useRef<MasterDataType | null>(null);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const TAB_CHANGE_COOLDOWN_MS = 250; // Cooldown period to detect rapid clicking
-
-  // Unified Grid API reference from EntityGrid
-  const [unifiedGridApi, setUnifiedGridApi] = useState<GridApi | null>(null);
-
-  // Track visible and ordered columns from AG Grid
-  const [visibleColumns, setVisibleColumns] = useState<string[]>([]);
+  const {
+    gridApi: unifiedGridApi,
+    visibleColumns,
+    handleGridApiReady: handleUnifiedGridApiReady,
+    resetVisibleColumns,
+  } = useVisibleGridColumns();
 
   // ✅ REALTIME WORKING! Use postgres_changes approach
   useItemsSync({ enabled: true });
 
+  const supplierTab = useSupplierTab({ enabled: isSupplierTab });
   const {
     suppliersQuery,
-    supplierMutations,
-    supplierFields,
     supplierColumnDefs,
     suppliersData,
     isAddSupplierModalOpen,
     isEditSupplierModalOpen,
-    editingSupplier,
     openAddSupplierModal,
-    closeAddSupplierModal,
     openEditSupplierModal,
-    closeEditSupplierModal,
-  } = useSupplierTab({ enabled: isSupplierTab });
+  } = supplierTab;
 
+  const identityTabs = useIdentityMasterDataTabs({
+    isCustomerTab,
+    isDoctorTab,
+    isPatientTab,
+  });
   const {
-    isAddModalOpen: isAddCustomerModalOpen,
-    setIsAddModalOpen: setIsAddCustomerModalOpen,
-    isEditModalOpen: isEditCustomerModalOpen,
-    setIsEditModalOpen: setIsEditCustomerModalOpen,
-    editingItem: editingCustomer,
-    data: customersData,
-    isLoading: isCustomersLoading,
-    isError: isCustomersError,
-    queryError: customersQueryError,
-    itemsPerPage: customerItemsPerPage,
-    handleEdit: handleCustomerEdit,
-    handleModalSubmit: handleCustomerModalSubmit,
-    handleFieldAutosave: handleCustomerFieldAutosave,
-    handleDelete: handleCustomerDelete,
-    debouncedSearch: customerDebouncedSearch,
-    handleKeyDown: handleCustomerKeyDown,
-    setSearch: setCustomerDataSearch,
-  } = useMasterDataManagement('customers', 'Pelanggan', {
-    enabled: isCustomerTab,
-  });
+    customerColumnDefs,
+    customerItemsPerPage,
+    customersDataTyped,
+    customersQueryError,
+    doctorColumnDefs,
+    doctorItemsPerPage,
+    doctorsDataTyped,
+    doctorsQueryError,
+    handleCustomerEdit,
+    handleCustomerKeyDown,
+    handleDoctorEdit,
+    handleDoctorKeyDown,
+    handlePatientEdit,
+    handlePatientKeyDown,
+    isAddCustomerModalOpen,
+    isAddDoctorModalOpen,
+    isAddPatientModalOpen,
+    isCustomersError,
+    isCustomersLoading,
+    isDoctorsError,
+    isDoctorsLoading,
+    isEditCustomerModalOpen,
+    isEditDoctorModalOpen,
+    isEditPatientModalOpen,
+    isPatientsError,
+    isPatientsLoading,
+    patientColumnDefs,
+    patientItemsPerPage,
+    patientsDataTyped,
+    patientsQueryError,
+    setCustomerDataSearch,
+    setDoctorDataSearch,
+    setIsAddCustomerModalOpen,
+    setIsAddDoctorModalOpen,
+    setIsAddPatientModalOpen,
+    setIsEditCustomerModalOpen,
+    setIsEditDoctorModalOpen,
+    setIsEditPatientModalOpen,
+    setPatientDataSearch,
+  } = identityTabs;
 
+  const itemModalState = useItemModalState();
   const {
-    isAddModalOpen: isAddPatientModalOpen,
-    setIsAddModalOpen: setIsAddPatientModalOpen,
-    isEditModalOpen: isEditPatientModalOpen,
-    setIsEditModalOpen: setIsEditPatientModalOpen,
-    editingItem: editingPatient,
-    data: patientsData,
-    isLoading: isPatientsLoading,
-    isError: isPatientsError,
-    queryError: patientsQueryError,
-    itemsPerPage: patientItemsPerPage,
-    handleEdit: handlePatientEdit,
-    handleModalSubmit: handlePatientModalSubmit,
-    handleFieldAutosave: handlePatientFieldAutosave,
-    handleImageSave: handlePatientImageSave,
-    handleImageDelete: handlePatientImageDelete,
-    handleDelete: handlePatientDelete,
-    debouncedSearch: patientDebouncedSearch,
-    handleKeyDown: handlePatientKeyDown,
-    setSearch: setPatientDataSearch,
-  } = useMasterDataManagement('patients', 'Pasien', {
-    enabled: isPatientTab,
-  });
-
-  const {
-    isAddModalOpen: isAddDoctorModalOpen,
-    setIsAddModalOpen: setIsAddDoctorModalOpen,
-    isEditModalOpen: isEditDoctorModalOpen,
-    setIsEditModalOpen: setIsEditDoctorModalOpen,
-    editingItem: editingDoctor,
-    data: doctorsData,
-    isLoading: isDoctorsLoading,
-    isError: isDoctorsError,
-    queryError: doctorsQueryError,
-    itemsPerPage: doctorItemsPerPage,
-    handleEdit: handleDoctorEdit,
-    handleModalSubmit: handleDoctorModalSubmit,
-    handleFieldAutosave: handleDoctorFieldAutosave,
-    handleImageSave: handleDoctorImageSave,
-    handleImageDelete: handleDoctorImageDelete,
-    handleDelete: handleDoctorDelete,
-    debouncedSearch: doctorDebouncedSearch,
-    handleKeyDown: handleDoctorKeyDown,
-    setSearch: setDoctorDataSearch,
-  } = useMasterDataManagement('doctors', 'Dokter', {
-    enabled: isDoctorTab,
-  });
-
-  const { levels: customerLevels } = useCustomerLevels({
-    enabled: isCustomerTab,
-  });
-  const customersDataTyped = customersData as CustomerType[];
-  const patientsDataTyped = patientsData as PatientType[];
-  const doctorsDataTyped = doctorsData as DoctorType[];
-
-  // Items tab states (only needed for items tab)
-  const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
-  const [isItemModalClosing, setIsItemModalClosing] = useState(false);
-  const [editingItemId, setEditingItemId] = useState<string | undefined>(
-    undefined
-  );
-  const [editingItemData, setEditingItemData] = useState<
-    ItemDataType | undefined
-  >(undefined);
-  const [currentSearchQueryForModal, setCurrentSearchQueryForModal] = useState<
-    string | undefined
-  >(undefined);
-  const [modalRenderId, setModalRenderId] = useState(0);
-
-  // 🔒 Flag to block SearchBar from clearing grid filters during tab switch
-  const isTabSwitchingRef = useRef(false);
-  const searchSnapshotsByTabRef = useRef<
-    Partial<Record<MasterDataType, SearchPatternSnapshot>>
-  >({});
+    isOpen: isAddItemModalOpen,
+    isClosing: isItemModalClosing,
+    open: openAddItemModal,
+    close: closeAddItemModal,
+  } = itemModalState;
 
   // Enhanced row grouping state with multi-grouping support (client-side only, no persistence)
   const [isRowGroupingEnabled] = useState(true);
@@ -483,22 +195,6 @@ const ItemMasterNew = memo(() => {
 
   const { columnDefs: itemColumnDefs } = useItemGridColumns();
 
-  // activeTab auto-syncs with URL changes via getDerivedStateFromProps pattern
-  // Clear pending tab changes when URL changes externally
-  useEffect(() => {
-    const newTab = getTabFromPath(location.pathname);
-    if (newTab !== activeTab) {
-      // Clear any pending tab change when URL changes externally
-      /* c8 ignore next 5 */
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-        debounceTimerRef.current = null;
-      }
-      /* c8 ignore next */
-      pendingTabRef.current = null;
-    }
-  }, [location.pathname, activeTab, getTabFromPath]);
-
   // Entity column visibility management
   const entityCurrentConfig = useMemo(
     () =>
@@ -508,1350 +204,179 @@ const ItemMasterNew = memo(() => {
     [activeTab, entityManager.entityConfigs, isItemEntityTab]
   );
 
-  const customerLevelOptions = useMemo(
+  const entityColumnDefs = useMemo(
     () =>
-      customerLevels.map(level => ({
-        id: level.id,
-        name: level.level_name,
-      })),
-    [customerLevels]
+      isItemEntityTab
+        ? buildEntityColumnDefs(activeTab, entityCurrentConfig)
+        : [],
+    [activeTab, entityCurrentConfig, isItemEntityTab]
   );
 
-  const customerLevelById = useMemo(() => {
-    return new Map(customerLevels.map(level => [level.id, level.level_name]));
-  }, [customerLevels]);
-
-  const defaultCustomerLevelId = customerLevels[0]?.id ?? null;
-
-  const toCustomerPayload = useCallback(
-    (data: Record<string, string | number | boolean | null>) => ({
-      name: String(data.name || ''),
-      customer_level_id: String(
-        data.customer_level_id || defaultCustomerLevelId || ''
-      ),
-      phone: data.phone ? String(data.phone) : null,
-      email: data.email ? String(data.email) : null,
-      address: data.address ? String(data.address) : null,
-    }),
-    [defaultCustomerLevelId]
-  );
-
-  const toPatientPayload = useCallback(
-    (data: Record<string, string | number | boolean | null>) => ({
-      name: String(data.name || ''),
-      gender: data.gender ? String(data.gender) : null,
-      birth_date: data.birth_date ? String(data.birth_date) : null,
-      address: data.address ? String(data.address) : null,
-      phone: data.phone ? String(data.phone) : null,
-      email: data.email ? String(data.email) : null,
-      image_url: data.image_url ? String(data.image_url) : null,
-    }),
-    []
-  );
-
-  const toDoctorPayload = useCallback(
-    (data: Record<string, string | number | boolean | null>) => {
-      const rawExperienceYears = data.experience_years;
-      const hasExperienceYears =
-        rawExperienceYears !== null &&
-        rawExperienceYears !== undefined &&
-        String(rawExperienceYears).trim() !== '';
-      const parsedExperienceYears = hasExperienceYears
-        ? Number(rawExperienceYears)
-        : null;
-
-      return {
-        name: String(data.name || ''),
-        gender: data.gender ? String(data.gender) : null,
-        specialization: data.specialization
-          ? String(data.specialization)
-          : null,
-        license_number: data.license_number
-          ? String(data.license_number)
-          : null,
-        experience_years:
-          parsedExperienceYears !== null &&
-          Number.isFinite(parsedExperienceYears)
-            ? parsedExperienceYears
-            : null,
-        qualification: data.education ? String(data.education) : null,
-        phone: data.phone ? String(data.phone) : null,
-        email: data.email ? String(data.email) : null,
-        image_url: data.image_url ? String(data.image_url) : null,
-      };
-    },
-    []
-  );
-
-  const customerFields: FieldConfig[] = useMemo(
-    () => [
-      {
-        key: 'name',
-        label: 'Nama Pelanggan',
-        type: 'text',
-      },
-      {
-        key: 'customer_level_id',
-        label: 'Level Pelanggan',
-        options: customerLevelOptions,
-        isRadioDropdown: true,
-      },
-      {
-        key: 'phone',
-        label: 'Telepon',
-        type: 'tel',
-      },
-      {
-        key: 'email',
-        label: 'Email',
-        type: 'email',
-      },
-      {
-        key: 'address',
-        label: 'Alamat',
-        type: 'textarea',
-      },
-    ],
-    [customerLevelOptions]
-  );
-
-  const patientFields: FieldConfig[] = useMemo(
-    () => [
-      {
-        key: 'name',
-        label: 'Nama Pasien',
-        type: 'text',
-      },
-      {
-        key: 'gender',
-        label: 'Jenis Kelamin',
-        type: 'text',
-        options: [
-          { id: 'L', name: 'Laki-laki' },
-          { id: 'P', name: 'Perempuan' },
-        ],
-        isRadioDropdown: true,
-      },
-      {
-        key: 'birth_date',
-        label: 'Tanggal Lahir',
-        type: 'date',
-      },
-      {
-        key: 'address',
-        label: 'Alamat',
-        type: 'textarea',
-      },
-      {
-        key: 'phone',
-        label: 'Telepon',
-        type: 'tel',
-      },
-      {
-        key: 'email',
-        label: 'Email',
-        type: 'email',
-      },
-    ],
-    []
-  );
-
-  const doctorFields: FieldConfig[] = useMemo(
-    () => [
-      {
-        key: 'name',
-        label: 'Nama Dokter',
-        type: 'text',
-      },
-      {
-        key: 'gender',
-        label: 'Jenis Kelamin',
-        type: 'text',
-        options: [
-          { id: 'L', name: 'Laki-laki' },
-          { id: 'P', name: 'Perempuan' },
-        ],
-        isRadioDropdown: true,
-      },
-      {
-        key: 'specialization',
-        label: 'Spesialisasi',
-        type: 'text',
-      },
-      {
-        key: 'license_number',
-        label: 'Nomor Lisensi',
-        type: 'text',
-      },
-      {
-        key: 'experience_years',
-        label: 'Tahun Pengalaman',
-        type: 'text',
-      },
-      {
-        key: 'education',
-        label: 'Pendidikan',
-        type: 'textarea',
-      },
-      {
-        key: 'phone',
-        label: 'Telepon',
-        type: 'tel',
-      },
-      {
-        key: 'email',
-        label: 'Email',
-        type: 'email',
-      },
-    ],
-    []
-  );
-
-  const customerColumnDefs: ColDef[] = useMemo(() => {
-    const columns: ColDef[] = [
-      createAdvancedTextColumn({
-        field: 'name',
-        headerName: 'Nama Pelanggan',
-        minWidth: 200,
-        flex: 1,
-      }),
-      createAdvancedTextColumn({
-        field: 'customer_level_id',
-        headerName: 'Level',
-        minWidth: 140,
-        valueGetter: params =>
-          customerLevelById.get(params.data.customer_level_id) || '-',
-      }),
-      createAdvancedTextColumn({
-        field: 'phone',
-        headerName: 'Telepon',
-        minWidth: 120,
-        valueGetter: params => params.data.phone || '-',
-      }),
-      createAdvancedTextColumn({
-        field: 'email',
-        headerName: 'Email',
-        minWidth: 150,
-        valueGetter: params => params.data.email || '-',
-      }),
-      createAdvancedTextColumn({
-        field: 'address',
-        headerName: 'Alamat',
-        minWidth: 180,
-        flex: 1,
-        valueGetter: params => params.data.address || '-',
-      }),
-    ];
-
-    return columns;
-  }, [customerLevelById]);
-
-  const patientColumnDefs: ColDef[] = useMemo(() => {
-    const columns: ColDef[] = [
-      createAdvancedTextColumn({
-        field: 'name',
-        headerName: 'Nama Pasien',
-        minWidth: 200,
-        flex: 1,
-      }),
-      createAdvancedTextColumn({
-        field: 'gender',
-        headerName: 'Jenis Kelamin',
-        minWidth: 120,
-        valueGetter: params => params.data.gender || '-',
-      }),
-      {
-        ...createTextColumn({
-          field: 'birth_date',
-          headerName: 'Tanggal Lahir',
-          minWidth: 120,
-          valueGetter: params => {
-            const value = params.data.birth_date;
-            return value && typeof value === 'string'
-              ? formatDateOnlyDisplayValue(value)
-              : '-';
-          },
-        }),
-        ...DATE_ADVANCED_FILTER_COLUMN_PROPS,
-        filterValueGetter: params => params.data?.birth_date ?? null,
-      },
-      createAdvancedTextColumn({
-        field: 'address',
-        headerName: 'Alamat',
-        minWidth: 150,
-        flex: 1,
-        valueGetter: params => params.data.address || '-',
-      }),
-      createAdvancedTextColumn({
-        field: 'phone',
-        headerName: 'Telepon',
-        minWidth: 120,
-        valueGetter: params => params.data.phone || '-',
-      }),
-      createAdvancedTextColumn({
-        field: 'email',
-        headerName: 'Email',
-        minWidth: 150,
-        valueGetter: params => params.data.email || '-',
-      }),
-    ];
-
-    return columns;
-  }, []);
-
-  const doctorColumnDefs: ColDef[] = useMemo(() => {
-    const columns: ColDef[] = [
-      createAdvancedTextColumn({
-        field: 'name',
-        headerName: 'Nama Dokter',
-        minWidth: 200,
-        flex: 1,
-      }),
-      createAdvancedTextColumn({
-        field: 'gender',
-        headerName: 'Jenis Kelamin',
-        minWidth: 120,
-        valueGetter: params => {
-          const value = params.data.gender;
-          return value === 'L'
-            ? 'Laki-laki'
-            : value === 'P'
-              ? 'Perempuan'
-              : value || '-';
-        },
-      }),
-      createAdvancedTextColumn({
-        field: 'specialization',
-        headerName: 'Spesialisasi',
-        minWidth: 150,
-        valueGetter: params => params.data.specialization || '-',
-      }),
-      createAdvancedTextColumn({
-        field: 'license_number',
-        headerName: 'Nomor Lisensi',
-        minWidth: 120,
-        valueGetter: params => params.data.license_number || '-',
-      }),
-      {
-        ...createTextColumn({
-          field: 'experience_years',
-          headerName: 'Pengalaman',
-          minWidth: 100,
-          valueGetter: params => {
-            const years = params.data.experience_years;
-            return years ? `${years} tahun` : '-';
-          },
-        }),
-        ...NUMBER_ADVANCED_FILTER_COLUMN_PROPS,
-        filterValueGetter: params => params.data?.experience_years ?? null,
-      },
-      createAdvancedTextColumn({
-        field: 'phone',
-        headerName: 'Telepon',
-        minWidth: 120,
-        valueGetter: params => params.data.phone || '-',
-      }),
-      createAdvancedTextColumn({
-        field: 'email',
-        headerName: 'Email',
-        minWidth: 150,
-        valueGetter: params => params.data.email || '-',
-      }),
-    ];
-
-    return columns;
-  }, []);
-
-  // Entity column definitions with unique field IDs per table
-  const entityColumnDefs: ColDef[] = useMemo(() => {
-    if (!isItemEntityTab || !entityCurrentConfig) return [];
-
-    // 🎯 Create unique field IDs by prefixing with entity type
-    const tablePrefix = activeTab as string;
-
-    const columns: ColDef[] = [
-      {
-        ...createTextColumn({
-          field: `${tablePrefix}.code`, // ← UNIQUE: packages.code, dosages.code, etc
-          headerName: 'Kode',
-          valueGetter: params => params.data?.code || '-',
-        }),
-        filter: 'agMultiColumnFilter',
-        filterParams: {
-          filters: [
-            { filter: 'agTextColumnFilter' },
-            { filter: 'agSetColumnFilter' },
-          ],
-        },
-        suppressHeaderFilterButton: true,
-      },
-      {
-        field: `${tablePrefix}.name`, // ← UNIQUE: packages.name, dosages.name, etc
-        headerName: entityCurrentConfig.nameColumnHeader || 'Nama',
-        filter: 'agTextColumnFilter',
-        filterParams: {
-          filterOptions: [
-            'contains',
-            'notContains',
-            'equals',
-            'notEqual',
-            'startsWith',
-            'endsWith',
-          ],
-          defaultOption: 'contains',
-          suppressAndOrCondition: false,
-          caseSensitive: false,
-        },
-        cellStyle: {
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        },
-        tooltipField: 'name',
-        valueGetter: params => params.data?.name || '-',
-        // Remove hardcoded sortable, resizable - let saved state control these
-        suppressHeaderFilterButton: true,
-      },
-    ];
-
-    // Add NCI Code column for packages and dosages
-    if (entityCurrentConfig.hasNciCode) {
-      columns.push({
-        ...createTextColumn({
-          field: `${tablePrefix}.nci_code`, // ← UNIQUE: packages.nci_code vs dosages.nci_code
-          headerName: 'Kode NCI',
-          valueGetter: params => params.data?.nci_code || '-',
-        }),
-        filter: 'agMultiColumnFilter',
-        filterParams: {
-          filters: [
-            { filter: 'agTextColumnFilter' },
-            { filter: 'agSetColumnFilter' },
-          ],
-        },
-        suppressHeaderFilterButton: true,
-      });
-    }
-
-    // Add address or description column
-    columns.push({
-      ...createTextColumn({
-        field: `${tablePrefix}.${entityCurrentConfig.hasAddress ? 'address' : 'description'}`, // ← UNIQUE per table
-        headerName: entityCurrentConfig.hasAddress ? 'Alamat' : 'Deskripsi',
-        flex: 1,
-        valueGetter: params => {
-          if (entityCurrentConfig.hasAddress) {
-            return params.data?.address || '-';
-          }
-          return params.data?.description || '-';
-        },
-      }),
-      filter: 'agTextColumnFilter',
-      filterParams: {
-        filterOptions: [
-          'contains',
-          'notContains',
-          'equals',
-          'notEqual',
-          'startsWith',
-          'endsWith',
-        ],
-        defaultOption: 'contains',
-        suppressAndOrCondition: false,
-        caseSensitive: false,
-      },
-      suppressHeaderFilterButton: true,
+  const { handleAddItem, handleItemEdit, handleItemSelect } =
+    useItemMasterItemActions({
+      itemsData: itemsManagement.allData as ItemDataType[],
+      openAddItemModal,
     });
-
-    return columns;
-  }, [activeTab, entityCurrentConfig, isItemEntityTab]);
-
-  // Memoize modal handlers
-  const openAddItemModal = useCallback(
-    (item?: ItemDataType, searchQuery?: string) => {
-      setEditingItemId(item?.id);
-      setEditingItemData(item);
-      setCurrentSearchQueryForModal(searchQuery);
-      setIsItemModalClosing(false);
-      setIsAddItemModalOpen(true);
-      setModalRenderId(prevId => prevId + 1);
-    },
-    []
-  );
-
-  const closeAddItemModal = useCallback(() => {
-    setIsItemModalClosing(true);
-    setTimeout(() => {
-      setIsAddItemModalOpen(false);
-      setIsItemModalClosing(false);
-      setEditingItemId(undefined);
-      setEditingItemData(undefined);
-      setCurrentSearchQueryForModal(undefined);
-    }, 200);
-  }, []);
-
-  // Memoize item handlers
-  const handleItemEdit = useCallback(
-    (item: ItemDataType) => {
-      openAddItemModal(item);
-    },
-    [openAddItemModal]
-  );
-
-  const handleItemSelect = useCallback(
-    (item: { id: string }) => {
-      const selectedItem = (itemsManagement.allData as ItemDataType[]).find(
-        dataItem => dataItem.id === item.id
-      );
-      openAddItemModal(selectedItem);
-    },
-    [itemsManagement.allData, openAddItemModal]
-  );
-
-  const handleAddItem = useCallback(
-    (_itemId?: string, searchQuery?: string) => {
-      openAddItemModal(undefined, searchQuery);
-    },
-    [openAddItemModal]
-  );
-
-  // Items tab search functionality
-  const handleItemSearch = useCallback(
-    (searchValue: string) => {
-      itemsManagement.setSearch(searchValue);
-    },
-    [itemsManagement]
-  );
-
-  const handleItemClear = useCallback(() => {
-    itemsManagement.setSearch('');
-  }, [itemsManagement]);
-
-  const handleItemFilterSearch = useCallback(
-    (filterSearch: FilterSearch | null) => {
-      // 🔒 Block grid filter changes during tab switching
-      // SearchBar will call this with null when clearing, but we want to preserve grid filters
-      if (isTabSwitchingRef.current && !filterSearch) {
-        return;
-      }
-
-      if (!unifiedGridApi || unifiedGridApi.isDestroyed()) {
-        return;
-      }
-
-      // Build Advanced Filter model from FilterSearch
-      // Advanced Filter API supports OR across different columns natively
-      const advancedFilterModel = buildAdvancedFilterModel(filterSearch);
-
-      // Apply the Advanced Filter model
-      unifiedGridApi.setAdvancedFilterModel(advancedFilterModel);
-
-      saveFilterSearchPatternToSession(
-        'items',
-        filterSearch,
-        searchSnapshotsByTabRef.current.items
-      );
-    },
-    [unifiedGridApi]
-  );
-
-  // Get search columns for items - ordered based on AG Grid visibility & ordering.
-  // Keep hidden columns at the end so filters can be restored even if a column is hidden.
-  const orderedSearchColumns = useMemo(() => {
-    return getOrderedSearchColumnsByEntity(
-      'items',
-      visibleColumns.length > 0 ? visibleColumns : undefined
-    );
-  }, [visibleColumns]);
 
   const {
-    search: itemSearch,
-    setSearch: setItemSearch,
-    onGridReady: itemOnGridReady,
-    isExternalFilterPresent: itemIsExternalFilterPresent,
-    doesExternalFilterPass: itemDoesExternalFilterPass,
-    searchBarProps: itemSearchBarProps,
-    clearSearchUIOnly: clearItemSearchUIOnly,
-  } = useUnifiedSearch({
-    columns: orderedSearchColumns,
-    searchMode: 'hybrid',
-    useFuzzySearch: true,
-    data: itemsManagement.data as ItemDataType[],
-    onSearch: handleItemSearch,
-    onClear: handleItemClear,
-    onFilterSearch: handleItemFilterSearch,
-  });
-
-  // Grid API ready callback from EntityGrid
-  const handleUnifiedGridApiReady = useCallback((api: GridApi | null) => {
-    setUnifiedGridApi(api);
-  }, []);
-
-  // Update visible columns when grid API or column state changes
-  useEffect(() => {
-    if (!unifiedGridApi || unifiedGridApi.isDestroyed()) {
-      return;
-    }
-
-    const updateVisibleColumns = () => {
-      try {
-        // Get all displayed columns in their current order
-        const displayedColumns = unifiedGridApi.getAllDisplayedColumns();
-        if (displayedColumns) {
-          const visibleFields = displayedColumns
-            .map(col => col.getColId())
-            .filter(colId => colId); // Filter out empty IDs
-          setVisibleColumns(visibleFields);
-        }
-      } catch (error) {
-        console.error('Failed to update visible columns:', error);
-      }
-    };
-
-    // Initial update
-    updateVisibleColumns();
-
-    // Listen to column visibility, move, and state restore events
-    const onColumnVisible = () => updateVisibleColumns();
-    const onColumnMoved = () => updateVisibleColumns();
-    const onFirstDataRendered = () => updateVisibleColumns();
-    const onGridColumnsChanged = () => updateVisibleColumns();
-
-    unifiedGridApi.addEventListener('columnVisible', onColumnVisible);
-    unifiedGridApi.addEventListener('columnMoved', onColumnMoved);
-    unifiedGridApi.addEventListener('firstDataRendered', onFirstDataRendered);
-    unifiedGridApi.addEventListener('gridColumnsChanged', onGridColumnsChanged);
-
-    return () => {
-      if (unifiedGridApi && !unifiedGridApi.isDestroyed()) {
-        unifiedGridApi.removeEventListener('columnVisible', onColumnVisible);
-        unifiedGridApi.removeEventListener('columnMoved', onColumnMoved);
-        unifiedGridApi.removeEventListener(
-          'firstDataRendered',
-          onFirstDataRendered
-        );
-        unifiedGridApi.removeEventListener(
-          'gridColumnsChanged',
-          onGridColumnsChanged
-        );
-      }
-    };
-  }, [unifiedGridApi]);
-
-  // Enhanced onGridReady to capture grid API for items tab
-  const enhancedItemOnGridReady = useCallback(
-    (params: GridReadyEvent) => {
-      itemOnGridReady(params);
-    },
-    [itemOnGridReady]
-  );
-
-  // Entity search functionality - filtered and ordered based on AG Grid visibility & ordering
-  const entitySearchColumns = useMemo(() => {
-    if (!isItemEntityTab) return [];
-
-    const allColumns = getSearchColumnsByEntity(activeTab);
-
-    // If no visible columns tracked yet, return all columns
-    if (visibleColumns.length === 0) return allColumns;
-
-    // Sort by grid order, keeping hidden columns at the end.
-    return [...allColumns].sort((a, b) => {
-      const getIndex = (field: string) => {
-        const baseField = field.split('.').pop() || field;
-        const exactIndex = visibleColumns.indexOf(field);
-        if (exactIndex !== -1) return exactIndex;
-
-        // Find by base field name
-        const matchIndex = visibleColumns.findIndex(vc =>
-          vc.endsWith(`.${baseField}`)
-        );
-        return matchIndex !== -1 ? matchIndex : visibleColumns.length;
-      };
-
-      return getIndex(a.field) - getIndex(b.field);
-    });
-  }, [activeTab, isItemEntityTab, visibleColumns]);
-
-  const supplierSearchColumns = useMemo(() => {
-    if (!isSupplierTab) return [];
-
-    const allColumns = [
-      {
-        field: 'suppliers.name',
-        headerName: 'Nama Supplier',
-        searchable: true,
-        type: 'text' as const,
-        description: 'Cari berdasarkan nama supplier',
-      },
-      {
-        field: 'suppliers.address',
-        headerName: 'Alamat',
-        searchable: true,
-        type: 'text' as const,
-        description: 'Cari berdasarkan alamat supplier',
-      },
-      {
-        field: 'suppliers.phone',
-        headerName: 'Telepon',
-        searchable: true,
-        type: 'text' as const,
-        description: 'Cari berdasarkan nomor telepon supplier',
-      },
-      {
-        field: 'suppliers.email',
-        headerName: 'Email',
-        searchable: true,
-        type: 'text' as const,
-        description: 'Cari berdasarkan email supplier',
-      },
-      {
-        field: 'suppliers.contact_person',
-        headerName: 'Kontak Person',
-        searchable: true,
-        type: 'text' as const,
-        description: 'Cari berdasarkan kontak person supplier',
-      },
-    ];
-
-    if (visibleColumns.length === 0) return allColumns;
-
-    return [...allColumns].sort((a, b) => {
-      const indexA = visibleColumns.indexOf(a.field);
-      const indexB = visibleColumns.indexOf(b.field);
-      const safeA = indexA === -1 ? visibleColumns.length : indexA;
-      const safeB = indexB === -1 ? visibleColumns.length : indexB;
-      return safeA - safeB;
-    });
-  }, [isSupplierTab, visibleColumns]);
-
-  const customerSearchColumns = useMemo(() => {
-    if (!isCustomerTab) return [];
-
-    const allColumns = getSearchColumnsByEntity('customers');
-    if (visibleColumns.length === 0) return allColumns;
-
-    return [...allColumns].sort((a, b) => {
-      const indexA = visibleColumns.indexOf(a.field);
-      const indexB = visibleColumns.indexOf(b.field);
-      const safeA = indexA === -1 ? visibleColumns.length : indexA;
-      const safeB = indexB === -1 ? visibleColumns.length : indexB;
-      return safeA - safeB;
-    });
-  }, [isCustomerTab, visibleColumns]);
-
-  const patientSearchColumns = useMemo(() => {
-    if (!isPatientTab) return [];
-
-    const allColumns = getSearchColumnsByEntity('patients');
-    if (visibleColumns.length === 0) return allColumns;
-
-    return [...allColumns].sort((a, b) => {
-      const indexA = visibleColumns.indexOf(a.field);
-      const indexB = visibleColumns.indexOf(b.field);
-      const safeA = indexA === -1 ? visibleColumns.length : indexA;
-      const safeB = indexB === -1 ? visibleColumns.length : indexB;
-      return safeA - safeB;
-    });
-  }, [isPatientTab, visibleColumns]);
-
-  const doctorSearchColumns = useMemo(() => {
-    if (!isDoctorTab) return [];
-
-    const allColumns = getSearchColumnsByEntity('doctors');
-    if (visibleColumns.length === 0) return allColumns;
-
-    return [...allColumns].sort((a, b) => {
-      const indexA = visibleColumns.indexOf(a.field);
-      const indexB = visibleColumns.indexOf(b.field);
-      const safeA = indexA === -1 ? visibleColumns.length : indexA;
-      const safeB = indexB === -1 ? visibleColumns.length : indexB;
-      return safeA - safeB;
-    });
-  }, [isDoctorTab, visibleColumns]);
-
-  const handleSupplierFilterSearch = useCallback(
-    (filterSearch: FilterSearch | null) => {
-      // 🔒 Block grid filter changes during tab switching
-      if (isTabSwitchingRef.current && !filterSearch) {
-        return;
-      }
-
-      if (!isSupplierTab) {
-        return;
-      }
-
-      if (!unifiedGridApi || unifiedGridApi.isDestroyed()) {
-        return;
-      }
-
-      const advancedFilterModel = buildAdvancedFilterModel(filterSearch);
-      unifiedGridApi.setAdvancedFilterModel(advancedFilterModel);
-
-      saveFilterSearchPatternToSession(
-        activeTab,
-        filterSearch,
-        searchSnapshotsByTabRef.current[activeTab]
-      );
-    },
-    [activeTab, isSupplierTab, unifiedGridApi]
-  );
-
-  // Entity filter search handler
-  const handleEntityFilterSearch = useCallback(
-    (filterSearch: FilterSearch | null) => {
-      // 🔒 Block grid filter changes during tab switching
-      if (isTabSwitchingRef.current && !filterSearch) {
-        return;
-      }
-
-      if (!isItemEntityTab) {
-        return;
-      }
-
-      if (!unifiedGridApi || unifiedGridApi.isDestroyed()) {
-        return;
-      }
-
-      // Build Advanced Filter model from FilterSearch
-      // Advanced Filter API supports OR across different columns natively
-      const advancedFilterModel = buildAdvancedFilterModel(filterSearch);
-
-      // Apply the Advanced Filter model
-      unifiedGridApi.setAdvancedFilterModel(advancedFilterModel);
-
-      saveFilterSearchPatternToSession(
-        activeTab,
-        filterSearch,
-        searchSnapshotsByTabRef.current[activeTab]
-      );
-    },
-    [activeTab, isItemEntityTab, unifiedGridApi]
-  );
-
-  const handleMasterDataFilterSearch = useCallback(
-    (filterSearch: FilterSearch | null) => {
-      if (isTabSwitchingRef.current && !filterSearch) {
-        return;
-      }
-
-      if (!isOtherMasterTab) {
-        return;
-      }
-
-      if (!unifiedGridApi || unifiedGridApi.isDestroyed()) {
-        return;
-      }
-
-      const advancedFilterModel = buildAdvancedFilterModel(filterSearch);
-      unifiedGridApi.setAdvancedFilterModel(advancedFilterModel);
-
-      saveFilterSearchPatternToSession(
-        activeTab,
-        filterSearch,
-        searchSnapshotsByTabRef.current[activeTab]
-      );
-    },
-    [activeTab, isOtherMasterTab, unifiedGridApi]
-  );
-
-  const {
-    search: entitySearch,
-    setSearch: setEntitySearch,
-    onGridReady: entityOnGridReady,
-    isExternalFilterPresent: entityIsExternalFilterPresent,
-    doesExternalFilterPass: entityDoesExternalFilterPass,
-    searchBarProps: entitySearchBarProps,
-    clearSearchUIOnly: clearEntitySearchUIOnly,
-  } = useUnifiedSearch({
-    columns: entitySearchColumns,
-    searchMode: 'hybrid',
-    useFuzzySearch: true,
-    data: entityData.data,
-    onSearch: entityManager.handleSearch,
-    onClear: () => entityManager.handleSearch(''),
-    onFilterSearch: handleEntityFilterSearch,
+    activeSearchBarProps,
+    activeSearchValue,
+    activeIsExternalFilterPresent,
+    activeDoesExternalFilterPass,
+    handleActiveGridReady,
+    supplierSearch,
+    suppliersForDisplay,
+    searchRuntimes,
+  } = useItemMasterSearches({
+    activeTab,
+    visibleColumns,
+    unifiedGridApi,
+    isTabSwitchingRef,
+    itemsData: itemsManagement.data as ItemDataType[],
+    setItemsSearch: itemsManagement.setSearch,
+    entityData: entityData.data,
+    handleEntitySearch: entityManager.handleSearch,
+    suppliersData,
+    customersData: customersDataTyped,
+    patientsData: patientsDataTyped,
+    doctorsData: doctorsDataTyped,
+    setCustomerDataSearch,
+    setPatientDataSearch,
+    setDoctorDataSearch,
   });
 
   const {
-    search: supplierSearch,
-    setSearch: setSupplierSearch,
-    onGridReady: supplierOnGridReady,
-    isExternalFilterPresent: supplierIsExternalFilterPresent,
-    doesExternalFilterPass: supplierDoesExternalFilterPass,
-    searchBarProps: supplierSearchBarProps,
-    clearSearchUIOnly: clearSupplierSearchUIOnly,
-  } = useUnifiedSearch({
-    columns: supplierSearchColumns,
-    searchMode: 'client',
-    useFuzzySearch: true,
-    data: suppliersData,
-    onFilterSearch: handleSupplierFilterSearch,
-  });
-
-  const {
-    search: customerSearch,
-    setSearch: setCustomerSearch,
-    onGridReady: customerOnGridReady,
-    isExternalFilterPresent: customerIsExternalFilterPresent,
-    doesExternalFilterPass: customerDoesExternalFilterPass,
-    searchBarProps: customerSearchBarProps,
-    clearSearchUIOnly: clearCustomerSearchUIOnly,
-  } = useUnifiedSearch({
-    columns: customerSearchColumns,
-    searchMode: 'hybrid',
-    useFuzzySearch: true,
-    data: customersDataTyped,
-    onSearch: setCustomerDataSearch,
-    onClear: () => setCustomerDataSearch(''),
-    onFilterSearch: handleMasterDataFilterSearch,
-  });
-
-  const {
-    search: patientSearch,
-    setSearch: setPatientSearch,
-    onGridReady: patientOnGridReady,
-    isExternalFilterPresent: patientIsExternalFilterPresent,
-    doesExternalFilterPass: patientDoesExternalFilterPass,
-    searchBarProps: patientSearchBarProps,
-    clearSearchUIOnly: clearPatientSearchUIOnly,
-  } = useUnifiedSearch({
-    columns: patientSearchColumns,
-    searchMode: 'hybrid',
-    useFuzzySearch: true,
-    data: patientsDataTyped,
-    onSearch: setPatientDataSearch,
-    onClear: () => setPatientDataSearch(''),
-    onFilterSearch: handleMasterDataFilterSearch,
-  });
-
-  const {
-    search: doctorSearch,
-    setSearch: setDoctorSearch,
-    onGridReady: doctorOnGridReady,
-    isExternalFilterPresent: doctorIsExternalFilterPresent,
-    doesExternalFilterPass: doctorDoesExternalFilterPass,
-    searchBarProps: doctorSearchBarProps,
-    clearSearchUIOnly: clearDoctorSearchUIOnly,
-  } = useUnifiedSearch({
-    columns: doctorSearchColumns,
-    searchMode: 'hybrid',
-    useFuzzySearch: true,
-    data: doctorsDataTyped,
-    onSearch: setDoctorDataSearch,
-    onClear: () => setDoctorDataSearch(''),
-    onFilterSearch: handleMasterDataFilterSearch,
-  });
-
-  const suppliersForDisplay: SupplierType[] = useMemo(() => {
-    const q = supplierSearch.trim().toLowerCase();
-    if (!q || q.startsWith('#')) return suppliersData;
-
-    return suppliersData
-      .filter(supplier => {
-        return (
-          fuzzyMatch(supplier.name, q) ||
-          (supplier.address && fuzzyMatch(supplier.address, q)) ||
-          (supplier.phone && fuzzyMatch(supplier.phone, q)) ||
-          (supplier.email && fuzzyMatch(supplier.email, q)) ||
-          (supplier.contact_person && fuzzyMatch(supplier.contact_person, q))
-        );
-      })
-      .sort((a, b) => {
-        const getSupplierScore = (supplier: SupplierType) => {
-          const nameLower = supplier.name?.toLowerCase?.() ?? '';
-          const addressLower = supplier.address?.toLowerCase?.() ?? '';
-          const phoneLower = supplier.phone?.toLowerCase?.() ?? '';
-          const emailLower = supplier.email?.toLowerCase?.() ?? '';
-          const contactLower = supplier.contact_person?.toLowerCase?.() ?? '';
-
-          if (nameLower.startsWith(q)) return 5;
-          if (nameLower.includes(q)) return 4;
-          if (emailLower.includes(q)) return 3;
-          if (phoneLower.includes(q)) return 2;
-          if (addressLower.includes(q) || contactLower.includes(q)) return 1;
-          return 0;
-        };
-
-        const scoreA = getSupplierScore(a);
-        const scoreB = getSupplierScore(b);
-        if (scoreA !== scoreB) return scoreB - scoreA;
-        return a.name.localeCompare(b.name);
-      });
-  }, [supplierSearch, suppliersData]);
-
-  const masterDataRows = useMemo(() => {
-    if (isItemEntityTab) return entityData.data;
-    if (isCustomerTab) return customersDataTyped;
-    if (isPatientTab) return patientsDataTyped;
-    if (isDoctorTab) return doctorsDataTyped;
-    return [];
-  }, [
-    customersDataTyped,
-    doctorsDataTyped,
-    entityData.data,
-    isCustomerTab,
-    isDoctorTab,
-    isItemEntityTab,
-    isPatientTab,
-    patientsDataTyped,
-  ]);
-
-  const masterDataColumnDefs = useMemo(() => {
-    if (isItemEntityTab) return entityColumnDefs;
-    if (isCustomerTab) return customerColumnDefs;
-    if (isPatientTab) return patientColumnDefs;
-    if (isDoctorTab) return doctorColumnDefs;
-    return [];
-  }, [
-    customerColumnDefs,
-    doctorColumnDefs,
-    entityColumnDefs,
-    isCustomerTab,
-    isDoctorTab,
-    isItemEntityTab,
-    isPatientTab,
-    patientColumnDefs,
-  ]);
-
-  const masterDataConfig = useMemo(() => {
-    if (isItemEntityTab) return entityCurrentConfig;
-    if (otherMasterDataConfig) {
-      return {
-        entityName: otherMasterDataConfig.entityName,
-        nameColumnHeader: 'Nama',
-        searchPlaceholder: otherMasterDataConfig.searchPlaceholder,
-        noDataMessage: otherMasterDataConfig.noDataMessage,
-        searchNoDataMessage: otherMasterDataConfig.searchNoDataMessage,
-      };
-    }
-    return null;
-  }, [entityCurrentConfig, isItemEntityTab, otherMasterDataConfig]);
-
-  const activeItemsPerPage = useMemo(() => {
-    if (isItemTab) return itemsManagement.itemsPerPage;
-    if (isItemEntityTab) return entityManager.itemsPerPage;
-    if (isSupplierTab) return 25;
-    if (isCustomerTab) return customerItemsPerPage;
-    if (isPatientTab) return patientItemsPerPage;
-    if (isDoctorTab) return doctorItemsPerPage;
-    return 25;
-  }, [
-    customerItemsPerPage,
-    doctorItemsPerPage,
-    isCustomerTab,
-    isDoctorTab,
-    isItemEntityTab,
-    isItemTab,
-    isPatientTab,
-    isSupplierTab,
-    entityManager.itemsPerPage,
-    patientItemsPerPage,
-    itemsManagement.itemsPerPage,
-  ]);
-
-  // Cleanup grid API reference and pending tab changes on unmount
-  useEffect(() => {
-    return () => {
-      // Clear pending tab change timeout
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-        debounceTimerRef.current = null;
-      }
-      pendingTabRef.current = null;
-      setUnifiedGridApi(null);
-    };
-  }, []);
-
-  // Navigation logic extracted for reuse
-  const performNavigation = useCallback(
-    (targetTab: MasterDataType) => {
-      const currentSearchPattern =
-        activeTab === 'items'
-          ? itemSearch
-          : activeTab === 'suppliers'
-            ? supplierSearch
-            : activeTab === 'customers'
-              ? customerSearch
-              : activeTab === 'patients'
-                ? patientSearch
-                : activeTab === 'doctors'
-                  ? doctorSearch
-                  : entitySearch;
-
-      const currentSearchColumns =
-        activeTab === 'items'
-          ? orderedSearchColumns
-          : activeTab === 'suppliers'
-            ? supplierSearchColumns
-            : activeTab === 'customers'
-              ? customerSearchColumns
-              : activeTab === 'patients'
-                ? patientSearchColumns
-                : activeTab === 'doctors'
-                  ? doctorSearchColumns
-                  : entitySearchColumns;
-
-      saveSearchPatternToSession(
-        activeTab,
-        normalizePendingOperatorPattern(
-          currentSearchPattern,
-          currentSearchColumns
-        )
-      );
-
-      void navigate(getMasterDataPathForTab(targetTab));
-
-      // Save selected tab to session storage for future visits
-      saveLastTabToSession(targetTab);
-
-      // Simple client-side grouping - no need to clear on tab switch
-
-      // 🔒 Block SearchBar from clearing grid filters during tab switch
-      // This prevents the cascade: clearSearch → useSearchState → onFilterSearch(null)
-      isTabSwitchingRef.current = true;
-
-      // Clear React state to prevent field contamination
-      if (activeTab === 'items') {
-        clearItemSearchUIOnly();
-      } else if (activeTab === 'suppliers') {
-        /* c8 ignore next */
-        clearSupplierSearchUIOnly();
-      } else if (activeTab === 'customers') {
-        /* c8 ignore next */
-        clearCustomerSearchUIOnly();
-      } else if (activeTab === 'patients') {
-        /* c8 ignore next */
-        clearPatientSearchUIOnly();
-      } else if (activeTab === 'doctors') {
-        /* c8 ignore next */
-        clearDoctorSearchUIOnly();
-      } else {
-        clearEntitySearchUIOnly();
-      }
-
-      // Reset visible columns to allow new grid to populate
-      setVisibleColumns([]);
-
-      // 🔓 Unlock after navigation and grid restoration completes
-      // Grid restoration happens quickly after tab switch
-      setTimeout(() => {
-        isTabSwitchingRef.current = false;
-      }, 500);
-
-      // Note: Grid state restoration will handle filter state correctly:
-      // - If saved filter exists → restored automatically (including badge filters)
-      // - If no saved filter → empty by default
-      // SearchBar UI cleared, grid filters preserved
-
-      // Reset item modal state when switching tabs
-      if (isAddItemModalOpen) {
-        closeAddItemModal();
-      }
-
-      if (isAddCustomerModalOpen) {
-        setIsAddCustomerModalOpen(false);
-      }
-      if (isEditCustomerModalOpen) {
-        setIsEditCustomerModalOpen(false);
-      }
-      if (isAddPatientModalOpen) {
-        setIsAddPatientModalOpen(false);
-      }
-      if (isEditPatientModalOpen) {
-        setIsEditPatientModalOpen(false);
-      }
-      if (isAddDoctorModalOpen) {
-        setIsAddDoctorModalOpen(false);
-      }
-      if (isEditDoctorModalOpen) {
-        setIsEditDoctorModalOpen(false);
-      }
+    masterDataRows,
+    masterDataColumnDefs,
+    masterDataConfig,
+    activeItemsPerPage,
+    activePlaceholder,
+    activeOnAdd,
+    activeOnKeyDown,
+    activeAddTooltipLabel,
+    activeExportTooltipLabel,
+    activeExportFilename,
+    activeIsLoading,
+    activeIsError,
+    activeError,
+    activeItemsSelection,
+    activeOnItemSelect,
+  } = useItemMasterActiveView({
+    activeTab,
+    flags: {
+      isItemTab,
+      isSupplierTab,
+      isCustomerTab,
+      isPatientTab,
+      isDoctorTab,
+      isItemEntityTab,
+      isOtherMasterTab,
     },
-    [
+    config: {
+      entityCurrentConfig,
+      otherMasterDataConfig,
+    },
+    data: {
+      itemsData: itemsManagement.data as ItemDataType[],
+      entityRows: entityData.data,
+      customers: customersDataTyped,
+      patients: patientsDataTyped,
+      doctors: doctorsDataTyped,
+    },
+    columns: {
+      entityColumnDefs,
+      customerColumnDefs,
+      patientColumnDefs,
+      doctorColumnDefs,
+    },
+    pagination: {
+      itemItemsPerPage: itemsManagement.itemsPerPage,
+      entityItemsPerPage: entityManager.itemsPerPage,
+      customerItemsPerPage,
+      patientItemsPerPage,
+      doctorItemsPerPage,
+    },
+    status: {
+      items: {
+        isLoading: itemsManagement.isLoading,
+        isError: itemsManagement.isError,
+        error: itemsManagement.queryError,
+      },
+      suppliers: {
+        isLoading: suppliersQuery.isLoading,
+        isError: suppliersQuery.isError,
+        error: suppliersQuery.error,
+      },
+      customers: {
+        isLoading: isCustomersLoading,
+        isError: isCustomersError,
+        error: customersQueryError,
+      },
+      patients: {
+        isLoading: isPatientsLoading,
+        isError: isPatientsError,
+        error: patientsQueryError,
+      },
+      doctors: {
+        isLoading: isDoctorsLoading,
+        isError: isDoctorsError,
+        error: doctorsQueryError,
+      },
+      entity: {
+        isLoading: entityData.isLoading,
+        isError: entityData.isError,
+        error: entityData.error,
+      },
+    },
+    toolbar: {
+      activeSearchValue,
+      handleAddItem,
+      openAddSupplierModal,
+      openAddEntityModal: entityManager.openAddModal,
+      openAddCustomerModal: () => setIsAddCustomerModalOpen(true),
+      openAddPatientModal: () => setIsAddPatientModalOpen(true),
+      openAddDoctorModal: () => setIsAddDoctorModalOpen(true),
+      handleCustomerKeyDown,
+      handlePatientKeyDown,
+      handleDoctorKeyDown,
+      handleItemSelect,
+    },
+  });
+
+  const { handleTabChange, handleTabNext, handleTabPrevious } =
+    useItemMasterTabNavigation({
+      activeTab,
       navigate,
-      activeTab,
-      itemSearch,
-      supplierSearch,
-      customerSearch,
-      patientSearch,
-      doctorSearch,
-      entitySearch,
-      orderedSearchColumns,
-      supplierSearchColumns,
-      customerSearchColumns,
-      patientSearchColumns,
-      doctorSearchColumns,
-      entitySearchColumns,
-      isAddItemModalOpen,
-      isAddCustomerModalOpen,
-      isEditCustomerModalOpen,
-      isAddPatientModalOpen,
-      isEditPatientModalOpen,
-      isAddDoctorModalOpen,
-      isEditDoctorModalOpen,
-      closeAddItemModal,
-      setIsAddCustomerModalOpen,
-      setIsEditCustomerModalOpen,
-      setIsAddPatientModalOpen,
-      setIsEditPatientModalOpen,
-      setIsAddDoctorModalOpen,
-      setIsEditDoctorModalOpen,
-      clearItemSearchUIOnly,
-      clearEntitySearchUIOnly,
-      clearCustomerSearchUIOnly,
-      clearDoctorSearchUIOnly,
-      clearPatientSearchUIOnly,
-      clearSupplierSearchUIOnly,
-    ]
-  );
+      isTabSwitchingRef,
+      resetVisibleColumns,
+      searchRuntimes,
+      modalState: {
+        isAddItemModalOpen,
+        closeAddItemModal,
+        isAddCustomerModalOpen,
+        setIsAddCustomerModalOpen,
+        isEditCustomerModalOpen,
+        setIsEditCustomerModalOpen,
+        isAddPatientModalOpen,
+        setIsAddPatientModalOpen,
+        isEditPatientModalOpen,
+        setIsEditPatientModalOpen,
+        isAddDoctorModalOpen,
+        setIsAddDoctorModalOpen,
+        isEditDoctorModalOpen,
+        setIsEditDoctorModalOpen,
+      },
+    });
 
-  const handleTabChange = useCallback(
-    (_key: string, value: MasterDataType) => {
-      // Skip if same tab
-      if (value === activeTab) return;
-
-      const now = Date.now();
-      const timeSinceLastNav = now - lastNavigationTimeRef.current;
-      const isInCooldown = timeSinceLastNav < TAB_CHANGE_COOLDOWN_MS;
-
-      if (!isInCooldown) {
-        // 🚀 First click or after cooldown - navigate IMMEDIATELY (0ms delay)
-        performNavigation(value);
-        lastNavigationTimeRef.current = now;
-
-        // Clear any pending debounced navigation
-        if (debounceTimerRef.current) {
-          clearTimeout(debounceTimerRef.current);
-          debounceTimerRef.current = null;
-        }
-        pendingTabRef.current = null;
-      } else {
-        // ⏸️ Rapid clicking detected - debounce to capture final selection
-
-        // Clear previous debounce timer
-        if (debounceTimerRef.current) {
-          clearTimeout(debounceTimerRef.current);
-        }
-
-        // Store pending tab selection
-        pendingTabRef.current = value;
-
-        // Set new debounce timer - navigates to final selection after user settles
-        debounceTimerRef.current = setTimeout(() => {
-          if (pendingTabRef.current) {
-            performNavigation(pendingTabRef.current);
-            lastNavigationTimeRef.current = Date.now();
-            pendingTabRef.current = null;
-          }
-          debounceTimerRef.current = null;
-        }, TAB_CHANGE_COOLDOWN_MS);
-      }
-    },
-    [activeTab, performNavigation]
-  );
-
-  // Tab navigation handlers for keyboard shortcuts
-  const handleTabNext = useCallback(() => {
-    const currentIndex = ITEM_MASTER_SWITCHER_TAB_OPTIONS.findIndex(
-      opt => opt.value === activeTab
-    );
-    const safeIndex = currentIndex === -1 ? 0 : currentIndex;
-    const nextIndex =
-      safeIndex < ITEM_MASTER_SWITCHER_TAB_OPTIONS.length - 1
-        ? safeIndex + 1
-        : 0;
-    const nextTab = ITEM_MASTER_SWITCHER_TAB_OPTIONS[nextIndex];
-    handleTabChange(nextTab.key, nextTab.value);
-  }, [activeTab, handleTabChange]);
-
-  const handleTabPrevious = useCallback(() => {
-    const currentIndex = ITEM_MASTER_SWITCHER_TAB_OPTIONS.findIndex(
-      opt => opt.value === activeTab
-    );
-    const safeIndex = currentIndex === -1 ? 0 : currentIndex;
-    const prevIndex =
-      safeIndex > 0
-        ? safeIndex - 1
-        : ITEM_MASTER_SWITCHER_TAB_OPTIONS.length - 1;
-    const prevTab = ITEM_MASTER_SWITCHER_TAB_OPTIONS[prevIndex];
-    handleTabChange(prevTab.key, prevTab.value);
-  }, [activeTab, handleTabChange]);
-
-  // Unified handlers for EntityGrid
-  const unifiedRowClickHandler = useCallback(
-    (
-      data:
-        | ItemDataType
-        | EntityData
-        | SupplierType
-        | CustomerType
-        | PatientType
-        | DoctorType
-    ) => {
-      if (activeTab === 'items') {
-        // Convert back to base Item type for editing
-        const baseItem = data as ItemDataType;
-        handleItemEdit(baseItem);
-      } else if (activeTab === 'suppliers') {
-        openEditSupplierModal(data as SupplierType);
-      } else if (activeTab === 'customers') {
-        handleCustomerEdit(data as CustomerType);
-      } else if (activeTab === 'patients') {
-        handlePatientEdit(data as PatientType);
-      } else if (activeTab === 'doctors') {
-        handleDoctorEdit(data as DoctorType);
-      } else {
-        entityManager.openEditModal(data as EntityData);
-      }
-    },
-    [
-      activeTab,
-      handleCustomerEdit,
-      handleDoctorEdit,
-      handleItemEdit,
-      handlePatientEdit,
-      entityManager,
-      openEditSupplierModal,
-    ]
-  );
-
-  const unifiedGridReadyHandler = useCallback(
-    (params: GridReadyEvent) => {
-      if (activeTab === 'items') {
-        enhancedItemOnGridReady(params);
-      } else if (activeTab === 'suppliers') {
-        supplierOnGridReady(params);
-      } else if (activeTab === 'customers') {
-        customerOnGridReady(params);
-      } else if (activeTab === 'patients') {
-        patientOnGridReady(params);
-      } else if (activeTab === 'doctors') {
-        doctorOnGridReady(params);
-      } else {
-        entityOnGridReady(params);
-      }
-    },
-    [
-      activeTab,
-      customerOnGridReady,
-      doctorOnGridReady,
-      enhancedItemOnGridReady,
-      entityOnGridReady,
-      patientOnGridReady,
-      supplierOnGridReady,
-    ]
-  );
-
-  useEffect(() => {
-    if (!unifiedGridApi || unifiedGridApi.isDestroyed()) {
-      return;
-    }
-
-    unifiedGridReadyHandler({
-      api: unifiedGridApi,
-    } as GridReadyEvent);
-  }, [activeTab, unifiedGridApi, unifiedGridReadyHandler]);
+  const unifiedRowClickHandler = useItemMasterRowClickHandler({
+    activeTab,
+    handleCustomerEdit,
+    handleDoctorEdit,
+    handleItemEdit,
+    handlePatientEdit,
+    openEditEntityModal: entityManager.openEditModal,
+    openEditSupplierModal,
+  });
 
   const showTabSelector = isItemMasterTab(activeTab);
   const pageTitle =
@@ -1859,17 +384,6 @@ const ItemMasterNew = memo(() => {
       ? 'Daftar Supplier'
       : (otherMasterDataConfig?.title ?? 'Item Master');
 
-  const activeSearchBarProps = isItemTab
-    ? itemSearchBarProps
-    : isSupplierTab
-      ? supplierSearchBarProps
-      : isCustomerTab
-        ? customerSearchBarProps
-        : isPatientTab
-          ? patientSearchBarProps
-          : isDoctorTab
-            ? doctorSearchBarProps
-            : entitySearchBarProps;
   const coordinatedSearchBarProps = useMemo(
     () => ({
       ...activeSearchBarProps,
@@ -1881,234 +395,9 @@ const ItemMasterNew = memo(() => {
       activeSearchBarProps,
       handleSearchSelectorOpenChange,
       isTabSelectorExpanded,
+      tabSelectorContainerRef,
     ]
   );
-  const activeSearchColumns = activeSearchBarProps.columns;
-
-  const activeSearchValue = isItemTab
-    ? itemSearch
-    : isSupplierTab
-      ? supplierSearch
-      : isCustomerTab
-        ? customerSearch
-        : isPatientTab
-          ? patientSearch
-          : isDoctorTab
-            ? doctorSearch
-            : entitySearch;
-
-  searchSnapshotsByTabRef.current[activeTab] = {
-    pattern: activeSearchValue,
-    columns: activeSearchColumns,
-  };
-
-  useEffect(() => {
-    const snapshotsByTab = searchSnapshotsByTabRef.current;
-
-    return () => {
-      const snapshot = snapshotsByTab[activeTab];
-      if (!snapshot) {
-        return;
-      }
-
-      saveSearchPatternToSession(
-        activeTab,
-        normalizePendingOperatorPattern(snapshot.pattern, snapshot.columns)
-      );
-    };
-  }, [activeTab]);
-
-  // Restore SearchBar badge UI per tab from its dedicated session key.
-  // Using the explicit search key as the source of truth avoids badge leakage
-  // when AG Grid state is still transitioning during a tab switch.
-  useLayoutEffect(() => {
-    const setSearch =
-      activeTab === 'items'
-        ? setItemSearch
-        : activeTab === 'suppliers'
-          ? setSupplierSearch
-          : activeTab === 'customers'
-            ? setCustomerSearch
-            : activeTab === 'patients'
-              ? setPatientSearch
-              : activeTab === 'doctors'
-                ? setDoctorSearch
-                : setEntitySearch;
-    const sessionKey = getItemMasterSearchSessionKey(activeTab);
-
-    let savedPattern = '';
-    try {
-      savedPattern = sessionStorage.getItem(sessionKey) ?? '';
-    } catch {
-      // ignore
-    }
-
-    const restoredPattern = normalizePendingOperatorPattern(
-      savedPattern,
-      activeSearchColumns
-    );
-    if (restoredPattern !== savedPattern) {
-      saveSearchPatternToSession(activeTab, restoredPattern);
-    }
-
-    setSearch(restoredPattern);
-
-    if (!unifiedGridApi || unifiedGridApi.isDestroyed()) {
-      return;
-    }
-
-    if (restoredPattern.trim() === '') {
-      unifiedGridApi.setAdvancedFilterModel(null);
-      return;
-    }
-
-    const parsedSearch = parseSearchValue(restoredPattern, activeSearchColumns);
-    const filterSearch = parsedSearch.isFilterMode
-      ? (parsedSearch.filterSearch ?? null)
-      : null;
-
-    unifiedGridApi.setAdvancedFilterModel(
-      shouldApplyRestoredFilter(filterSearch)
-        ? buildAdvancedFilterModel(filterSearch)
-        : null
-    );
-  }, [
-    activeSearchColumns,
-    activeTab,
-    setCustomerSearch,
-    setDoctorSearch,
-    setEntitySearch,
-    setItemSearch,
-    setPatientSearch,
-    setSupplierSearch,
-    unifiedGridApi,
-  ]);
-
-  const activePlaceholder = isItemTab
-    ? 'Cari item...'
-    : isSupplierTab
-      ? 'Cari supplier...'
-      : (otherMasterDataConfig?.searchPlaceholder ??
-        `${entityCurrentConfig?.searchPlaceholder || 'Cari'} atau ketik # untuk pencarian kolom spesifik`);
-
-  const activeOnAdd = isItemTab
-    ? () => handleAddItem(undefined, itemSearch)
-    : isSupplierTab
-      ? openAddSupplierModal
-      : isCustomerTab
-        ? () => setIsAddCustomerModalOpen(true)
-        : isPatientTab
-          ? () => setIsAddPatientModalOpen(true)
-          : isDoctorTab
-            ? () => setIsAddDoctorModalOpen(true)
-            : entityManager.openAddModal;
-
-  const activeOnKeyDown = isCustomerTab
-    ? handleCustomerKeyDown
-    : isPatientTab
-      ? handlePatientKeyDown
-      : isDoctorTab
-        ? handleDoctorKeyDown
-        : undefined;
-
-  const activeAddTooltipLabel = isItemTab
-    ? 'Tambah Item Baru'
-    : isSupplierTab
-      ? 'Tambah Supplier Baru'
-      : isOtherMasterTab && otherMasterDataConfig
-        ? `Tambah ${otherMasterDataConfig.entityName} Baru`
-        : (entityCurrentConfig?.addButtonText ?? 'Tambah Data Baru');
-
-  const activeExportTooltipLabel = isItemTab
-    ? 'Export Data Item'
-    : isSupplierTab
-      ? 'Export Data Supplier'
-      : isOtherMasterTab && otherMasterDataConfig
-        ? `Export Data ${otherMasterDataConfig.entityName}`
-        : `Export Data ${entityCurrentConfig?.entityName ?? 'Data'}`;
-
-  const activeExportFilename = isItemTab
-    ? 'daftar-item'
-    : isSupplierTab
-      ? 'daftar-supplier'
-      : (otherMasterDataConfig?.exportFilename ??
-        (activeTab === 'categories'
-          ? 'kategori-item'
-          : activeTab === 'types'
-            ? 'jenis-item'
-            : activeTab === 'packages'
-              ? 'kemasan-item'
-              : activeTab === 'dosages'
-                ? 'sediaan-item'
-                : activeTab === 'manufacturers'
-                  ? 'produsen-item'
-                  : 'satuan-item'));
-
-  const activeIsLoading = isItemTab
-    ? itemsManagement.isLoading
-    : isSupplierTab
-      ? suppliersQuery.isLoading
-      : isCustomerTab
-        ? isCustomersLoading
-        : isPatientTab
-          ? isPatientsLoading
-          : isDoctorTab
-            ? isDoctorsLoading
-            : entityData.isLoading;
-
-  const activeIsError = isItemTab
-    ? itemsManagement.isError
-    : isSupplierTab
-      ? suppliersQuery.isError
-      : isCustomerTab
-        ? isCustomersError
-        : isPatientTab
-          ? isPatientsError
-          : isDoctorTab
-            ? isDoctorsError
-            : entityData.isError;
-
-  const activeError = isItemTab
-    ? itemsManagement.queryError
-    : isSupplierTab
-      ? suppliersQuery.error
-      : isCustomerTab
-        ? customersQueryError
-        : isPatientTab
-          ? patientsQueryError
-          : isDoctorTab
-            ? doctorsQueryError
-            : entityData.error;
-
-  const activeIsExternalFilterPresent = isItemTab
-    ? itemIsExternalFilterPresent
-    : isSupplierTab
-      ? supplierIsExternalFilterPresent
-      : isCustomerTab
-        ? customerIsExternalFilterPresent
-        : isPatientTab
-          ? patientIsExternalFilterPresent
-          : isDoctorTab
-            ? doctorIsExternalFilterPresent
-            : entityIsExternalFilterPresent;
-
-  const activeDoesExternalFilterPass = isItemTab
-    ? itemDoesExternalFilterPass
-    : isSupplierTab
-      ? supplierDoesExternalFilterPass
-      : isCustomerTab
-        ? customerDoesExternalFilterPass
-        : isPatientTab
-          ? patientDoesExternalFilterPass
-          : isDoctorTab
-            ? doctorDoesExternalFilterPass
-            : entityDoesExternalFilterPass;
-
-  const activeItemsSelection = isItemTab
-    ? (itemsManagement.data as ItemDataType[])
-    : undefined;
-
-  const activeOnItemSelect = isItemTab ? handleItemSelect : undefined;
 
   const enableTabShortcuts = isItemMasterTab(activeTab);
   const isAnyMasterDataModalOpen =
@@ -2126,38 +415,14 @@ const ItemMasterNew = memo(() => {
     isEditDoctorModalOpen;
   const tabSelectorLayerClass = isAnyMasterDataModalOpen ? 'z-40' : 'z-[70]';
 
-  useEffect(() => {
-    if (!isItemTab || !unifiedGridApi || unifiedGridApi.isDestroyed()) {
-      return;
-    }
-
-    const syncItemsGrid = () => {
-      if (unifiedGridApi.isDestroyed()) {
-        return;
-      }
-
-      const nextRowData = itemsManagement.data as ItemDataType[];
-      const shouldShowItemsLoading =
-        activeIsLoading && nextRowData.length === 0;
-
-      unifiedGridApi.setGridOption('loading', shouldShowItemsLoading);
-      unifiedGridApi.setGridOption('rowData', nextRowData);
-    };
-
-    syncItemsGrid();
-    const rafId = requestAnimationFrame(syncItemsGrid);
-
-    return () => {
-      cancelAnimationFrame(rafId);
-    };
-  }, [
-    activeIsLoading,
+  useItemMasterItemsGridSync({
+    gridApi: unifiedGridApi,
     isAddItemModalOpen,
     isItemModalClosing,
     isItemTab,
-    itemsManagement.data,
-    unifiedGridApi,
-  ]);
+    isLoading: activeIsLoading,
+    itemsData: itemsManagement.data as ItemDataType[],
+  });
 
   // Removed unified column handlers - now handled by live save in EntityGrid
 
@@ -2167,35 +432,16 @@ const ItemMasterNew = memo(() => {
   return (
     <>
       <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden p-6">
-        <div className="relative flex items-center justify-center mb-0 pt-0">
-          <div
-            ref={tabSelectorContainerRef}
-            className="absolute left-0 pb-4 pt-6"
-          >
-            {showTabSelector && (
-              <SlidingSelector
-                options={ITEM_MASTER_SWITCHER_TAB_OPTIONS}
-                activeKey={activeTab}
-                onSelectionChange={handleTabChange}
-                variant="tabs"
-                size="md"
-                shape="rounded"
-                className={`${tabSelectorLayerClass} [&_[role=tab]]:rounded-lg [&_[role=tab]>.absolute]:rounded-lg`}
-                collapsible={true}
-                defaultExpanded={false}
-                expandOnHover={true}
-                expandDirection="vertical"
-                onExpandedChange={handleTabSelectorExpandedChange}
-                collapseSignal={tabSelectorCollapseSignal}
-                autoCollapseDelay={150}
-                layoutId="item-master-tabs"
-                animationPreset="smooth"
-              />
-            )}
-          </div>
-
-          <PageTitle title={pageTitle} />
-        </div>
+        <ItemMasterHeader
+          activeTab={activeTab}
+          pageTitle={pageTitle}
+          showTabSelector={showTabSelector}
+          tabSelectorContainerRef={tabSelectorContainerRef}
+          tabSelectorLayerClass={tabSelectorLayerClass}
+          tabSelectorCollapseSignal={tabSelectorCollapseSignal}
+          onTabChange={handleTabChange}
+          onTabSelectorExpandedChange={handleTabSelectorExpandedChange}
+        />
 
         {/* Unified SearchToolbar */}
         <div className="flex items-center pt-8">
@@ -2238,7 +484,7 @@ const ItemMasterNew = memo(() => {
             entityColumnDefs={masterDataColumnDefs}
             supplierColumnDefs={supplierColumnDefs}
             onRowClick={unifiedRowClickHandler}
-            onGridReady={unifiedGridReadyHandler}
+            onGridReady={handleActiveGridReady}
             isExternalFilterPresent={activeIsExternalFilterPresent}
             doesExternalFilterPass={activeDoesExternalFilterPass}
             onGridApiReady={handleUnifiedGridApiReady}
@@ -2253,271 +499,22 @@ const ItemMasterNew = memo(() => {
         </div>
       </div>
 
-      {/* Item Management Modal - only render for items tab */}
-      {activeTab === 'items' && (isAddItemModalOpen || isItemModalClosing) && (
-        <Suspense fallback={null}>
-          <ItemModal
-            key={`${editingItemId ?? 'new'}-${currentSearchQueryForModal ?? ''}-${modalRenderId}`}
-            isOpen={isAddItemModalOpen}
-            onClose={closeAddItemModal}
-            itemId={editingItemId}
-            initialItemData={editingItemData}
-            initialSearchQuery={currentSearchQueryForModal}
-            isClosing={isItemModalClosing}
-            setIsClosing={setIsItemModalClosing}
-            refetchItems={itemsManagement.refetchItems}
-          />
-        </Suspense>
-      )}
-
-      {/* Entity Management Modal - only render for entity tabs */}
-      {isItemEntityTab &&
-        (entityManager.isAddModalOpen || entityManager.isEditModalOpen) && (
-          <Suspense fallback={null}>
-            <EntityModal
-              isOpen={true}
-              onClose={
-                entityManager.isEditModalOpen
-                  ? entityManager.closeEditModal
-                  : entityManager.closeAddModal
-              }
-              onSubmit={entityManager.handleSubmit}
-              initialData={entityManager.editingEntity}
-              onDelete={
-                entityManager.editingEntity
-                  ? () =>
-                      entityManager.handleDelete(entityManager.editingEntity!)
-                  : undefined
-              }
-              isLoading={false}
-              isDeleting={false}
-              entityName={entityCurrentConfig?.entityName || 'Entity'}
-            />
-          </Suspense>
-        )}
-
-      {(isSupplierTab || isAddSupplierModalOpen || isEditSupplierModalOpen) && (
-        <Suspense fallback={null}>
-          <SupplierModals
-            isActive={isSupplierTab}
-            supplierFields={supplierFields}
-            supplierSearch={supplierSearch}
-            isAddSupplierModalOpen={isAddSupplierModalOpen}
-            isEditSupplierModalOpen={isEditSupplierModalOpen}
-            editingSupplier={editingSupplier}
-            supplierMutations={supplierMutations}
-            openConfirmDialog={openConfirmDialog}
-            closeAddSupplierModal={closeAddSupplierModal}
-            closeEditSupplierModal={closeEditSupplierModal}
-          />
-        </Suspense>
-      )}
-
-      {/* Customer Modals */}
-      {isCustomerTab && isAddCustomerModalOpen && (
-        <Suspense fallback={null}>
-          <IdentityDataModal
-            title="Tambah Pelanggan Baru"
-            data={{ customer_level_id: defaultCustomerLevelId }}
-            fields={customerFields}
-            isOpen={isCustomerTab && isAddCustomerModalOpen}
-            onClose={() => setIsAddCustomerModalOpen(false)}
-            onSave={async data => {
-              return await handleCustomerModalSubmit({
-                data: toCustomerPayload(data),
-              });
-            }}
-            mode="add"
-            initialNameFromSearch={customerDebouncedSearch}
-            showImageUploader={false}
-            useInlineFieldActions={false}
-          />
-        </Suspense>
-      )}
-
-      {isCustomerTab && isEditCustomerModalOpen && (
-        <Suspense fallback={null}>
-          <IdentityDataModal
-            title="Edit Pelanggan"
-            data={
-              (editingCustomer as unknown as Record<
-                string,
-                string | number | boolean | null
-              >) || {}
-            }
-            fields={customerFields}
-            isOpen={isCustomerTab && isEditCustomerModalOpen}
-            onClose={() => setIsEditCustomerModalOpen(false)}
-            onSave={async data => {
-              return await handleCustomerModalSubmit({
-                id: editingCustomer?.id,
-                data: toCustomerPayload(data),
-              });
-            }}
-            onFieldSave={async (key, value) => {
-              await handleCustomerFieldAutosave(
-                editingCustomer?.id,
-                key,
-                value
-              );
-            }}
-            onDeleteRequest={
-              editingCustomer
-                ? () => {
-                    openConfirmDialog({
-                      title: 'Konfirmasi Hapus',
-                      message: `Apakah Anda yakin ingin menghapus pelanggan "${editingCustomer.name}"?`,
-                      variant: 'danger',
-                      confirmText: 'Ya, Hapus',
-                      onConfirm: async () => {
-                        await handleCustomerDelete(editingCustomer.id);
-                      },
-                    });
-                  }
-                : undefined
-            }
-            mode="edit"
-            showImageUploader={false}
-            useInlineFieldActions={false}
-          />
-        </Suspense>
-      )}
-
-      {/* Patient Modals */}
-      {isPatientTab && isAddPatientModalOpen && (
-        <Suspense fallback={null}>
-          <IdentityDataModal
-            title="Tambah Pasien Baru"
-            data={{}}
-            fields={patientFields}
-            isOpen={isPatientTab && isAddPatientModalOpen}
-            onClose={() => setIsAddPatientModalOpen(false)}
-            onSave={async data => {
-              return await handlePatientModalSubmit({
-                data: toPatientPayload(data),
-                id: undefined,
-              });
-            }}
-            mode="add"
-            initialNameFromSearch={patientDebouncedSearch}
-            useInlineFieldActions={false}
-          />
-        </Suspense>
-      )}
-
-      {isPatientTab && isEditPatientModalOpen && (
-        <Suspense fallback={null}>
-          <IdentityDataModal
-            title="Edit Pasien"
-            data={
-              (editingPatient as unknown as Record<
-                string,
-                string | number | boolean | null
-              >) || {}
-            }
-            fields={patientFields}
-            isOpen={isPatientTab && isEditPatientModalOpen}
-            onClose={() => setIsEditPatientModalOpen(false)}
-            onSave={async data => {
-              return await handlePatientModalSubmit({
-                data: toPatientPayload(data),
-                id: editingPatient?.id,
-              });
-            }}
-            onFieldSave={async (key, value) => {
-              await handlePatientFieldAutosave(editingPatient?.id, key, value);
-            }}
-            onDeleteRequest={
-              editingPatient
-                ? () => {
-                    openConfirmDialog({
-                      title: 'Konfirmasi Hapus',
-                      message: `Apakah Anda yakin ingin menghapus pasien "${editingPatient.name}"?`,
-                      variant: 'danger',
-                      confirmText: 'Ya, Hapus',
-                      onConfirm: async () => {
-                        await handlePatientDelete(editingPatient.id);
-                      },
-                    });
-                  }
-                : undefined
-            }
-            mode="edit"
-            imageUrl={(editingPatient as PatientType)?.image_url || undefined}
-            onImageSave={handlePatientImageSave}
-            onImageDelete={handlePatientImageDelete}
-            useInlineFieldActions={false}
-          />
-        </Suspense>
-      )}
-
-      {/* Doctor Modals */}
-      {isDoctorTab && isAddDoctorModalOpen && (
-        <Suspense fallback={null}>
-          <IdentityDataModal
-            title="Tambah Dokter Baru"
-            data={{}}
-            fields={doctorFields}
-            isOpen={isDoctorTab && isAddDoctorModalOpen}
-            onClose={() => setIsAddDoctorModalOpen(false)}
-            onSave={async data => {
-              return await handleDoctorModalSubmit({
-                data: toDoctorPayload(data),
-                id: undefined,
-              });
-            }}
-            mode="add"
-            initialNameFromSearch={doctorDebouncedSearch}
-            useInlineFieldActions={false}
-          />
-        </Suspense>
-      )}
-
-      {isDoctorTab && isEditDoctorModalOpen && (
-        <Suspense fallback={null}>
-          <IdentityDataModal
-            title="Edit Dokter"
-            data={
-              (editingDoctor as unknown as Record<
-                string,
-                string | number | boolean | null
-              >) || {}
-            }
-            fields={doctorFields}
-            isOpen={isDoctorTab && isEditDoctorModalOpen}
-            onClose={() => setIsEditDoctorModalOpen(false)}
-            onSave={async data => {
-              return await handleDoctorModalSubmit({
-                data: toDoctorPayload(data),
-                id: editingDoctor?.id,
-              });
-            }}
-            onFieldSave={async (key, value) => {
-              await handleDoctorFieldAutosave(editingDoctor?.id, key, value);
-            }}
-            onDeleteRequest={
-              editingDoctor
-                ? () => {
-                    openConfirmDialog({
-                      title: 'Konfirmasi Hapus',
-                      message: `Apakah Anda yakin ingin menghapus dokter "${editingDoctor.name}"?`,
-                      variant: 'danger',
-                      confirmText: 'Ya, Hapus',
-                      onConfirm: async () => {
-                        await handleDoctorDelete(editingDoctor.id);
-                      },
-                    });
-                  }
-                : undefined
-            }
-            mode="edit"
-            imageUrl={(editingDoctor as DoctorType)?.image_url || undefined}
-            onImageSave={handleDoctorImageSave}
-            onImageDelete={handleDoctorImageDelete}
-            useInlineFieldActions={false}
-          />
-        </Suspense>
-      )}
+      <ItemMasterModalStack
+        activeTab={activeTab}
+        entityCurrentConfig={entityCurrentConfig}
+        entityManager={entityManager}
+        identityTabs={identityTabs}
+        isCustomerTab={isCustomerTab}
+        isDoctorTab={isDoctorTab}
+        isItemEntityTab={isItemEntityTab}
+        isPatientTab={isPatientTab}
+        isSupplierTab={isSupplierTab}
+        itemModalState={itemModalState}
+        itemsManagement={itemsManagement}
+        openConfirmDialog={openConfirmDialog}
+        supplierSearch={supplierSearch}
+        supplierTab={supplierTab}
+      />
     </>
   );
 });

@@ -1,10 +1,13 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useMemo } from 'react';
 import { EnhancedSearchState } from '../types';
 import {
   buildColumnValue,
   buildFilterValue,
   getOperatorSearchTerm,
 } from '../utils/searchUtils';
+import { getSearchInputDisplayValue } from '../utils/searchInputDisplay';
+import { useSearchBadgeRefs } from './useSearchBadgeRefs';
+import { useSearchBadgeWidthSync } from './useSearchBadgeWidthSync';
 
 interface UseSearchInputProps {
   value: string;
@@ -31,152 +34,18 @@ export const useSearchInput = ({
   onChange,
   inputRef,
 }: UseSearchInputProps) => {
-  // ============ Dynamic Ref Map ============
-  // Map<badgeId, HTMLDivElement | null>
-  const badgeRefsMap = useRef<Map<string, HTMLDivElement | null>>(new Map());
-
-  /**
-   * Get ref for a badge by ID
-   */
-  const getBadgeRef = useCallback((badgeId: string): HTMLDivElement | null => {
-    return badgeRefsMap.current.get(badgeId) || null;
-  }, []);
-
-  /**
-   * Set ref for a badge by ID (used as callback ref)
-   */
-  const setBadgeRef = useCallback(
-    (badgeId: string, element: HTMLDivElement | null) => {
-      if (element) {
-        badgeRefsMap.current.set(badgeId, element);
-      } else {
-        badgeRefsMap.current.delete(badgeId);
-      }
-    },
-    []
-  );
-
-  // ============ Ref Map Helpers ============
-  /**
-   * Get column badge ref by condition index
-   */
-  const getColumnRef = useCallback(
-    (conditionIndex: number): HTMLDivElement | null => {
-      return getBadgeRef(`condition-${conditionIndex}-column`);
-    },
-    [getBadgeRef]
-  );
-
-  /**
-   * Get operator badge ref by condition index
-   */
-  const getOperatorRef = useCallback(
-    (conditionIndex: number): HTMLDivElement | null => {
-      return getBadgeRef(`condition-${conditionIndex}-operator`);
-    },
-    [getBadgeRef]
-  );
-
-  /**
-   * Get join badge ref by index (join-0 = between condition 0 and 1)
-   */
-  const getJoinRef = useCallback(
-    (joinIndex: number): HTMLDivElement | null => {
-      return getBadgeRef(`join-${joinIndex}`);
-    },
-    [getBadgeRef]
-  );
-
-  // ============ Container Ref ============
-  // Used for measuring the total width of all badges combined
-  const badgesContainerRef = useRef<HTMLDivElement>(null);
-
-  // ============ Generalized Lazy Ref System ============
-  // Cache for lazy refs to ensure stability across renders
-  const lazyRefsCache = useRef<
-    Map<string, React.RefObject<HTMLDivElement | null>>
-  >(new Map());
-
-  /**
-   * Creates a "lazy ref" that looks up the element from the badge map on access.
-   * This is required for Selector components that expect a React.RefObject.
-   * Stability is GUARANTEED by the lazyRefsCache to avoid infinite re-render loops.
-   */
-  const getLazyColumnRef = useCallback(
-    (conditionIndex: number): React.RefObject<HTMLDivElement | null> => {
-      const cacheKey = `column-${conditionIndex}`;
-      if (lazyRefsCache.current.has(cacheKey)) {
-        return lazyRefsCache.current.get(cacheKey)!;
-      }
-
-      const lazyRef = {
-        get current() {
-          return getColumnRef(conditionIndex);
-        },
-      } as React.RefObject<HTMLDivElement | null>;
-
-      lazyRefsCache.current.set(cacheKey, lazyRef);
-      return lazyRef;
-    },
-    [getColumnRef]
-  );
-
-  const getLazyOperatorRef = useCallback(
-    (conditionIndex: number): React.RefObject<HTMLDivElement | null> => {
-      const cacheKey = `operator-${conditionIndex}`;
-      if (lazyRefsCache.current.has(cacheKey)) {
-        return lazyRefsCache.current.get(cacheKey)!;
-      }
-
-      const lazyRef = {
-        get current() {
-          return getOperatorRef(conditionIndex);
-        },
-      } as React.RefObject<HTMLDivElement | null>;
-
-      lazyRefsCache.current.set(cacheKey, lazyRef);
-      return lazyRef;
-    },
-    [getOperatorRef]
-  );
-
-  const getLazyJoinRef = useCallback(
-    (joinIndex: number): React.RefObject<HTMLDivElement | null> => {
-      const cacheKey = `join-${joinIndex}`;
-      if (lazyRefsCache.current.has(cacheKey)) {
-        return lazyRefsCache.current.get(cacheKey)!;
-      }
-
-      const lazyRef = {
-        get current() {
-          return getJoinRef(joinIndex);
-        },
-      } as React.RefObject<HTMLDivElement | null>;
-
-      lazyRefsCache.current.set(cacheKey, lazyRef);
-      return lazyRef;
-    },
-    [getJoinRef]
-  );
-
-  const getLazyBadgeRef = useCallback(
-    (badgeId: string): React.RefObject<HTMLDivElement | null> => {
-      const cacheKey = `badge-${badgeId}`;
-      if (lazyRefsCache.current.has(cacheKey)) {
-        return lazyRefsCache.current.get(cacheKey)!;
-      }
-
-      const lazyRef = {
-        get current() {
-          return getBadgeRef(badgeId);
-        },
-      } as React.RefObject<HTMLDivElement | null>;
-
-      lazyRefsCache.current.set(cacheKey, lazyRef);
-      return lazyRef;
-    },
-    [getBadgeRef]
-  );
+  const {
+    getBadgeRef,
+    setBadgeRef,
+    getColumnRef,
+    getOperatorRef,
+    getJoinRef,
+    badgesContainerRef,
+    getLazyColumnRef,
+    getLazyOperatorRef,
+    getLazyJoinRef,
+    getLazyBadgeRef,
+  } = useSearchBadgeRefs();
 
   const operatorSearchTerm = useMemo(
     () => getOperatorSearchTerm(value),
@@ -204,326 +73,19 @@ export const useSearchInput = ({
     ]
   );
 
-  const displayValue = useMemo(() => {
-    // PRIORITY 0: When any modal selector is open, hide "#" from input
-    // BaseSelector now handles its own internal search, so we don't need to show "#" trigger
-    if (searchMode.showColumnSelector) {
-      return ''; // Column selector open - hide "#"
-    }
-    if (searchMode.showOperatorSelector) {
-      return ''; // Operator selector open - hide "#"
-    }
-    if (searchMode.showJoinOperatorSelector) {
-      return ''; // Join operator selector open - hide "#"
-    }
+  const displayValue = useMemo(
+    () => getSearchInputDisplayValue(value, searchMode),
+    [searchMode, value]
+  );
 
-    // PRIORITY 0.5: Building condition N (index >= 2) value - show the value being typed
-    // This takes precedence over multi-condition verbose mode
-    const isBuildingConditionNValue =
-      searchMode.activeConditionIndex !== undefined &&
-      searchMode.activeConditionIndex >= 2 &&
-      !searchMode.showColumnSelector &&
-      !searchMode.showOperatorSelector &&
-      !searchMode.showJoinOperatorSelector;
-
-    if (isBuildingConditionNValue) {
-      // Use state-based extraction (more reliable than regex)
-      const activeIdx = searchMode.activeConditionIndex!; // Safe: isBuildingConditionNValue ensures this is defined
-      const nthCondition = searchMode.partialConditions?.[activeIdx];
-
-      // [FIX] For Between operator waiting for valueTo, return empty to allow typing valueTo
-      if (
-        nthCondition?.operator === 'inRange' &&
-        nthCondition?.waitingForValueTo
-      ) {
-        return ''; // Empty input, user types valueTo fresh
-      }
-
-      // [FIX] For Between operator typing valueTo, show only valueTo being typed
-      if (nthCondition?.valueTo && nthCondition?.operator === 'inRange') {
-        return nthCondition.valueTo;
-      }
-
-      if (nthCondition?.value !== undefined) {
-        return nthCondition.value;
-      }
-      // No value yet - return empty to allow typing
-      return '';
-    }
-
-    // PRIORITY 1: Multi-condition verbose mode - all values shown in badges, input empty
-    if (searchMode.filterSearch?.filterGroup && searchMode.isFilterMode) {
-      return '';
-    }
-
-    if (
-      searchMode.filterSearch?.isMultiCondition &&
-      searchMode.filterSearch?.conditions &&
-      searchMode.filterSearch.conditions.length > 1 &&
-      searchMode.isFilterMode
-    ) {
-      return ''; // All values displayed in badges, input empty
-    }
-
-    // PRIORITY 2: Confirmed single-condition - value shown as gray badge, input empty
-    if (
-      searchMode.isFilterMode &&
-      searchMode.filterSearch?.isConfirmed &&
-      !searchMode.filterSearch?.isMultiCondition
-    ) {
-      return ''; // Value displayed in gray badge, input empty
-    }
-
-    // PRIORITY 3: Incomplete multi-condition (building condition N where N >= 1)
-    // When user has selected join operator and is either selecting operator OR ready to type value
-    if (
-      !searchMode.isFilterMode &&
-      searchMode.partialJoin &&
-      searchMode.filterSearch &&
-      searchMode.selectedColumn
-    ) {
-      // Use activeConditionIndex for N-condition scalability (defaults to 1 in this context)
-      const activeIdx = searchMode.activeConditionIndex ?? 1;
-      const activeCondition = searchMode.partialConditions?.[activeIdx];
-
-      // Special case: Between operator waiting for valueTo - badge shows [value][to], input empty
-      if (activeCondition?.waitingForValueTo && activeCondition?.value) {
-        return ''; // Value already shown in badge, input empty for typing second value
-      }
-
-      // Special case: Between operator with valueTo being typed - show only valueTo
-      if (activeCondition?.valueTo) {
-        return activeCondition.valueTo; // Show only valueTo being typed
-      }
-
-      // Case: Operator selected, ready for value input
-      // Use state-based extraction first (more reliable than regex)
-      if (activeCondition?.value !== undefined) {
-        return activeCondition.value;
-      }
-      // No value yet - return empty to allow typing
-      return '';
-    }
-
-    // PRIORITY 4: Single-condition filter mode - show value for editing (NOT confirmed)
-    if (searchMode.isFilterMode && searchMode.filterSearch) {
-      // For inRange (Between) operator waiting for second value - show empty input
-      if (
-        searchMode.filterSearch.operator === 'inRange' &&
-        searchMode.filterSearch.waitingForValueTo
-      ) {
-        return ''; // Empty input, user types second value fresh
-      }
-      // For inRange (Between) operator with valueTo being typed - show only valueTo
-      // The first value is already shown in badge, user is typing second value
-      if (
-        searchMode.filterSearch.operator === 'inRange' &&
-        searchMode.filterSearch.valueTo &&
-        !searchMode.filterSearch.isConfirmed
-      ) {
-        return searchMode.filterSearch.valueTo; // Show only second value being typed
-      }
-      // For confirmed inRange, show both values (for editing)
-      if (
-        searchMode.filterSearch.operator === 'inRange' &&
-        searchMode.filterSearch.valueTo &&
-        searchMode.filterSearch.isConfirmed
-      ) {
-        return ''; // Confirmed - values shown in badges, input empty
-      }
-      return searchMode.filterSearch.value;
-    }
-
-    // PRIORITY 5: Column selected, waiting for input
-    if (searchMode.selectedColumn && !searchMode.showColumnSelector) {
-      return '';
-    }
-
-    // DEFAULT: Show raw value
-    return value;
-  }, [
-    value,
-    searchMode.isFilterMode,
-    searchMode.filterSearch,
-    searchMode.showOperatorSelector,
-    searchMode.showJoinOperatorSelector,
-    searchMode.showColumnSelector,
-    searchMode.partialJoin,
-    searchMode.selectedColumn,
-    searchMode.partialConditions,
-    searchMode.activeConditionIndex,
-  ]);
-
-  // Ref to store last measured width - persists across renders
-  const lastMeasuredWidthRef = useRef<number>(0);
-  // Ref to track badge count for detecting additions/removals
-  const lastBadgeCountRef = useRef<number>(0);
-
-  // Calculate expected badge count based on current state
-  const currentBadgeCount = useMemo(() => {
-    if (!showTargetedIndicator) return 0;
-
-    let count = 0;
-    const filter = searchMode.filterSearch;
-
-    // 1. Column badge
-    if (searchMode.selectedColumn || filter?.field) count++;
-
-    // 2. Operator badge
-    if (filter?.operator) count++;
-
-    // 3. First Value badge
-    if (filter?.value) count++;
-
-    // 4. "Between" (inRange) specific badges
-    if (filter?.operator === 'inRange') {
-      // Separator badge ("to")
-      if (filter.valueTo || filter.waitingForValueTo) count++;
-      // Second value badge
-      if (filter.valueTo) count++;
-    }
-
-    // 5. Join badge
-    if (searchMode.partialJoin || filter?.joinOperator) count++;
-
-    // 6. Second condition badges (if any)
-    const hasSecondCond =
-      (filter?.conditions && filter.conditions.length >= 2) ||
-      searchMode.partialConditions?.[1]?.operator;
-
-    if (hasSecondCond) {
-      // Second condition operator
-      count++;
-      // Second condition value(s)
-      const secondCond =
-        filter?.conditions?.[1] || searchMode.partialConditions?.[1];
-      if (secondCond?.value) count++;
-      if (secondCond?.operator === 'inRange') {
-        const waitingForValueTo = (
-          secondCond as { waitingForValueTo?: boolean }
-        ).waitingForValueTo;
-        if (secondCond.valueTo || waitingForValueTo) count++;
-        if (secondCond.valueTo) count++;
-      }
-    }
-
-    return count;
-  }, [
+  useSearchBadgeWidthSync({
     showTargetedIndicator,
-    searchMode.selectedColumn,
-    searchMode.filterSearch,
-    searchMode.partialJoin,
-    searchMode.partialConditions,
-  ]);
-
-  // Dynamic badge width tracking using CSS variable - no React state updates!
-  useEffect(() => {
-    if (!showTargetedIndicator || !inputRef?.current) {
-      // Reset to default padding when no badge
-      if (inputRef?.current) {
-        inputRef.current.style.removeProperty('--badge-width');
-      }
-      lastMeasuredWidthRef.current = 0;
-      lastBadgeCountRef.current = 0;
-      return;
-    }
-
-    // Determine if we should use badges container (when showing both purple + blue badges)
-    const shouldUseContainer =
-      (searchMode.isFilterMode ||
-        searchMode.showJoinOperatorSelector ||
-        (searchMode.showOperatorSelector && hasSecondConditionOperator) ||
-        // Show container for incomplete multi-condition (waiting for second value)
-        (!searchMode.isFilterMode &&
-          searchMode.partialJoin &&
-          !!searchMode.filterSearch) ||
-        // Show container for confirmed multi-condition
-        searchMode.filterSearch?.isMultiCondition) &&
-      !!searchMode.filterSearch;
-
-    const targetElement =
-      shouldUseContainer && badgesContainerRef.current
-        ? badgesContainerRef.current
-        : getColumnRef(0);
-
-    if (!targetElement || !inputRef.current) {
-      return;
-    }
-
-    const inputElement = inputRef.current;
-
-    // Detect badge count changes
-    const badgeAdded = currentBadgeCount > lastBadgeCountRef.current;
-    const badgeRemoved = currentBadgeCount < lastBadgeCountRef.current;
-    lastBadgeCountRef.current = currentBadgeCount;
-
-    const updatePadding = () => {
-      if (!targetElement || !inputElement) return;
-
-      const badgeWidth = targetElement.offsetWidth;
-
-      // Skip if width is 0 (element not rendered yet)
-      if (badgeWidth === 0) return;
-
-      // Only update if width has changed significantly (>2px difference)
-      if (Math.abs(badgeWidth - lastMeasuredWidthRef.current) > 2) {
-        lastMeasuredWidthRef.current = badgeWidth;
-        inputElement.style.setProperty('--badge-width', `${badgeWidth + 16}px`);
-      }
-    };
-
-    let initialTimer: ReturnType<typeof setTimeout> | null = null;
-    let frameId: number | null = null;
-
-    if (badgeAdded) {
-      // Badge ADDED: delay measurement to let animation complete
-      // This prevents the "jump to the right" visual glitch
-      initialTimer = setTimeout(() => {
-        updatePadding();
-      }, 300);
-    } else if (badgeRemoved) {
-      // Badge REMOVED: update immediately so placeholder follows badges
-      // Don't wait for exit animation - user expects immediate feedback
-      updatePadding();
-    } else {
-      // No count change, measure on next frame
-      frameId = requestAnimationFrame(() => {
-        updatePadding();
-      });
-    }
-
-    // ResizeObserver for subsequent size changes
-    // Use shorter debounce when badges are removed for faster response
-    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-    const resizeObserver = new ResizeObserver(() => {
-      if (debounceTimer) clearTimeout(debounceTimer);
-      // Shorter debounce for immediate feel
-      debounceTimer = setTimeout(() => {
-        updatePadding();
-      }, 16); // ~1 frame
-    });
-
-    resizeObserver.observe(targetElement);
-
-    return () => {
-      resizeObserver.disconnect();
-      if (initialTimer) clearTimeout(initialTimer);
-      if (debounceTimer) clearTimeout(debounceTimer);
-      if (frameId !== null) cancelAnimationFrame(frameId);
-    };
-  }, [
-    showTargetedIndicator,
-    searchMode.isFilterMode,
-    searchMode.showJoinOperatorSelector,
-    searchMode.showOperatorSelector,
-    searchMode.filterSearch,
-    searchMode.filterSearch?.isMultiCondition,
-    searchMode.partialJoin,
+    searchMode,
     inputRef,
+    badgesContainerRef,
     hasSecondConditionOperator,
-    currentBadgeCount,
     getColumnRef,
-  ]);
+  });
 
   const handleHoverChange = useCallback(() => {
     // No-op - kept for compatibility

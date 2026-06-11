@@ -65,6 +65,18 @@ export function restoreConfirmedPattern(filter: FilterSearch): string {
   return restoreSingleConditionPattern(filter, columnName);
 }
 
+export function restoreEditableFilterPattern(filter: FilterSearch): string {
+  if (filter.isConfirmed) {
+    return restoreConfirmedPattern(filter);
+  }
+
+  if (filter.operator) {
+    return `#${filter.field} #${filter.operator} `;
+  }
+
+  return `#${filter.field} `;
+}
+
 /**
  * Restore a single-condition confirmed pattern
  *

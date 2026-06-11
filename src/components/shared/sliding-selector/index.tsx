@@ -1,130 +1,23 @@
 import classNames from 'classnames';
 import { LayoutGroup, motion } from 'motion/react';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { TbChevronDown } from 'react-icons/tb';
+import {
+  ACTIVE_FILL_COLLAPSE_TRANSITION,
+  ACTIVE_FILL_DELAYED_TRANSITION,
+  ANIMATION_PRESETS,
+  CHEVRON_EXIT_TRANSITION,
+  CHEVRON_ROTATE_TRANSITION,
+  DIRECT_DROPDOWN_TRANSITION,
+  DIRECT_HOVER_TRANSITION,
+  SHAPE_CLASSES,
+  SIZE_CLASSES,
+  canUseHoverPointer,
+  getSlidingSelectorDisplayLabel,
+} from './styles';
+import type { SlidingSelectorOption, SlidingSelectorProps } from './types';
+import { useSlidingSelectorInteraction } from './useSlidingSelectorInteraction';
 
-export interface SlidingSelectorOption<T = unknown> {
-  key: string;
-  value: T;
-  defaultLabel: string;
-  activeLabel?: string;
-  disabled?: boolean;
-}
-
-export interface SlidingSelectorProps<T = unknown> {
-  options: SlidingSelectorOption<T>[];
-  activeKey: string;
-  onSelectionChange: (key: string, value: T, event?: React.MouseEvent) => void;
-
-  // Styling options
-  variant?: 'tabs' | 'selector';
-  size?: 'sm' | 'md' | 'lg';
-  shape?: 'rounded' | 'pill';
-
-  // Expand/collapse functionality
-  collapsible?: boolean;
-  defaultExpanded?: boolean;
-  autoCollapseDelay?: number;
-  expandOnHover?: boolean;
-  expandDirection?: 'horizontal' | 'vertical';
-
-  // Animation options
-  layoutId?: string;
-  animationPreset?: 'smooth' | 'snappy' | 'fluid';
-  collapseSignal?: number;
-
-  // Additional props
-  className?: string;
-  disabled?: boolean;
-
-  // Focus & state coordination (optional)
-  onExpandedChange?: (expanded: boolean) => void;
-}
-
-const ANIMATION_PRESETS = {
-  smooth: {
-    container: { stiffness: 260, damping: 32, duration: 0.85 },
-    background: { stiffness: 320, damping: 34, duration: 0.5 },
-  },
-  snappy: {
-    container: { stiffness: 420, damping: 30, duration: 0.6 },
-    background: { stiffness: 460, damping: 30, duration: 0.38 },
-  },
-  fluid: {
-    container: { stiffness: 220, damping: 36, duration: 1 },
-    background: { stiffness: 260, damping: 38, duration: 0.65 },
-  },
-};
-
-const DIRECT_HOVER_TRANSITION = {
-  duration: 0.22,
-  ease: 'easeOut',
-} as const;
-
-const DIRECT_DROPDOWN_TRANSITION = {
-  duration: 0.32,
-  ease: 'easeOut',
-} as const;
-
-const CHEVRON_EXIT_TRANSITION = {
-  duration: 0.18,
-  delay: 0.28,
-  ease: 'easeOut',
-} as const;
-
-const CHEVRON_ROTATE_TRANSITION = {
-  duration: 0.28,
-  ease: 'easeInOut',
-} as const;
-
-const ACTIVE_FILL_DELAYED_TRANSITION = {
-  duration: 0.26,
-  delay: 0.28,
-  ease: 'easeOut',
-} as const;
-
-const ACTIVE_FILL_COLLAPSE_TRANSITION = {
-  duration: 0.32,
-  ease: 'easeInOut',
-} as const;
-
-const canUseHoverPointer = () =>
-  typeof window === 'undefined' ||
-  window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-
-const SIZE_CLASSES = {
-  sm: {
-    container: 'p-0.5',
-    button: 'px-2 py-1 text-sm',
-    text: 'text-sm',
-    label: 'h-5 leading-5',
-  },
-  md: {
-    container: 'p-1',
-    button: 'px-3 py-1.5',
-    text: 'text-base',
-    label: 'h-6 leading-6',
-  },
-  lg: {
-    container: 'p-1.5',
-    button: 'px-6 py-3 text-lg',
-    text: 'text-lg',
-    label: 'h-7 leading-7',
-  },
-};
-
-const SHAPE_CLASSES = {
-  rounded: {
-    container: 'rounded-xl',
-    button: 'rounded-xl',
-    background: 'rounded-xl',
-  },
-  pill: {
-    container: 'rounded-full',
-    button: 'rounded-full',
-    background: 'rounded-full',
-  },
-};
+export type { SlidingSelectorOption, SlidingSelectorProps } from './types';
 
 export const SlidingSelector = <T,>({
   options,
@@ -145,270 +38,38 @@ export const SlidingSelector = <T,>({
   disabled = false,
   onExpandedChange,
 }: SlidingSelectorProps<T>) => {
-  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
-  const [isMouseOver, setIsMouseOver] = useState(false);
-  const [focusedIndex, setFocusedIndex] = useState<number>(-1);
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const [isVerticalActiveFillVisible, setIsVerticalActiveFillVisible] =
-    useState(defaultExpanded && expandDirection === 'vertical');
-  const mouseLeaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const previousCollapseSignalRef = useRef(collapseSignal);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
-
   const activeOption = options.find(option => option.key === activeKey);
   const animation = ANIMATION_PRESETS[animationPreset];
   const sizeClasses = SIZE_CLASSES[size];
   const shapeClasses = SHAPE_CLASSES[shape];
+  const {
+    buttonRefs,
+    handleKeyDown,
+    handleMouseEnter,
+    handleMouseLeave,
+    handleOptionClick,
+    hoveredIndex,
+    isExpanded,
+    isVerticalActiveFillVisible,
+    rootRef,
+    setHoveredIndex,
+    toggleExpanded,
+  } = useSlidingSelectorInteraction({
+    activeKey,
+    autoCollapseDelay,
+    collapseSignal,
+    collapsible,
+    defaultExpanded,
+    disabled,
+    expandDirection,
+    expandOnHover,
+    onExpandedChange,
+    onSelectionChange,
+    options,
+  });
   const isVerticalExpanded = isExpanded && expandDirection === 'vertical';
-  const supportsHoverPointer = canUseHoverPointer();
   const showVerticalActiveFill =
     expandDirection === 'vertical' && isVerticalActiveFillVisible;
-
-  // Notify parent whenever expanded state changes
-  useEffect(() => {
-    onExpandedChange?.(isExpanded);
-  }, [isExpanded, onExpandedChange]);
-
-  useEffect(() => {
-    if (!collapsible || collapseSignal === undefined) return;
-    if (previousCollapseSignalRef.current === collapseSignal) return;
-
-    previousCollapseSignalRef.current = collapseSignal;
-    setIsExpanded(false);
-    setIsMouseOver(false);
-    setHoveredIndex(null);
-    setFocusedIndex(-1);
-    buttonRefs.current.forEach(button => button?.blur());
-  }, [collapseSignal, collapsible]);
-
-  useEffect(() => {
-    if (expandDirection !== 'vertical') {
-      setIsVerticalActiveFillVisible(false);
-      return;
-    }
-
-    if (isExpanded) {
-      setIsVerticalActiveFillVisible(true);
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      setIsVerticalActiveFillVisible(false);
-    }, 320);
-
-    return () => clearTimeout(timer);
-  }, [expandDirection, isExpanded]);
-
-  useEffect(() => {
-    if (!collapsible || !isExpanded) return;
-
-    const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target as Node | null;
-      if (target && rootRef.current?.contains(target)) return;
-
-      setIsExpanded(false);
-      setIsMouseOver(false);
-      setHoveredIndex(null);
-      setFocusedIndex(-1);
-      buttonRefs.current.forEach(button => button?.blur());
-    };
-
-    document.addEventListener('pointerdown', handlePointerDown);
-    return () => {
-      document.removeEventListener('pointerdown', handlePointerDown);
-    };
-  }, [collapsible, isExpanded]);
-
-  // Auto-collapse logic - don't collapse if keyboard navigating
-  useEffect(() => {
-    if (!collapsible || !expandOnHover) return;
-    if (!supportsHoverPointer) return;
-
-    // Check if any button has focus (keyboard navigation)
-    const hasFocus = buttonRefs.current.some(
-      btn => btn && document.activeElement === btn
-    );
-
-    if (!isMouseOver && isExpanded && !hasFocus) {
-      mouseLeaveTimeoutRef.current = setTimeout(() => {
-        setIsExpanded(false);
-        setFocusedIndex(-1);
-      }, autoCollapseDelay);
-    } else if (isMouseOver || hasFocus) {
-      if (mouseLeaveTimeoutRef.current) {
-        clearTimeout(mouseLeaveTimeoutRef.current);
-        mouseLeaveTimeoutRef.current = null;
-      }
-      // Use setTimeout to avoid synchronous setState in effect
-      setTimeout(() => {
-        setIsExpanded(true);
-      }, 0);
-    }
-
-    return () => {
-      if (mouseLeaveTimeoutRef.current) {
-        clearTimeout(mouseLeaveTimeoutRef.current);
-      }
-    };
-  }, [
-    isMouseOver,
-    isExpanded,
-    collapsible,
-    expandOnHover,
-    supportsHoverPointer,
-    autoCollapseDelay,
-    focusedIndex,
-  ]);
-
-  // Auto-focus active button when expanded via hover to enable keyboard navigation immediately
-  useEffect(() => {
-    if (isExpanded && isMouseOver && expandOnHover && collapsible) {
-      // Very small delay to ensure buttons are rendered
-      const timer = setTimeout(() => {
-        const activeIndex = options.findIndex(opt => opt.key === activeKey);
-        if (activeIndex >= 0 && buttonRefs.current[activeIndex]) {
-          buttonRefs.current[activeIndex]?.focus();
-          setFocusedIndex(activeIndex);
-        }
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [isExpanded, isMouseOver, expandOnHover, collapsible, options, activeKey]);
-
-  const handleMouseEnter = useCallback(() => {
-    if (expandOnHover && supportsHoverPointer) {
-      setIsMouseOver(true);
-    }
-  }, [expandOnHover, supportsHoverPointer]);
-
-  const handleMouseLeave = useCallback(() => {
-    if (!supportsHoverPointer) return;
-
-    setHoveredIndex(null);
-
-    if (expandOnHover) {
-      setIsMouseOver(false);
-      // Blur all buttons when mouse leaves to allow auto-collapse
-      buttonRefs.current.forEach(btn => {
-        if (btn && document.activeElement === btn) {
-          btn.blur();
-        }
-      });
-      setFocusedIndex(-1);
-    }
-  }, [expandOnHover, supportsHoverPointer]);
-
-  const toggleExpanded = useCallback(() => {
-    if (collapsible) {
-      setIsExpanded(prev => !prev);
-    }
-  }, [collapsible]);
-
-  // When expanding via toggle button, move focus to the active tab
-  useEffect(() => {
-    if (!collapsible) return;
-    if (!isExpanded) return;
-
-    // Only force focus when expanded via explicit toggle (not hover focus effect)
-    if (!expandOnHover) {
-      const activeIndex = options.findIndex(opt => opt.key === activeKey);
-      if (activeIndex >= 0) {
-        const timer = setTimeout(() => {
-          buttonRefs.current[activeIndex]?.focus();
-          setFocusedIndex(activeIndex);
-        }, 0);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [activeKey, collapsible, expandOnHover, isExpanded, options]);
-
-  // Keyboard navigation handler - Tab keys directly change page
-  // Note: Hybrid protection (immediate + debounce) handled centrally in parent's handleTabChange
-  const handleKeyDown = useCallback(
-    (event: React.KeyboardEvent) => {
-      if (disabled || !isExpanded) return;
-
-      // Ignore keyboard auto-repeat to prevent rapid navigation spam
-      if (event.repeat) {
-        return;
-      }
-
-      const enabledOptions = options.filter(opt => !opt.disabled);
-      const currentIndex =
-        focusedIndex >= 0
-          ? focusedIndex
-          : enabledOptions.findIndex(opt => opt.key === activeKey);
-
-      switch (event.key) {
-        case 'Tab':
-          // Prevent default tab behavior to control focus ourselves
-          event.preventDefault();
-          if (event.shiftKey) {
-            // Shift+Tab: Move to previous and change page
-            const prevIndex =
-              currentIndex > 0 ? currentIndex - 1 : enabledOptions.length - 1;
-            const prevOption = enabledOptions[prevIndex];
-            setFocusedIndex(prevIndex);
-            buttonRefs.current[prevIndex]?.focus();
-            onSelectionChange(prevOption.key, prevOption.value);
-          } else {
-            // Tab: Move to next and change page
-            const nextIndex =
-              currentIndex < enabledOptions.length - 1 ? currentIndex + 1 : 0;
-            const nextOption = enabledOptions[nextIndex];
-            setFocusedIndex(nextIndex);
-            buttonRefs.current[nextIndex]?.focus();
-            onSelectionChange(nextOption.key, nextOption.value);
-          }
-          break;
-
-        case 'Escape':
-          event.preventDefault();
-          if (collapsible) {
-            setIsExpanded(false);
-            setFocusedIndex(-1);
-          }
-          break;
-      }
-    },
-    [
-      disabled,
-      isExpanded,
-      options,
-      focusedIndex,
-      activeKey,
-      collapsible,
-      onSelectionChange,
-    ]
-  );
-
-  const handleOptionClick = useCallback(
-    (option: SlidingSelectorOption<T>, event: React.MouseEvent) => {
-      if (disabled || option.disabled) return;
-
-      // Blur focus after click to allow auto-collapse to work
-      (event.currentTarget as HTMLButtonElement).blur();
-
-      // Reset focused index to allow fresh keyboard navigation next time
-      setFocusedIndex(-1);
-      setHoveredIndex(null);
-
-      // Note: Hybrid protection (immediate + debounce) handled centrally in parent's handleTabChange
-      onSelectionChange(option.key, option.value, event);
-    },
-    [disabled, onSelectionChange]
-  );
-
-  const getDisplayLabel = (
-    option: SlidingSelectorOption<T>,
-    isActive: boolean
-  ) => {
-    if (isActive && option.activeLabel) {
-      return option.activeLabel;
-    }
-    return option.defaultLabel;
-  };
 
   const renderOption = (
     option: SlidingSelectorOption<T>,
@@ -489,7 +150,7 @@ export const SlidingSelector = <T,>({
             }
           )}
         >
-          {getDisplayLabel(option, isActive)}
+          {getSlidingSelectorDisplayLabel(option, isActive)}
         </motion.span>
       </motion.button>
     );
@@ -567,7 +228,7 @@ export const SlidingSelector = <T,>({
           }}
         >
           <span className="col-start-1 row-start-1 inline-block justify-self-start whitespace-nowrap text-left">
-            {activeOption && getDisplayLabel(activeOption, true)}
+            {activeOption && getSlidingSelectorDisplayLabel(activeOption, true)}
           </span>
         </motion.span>
       </motion.button>
@@ -627,7 +288,7 @@ export const SlidingSelector = <T,>({
             sizeClasses.label
           )}
         >
-          {activeOption && getDisplayLabel(activeOption, true)}
+          {activeOption && getSlidingSelectorDisplayLabel(activeOption, true)}
         </span>
       </div>
       <div className={classNames('ml-1 p-2', shapeClasses.button)}>

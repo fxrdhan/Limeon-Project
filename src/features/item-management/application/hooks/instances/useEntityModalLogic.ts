@@ -5,9 +5,12 @@ import toast from 'react-hot-toast';
 import type {
   EntityModalContextValue,
   ModalMode,
-  VersionData,
 } from '../../../shared/contexts/EntityModalContext';
 import type { EntityData } from '../../../shared/types';
+import { buildEntitySubmitData } from './entity-modal-logic/entitySubmitData';
+import { getEntityTableName } from './entity-modal-logic/entityTable';
+import { useEntityComparisonState } from './entity-modal-logic/useEntityComparisonState';
+import { useEntityHistoryState } from './entity-modal-logic/useEntityHistoryState';
 
 interface UseEntityModalLogicProps {
   isOpen: boolean;
@@ -59,70 +62,25 @@ export const useEntityModalLogic = ({
   const [mode, setMode] = useState<ModalMode>('add');
   const [isClosing, setIsClosing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [historyData, setHistoryData] = useState({
-    entityTable: '',
-    entityId: '',
-    selectedVersion: undefined as VersionData | undefined,
+  const {
+    historyData,
+    syncPreviousMode,
+    openHistory,
+    selectVersion,
+    closeHistory,
+  } = useEntityHistoryState({
+    mode,
+    setMode,
   });
-
-  // Type for comparison data
-  type ComparisonData = {
-    isOpen: boolean;
-    isClosing: boolean;
-    selectedVersion: VersionData | undefined;
-    isDualMode: boolean;
-    versionA: VersionData | undefined;
-    versionB: VersionData | undefined;
-    isFlipped: boolean;
-  };
-
-  // Use getDerivedStateFromProps to reset comparisonData when modal closes
-  const [comparisonState, setComparisonState] = useState<{
-    modalOpen: boolean;
-    data: ComparisonData;
-  }>({
-    modalOpen: false,
-    data: {
-      isOpen: false,
-      isClosing: false,
-      selectedVersion: undefined,
-      isDualMode: false,
-      versionA: undefined,
-      versionB: undefined,
-      isFlipped: false,
-    },
-  });
-  if (
-    isOpen !== comparisonState.modalOpen &&
-    !isOpen &&
-    comparisonState.data.isOpen
-  ) {
-    setComparisonState({
-      modalOpen: isOpen,
-      data: {
-        isOpen: false,
-        isClosing: false,
-        selectedVersion: undefined,
-        isDualMode: false,
-        versionA: undefined,
-        versionB: undefined,
-        isFlipped: false,
-      },
-    });
-  } else if (isOpen !== comparisonState.modalOpen) {
-    setComparisonState(prev => ({ ...prev, modalOpen: isOpen }));
-  }
-  const comparisonData = comparisonState.data;
-  const setComparisonData = useCallback(
-    (updater: ComparisonData | ((prev: ComparisonData) => ComparisonData)) => {
-      setComparisonState(prev => ({
-        ...prev,
-        data: typeof updater === 'function' ? updater(prev.data) : updater,
-      }));
-    },
-    []
-  );
-  const [previousMode, setPreviousMode] = useState<ModalMode>('add');
+  const {
+    comparisonData,
+    setComparisonData,
+    resetComparisonData,
+    openComparison,
+    closeComparison,
+    openDualComparison,
+    flipVersions,
+  } = useEntityComparisonState(isOpen);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   // Track last synchronized state from database (for realtime updates)
@@ -143,25 +101,7 @@ export const useEntityModalLogic = ({
   const isEditMode = Boolean(initialData);
   const formattedUpdateAt = formatDateTime(initialData?.updated_at);
 
-  // Determine table name based on entity name
-  const getTableName = useCallback((entity: string) => {
-    switch (entity.toLowerCase()) {
-      case 'kategori':
-        return 'item_categories';
-      case 'jenis item':
-        return 'item_types';
-      case 'kemasan':
-        return 'item_packages';
-      case 'sediaan':
-        return 'item_dosages';
-      case 'produsen':
-        return 'item_manufacturers';
-      default:
-        return '';
-    }
-  }, []);
-
-  const entityTable = getTableName(entityName);
+  const entityTable = getEntityTableName(entityName);
   const entityId = initialData?.id || '';
 
   // Realtime sync callback - updates form state from realtime changes
@@ -251,7 +191,7 @@ export const useEntityModalLogic = ({
         setIsSubmitting(false);
         const newMode = initialData ? 'edit' : 'add';
         setMode(newMode);
-        setPreviousMode(newMode);
+        syncPreviousMode(newMode);
 
         if (initialData) {
           // All tables now use 'code' field consistently
@@ -282,7 +222,7 @@ export const useEntityModalLogic = ({
         }, 100);
       }, 0);
     }
-  }, [isOpen, initialData, initialNameFromSearch, resetForm]);
+  }, [isOpen, initialData, initialNameFromSearch, resetForm, syncPreviousMode]);
 
   // Focus on name input when switching from history back to edit/add mode
   useEffect(() => {
@@ -316,29 +256,14 @@ export const useEntityModalLogic = ({
 
     setIsSubmitting(true);
 
-    const submitData: {
-      id?: string;
-      code?: string;
-      name: string;
-      fda_code?: string;
-      description?: string;
-      address?: string;
-    } = {
+    const submitData = buildEntitySubmitData({
       id: initialData?.id,
-      // All tables now use 'code' field consistently
-      code: code.trim(),
-      name: name.trim(),
-    };
-
-    // Include description field only for entities that have it (not manufacturers)
-    if (entityName !== 'Produsen') {
-      submitData.description = description.trim();
-    }
-
-    // Only include address field for Produsen (manufacturers)
-    if (entityName === 'Produsen') {
-      submitData.address = address.trim();
-    }
+      code,
+      name,
+      description,
+      address,
+      entityName,
+    });
 
     try {
       await onSubmit(submitData);
@@ -374,94 +299,6 @@ export const useEntityModalLogic = ({
     }
   }, [initialData, onDelete]);
 
-  // History actions
-  const openHistory = useCallback(
-    (entityTable: string, entityId: string) => {
-      setPreviousMode(mode);
-      setMode('history');
-      setHistoryData({
-        entityTable,
-        entityId,
-        selectedVersion: undefined,
-      });
-    },
-    [mode]
-  );
-
-  const selectVersion = useCallback((version: VersionData) => {
-    setHistoryData(prev => ({
-      ...prev,
-      selectedVersion: version,
-    }));
-  }, []);
-
-  const closeHistory = useCallback(() => {
-    setMode(previousMode);
-    setHistoryData({
-      entityTable: '',
-      entityId: '',
-      selectedVersion: undefined,
-    });
-  }, [previousMode]);
-
-  const openComparison = useCallback(
-    (version: VersionData) => {
-      setComparisonData({
-        isOpen: true,
-        isClosing: false,
-        selectedVersion: version,
-        isDualMode: false,
-        versionA: undefined,
-        versionB: undefined,
-        isFlipped: false,
-      });
-    },
-    [setComparisonData]
-  );
-
-  const openDualComparison = useCallback(
-    (versionA: VersionData, versionB: VersionData) => {
-      setComparisonData({
-        isOpen: true,
-        isClosing: false,
-        selectedVersion: undefined,
-        isDualMode: true,
-        versionA,
-        versionB,
-        isFlipped: false,
-      });
-    },
-    [setComparisonData]
-  );
-
-  const flipVersions = useCallback(() => {
-    setComparisonData(prev => ({
-      ...prev,
-      isFlipped: !prev.isFlipped,
-    }));
-  }, [setComparisonData]);
-
-  const closeComparison = useCallback(() => {
-    // Start closing animation
-    setComparisonData(prev => ({
-      ...prev,
-      isClosing: true,
-    }));
-
-    // Actually close after animation completes
-    setTimeout(() => {
-      setComparisonData({
-        isOpen: false,
-        isClosing: false,
-        selectedVersion: undefined,
-        isDualMode: false,
-        versionA: undefined,
-        versionB: undefined,
-        isFlipped: false,
-      });
-    }, 250); // Match animation duration
-  }, [setComparisonData]);
-
   const goBack = useCallback(() => {
     // Close comparison modal when going back with animation
     setComparisonData(prev => ({
@@ -470,26 +307,13 @@ export const useEntityModalLogic = ({
     }));
 
     setTimeout(() => {
-      setComparisonData({
-        isOpen: false,
-        isClosing: false,
-        selectedVersion: undefined,
-        isDualMode: false,
-        versionA: undefined,
-        versionB: undefined,
-        isFlipped: false,
-      });
+      resetComparisonData();
 
       if (mode === 'history') {
-        setMode(previousMode);
-        setHistoryData({
-          entityTable: '',
-          entityId: '',
-          selectedVersion: undefined,
-        });
+        closeHistory();
       }
     }, 250); // Match animation duration
-  }, [mode, previousMode, setComparisonData]);
+  }, [closeHistory, mode, resetComparisonData, setComparisonData]);
 
   // UI actions
   const handleClose = useCallback(() => {

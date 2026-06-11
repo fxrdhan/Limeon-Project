@@ -1,41 +1,16 @@
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useItemModalRealtime } from '@/hooks/realtime/useItemModalRealtime';
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import type { DBPackageConversion, ItemInventoryUnit } from '@/types/database';
 import { logger } from '@/utils/logger';
 import { useAddItemPageHandlers } from '../../../application/hooks/form/useItemPageHandlers';
 import { useItemFormValidation } from '../../../application/hooks/form/useItemValidation';
 import { useEntityHistory } from '../../../application/hooks/instances/useEntityHistory';
 import { ItemManagementProvider } from '../../../shared/contexts/ItemFormContext';
-import {
-  useItemActions,
-  useItemForm,
-  useItemPrice,
-  useItemUI,
-} from '../../../shared/contexts/useItemFormContext';
 import type {
   ItemManagementContextValue,
   ItemModalProps,
 } from '../../../shared/types';
-import type { DBPackageConversion, ItemInventoryUnit } from '@/types/database';
-
-type AccordionSection = 'additional' | 'settings' | 'pricing' | 'conversion';
-
-const SECTION_ORDER: AccordionSection[] = [
-  'additional',
-  'settings',
-  'pricing',
-  'conversion',
-];
-
-// Template and Organisms
-import { ItemFormSections } from '../ItemFormSections';
-import ItemModalTemplate from '../ItemModalTemplate';
-import ItemModalContainer from '../containers/ItemModalContainer';
+import ItemManagementContent from './ItemManagementContent';
 
 const ItemModal: React.FC<ItemModalProps> = ({
   isOpen,
@@ -49,7 +24,6 @@ const ItemModal: React.FC<ItemModalProps> = ({
 }) => {
   const expiryCheckboxRef = useRef<HTMLLabelElement>(null);
 
-  // Main data hook - this is the orchestrator
   const handlers = useAddItemPageHandlers({
     itemId,
     initialItemData,
@@ -59,7 +33,6 @@ const ItemModal: React.FC<ItemModalProps> = ({
     refetchItems,
   });
 
-  // Extract minimal required data (not 38+ values!)
   const {
     formData,
     displayBasePrice,
@@ -84,8 +57,6 @@ const ItemModal: React.FC<ItemModalProps> = ({
     setInitialPackageConversions,
     resetForm,
     isDirty,
-
-    // Modal state
     isAddEditModalOpen,
     setIsAddEditModalOpen,
     isAddTypeModalOpen,
@@ -105,8 +76,6 @@ const ItemModal: React.FC<ItemModalProps> = ({
     handleAddNewDosage,
     handleAddNewManufacturer,
     closeModalAndClearSearch,
-
-    // Actions
     handleCancel,
     handleDeleteItem,
     handleSaveCategory,
@@ -114,27 +83,21 @@ const ItemModal: React.FC<ItemModalProps> = ({
     handleSaveUnit,
     handleSaveDosage,
     handleSaveManufacturer,
-
-    // Mutations
     addCategoryMutation,
     addTypeMutation,
     addUnitMutation,
     addDosageMutation,
     addManufacturerMutation,
     deleteItemMutation,
-
-    // Price & conversion
     packageConversionHook,
     formattedUpdateAt,
   } = handlers;
 
-  // Version viewing state
   const [viewingVersionNumber, setViewingVersionNumber] = useState<
     number | null
   >(null);
   const [resetKey, setResetKey] = useState(0);
 
-  // Form validation
   const { finalDisabledState } = useItemFormValidation({
     formData,
     isDirtyFn: isDirty,
@@ -147,16 +110,14 @@ const ItemModal: React.FC<ItemModalProps> = ({
       deleteItemMutation.isPending,
   });
 
-  // Pre-fetch history data for seamless UX (no loading spinner when opening history)
   const {
     history,
     isLoading: isHistoryLoading,
     error: historyError,
   } = useEntityHistory('items', itemId || '');
 
-  // Memoized callbacks for realtime to prevent unnecessary reconnections
   const handleItemUpdated = useCallback(() => {
-    // Smart sync handles the updates intelligently
+    // Smart sync handles the updates intelligently.
   }, []);
 
   const handleItemDeleted = useCallback(() => {
@@ -249,7 +210,6 @@ const ItemModal: React.FC<ItemModalProps> = ({
       }
 
       if (Object.keys(restUpdates).length > 0) {
-        // Apply updates that don't conflict with user input
         updateFormData(restUpdates, { recordHistory: false });
         setInitialFormData(prev =>
           prev ? ({ ...prev, ...restUpdates } as typeof prev) : prev
@@ -265,11 +225,10 @@ const ItemModal: React.FC<ItemModalProps> = ({
     ]
   );
 
-  // Realtime for current item data with smart form sync
   const { smartFormSync, isConnected: isRealtimeConnected } =
     useItemModalRealtime({
       itemId: itemId,
-      enabled: isOpen && isEditMode, // Only enable in edit mode
+      enabled: isOpen && isEditMode,
       onItemUpdated: handleItemUpdated,
       onItemDeleted: handleItemDeleted,
       onSmartUpdate: handleSmartUpdate,
@@ -283,14 +242,12 @@ const ItemModal: React.FC<ItemModalProps> = ({
     });
   }, [isOpen, isEditMode, itemId]);
 
-  // Get current version number from history
   const currentVersionNumber =
     history && history.length > 0 ? history[0].version_number : undefined;
 
-  // UI event handlers
   const handleReset = useCallback(() => {
     resetForm();
-    setResetKey(prev => prev + 1); // Force re-mount of form sections to clear validation
+    setResetKey(prev => prev + 1);
   }, [resetForm]);
 
   const handleBackdropClick = () => {
@@ -305,28 +262,22 @@ const ItemModal: React.FC<ItemModalProps> = ({
     }
   };
 
-  // Version selection handler
   const handleVersionSelect = useCallback(
     (versionNumber: number, entityData: Record<string, unknown>) => {
       setViewingVersionNumber(versionNumber);
-
-      // Update form data with version data (but don't mark as dirty)
       updateFormData(entityData);
     },
     [updateFormData]
   );
 
-  // Clear version viewing (back to current)
   const handleClearVersionView = useCallback(() => {
     setViewingVersionNumber(null);
     resetForm();
     setResetKey(prev => prev + 1);
   }, [resetForm]);
 
-  // Keyboard shortcut for Reset All (Ctrl+Shift+R)
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Only trigger when modal is open and not in edit mode (reset button only shows in add mode)
       if (
         isOpen &&
         !isEditMode &&
@@ -348,16 +299,13 @@ const ItemModal: React.FC<ItemModalProps> = ({
     }
   }, [isOpen, isEditMode, isClosing, handleReset]);
 
-  // Auto focus management
   useEffect(() => {
     if (isClosing) {
       onClose();
     }
   }, [isClosing, onClose]);
 
-  // Create consolidated context value
   const contextValue: ItemManagementContextValue = {
-    // State
     form: {
       formData,
       categories,
@@ -415,8 +363,6 @@ const ItemModal: React.FC<ItemModalProps> = ({
       isLoading: isHistoryLoading,
       error: historyError,
     },
-
-    // Actions
     formActions: {
       updateFormData,
       undoFormChange,
@@ -478,627 +424,6 @@ const ItemModal: React.FC<ItemModalProps> = ({
         initialItemData={initialItemData}
       />
     </ItemManagementProvider>
-  );
-};
-
-// Clean content component - only uses context
-const ItemManagementContent: React.FC<{
-  itemId?: string;
-  initialItemData?: ItemModalProps['initialItemData'];
-}> = ({ itemId, initialItemData }) => {
-  const ui = useItemUI();
-  const form = useItemForm();
-  const price = useItemPrice();
-  const actions = useItemActions();
-  const isEditSession = Boolean(itemId);
-  const hasFormData =
-    Boolean(form.formData.code?.trim()) ||
-    Boolean(form.formData.name?.trim()) ||
-    Boolean(form.formData.updated_at);
-  const hasEditData =
-    isEditSession && (hasFormData || Boolean(initialItemData));
-
-  const [openSection, setOpenSection] = useState<AccordionSection | null>(() =>
-    isEditSession ? null : 'additional'
-  );
-  const [hasUserToggled, setHasUserToggled] = useState(false);
-  const [isStackHovering, setIsStackHovering] = useState(false);
-  const [isStackTransitioning, setIsStackTransitioning] = useState(false);
-  const [isLevelPricingMode, setIsLevelPricingMode] = useState(false);
-  const [lastOpenSection, setLastOpenSection] =
-    useState<AccordionSection | null>(isEditSession ? null : 'additional');
-  const hoverTimerRef = useRef<number | null>(null);
-  const ignoreStackTapRef = useRef(false);
-  const ignoreStackTapTimerRef = useRef<number | null>(null);
-  const updateOpenSection = useCallback(
-    (nextSection: AccordionSection | null) => {
-      setOpenSection(nextSection);
-      if (nextSection) {
-        setLastOpenSection(nextSection);
-      }
-    },
-    []
-  );
-
-  const toggleSection = useCallback(
-    (section: AccordionSection) => {
-      setHasUserToggled(true);
-      if (openSection === section) {
-        // User explicitly collapsed the expanded section; don't restore it on
-        // stack/unstack transitions.
-        setOpenSection(null);
-        setLastOpenSection(null);
-        return;
-      }
-
-      // If user expands a section while in unstack mode, immediately return to
-      // stacked mode (no need to wait for mouse leave).
-      if (hoverTimerRef.current) {
-        window.clearTimeout(hoverTimerRef.current);
-        hoverTimerRef.current = null;
-      }
-      setIsStackHovering(false);
-      setIsStackTransitioning(false);
-
-      updateOpenSection(section);
-    },
-    [openSection, updateOpenSection]
-  );
-
-  const handleLevelPricingToggle = useCallback(
-    (isOpen: boolean) => {
-      setIsLevelPricingMode(isOpen);
-      if (!isOpen) return;
-      if (hoverTimerRef.current) {
-        window.clearTimeout(hoverTimerRef.current);
-        hoverTimerRef.current = null;
-      }
-      setIsStackHovering(false);
-      setIsStackTransitioning(false);
-      updateOpenSection('pricing');
-    },
-    [updateOpenSection]
-  );
-  const autoOpenSection = useMemo<AccordionSection | null>(() => {
-    if (!hasEditData || form.loading) return null;
-
-    const dataSource = (hasFormData ? form.formData : initialItemData) ?? null;
-    const barcode = (dataSource?.barcode || '') as string;
-    const description =
-      dataSource && 'description' in dataSource
-        ? ((dataSource.description as string) ?? '')
-        : '';
-    const basePrice = dataSource?.base_price ?? 0;
-    const sellPrice = dataSource?.sell_price ?? 0;
-    const fallbackConversions = Array.isArray(
-      (initialItemData as { package_conversions?: unknown[] } | undefined)
-        ?.package_conversions
-    )
-      ? (initialItemData as { package_conversions: unknown[] })
-          .package_conversions.length
-      : 0;
-    const conversionCount =
-      price.packageConversionHook.conversions.length || fallbackConversions;
-
-    const hasAdditionalInfo =
-      Boolean(barcode?.trim()) || Boolean(description?.trim());
-    const hasConversion = conversionCount > 0;
-    const hasSettings =
-      dataSource &&
-      'is_active' in dataSource &&
-      (dataSource.is_active === false ||
-        dataSource.has_expiry_date === true ||
-        (dataSource.min_stock ?? 10) !== 10);
-    const hasPricing = (basePrice ?? 0) > 0 || (sellPrice ?? 0) > 0;
-
-    return hasAdditionalInfo
-      ? 'additional'
-      : hasConversion
-        ? 'conversion'
-        : hasSettings
-          ? 'settings'
-          : hasPricing
-            ? 'pricing'
-            : 'additional';
-  }, [
-    hasEditData,
-    hasFormData,
-    form.formData,
-    form.loading,
-    initialItemData,
-    price.packageConversionHook.conversions.length,
-  ]);
-
-  useEffect(() => {
-    if (
-      !isEditSession ||
-      hasUserToggled ||
-      !ui.isOpen ||
-      isStackHovering ||
-      isStackTransitioning
-    ) {
-      return;
-    }
-    if (openSection || !autoOpenSection) return;
-    const frameId = requestAnimationFrame(() => {
-      updateOpenSection(autoOpenSection);
-    });
-    return () => cancelAnimationFrame(frameId);
-  }, [
-    autoOpenSection,
-    hasUserToggled,
-    isEditSession,
-    isStackHovering,
-    isStackTransitioning,
-    openSection,
-    ui.isOpen,
-    updateOpenSection,
-  ]);
-
-  const activeSection: AccordionSection | null = openSection;
-  const effectiveSection = isStackHovering
-    ? null
-    : isStackTransitioning
-      ? lastOpenSection
-      : activeSection;
-
-  const activeIndex = effectiveSection
-    ? SECTION_ORDER.indexOf(effectiveSection)
-    : -1;
-  const stackAboveEnabled = activeIndex >= 2;
-  const stackBelowEnabled =
-    activeIndex !== -1 && SECTION_ORDER.length - 1 - activeIndex >= 2;
-
-  const getStackClasses = (section: AccordionSection) => {
-    const index = SECTION_ORDER.indexOf(section);
-    if (index === -1) return '';
-
-    if (isStackHovering) {
-      // Unstacked mode should look like a normal list, with tighter spacing.
-      return index === 0 ? '' : 'mt-3';
-    }
-
-    if (index === 0 && activeIndex === -1) return '';
-
-    if (activeIndex === -1) {
-      return index === 0 ? '' : 'mt-3';
-    }
-
-    if (index === activeIndex) {
-      return index === 0 ? 'relative' : 'relative mt-4';
-    }
-
-    if (index < activeIndex) {
-      if (!stackAboveEnabled) {
-        return index === 0 ? '' : 'relative mt-4';
-      }
-      return index === 0 ? 'relative' : 'relative -mt-6';
-    }
-
-    if (stackBelowEnabled) {
-      return index === activeIndex + 1 ? 'relative mt-4' : 'relative -mt-6';
-    }
-
-    return 'relative mt-4';
-  };
-
-  const getStackWrapperStyle = (section: AccordionSection) => {
-    if (isStackHovering) return undefined;
-    const index = SECTION_ORDER.indexOf(section);
-    if (index === -1 || activeIndex === -1) return undefined;
-    if (index === activeIndex) return { zIndex: 30 };
-    if (index > activeIndex && !stackBelowEnabled) return undefined;
-    if (index < activeIndex && !stackAboveEnabled) {
-      return undefined;
-    }
-
-    const depth = Math.abs(activeIndex - index);
-    return { zIndex: Math.max(1, 20 - depth) };
-  };
-
-  const getStackStyle = (section: AccordionSection) => {
-    if (isStackHovering) return undefined;
-    const index = SECTION_ORDER.indexOf(section);
-    if (index === -1 || activeIndex === -1 || index === activeIndex) {
-      return undefined;
-    }
-    if (index > activeIndex && !stackBelowEnabled) return undefined;
-    if (index < activeIndex && !stackAboveEnabled) {
-      return undefined;
-    }
-
-    const depth = Math.abs(activeIndex - index);
-    const blurAmount = Math.min(depth * 0.35, 1.2);
-    const opacityValue = Math.max(0.82, 1 - depth * 0.04);
-    const scaleValue = Math.max(0.98, 1 - depth * 0.01);
-
-    return {
-      filter: blurAmount ? `blur(${blurAmount}px)` : undefined,
-      opacity: opacityValue,
-      transform: `scale(${scaleValue})`,
-    };
-  };
-
-  const getStackEffect = (section: AccordionSection) => ({
-    className:
-      'origin-top transition-[transform,opacity,filter] duration-300 ease-out',
-    style: getStackStyle(section),
-  });
-
-  const getStackSectionFromTarget = useCallback(
-    (target: HTMLElement | null) => {
-      if (!target) return null;
-      const hoveredSectionEl = target.closest<HTMLElement>(
-        '[data-stack-section]'
-      );
-      const hoveredSectionRaw = hoveredSectionEl?.dataset.stackSection;
-      return hoveredSectionRaw === 'additional' ||
-        hoveredSectionRaw === 'settings' ||
-        hoveredSectionRaw === 'pricing' ||
-        hoveredSectionRaw === 'conversion'
-        ? (hoveredSectionRaw as AccordionSection)
-        : null;
-    },
-    []
-  );
-
-  const shouldTriggerStackExpand = useCallback(
-    (hoveredSection: AccordionSection) => {
-      if (hoveredSection === activeSection) return false;
-
-      const hoveredIndex = SECTION_ORDER.indexOf(hoveredSection);
-      const activeSectionIndex = activeSection
-        ? SECTION_ORDER.indexOf(activeSection)
-        : -1;
-      if (hoveredIndex === -1 || activeSectionIndex === -1) {
-        return false;
-      }
-
-      const shouldStackAbove = activeSectionIndex >= 2;
-      const shouldStackBelow =
-        activeSectionIndex !== -1 &&
-        SECTION_ORDER.length - 1 - activeSectionIndex >= 2;
-
-      if (hoveredIndex > activeSectionIndex && !shouldStackBelow) {
-        return false;
-      }
-      if (hoveredIndex < activeSectionIndex && !shouldStackAbove) {
-        return false;
-      }
-      if (
-        hoveredIndex < activeSectionIndex &&
-        activeSectionIndex - hoveredIndex === 1
-      ) {
-        return false;
-      }
-      if (
-        hoveredIndex > activeSectionIndex &&
-        hoveredIndex - activeSectionIndex === 1
-      ) {
-        return false;
-      }
-
-      return true;
-    },
-    [activeSection]
-  );
-
-  const startStackCollapse = useCallback(() => {
-    if (isStackHovering || isStackTransitioning) return;
-    if (openSection) {
-      setLastOpenSection(openSection);
-    }
-    if (hoverTimerRef.current) {
-      window.clearTimeout(hoverTimerRef.current);
-    }
-    setIsStackTransitioning(true);
-    // Collapse the currently open section first, then switch to unstack mode.
-    setOpenSection(null);
-    hoverTimerRef.current = window.setTimeout(() => {
-      setIsStackTransitioning(false);
-      setIsStackHovering(true);
-      hoverTimerRef.current = null;
-    }, 220);
-  }, [isStackHovering, isStackTransitioning, openSection]);
-
-  const restoreStack = useCallback(() => {
-    if (hoverTimerRef.current) {
-      window.clearTimeout(hoverTimerRef.current);
-      hoverTimerRef.current = null;
-    }
-    setIsStackHovering(false);
-    setIsStackTransitioning(false);
-    const restoreSection: AccordionSection | null =
-      openSection ??
-      lastOpenSection ??
-      (hasUserToggled ? null : isEditSession ? autoOpenSection : 'additional');
-
-    if (restoreSection !== null) {
-      requestAnimationFrame(() => {
-        updateOpenSection(restoreSection);
-      });
-    }
-  }, [
-    autoOpenSection,
-    hasUserToggled,
-    isEditSession,
-    lastOpenSection,
-    openSection,
-    updateOpenSection,
-  ]);
-
-  const handleStackMouseMove = useCallback(
-    (event: React.MouseEvent<HTMLDivElement>) => {
-      const target = event.target as HTMLElement | null;
-      if (!target) return;
-
-      const isOverIgnore = Boolean(
-        target.closest('[data-stack-ignore="true"]')
-      );
-      const hoveredSection = getStackSectionFromTarget(target);
-
-      // Ignore regions (e.g. image uploader grid) should not participate in the
-      // stack/unstack behavior.
-      if (isOverIgnore) {
-        if (isStackHovering || isStackTransitioning) {
-          restoreStack();
-        }
-        return;
-      }
-
-      if (
-        isStackHovering &&
-        hoveredSection &&
-        hoveredSection === lastOpenSection
-      ) {
-        restoreStack();
-        return;
-      }
-
-      // Don't aggressively re-stack when moving between cards (gaps). We'll
-      // restore on container mouse leave instead.
-      if (!hoveredSection) {
-        return;
-      }
-
-      // Hover should only affect stacked cards. If the user is hovering the
-      // currently expanded card, keep the current state (do not unstack).
-      if (hoveredSection === activeSection) {
-        return;
-      }
-
-      if (!shouldTriggerStackExpand(hoveredSection)) {
-        return;
-      }
-
-      startStackCollapse();
-    },
-    [
-      activeSection,
-      getStackSectionFromTarget,
-      isStackHovering,
-      isStackTransitioning,
-      lastOpenSection,
-      restoreStack,
-      shouldTriggerStackExpand,
-      startStackCollapse,
-    ]
-  );
-
-  const handleStackMouseLeave = useCallback(() => {
-    restoreStack();
-  }, [restoreStack]);
-
-  const focusSectionFirstField = useCallback((section: AccordionSection) => {
-    let attempts = 0;
-    const tryFocus = () => {
-      const modal = document.querySelector(
-        '[role="dialog"][aria-modal="true"]'
-      );
-      if (!modal) return;
-      const sectionEl = modal.querySelector(
-        `[data-stack-section="${section}"]`
-      );
-      const container = sectionEl?.querySelector<HTMLElement>(
-        '[data-section-content]'
-      );
-      const preferredInput =
-        section === 'pricing'
-          ? container?.querySelector<HTMLInputElement>(
-              'input[name="base_price"]'
-            )
-          : null;
-      const firstFocusable =
-        preferredInput ||
-        container?.querySelector<HTMLElement>(
-          'input, select, textarea, button, [tabindex]:not([tabindex="-1"])'
-        );
-      if (firstFocusable) {
-        firstFocusable.focus();
-        return;
-      }
-      if (attempts < 6) {
-        attempts += 1;
-        requestAnimationFrame(tryFocus);
-      }
-    };
-    tryFocus();
-  }, []);
-
-  const handleStackPointerDownCapture = useCallback(
-    (event: React.PointerEvent<HTMLDivElement>) => {
-      if (event.pointerType === 'mouse') return;
-      const target = event.target as HTMLElement | null;
-      if (!target) return;
-      if (target.closest('[data-stack-ignore="true"]')) return;
-      if (isStackHovering || isStackTransitioning) return;
-
-      const tappedSection = getStackSectionFromTarget(target);
-      if (!tappedSection) return;
-      if (!shouldTriggerStackExpand(tappedSection)) return;
-
-      startStackCollapse();
-      ignoreStackTapRef.current = true;
-      if (ignoreStackTapTimerRef.current) {
-        window.clearTimeout(ignoreStackTapTimerRef.current);
-      }
-      ignoreStackTapTimerRef.current = window.setTimeout(() => {
-        ignoreStackTapRef.current = false;
-        ignoreStackTapTimerRef.current = null;
-      }, 400);
-      event.preventDefault();
-      event.stopPropagation();
-    },
-    [
-      getStackSectionFromTarget,
-      isStackHovering,
-      isStackTransitioning,
-      shouldTriggerStackExpand,
-      startStackCollapse,
-    ]
-  );
-
-  const handleStackClickCapture = useCallback(
-    (event: React.MouseEvent<HTMLDivElement>) => {
-      if (!ignoreStackTapRef.current) return;
-      ignoreStackTapRef.current = false;
-      if (ignoreStackTapTimerRef.current) {
-        window.clearTimeout(ignoreStackTapTimerRef.current);
-        ignoreStackTapTimerRef.current = null;
-      }
-      event.preventDefault();
-      event.stopPropagation();
-    },
-    []
-  );
-
-  useEffect(
-    () => () => {
-      if (hoverTimerRef.current) {
-        window.clearTimeout(hoverTimerRef.current);
-        hoverTimerRef.current = null;
-      }
-      if (ignoreStackTapTimerRef.current) {
-        window.clearTimeout(ignoreStackTapTimerRef.current);
-        ignoreStackTapTimerRef.current = null;
-      }
-    },
-    []
-  );
-
-  // Single form mode rendering
-  return (
-    <ItemModalTemplate
-      isOpen={ui.isOpen}
-      isClosing={ui.isClosing}
-      onBackdropClick={ui.handleBackdropClick}
-      onSubmit={form.handleSubmit}
-      rightColumnProps={
-        isLevelPricingMode
-          ? undefined
-          : {
-              onMouseMove: handleStackMouseMove,
-              onMouseLeave: handleStackMouseLeave,
-              onPointerDownCapture: handleStackPointerDownCapture,
-              onClickCapture: handleStackClickCapture,
-            }
-      }
-      children={{
-        header: (
-          <ItemFormSections.Header
-            onReset={ui.handleReset}
-            onClose={ui.handleClose}
-            itemId={itemId}
-          />
-        ),
-        basicInfoRequired: (
-          <ItemFormSections.BasicInfoRequired itemId={itemId} />
-        ),
-        basicInfoOptional: !isLevelPricingMode ? (
-          <div
-            className={`${getStackClasses('additional')} transition-[margin] duration-200 ease-out`}
-            style={getStackWrapperStyle('additional')}
-            data-stack-section="additional"
-          >
-            <ItemFormSections.BasicInfoOptional
-              isExpanded={activeSection === 'additional'}
-              onExpand={() => toggleSection('additional')}
-              itemId={itemId}
-              stackClassName={getStackEffect('additional').className}
-              stackStyle={getStackEffect('additional').style}
-            />
-          </div>
-        ) : null,
-        settingsForm: !isLevelPricingMode ? (
-          <div
-            className={`${getStackClasses('settings')} transition-[margin] duration-200 ease-out`}
-            style={getStackWrapperStyle('settings')}
-            data-stack-section="settings"
-          >
-            <ItemFormSections.Settings
-              isExpanded={activeSection === 'settings'}
-              onExpand={() => toggleSection('settings')}
-              itemId={itemId}
-              onRequestNextSection={() => {
-                toggleSection('pricing');
-                requestAnimationFrame(() => focusSectionFirstField('pricing'));
-              }}
-              stackClassName={getStackEffect('settings').className}
-              stackStyle={getStackEffect('settings').style}
-            />
-          </div>
-        ) : null,
-        pricingForm: (
-          <div
-            className={`${isLevelPricingMode ? '' : getStackClasses('pricing')} transition-[margin] duration-200 ease-out`}
-            style={
-              isLevelPricingMode ? undefined : getStackWrapperStyle('pricing')
-            }
-            data-stack-section="pricing"
-          >
-            <ItemFormSections.Pricing
-              isExpanded={activeSection === 'pricing'}
-              onExpand={() => toggleSection('pricing')}
-              itemId={itemId}
-              onLevelPricingToggle={handleLevelPricingToggle}
-              stackClassName={
-                isLevelPricingMode
-                  ? undefined
-                  : getStackEffect('pricing').className
-              }
-              stackStyle={
-                isLevelPricingMode ? undefined : getStackEffect('pricing').style
-              }
-            />
-          </div>
-        ),
-        packageConversionManager: !isLevelPricingMode ? (
-          <div
-            className={`${getStackClasses('conversion')} transition-[margin] duration-200 ease-out`}
-            style={getStackWrapperStyle('conversion')}
-            data-stack-section="conversion"
-          >
-            <ItemFormSections.PackageConversion
-              isExpanded={activeSection === 'conversion'}
-              onExpand={() => toggleSection('conversion')}
-              itemId={itemId}
-              stackClassName={getStackEffect('conversion').className}
-              stackStyle={getStackEffect('conversion').style}
-            />
-          </div>
-        ) : null,
-        modals: <ItemModalContainer />,
-      }}
-      formAction={{
-        onCancel: () => actions.handleCancel(ui.setIsClosing),
-        onDelete: ui.isEditMode ? actions.handleDeleteItem : undefined,
-        isSaving: actions.saving,
-        isDeleting: actions.deleteItemMutation?.isPending || false,
-        isEditMode: ui.isEditMode,
-        isDisabled: actions.finalDisabledState,
-        updateText: 'Simpan',
-      }}
-    />
   );
 };
 

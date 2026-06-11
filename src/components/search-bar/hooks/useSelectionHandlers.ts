@@ -1,9 +1,10 @@
 /**
- * Hook for handling column and operator selection logic
+ * Hook for handling column, operator, and join selection logic
  *
  * This hook orchestrates selection handlers extracted to:
  * - selection/useColumnSelection.ts - Column selection helpers
  * - selection/useOperatorSelection.ts - Operator selection helpers
+ * - selection/useJoinOperatorSelection.ts - Join selection flow
  */
 
 import { useCallback, type RefObject } from 'react';
@@ -14,10 +15,7 @@ import type {
   SearchColumn,
 } from '../types';
 import type { PreservedFilter } from '../utils/handlerHelpers';
-import {
-  extractMultiConditionPreservation,
-  setFilterValue,
-} from '../utils/handlerHelpers';
+import { setFilterValue } from '../utils/handlerHelpers';
 import { isOperatorCompatibleWithColumn } from '../utils/operatorUtils';
 import { PatternBuilder } from '../utils/PatternBuilder';
 
@@ -31,6 +29,7 @@ import {
   handleOperatorSelectNormal,
   handleOperatorSelectSecond,
   isBuildingConditionN,
+  useJoinOperatorSelection,
 } from './selection';
 
 // Re-export helpers for external use
@@ -502,146 +501,14 @@ export function useSelectionHandlers(
     ]
   );
 
-  // ============================================================================
-  // Join Operator Selection Handler
-  // ============================================================================
-  const handleJoinOperatorSelect = useCallback(
-    (joinOp: JoinOperator) => {
-      const preserved = preservedFilterRef.current;
-      const joinOperator = joinOp.value.toUpperCase() as 'AND' | 'OR';
-      const isEditingJoin = editingSelectorTarget?.target === 'join';
-
-      let newValue: string;
-
-      // CASE 1: Editing join at specific index with preserved N-conditions
-      // [FIX] Skip to CASE 2 if preserved conditions don't have valueTo but filter does
-      // This happens when join selector is opened for inRange operator
-      const filterHasValueTo =
-        searchMode.filterSearch?.valueTo ||
-        searchMode.filterSearch?.conditions?.[0]?.valueTo;
-      const preservedHasValueTo = preserved?.conditions?.[0]?.valueTo;
-      const shouldUseFiterInstead =
-        filterHasValueTo &&
-        !preservedHasValueTo &&
-        searchMode.filterSearch?.isConfirmed;
-
-      if (
-        preserved &&
-        preserved.conditions &&
-        preserved.conditions.length > 0 &&
-        !shouldUseFiterInstead
-      ) {
-        const conditions = preserved.conditions;
-        const defaultField = conditions[0]?.field || '';
-        const isMultiColumn = preserved.isMultiColumn || false;
-
-        // Join operator is intentionally uniform across all conditions.
-        // When editing any join badge, apply the selected join to ALL joins.
-        const joinCount = Math.max(conditions.length - 1, 0);
-        const newJoins: ('AND' | 'OR')[] = isEditingJoin
-          ? Array(joinCount).fill(joinOperator)
-          : [...(preserved.joins || [])];
-
-        // If we are not in edit-join mode, ensure the join array is long enough
-        // to represent the join being built.
-        if (!isEditingJoin) {
-          const targetJoinIndex = joinCount > 0 ? joinCount - 1 : 0;
-          while (newJoins.length <= targetJoinIndex) {
-            newJoins.push('AND');
-          }
-          newJoins[targetJoinIndex] = joinOperator;
-        }
-
-        const allConditionsComplete = conditions.every(
-          c => c.value && c.value.trim() !== ''
-        );
-
-        if (allConditionsComplete) {
-          newValue = PatternBuilder.buildNConditions(
-            conditions.map(c => ({
-              field: c.field,
-              operator: c.operator || '',
-              value: c.value || '',
-              valueTo: c.valueTo,
-            })),
-            newJoins,
-            isMultiColumn,
-            defaultField,
-            { confirmed: true }
-          );
-        } else {
-          newValue = PatternBuilder.buildNConditions(
-            conditions.map(c => ({
-              field: c.field,
-              operator: c.operator || '',
-              value: c.value || '',
-              valueTo: c.valueTo,
-            })),
-            newJoins,
-            isMultiColumn,
-            defaultField,
-            { confirmed: false }
-          );
-        }
-
-        preservedFilterRef.current = null;
-        setPreservedSearchMode(null);
-      } else if (searchMode.filterSearch?.isConfirmed) {
-        // CASE 2: Normal join selection after confirmed filter
-        const filter = searchMode.filterSearch;
-
-        const extraction = extractMultiConditionPreservation(searchMode);
-        preservedFilterRef.current = extraction;
-
-        if (
-          filter.isMultiCondition &&
-          filter.conditions &&
-          filter.conditions.length > 0
-        ) {
-          const conditions = filter.conditions;
-          const existingJoins = filter.joins || [filter.joinOperator || 'AND'];
-          const isMultiColumn = filter.isMultiColumn || false;
-          const defaultField = conditions[0]?.field || filter.field;
-
-          const basePattern = PatternBuilder.buildNConditions(
-            conditions.map(c => ({
-              field: c.field,
-              operator: c.operator,
-              value: c.value,
-              valueTo: c.valueTo,
-            })),
-            existingJoins,
-            isMultiColumn,
-            defaultField,
-            { confirmed: false }
-          );
-
-          newValue = `${basePattern} #${joinOperator.toLowerCase()} #`;
-        } else if (filter.valueTo) {
-          newValue = `#${filter.field} #${filter.operator} ${filter.value} #to ${filter.valueTo} #${joinOperator.toLowerCase()} #`;
-        } else {
-          newValue = PatternBuilder.partialMulti(
-            filter.field,
-            filter.operator,
-            filter.value,
-            joinOperator
-          );
-        }
-      } else {
-        return;
-      }
-
-      setFilterValue(newValue, onChange, inputRef);
-    },
-    [
-      onChange,
-      inputRef,
-      searchMode,
-      preservedFilterRef,
-      setPreservedSearchMode,
-      editingSelectorTarget,
-    ]
-  );
+  const { handleJoinOperatorSelect } = useJoinOperatorSelection({
+    onChange,
+    inputRef,
+    searchMode,
+    preservedFilterRef,
+    setPreservedSearchMode,
+    editingSelectorTarget,
+  });
 
   return {
     handleColumnSelect,

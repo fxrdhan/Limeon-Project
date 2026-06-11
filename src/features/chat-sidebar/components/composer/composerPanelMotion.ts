@@ -1,0 +1,7 @@
+import { COMPOSER_SYNC_LAYOUT_TRANSITION } from '../../constants';
+
+export const COMPOSER_CONTEXTUAL_PANEL_TRANSITION = {
+  duration: COMPOSER_SYNC_LAYOUT_TRANSITION.duration,
+  ease: COMPOSER_SYNC_LAYOUT_TRANSITION.ease,
+  layout: COMPOSER_SYNC_LAYOUT_TRANSITION,
+} as const;

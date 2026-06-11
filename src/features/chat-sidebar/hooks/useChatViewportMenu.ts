@@ -5,7 +5,6 @@ import {
   useState,
   type RefObject,
 } from 'react';
-import { CHAT_HEADER_OVERLAY_HEIGHT, MENU_GAP } from '../constants';
 import type {
   MenuPlacement,
   MenuSideAnchor,
@@ -18,77 +17,16 @@ import {
   isAnchorVisibleWithinViewport,
   type VisibleBounds,
 } from '../utils/chatViewportMenu';
+import {
+  getMessageMenuElement,
+  resolveVisibleMenuAdjustment,
+} from './chat-viewport-menu/menuVisibility';
+import { useMenuOpenScrollAnimation } from './chat-viewport-menu/useMenuOpenScrollAnimation';
 
 interface UseChatViewportMenuProps {
   getVisibleMessagesBounds: () => VisibleBounds | null;
   messagesContainerRef: RefObject<HTMLDivElement | null>;
 }
-
-const getProjectedMenuRect = ({
-  anchorRect,
-  menuPlacement,
-  menuSideAnchor,
-  menuVerticalAnchor,
-  menuOffsetX,
-  menuWidth,
-  menuHeight,
-}: {
-  anchorRect: DOMRect;
-  menuPlacement: MenuPlacement;
-  menuSideAnchor: MenuSideAnchor;
-  menuVerticalAnchor: MenuVerticalAnchor;
-  menuOffsetX: number;
-  menuWidth: number;
-  menuHeight: number;
-}) => {
-  let top = anchorRect.top;
-  let left = anchorRect.left;
-
-  if (menuPlacement === 'left' || menuPlacement === 'right') {
-    top =
-      menuSideAnchor === 'bottom'
-        ? anchorRect.bottom - menuHeight
-        : menuSideAnchor === 'top'
-          ? anchorRect.top
-          : anchorRect.top + (anchorRect.height - menuHeight) / 2;
-    left =
-      menuPlacement === 'left'
-        ? anchorRect.left - MENU_GAP - menuWidth
-        : anchorRect.right + MENU_GAP;
-  } else {
-    left =
-      menuVerticalAnchor === 'right'
-        ? anchorRect.right - menuWidth
-        : anchorRect.left;
-    top =
-      menuPlacement === 'down'
-        ? anchorRect.top - MENU_GAP - menuHeight
-        : anchorRect.bottom + MENU_GAP;
-  }
-
-  left += menuOffsetX;
-
-  return {
-    top,
-    bottom: top + menuHeight,
-    left,
-    right: left + menuWidth,
-    width: menuWidth,
-    height: menuHeight,
-  };
-};
-
-const getVerticalMenuOverflow = ({
-  rect,
-  minVisibleTop,
-  maxVisibleBottom,
-}: {
-  rect: Pick<DOMRect, 'top' | 'bottom'>;
-  minVisibleTop: number;
-  maxVisibleBottom: number;
-}) =>
-  Math.max(minVisibleTop - rect.top, 0) +
-  Math.max(rect.bottom - maxVisibleBottom, 0);
 
 const animationFrameController = createAnimationFrameController();
 
@@ -118,7 +56,6 @@ export const useChatViewportMenu = ({
     typeof setTimeout
   > | null>(null);
   const pendingMenuRepositionAnimationFrameRef = useRef<number | null>(null);
-  const menuOpenScrollAnimationFrameRef = useRef<number | null>(null);
   const openMenuMessageIdRef = useRef<string | null>(null);
   const openMenuAnchorRef = useRef<HTMLElement | null>(null);
   const openMenuPreferredSideRef = useRef<'left' | 'right'>('left');
@@ -132,59 +69,11 @@ export const useChatViewportMenu = ({
     return animationFrameController.request(callback);
   }, []);
 
-  const cancelMenuOpenScrollAnimation = useCallback(() => {
-    if (menuOpenScrollAnimationFrameRef.current === null) {
-      return;
-    }
-
-    cancelNextFrame(menuOpenScrollAnimationFrameRef.current);
-    menuOpenScrollAnimationFrameRef.current = null;
-  }, [cancelNextFrame]);
-
-  const animateMenuOpenScroll = useCallback(
-    (
-      container: HTMLDivElement,
-      targetScrollTop: number,
-      onComplete?: () => void
-    ) => {
-      const startScrollTop = container.scrollTop;
-      const distance = targetScrollTop - startScrollTop;
-
-      if (Math.abs(distance) < 0.5) {
-        container.scrollTop = targetScrollTop;
-        onComplete?.();
-        return;
-      }
-
-      cancelMenuOpenScrollAnimation();
-
-      const totalFrames = Math.min(
-        18,
-        Math.max(8, Math.round(Math.abs(distance) / 18))
-      );
-      let currentFrame = 0;
-
-      const step = () => {
-        currentFrame += 1;
-        const progress = currentFrame / totalFrames;
-        const easedProgress = 1 - (1 - progress) ** 4;
-
-        container.scrollTop = startScrollTop + distance * easedProgress;
-
-        if (currentFrame < totalFrames) {
-          menuOpenScrollAnimationFrameRef.current = requestNextFrame(step);
-          return;
-        }
-
-        container.scrollTop = targetScrollTop;
-        menuOpenScrollAnimationFrameRef.current = null;
-        onComplete?.();
-      };
-
-      menuOpenScrollAnimationFrameRef.current = requestNextFrame(step);
-    },
-    [cancelMenuOpenScrollAnimation, requestNextFrame]
-  );
+  const { animateMenuOpenScroll, cancelMenuOpenScrollAnimation } =
+    useMenuOpenScrollAnimation({
+      cancelNextFrame,
+      requestNextFrame,
+    });
 
   const getMenuOpenScrollPlanForAnchor = useCallback(
     (anchorRect: DOMRect) =>
@@ -420,134 +309,43 @@ export const useChatViewportMenu = ({
           : messagesContainerRef.current;
       if (!menuRoot) return;
 
-      const menuElement = menuRoot.querySelector<HTMLElement>(
-        `[data-chat-menu-id="${messageId}"]`
-      );
-
+      const menuElement = getMessageMenuElement(menuRoot, messageId);
       if (!menuElement) return;
 
       const bounds = getVisibleMessagesBounds();
       if (!bounds) return;
 
-      let anchorRect: DOMRect | null = null;
-      const anchor = openMenuAnchorRef.current;
-      if (anchor) {
-        anchorRect = anchor.getBoundingClientRect();
-        if (!isAnchorVisibleWithinViewport(bounds, anchorRect)) {
-          closeMessageMenu();
-          return;
-        }
-      }
-
-      const { containerRect } = bounds;
-      const measuredMenuRect = menuElement.getBoundingClientRect();
-      const menuWidth = menuElement.offsetWidth || measuredMenuRect.width;
-      const menuHeight = menuElement.offsetHeight || measuredMenuRect.height;
-      const menuRect =
-        anchorRect !== null
-          ? getProjectedMenuRect({
-              anchorRect,
-              menuPlacement,
-              menuSideAnchor,
-              menuVerticalAnchor,
-              menuOffsetX,
-              menuWidth,
-              menuHeight,
-            })
-          : {
-              top: measuredMenuRect.top,
-              bottom: measuredMenuRect.bottom,
-              left: measuredMenuRect.left,
-              right: measuredMenuRect.right,
-              width: measuredMenuRect.width,
-              height: measuredMenuRect.height,
-            };
-      const minVisibleTop =
-        containerRect.top + CHAT_HEADER_OVERLAY_HEIGHT + MENU_GAP;
-      const maxVisibleBottom = bounds.visibleBottom - MENU_GAP;
-      const currentVerticalOverflow = getVerticalMenuOverflow({
-        rect: menuRect,
-        minVisibleTop,
-        maxVisibleBottom,
+      const adjustment = resolveVisibleMenuAdjustment({
+        menuElement,
+        bounds,
+        anchor: openMenuAnchorRef.current,
+        menuPlacement,
+        menuSideAnchor,
+        menuVerticalAnchor,
+        menuOffsetX,
       });
 
-      if (currentVerticalOverflow > 0 && anchorRect) {
-        const upMenuRect = getProjectedMenuRect({
-          anchorRect,
-          menuPlacement: 'up',
-          menuSideAnchor,
-          menuVerticalAnchor,
-          menuOffsetX,
-          menuWidth,
-          menuHeight,
-        });
-        const downMenuRect = getProjectedMenuRect({
-          anchorRect,
-          menuPlacement: 'down',
-          menuSideAnchor,
-          menuVerticalAnchor,
-          menuOffsetX,
-          menuWidth,
-          menuHeight,
-        });
-        const upOverflow = getVerticalMenuOverflow({
-          rect: upMenuRect,
-          minVisibleTop,
-          maxVisibleBottom,
-        });
-        const downOverflow = getVerticalMenuOverflow({
-          rect: downMenuRect,
-          minVisibleTop,
-          maxVisibleBottom,
-        });
-        const nextPlacement: MenuPlacement =
-          upOverflow <= downOverflow ? 'up' : 'down';
-
-        if (
-          menuPlacement !== nextPlacement &&
-          Math.min(upOverflow, downOverflow) < currentVerticalOverflow
-        ) {
-          setMenuPlacement(nextPlacement);
-          setMenuOffsetX(0);
-          return;
-        }
+      if (adjustment.kind === 'close') {
+        closeMessageMenu();
+        return;
       }
 
-      const minMenuLeft = containerRect.left + MENU_GAP;
-      const maxMenuRight = containerRect.right - MENU_GAP;
-
-      if (
-        (menuPlacement === 'up' || menuPlacement === 'down') &&
-        anchorRect !== null
-      ) {
-        const leftAnchoredOverflow =
-          Math.max(minMenuLeft - anchorRect.left, 0) +
-          Math.max(anchorRect.left + menuRect.width - maxMenuRight, 0);
-        const rightAnchoredLeft = anchorRect.right - menuRect.width;
-        const rightAnchoredOverflow =
-          Math.max(minMenuLeft - rightAnchoredLeft, 0) +
-          Math.max(anchorRect.right - maxMenuRight, 0);
-        const nextVerticalAnchor: MenuVerticalAnchor =
-          leftAnchoredOverflow <= rightAnchoredOverflow ? 'left' : 'right';
-
-        if (menuVerticalAnchor !== nextVerticalAnchor) {
-          setMenuVerticalAnchor(nextVerticalAnchor);
-          setMenuOffsetX(0);
-          return;
-        }
+      if (adjustment.kind === 'placement') {
+        setMenuPlacement(adjustment.menuPlacement);
+        setMenuOffsetX(0);
+        return;
       }
 
-      const shiftMin = minMenuLeft - menuRect.left;
-      const shiftMax = maxMenuRight - menuRect.right;
-      const nextOffsetX =
-        shiftMin > shiftMax
-          ? shiftMin
-          : Math.min(Math.max(0, shiftMin), shiftMax);
+      if (adjustment.kind === 'vertical-anchor') {
+        setMenuVerticalAnchor(adjustment.menuVerticalAnchor);
+        setMenuOffsetX(0);
+        return;
+      }
 
       setMenuOffsetX(previousOffset =>
-        Math.abs(previousOffset - nextOffsetX) < 0.5
+        Math.abs(previousOffset - adjustment.menuOffsetX) < 0.5
           ? previousOffset
-          : nextOffsetX
+          : adjustment.menuOffsetX
       );
     },
     [
@@ -608,12 +406,9 @@ export const useChatViewportMenu = ({
         cancelNextFrame(pendingMenuRepositionAnimationFrameRef.current);
         pendingMenuRepositionAnimationFrameRef.current = null;
       }
-      if (menuOpenScrollAnimationFrameRef.current !== null) {
-        cancelNextFrame(menuOpenScrollAnimationFrameRef.current);
-        menuOpenScrollAnimationFrameRef.current = null;
-      }
+      cancelMenuOpenScrollAnimation();
     };
-  }, [cancelNextFrame]);
+  }, [cancelMenuOpenScrollAnimation, cancelNextFrame]);
 
   return {
     openMenuMessageId,

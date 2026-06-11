@@ -18,3 +18,5 @@ export {
   handleOperatorSelectNormal,
   handleOperatorSelectSecond,
 } from './useOperatorSelection';
+
+export { useJoinOperatorSelection } from './useJoinOperatorSelection';

@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { createPortal } from 'react-dom';
 import type { ImageUploaderProps } from '@/types';
 import { ClipLoader } from 'react-spinners';
-import { TbPhotoEdit, TbTrash, TbUpload, TbX } from 'react-icons/tb';
-import PopupMenuContent from './PopupMenuContent';
+import { getImageUploaderBorderRadiusClass } from './image-uploader/borderRadius';
+import ImageUploaderPopupPortal from './image-uploader/ImageUploaderPopupPortal';
+import { getImageUploaderPopupOptions } from './image-uploader/popupOptions';
 
 const ImageUploader: React.FC<ImageUploaderProps> = ({
   id,
@@ -42,6 +42,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
 
   const isDirect = interaction === 'direct';
   const isClickTrigger = popupTrigger === 'click';
+  const borderRadiusClass = getImageUploaderBorderRadiusClass(shape);
 
   // Combined hover and focus state
   const isVisible = isClickTrigger
@@ -73,21 +74,6 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     clearHoverTimeout('container');
     clearHoverTimeout('popup');
   }, [clearHoverTimeout]);
-
-  const getBorderRadiusClass = () => {
-    switch (shape) {
-      case 'rounded':
-        return 'rounded-xl';
-      case 'rounded-md':
-        return 'rounded-lg';
-      case 'square':
-        return 'rounded-none';
-      case 'full':
-        return 'rounded-full';
-      default:
-        return 'rounded-full';
-    }
-  };
 
   const handleFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>
@@ -153,59 +139,29 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     fileInputRef.current.click();
   }, [disabled, isUploading, isDeleting]);
 
-  const getPopupOptions = useCallback(() => {
-    const options = [];
-
-    if (!hasImage) {
-      options.push({
-        label: 'Upload',
-        icon: <TbUpload className="w-4 h-4" />,
-        action: handleUploadClick,
-        disabled: isUploading || isDeleting,
-      });
-    } else {
-      if (onPopupClose) {
-        options.push({
-          label: 'Tutup',
-          icon: <TbX className="w-4 h-4" />,
-          action: () => {
-            closePortal();
-            onPopupClose();
-          },
-          disabled: isUploading || isDeleting,
-        });
-      }
-
-      options.push({
-        label: 'Edit',
-        icon: <TbPhotoEdit className="-ml-px h-4.5 w-4.5" />,
-        action: handleUploadClick,
-        disabled: isUploading || isDeleting,
-      });
-      // Always show delete option when image exists
-      options.push({
-        label: 'Hapus',
-        icon: <TbTrash className="w-4 h-4" />,
-        action: onImageDelete
-          ? handleDeleteImage
-          : () => {
-              alert('Fitur hapus gambar belum tersedia untuk komponen ini');
-            },
-        disabled: isUploading || isDeleting,
-      });
-    }
-
-    return options;
-  }, [
-    hasImage,
-    handleUploadClick,
-    isUploading,
-    isDeleting,
-    onImageDelete,
-    handleDeleteImage,
-    onPopupClose,
-    closePortal,
-  ]);
+  const getPopupOptions = useCallback(
+    () =>
+      getImageUploaderPopupOptions({
+        closePortal,
+        handleDeleteImage,
+        handleUploadClick,
+        hasImage,
+        isDeleting,
+        isUploading,
+        onImageDelete,
+        onPopupClose,
+      }),
+    [
+      closePortal,
+      handleDeleteImage,
+      handleUploadClick,
+      hasImage,
+      isDeleting,
+      isUploading,
+      onImageDelete,
+      onPopupClose,
+    ]
+  );
 
   const positionPopupAtClick = useCallback(
     (clickX: number, clickY: number) => {
@@ -444,7 +400,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     <div className="relative inline-block">
       <div
         ref={containerRef}
-        className={`relative group ${className} ${getBorderRadiusClass()} overflow-hidden cursor-pointer outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0`}
+        className={`relative group ${className} ${borderRadiusClass} overflow-hidden cursor-pointer outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0`}
         onMouseEnter={() => handleMouseEnter('container')}
         onMouseLeave={() => handleMouseLeave('container')}
         onClick={handleContainerClick}
@@ -467,7 +423,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         {/* Loading overlay */}
         {(isUploading || isDeleting) && loadingIcon !== null && (
           <div
-            className={`absolute inset-0 flex items-center justify-center bg-black/50 ${getBorderRadiusClass()}`}
+            className={`absolute inset-0 flex items-center justify-center bg-black/50 ${borderRadiusClass}`}
           >
             {loadingIcon}
           </div>
@@ -477,6 +433,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
           id={id}
           ref={fileInputRef}
           type="file"
+          aria-label={hasImage ? 'Edit image file' : 'Upload image file'}
           className="hidden"
           accept={validTypes.join(',')}
           onChange={handleFileChange}
@@ -485,51 +442,18 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       </div>
 
       {/* Mini popup modal rendered via Portal */}
-      {isPopupMounted &&
-        createPortal(
-          <div
-            ref={portalRef}
-            className="fixed z-[9999]"
-            style={{
-              left: popupCoordinates.x,
-              top: popupCoordinates.y,
-              transform: isClickTrigger ? 'none' : 'translateY(-50%)',
-            }}
-            onMouseEnter={() => handleMouseEnter('popup')}
-            onMouseLeave={() => handleMouseLeave('popup')}
-          >
-            <div
-              className={`transition-all duration-150 ease-out ${
-                isPopupVisible
-                  ? 'opacity-100 scale-100'
-                  : 'opacity-0 scale-95 pointer-events-none'
-              }`}
-            >
-              <PopupMenuContent
-                actions={getPopupOptions().map(option => ({
-                  label: option.label,
-                  icon: option.icon,
-                  onClick: option.action,
-                  disabled: option.disabled,
-                  tone: option.label === 'Hapus' ? 'danger' : 'default',
-                }))}
-              />
-              {!isClickTrigger &&
-                (popupPosition === 'right' ? (
-                  <div className="absolute right-full top-1/2 transform -translate-y-1/2">
-                    <div className="w-0 h-0 border-t-[6px] border-b-[6px] border-r-[6px] border-t-transparent border-b-transparent border-r-slate-200"></div>
-                    <div className="absolute w-0 h-0 border-t-[5px] border-b-[5px] border-r-[5px] border-t-transparent border-b-transparent border-r-white right-[-1px] top-1/2 transform -translate-y-1/2"></div>
-                  </div>
-                ) : (
-                  <div className="absolute left-full top-1/2 transform -translate-y-1/2">
-                    <div className="w-0 h-0 border-t-[6px] border-b-[6px] border-l-[6px] border-t-transparent border-b-transparent border-l-slate-200"></div>
-                    <div className="absolute w-0 h-0 border-t-[5px] border-b-[5px] border-l-[5px] border-t-transparent border-b-transparent border-l-white left-[-1px] top-1/2 transform -translate-y-1/2"></div>
-                  </div>
-                ))}
-            </div>
-          </div>,
-          document.body
-        )}
+      {isPopupMounted && (
+        <ImageUploaderPopupPortal
+          coordinates={popupCoordinates}
+          isClickTrigger={isClickTrigger}
+          isVisible={isPopupVisible}
+          onMouseEnter={() => handleMouseEnter('popup')}
+          onMouseLeave={() => handleMouseLeave('popup')}
+          options={getPopupOptions()}
+          popupPosition={popupPosition}
+          portalRef={portalRef}
+        />
+      )}
 
       {error && <div className="mt-2 text-sm text-red-600">{error}</div>}
     </div>

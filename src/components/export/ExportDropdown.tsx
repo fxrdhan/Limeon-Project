@@ -1,103 +1,60 @@
-import Button from '@/components/button';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/tooltip';
-import { googleSheetsService } from '@/utils/googleSheetsApi';
-import type { Column, GridApi, IRowNode } from 'ag-grid-community';
-import { AnimatePresence, motion } from 'motion/react';
-import React, {
-  CSSProperties,
-  memo,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
-import { createPortal } from 'react-dom';
-import {
-  TbBrandGoogle,
-  TbCsv,
-  TbJson,
-  TbTableExport,
-  TbTableFilled,
-} from 'react-icons/tb';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
+import { TbTableExport } from 'react-icons/tb';
+import { getExportDropdownPortalStyle } from './export-dropdown/dropdownPosition';
+import { ExportDropdownMenu } from './export-dropdown/ExportDropdownMenu';
+import type { ExportDropdownProps } from './export-dropdown/types';
+import { useGoogleSheetsExport } from './export-dropdown/useGoogleSheetsExport';
 
-interface ExportDropdownProps {
-  gridApi: GridApi | null;
-  filename?: string;
-  className?: string;
-  tooltipLabel?: string;
-}
+const getDatedExportFilename = (filename: string, extension: string) =>
+  `${filename}-${new Date().toISOString().split('T')[0]}.${extension}`;
 
-const ExportDropdown: React.FC<ExportDropdownProps> = memo(
+const ExportDropdown = memo(
   ({
     gridApi,
     filename = 'data-export',
     className = '',
     tooltipLabel = 'Export Data',
-  }) => {
+  }: ExportDropdownProps) => {
     const [isOpen, setIsOpen] = useState(false);
-    const [isGoogleSheetsInitializing, setIsGoogleSheetsInitializing] =
-      useState(false);
-    const [isGoogleSheetsLoading, setIsGoogleSheetsLoading] = useState(false);
-    const [isAuthenticating, setIsAuthenticating] = useState(false);
     const [portalStyle, setPortalStyle] = useState<CSSProperties>({});
     const buttonRef = useRef<HTMLButtonElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const isGridAvailable = Boolean(gridApi && !gridApi.isDestroyed());
 
-    // Simple toggle function
+    const closeDropdown = useCallback(() => {
+      setIsOpen(false);
+    }, []);
+
     const toggleDropdown = useCallback(() => {
       if (!gridApi || gridApi.isDestroyed()) return;
 
       if (isOpen) {
         setIsOpen(false);
-      } else {
-        // Calculate position when opening
-        if (buttonRef.current) {
-          const buttonRect = buttonRef.current.getBoundingClientRect();
-          const dropdownWidth = 230;
-          const viewportWidth = window.innerWidth;
-          const margin = 8;
-
-          let leftPosition = buttonRect.right - dropdownWidth;
-
-          if (leftPosition + dropdownWidth > viewportWidth - margin) {
-            leftPosition = viewportWidth - dropdownWidth - margin;
-          }
-          if (leftPosition < margin) {
-            leftPosition = margin;
-          }
-
-          setPortalStyle({
-            position: 'fixed',
-            left: `${leftPosition}px`,
-            top: `${buttonRect.bottom + window.scrollY + 8}px`,
-            width: `${dropdownWidth}px`,
-            zIndex: 50,
-          });
-        }
-        setIsOpen(true);
+        return;
       }
-    }, [gridApi, isOpen]);
 
-    // Close dropdown
-    const closeDropdown = useCallback(() => {
-      setIsOpen(false);
-    }, []);
+      if (buttonRef.current) {
+        setPortalStyle(getExportDropdownPortalStyle(buttonRef.current));
+      }
+      setIsOpen(true);
+    }, [gridApi, isOpen]);
 
     const handleCsvExport = useCallback(() => {
       if (gridApi && !gridApi.isDestroyed()) {
         gridApi.exportDataAsCsv({
-          fileName: `${filename}-${new Date().toISOString().split('T')[0]}.csv`,
+          fileName: getDatedExportFilename(filename, 'csv'),
           columnSeparator: ',',
           suppressQuotes: false,
-          allColumns: false, // Only export visible columns
+          allColumns: false,
           onlySelected: false,
           processCellCallback: params => {
-            // Handle special formatting for display
             if (params.value === null || params.value === undefined) {
               return '';
             }
@@ -106,12 +63,12 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
         });
       }
       closeDropdown();
-    }, [gridApi, filename, closeDropdown]);
+    }, [closeDropdown, filename, gridApi]);
 
     const handleExcelExport = useCallback(() => {
       if (gridApi && !gridApi.isDestroyed()) {
         gridApi.exportDataAsExcel({
-          fileName: `${filename}-${new Date().toISOString().split('T')[0]}.xlsx`,
+          fileName: getDatedExportFilename(filename, 'xlsx'),
           sheetName: 'Data',
           author: 'PharmaSys',
           headerRowHeight: 25,
@@ -127,28 +84,22 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
             pageSize: 'A4',
           },
           columnWidth: params => {
-            // Auto-size columns based on header text length
             const headerLength =
               params.column?.getColDef().headerName?.length || 10;
-            return Math.max(headerLength * 8, 80); // Minimum 80px, 8px per character
+            return Math.max(headerLength * 8, 80);
           },
           processCellCallback: params => {
-            // Handle special formatting for display
             if (params.value === null || params.value === undefined) {
               return '';
             }
             return params.value;
           },
-          processHeaderCallback: params => {
-            // Ensure headers are properly formatted
-            return (
-              params.column.getColDef().headerName || params.column.getColId()
-            );
-          },
+          processHeaderCallback: params =>
+            params.column.getColDef().headerName || params.column.getColId(),
         });
       }
       closeDropdown();
-    }, [gridApi, filename, closeDropdown]);
+    }, [closeDropdown, filename, gridApi]);
 
     const handleJsonExport = useCallback(() => {
       if (gridApi && !gridApi.isDestroyed()) {
@@ -164,331 +115,29 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `${filename}-${new Date().toISOString().split('T')[0]}.json`;
+        link.download = getDatedExportFilename(filename, 'json');
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
       }
       closeDropdown();
-    }, [gridApi, filename, closeDropdown]);
+    }, [closeDropdown, filename, gridApi]);
 
-    const processAndExportData = useCallback(async (): Promise<{
-      processedData: string[][];
-      headers: string[];
-    }> => {
-      if (!gridApi || gridApi.isDestroyed()) {
-        throw new Error('Grid API is not available');
-      }
+    const {
+      isGoogleSheetsInitializing,
+      isGoogleSheetsLoading,
+      isAuthenticating,
+      handleGoogleSheetsExport,
+    } = useGoogleSheetsExport({
+      gridApi,
+      filename,
+      isOpen,
+      closeDropdown,
+    });
 
-      // Get column definitions from AG Grid
-      const columnDefs = gridApi.getColumnDefs() || [];
-      const visibleColumns = columnDefs.filter(
-        (col): col is import('ag-grid-community').ColDef =>
-          'field' in col && col.field != null && !col.hide
-      );
-
-      // Create headers and extract processed data handling nested objects and valueGetters
-      const headers = visibleColumns.map(col => col.headerName || col.field!);
-
-      // Helper function to get nested values
-      function getNestedValue(
-        obj: Record<string, unknown>,
-        path: string
-      ): unknown {
-        const keys = path.split('.');
-        let current: unknown = obj;
-
-        for (const key of keys) {
-          if (current && typeof current === 'object' && current !== null) {
-            current = (current as Record<string, unknown>)[key];
-          } else {
-            return null;
-          }
-        }
-
-        return current;
-      }
-
-      const toExportString = (value: unknown): string => {
-        if (value === null || value === undefined) return '';
-        if (
-          typeof value === 'string' ||
-          typeof value === 'number' ||
-          typeof value === 'boolean' ||
-          typeof value === 'bigint'
-        ) {
-          return String(value);
-        }
-        if (value instanceof Date) {
-          return value.toISOString();
-        }
-        try {
-          return JSON.stringify(value);
-        } catch {
-          return '';
-        }
-      };
-
-      // Extract data using direct row data access
-      const processedData: string[][] = [];
-
-      // Get all row data directly from grid using forEachNode
-      // This bypasses any filter state and gets complete dataset
-      const allRowData: unknown[] = [];
-
-      try {
-        // Iterate all nodes (requires RowApiModule)
-        gridApi.forEachNode(node => {
-          // Skip group nodes, only process data rows
-          if (node.data && !node.group) {
-            allRowData.push(node.data);
-          }
-        });
-      } catch (error) {
-        console.error('❌ Error getting row data:', error);
-        throw new Error(
-          'Failed to retrieve grid data. Please ensure grid is ready.'
-        );
-      }
-
-      // Process each row to extract column values
-      allRowData.forEach((rowData, index) => {
-        const rowValues = visibleColumns.map(col => {
-          let value: unknown;
-
-          // If column has valueGetter function, use it
-          if (col.valueGetter && typeof col.valueGetter === 'function') {
-            // Modern AG Grid v30+ approach: Column API merged into Grid API
-            const column = gridApi.getColumn(col.field || '') || null;
-
-            // Create a minimal fallback column object if needed
-            const fallbackColumn: Partial<Column> = {
-              getColId: () => col.field || '',
-              getColDef: () => col,
-            };
-
-            try {
-              value = col.valueGetter({
-                data: rowData,
-                // Provide minimal required node properties
-                node: {
-                  data: rowData,
-                  id: String(index),
-                  group: false,
-                } as IRowNode,
-                colDef: col,
-                api: gridApi,
-                context: undefined,
-                column: (column || fallbackColumn) as Column,
-                getValue: (field: string) => {
-                  return getNestedValue(
-                    rowData as Record<string, unknown>,
-                    field
-                  );
-                },
-              });
-            } catch (error) {
-              console.warn(
-                `⚠️ ValueGetter error for column ${col.field}:`,
-                error
-              );
-              // Fallback to direct field access
-              if (col.field) {
-                value = getNestedValue(
-                  rowData as Record<string, unknown>,
-                  col.field
-                );
-              }
-            }
-          } else if (col.field) {
-            // Handle nested field access (e.g., 'category.name')
-            value = getNestedValue(
-              rowData as Record<string, unknown>,
-              col.field
-            );
-          }
-
-          return toExportString(value);
-        });
-        processedData.push(rowValues);
-      });
-
-      return { processedData, headers };
-    }, [gridApi]);
-
-    const handleGoogleSheetsExport = useCallback(async () => {
-      if (!gridApi || gridApi.isDestroyed()) {
-        return;
-      }
-
-      try {
-        if (!googleSheetsService.isInitialized()) {
-          setIsGoogleSheetsInitializing(true);
-          await googleSheetsService.initialize();
-          setIsGoogleSheetsInitializing(false);
-        }
-
-        // Check if already authorized (token exists in memory for current session)
-        if (googleSheetsService.isAuthorized()) {
-          // Open placeholder tab and start export
-          const placeholderTab = window.open('about:blank', '_blank');
-          if (!placeholderTab) {
-            alert('Please allow popups to open Google Sheets.');
-            return;
-          }
-
-          showLoadingInTab(placeholderTab);
-          void performExportToTab(placeholderTab);
-          return;
-        }
-
-        // Need authentication - set state and trigger auth
-        setIsAuthenticating(true);
-
-        // Trigger auth popup. The dropdown preloads Google APIs while open so
-        // requestAccessToken can still run inside this click handler.
-        await googleSheetsService.authorize();
-        setIsAuthenticating(false);
-
-        // Open placeholder tab after successful auth
-        const placeholderTab = window.open('about:blank', '_blank');
-        if (placeholderTab) showLoadingInTab(placeholderTab);
-        void performExportToTab(placeholderTab);
-      } catch (error) {
-        console.error('❌ Auth process failed:', error);
-        setIsGoogleSheetsInitializing(false);
-        setIsAuthenticating(false);
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
-        alert(`Authentication failed: ${errorMessage}`);
-      }
-
-      function showLoadingInTab(tab: Window) {
-        try {
-          // Get font from Tailwind @theme CSS variable
-          const fontFamily =
-            getComputedStyle(document.documentElement)
-              .getPropertyValue('--font-sans')
-              .trim() || 'system-ui, sans-serif';
-
-          tab.document.write(`
-            <html>
-              <head><title>Creating Google Sheet...</title></head>
-              <body style="font-family: ${fontFamily}; text-align: center; padding: 50px; background: oklch(97% 0 0);">
-                <h2>☁️ Creating your Google Sheet...</h2>
-                <p>Please wait while we prepare your data...</p>
-                <div style="margin: 20px auto; width: 50px; height: 50px; border: 3px solid oklch(91.6% 0 0); border-top: 3px solid oklch(65.3% 0.135 242.7); border-radius: 50%; animation: spin 1s linear infinite;"></div>
-                <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
-              </body>
-            </html>
-          `);
-        } catch {
-          // Silent error
-        }
-      }
-
-      async function performExportToTab(placeholderTab: Window | null) {
-        let exportSuccess = false;
-
-        try {
-          setIsGoogleSheetsLoading(true);
-
-          // Process data from AG Grid
-          const { processedData, headers } = await processAndExportData();
-
-          // Export to Google Sheets
-          const sheetUrl = await googleSheetsService.exportGridDataToSheets(
-            processedData,
-            headers,
-            filename
-          );
-
-          // Redirect placeholder tab to actual Google Sheet
-          if (sheetUrl) {
-            if (placeholderTab && !placeholderTab.closed) {
-              placeholderTab.location.href = sheetUrl;
-            } else {
-              const openedSheetTab = window.open(
-                sheetUrl,
-                '_blank',
-                'noopener,noreferrer'
-              );
-              if (!openedSheetTab) {
-                window.location.assign(sheetUrl);
-              }
-            }
-            exportSuccess = true;
-          } else {
-            console.warn('⚠️ No sheet URL returned');
-            placeholderTab?.close();
-            alert('Failed to create Google Sheet. Please try again.');
-          }
-        } catch (error) {
-          console.error('❌ Failed to export to Google Sheets:', error);
-
-          const errorMessage =
-            error instanceof Error ? error.message : String(error);
-
-          // Check if token expired - offer to retry
-          if (errorMessage.includes('Authentication token expired')) {
-            placeholderTab?.close();
-            if (
-              confirm(
-                'Your Google authentication has expired. Click OK to re-authenticate and try again.'
-              )
-            ) {
-              // Retry the whole export process which will trigger new auth
-              void handleGoogleSheetsExport();
-              return;
-            }
-          } else {
-            // Close placeholder tab on other errors
-            if (placeholderTab && !placeholderTab.closed) {
-              placeholderTab.close();
-            }
-            alert(`Failed to export to Google Sheets: ${errorMessage}`);
-          }
-        } finally {
-          setIsGoogleSheetsLoading(false);
-
-          // Only close dropdown if export was successful
-          if (exportSuccess) {
-            closeDropdown();
-          } else {
-            // Keep dropdown open
-          }
-        }
-      }
-    }, [gridApi, filename, closeDropdown, processAndExportData]);
-
-    useEffect(() => {
-      if (!isOpen || googleSheetsService.isInitialized()) return;
-
-      let isCurrent = true;
-      setIsGoogleSheetsInitializing(true);
-
-      googleSheetsService
-        .initialize()
-        .catch(error => {
-          console.error(
-            '❌ Failed to initialize Google Sheets service:',
-            error
-          );
-        })
-        .finally(() => {
-          if (isCurrent) setIsGoogleSheetsInitializing(false);
-        });
-
-      return () => {
-        isCurrent = false;
-      };
-    }, [isOpen]);
-
-    // Handle click outside to close dropdown
     useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
-        // Don't close dropdown if we're in the middle of auth or export process
         if (
           isGoogleSheetsInitializing ||
           isAuthenticating ||
@@ -515,17 +164,16 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
         document.removeEventListener('mousedown', handleClickOutside);
       };
     }, [
-      isOpen,
       closeDropdown,
-      isGoogleSheetsInitializing,
       isAuthenticating,
+      isGoogleSheetsInitializing,
       isGoogleSheetsLoading,
+      isOpen,
     ]);
 
     return (
       <TooltipProvider>
         <div className={`relative inline-block ${className}`}>
-          {/* Main Export Button */}
           <Tooltip side="bottom">
             <TooltipTrigger asChild>
               <button
@@ -540,91 +188,19 @@ const ExportDropdown: React.FC<ExportDropdownProps> = memo(
             <TooltipContent>{tooltipLabel}</TooltipContent>
           </Tooltip>
 
-          {/* Export Dropdown Portal */}
-          {gridApi &&
-            !gridApi.isDestroyed() &&
-            typeof document !== 'undefined' &&
-            createPortal(
-              <AnimatePresence>
-                {isOpen && (
-                  <motion.div
-                    ref={dropdownRef}
-                    style={portalStyle}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.15, ease: 'easeOut' }}
-                    className="origin-top bg-white rounded-xl border border-slate-200 shadow-xl"
-                    role="menu"
-                    onClick={e => e.stopPropagation()}
-                  >
-                    <div className="px-1 py-1">
-                      {/* CSV Export Option */}
-                      <Button
-                        variant="text"
-                        size="sm"
-                        withUnderline={false}
-                        onClick={handleCsvExport}
-                        className="w-full px-3 py-2 text-left text-slate-700 hover:text-slate-900 hover:bg-slate-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group"
-                      >
-                        <TbCsv className="h-6 w-6 text-slate-500 group-hover:text-primary" />
-                        <span>Export ke CSV</span>
-                      </Button>
-
-                      {/* Excel Export Option */}
-                      <Button
-                        variant="text"
-                        size="sm"
-                        withUnderline={false}
-                        onClick={handleExcelExport}
-                        className="w-full px-3 py-2 text-left text-slate-700 hover:text-slate-900 hover:bg-slate-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group"
-                      >
-                        <TbTableFilled className="h-6 w-6 text-slate-500 group-hover:text-primary" />
-                        <span>Export ke Excel</span>
-                      </Button>
-
-                      {/* JSON Export Option */}
-                      <Button
-                        variant="text"
-                        size="sm"
-                        withUnderline={false}
-                        onClick={handleJsonExport}
-                        className="w-full px-3 py-2 text-left text-slate-700 hover:text-slate-900 hover:bg-slate-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group"
-                      >
-                        <TbJson className="h-6 w-6 text-slate-500 group-hover:text-primary" />
-                        <span>Export ke JSON</span>
-                      </Button>
-
-                      {/* Google Sheets Export Option */}
-                      <Button
-                        variant="text"
-                        size="sm"
-                        withUnderline={false}
-                        onClick={handleGoogleSheetsExport}
-                        disabled={
-                          isGoogleSheetsInitializing ||
-                          isGoogleSheetsLoading ||
-                          isAuthenticating
-                        }
-                        className="w-full px-3 py-2 text-left text-slate-700 hover:text-slate-900 hover:bg-slate-200 flex items-center gap-2 justify-start first:rounded-t-lg last:rounded-b-lg group disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <TbBrandGoogle className="h-5 w-5 text-slate-500 group-hover:text-primary" />
-                        <span>
-                          {isGoogleSheetsInitializing
-                            ? 'Menyiapkan Google...'
-                            : isAuthenticating
-                              ? 'Authenticating...'
-                              : isGoogleSheetsLoading
-                                ? 'Exporting...'
-                                : 'Export ke Google Sheets'}
-                        </span>
-                      </Button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>,
-              document.body
-            )}
+          <ExportDropdownMenu
+            isOpen={isOpen}
+            isAvailable={isGridAvailable}
+            portalStyle={portalStyle}
+            dropdownRef={dropdownRef}
+            isGoogleSheetsInitializing={isGoogleSheetsInitializing}
+            isGoogleSheetsLoading={isGoogleSheetsLoading}
+            isAuthenticating={isAuthenticating}
+            onCsvExport={handleCsvExport}
+            onExcelExport={handleExcelExport}
+            onJsonExport={handleJsonExport}
+            onGoogleSheetsExport={handleGoogleSheetsExport}
+          />
         </div>
       </TooltipProvider>
     );

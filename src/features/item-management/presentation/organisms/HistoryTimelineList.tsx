@@ -1,355 +1,17 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence, useIsPresent } from 'motion/react';
+import { useState, useRef, useEffect } from 'react';
+import { AnimatePresence } from 'motion/react';
 import '@/features/item-management/presentation/organisms/styles/scrollbar.scss';
 import { TbHistory } from 'react-icons/tb';
-import { formatDateTime } from '@/lib/formatters';
+import { HistoryItemCard } from './history-timeline-list/HistoryItemCard';
+import { HistoryTimelineSkeleton } from './history-timeline-list/HistoryTimelineSkeleton';
+import type {
+  HistoryItem,
+  HistoryTimelineListProps,
+} from './history-timeline-list/types';
 
-export interface HistoryItem {
-  id: string;
-  version_number: number;
-  action_type: 'INSERT' | 'UPDATE' | 'DELETE';
-  changed_at: string;
-  changed_fields?: Record<string, unknown>;
-}
+export type { HistoryItem } from './history-timeline-list/types';
 
-interface HistoryTimelineListProps {
-  history: HistoryItem[] | null;
-  isLoading: boolean;
-  onVersionClick: (item: HistoryItem) => void;
-  selectedVersions?: number[];
-  selectedVersion?: number | null;
-  showRestoreButton?: boolean;
-  onRestore?: (version: number) => void;
-  emptyMessage?: string;
-  loadingMessage?: string;
-  // New props for dual comparison
-  allowMultiSelect?: boolean;
-  onCompareSelected?: (versions: HistoryItem[]) => void;
-  maxSelections?: number;
-  onSelectionEmpty?: () => void;
-  isFlipped?: boolean;
-  // Auto-scroll behavior
-  autoScrollToSelected?: boolean;
-  // Animation control
-  skipEntranceAnimation?: boolean;
-  scrollContainerMaxHeight?: number;
-  disableHoverDetails?: boolean;
-  showExpandedRestoreActions?: boolean;
-}
-
-interface HistoryItemCardProps {
-  item: HistoryItem;
-  index: number;
-  isSelected: boolean;
-  isExpanded: boolean;
-  isFirst: boolean;
-  isLast: boolean;
-  allowMultiSelect: boolean;
-  selectedForCompare: HistoryItem[];
-  isFlipped: boolean;
-  latestVersion: number;
-  showRestoreButton: boolean;
-  hoveredItem: string | null;
-  bgColor: string;
-  skipEntranceAnimation: boolean;
-  showExpandedRestoreActions: boolean;
-  onMouseEnter: (itemId: string) => void;
-  onMouseLeave: () => void;
-  onClick: (item: HistoryItem) => void;
-  onRestore?: (version: number) => void;
-}
-
-const HISTORY_FIELD_LABELS: Record<string, string> = {
-  address: 'Alamat',
-  base_inventory_unit: 'Unit Dasar',
-  base_inventory_unit_id: 'Unit Dasar',
-  base_inventory_unit_name: 'Unit Dasar',
-  base_price: 'Harga Pokok',
-  base_unit: 'Unit Dasar',
-  base_unit_id: 'Unit Dasar',
-  category_id: 'Kategori',
-  code: 'Kode',
-  customer_level_discounts: 'Diskon Level Pelanggan',
-  description: 'Keterangan',
-  dosage_id: 'Sediaan',
-  has_expiry_date: 'Tanggal Kedaluwarsa',
-  image_urls: 'Gambar Item',
-  inventory_unit: 'Unit Inventori',
-  inventory_unit_id: 'Unit Inventori',
-  inventory_unit_name: 'Unit Inventori',
-  is_active: 'Status Aktif',
-  is_level_pricing_active: 'Harga Bertingkat',
-  is_medicine: 'Status Obat',
-  manufacturer_id: 'Produsen',
-  measurement_denominator_unit_id: 'Satuan Penyebut Ukuran',
-  measurement_denominator_value: 'Nilai Penyebut Ukuran',
-  measurement_numerator_unit_id: 'Satuan Pembilang Ukuran',
-  measurement_numerator_value: 'Nilai Pembilang Ukuran',
-  min_stock: 'Stok Minimum',
-  name: 'Nama',
-  package_conversions: 'Struktur Unit Jual',
-  package_id: 'Kemasan',
-  quantity: 'Stok',
-  sell_price: 'Harga Jual',
-  type_id: 'Jenis',
-  unit_id: 'Satuan',
-  unit_name: 'Satuan',
-};
-
-const normalizeHistoryFieldKey = (field: string): string =>
-  field
-    .trim()
-    .replace(/([a-z0-9])([A-Z])/gu, '$1_$2')
-    .replace(/[\s-]+/gu, '_')
-    .replace(/[^a-zA-Z0-9_]/gu, '')
-    .toLowerCase();
-
-const formatHistoryFieldLabel = (field: string): string => {
-  const normalizedField = normalizeHistoryFieldKey(field);
-  const label =
-    HISTORY_FIELD_LABELS[field] ?? HISTORY_FIELD_LABELS[normalizedField];
-  if (label) return label;
-
-  return normalizedField
-    .replace(/_id$/u, '')
-    .replace(/_/gu, ' ')
-    .replace(/\b\w/gu, letter => letter.toUpperCase());
-};
-
-const getChangedFieldLabels = (
-  changedFields: HistoryItem['changed_fields']
-): string => {
-  if (!changedFields) return '';
-
-  return Object.keys(changedFields).map(formatHistoryFieldLabel).join(', ');
-};
-
-const HistoryTimelineSkeleton: React.FC<{
-  scrollContainerMaxHeight?: number;
-}> = ({ scrollContainerMaxHeight }) => (
-  <div className="p-6">
-    <div className="relative animate-pulse">
-      <div className="absolute left-[5.4px] top-8 bottom-0 z-0 w-0.5 bg-slate-200" />
-      <div
-        className="relative max-h-96 space-y-3 overflow-hidden"
-        style={
-          scrollContainerMaxHeight
-            ? { maxHeight: `${scrollContainerMaxHeight}px` }
-            : undefined
-        }
-      >
-        {Array.from({ length: 5 }).map((_, index) => (
-          <div
-            key={index}
-            className={`relative ${index === 0 ? 'pt-2' : ''} ${
-              index === 4 ? 'pb-2' : ''
-            }`}
-          >
-            <span className="absolute left-0 top-5 block h-3 w-3 rounded-full border-2 border-slate-200 bg-white" />
-            <div className="ml-6 rounded-xl border border-slate-200 px-4 py-3">
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-3">
-                  <div className="h-6 w-[62px] rounded bg-slate-200" />
-                  <div className="h-4 w-[104px] rounded bg-slate-200" />
-                </div>
-                <div className="h-6 w-8 rounded bg-slate-200" />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  </div>
-);
-
-const HistoryItemCard: React.FC<HistoryItemCardProps> = ({
-  item,
-  index,
-  isSelected,
-  isExpanded,
-  isFirst,
-  isLast,
-  allowMultiSelect,
-  selectedForCompare,
-  isFlipped,
-  latestVersion,
-  showRestoreButton,
-  bgColor,
-  skipEntranceAnimation,
-  showExpandedRestoreActions,
-  onMouseEnter,
-  onMouseLeave,
-  onClick,
-  onRestore,
-}) => {
-  const isPresent = useIsPresent();
-
-  const handleRestore = (e: React.MouseEvent, version: number) => {
-    e.stopPropagation();
-    if (onRestore) {
-      onRestore(version);
-    }
-  };
-  const canRestore =
-    showRestoreButton &&
-    item.version_number < latestVersion &&
-    Boolean(onRestore);
-  const hasExpandedContent =
-    isExpanded &&
-    (Boolean(item.changed_fields) ||
-      (showExpandedRestoreActions && canRestore && isSelected));
-
-  return (
-    <motion.div
-      layout="position"
-      initial={
-        skipEntranceAnimation ? { opacity: 1, y: 0 } : { opacity: 0, y: -30 }
-      }
-      animate={{
-        opacity: 1,
-        y: 0,
-        transition: {
-          type: 'spring',
-          stiffness: 500,
-          damping: 30,
-          delay: skipEntranceAnimation ? 0 : index * 0.08,
-        },
-      }}
-      transition={{
-        layout: {
-          duration: 0.26,
-          ease: [0.22, 1, 0.36, 1],
-        },
-      }}
-      exit={{
-        opacity: 0,
-        y: -10,
-        transition: {
-          duration: 0.2,
-        },
-      }}
-      style={{
-        position: isPresent ? 'static' : 'absolute',
-        willChange: 'transform', // Force GPU layer
-        backfaceVisibility: 'hidden' as const,
-      }}
-      className={`relative ${isFirst ? 'pt-2' : ''} ${isLast ? 'pb-2' : ''}`}
-      data-version-number={item.version_number}
-    >
-      {/* Simple bullet - use CSS only, no transform */}
-      <span
-        className={`absolute left-0 top-5 w-3 h-3 rounded-full transition-colors duration-200 block ${
-          isSelected
-            ? allowMultiSelect
-              ? (() => {
-                  const selectionIndex = selectedForCompare.findIndex(
-                    s => s.id === item.id
-                  );
-                  if (selectionIndex >= 0) {
-                    if (isFlipped) {
-                      return selectionIndex === 0
-                        ? 'border-2 border-purple-300 bg-purple-300'
-                        : 'border-2 border-blue-300 bg-blue-300';
-                    } else {
-                      return selectionIndex === 0
-                        ? 'border-2 border-blue-300 bg-blue-300'
-                        : 'border-2 border-purple-300 bg-purple-300';
-                    }
-                  }
-                  return 'border-2 border-slate-300 bg-white';
-                })()
-              : 'border-2 border-blue-300 bg-blue-300'
-            : 'border-2 border-slate-300 bg-white'
-        }`}
-      />
-
-      <div
-        className={`ml-6 py-3 px-4 cursor-pointer transition-all duration-200 rounded-xl ${bgColor} ${
-          isExpanded ? 'shadow-md' : ''
-        } border border-slate-200 hover:border-slate-300`}
-        onMouseEnter={() => onMouseEnter(item.id)}
-        onMouseLeave={onMouseLeave}
-        onClick={() => onClick(item)}
-        onKeyDown={event => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            onClick(item);
-          }
-        }}
-        role="button"
-        tabIndex={0}
-      >
-        <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center gap-3">
-            <span
-              className={`text-xs px-2 py-1 rounded font-medium ${
-                item.action_type === 'INSERT'
-                  ? 'bg-green-100 text-green-700'
-                  : item.action_type === 'UPDATE'
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'bg-red-100 text-red-700'
-              }`}
-            >
-              {item.action_type}
-            </span>
-            <span className="text-slate-500 text-xs">
-              {formatDateTime(item.changed_at)}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs px-2 py-1 rounded bg-purple-100 text-purple-700">
-              v{item.version_number}
-            </span>
-          </div>
-        </div>
-
-        <motion.div
-          initial={false}
-          animate={{
-            height: hasExpandedContent ? 'auto' : 0,
-            opacity: hasExpandedContent ? 1 : 0,
-            marginTop: hasExpandedContent ? 12 : 0,
-          }}
-          transition={{
-            duration: 0.24,
-            ease: [0.22, 1, 0.36, 1],
-          }}
-          className="overflow-hidden"
-        >
-          {item.changed_fields && (
-            <div className="text-xs text-slate-600">
-              <span className="font-medium text-slate-500">Mengubah:</span>{' '}
-              {getChangedFieldLabels(item.changed_fields)}
-            </div>
-          )}
-          {showExpandedRestoreActions && canRestore && isSelected && (
-            <div className="mt-3 flex items-center justify-end gap-2">
-              <button
-                type="button"
-                className="rounded-lg px-3 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
-                onClick={event => {
-                  event.stopPropagation();
-                  onClick(item);
-                }}
-              >
-                Batal
-              </button>
-              <button
-                type="button"
-                className="rounded-lg bg-orange-500 px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-orange-600"
-                onClick={event => handleRestore(event, item.version_number)}
-              >
-                Rollback
-              </button>
-            </div>
-          )}
-        </motion.div>
-      </div>
-    </motion.div>
-  );
-};
-
-const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
+const HistoryTimelineList = ({
   history,
   isLoading,
   onVersionClick,
@@ -368,13 +30,12 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
   scrollContainerMaxHeight,
   disableHoverDetails = false,
   showExpandedRestoreActions = false,
-}) => {
+}: HistoryTimelineListProps) => {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [scrollState, setScrollState] = useState({
     canScrollUp: false,
     canScrollDown: false,
   });
-  // Use getDerivedStateFromProps to reset selectedForCompare when allowMultiSelect changes
   const [compareState, setCompareState] = useState<{
     allowMultiSelect: boolean;
     selected: HistoryItem[];
@@ -396,9 +57,8 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
   const targetScrollRef = useRef<number>(0);
   const scrollingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Find the latest version number (current version should not have restore button)
   const latestVersion = history
-    ? Math.max(...history.map(h => h.version_number))
+    ? Math.max(...history.map(item => item.version_number))
     : 0;
 
   const checkScrollPosition = () => {
@@ -407,7 +67,6 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
     const { scrollTop, scrollHeight, clientHeight } =
       scrollContainerRef.current;
 
-    // Use a threshold of 5px to account for sub-pixel rendering and rounding
     const threshold = 5;
     const canScrollUp = scrollTop > threshold;
     const canScrollDown = scrollTop < scrollHeight - clientHeight - threshold;
@@ -427,23 +86,18 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
     const container = scrollContainerRef.current;
     if (!container) return;
 
-    // Check initial scroll position immediately
     checkScrollPosition();
 
-    // Check again after a short delay to ensure animations have completed
     const timeoutId = setTimeout(checkScrollPosition, 100);
 
-    // Handle scrolling state for hover prevention during scroll
     let scrollCheckRaf: number | null = null;
     const handleScroll = () => {
       setIsScrolling(true);
 
-      // Clear existing timeout
       if (scrollingTimeoutRef.current) {
         clearTimeout(scrollingTimeoutRef.current);
       }
 
-      // Reset scrolling state after 150ms of no scroll
       scrollingTimeoutRef.current = setTimeout(() => {
         setIsScrolling(false);
       }, 150);
@@ -455,17 +109,14 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
       });
     };
 
-    // Add scroll listener
     container.addEventListener('scroll', handleScroll);
 
-    // Check when content changes
     let resizeRaf: number | null = null;
     const resizeObserver = new ResizeObserver(() => {
       if (resizeRaf !== null) return;
       resizeRaf = requestAnimationFrame(() => {
         resizeRaf = null;
         checkScrollPosition();
-        // Double-check after resize completes
         setTimeout(checkScrollPosition, 50);
       });
     });
@@ -487,9 +138,6 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
     };
   }, [history]);
 
-  // selectedForCompare auto-resets when allowMultiSelect changes (getDerivedStateFromProps pattern)
-
-  // Cleanup hover timeout on unmount
   useEffect(() => {
     return () => {
       if (hoverTimeoutRef.current) {
@@ -498,7 +146,6 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
     };
   }, []);
 
-  // Auto-scroll to selected version when it changes
   useEffect(() => {
     if (!selectedVersion || !autoScrollToSelected || allowMultiSelect) {
       return;
@@ -555,61 +202,47 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
     };
   }, [selectedVersion, autoScrollToSelected, allowMultiSelect]);
 
-  // Custom smooth scrolling effect
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
 
-    // Initialize target scroll to current position
     targetScrollRef.current = container.scrollTop;
 
-    const handleWheel = (e: WheelEvent) => {
-      e.preventDefault();
+    const handleWheel = (event: WheelEvent) => {
+      event.preventDefault();
 
-      // Cancel any ongoing animation
       if (scrollAnimationRef.current) {
         cancelAnimationFrame(scrollAnimationRef.current);
       }
 
-      // Update target scroll position with damping (reduce scroll speed)
-      const scrollSpeed = 0.5; // Lower = slower, smoother scrolling
-      targetScrollRef.current += e.deltaY * scrollSpeed;
+      const scrollSpeed = 0.5;
+      targetScrollRef.current += event.deltaY * scrollSpeed;
 
-      // Clamp to valid scroll range
       const maxScroll = container.scrollHeight - container.clientHeight;
       targetScrollRef.current = Math.max(
         0,
         Math.min(targetScrollRef.current, maxScroll)
       );
 
-      // Smooth animation function
       const smoothScroll = () => {
         const current = container.scrollTop;
         const target = targetScrollRef.current;
         const diff = target - current;
-
-        // Easing factor (lower = smoother, more buttery)
         const easingFactor = 0.15;
 
-        // If difference is very small, snap to target
         if (Math.abs(diff) < 0.1) {
           container.scrollTop = target;
           scrollAnimationRef.current = null;
           return;
         }
 
-        // Apply easing
         container.scrollTop += diff * easingFactor;
-
-        // Continue animation
         scrollAnimationRef.current = requestAnimationFrame(smoothScroll);
       };
 
-      // Start animation
       smoothScroll();
     };
 
-    // Add passive: false to allow preventDefault
     container.addEventListener('wheel', handleWheel, { passive: false });
 
     return () => {
@@ -621,56 +254,50 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
   }, []);
 
   const handleMouseEnter = (itemId: string) => {
-    // Clear any existing timeout
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
     }
 
-    // Set new timeout for 150ms delay
     hoverTimeoutRef.current = setTimeout(() => {
       setHoveredItem(itemId);
     }, 150);
   };
 
   const handleMouseLeave = () => {
-    // Clear timeout if mouse leaves before delay completes
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
       hoverTimeoutRef.current = null;
     }
-    // Immediately remove hover state
     setHoveredItem(null);
   };
 
   const handleItemClick = (item: HistoryItem) => {
     if (allowMultiSelect) {
-      const isSelected = selectedForCompare.find(s => s.id === item.id);
+      const isSelected = selectedForCompare.find(
+        selected => selected.id === item.id
+      );
       if (isSelected) {
-        // Remove from selection
-        const newSelection = selectedForCompare.filter(s => s.id !== item.id);
+        const newSelection = selectedForCompare.filter(
+          selected => selected.id !== item.id
+        );
         setSelectedForCompare(newSelection);
 
-        // Trigger callback for any selection change
         if (newSelection.length === 0 && onSelectionEmpty) {
           onSelectionEmpty();
         } else if (onCompareSelected) {
           onCompareSelected(newSelection);
         }
       } else if (selectedForCompare.length < maxSelections) {
-        // Add to selection
         const newSelection = [...selectedForCompare, item];
         setSelectedForCompare(newSelection);
 
-        // Trigger callback for any selection change
         if (onCompareSelected) {
           onCompareSelected(newSelection);
         }
       } else {
-        // Replace oldest selection
         const newSelection = [...selectedForCompare.slice(1), item];
         setSelectedForCompare(newSelection);
 
-        // Trigger callback for any selection change
         if (onCompareSelected) {
           onCompareSelected(newSelection);
         }
@@ -682,7 +309,7 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
 
   const isItemSelected = (item: HistoryItem): boolean => {
     if (allowMultiSelect) {
-      return selectedForCompare.some(s => s.id === item.id);
+      return selectedForCompare.some(selected => selected.id === item.id);
     }
     return (
       selectedVersions.includes(item.version_number) ||
@@ -693,7 +320,7 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
   const getItemBgColor = (item: HistoryItem): string => {
     if (allowMultiSelect) {
       const selectionIndex = selectedForCompare.findIndex(
-        s => s.id === item.id
+        selected => selected.id === item.id
       );
       if (selectionIndex >= 0) {
         return '';
@@ -710,7 +337,6 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
     return 'hover:bg-slate-50';
   };
 
-  // Only show empty state when no history exists (not loading)
   if (!history || history.length === 0) {
     if (isLoading) {
       return (
@@ -720,7 +346,6 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
       );
     }
 
-    // Show empty state when no data and not loading
     return (
       <div className="p-6 text-center text-slate-500">
         <TbHistory size={48} className="mx-auto mb-4 opacity-30" />
@@ -732,15 +357,12 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
   return (
     <div className="p-6">
       <div className="relative">
-        {/* Fixed timeline line - doesn't scroll */}
         <div className="absolute left-[5.4px] top-8 bottom-0 w-0.5 bg-slate-300 opacity-50 z-0" />
 
-        {/* Top fade overlay */}
         {scrollState.canScrollUp && (
           <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white via-white/80 to-transparent pointer-events-none z-10" />
         )}
 
-        {/* Bottom fade overlay */}
         {scrollState.canScrollDown && (
           <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none z-10" />
         )}
@@ -779,7 +401,6 @@ const HistoryTimelineList: React.FC<HistoryTimelineListProps> = ({
                   isFlipped={isFlipped}
                   latestVersion={latestVersion}
                   showRestoreButton={showRestoreButton}
-                  hoveredItem={hoveredItem}
                   bgColor={getItemBgColor(item)}
                   skipEntranceAnimation={skipEntranceAnimation}
                   showExpandedRestoreActions={showExpandedRestoreActions}
