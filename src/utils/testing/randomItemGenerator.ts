@@ -6,8 +6,10 @@
  * categories, types, packages, dosages, and manufacturers.
  */
 
-import type { ItemFormData } from '@/features/item-management/shared/types/FormTypes';
-import type { EntityData } from '@/features/item-management/application/hooks/collections/useEntityManager';
+import type {
+  EntityData,
+  ItemFormData,
+} from '@/features/item-management/public/testing';
 
 /**
  * Interface for entities required for random item generation

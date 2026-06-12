@@ -1,31 +1,11 @@
 import { createPortal } from 'react-dom';
-import type { ConfirmDialogContextType, ConfirmDialogOptions } from '@/types';
-import React, {
-  createContext,
-  useState,
-  useContext,
-  useCallback,
-  useRef,
-  useEffect,
-} from 'react';
-
-const initialState: Omit<
-  ConfirmDialogContextType,
-  'openConfirmDialog' | 'closeConfirmDialog'
-> = {
-  isOpen: false,
-  title: '',
-  message: '',
-  confirmText: 'Ya',
-  cancelText: 'Batal',
-  onConfirm: () => {},
-  onCancel: () => {},
-  variant: 'primary',
-};
-
-const ConfirmDialogContext = createContext<
-  ConfirmDialogContextType | undefined
->(undefined);
+import type { ConfirmDialogOptions } from '@/types';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import {
+  ConfirmDialogContext,
+  initialConfirmDialogState,
+  type ConfirmDialogState,
+} from './context';
 
 const actionButtonStyles = {
   cancel:
@@ -39,10 +19,9 @@ const actionButtonStyles = {
 export const ConfirmDialogProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [dialogState, setDialogState] =
-    useState<
-      Omit<ConfirmDialogContextType, 'openConfirmDialog' | 'closeConfirmDialog'>
-    >(initialState);
+  const [dialogState, setDialogState] = useState<ConfirmDialogState>(
+    initialConfirmDialogState
+  );
 
   const openConfirmDialog = useCallback((options: ConfirmDialogOptions) => {
     setDialogState({
@@ -78,22 +57,27 @@ export const ConfirmDialogProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 };
 
-// eslint-disable-next-line react-refresh/only-export-components
-export const useConfirmDialog = () => {
-  const context = useContext(ConfirmDialogContext);
-  if (!context) {
-    throw new Error(
-      'useConfirmDialog must be used within a ConfirmDialogProvider'
-    );
-  }
-  return context;
-};
-
 export const ConfirmDialogComponent: React.FC = () => {
-  const context = useContext(ConfirmDialogContext);
+  const context = React.useContext(ConfirmDialogContext);
   const dialogRef = useRef<HTMLDivElement>(null);
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
   const isOpen = context?.isOpen ?? false;
+
+  const handleCancel = useCallback(() => {
+    if (!context) {
+      return;
+    }
+    context.onCancel();
+    context.closeConfirmDialog();
+  }, [context]);
+
+  const handleConfirm = useCallback(() => {
+    if (!context) {
+      return;
+    }
+    context.onConfirm();
+    context.closeConfirmDialog();
+  }, [context]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -109,86 +93,77 @@ export const ConfirmDialogComponent: React.FC = () => {
     };
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        handleCancel();
+        return;
+      }
+
+      if (event.key !== 'Tab' || !dialogRef.current) {
+        return;
+      }
+
+      const focusableElements = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      ).filter(element => element.offsetParent !== null);
+
+      if (focusableElements.length === 0) {
+        return;
+      }
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (event.shiftKey) {
+        if (document.activeElement === firstElement) {
+          lastElement.focus();
+          event.preventDefault();
+        }
+        return;
+      }
+
+      if (document.activeElement === lastElement) {
+        firstElement.focus();
+        event.preventDefault();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleCancel, isOpen]);
+
   if (!context || !isOpen) {
     return null;
   }
 
-  const {
-    title,
-    message,
-    confirmText,
-    cancelText,
-    onConfirm,
-    onCancel,
-    variant,
-    closeConfirmDialog,
-  } = context;
-
-  const handleConfirm = () => {
-    onConfirm();
-    closeConfirmDialog();
-  };
-
-  const handleCancel = () => {
-    onCancel();
-    closeConfirmDialog();
-  };
-
-  const handleBackdropClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (event.target === event.currentTarget) {
-      handleCancel();
-    }
-  };
-
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      handleCancel();
-      return;
-    }
-
-    if (event.key !== 'Tab' || !dialogRef.current) {
-      return;
-    }
-
-    const focusableElements = Array.from(
-      dialogRef.current.querySelectorAll<HTMLElement>(
-        'button, [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-      )
-    ).filter(element => element.offsetParent !== null);
-
-    if (focusableElements.length === 0) {
-      return;
-    }
-
-    const firstElement = focusableElements[0];
-    const lastElement = focusableElements[focusableElements.length - 1];
-
-    if (event.shiftKey) {
-      if (document.activeElement === firstElement) {
-        lastElement.focus();
-        event.preventDefault();
-      }
-      return;
-    }
-
-    if (document.activeElement === lastElement) {
-      firstElement.focus();
-      event.preventDefault();
-    }
-  };
+  const { title, message, confirmText, cancelText, variant } = context;
 
   return createPortal(
-    <div
-      ref={dialogRef}
-      onKeyDown={handleKeyDown}
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-xs"
-      onClick={handleBackdropClick}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="dialog-title"
-    >
-      <div className="relative w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-xs">
+      <button
+        type="button"
+        aria-label="Tutup dialog"
+        tabIndex={-1}
+        className="absolute inset-0 h-full w-full cursor-default border-0 bg-transparent p-0"
+        onClick={handleCancel}
+      />
+      <div
+        ref={dialogRef}
+        className="relative w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="dialog-title"
+      >
         <div id="dialog-title" className="mb-2 text-lg font-semibold">
           {title}
         </div>

@@ -6,7 +6,7 @@
  * 1. Index-based scalable handlers (new)
  * 2. Legacy handlers for backward compatibility with current useBadgeBuilder
  *
- * This hook eliminates ~500+ lines of handler code from EnhancedSearchBar.tsx
+ * This hook keeps badge handler logic out of EnhancedSearchBar.tsx.
  */
 
 import { RefObject, useCallback } from 'react';

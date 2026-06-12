@@ -23,6 +23,15 @@ interface UsePurchaseFormProps {
   enabled?: boolean;
 }
 
+export interface PurchaseFormChangeEvent {
+  target: {
+    name: string;
+    value: string;
+    type?: string;
+    checked?: boolean;
+  };
+}
+
 export const usePurchaseForm = ({
   initialInvoiceNumber = '',
   enabled = true,
@@ -81,15 +90,11 @@ export const usePurchaseForm = ({
     setPurchaseItems(prev => recalculateItems(prev, formData.is_vat_included));
   }, [formData.is_vat_included]);
 
-  const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
-  ) => {
-    const { name, value, type, checked } = e.target as HTMLInputElement;
+  const handleChange = (e: PurchaseFormChangeEvent) => {
+    const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: type === 'checkbox' ? Boolean(checked) : value,
     });
   };
 

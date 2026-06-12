@@ -1,11 +1,22 @@
-import type { MutableRefObject, Ref } from 'react';
+import { createElement, type MutableRefObject, type Ref } from 'react';
 import {
   createTypedCombobox,
   type ComboboxChangeEventDetails,
+  type ComboboxRootProps,
   type PharmaComboboxClassNames,
 } from '@/components/combobox';
 
 export const SearchSelectorCombobox = createTypedCombobox<unknown>();
+
+export function SearchSelectorRoot<T>(
+  props: ComboboxRootProps<T>
+): React.ReactElement | null {
+  return createElement(
+    SearchSelectorCombobox.Root,
+    props as ComboboxRootProps<unknown>
+  );
+}
+
 export const searchSelectorHighlightClassName = 'bg-slate-100';
 export const searchSelectorClassNames = {
   optionHighlight: searchSelectorHighlightClassName,

@@ -531,23 +531,24 @@ When `open` is controlled, `onOpenChange(false, details)` is only a close reques
 
 ## File Structure
 
-| File                      | Responsibility                                                                 |
-| ------------------------- | ------------------------------------------------------------------------------ |
-| `index.ts`                | Public exports.                                                                |
-| `internal/primitive.tsx`  | Internal compound namespace and root provider shell.                           |
-| `primitive-root-state.ts` | Root state, filtering, option registry, callbacks, and hidden input state.     |
-| `primitive-label.tsx`     | Label registration and label association.                                      |
-| `primitive-trigger.tsx`   | Trigger ARIA, open behavior, keyboard navigation, and typeahead.               |
-| `primitive-value.tsx`     | Selected label and placeholder rendering.                                      |
-| `primitive-input.tsx`     | Search input ownership and search-list keyboard handling.                      |
-| `primitive-items.tsx`     | Listbox, options, item registration, empty state, and status parts.            |
-| `primitive-popup.tsx`     | Portal, popup container, and positioner integration.                           |
-| `presets.tsx`             | Standard PharmaSys select composition.                                         |
-| `entity-select.tsx`       | Entity id adapter.                                                             |
-| `presets-types.ts`        | Public preset types.                                                           |
-| `hooks/*`                 | Preset state, search, highlight, validation, focus, and hover-detail behavior. |
-| `components/*`            | Preset visual subcomponents.                                                   |
-| `utils/*`                 | Primitive and preset utilities.                                                |
+| File                        | Responsibility                                                                 |
+| --------------------------- | ------------------------------------------------------------------------------ |
+| `index.ts`                  | Public exports.                                                                |
+| `internal/primitive.ts`     | Internal compound namespace and primitive type exports.                        |
+| `internal/ComboboxRoot.tsx` | Root provider shell and hidden input wiring.                                   |
+| `primitive-root-state.ts`   | Root state, filtering, option registry, callbacks, and hidden input state.     |
+| `primitive-label.tsx`       | Label registration and label association.                                      |
+| `primitive-trigger.tsx`     | Trigger ARIA, open behavior, keyboard navigation, and typeahead.               |
+| `primitive-value.tsx`       | Selected label and placeholder rendering.                                      |
+| `primitive-input.tsx`       | Search input ownership and search-list keyboard handling.                      |
+| `primitive-items.tsx`       | Listbox, options, item registration, empty state, and status parts.            |
+| `primitive-popup.tsx`       | Portal, popup container, and positioner integration.                           |
+| `presets.tsx`               | Standard PharmaSys select composition.                                         |
+| `entity-select.tsx`         | Entity id adapter.                                                             |
+| `presets-types.ts`          | Public preset types.                                                           |
+| `hooks/*`                   | Preset state, search, highlight, validation, focus, and hover-detail behavior. |
+| `components/*`              | Preset visual subcomponents.                                                   |
+| `utils/*`                   | Primitive and preset utilities.                                                |
 
 ## Change Route
 

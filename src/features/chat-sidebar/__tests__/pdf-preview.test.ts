@@ -12,23 +12,20 @@ import {
 } from '../utils/pdf-preview';
 
 const {
-  mockCanvas,
+  mockGetContext,
   mockRender,
   mockDestroy,
   mockGetPage,
   mockGetDocument,
   mockGlobalWorkerOptions,
+  mockToBlob,
+  mockToDataUrl,
 } = vi.hoisted(() => {
-  const canvas = {
-    width: 0,
-    height: 0,
-    getContext: vi.fn(() => ({})),
-    toDataURL: vi.fn(() => 'data:image/png;base64,preview'),
-    toBlob: vi.fn((callback: BlobCallback) => {
-      callback(new Blob(['preview'], { type: 'image/png' }));
-    }),
-  };
-
+  const getContext = vi.fn(() => ({}));
+  const toDataUrl = vi.fn(() => 'data:image/png;base64,preview');
+  const toBlob = vi.fn((callback: BlobCallback) => {
+    callback(new Blob(['preview'], { type: 'image/png' }));
+  });
   const render = vi.fn(() => ({ promise: Promise.resolve() }));
   const destroy = vi.fn(() => Promise.resolve());
   const getPage = vi.fn(async () => ({
@@ -48,12 +45,14 @@ const {
   }));
 
   return {
-    mockCanvas: canvas,
+    mockGetContext: getContext,
     mockRender: render,
     mockDestroy: destroy,
     mockGetPage: getPage,
     mockGetDocument: getDocument,
     mockGlobalWorkerOptions: { workerSrc: '' },
+    mockToBlob: toBlob,
+    mockToDataUrl: toDataUrl,
   };
 });
 
@@ -69,13 +68,24 @@ vi.mock('pdfjs-dist/legacy/build/pdf.worker.mjs?url', () => ({
 describe('pdf-preview utils', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockCanvas.width = 0;
-    mockCanvas.height = 0;
     mockGlobalWorkerOptions.workerSrc = '';
     const originalCreateElement = document.createElement.bind(document);
     vi.spyOn(document, 'createElement').mockImplementation(tagName => {
       if (tagName === 'canvas') {
-        return mockCanvas as unknown as HTMLCanvasElement;
+        const canvas = originalCreateElement('canvas');
+        Object.defineProperty(canvas, 'getContext', {
+          configurable: true,
+          value: mockGetContext,
+        });
+        Object.defineProperty(canvas, 'toBlob', {
+          configurable: true,
+          value: mockToBlob,
+        });
+        Object.defineProperty(canvas, 'toDataURL', {
+          configurable: true,
+          value: mockToDataUrl,
+        });
+        return canvas;
       }
 
       return originalCreateElement(tagName);

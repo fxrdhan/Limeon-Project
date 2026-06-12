@@ -21,6 +21,12 @@ export interface NormalizedMutationHandle<TArg = unknown, TResult = unknown> {
   error?: unknown;
 }
 
+interface MutationState {
+  isPending?: boolean;
+  isLoading?: boolean;
+  error?: unknown;
+}
+
 export interface NormalizedMutations {
   /**
    * Create mutation expects a flat record of fields
@@ -113,11 +119,7 @@ function pickFirstExistingKey<K extends string>(
   return null;
 }
 
-function extractCommonState(from: unknown): {
-  isPending?: boolean;
-  isLoading?: boolean;
-  error?: unknown;
-} {
+function extractCommonState(from: unknown): MutationState {
   if (!from || typeof from !== 'object') return {};
   const f = from as Record<string, unknown>;
   const isPending =
@@ -228,7 +230,7 @@ export function hasFullCRUD(m: NormalizedMutations): boolean {
  * Helper to merge multiple mutation states to a single "pending" boolean.
  */
 export function anyPending(
-  ...handles: Array<NormalizedMutationHandle<unknown, unknown> | undefined>
+  ...handles: Array<MutationState | undefined>
 ): boolean {
   return handles.some(h => (h?.isPending ?? h?.isLoading) === true);
 }
@@ -237,7 +239,7 @@ export function anyPending(
  * Helper to collect the first error from multiple handles.
  */
 export function firstError(
-  ...handles: Array<NormalizedMutationHandle<unknown, unknown> | undefined>
+  ...handles: Array<MutationState | undefined>
 ): unknown {
   for (const h of handles) {
     if (h?.error) return h.error;

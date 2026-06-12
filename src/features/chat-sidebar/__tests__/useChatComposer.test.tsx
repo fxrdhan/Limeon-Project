@@ -5,6 +5,23 @@ import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import type { ChatMessage } from '../../../services/api/chat.service';
 import { useChatComposer } from '../hooks/useChatComposer';
 
+const createFileInputChangeEvent = (
+  files: File[]
+): ChangeEvent<HTMLInputElement> => {
+  const input = document.createElement('input');
+  input.type = 'file';
+  Object.defineProperty(input, 'files', {
+    configurable: true,
+    value: files,
+  });
+  input.value = '';
+
+  return {
+    currentTarget: input,
+    target: input,
+  } as ChangeEvent<HTMLInputElement>;
+};
+
 const { mockToast } = vi.hoisted(() => ({
   mockToast: {
     error: vi.fn(),
@@ -241,18 +258,17 @@ describe('useChatComposer', () => {
     });
 
     await act(async () => {
-      result.current.handleImageFileChange({
-        target: {
-          files: Array.from({ length: 15 }, (_, index) => {
+      result.current.handleImageFileChange(
+        createFileInputChangeEvent(
+          Array.from({ length: 15 }, (_, index) => {
             const nextIndex = index + 1;
 
             return new File(['image'], `foto-${nextIndex}.png`, {
               type: 'image/png',
             });
-          }),
-          value: '',
-        },
-      } as unknown as ChangeEvent<HTMLInputElement>);
+          })
+        )
+      );
     });
 
     await waitFor(() => {
@@ -260,18 +276,17 @@ describe('useChatComposer', () => {
     });
 
     await act(async () => {
-      result.current.handleDocumentFileChange({
-        target: {
-          files: Array.from({ length: 15 }, (_, index) => {
+      result.current.handleDocumentFileChange(
+        createFileInputChangeEvent(
+          Array.from({ length: 15 }, (_, index) => {
             const nextIndex = index + 1;
 
             return new File(['pdf'], `dokumen-${nextIndex}.pdf`, {
               type: 'application/pdf',
             });
-          }),
-          value: '',
-        },
-      } as unknown as ChangeEvent<HTMLInputElement>);
+          })
+        )
+      );
     });
 
     await waitFor(() => {
@@ -279,16 +294,13 @@ describe('useChatComposer', () => {
     });
 
     await act(async () => {
-      result.current.handleDocumentFileChange({
-        target: {
-          files: [
-            new File(['pdf'], 'dokumen-16.pdf', {
-              type: 'application/pdf',
-            }),
-          ],
-          value: '',
-        },
-      } as unknown as ChangeEvent<HTMLInputElement>);
+      result.current.handleDocumentFileChange(
+        createFileInputChangeEvent([
+          new File(['pdf'], 'dokumen-16.pdf', {
+            type: 'application/pdf',
+          }),
+        ])
+      );
     });
 
     await waitFor(() => {
@@ -328,12 +340,9 @@ describe('useChatComposer', () => {
     });
 
     await act(async () => {
-      result.current.handleImageFileChange({
-        target: {
-          files: [firstFile],
-          value: '',
-        },
-      } as unknown as ChangeEvent<HTMLInputElement>);
+      result.current.handleImageFileChange(
+        createFileInputChangeEvent([firstFile])
+      );
     });
 
     await waitFor(() => {
@@ -341,12 +350,9 @@ describe('useChatComposer', () => {
     });
 
     await act(async () => {
-      result.current.handleDocumentFileChange({
-        target: {
-          files: [secondFile],
-          value: '',
-        },
-      } as unknown as ChangeEvent<HTMLInputElement>);
+      result.current.handleDocumentFileChange(
+        createFileInputChangeEvent([secondFile])
+      );
     });
 
     await waitFor(() => {

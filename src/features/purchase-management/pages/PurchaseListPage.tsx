@@ -8,7 +8,7 @@ import DataGrid from '@/components/ag-grid/DataGrid';
 import UploadInvoicePortal from '@/features/purchase-management/components/UploadInvoicePortal';
 import { AddPurchasePortal } from '@/features/purchase-management';
 
-import { useConfirmDialog } from '@/components/dialog-box';
+import { useConfirmDialog } from '@/components/dialog-box/useConfirmDialog';
 import { Card } from '@/components/card';
 import { Link } from 'react-router-dom';
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';

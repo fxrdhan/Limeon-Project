@@ -20,7 +20,7 @@ export const itemStorageService = {
 
       return { data: data || [], error: null };
     } catch (error) {
-      return { data: null, error: error as unknown as PostgrestError };
+      return { data: null, error: error as PostgrestError };
     }
   },
 
@@ -39,7 +39,7 @@ export const itemStorageService = {
         error: null,
       };
     } catch (error) {
-      return { data: null, error: error as unknown as PostgrestError };
+      return { data: null, error: error as PostgrestError };
     }
   },
 };

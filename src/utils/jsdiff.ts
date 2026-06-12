@@ -116,8 +116,7 @@ export type AllDiffOptions = {
  * keep track of the state of the diffing algorithm, but gets converted to an array of
  * ChangeObjects before being returned to the caller.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-interface DraftChangeObject<ValueT = any> {
+interface DraftChangeObject<ValueT = unknown> {
   added: boolean;
   removed: boolean;
   count: number;
@@ -127,10 +126,13 @@ interface DraftChangeObject<ValueT = any> {
   value?: ValueT;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-interface Path<ValueT = any> {
+interface Path<ValueT = unknown> {
   oldPos: number;
   lastComponent: DraftChangeObject<ValueT> | undefined;
+}
+
+function coerceDiffValue<ValueT>(value: unknown): ValueT {
+  return value as ValueT;
 }
 
 export default class Diff<
@@ -226,20 +228,24 @@ export default class Diff<
     const maxExecutionTime = options.timeout ?? Infinity;
     const abortAfterTimestamp = Date.now() + maxExecutionTime;
 
-    const bestPath: Path<ValueT>[] = [{ oldPos: -1, lastComponent: undefined }];
+    const initialPath: Path<ValueT> = {
+      oldPos: -1,
+      lastComponent: undefined,
+    };
+    const bestPath: Array<Path<ValueT> | undefined> = [initialPath];
 
     // Seed editLength = 0, i.e. the content starts with the same values
     let newPos = this.extractCommon(
-      bestPath[0],
+      initialPath,
       newTokens,
       oldTokens,
       0,
       options
     );
-    if (bestPath[0].oldPos + 1 >= oldLen && newPos + 1 >= newLen) {
+    if (initialPath.oldPos + 1 >= oldLen && newPos + 1 >= newLen) {
       // Identity per the equality and tokenizer
       return done(
-        this.buildValues(bestPath[0].lastComponent, newTokens, oldTokens)
+        this.buildValues(initialPath.lastComponent, newTokens, oldTokens)
       );
     }
 
@@ -275,7 +281,6 @@ export default class Diff<
           addPath = bestPath[diagonalPath + 1];
         if (removePath) {
           // No one else is going to attempt to use this value, clear it
-          // @ts-expect-error - perf optimisation. This type-violating value will never be read.
           bestPath[diagonalPath - 1] = undefined;
         }
 
@@ -286,10 +291,9 @@ export default class Diff<
           canAdd = addPath && 0 <= addPathNewPos && addPathNewPos < newLen;
         }
 
-        const canRemove = removePath && removePath.oldPos + 1 < oldLen;
+        const canRemove = removePath ? removePath.oldPos + 1 < oldLen : false;
         if (!canAdd && !canRemove) {
           // If this path is a terminal then prune
-          // @ts-expect-error - perf optimisation. This type-violating value will never be read.
           bestPath[diagonalPath] = undefined;
           continue;
         }
@@ -297,10 +301,15 @@ export default class Diff<
         // Select the diagonal that we want to branch from. We select the prior
         // path whose position in the old string is the farthest from the origin
         // and does not pass the bounds of the diff graph
-        if (!canRemove || (canAdd && removePath.oldPos < addPath.oldPos)) {
+        if (
+          addPath &&
+          (!canRemove || (removePath && removePath.oldPos < addPath.oldPos))
+        ) {
           basePath = this.addToPath(addPath, true, false, 0, options);
-        } else {
+        } else if (removePath) {
           basePath = this.addToPath(removePath, false, true, 1, options);
+        } else {
+          continue;
         }
 
         newPos = this.extractCommon(
@@ -466,13 +475,13 @@ export default class Diff<
     return ret;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   castInput(value: InputValueT, _options: AllDiffOptions): ValueT {
-    return value as unknown as ValueT;
+    void _options;
+    return coerceDiffValue<ValueT>(value);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   tokenize(value: ValueT, _options: AllDiffOptions): TokenT[] {
+    void _options;
     return Array.from(value);
   }
 
@@ -481,14 +490,14 @@ export default class Diff<
     // When it's false, e.g. in diffArrays, this method needs to be overridden (e.g. with a no-op)
     // Yes, the casts are verbose and ugly, because this pattern - of having the base class SORT OF
     // assume tokens and values are strings, but not completely - is weird and janky.
-    return (chars as string[]).join('') as unknown as ValueT;
+    return coerceDiffValue<ValueT>((chars as string[]).join(''));
   }
 
   postProcess(
     changeObjects: ChangeObject<ValueT>[],
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _options: AllDiffOptions
   ): ChangeObject<ValueT>[] {
+    void _options;
     return changeObjects;
   }
 
@@ -559,6 +568,19 @@ class CharacterDiff extends Diff<string, string> {}
 
 export const characterDiff = new CharacterDiff();
 
+type DiffCharsImplementationOptions =
+  | DiffCallbackNonabortable<string>
+  | DiffCharsOptionsNonabortable
+  | DiffCharsOptionsAbortable
+  | (DiffCharsOptionsAbortable & CallbackOptionAbortable<string>)
+  | (DiffCharsOptionsNonabortable & CallbackOptionNonabortable<string>);
+
+const runCharacterDiff = characterDiff.diff.bind(characterDiff) as (
+  oldStr: string,
+  newStr: string,
+  options?: DiffCharsImplementationOptions
+) => undefined | ChangeObject<string>[];
+
 /**
  * diffs two blocks of text, treating each character as a token.
  *
@@ -594,10 +616,9 @@ export function diffChars(
 export function diffChars(
   oldStr: string,
   newStr: string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  options?: any
+  options?: DiffCharsImplementationOptions
 ): undefined | ChangeObject<string>[] {
-  return characterDiff.diff(oldStr, newStr, options);
+  return runCharacterDiff(oldStr, newStr, options);
 }
 
 // ===== BACKWARD COMPATIBILITY FOR PHARMASYS =====

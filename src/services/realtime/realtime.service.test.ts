@@ -22,6 +22,16 @@ vi.mock('@/lib/supabase', () => ({
   supabase: mockSupabase,
 }));
 
+const createMockChannel = (
+  unsubscribe: () => Promise<'ok'> | undefined,
+  teardown: () => void
+): RealtimeChannel =>
+  ({
+    topic: 'realtime:chat_channel-a',
+    teardown,
+    unsubscribe,
+  }) as RealtimeChannel;
+
 describe('realtimeService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -42,16 +52,14 @@ describe('realtimeService', () => {
     const staleChannelTeardown = vi.fn();
     const replacementChannelUnsubscribe = vi.fn();
     const replacementChannelTeardown = vi.fn();
-    const staleChannel = {
-      topic: 'realtime:chat_channel-a',
-      unsubscribe: staleChannelUnsubscribe,
-      teardown: staleChannelTeardown,
-    } as unknown as RealtimeChannel;
-    const replacementChannel = {
-      topic: 'realtime:chat_channel-a',
-      unsubscribe: replacementChannelUnsubscribe,
-      teardown: replacementChannelTeardown,
-    } as unknown as RealtimeChannel;
+    const staleChannel = createMockChannel(
+      staleChannelUnsubscribe,
+      staleChannelTeardown
+    );
+    const replacementChannel = createMockChannel(
+      replacementChannelUnsubscribe,
+      replacementChannelTeardown
+    );
     mockRealtimeClient.channels = [staleChannel, replacementChannel];
 
     const removal = realtimeService.removeChannel(staleChannel);

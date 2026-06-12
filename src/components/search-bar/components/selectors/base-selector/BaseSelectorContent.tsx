@@ -25,6 +25,7 @@ import {
   getSelectedValue,
   isPlainCharacterKey,
   SearchSelectorCombobox,
+  SearchSelectorRoot,
   searchSelectorClassNames,
   searchSelectorHighlightClassName,
   selectorPopupTransition,
@@ -256,9 +257,6 @@ export function BaseSelectorContent<T>({
     [onHighlightChange, root.comboboxRootProps]
   );
 
-  const SearchSelectorRoot = SearchSelectorCombobox.Root as unknown as (
-    props: ComboboxRootProps<T>
-  ) => React.ReactElement | null;
   const comboboxRootProps = {
     ...root.comboboxRootProps,
     onItemHighlighted: handleItemHighlighted,

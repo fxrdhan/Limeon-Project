@@ -6,15 +6,48 @@ import ConversationHeaderContent from './header/ConversationHeaderContent';
 import SearchHeaderContent from './header/SearchHeaderContent';
 import SelectionHeaderContent from './header/SelectionHeaderContent';
 
-type ChatHeaderRuntime = Pick<
-  ChatSidebarRuntimeState,
-  | 'user'
-  | 'targetUser'
-  | 'displayTargetPhotoUrl'
-  | 'session'
-  | 'interaction'
-  | 'actions'
->;
+interface ChatHeaderRuntime {
+  user: ChatSidebarRuntimeState['user'];
+  targetUser: ChatSidebarRuntimeState['targetUser'];
+  displayTargetPhotoUrl: ChatSidebarRuntimeState['displayTargetPhotoUrl'];
+  session: Pick<
+    ChatSidebarRuntimeState['session'],
+    'isTargetOnline' | 'targetUserPresence' | 'targetUserPresenceError'
+  >;
+  interaction: Pick<
+    ChatSidebarRuntimeState['interaction'],
+    | 'isMessageSearchMode'
+    | 'messageSearchQuery'
+    | 'messageSearchState'
+    | 'searchMatchedMessageIds'
+    | 'activeSearchResultIndex'
+    | 'canNavigateSearchUp'
+    | 'canNavigateSearchDown'
+    | 'hasMoreSearchResults'
+    | 'isSelectionMode'
+    | 'selectedVisibleMessages'
+    | 'canDeleteSelectedMessages'
+    | 'searchInputRef'
+    | 'handleEnterMessageSearchMode'
+    | 'handleExitMessageSearchMode'
+    | 'handleEnterMessageSelectionMode'
+    | 'handleClearSelectedMessages'
+    | 'handleExitMessageSelectionMode'
+    | 'handleMessageSearchQueryChange'
+    | 'handleNavigateSearchUp'
+    | 'handleNavigateSearchDown'
+    | 'handleFocusSearchInput'
+    | 'handleCopySelectedMessages'
+  >;
+  actions: Pick<
+    ChatSidebarRuntimeState['actions'],
+    | 'handleDeleteSelectedMessages'
+    | 'handleClose'
+    | 'handleOpenContactList'
+    | 'getInitials'
+    | 'getInitialsColor'
+  >;
+}
 
 interface ChatHeaderProps {
   runtime: ChatHeaderRuntime;

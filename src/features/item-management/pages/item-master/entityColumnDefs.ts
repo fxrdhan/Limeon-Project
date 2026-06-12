@@ -43,7 +43,7 @@ export const buildEntityColumnDefs = (
 ): ColDef[] => {
   if (!config) return [];
 
-  const tablePrefix = activeTab as string;
+  const tablePrefix = activeTab;
   const columns: ColDef[] = [
     {
       ...createTextColumn({

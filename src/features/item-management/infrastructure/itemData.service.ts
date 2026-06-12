@@ -7,6 +7,57 @@ import type {
   ItemUnitHierarchyEntry,
 } from '@/types/database';
 
+type InventoryUnitRelation =
+  | ItemInventoryUnit
+  | ItemInventoryUnit[]
+  | null
+  | undefined;
+
+interface RawItemUnitHierarchyEntry {
+  id: string;
+  item_id?: string | null;
+  inventory_unit_id: string;
+  parent_inventory_unit_id?: string | null;
+  contains_quantity: number;
+  factor_to_base: number;
+  base_price_override?: number | null;
+  sell_price_override?: number | null;
+  inventory_unit: InventoryUnitRelation;
+  parent_unit?: InventoryUnitRelation;
+}
+
+const normalizeInventoryUnitRelation = (
+  relation: InventoryUnitRelation
+): ItemInventoryUnit | null => {
+  if (Array.isArray(relation)) {
+    return relation[0] ?? null;
+  }
+  return relation ?? null;
+};
+
+const toItemUnitHierarchyEntry = (
+  entry: RawItemUnitHierarchyEntry
+): ItemUnitHierarchyEntry => ({
+  id: entry.id,
+  item_id: entry.item_id ?? undefined,
+  inventory_unit_id: entry.inventory_unit_id,
+  parent_inventory_unit_id: entry.parent_inventory_unit_id,
+  contains_quantity: entry.contains_quantity,
+  factor_to_base: entry.factor_to_base,
+  base_price_override: entry.base_price_override,
+  sell_price_override: entry.sell_price_override,
+  unit:
+    normalizeInventoryUnitRelation(entry.inventory_unit) ??
+    ({
+      id: entry.inventory_unit_id,
+      name: '',
+      kind: 'custom',
+    } satisfies ItemInventoryUnit),
+  parent_unit: normalizeInventoryUnitRelation(entry.parent_unit),
+  base_price: entry.base_price_override ?? 0,
+  sell_price: entry.sell_price_override ?? 0,
+});
+
 export const itemDataService = {
   async fetchItemDataById(
     id: string
@@ -370,7 +421,7 @@ export const itemDataService = {
       }
 
       return {
-        data: (data || []) as unknown as ItemUnitHierarchyEntry[],
+        data: (data || []).map(toItemUnitHierarchyEntry),
         error: null,
       };
     } catch (error) {

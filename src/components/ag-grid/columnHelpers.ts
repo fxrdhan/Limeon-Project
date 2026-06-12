@@ -1,6 +1,7 @@
 import type {
   ColDef,
   ColumnMenuTab,
+  DefaultMenuItem,
   GetMainMenuItems,
 } from 'ag-grid-community';
 import { ColumnConfig } from '@/types';
@@ -197,9 +198,8 @@ export const getPinOnlyMenuItems: GetMainMenuItems = () => {
 /**
  * Show Pin Column and Filter options with Sorting and conditional Group By
  */
-// @ts-expect-error - AG-Grid typing issues with conditional menu items
 export const getPinAndFilterMenuItems: GetMainMenuItems = params => {
-  const baseItems = [
+  const baseItems: DefaultMenuItem[] = [
     'sortAscending',
     'sortDescending',
     'separator',

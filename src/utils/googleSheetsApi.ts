@@ -56,6 +56,10 @@ const googleSheetsInitializeTimeoutMs = 15_000;
 const googleIdentityServicesUrl = 'https://accounts.google.com/gsi/client';
 const googleSheetsApiBaseUrl = 'https://sheets.googleapis.com/v4/spreadsheets';
 
+function parseGoogleSheetsResponse(responseText: string): unknown {
+  return responseText.length > 0 ? JSON.parse(responseText) : null;
+}
+
 class GoogleSheetsService {
   private clientId: string;
   private tokenClient: TokenClient | null = null;
@@ -208,8 +212,7 @@ class GoogleSheetsService {
       headers,
     });
     const responseText = await response.text();
-    const responseBody =
-      responseText.length > 0 ? (JSON.parse(responseText) as unknown) : null;
+    const responseBody = parseGoogleSheetsResponse(responseText);
 
     if (!response.ok) {
       const apiError = responseBody as GoogleSheetsApiErrorBody | null;

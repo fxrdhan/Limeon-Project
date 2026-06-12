@@ -109,6 +109,48 @@ const buildNormalizedHierarchyEntries = async ({
   };
 };
 
+const buildFallbackSavedItem = ({
+  baseInventoryUnitId,
+  baseUnit,
+  conversions,
+  formData,
+  id,
+  stock = 0,
+}: Pick<SaveItemParams, 'baseUnit' | 'conversions' | 'formData'> & {
+  baseInventoryUnitId: string;
+  id: string;
+  stock?: number;
+}): Item => ({
+  id,
+  name: formData.name,
+  display_name: formData.name,
+  manufacturer: {
+    id: formData.manufacturer_id || undefined,
+    name: '',
+  },
+  code: formData.code,
+  barcode: formData.barcode || null,
+  image_urls: formData.image_urls || [],
+  base_price: formData.base_price,
+  sell_price: formData.sell_price,
+  is_level_pricing_active: formData.is_level_pricing_active,
+  stock,
+  package_id: formData.package_id,
+  base_inventory_unit_id:
+    baseInventoryUnitId || formData.base_inventory_unit_id || null,
+  base_unit: baseUnit,
+  package_conversions: conversions,
+  inventory_units: [],
+  customer_level_discounts: formData.customer_level_discounts,
+  category: { name: '' },
+  type: { name: '' },
+  package: { name: baseUnit },
+  unit: { name: baseUnit },
+  dosage: formData.dosage_id ? { name: '' } : undefined,
+  measurement_value: formData.quantity > 0 ? formData.quantity : null,
+  measurement_denominator_value: formData.measurement_denominator_value ?? null,
+});
+
 export const saveItemBusinessLogic = async ({
   formData,
   conversions,
@@ -218,7 +260,14 @@ export const saveItemBusinessLogic = async ({
       itemId,
       code: finalFormData.code,
       item:
-        updatedItem ?? ({ id: itemId, ...itemUpdateData } as unknown as Item),
+        updatedItem ??
+        buildFallbackSavedItem({
+          baseInventoryUnitId: resolvedBaseInventoryUnitId,
+          baseUnit,
+          conversions,
+          formData: finalFormData,
+          id: itemId,
+        }),
     };
   }
 
@@ -267,6 +316,13 @@ export const saveItemBusinessLogic = async ({
     code: finalFormData.code,
     item:
       createdItem ??
-      ({ id: insertedItem.id, ...mainItemData } as unknown as Item),
+      buildFallbackSavedItem({
+        baseInventoryUnitId: resolvedBaseInventoryUnitId,
+        baseUnit,
+        conversions,
+        formData: finalFormData,
+        id: insertedItem.id,
+        stock: 0,
+      }),
   };
 };

@@ -56,6 +56,7 @@ export const useEntityModalRealtime = ({
     onDataUpdate: handleDataUpdate,
     showConflictNotification: true,
   });
+  const { handleRealtimeUpdate } = smartFormSync;
 
   useEffect(() => {
     // Don't setup if no entityId, no table, or disabled
@@ -99,7 +100,7 @@ export const useEntityModalRealtime = ({
             }
 
             // ANTI-LOOP #3: Apply smart updates (respects active fields)
-            smartFormSync.handleRealtimeUpdate(changedFields);
+            handleRealtimeUpdate(changedFields);
           }
 
           // Invalidate queries for fresh data in lists
@@ -146,14 +147,7 @@ export const useEntityModalRealtime = ({
         channelRef.current = null;
       }
     };
-    // Effect only re-runs when these essential properties change:
-    // - entityId, entityTable, enabled: Core subscription parameters
-    // - queryClient: Stable singleton from React Query
-    // Explicitly excluded to prevent reconnection cycles:
-    // - smartFormSync: Stable object (methods are stable via useCallback)
-    // - onEntityUpdated, onEntityDeleted, onSmartUpdate: Handled via refs
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entityId, entityTable, enabled, queryClient]);
+  }, [entityId, entityTable, enabled, handleRealtimeUpdate, queryClient]);
 
   return {
     isConnected: !!channelRef.current,

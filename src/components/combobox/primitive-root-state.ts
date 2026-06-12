@@ -258,8 +258,16 @@ export function useComboboxRootState<Value>({
       popupRef,
       triggerRef,
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- refs and useId values are stable
-    []
+    [
+      activeIndexRef,
+      defaultLabelId,
+      defaultTriggerId,
+      getItemId,
+      inputId,
+      listboxId,
+      popupRef,
+      triggerRef,
+    ]
   );
 
   const actions = useMemo<ComboboxActionsContextValue<Value>>(

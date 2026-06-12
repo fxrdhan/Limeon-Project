@@ -541,12 +541,12 @@ describe('Combobox primitive architecture', () => {
   it('keeps unsafe primitive imports inside the combobox package', () => {
     const forbiddenRawPrimitiveSpecifiers = new Set([
       '@/components/combobox/internal/primitive',
-      '@/components/combobox/internal/primitive.tsx',
+      '@/components/combobox/internal/primitive.ts',
       '@/components/combobox/primitive',
       '@/components/combobox/primitive.tsx',
     ]);
     const forbiddenRawPrimitiveTargets = new Set([
-      'src/components/combobox/internal/primitive.tsx',
+      'src/components/combobox/internal/primitive.ts',
       'src/components/combobox/primitive.tsx',
     ]);
     const illegalImports = Array.from(sourceByPath).flatMap(

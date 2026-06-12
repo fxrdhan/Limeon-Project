@@ -406,10 +406,16 @@ describe('useMessagesPanePreviews', () => {
     );
     const replace = vi.fn();
     const close = vi.fn();
-    vi.spyOn(window, 'open').mockReturnValue({
-      close,
-      location: { replace },
-    } as unknown as Window);
+    const openedWindow: Window = Object.create(window);
+    Object.defineProperty(openedWindow, 'close', {
+      configurable: true,
+      value: close,
+    });
+    Object.defineProperty(openedWindow, 'location', {
+      configurable: true,
+      value: { replace },
+    });
+    vi.spyOn(window, 'open').mockReturnValue(openedWindow);
 
     const { result } = renderHook(() =>
       useMessagesPanePreviews({

@@ -5,7 +5,7 @@ import {
   useMemo,
   type KeyboardEvent,
 } from 'react';
-import { useConfirmDialog } from '@/components/dialog-box';
+import { useConfirmDialog } from '@/components/dialog-box/useConfirmDialog';
 import { useAlert } from '@/components/alert/hooks';
 import { StorageService } from '@/services/api/storage.service';
 import type { UseMasterDataManagementOptions } from '@/types';

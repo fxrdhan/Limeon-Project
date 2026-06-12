@@ -21,7 +21,7 @@ export const useEntityGridStatePersistence = ({
   gridApi,
   itemsPerPage,
 }: UseEntityGridStatePersistenceParams) => {
-  const tableType = activeTab as TableType;
+  const tableType: TableType = activeTab;
   const currentPageSizeRef = useRef<number>(itemsPerPage);
   const isApplyingTabStateRef = useRef(false);
   const previousActiveTabRef = useRef<TableType | null>(null);

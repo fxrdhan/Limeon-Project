@@ -1,4 +1,3 @@
-import type { Customer, Doctor, Patient, Supplier } from '@/types';
 import { fuzzyMatch } from '@/utils/search';
 import { filterAndRank } from '../searchCore';
 import type { MasterDataIdentity } from './types';
@@ -34,83 +33,148 @@ const matchesCommonIdentityField = (
   return false;
 };
 
-const matchesSupplierField = (supplier: Supplier, searchTermLower: string) => {
-  if (supplier.address && fuzzyMatch(supplier.address, searchTermLower)) {
-    return true;
-  }
-  if (supplier.phone && fuzzyMatch(supplier.phone, searchTermLower)) {
-    return true;
-  }
-  if (supplier.email && fuzzyMatch(supplier.email, searchTermLower)) {
+const matchesSupplierField = (
+  identity: MasterDataIdentity,
+  searchTermLower: string
+) => {
+  if (
+    'address' in identity &&
+    identity.address &&
+    fuzzyMatch(identity.address, searchTermLower)
+  ) {
     return true;
   }
   if (
-    supplier.contact_person &&
-    fuzzyMatch(supplier.contact_person, searchTermLower)
+    'phone' in identity &&
+    identity.phone &&
+    fuzzyMatch(identity.phone, searchTermLower)
+  ) {
+    return true;
+  }
+  if (
+    'email' in identity &&
+    identity.email &&
+    fuzzyMatch(identity.email, searchTermLower)
+  ) {
+    return true;
+  }
+  if (
+    'contact_person' in identity &&
+    identity.contact_person &&
+    fuzzyMatch(identity.contact_person, searchTermLower)
   ) {
     return true;
   }
   return false;
 };
 
-const matchesPatientField = (patient: Patient, searchTermLower: string) => {
-  if (patient.gender && fuzzyMatch(patient.gender, searchTermLower)) {
-    return true;
-  }
-  if (patient.address && fuzzyMatch(patient.address, searchTermLower)) {
-    return true;
-  }
-  if (patient.phone && fuzzyMatch(patient.phone, searchTermLower)) {
-    return true;
-  }
-  if (patient.email && fuzzyMatch(patient.email, searchTermLower)) {
+const matchesPatientField = (
+  identity: MasterDataIdentity,
+  searchTermLower: string
+) => {
+  if (
+    'gender' in identity &&
+    identity.gender &&
+    fuzzyMatch(identity.gender, searchTermLower)
+  ) {
     return true;
   }
   if (
-    patient.birth_date &&
-    fuzzyMatch(patient.birth_date.toString(), searchTermLower)
+    'address' in identity &&
+    identity.address &&
+    fuzzyMatch(identity.address, searchTermLower)
+  ) {
+    return true;
+  }
+  if (
+    'phone' in identity &&
+    identity.phone &&
+    fuzzyMatch(identity.phone, searchTermLower)
+  ) {
+    return true;
+  }
+  if (
+    'email' in identity &&
+    identity.email &&
+    fuzzyMatch(identity.email, searchTermLower)
+  ) {
+    return true;
+  }
+  if (
+    'birth_date' in identity &&
+    identity.birth_date &&
+    fuzzyMatch(identity.birth_date.toString(), searchTermLower)
   ) {
     return true;
   }
   return false;
 };
 
-const matchesDoctorField = (doctor: Doctor, searchTermLower: string) => {
+const matchesDoctorField = (
+  identity: MasterDataIdentity,
+  searchTermLower: string
+) => {
   if (
-    doctor.specialization &&
-    fuzzyMatch(doctor.specialization, searchTermLower)
+    'specialization' in identity &&
+    identity.specialization &&
+    fuzzyMatch(identity.specialization, searchTermLower)
   ) {
     return true;
   }
   if (
-    doctor.license_number &&
-    fuzzyMatch(doctor.license_number, searchTermLower)
+    'license_number' in identity &&
+    identity.license_number &&
+    fuzzyMatch(identity.license_number, searchTermLower)
   ) {
     return true;
   }
-  if (doctor.phone && fuzzyMatch(doctor.phone, searchTermLower)) {
-    return true;
-  }
-  if (doctor.email && fuzzyMatch(doctor.email, searchTermLower)) {
+  if (
+    'phone' in identity &&
+    identity.phone &&
+    fuzzyMatch(identity.phone, searchTermLower)
+  ) {
     return true;
   }
   if (
-    doctor.experience_years &&
-    fuzzyMatch(doctor.experience_years.toString(), searchTermLower)
+    'email' in identity &&
+    identity.email &&
+    fuzzyMatch(identity.email, searchTermLower)
+  ) {
+    return true;
+  }
+  if (
+    'experience_years' in identity &&
+    identity.experience_years &&
+    fuzzyMatch(identity.experience_years.toString(), searchTermLower)
   ) {
     return true;
   }
   return false;
 };
 
-const matchesCustomerField = (customer: Customer, searchTermLower: string) => {
-  if (customer.phone && fuzzyMatch(customer.phone, searchTermLower)) {
+const matchesCustomerField = (
+  identity: MasterDataIdentity,
+  searchTermLower: string
+) => {
+  if (
+    'phone' in identity &&
+    identity.phone &&
+    fuzzyMatch(identity.phone, searchTermLower)
+  ) {
     return true;
   }
-  if (customer.email && fuzzyMatch(customer.email, searchTermLower)) {
+  if (
+    'email' in identity &&
+    identity.email &&
+    fuzzyMatch(identity.email, searchTermLower)
+  ) {
     return true;
   }
-  if (customer.address && fuzzyMatch(customer.address, searchTermLower)) {
+  if (
+    'address' in identity &&
+    identity.address &&
+    fuzzyMatch(identity.address, searchTermLower)
+  ) {
     return true;
   }
   return false;
@@ -126,16 +190,16 @@ const matchesIdentity = (
   }
 
   if (tableName === 'suppliers') {
-    return matchesSupplierField(identity as Supplier, searchTermLower);
+    return matchesSupplierField(identity, searchTermLower);
   }
   if (tableName === 'patients') {
-    return matchesPatientField(identity as Patient, searchTermLower);
+    return matchesPatientField(identity, searchTermLower);
   }
   if (tableName === 'doctors') {
-    return matchesDoctorField(identity as Doctor, searchTermLower);
+    return matchesDoctorField(identity, searchTermLower);
   }
   if (tableName === 'customers') {
-    return matchesCustomerField(identity as Customer, searchTermLower);
+    return matchesCustomerField(identity, searchTermLower);
   }
   return false;
 };

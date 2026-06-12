@@ -1,27 +1,14 @@
 /**
- * Entity CRUD Operations Hook - Refactored using Configuration System
+ * Entity CRUD Operations Hook
  *
- * This file replaces the previous implementation which contained unused helpers,
- * loose `any` usage and several TypeScript lint issues.
- *
- * Changes:
- * - Removed unused local helpers (code normalizer / pickers)
- * - Tightened types (use `unknown` and `Record<string, unknown>` instead of `any`)
- * - Use `toNormalizedMutations` to handle external mutation normalization
- * - Memoize `refetch` so it is safe to include in hook dependency arrays
- * - Keep behavior compatible with consumers: returns `handleModalSubmit` and a
- *   `deleteMutation`-compatible object.
+ * Bridges table-driven entity screens to the configured data and mutation hooks
+ * while keeping the public return shape expected by existing consumers.
  */
 
 import { useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
-import type { PostgrestError } from '@supabase/supabase-js';
-import {
-  getExternalHooks,
-  isEntityTypeSupported,
-  type EntityTypeKey,
-} from '../core/GenericHookFactories';
-import { ENTITY_CONFIGURATIONS } from '../core/EntityHookConfigurations';
+import { getExternalHooks } from '../core/GenericHookFactories';
+import { getEntityTypeForTableName } from '../core/EntityHookConfigurations';
 import {
   toNormalizedMutations,
   anyPending,
@@ -29,30 +16,26 @@ import {
   type NormalizedMutations,
   type NormalizedMutationHandle,
 } from '../core/MutationAdapter';
+import {
+  getEntityCrudErrorMessage,
+  isDuplicateEntityCodeError,
+  isForeignKeyReferenceError,
+} from './entityCrudErrors';
+import {
+  buildEntityCrudMutationPayload,
+  type EntityCrudFormPayload,
+} from './entityCrudPayload';
 
 /**
  * Lookup the external hooks provider for a given table using the centralized
  * entity configuration system.
  */
 const getHooksForTable = (tableName: string) => {
-  const found = Object.entries(ENTITY_CONFIGURATIONS).find(
-    ([, cfg]) => cfg.query.tableName === tableName
-  );
-
-  const entityType = found?.[0] as EntityTypeKey | undefined;
-  if (!entityType || !isEntityTypeSupported(entityType)) {
+  const entityType = getEntityTypeForTableName(tableName);
+  if (!entityType) {
     throw new Error(`Unsupported table: ${tableName}`);
   }
   return getExternalHooks(entityType);
-};
-
-type ItemFormPayload = {
-  id?: string;
-  code?: string;
-  name: string;
-  description?: string;
-  address?: string;
-  nci_code?: string;
 };
 
 /**
@@ -69,21 +52,20 @@ export const useEntityCrudOperations = (
   const hooks = getHooksForTable(tableName);
 
   // Minimal typing for the data hook return that we need here (only `refetch`)
-  type UseDataReturn = { refetch?: () => Promise<unknown> } | undefined;
-  const dataHookReturn = (typeof hooks.useData === 'function'
-    ? (hooks.useData as (opts?: { enabled?: boolean }) => UseDataReturn)({
-        enabled: true,
-      })
-    : undefined) ?? { refetch: () => Promise.resolve() };
+  type UseDataReturn = { refetch?: () => Promise<unknown> };
+  const dataHookReturn: UseDataReturn =
+    typeof hooks.useData === 'function'
+      ? ((hooks.useData as (opts?: { enabled?: boolean }) => UseDataReturn)({
+          enabled: true,
+        }) ?? {})
+      : {};
 
   // Extract the refetch function (if present) and memoize it so it can be safely
   // included in useCallback dependency arrays without causing spurious changes.
-  const dataRefetch = (dataHookReturn as { refetch?: unknown }).refetch;
+  const dataRefetch = dataHookReturn.refetch;
   const refetch = useMemo(
     () =>
-      typeof dataRefetch === 'function'
-        ? (dataRefetch as () => Promise<unknown>)
-        : () => Promise.resolve(),
+      typeof dataRefetch === 'function' ? dataRefetch : () => Promise.resolve(),
     // depend only on the raw refetch function identity
     [dataRefetch]
   );
@@ -108,72 +90,27 @@ export const useEntityCrudOperations = (
     | undefined = normalized.delete;
 
   const handleModalSubmit = useCallback(
-    async (itemData: ItemFormPayload) => {
+    async (itemData: EntityCrudFormPayload) => {
       try {
-        // Build base data
-        const baseData: Record<string, unknown> = { name: itemData.name };
-        if (itemData.description !== undefined)
-          baseData.description = itemData.description;
-        if (itemData.address !== undefined) baseData.address = itemData.address;
-        if (itemData.nci_code !== undefined)
-          baseData.nci_code = itemData.nci_code;
+        const mutationPayload = buildEntityCrudMutationPayload(itemData);
 
-        // All tables now use 'code' field
-        if (itemData.code !== undefined) {
-          baseData.code = itemData.code;
-        }
-
-        if (itemData.id) {
+        if (mutationPayload.action === 'update') {
           if (normalizedUpdate) {
-            const updatePayload: { id: string } & Record<string, unknown> = {
-              id: itemData.id,
-              ...baseData,
-            };
-            await normalizedUpdate.mutateAsync(updatePayload);
+            await normalizedUpdate.mutateAsync(mutationPayload.payload);
           }
         } else {
           if (normalizedCreate) {
-            const createPayload: Record<string, unknown> = baseData;
-            await normalizedCreate.mutateAsync(createPayload);
+            await normalizedCreate.mutateAsync(mutationPayload.payload);
           }
         }
 
         // Ensure UI refresh
         await refetch();
       } catch (err: unknown) {
-        // Narrow PostgrestError-like objects
-        const isPostgrestError = (e: unknown): e is PostgrestError => {
-          if (typeof e !== 'object' || e === null) return false;
-          const rec = e as Record<string, unknown>;
-          return (
-            typeof rec.message === 'string' && typeof rec.code === 'string'
-          );
-        };
-
-        const errorMessage = isPostgrestError(err)
-          ? err.message
-          : err instanceof Error
-            ? err.message
-            : typeof err === 'string'
-              ? err
-              : err == null
-                ? 'Unknown error'
-                : 'Unknown error';
-
-        const errorDetails = isPostgrestError(err) ? (err.details ?? '') : '';
-        const errorCode = isPostgrestError(err) ? (err.code ?? '') : '';
-
-        const isDuplicateCodeError =
-          errorCode === '23505' ||
-          errorMessage.includes('duplicate key value') ||
-          errorMessage.includes('violates unique constraint') ||
-          errorDetails.includes('already exists') ||
-          errorMessage.includes('already exists') ||
-          (errorMessage.includes('409') && errorMessage.includes('conflict'));
-
+        const errorMessage = getEntityCrudErrorMessage(err);
         const action = itemData.id ? 'memperbarui' : 'menambahkan';
 
-        if (isDuplicateCodeError && itemData.code) {
+        if (isDuplicateEntityCodeError(err) && itemData.code) {
           toast.error(
             `Code "${itemData.code}" sudah digunakan oleh ${entityNameLabel.toLowerCase()} lain. Silakan gunakan code yang berbeda.`
           );
@@ -194,13 +131,7 @@ export const useEntityCrudOperations = (
         }
         await refetch();
       } catch (error: unknown) {
-        const isForeignKeyError =
-          error instanceof Error &&
-          (error.message.includes('foreign key constraint') ||
-            error.message.includes('violates foreign key') ||
-            error.message.includes('still referenced'));
-
-        if (isForeignKeyError) {
+        if (isForeignKeyReferenceError(error)) {
           toast.error(
             `Tidak dapat menghapus ${entityNameLabel.toLowerCase()} karena masih digunakan di data lain. Hapus terlebih dahulu data yang menggunakannya.`
           );
@@ -218,28 +149,12 @@ export const useEntityCrudOperations = (
   // Provide a deletion mutation-shaped object for compatibility with existing consumers
   const deleteMutation = {
     mutateAsync: handleDelete,
-    // Cast individual normalized handles to the generic form expected by anyPending/firstError.
-    // This preserves the concrete, well-typed handles locally while satisfying the
-    // invariant generic parameter expectations of the helper functions.
-    isLoading: anyPending(
-      normalizedCreate as unknown as NormalizedMutationHandle<unknown, unknown>,
-      normalizedUpdate as unknown as NormalizedMutationHandle<unknown, unknown>,
-      normalizedDelete as unknown as NormalizedMutationHandle<unknown, unknown>
-    ),
+    isLoading: anyPending(normalizedCreate, normalizedUpdate, normalizedDelete),
     error:
       (firstError(
-        normalizedCreate as unknown as NormalizedMutationHandle<
-          unknown,
-          unknown
-        >,
-        normalizedUpdate as unknown as NormalizedMutationHandle<
-          unknown,
-          unknown
-        >,
-        normalizedDelete as unknown as NormalizedMutationHandle<
-          unknown,
-          unknown
-        >
+        normalizedCreate,
+        normalizedUpdate,
+        normalizedDelete
       ) as Error | null) ?? null,
   };
 

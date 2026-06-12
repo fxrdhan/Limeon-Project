@@ -109,7 +109,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
 
   const handleGridReady = useCallback(
     (params: GridReadyEvent<EntityGridRow>) => {
-      const tableType = activeTab as TableType;
+      const tableType: TableType = activeTab;
       const savedState = readSavedGridState(tableType);
 
       applySavedPaginationState(
@@ -142,7 +142,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
     (event: FirstDataRenderedEvent) => {
       /* c8 ignore start */
       const api = event.api;
-      const tableType = activeTab as TableType;
+      const tableType: TableType = activeTab;
 
       if (api && !api.isDestroyed() && !hasSavedGridState(tableType)) {
         api.autoSizeAllColumns();

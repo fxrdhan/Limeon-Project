@@ -1,12 +1,14 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import type { FieldConfig, Supplier as SupplierType } from '@/types';
-import type { useConfirmDialog } from '@/components/dialog-box';
+import type { useConfirmDialog } from '@/components/dialog-box/useConfirmDialog';
 import type { useSupplierMutations } from '@/hooks/queries';
 
 import IdentityDataModal from '@/components/identity-data-modal';
 import { StorageService } from '@/services/api/storage.service';
 
 const SUPPLIER_IMAGE_BUCKET = 'profiles';
+
+type SupplierModalData = Record<string, string | number | boolean | null>;
 
 interface SupplierModalsProps {
   isActive: boolean;
@@ -76,6 +78,23 @@ const SupplierModals: React.FC<SupplierModalsProps> = ({
     return value;
   };
 
+  const supplierModalData = useMemo(() => {
+    const modalData: SupplierModalData = {};
+    if (editingSupplier) {
+      Object.entries(editingSupplier).forEach(([key, value]) => {
+        if (
+          value === null ||
+          typeof value === 'string' ||
+          typeof value === 'number' ||
+          typeof value === 'boolean'
+        ) {
+          modalData[key] = value;
+        }
+      });
+    }
+    return modalData;
+  }, [editingSupplier]);
+
   return (
     <>
       <IdentityDataModal
@@ -105,12 +124,7 @@ const SupplierModals: React.FC<SupplierModalsProps> = ({
 
       <IdentityDataModal
         title="Edit Supplier"
-        data={
-          (editingSupplier as unknown as Record<
-            string,
-            string | number | boolean | null
-          >) || {}
-        }
+        data={supplierModalData}
         fields={supplierFields}
         isOpen={isActive && isEditSupplierModalOpen}
         onClose={closeEditSupplierModal}

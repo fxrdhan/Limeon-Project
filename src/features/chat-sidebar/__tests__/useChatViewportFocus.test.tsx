@@ -28,6 +28,16 @@ const createRect = (top: number, bottom: number): DOMRect =>
     toJSON: () => ({}),
   }) as DOMRect;
 
+const stubScrollTo = (
+  element: HTMLDivElement,
+  scrollTo: (options: ScrollToOptions) => void
+) => {
+  Object.defineProperty(element, 'scrollTo', {
+    configurable: true,
+    value: scrollTo,
+  });
+};
+
 describe('useChatViewportFocus', () => {
   beforeEach(() => {
     vi.stubGlobal(
@@ -65,8 +75,7 @@ describe('useChatViewportFocus', () => {
     const scrollTo = vi.fn(({ top }: ScrollToOptions) => {
       scrollTop = top ?? scrollTop;
     });
-    messagesContainer.scrollTo =
-      scrollTo as unknown as typeof messagesContainer.scrollTo;
+    stubScrollTo(messagesContainer, scrollTo);
     chatHeaderContainer.getBoundingClientRect = () => createRect(0, 100);
     messageBubble.getBoundingClientRect = () =>
       createRect(
@@ -148,8 +157,7 @@ describe('useChatViewportFocus', () => {
     const scrollTo = vi.fn(({ top }: ScrollToOptions) => {
       scrollTop = top ?? scrollTop;
     });
-    messagesContainer.scrollTo =
-      scrollTo as unknown as typeof messagesContainer.scrollTo;
+    stubScrollTo(messagesContainer, scrollTo);
     chatHeaderContainer.getBoundingClientRect = () => createRect(0, 100);
     messageBubble.getBoundingClientRect = () =>
       createRect(

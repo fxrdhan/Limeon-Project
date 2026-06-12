@@ -3,7 +3,7 @@ import { TbHistory, TbLoader2 } from 'react-icons/tb';
 import Button from '@/components/button';
 import IdentityImageUploader from './IdentityImageUploader';
 import IdentityFormField from './IdentityFormField';
-import { useIdentityModalContext } from '@/contexts/IdentityModalContext';
+import { useIdentityModalContext } from '@/contexts/useIdentityModalContext';
 
 const IdentityModalContent: React.FC = () => {
   const {

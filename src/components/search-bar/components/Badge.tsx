@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { TbCirclePlus, TbPencil, TbTrash, TbX } from 'react-icons/tb';
 import { BADGE_COLORS, BadgeConfig } from '../types/badge';
 import { validateFilterValue } from '../utils/validationUtils';
@@ -32,9 +38,17 @@ const Badge: React.FC<BadgeProps> = ({ config, onSelect }) => {
   const isSelected = config.isSelected || false;
   const columnType = config.columnType;
   const onHoverChange = config.onHoverChange;
+  const onInvalidValue = config.onInvalidValue;
+  const onEdit = config.onEdit;
   const hasActionMenu =
     !!config.canEdit || !!config.canClear || !!config.canInsert;
   const badgeTypeLabel = BADGE_TYPE_LABELS[config.type];
+  const columnTypeRef = useRef(columnType);
+  const editingValueRef = useRef(editingValue);
+  const onInvalidValueRef = useRef(onInvalidValue);
+  columnTypeRef.current = columnType;
+  editingValueRef.current = editingValue;
+  onInvalidValueRef.current = onInvalidValue;
 
   // Format display label for currency columns (only for value badges)
   const displayLabel = useMemo(() => {
@@ -46,16 +60,18 @@ const Badge: React.FC<BadgeProps> = ({ config, onSelect }) => {
   }, [config.type, config.label, columnType]);
 
   // Trigger shake animation for validation error
-  const triggerShake = () => {
+  const triggerShake = useCallback(() => {
     setIsShaking(true);
-    config.onInvalidValue?.();
+    onInvalidValueRef.current?.();
     setTimeout(() => setIsShaking(false), 400);
-  };
+  }, []);
 
   // Validate value based on column type
-  const validateValue = (value: string): boolean => {
-    return validateFilterValue(value, columnType);
-  };
+  const validateValue = useCallback(
+    (value: string): boolean =>
+      validateFilterValue(value, columnTypeRef.current),
+    []
+  );
 
   // Auto-focus input when entering editing mode
   // Only position cursor once when entering edit mode, not on every value change
@@ -64,12 +80,9 @@ const Badge: React.FC<BadgeProps> = ({ config, onSelect }) => {
       setIsMenuOpen(false);
       inputRef.current.focus();
       // Position cursor at end
-      inputRef.current.setSelectionRange(
-        editingValue.length,
-        editingValue.length
-      );
+      const cursorPosition = editingValueRef.current.length;
+      inputRef.current.setSelectionRange(cursorPosition, cursorPosition);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditing]); // Only trigger on edit mode change, not value length change
 
   useEffect(() => {
@@ -99,9 +112,9 @@ const Badge: React.FC<BadgeProps> = ({ config, onSelect }) => {
         // Shake to indicate error
         triggerShake();
         // If editable, auto-enter edit mode immediately using RAF
-        if (config.canEdit && config.onEdit) {
+        if (config.canEdit && onEdit) {
           requestAnimationFrame(() => {
-            config.onEdit?.();
+            onEdit();
           });
         }
       }
@@ -110,8 +123,15 @@ const Badge: React.FC<BadgeProps> = ({ config, onSelect }) => {
     if (hasAutoTriggered.current && validateValue(config.label)) {
       hasAutoTriggered.current = false;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config.label, config.type, config.canEdit, config.onEdit, isEditing]);
+  }, [
+    config.canEdit,
+    config.label,
+    config.type,
+    isEditing,
+    onEdit,
+    triggerShake,
+    validateValue,
+  ]);
 
   // Restore cursor position after value changes (but not when entering edit mode)
   useEffect(() => {
@@ -225,16 +245,16 @@ const Badge: React.FC<BadgeProps> = ({ config, onSelect }) => {
   const lastInvalidLabelRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (hasInvalidValue && config.onInvalidValue) {
+    if (hasInvalidValue && onInvalidValue) {
       if (lastInvalidLabelRef.current !== config.label) {
-        config.onInvalidValue();
+        onInvalidValue();
         lastInvalidLabelRef.current = config.label;
       }
       return;
     }
 
     lastInvalidLabelRef.current = null;
-  }, [hasInvalidValue, config.label, config.onInvalidValue, config]);
+  }, [hasInvalidValue, config.label, onInvalidValue]);
 
   // Glow effect - red for invalid/shaking, otherwise badge type color
   const errorGlow =

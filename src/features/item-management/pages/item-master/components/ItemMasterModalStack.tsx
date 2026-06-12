@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import type { useConfirmDialog } from '@/components/dialog-box';
+import type { useConfirmDialog } from '@/components/dialog-box/useConfirmDialog';
 import type { useItemsManagement } from '@/hooks/data/useItemsManagement';
 import type { useEntityManager } from '@/features/item-management/application/hooks/collections';
 import type { EntityData } from '@/features/item-management/application/hooks/collections/useEntityManager';

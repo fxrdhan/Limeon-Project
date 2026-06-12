@@ -121,18 +121,107 @@ export interface MessagesPaneRuntime {
   previews: MessagesPanePreviewRuntime;
 }
 
-type MessagesPaneRuntimeSource = Pick<
-  ChatSidebarRuntimeState,
-  | 'user'
-  | 'session'
-  | 'interaction'
-  | 'composer'
-  | 'viewport'
-  | 'refs'
-  | 'previews'
-  | 'mutations'
-  | 'actions'
->;
+interface MessagesPaneRuntimeSource {
+  user: ChatSidebarRuntimeState['user'];
+  session: Pick<
+    ChatSidebarRuntimeState['session'],
+    | 'messages'
+    | 'loading'
+    | 'loadError'
+    | 'retryLoadMessages'
+    | 'hasOlderMessages'
+    | 'isLoadingOlderMessages'
+    | 'olderMessagesError'
+    | 'loadOlderMessages'
+    | 'getReplyTargetMessage'
+  >;
+  interaction: Pick<
+    ChatSidebarRuntimeState['interaction'],
+    | 'isSelectionMode'
+    | 'normalizedMessageSearchQuery'
+    | 'selectedMessageIds'
+    | 'handleToggleMessageSelection'
+    | 'isMessageSearchMode'
+    | 'searchMatchedMessageIdSet'
+    | 'activeSearchMessageId'
+  >;
+  composer: Pick<
+    ChatSidebarRuntimeState['composer'],
+    'messageInputHeight' | 'composerContextualOffset'
+  >;
+  viewport: Pick<
+    ChatSidebarRuntimeState['viewport'],
+    | 'flashingMessageId'
+    | 'isFlashHighlightVisible'
+    | 'isInitialOpenPinPending'
+    | 'openMenuMessageId'
+    | 'menuDimmingMessageId'
+    | 'menuPlacement'
+    | 'menuSideAnchor'
+    | 'menuVerticalAnchor'
+    | 'shouldAnimateMenuOpen'
+    | 'menuTransitionSourceId'
+    | 'menuOffsetX'
+    | 'focusReplyTargetMessage'
+    | 'composerContainerHeight'
+    | 'closeMessageMenu'
+    | 'hasNewMessages'
+    | 'isAtBottom'
+    | 'scrollToBottom'
+  >;
+  refs: Pick<
+    ChatSidebarRuntimeState['refs'],
+    | 'expandedMessageIds'
+    | 'handleToggleExpand'
+    | 'messageBubbleRefs'
+    | 'initialMessageAnimationKeysRef'
+    | 'initialOpenJumpAnimationKeysRef'
+    | 'messagesContainerRef'
+    | 'messagesContentRef'
+    | 'messagesEndRef'
+  >;
+  previews: Pick<
+    ChatSidebarRuntimeState['previews'],
+    | 'captionMessageIds'
+    | 'captionMessagesByAttachmentId'
+    | 'getImageMessageUrl'
+    | 'getPdfMessagePreview'
+    | 'openImageInPortal'
+    | 'openImageGroupInPortal'
+    | 'openDocumentInPortal'
+    | 'isImagePreviewOpen'
+    | 'isImagePreviewVisible'
+    | 'closeImagePreview'
+    | 'imagePreviewUrl'
+    | 'imagePreviewBackdropUrl'
+    | 'imagePreviewName'
+    | 'imageGroupPreviewItems'
+    | 'activeImageGroupPreviewId'
+    | 'isImageGroupPreviewVisible'
+    | 'selectImageGroupPreviewItem'
+    | 'closeImageGroupPreview'
+    | 'documentPreviewUrl'
+    | 'documentPreviewName'
+    | 'isDocumentPreviewVisible'
+    | 'closeDocumentPreview'
+  >;
+  mutations: Pick<
+    ChatSidebarRuntimeState['mutations'],
+    | 'handleEditMessage'
+    | 'handleReplyMessage'
+    | 'handleCopyMessage'
+    | 'handleDownloadMessage'
+    | 'handleDownloadImageGroup'
+    | 'handleDownloadDocumentGroup'
+    | 'handleDeleteMessages'
+    | 'handleOpenForwardMessagePicker'
+    | 'handleDeleteMessage'
+  >;
+  actions: Pick<
+    ChatSidebarRuntimeState['actions'],
+    'getAttachmentFileName' | 'getAttachmentFileKind' | 'toggleMessageMenu'
+  >;
+}
 
 const buildMessageItemRuntime = (
   runtime: MessagesPaneRuntimeSource

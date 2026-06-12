@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useConfirmDialog } from '@/components/dialog-box';
+import { useConfirmDialog } from '@/components/dialog-box/useConfirmDialog';
 import type { PackageConversion, ItemFormData } from '../../../shared/types';
 import type { UseMutationResult } from '@tanstack/react-query';
 

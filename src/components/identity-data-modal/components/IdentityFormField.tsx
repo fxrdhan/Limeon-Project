@@ -9,7 +9,7 @@ import {
 } from '@/components/calendar';
 import Button from '@/components/button';
 import { TbBan, TbDeviceFloppy, TbPencil } from 'react-icons/tb';
-import { useIdentityModalContext } from '@/contexts/IdentityModalContext';
+import { useIdentityModalContext } from '@/contexts/useIdentityModalContext';
 import type { FieldConfig } from '@/types';
 
 interface IdentityFormFieldProps {

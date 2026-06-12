@@ -1,13 +1,29 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
-import type {
-  ChangeEvent,
-  ClipboardEvent as ReactClipboardEvent,
-  Dispatch,
-  SetStateAction,
-} from 'react';
+import type { ChangeEvent, Dispatch, SetStateAction } from 'react';
 import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { useChatComposerAttachments } from '../hooks/useChatComposerAttachments';
+
+type ComposerPasteEvent = Parameters<
+  ReturnType<typeof useChatComposerAttachments>['handleComposerPaste']
+>[0];
+
+const createFileInputChangeEvent = (
+  files: File[]
+): ChangeEvent<HTMLInputElement> => {
+  const input = document.createElement('input');
+  input.type = 'file';
+  Object.defineProperty(input, 'files', {
+    configurable: true,
+    value: files,
+  });
+  input.value = '';
+
+  return {
+    currentTarget: input,
+    target: input,
+  } as ChangeEvent<HTMLInputElement>;
+};
 
 const { mockToast } = vi.hoisted(() => ({
   mockToast: {
@@ -80,15 +96,16 @@ const buildComposerPasteEvent = ({
   textareaValue?: string;
   selectionStart?: number;
   selectionEnd?: number;
-  preventDefault?: ReturnType<typeof vi.fn>;
-}) => {
+  preventDefault?: () => void;
+}): ComposerPasteEvent => {
   const textarea = document.createElement('textarea');
   textarea.value = textareaValue;
   textarea.selectionStart = selectionStart;
   textarea.selectionEnd = selectionEnd;
-
   return {
-    preventDefault,
+    preventDefault: () => {
+      preventDefault();
+    },
     currentTarget: textarea,
     clipboardData: {
       items: [],
@@ -98,7 +115,7 @@ const buildComposerPasteEvent = ({
         return '';
       },
     },
-  } as unknown as ReactClipboardEvent<HTMLTextAreaElement>;
+  } satisfies ComposerPasteEvent;
 };
 
 describe('useChatComposerAttachments', () => {
@@ -301,16 +318,13 @@ describe('useChatComposerAttachments', () => {
     });
 
     act(() => {
-      result.current.handleDocumentFileChange({
-        target: {
-          files: [
-            new File(['pdf'], 'stok.pdf', {
-              type: 'application/pdf',
-            }),
-          ],
-          value: '',
-        },
-      } as unknown as ChangeEvent<HTMLInputElement>);
+      result.current.handleDocumentFileChange(
+        createFileInputChangeEvent([
+          new File(['pdf'], 'stok.pdf', {
+            type: 'application/pdf',
+          }),
+        ])
+      );
     });
 
     const attachmentId = result.current.pendingComposerAttachments[0]!.id;
@@ -390,16 +404,13 @@ describe('useChatComposerAttachments', () => {
     });
 
     act(() => {
-      result.current.handleDocumentFileChange({
-        target: {
-          files: [
-            new File(['pdf'], 'stok.pdf', {
-              type: 'application/pdf',
-            }),
-          ],
-          value: '',
-        },
-      } as unknown as ChangeEvent<HTMLInputElement>);
+      result.current.handleDocumentFileChange(
+        createFileInputChangeEvent([
+          new File(['pdf'], 'stok.pdf', {
+            type: 'application/pdf',
+          }),
+        ])
+      );
     });
 
     const attachmentId = result.current.pendingComposerAttachments[0]!.id;
@@ -472,12 +483,9 @@ describe('useChatComposerAttachments', () => {
     });
 
     act(() => {
-      result.current.handleDocumentFileChange({
-        target: {
-          files: [oversizedPdf],
-          value: '',
-        },
-      } as unknown as ChangeEvent<HTMLInputElement>);
+      result.current.handleDocumentFileChange(
+        createFileInputChangeEvent([oversizedPdf])
+      );
     });
 
     await act(async () => {
@@ -525,16 +533,13 @@ describe('useChatComposerAttachments', () => {
     });
 
     act(() => {
-      result.current.handleDocumentFileChange({
-        target: {
-          files: [
-            new File(['pdf'], 'stok.pdf', {
-              type: 'application/pdf',
-            }),
-          ],
-          value: '',
-        },
-      } as unknown as ChangeEvent<HTMLInputElement>);
+      result.current.handleDocumentFileChange(
+        createFileInputChangeEvent([
+          new File(['pdf'], 'stok.pdf', {
+            type: 'application/pdf',
+          }),
+        ])
+      );
     });
 
     await act(async () => {
@@ -591,16 +596,13 @@ describe('useChatComposerAttachments', () => {
     });
 
     act(() => {
-      result.current.handleDocumentFileChange({
-        target: {
-          files: [
-            new File(['pdf'], 'stok.pdf', {
-              type: 'application/pdf',
-            }),
-          ],
-          value: '',
-        },
-      } as unknown as ChangeEvent<HTMLInputElement>);
+      result.current.handleDocumentFileChange(
+        createFileInputChangeEvent([
+          new File(['pdf'], 'stok.pdf', {
+            type: 'application/pdf',
+          }),
+        ])
+      );
     });
 
     const attachmentId = result.current.pendingComposerAttachments[0]!.id;

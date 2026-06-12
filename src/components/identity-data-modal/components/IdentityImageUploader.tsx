@@ -2,7 +2,7 @@ import React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { TbPhotoOff, TbPhotoUp } from 'react-icons/tb';
 import ImageUploader from '@/components/image-manager';
-import { useIdentityModalContext } from '@/contexts/IdentityModalContext';
+import { useIdentityModalContext } from '@/contexts/useIdentityModalContext';
 import {
   cacheImageBlob,
   getCachedImage,

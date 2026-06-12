@@ -1,5 +1,6 @@
 import { restoreConfirmedPattern } from '@/components/search-bar/utils/patternRestoration';
 import { parseSearchValue } from '@/components/search-bar/utils/searchUtils';
+import type { FilterSearch as RestorableFilterSearch } from '@/components/search-bar/types';
 import {
   LAST_ITEM_MASTER_TAB_SESSION_KEY,
   getItemMasterSearchSessionKey,
@@ -16,6 +17,13 @@ export type SearchPatternSnapshot = {
 const hasFilterValue = (value: string | undefined): boolean => {
   return value !== undefined && value.trim() !== '';
 };
+
+const toRestorableFilterSearch = (
+  filterSearch: FilterSearch
+): RestorableFilterSearch => ({
+  ...filterSearch,
+  isExplicitOperator: filterSearch.isExplicitOperator ?? true,
+});
 
 export const saveLastTabToSession = (tab: MasterDataType): void => {
   if (!isItemMasterTab(tab)) return;
@@ -122,9 +130,6 @@ export const saveFilterSearchPatternToSession = (
 
   saveSearchPatternToSession(
     tab,
-    restoreConfirmedPattern({
-      ...filterSearch,
-      isExplicitOperator: filterSearch.isExplicitOperator ?? true,
-    } as unknown as import('@/components/search-bar/types').FilterSearch)
+    restoreConfirmedPattern(toRestorableFilterSearch(filterSearch))
   );
 };

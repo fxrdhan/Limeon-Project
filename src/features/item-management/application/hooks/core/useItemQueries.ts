@@ -1,36 +1,13 @@
 /**
- * Item Queries Hook - Refactored using Generic Hook Factory System
- *
- * This hook has been completely refactored to use the generic factory system,
- * eliminating 94 lines of duplicated query code while maintaining full backward compatibility.
- *
- * Before: 6 identical query patterns with only table/field differences
- * After: Configuration-driven approach using centralized entity system
- *
- * Benefits:
- * - Eliminated 90%+ code duplication
- * - Type-safe query generation
- * - Consistent error handling
- * - Single source of truth for entity queries
- * - Easier maintenance and extensibility
+ * Item query composition for item-management master data.
  */
 
 import { useEntityQueries } from './GenericHookFactories';
-import type {
-  ItemCategory,
-  ItemTypeEntity,
-  ItemInventoryUnitEntity,
-  ItemPackage,
-  ItemDosageEntity,
-  ItemManufacturerEntity,
-  ItemUnitEntity,
-} from '../../../shared/types';
 
 /**
  * Unified item queries hook using the generic factory system
  *
- * Maintains the exact same API as before for full backward compatibility,
- * but now uses the centralized configuration system instead of duplicate code.
+ * Keeps the existing query result shape used by item-management consumers.
  */
 export const useItemQueries = () => {
   // Use factory-generated hooks with default configuration
@@ -42,19 +19,14 @@ export const useItemQueries = () => {
   const dosagesQuery = useEntityQueries.dosages();
   const manufacturersQuery = useEntityQueries.manufacturers();
 
-  // Return data in the exact same format as before for backward compatibility
   return {
-    categoriesData: categoriesQuery.data as ItemCategory[] | undefined,
-    typesData: typesQuery.data as ItemTypeEntity[] | undefined,
-    packagesData: packagesQuery.data as ItemPackage[] | undefined,
-    inventoryUnitsData: inventoryUnitsQuery.data as
-      | ItemInventoryUnitEntity[]
-      | undefined,
-    unitsData: unitsQuery.data as ItemUnitEntity[] | undefined,
-    dosagesData: dosagesQuery.data as ItemDosageEntity[] | undefined,
-    manufacturersData: manufacturersQuery.data as
-      | ItemManufacturerEntity[]
-      | undefined,
+    categoriesData: categoriesQuery.data,
+    typesData: typesQuery.data,
+    packagesData: packagesQuery.data,
+    inventoryUnitsData: inventoryUnitsQuery.data,
+    unitsData: unitsQuery.data,
+    dosagesData: dosagesQuery.data,
+    manufacturersData: manufacturersQuery.data,
 
     // Enhanced: Also expose full query objects for advanced usage
     queries: {

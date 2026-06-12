@@ -5,11 +5,16 @@
  * Provides core components, hooks, and utilities for managing items,
  * categories, types, units, and dosages.
  *
- * Architecture: Clean Architecture with Domain-Driven Design
- * - Domain: Core business entities and use cases
- * - Application: Hooks and business logic
- * - Presentation: UI components following atomic design
- * - Shared: Types, contexts, and utilities
+ * Architecture: layered feature module
+ * - Domain: pure business rules and validators
+ * - Application: hook composition, data loading, mutations, and form workflows
+ * - Infrastructure: Supabase and storage adapters
+ * - Presentation: UI components following local component conventions
+ * - Shared: feature-level types, contexts, and utilities
+ *
+ * Some reusable services and hooks still live in the app-wide shared layers.
+ * Keep new feature-specific behavior inside this module unless it is genuinely
+ * reused by multiple domains.
  */
 
 // Core Templates

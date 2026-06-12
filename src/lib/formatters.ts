@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 export function formatRupiah(angka: number): string {
   return new Intl.NumberFormat('id-ID', {
     style: 'currency',
@@ -67,7 +66,7 @@ export const formatDateTime = (
       hour: '2-digit',
       minute: '2-digit',
     });
-  } catch (e) {
+  } catch {
     return 'Invalid Date';
   }
 };

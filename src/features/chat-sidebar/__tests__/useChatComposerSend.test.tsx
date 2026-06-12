@@ -575,7 +575,7 @@ describe('useChatComposerSend', () => {
             message_type: 'text',
             reply_to_id: String(payload.reply_to_id),
             file_name: null,
-            file_kind: null as unknown as ChatMessage['file_kind'],
+            file_kind: undefined,
             file_mime_type: null,
             file_size: null,
             file_storage_path: null,

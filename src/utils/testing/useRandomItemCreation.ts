@@ -10,10 +10,11 @@ import { useCallback, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 
-// Business logic imports
-import { saveItemBusinessLogic } from '@/features/item-management/application/hooks/core/ItemMutationUtilities';
 import { getInvalidationKeys } from '@/constants/queryKeys';
-import { useEntity } from '@/features/item-management/application/hooks/collections';
+import {
+  saveItemBusinessLogic,
+  useEntity,
+} from '@/features/item-management/public/testing';
 
 // Testing utilities
 import {

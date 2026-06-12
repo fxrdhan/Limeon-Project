@@ -42,7 +42,7 @@ export const useEntityGridOptions = ({
   }, [activeTab, isRowGroupingEnabled]);
 
   const sideBarConfig = useMemo(() => {
-    const tableType = activeTab as TableType;
+    const tableType: TableType = activeTab;
     const savedState = hasSavedGridState(tableType)
       ? readSavedGridState(tableType)
       : null;

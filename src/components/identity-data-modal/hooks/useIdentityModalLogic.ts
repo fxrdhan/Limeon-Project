@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useIdentityForm } from './identityForm';
 import { formatDateTime } from '@/lib/formatters';
 import type { GenericIdentityModalProps } from '@/types';
-import type { IdentityModalContextValue } from '@/contexts/IdentityModalContext';
+import type { IdentityModalContextValue } from '@/contexts/IdentityModalContextState';
 
 interface UseIdentityModalLogicProps {
   title: string;

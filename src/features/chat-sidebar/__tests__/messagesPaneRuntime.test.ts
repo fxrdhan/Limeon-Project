@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from 'vite-plus/test';
 import { MESSAGE_BOTTOM_GAP } from '../constants';
 import { buildMessagesPaneRuntime } from '../components/messagesPaneRuntime';
+import type { ChatMessage } from '../data/chatSidebarGateway';
+
+type MessagesPaneRuntimeSource = Parameters<typeof buildMessagesPaneRuntime>[0];
+const getDocumentAttachmentFileKind: MessagesPaneRuntimeSource['actions']['getAttachmentFileKind'] =
+  () => 'document';
 
 const createSource = ({
   composerContainerHeight,
@@ -9,15 +14,15 @@ const createSource = ({
   messages = [],
   isSelectionMode = false,
   normalizedMessageSearchQuery = '',
-  getAttachmentFileKind = vi.fn(() => 'document'),
+  getAttachmentFileKind = getDocumentAttachmentFileKind,
 }: {
   composerContainerHeight: number;
   messageInputHeight?: number;
   composerContextualOffset?: number;
-  messages?: unknown[];
+  messages?: ChatMessage[];
   isSelectionMode?: boolean;
   normalizedMessageSearchQuery?: string;
-  getAttachmentFileKind?: ReturnType<typeof vi.fn>;
+  getAttachmentFileKind?: MessagesPaneRuntimeSource['actions']['getAttachmentFileKind'];
 }) =>
   ({
     user: {
@@ -32,6 +37,7 @@ const createSource = ({
       isLoadingOlderMessages: false,
       olderMessagesError: null,
       loadOlderMessages: vi.fn(),
+      getReplyTargetMessage: vi.fn(() => null),
     },
     interaction: {
       isSelectionMode,
@@ -57,11 +63,13 @@ const createSource = ({
       menuDimmingMessageId: null,
       menuPlacement: 'up',
       menuSideAnchor: 'middle',
+      menuVerticalAnchor: 'left',
       shouldAnimateMenuOpen: false,
       menuTransitionSourceId: null,
       menuOffsetX: 0,
       flashingMessageId: null,
       isFlashHighlightVisible: false,
+      focusReplyTargetMessage: vi.fn(),
     },
     refs: {
       messagesContainerRef: { current: null },
@@ -99,10 +107,16 @@ const createSource = ({
     },
     mutations: {
       handleEditMessage: vi.fn(),
+      handleReplyMessage: vi.fn(),
       handleCopyMessage: vi.fn(async () => {}),
       handleDownloadMessage: vi.fn(async () => {}),
       handleDownloadImageGroup: vi.fn(async () => {}),
       handleDownloadDocumentGroup: vi.fn(async () => {}),
+      handleDeleteMessages: vi.fn(async () => ({
+        deletedTargetMessageIds: [],
+        failedTargetMessageIds: [],
+        cleanupWarningTargetMessageIds: [],
+      })),
       handleOpenForwardMessagePicker: vi.fn(),
       handleDeleteMessage: vi.fn(async () => true),
     },
@@ -111,7 +125,7 @@ const createSource = ({
       getAttachmentFileKind,
       toggleMessageMenu: vi.fn(),
     },
-  }) as unknown as Parameters<typeof buildMessagesPaneRuntime>[0];
+  }) satisfies MessagesPaneRuntimeSource;
 
 describe('buildMessagesPaneRuntime', () => {
   it('prefers the measured composer height once it is available', () => {
@@ -137,22 +151,25 @@ describe('buildMessagesPaneRuntime', () => {
   });
 
   it('keeps grouped image bubbles in selection mode', () => {
-    const imageMessages = Array.from({ length: 4 }, (_, index) => ({
-      id: `image-${index + 1}`,
-      sender_id: 'user-a',
-      receiver_id: 'user-b',
-      channel_id: 'channel-1',
-      message: `images/channel/chat-${index + 1}.png`,
-      message_type: 'image',
-      created_at: `2026-03-20T10:00:${String(index * 8).padStart(2, '0')}.000Z`,
-      updated_at: `2026-03-20T10:00:${String(index * 8).padStart(2, '0')}.000Z`,
-      is_read: false,
-      is_delivered: false,
-      reply_to_id: null,
-      file_name: `Chat-${index + 1}.png`,
-      file_mime_type: 'image/png',
-      file_storage_path: `images/channel/chat-${index + 1}.png`,
-    }));
+    const imageMessages: ChatMessage[] = Array.from(
+      { length: 4 },
+      (_, index) => ({
+        id: `image-${index + 1}`,
+        sender_id: 'user-a',
+        receiver_id: 'user-b',
+        channel_id: 'channel-1',
+        message: `images/channel/chat-${index + 1}.png`,
+        message_type: 'image',
+        created_at: `2026-03-20T10:00:${String(index * 8).padStart(2, '0')}.000Z`,
+        updated_at: `2026-03-20T10:00:${String(index * 8).padStart(2, '0')}.000Z`,
+        is_read: false,
+        is_delivered: false,
+        reply_to_id: null,
+        file_name: `Chat-${index + 1}.png`,
+        file_mime_type: 'image/png',
+        file_storage_path: `images/channel/chat-${index + 1}.png`,
+      })
+    );
 
     const runtime = buildMessagesPaneRuntime(
       createSource({

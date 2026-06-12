@@ -1,9 +1,4 @@
-import type {
-  ClipboardEvent,
-  Dispatch,
-  MutableRefObject,
-  SetStateAction,
-} from 'react';
+import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import { useCallback } from 'react';
 import type { AttachmentComposerRemoteFile } from '../../utils/composer-attachment-link';
 import {
@@ -40,6 +35,15 @@ interface UseComposerAttachmentPasteHandlerProps {
   >;
 }
 
+export interface ComposerPasteEvent {
+  clipboardData: {
+    getData: (format: string) => string;
+    items: ArrayLike<DataTransferItem>;
+  };
+  currentTarget: HTMLTextAreaElement;
+  preventDefault: () => void;
+}
+
 export const useComposerAttachmentPasteHandler = ({
   attachmentPasteValidationScopeRef,
   clearAttachmentPasteState,
@@ -54,7 +58,7 @@ export const useComposerAttachmentPasteHandler = ({
   validatedAttachmentRemoteFilesRef,
 }: UseComposerAttachmentPasteHandlerProps) =>
   useCallback(
-    (event: ClipboardEvent<HTMLTextAreaElement>) => {
+    (event: ComposerPasteEvent) => {
       const imageItem = Array.from(event.clipboardData.items).find(item =>
         item.type.startsWith('image/')
       );

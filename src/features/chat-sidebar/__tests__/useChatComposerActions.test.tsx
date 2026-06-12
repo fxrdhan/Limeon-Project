@@ -1,13 +1,41 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
-import {
-  useEffect,
-  useRef,
-  useState,
-  type KeyboardEvent as ReactKeyboardEvent,
-} from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import type { ChatMessage } from '../../../services/api/chat.service';
 import { useChatComposerActions } from '../hooks/useChatComposerActions';
+
+type ChatComposerKeyEvent = Parameters<
+  ReturnType<typeof useChatComposerActions>['handleKeyPress']
+>[0];
+
+const createReactKeyboardEvent = ({
+  key,
+  keyCode,
+  preventDefault,
+  shiftKey,
+  isComposing = false,
+}: {
+  isComposing?: boolean;
+  key: string;
+  keyCode?: number;
+  preventDefault: () => void;
+  shiftKey?: boolean;
+}): ChatComposerKeyEvent => {
+  const event: ChatComposerKeyEvent = {
+    key,
+    nativeEvent: {
+      isComposing,
+    },
+    preventDefault,
+    shiftKey: Boolean(shiftKey),
+  };
+
+  if (keyCode !== undefined) {
+    event.keyCode = keyCode;
+  }
+
+  return event;
+};
 
 const { mockChatService, mockToast, mockUseChatComposerSend } = vi.hoisted(
   () => ({
@@ -110,6 +138,9 @@ describe('useChatComposerActions', () => {
       const [editingMessageId, setEditingMessageId] = useState<string | null>(
         'message-1'
       );
+      const [replyingMessageId, setReplyingMessageId] = useState<string | null>(
+        null
+      );
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
       const actions = useChatComposerActions({
@@ -127,6 +158,8 @@ describe('useChatComposerActions', () => {
         setMessage,
         editingMessageId,
         setEditingMessageId,
+        replyingMessageId,
+        setReplyingMessageId,
         pendingComposerAttachments: [],
         clearPendingComposerAttachments: vi.fn(),
         restorePendingComposerAttachments: vi.fn(),
@@ -184,6 +217,9 @@ describe('useChatComposerActions', () => {
       const [editingMessageId, setEditingMessageId] = useState<string | null>(
         null
       );
+      const [replyingMessageId, setReplyingMessageId] = useState<string | null>(
+        null
+      );
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
       const actions = useChatComposerActions({
@@ -201,6 +237,8 @@ describe('useChatComposerActions', () => {
         setMessage,
         editingMessageId,
         setEditingMessageId,
+        replyingMessageId,
+        setReplyingMessageId,
         pendingComposerAttachments: [
           {
             id: 'pending-image-1',
@@ -283,6 +321,9 @@ describe('useChatComposerActions', () => {
       const [editingMessageId, setEditingMessageId] = useState<string | null>(
         'message-1'
       );
+      const [replyingMessageId, setReplyingMessageId] = useState<string | null>(
+        null
+      );
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
       const actions = useChatComposerActions({
@@ -300,6 +341,8 @@ describe('useChatComposerActions', () => {
         setMessage,
         editingMessageId,
         setEditingMessageId,
+        replyingMessageId,
+        setReplyingMessageId,
         pendingComposerAttachments: [],
         clearPendingComposerAttachments: vi.fn(),
         restorePendingComposerAttachments: vi.fn(),
@@ -422,6 +465,9 @@ describe('useChatComposerActions', () => {
         const [editingMessageId, setEditingMessageId] = useState<string | null>(
           props.initialEditingMessageId
         );
+        const [replyingMessageId, setReplyingMessageId] = useState<
+          string | null
+        >(null);
         const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(
           new Map()
         );
@@ -452,6 +498,8 @@ describe('useChatComposerActions', () => {
           setMessage,
           editingMessageId,
           setEditingMessageId,
+          replyingMessageId,
+          setReplyingMessageId,
           pendingComposerAttachments: [],
           clearPendingComposerAttachments: vi.fn(),
           restorePendingComposerAttachments: vi.fn(),
@@ -544,6 +592,9 @@ describe('useChatComposerActions', () => {
       const [editingMessageId, setEditingMessageId] = useState<string | null>(
         null
       );
+      const [replyingMessageId, setReplyingMessageId] = useState<string | null>(
+        null
+      );
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
       const actions = useChatComposerActions({
@@ -561,6 +612,8 @@ describe('useChatComposerActions', () => {
         setMessage,
         editingMessageId,
         setEditingMessageId,
+        replyingMessageId,
+        setReplyingMessageId,
         pendingComposerAttachments: [],
         clearPendingComposerAttachments: vi.fn(),
         restorePendingComposerAttachments: vi.fn(),
@@ -652,6 +705,9 @@ describe('useChatComposerActions', () => {
         const [editingMessageId, setEditingMessageId] = useState<string | null>(
           null
         );
+        const [replyingMessageId, setReplyingMessageId] = useState<
+          string | null
+        >(null);
         const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(
           new Map()
         );
@@ -677,6 +733,8 @@ describe('useChatComposerActions', () => {
           setMessage,
           editingMessageId,
           setEditingMessageId,
+          replyingMessageId,
+          setReplyingMessageId,
           pendingComposerAttachments: [],
           clearPendingComposerAttachments: vi.fn(),
           restorePendingComposerAttachments: vi.fn(),
@@ -789,6 +847,9 @@ describe('useChatComposerActions', () => {
       const [editingMessageId, setEditingMessageId] = useState<string | null>(
         null
       );
+      const [replyingMessageId, setReplyingMessageId] = useState<string | null>(
+        null
+      );
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
       return useChatComposerActions({
@@ -806,6 +867,8 @@ describe('useChatComposerActions', () => {
         setMessage,
         editingMessageId,
         setEditingMessageId,
+        replyingMessageId,
+        setReplyingMessageId,
         pendingComposerAttachments: [],
         clearPendingComposerAttachments: vi.fn(),
         restorePendingComposerAttachments: vi.fn(),
@@ -855,6 +918,9 @@ describe('useChatComposerActions', () => {
       const [editingMessageId, setEditingMessageId] = useState<string | null>(
         null
       );
+      const [replyingMessageId, setReplyingMessageId] = useState<string | null>(
+        null
+      );
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
       return useChatComposerActions({
@@ -872,6 +938,8 @@ describe('useChatComposerActions', () => {
         setMessage,
         editingMessageId,
         setEditingMessageId,
+        replyingMessageId,
+        setReplyingMessageId,
         pendingComposerAttachments: [],
         clearPendingComposerAttachments: vi.fn(),
         restorePendingComposerAttachments: vi.fn(),
@@ -933,6 +1001,9 @@ describe('useChatComposerActions', () => {
       const [editingMessageId, setEditingMessageId] = useState<string | null>(
         null
       );
+      const [replyingMessageId, setReplyingMessageId] = useState<string | null>(
+        null
+      );
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
       return useChatComposerActions({
@@ -950,6 +1021,8 @@ describe('useChatComposerActions', () => {
         setMessage,
         editingMessageId,
         setEditingMessageId,
+        replyingMessageId,
+        setReplyingMessageId,
         pendingComposerAttachments: [],
         clearPendingComposerAttachments: vi.fn(),
         restorePendingComposerAttachments: vi.fn(),
@@ -1033,6 +1106,9 @@ describe('useChatComposerActions', () => {
       const [editingMessageId, setEditingMessageId] = useState<string | null>(
         null
       );
+      const [replyingMessageId, setReplyingMessageId] = useState<string | null>(
+        null
+      );
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
       return {
@@ -1051,6 +1127,8 @@ describe('useChatComposerActions', () => {
           setMessage,
           editingMessageId,
           setEditingMessageId,
+          replyingMessageId,
+          setReplyingMessageId,
           pendingComposerAttachments: [],
           clearPendingComposerAttachments: vi.fn(),
           restorePendingComposerAttachments: vi.fn(),
@@ -1116,6 +1194,9 @@ describe('useChatComposerActions', () => {
       const [editingMessageId, setEditingMessageId] = useState<string | null>(
         null
       );
+      const [replyingMessageId, setReplyingMessageId] = useState<string | null>(
+        null
+      );
       const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(new Map());
 
       return useChatComposerActions({
@@ -1133,6 +1214,8 @@ describe('useChatComposerActions', () => {
         setMessage,
         editingMessageId,
         setEditingMessageId,
+        replyingMessageId,
+        setReplyingMessageId,
         pendingComposerAttachments: [],
         clearPendingComposerAttachments: vi.fn(),
         restorePendingComposerAttachments: vi.fn(),
@@ -1148,13 +1231,15 @@ describe('useChatComposerActions', () => {
     const preventDefault = vi.fn();
 
     act(() => {
-      result.current.handleKeyPress({
-        key: 'Enter',
-        shiftKey: false,
-        keyCode: 229,
-        nativeEvent: { isComposing: true },
-        preventDefault,
-      } as unknown as ReactKeyboardEvent);
+      result.current.handleKeyPress(
+        createReactKeyboardEvent({
+          isComposing: true,
+          key: 'Enter',
+          keyCode: 229,
+          preventDefault,
+          shiftKey: false,
+        })
+      );
     });
 
     expect(preventDefault).not.toHaveBeenCalled();

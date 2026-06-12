@@ -1,20 +1,8 @@
 /**
  * Generic Hook Factory System
  *
- * This module provides generic, type-safe hook factories that eliminate code duplication
- * across query and mutation hooks by using the centralized entity configuration system.
- *
- * Replaces:
- * - useItemQueries.ts (94 lines of duplicated query logic)
- * - useItemMutations.ts (500+ lines of duplicated mutation logic)
- * - Switch statements in useEntityCrudOperations and useGenericEntityManagement
- *
- * Benefits:
- * - Type-safe hook generation
- * - Single source of truth for entity operations
- * - Automatic React Query integration
- * - Consistent error handling
- * - Simplified maintenance
+ * Provides configuration-driven query and mutation hook factories for
+ * item-management entity types.
  */
 
 import {
@@ -25,18 +13,34 @@ import {
 } from '@tanstack/react-query';
 import { GenericEntityService } from '@/services/api/genericEntity.service';
 import {
+  useCategories,
+  useMedicineTypes,
+  usePackages,
+  useItemUnits,
+  useInventoryUnits,
+  useCategoryMutations,
+  useMedicineTypeMutations,
+  usePackageMutations,
+  useItemUnitMutations,
+  useInventoryUnitMutations,
+} from '@/hooks/queries/useMasterData';
+import { useDosages, useDosageMutations } from '@/hooks/queries/useDosages';
+import {
+  useManufacturers,
+  useManufacturerMutations,
+} from '@/hooks/queries/useManufacturers';
+import {
   type EntityTypeKey,
-  type AnyEntity,
-  type AnyCreateInput,
-  type AnyUpdateInput,
-  getEntityConfig,
+  type EntityForType,
+  type CreateInputForEntityType,
+  type UpdateInputForEntityType,
   getQueryConfig,
   getMutationConfig,
-  ENTITY_CONFIGURATIONS,
 } from './EntityHookConfigurations';
 
 // Re-export commonly used types
 export type { EntityTypeKey };
+export { isEntityTypeSupported } from './EntityHookConfigurations';
 
 // ============================================================================
 // GENERIC QUERY HOOK FACTORY
@@ -58,10 +62,11 @@ export interface GenericQueryOptions {
  * Creates a type-safe useQuery hook for any entity type using the configuration system.
  * Eliminates the need for duplicate query definitions.
  */
-export function createEntityQuery<
-  TEntityType extends EntityTypeKey,
-  TEntity extends AnyEntity,
->(entityType: TEntityType) {
+export function createEntityQuery<TEntityType extends EntityTypeKey>(
+  entityType: TEntityType
+) {
+  type TEntity = EntityForType<TEntityType>;
+
   const config = getQueryConfig(entityType);
   const service = new GenericEntityService<TEntity>(config.tableName);
 
@@ -91,7 +96,7 @@ export function createEntityQuery<
           throw error;
         }
 
-        return (data || []) as unknown as TEntity[];
+        return data || [];
       },
       enabled,
       ...queryOptions,
@@ -117,19 +122,10 @@ export const useEntityQueries = {
 // ============================================================================
 
 /**
- * Generic mutation result type
- */
-export interface GenericMutationResult<TEntity extends AnyEntity> {
-  success: boolean;
-  data?: TEntity;
-  error?: string;
-}
-
-/**
  * Generic create mutation options
  */
-export interface CreateMutationOptions {
-  onSuccess?: (data: unknown) => void;
+export interface CreateMutationOptions<TEntity = unknown> {
+  onSuccess?: (data: TEntity) => void;
   onError?: (error: Error) => void;
   invalidateQueries?: boolean;
 }
@@ -137,8 +133,8 @@ export interface CreateMutationOptions {
 /**
  * Generic update mutation options
  */
-export interface UpdateMutationOptions {
-  onSuccess?: (data: unknown) => void;
+export interface UpdateMutationOptions<TEntity = unknown> {
+  onSuccess?: (data: TEntity) => void;
   onError?: (error: Error) => void;
   invalidateQueries?: boolean;
 }
@@ -158,12 +154,13 @@ export interface DeleteMutationOptions {
  * Creates type-safe mutation hooks for any entity type using the configuration system.
  * Eliminates the need for duplicate mutation definitions.
  */
-export function createEntityMutations<
-  TEntityType extends EntityTypeKey,
-  TEntity extends AnyEntity,
-  TCreateInput extends AnyCreateInput,
-  TUpdateInput extends AnyUpdateInput,
->(entityType: TEntityType) {
+export function createEntityMutations<TEntityType extends EntityTypeKey>(
+  entityType: TEntityType
+) {
+  type TEntity = EntityForType<TEntityType>;
+  type TCreateInput = CreateInputForEntityType<TEntityType>;
+  type TUpdateInput = UpdateInputForEntityType<TEntityType>;
+
   const config = getMutationConfig(entityType);
   const service = new GenericEntityService<TEntity>(config.tableName);
 
@@ -172,7 +169,7 @@ export function createEntityMutations<
   /**
    * Create mutation hook
    */
-  const useCreateMutation = (options: CreateMutationOptions = {}) => {
+  const useCreateMutation = (options: CreateMutationOptions<TEntity> = {}) => {
     const { onSuccess, onError, invalidateQueries = true } = options;
     const queryClient = useQueryClient(); // Get queryClient inside hook
 
@@ -188,7 +185,7 @@ export function createEntityMutations<
           throw error;
         }
 
-        return data as unknown as TEntity;
+        return data!;
       },
       onSuccess: data => {
         if (invalidateQueries) {
@@ -206,7 +203,7 @@ export function createEntityMutations<
   /**
    * Update mutation hook
    */
-  const useUpdateMutation = (options: UpdateMutationOptions = {}) => {
+  const useUpdateMutation = (options: UpdateMutationOptions<TEntity> = {}) => {
     const { onSuccess, onError, invalidateQueries = true } = options;
     const queryClient = useQueryClient(); // Get queryClient inside hook
 
@@ -228,7 +225,7 @@ export function createEntityMutations<
           throw error;
         }
 
-        return data as unknown as TEntity;
+        return data!;
       },
       onSuccess: data => {
         if (invalidateQueries) {
@@ -303,32 +300,11 @@ export const useEntityMutations = {
  * the configuration-driven approach.
  */
 
-// Import external hooks (these are the existing hooks used by the app)
-import {
-  useCategories,
-  useMedicineTypes,
-  usePackages,
-  useItemUnits,
-  useInventoryUnits,
-  useCategoryMutations,
-  useMedicineTypeMutations,
-  usePackageMutations,
-  useItemUnitMutations,
-  useInventoryUnitMutations,
-} from '@/hooks/queries/useMasterData';
-
-import { useDosages, useDosageMutations } from '@/hooks/queries/useDosages';
-
-import {
-  useManufacturers,
-  useManufacturerMutations,
-} from '@/hooks/queries/useManufacturers';
-
 /**
  * External hook registry
  *
  * Maps entity types to their corresponding external hooks.
- * This replaces the massive switch statements in useEntityCrudOperations and useGenericEntityManagement.
+ * Maps entity types to their corresponding external hooks.
  */
 export const EXTERNAL_HOOK_REGISTRY = {
   categories: {
@@ -374,64 +350,4 @@ export function getExternalHooks<T extends EntityTypeKey>(entityType: T) {
     );
   }
   return hooks;
-}
-
-// ============================================================================
-// UTILITY FUNCTIONS
-// ============================================================================
-
-/**
- * Create a unified hook that combines both internal and external approaches
- *
- * Provides flexibility to use either the new generic system or existing external hooks.
- */
-export function createUnifiedEntityHook<T extends EntityTypeKey>(
-  entityType: T,
-  useExternal: boolean = true
-) {
-  if (useExternal) {
-    return getExternalHooks(entityType);
-  } else {
-    return {
-      useData: useEntityQueries[entityType],
-      useMutations: useEntityMutations[entityType],
-    };
-  }
-}
-
-/**
- * Batch query multiple entity types
- */
-export function useBatchEntityQueries<T extends EntityTypeKey[]>(
-  entityTypes: T,
-  options: GenericQueryOptions = {}
-) {
-  const queries = entityTypes.map(entityType => ({
-    entityType,
-    result: useEntityQueries[entityType](options),
-  }));
-
-  return queries.reduce(
-    (acc, { entityType, result }) => {
-      (acc as Record<string, unknown>)[entityType] = result;
-      return acc;
-    },
-    {} as Record<string, unknown>
-  );
-}
-
-/**
- * Get entity configuration for debugging/development
- */
-export function getEntityConfigForType<T extends EntityTypeKey>(entityType: T) {
-  return getEntityConfig(entityType);
-}
-
-/**
- * Check if entity type is supported
- */
-export function isEntityTypeSupported(
-  entityType: string
-): entityType is EntityTypeKey {
-  return entityType in ENTITY_CONFIGURATIONS;
 }

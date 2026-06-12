@@ -47,14 +47,16 @@ class MockImage {
   }
 }
 
-class MockResizeObserver {
+class MockResizeObserver implements ResizeObserver {
   #callback: ResizeObserverCallback;
 
   constructor(callback: ResizeObserverCallback) {
     this.#callback = callback;
   }
 
-  observe() {
+  observe(_target: Element, _options?: ResizeObserverOptions) {
+    void _target;
+    void _options;
     this.#callback(
       [
         {
@@ -64,11 +66,15 @@ class MockResizeObserver {
           },
         } as ResizeObserverEntry,
       ],
-      this as unknown as ResizeObserver
+      this
     );
   }
 
   disconnect() {}
+
+  unobserve(_target: Element) {
+    void _target;
+  }
 }
 
 describe('ProgressiveImagePreview', () => {

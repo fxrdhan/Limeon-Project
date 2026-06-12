@@ -9,7 +9,7 @@ import { useItemsSync } from '@/hooks/realtime/useItemsSync';
 // Hooks and utilities
 import { useItemGridColumns } from '@/features/item-management/application/hooks/ui';
 import { useItemsManagement } from '@/hooks/data/useItemsManagement';
-import { useConfirmDialog } from '@/components/dialog-box';
+import { useConfirmDialog } from '@/components/dialog-box/useConfirmDialog';
 import { useSupplierTab } from './hooks/useSupplierTab';
 import { ItemMasterHeader } from './components/ItemMasterHeader';
 import { ItemMasterModalStack } from './components/ItemMasterModalStack';
@@ -26,8 +26,6 @@ import {
   useEntityManager,
 } from '@/features/item-management/application/hooks/collections';
 
-// Types
-import { EntityType } from '@/features/item-management/application/hooks/collections/useEntityManager';
 import type { Item as ItemDataType } from '@/types/database';
 
 import { buildEntityColumnDefs } from './entityColumnDefs';
@@ -161,23 +159,25 @@ const ItemMasterNew = memo(() => {
   });
 
   // Entity management (for entity tabs)
+  const activeEntityType = isItemMasterEntityTab(activeTab)
+    ? activeTab
+    : 'categories';
+
   const entityManager = useEntityManager({
-    activeEntityType: isItemEntityTab
-      ? (activeTab as EntityType)
-      : 'categories',
+    activeEntityType,
     searchInputRef: searchInputRef as React.RefObject<HTMLInputElement>,
   });
 
   // Memoize entity options to prevent unnecessary re-renders
   const entityManagementOptions = useMemo(
     () => ({
-      entityType: isItemEntityTab ? (activeTab as EntityType) : 'categories',
+      entityType: activeEntityType,
       search: entityManager.search,
       itemsPerPage: entityManager.itemsPerPage,
       enabled: isItemEntityTab,
     }),
     [
-      activeTab,
+      activeEntityType,
       entityManager.search,
       entityManager.itemsPerPage,
       isItemEntityTab,
@@ -198,10 +198,8 @@ const ItemMasterNew = memo(() => {
   // Entity column visibility management
   const entityCurrentConfig = useMemo(
     () =>
-      isItemEntityTab
-        ? entityManager.entityConfigs[activeTab as EntityType]
-        : null,
-    [activeTab, entityManager.entityConfigs, isItemEntityTab]
+      isItemEntityTab ? entityManager.entityConfigs[activeEntityType] : null,
+    [activeEntityType, entityManager.entityConfigs, isItemEntityTab]
   );
 
   const entityColumnDefs = useMemo(

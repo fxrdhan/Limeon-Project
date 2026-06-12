@@ -1,5 +1,5 @@
 import React from 'react';
-import { useConfirmDialog } from '@/components/dialog-box';
+import { useConfirmDialog } from '@/components/dialog-box/useConfirmDialog';
 import { EntityModalProvider } from '../../../shared/contexts/EntityModalContext';
 import { useEntityModalLogic } from '../../../application/hooks/instances/useEntityModalLogic';
 import { useEntityHistory } from '../../../application/hooks/instances/useEntityHistory';

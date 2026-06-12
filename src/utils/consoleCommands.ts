@@ -31,11 +31,16 @@ export const pharmaSysConsoleAPI = {
   storage: storageCommands,
 };
 
+declare global {
+  interface Window {
+    pharmaSys: typeof pharmaSysConsoleAPI;
+  }
+}
+
 // Initialize console API
 export const initConsoleAPI = () => {
   if (typeof window !== 'undefined') {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window as any).pharmaSys = pharmaSysConsoleAPI;
+    window.pharmaSys = pharmaSysConsoleAPI;
 
     if (process.env.NODE_ENV === 'development') {
       // console.log('🏥 PharmaSys Console API loaded');

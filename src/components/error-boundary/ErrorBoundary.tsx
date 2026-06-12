@@ -1,13 +1,13 @@
 import React, { Component, ReactNode } from 'react';
 import { TbAlertTriangle, TbRefresh } from 'react-icons/tb';
 
-interface ErrorBoundaryState {
+export interface ErrorBoundaryState {
   hasError: boolean;
   error?: Error;
   errorInfo?: React.ErrorInfo;
 }
 
-interface ErrorBoundaryProps {
+export interface ErrorBoundaryProps {
   children: ReactNode;
   fallback?: ReactNode;
   onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
@@ -140,23 +140,6 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 }
 
-// HOC version for easy wrapping
-// eslint-disable-next-line react-refresh/only-export-components
-export const withErrorBoundary = <P extends object>(
-  Component: React.ComponentType<P>,
-  errorBoundaryProps?: Omit<ErrorBoundaryProps, 'children'>
-) => {
-  const WrappedComponent = (props: P) => (
-    <ErrorBoundary {...errorBoundaryProps}>
-      <Component {...props} />
-    </ErrorBoundary>
-  );
-
-  WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`;
-  return WrappedComponent;
-};
-
-// Query Error Boundary - specialized for React Query errors
 interface QueryErrorBoundaryProps extends Omit<ErrorBoundaryProps, 'fallback'> {
   children: ReactNode;
   fallbackMessage?: string;

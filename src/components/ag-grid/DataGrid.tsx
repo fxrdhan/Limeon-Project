@@ -72,9 +72,7 @@ const hasInitialColumnSizing = (state: unknown): boolean => {
   return (gridState?.columnSizing?.columnSizingModel?.length ?? 0) > 0;
 };
 
-// Simple interface - extend AgGridReactProps and add commonly used shortcuts
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-interface DataGridProps extends AgGridReactProps<any> {
+interface DataGridProps extends AgGridReactProps {
   className?: string;
   style?: React.CSSProperties;
   autoSizeColumns?: string[];

@@ -1,74 +1,18 @@
-import React, { createContext, useMemo } from 'react';
-import type {
-  ItemActionState,
-  ItemBusinessActions,
-  ItemFormActions,
-  ItemFormState,
-  ItemManagementProviderProps,
-  ItemModalActions,
-  ItemModalState,
-  ItemPriceState,
-  ItemRealtimeState,
-  ItemUIActions,
-  ItemUIState,
-} from '../types';
-
-// eslint-disable-next-line react-refresh/only-export-components
-export const ItemFormStateContext = createContext<ItemFormState | undefined>(
-  undefined
-);
-// eslint-disable-next-line react-refresh/only-export-components
-export const ItemUIStateContext = createContext<ItemUIState | undefined>(
-  undefined
-);
-// eslint-disable-next-line react-refresh/only-export-components
-export const ItemModalStateContext = createContext<ItemModalState | undefined>(
-  undefined
-);
-// eslint-disable-next-line react-refresh/only-export-components
-export const ItemPriceStateContext = createContext<ItemPriceState | undefined>(
-  undefined
-);
-// eslint-disable-next-line react-refresh/only-export-components
-export const ItemActionStateContext = createContext<
-  ItemActionState | undefined
->(undefined);
-// eslint-disable-next-line react-refresh/only-export-components
-export const ItemRealtimeStateContext = createContext<
-  ItemRealtimeState | undefined
->(undefined);
-// eslint-disable-next-line react-refresh/only-export-components
-export const ItemHistoryStateContext = createContext<
-  | {
-      data: Array<{
-        id: string;
-        version_number: number;
-        action_type: 'INSERT' | 'UPDATE' | 'DELETE';
-        changed_at: string;
-        entity_data: Record<string, unknown>;
-        changed_fields?: Record<string, { from: unknown; to: unknown }>;
-      }> | null;
-      isLoading: boolean;
-      error: string | null;
-    }
-  | undefined
->(undefined);
-// eslint-disable-next-line react-refresh/only-export-components
-export const ItemFormActionsContext = createContext<
-  ItemFormActions | undefined
->(undefined);
-// eslint-disable-next-line react-refresh/only-export-components
-export const ItemUIActionsContext = createContext<ItemUIActions | undefined>(
-  undefined
-);
-// eslint-disable-next-line react-refresh/only-export-components
-export const ItemModalActionsContext = createContext<
-  ItemModalActions | undefined
->(undefined);
-// eslint-disable-next-line react-refresh/only-export-components
-export const ItemBusinessActionsContext = createContext<
-  ItemBusinessActions | undefined
->(undefined);
+import React, { useMemo } from 'react';
+import type { ItemManagementProviderProps } from '../types';
+import {
+  ItemActionStateContext,
+  ItemBusinessActionsContext,
+  ItemFormActionsContext,
+  ItemFormStateContext,
+  ItemHistoryStateContext,
+  ItemModalActionsContext,
+  ItemModalStateContext,
+  ItemPriceStateContext,
+  ItemRealtimeStateContext,
+  ItemUIActionsContext,
+  ItemUIStateContext,
+} from './ItemFormContexts';
 
 /**
  * ItemProvider - Composition pattern for context management
@@ -100,32 +44,35 @@ export const ItemManagementProvider: React.FC<ItemManagementProviderProps> = ({
     [value.businessActions]
   );
 
-  // Compose providers in array for better readability and maintainability
-  const providers: Array<{
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Context: React.Context<any>;
-    value: unknown;
-  }> = [
-    { Context: ItemFormStateContext, value: memoizedForm },
-    { Context: ItemUIStateContext, value: memoizedUI },
-    { Context: ItemModalStateContext, value: memoizedModal },
-    { Context: ItemPriceStateContext, value: memoizedPrice },
-    { Context: ItemActionStateContext, value: memoizedAction },
-    { Context: ItemRealtimeStateContext, value: memoizedRealtime },
-    { Context: ItemHistoryStateContext, value: memoizedHistory },
-    { Context: ItemFormActionsContext, value: memoizedFormActions },
-    { Context: ItemUIActionsContext, value: memoizedUIActions },
-    { Context: ItemModalActionsContext, value: memoizedModalActions },
-    { Context: ItemBusinessActionsContext, value: memoizedBusinessActions },
-  ];
-
-  // Reduce providers to eliminate nesting
-  return providers.reduceRight(
-    (child, { Context, value: contextValue }) => (
-      <Context.Provider value={contextValue}>{child}</Context.Provider>
-    ),
-    children
-  ) as React.ReactElement;
+  return (
+    <ItemFormStateContext.Provider value={memoizedForm}>
+      <ItemUIStateContext.Provider value={memoizedUI}>
+        <ItemModalStateContext.Provider value={memoizedModal}>
+          <ItemPriceStateContext.Provider value={memoizedPrice}>
+            <ItemActionStateContext.Provider value={memoizedAction}>
+              <ItemRealtimeStateContext.Provider value={memoizedRealtime}>
+                <ItemHistoryStateContext.Provider value={memoizedHistory}>
+                  <ItemFormActionsContext.Provider value={memoizedFormActions}>
+                    <ItemUIActionsContext.Provider value={memoizedUIActions}>
+                      <ItemModalActionsContext.Provider
+                        value={memoizedModalActions}
+                      >
+                        <ItemBusinessActionsContext.Provider
+                          value={memoizedBusinessActions}
+                        >
+                          {children}
+                        </ItemBusinessActionsContext.Provider>
+                      </ItemModalActionsContext.Provider>
+                    </ItemUIActionsContext.Provider>
+                  </ItemFormActionsContext.Provider>
+                </ItemHistoryStateContext.Provider>
+              </ItemRealtimeStateContext.Provider>
+            </ItemActionStateContext.Provider>
+          </ItemPriceStateContext.Provider>
+        </ItemModalStateContext.Provider>
+      </ItemUIStateContext.Provider>
+    </ItemFormStateContext.Provider>
+  );
 };
 
 // Shorter alias

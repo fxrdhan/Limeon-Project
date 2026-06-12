@@ -32,6 +32,24 @@ vi.mock('../data/chatSidebarAssetsGateway', () => ({
   },
 }));
 
+const createDownloadAnchor = (
+  createAnchor: () => HTMLAnchorElement,
+  click: () => void = vi.fn(),
+  remove: () => void = vi.fn()
+) => {
+  const anchor = createAnchor();
+  Object.defineProperty(anchor, 'click', {
+    configurable: true,
+    value: click,
+  });
+  Object.defineProperty(anchor, 'remove', {
+    configurable: true,
+    value: remove,
+  });
+
+  return anchor;
+};
+
 const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
   id: overrides.id ?? 'message-1',
   sender_id: overrides.sender_id ?? 'user-a',
@@ -121,13 +139,10 @@ describe('useChatMessageTransferActions', () => {
       .spyOn(document, 'createElement')
       .mockImplementation(tagName => {
         if (tagName === 'a') {
-          createdDownloadLink = {
-            click: anchorClick,
-            remove: vi.fn(),
-            href: '',
-            download: '',
-            rel: '',
-          } as unknown as HTMLAnchorElement;
+          createdDownloadLink = createDownloadAnchor(
+            () => originalCreateElement('a') as HTMLAnchorElement,
+            anchorClick
+          );
 
           return createdDownloadLink;
         }
@@ -191,13 +206,10 @@ describe('useChatMessageTransferActions', () => {
       .spyOn(document, 'createElement')
       .mockImplementation(tagName => {
         if (tagName === 'a') {
-          createdDownloadLink = {
-            click: anchorClick,
-            remove: vi.fn(),
-            href: '',
-            download: '',
-            rel: '',
-          } as unknown as HTMLAnchorElement;
+          createdDownloadLink = createDownloadAnchor(
+            () => originalCreateElement('a') as HTMLAnchorElement,
+            anchorClick
+          );
 
           return createdDownloadLink;
         }
@@ -299,13 +311,9 @@ describe('useChatMessageTransferActions', () => {
       .spyOn(document, 'createElement')
       .mockImplementation(tagName => {
         if (tagName === 'a') {
-          createdDownloadLink = {
-            click: vi.fn(),
-            remove: vi.fn(),
-            href: '',
-            download: '',
-            rel: '',
-          } as unknown as HTMLAnchorElement;
+          createdDownloadLink = createDownloadAnchor(
+            () => originalCreateElement('a') as HTMLAnchorElement
+          );
 
           return createdDownloadLink;
         }
@@ -383,13 +391,9 @@ describe('useChatMessageTransferActions', () => {
       .spyOn(document, 'createElement')
       .mockImplementation(tagName => {
         if (tagName === 'a') {
-          createdDownloadLink = {
-            click: vi.fn(),
-            remove: vi.fn(),
-            href: '',
-            download: '',
-            rel: '',
-          } as unknown as HTMLAnchorElement;
+          createdDownloadLink = createDownloadAnchor(
+            () => originalCreateElement('a') as HTMLAnchorElement
+          );
 
           return createdDownloadLink;
         }
@@ -599,14 +603,19 @@ describe('useChatMessageTransferActions', () => {
       .spyOn(document, 'createElement')
       .mockImplementation(tagName => {
         if (tagName === 'canvas') {
-          return {
-            width: 0,
-            height: 0,
-            getContext: vi.fn().mockReturnValue({ drawImage }),
-            toBlob: (callback: BlobCallback) => {
+          const canvas = originalCreateElement('canvas');
+          Object.defineProperty(canvas, 'getContext', {
+            configurable: true,
+            value: vi.fn().mockReturnValue({ drawImage }),
+          });
+          Object.defineProperty(canvas, 'toBlob', {
+            configurable: true,
+            value: (callback: BlobCallback) => {
               callback(new Blob(['png'], { type: 'image/png' }));
             },
-          } as unknown as HTMLCanvasElement;
+          });
+
+          return canvas;
         }
 
         return originalCreateElement(tagName);

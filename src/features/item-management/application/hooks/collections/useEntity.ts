@@ -12,17 +12,15 @@
  */
 
 import { useMemo } from 'react';
-import { fuzzyMatch } from '@/utils/search';
-import { filterAndRank } from '@/hooks/data/searchCore';
-import type { EntityData, EntityType } from './useEntityManager';
+import type { EntityData, ManagedEntityType } from './useEntityManager';
 import {
   getExternalHooks,
   isEntityTypeSupported,
-  type EntityTypeKey,
 } from '../core/GenericHookFactories';
+import { filterEntityData } from './entityFiltering';
 
 export interface EntityOptions {
-  entityType: EntityType;
+  entityType: ManagedEntityType;
   search?: string;
   itemsPerPage?: number;
   enabled?: boolean;
@@ -31,12 +29,12 @@ export interface EntityOptions {
 /**
  * Get hooks for entity type using configuration system
  */
-const getHooksForEntityType = (entityType: EntityType) => {
+const getHooksForEntityType = (entityType: ManagedEntityType) => {
   if (!isEntityTypeSupported(entityType)) {
-    throw new Error(`Unsupported entity type: ${entityType}`);
+    throw new Error(`Unsupported entity type: ${String(entityType)}`);
   }
 
-  return getExternalHooks(entityType as EntityTypeKey);
+  return getExternalHooks(entityType);
 };
 
 export const useEntity = (options: EntityOptions) => {
@@ -65,106 +63,10 @@ export const useEntity = (options: EntityOptions) => {
 
   // Filter data (no pagination - let AG Grid handle it)
   const filteredData = useMemo(() => {
-    let filteredData = allData as EntityData[];
-
-    // Apply search filter
-    if (search) {
-      filteredData = filterAndRank<EntityData>({
-        data: filteredData,
-        searchTerm: search,
-        matcher: (entity, searchTermLower) => {
-          // Check for code field (all entities now use 'code')
-          if (
-            'code' in entity &&
-            typeof entity.code === 'string' &&
-            fuzzyMatch(entity.code.toLowerCase(), searchTermLower)
-          )
-            return true;
-
-          // Check name
-          if (entity.name && fuzzyMatch(entity.name, searchTermLower))
-            return true;
-
-          // Check description
-          if (
-            'description' in entity &&
-            typeof entity.description === 'string' &&
-            fuzzyMatch(entity.description, searchTermLower)
-          )
-            return true;
-
-          // Check address (for manufacturers)
-          if (
-            'address' in entity &&
-            typeof entity.address === 'string' &&
-            fuzzyMatch(entity.address, searchTermLower)
-          )
-            return true;
-
-          // Check nci_code (for packages and dosages)
-          if (
-            'nci_code' in entity &&
-            typeof entity.nci_code === 'string' &&
-            fuzzyMatch(entity.nci_code, searchTermLower)
-          )
-            return true;
-
-          // Check abbreviation (for units)
-          if (
-            'abbreviation' in entity &&
-            typeof entity.abbreviation === 'string' &&
-            fuzzyMatch(entity.abbreviation, searchTermLower)
-          )
-            return true;
-
-          return false;
-        },
-        scorer: (entity, searchTermLower) => {
-          // Check code first (highest priority)
-          if (
-            'code' in entity &&
-            typeof entity.code === 'string' &&
-            entity.code.toLowerCase().startsWith(searchTermLower)
-          )
-            return 5;
-          if (
-            'code' in entity &&
-            typeof entity.code === 'string' &&
-            entity.code.toLowerCase().includes(searchTermLower)
-          )
-            return 4;
-
-          // Then check name
-          if (
-            entity.name &&
-            entity.name.toLowerCase().startsWith(searchTermLower)
-          )
-            return 3;
-          if (
-            entity.name &&
-            entity.name.toLowerCase().includes(searchTermLower)
-          )
-            return 2;
-          if (entity.name && fuzzyMatch(entity.name, searchTermLower)) return 1;
-
-          return 0;
-        },
-        tieBreaker: (a, b) => {
-          // Secondary sort by code if available, then name
-          if (
-            'code' in a &&
-            'code' in b &&
-            typeof a.code === 'string' &&
-            typeof b.code === 'string'
-          ) {
-            return a.code.localeCompare(b.code);
-          }
-          return a.name.localeCompare(b.name);
-        },
-      });
-    }
-
-    return filteredData;
+    return filterEntityData({
+      data: allData as EntityData[],
+      searchTerm: search,
+    });
   }, [allData, search]);
 
   return {

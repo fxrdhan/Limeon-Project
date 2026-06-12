@@ -4,6 +4,22 @@ import MessageItem, {
   type MessageItemModel,
 } from '../components/messages/MessageItem';
 
+const createToggleMock = () => vi.fn<MessageItemModel['menu']['toggle']>();
+
+const createOpenImageGroupMock = () =>
+  vi.fn<MessageItemModel['content']['openImageGroupInPortal']>(async () => {});
+
+const getFirstMockCall = <TArgs extends readonly unknown[]>(
+  calls: TArgs[]
+): TArgs => {
+  const firstCall = calls[0];
+  if (!firstCall) {
+    throw new Error('Expected mock to have been called.');
+  }
+
+  return firstCall;
+};
+
 const baseMessage = {
   id: 'message-1',
   sender_id: 'user-a',
@@ -60,11 +76,12 @@ const createModel = (
       expandedMessageIds: new Set<string>(),
       flashingMessageId: null,
       isFlashHighlightVisible: false,
+      isInitialOpenPinPending: false,
       searchMatchedMessageIds: new Set<string>(),
       activeSearchMessageId: null,
       maxMessageChars: 500,
-      onToggleMessageSelection: () => {},
-      handleToggleExpand: () => {},
+      onToggleMessageSelection: (_messageId: string | string[]) => {},
+      handleToggleExpand: (_messageId: string) => {},
       ...interaction,
     },
     menu: {
@@ -125,7 +142,7 @@ const createModel = (
 
 describe('MessageItem', () => {
   it('renders an inline reply panel and focuses the target message when clicked', () => {
-    const toggle = vi.fn();
+    const toggle = createToggleMock();
     const focusReplyTargetMessage = vi.fn();
 
     render(
@@ -165,7 +182,7 @@ describe('MessageItem', () => {
   });
 
   it('lets the bubble capture reply-panel clicks when another message menu is active', () => {
-    const toggle = vi.fn();
+    const toggle = createToggleMock();
     const focusReplyTargetMessage = vi.fn();
 
     render(
@@ -201,15 +218,16 @@ describe('MessageItem', () => {
 
     expect(focusReplyTargetMessage).not.toHaveBeenCalled();
     expect(toggle).toHaveBeenCalledTimes(1);
-    const [anchorElement, messageId, preferredSide] = toggle.mock
-      .calls[0] as unknown as [HTMLElement, string, 'left' | 'right'];
+    const [anchorElement, messageId, preferredSide] = getFirstMockCall(
+      toggle.mock.calls
+    );
     expect(anchorElement.getAttribute('role')).toBe('button');
     expect(messageId).toBe('message-3');
     expect(preferredSide).toBe('left');
   });
 
   it('lets the bubble capture reply-panel clicks when its own menu is active', () => {
-    const toggle = vi.fn();
+    const toggle = createToggleMock();
     const focusReplyTargetMessage = vi.fn();
 
     render(
@@ -245,11 +263,7 @@ describe('MessageItem', () => {
 
     expect(focusReplyTargetMessage).not.toHaveBeenCalled();
     expect(toggle).toHaveBeenCalledTimes(1);
-    const [, messageId, preferredSide] = toggle.mock.calls[0] as unknown as [
-      HTMLElement,
-      string,
-      'left' | 'right',
-    ];
+    const [, messageId, preferredSide] = getFirstMockCall(toggle.mock.calls);
     expect(messageId).toBe('message-3');
     expect(preferredSide).toBe('left');
   });
@@ -297,7 +311,7 @@ describe('MessageItem', () => {
       file_storage_path: `images/channel/chat-${index + 1}.png`,
       file_name: `Chat-${index + 1}.png`,
     }));
-    const openImageGroupInPortal = vi.fn(async () => {});
+    const openImageGroupInPortal = createOpenImageGroupMock();
 
     render(
       <MessageItem
@@ -320,18 +334,7 @@ describe('MessageItem', () => {
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Lihat' }));
 
     expect(openImageGroupInPortal).toHaveBeenCalledTimes(1);
-    const firstCall = openImageGroupInPortal.mock.calls[0] as unknown as [
-      Array<{
-        id: string;
-        message: string;
-        file_storage_path?: string | null;
-        file_mime_type?: string | null;
-        file_name?: string | null;
-      }>,
-      string | null | undefined,
-      string | null | undefined,
-    ];
-    expect(firstCall).toBeTruthy();
+    const firstCall = getFirstMockCall(openImageGroupInPortal.mock.calls);
     const previewMessages = firstCall[0];
     const activeMessageId = firstCall[1];
     const initialPreviewUrl = firstCall[2];
@@ -476,7 +479,7 @@ describe('MessageItem', () => {
       file_mime_type: 'image/png',
       file_storage_path: `images/channel/chat-${index + 1}.png`,
     }));
-    const toggle = vi.fn();
+    const toggle = createToggleMock();
 
     render(
       <MessageItem
@@ -497,8 +500,9 @@ describe('MessageItem', () => {
     fireEvent.click(button);
 
     expect(toggle).toHaveBeenCalledTimes(1);
-    const [anchorElement, messageId, preferredSide] = toggle.mock
-      .calls[0] as unknown as [HTMLElement, string, 'left' | 'right'];
+    const [anchorElement, messageId, preferredSide] = getFirstMockCall(
+      toggle.mock.calls
+    );
     expect(anchorElement).not.toBe(button);
     expect(anchorElement.contains(button)).toBe(true);
     expect(messageId).toBe('image-4');
@@ -625,7 +629,7 @@ describe('MessageItem', () => {
       file_name: `Chat-${index + 1}.png`,
       reply_to_id: 'message-source',
     }));
-    const toggle = vi.fn();
+    const toggle = createToggleMock();
     const focusReplyTargetMessage = vi.fn();
 
     render(
@@ -658,11 +662,7 @@ describe('MessageItem', () => {
 
     expect(focusReplyTargetMessage).not.toHaveBeenCalled();
     expect(toggle).toHaveBeenCalledTimes(1);
-    const [, messageId, preferredSide] = toggle.mock.calls[0] as unknown as [
-      HTMLElement,
-      string,
-      'left' | 'right',
-    ];
+    const [, messageId, preferredSide] = getFirstMockCall(toggle.mock.calls);
     expect(messageId).toBe('image-2');
     expect(preferredSide).toBe('left');
   });
@@ -691,7 +691,7 @@ describe('MessageItem', () => {
         file_kind: 'document' as const,
       },
     ];
-    const toggle = vi.fn();
+    const toggle = createToggleMock();
 
     const { container } = render(
       <MessageItem
@@ -717,8 +717,9 @@ describe('MessageItem', () => {
     fireEvent.click(root as HTMLDivElement);
 
     expect(toggle).toHaveBeenCalledTimes(1);
-    const [anchorElement, messageId, preferredSide] = toggle.mock
-      .calls[0] as unknown as [HTMLElement, string, 'left' | 'right'];
+    const [anchorElement, messageId, preferredSide] = getFirstMockCall(
+      toggle.mock.calls
+    );
     expect(anchorElement).not.toBe(root);
     expect(anchorElement.contains(root as HTMLDivElement)).toBe(true);
     expect(messageId).toBe('file-2');

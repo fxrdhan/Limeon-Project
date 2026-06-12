@@ -1,19 +1,5 @@
 /**
- * Item Mutations Hook - Refactored using Generic Factory System
- *
- * This hook has been completely refactored to use the generic factory system and
- * extracted business logic utilities, eliminating 300+ lines of duplicated mutation code
- * while maintaining full backward compatibility.
- *
- * Before: 6 identical entity mutations + complex item logic all mixed together
- * After: Factory-generated entity mutations + organized business logic utilities
- *
- * Benefits:
- * - Eliminated 85%+ entity mutation duplication
- * - Extracted reusable business logic to utilities
- * - Better separation of concerns
- * - Consistent error handling
- * - Easier maintenance and testing
+ * Item mutation composition for item-management workflows.
  */
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -21,7 +7,6 @@ import toast from 'react-hot-toast';
 import { logger } from '@/utils/logger';
 import { QueryKeys } from '@/constants/queryKeys';
 import type { Item } from '@/types/database';
-// ItemFormData and PackageConversion types are now used via SaveItemParams interface
 import { useEntityMutations } from './GenericHookFactories';
 import { itemsService } from '@/services/api/items.service';
 import {

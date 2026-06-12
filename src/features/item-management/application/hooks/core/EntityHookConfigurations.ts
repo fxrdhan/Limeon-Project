@@ -1,14 +1,8 @@
 /**
  * Entity Hook Configuration System
  *
- * This module provides a centralized configuration system for entity-related hooks,
- * eliminating massive switch statements and providing type-safe entity operations.
- *
- * Replaces:
- * - useEntityCrudOperations switch statements (376 lines)
- * - useGenericEntityManagement switch logic (270 lines)
- * - useItemQueries duplication (94 lines)
- * - useItemMutations duplication (500+ lines)
+ * Centralizes the table, query, mutation, and external hook metadata for
+ * supported item-management entity types.
  */
 
 import type { QueryKey } from '@tanstack/react-query';
@@ -44,50 +38,56 @@ import { QueryKeys } from '@/constants/queryKeys';
 /**
  * Supported entity types for configuration
  */
-export type EntityTypeKey =
-  | 'categories'
-  | 'types'
-  | 'packages'
-  | 'inventoryUnits'
-  | 'units'
-  | 'dosages'
-  | 'manufacturers';
+const ENTITY_TYPE_KEYS = [
+  'categories',
+  'types',
+  'packages',
+  'inventoryUnits',
+  'units',
+  'dosages',
+  'manufacturers',
+] as const;
 
-/**
- * Union type of all entity interfaces
- */
-export type AnyEntity =
-  | ItemCategory
-  | ItemTypeEntity
-  | ItemPackage
-  | ItemInventoryUnitEntity
-  | ItemUnitEntity
-  | ItemDosageEntity
-  | ItemManufacturerEntity;
+export type EntityTypeKey = (typeof ENTITY_TYPE_KEYS)[number];
 
-/**
- * Union type of all create input interfaces
- */
-export type AnyCreateInput =
-  | ItemCategoryCreateInput
-  | ItemTypeCreateInput
-  | ItemPackageCreateInput
-  | ItemInventoryUnitCreateInput
-  | ItemUnitCreateInput
-  | ItemDosageCreateInput
-  | ItemManufacturerCreateInput;
+export interface EntityTypeMap {
+  categories: ItemCategory;
+  types: ItemTypeEntity;
+  packages: ItemPackage;
+  inventoryUnits: ItemInventoryUnitEntity;
+  units: ItemUnitEntity;
+  dosages: ItemDosageEntity;
+  manufacturers: ItemManufacturerEntity;
+}
 
-/**
- * Union type of all update input interfaces
- */
-export type AnyUpdateInput =
-  | ItemCategoryUpdateInput
-  | ItemTypeUpdateInput
-  | ItemPackageUpdateInput
-  | ItemInventoryUnitUpdateInput
-  | ItemUnitUpdateInput
-  | ItemDosageUpdateInput
-  | ItemManufacturerUpdateInput;
+export interface EntityCreateInputMap {
+  categories: ItemCategoryCreateInput;
+  types: ItemTypeCreateInput;
+  packages: ItemPackageCreateInput;
+  inventoryUnits: ItemInventoryUnitCreateInput;
+  units: ItemUnitCreateInput;
+  dosages: ItemDosageCreateInput;
+  manufacturers: ItemManufacturerCreateInput;
+}
+
+export interface EntityUpdateInputMap {
+  categories: ItemCategoryUpdateInput;
+  types: ItemTypeUpdateInput;
+  packages: ItemPackageUpdateInput;
+  inventoryUnits: ItemInventoryUnitUpdateInput;
+  units: ItemUnitUpdateInput;
+  dosages: ItemDosageUpdateInput;
+  manufacturers: ItemManufacturerUpdateInput;
+}
+
+export type EntityForType<TEntityType extends EntityTypeKey> =
+  EntityTypeMap[TEntityType];
+
+export type CreateInputForEntityType<TEntityType extends EntityTypeKey> =
+  EntityCreateInputMap[TEntityType];
+
+export type UpdateInputForEntityType<TEntityType extends EntityTypeKey> =
+  EntityUpdateInputMap[TEntityType];
 
 // ============================================================================
 // QUERY CONFIGURATION TYPES
@@ -96,7 +96,7 @@ export type AnyUpdateInput =
 /**
  * Configuration for database queries
  */
-export interface EntityQueryConfig<TEntity extends AnyEntity> {
+export interface EntityQueryConfig {
   /** Database table name */
   tableName: string;
   /** React Query cache key */
@@ -107,17 +107,12 @@ export interface EntityQueryConfig<TEntity extends AnyEntity> {
   orderByField: string;
   /** Entity display name for error messages */
   entityDisplayName: string;
-  /** TypeScript type for the entity */
-  entityType: () => TEntity; // Function to preserve type info
 }
 
 /**
  * Configuration for database mutations
  */
-export interface EntityMutationConfig<
-  TCreateInput extends AnyCreateInput,
-  TUpdateInput extends AnyUpdateInput,
-> {
+export interface EntityMutationConfig {
   /** Database table name */
   tableName: string;
   /** React Query cache key for invalidation */
@@ -126,10 +121,6 @@ export interface EntityMutationConfig<
   selectFields: string;
   /** Entity display name for error messages */
   entityDisplayName: string;
-  /** TypeScript type for create input */
-  createInputType: () => TCreateInput;
-  /** TypeScript type for update input */
-  updateInputType: () => TUpdateInput;
 }
 
 /**
@@ -149,15 +140,11 @@ export interface EntityExternalHookConfig {
 /**
  * Complete entity configuration
  */
-export interface EntityConfig<
-  TEntity extends AnyEntity,
-  TCreateInput extends AnyCreateInput,
-  TUpdateInput extends AnyUpdateInput,
-> {
+export interface EntityConfig {
   /** Query configuration */
-  query: EntityQueryConfig<TEntity>;
+  query: EntityQueryConfig;
   /** Mutation configuration */
-  mutation: EntityMutationConfig<TCreateInput, TUpdateInput>;
+  mutation: EntityMutationConfig;
   /** External hook integration */
   external: EntityExternalHookConfig;
 }
@@ -169,26 +156,19 @@ export interface EntityConfig<
 /**
  * Categories entity configuration
  */
-const CATEGORIES_CONFIG: EntityConfig<
-  ItemCategory,
-  ItemCategoryCreateInput,
-  ItemCategoryUpdateInput
-> = {
+const CATEGORIES_CONFIG: EntityConfig = {
   query: {
     tableName: 'item_categories',
     queryKey: QueryKeys.masterData.categories.all,
     selectFields: 'id, code, name, description, created_at, updated_at',
     orderByField: 'code',
     entityDisplayName: 'kategori',
-    entityType: () => ({}) as ItemCategory,
   },
   mutation: {
     tableName: 'item_categories',
     queryKey: QueryKeys.masterData.categories.all,
     selectFields: 'id, code, name, description, created_at, updated_at',
     entityDisplayName: 'kategori',
-    createInputType: () => ({}) as ItemCategoryCreateInput,
-    updateInputType: () => ({}) as ItemCategoryUpdateInput,
   },
   external: {
     dataHookImportPath: '@/hooks/queries/useMasterData',
@@ -201,26 +181,19 @@ const CATEGORIES_CONFIG: EntityConfig<
 /**
  * Types entity configuration
  */
-const TYPES_CONFIG: EntityConfig<
-  ItemTypeEntity,
-  ItemTypeCreateInput,
-  ItemTypeUpdateInput
-> = {
+const TYPES_CONFIG: EntityConfig = {
   query: {
     tableName: 'item_types',
     queryKey: QueryKeys.masterData.types.all,
     selectFields: 'id, code, name, description, created_at, updated_at',
     orderByField: 'code',
     entityDisplayName: 'jenis item',
-    entityType: () => ({}) as ItemTypeEntity,
   },
   mutation: {
     tableName: 'item_types',
     queryKey: QueryKeys.masterData.types.all,
     selectFields: 'id, code, name, description, created_at, updated_at',
     entityDisplayName: 'jenis item',
-    createInputType: () => ({}) as ItemTypeCreateInput,
-    updateInputType: () => ({}) as ItemTypeUpdateInput,
   },
   external: {
     dataHookImportPath: '@/hooks/queries/useMasterData',
@@ -233,26 +206,19 @@ const TYPES_CONFIG: EntityConfig<
 /**
  * Packages entity configuration
  */
-const PACKAGES_CONFIG: EntityConfig<
-  ItemPackage,
-  ItemPackageCreateInput,
-  ItemPackageUpdateInput
-> = {
+const PACKAGES_CONFIG: EntityConfig = {
   query: {
     tableName: 'item_packages',
     queryKey: QueryKeys.masterData.packages.all,
     selectFields: 'id, code, name, description, created_at, updated_at',
     orderByField: 'code',
     entityDisplayName: 'kemasan',
-    entityType: () => ({}) as ItemPackage,
   },
   mutation: {
     tableName: 'item_packages',
     queryKey: QueryKeys.masterData.packages.all,
     selectFields: 'id, code, name, description, created_at, updated_at',
     entityDisplayName: 'kemasan',
-    createInputType: () => ({}) as ItemPackageCreateInput,
-    updateInputType: () => ({}) as ItemPackageUpdateInput,
   },
   external: {
     dataHookImportPath: '@/hooks/queries/useMasterData',
@@ -265,11 +231,7 @@ const PACKAGES_CONFIG: EntityConfig<
 /**
  * Inventory units entity configuration
  */
-const INVENTORY_UNITS_CONFIG: EntityConfig<
-  ItemInventoryUnitEntity,
-  ItemInventoryUnitCreateInput,
-  ItemInventoryUnitUpdateInput
-> = {
+const INVENTORY_UNITS_CONFIG: EntityConfig = {
   query: {
     tableName: 'item_inventory_units',
     queryKey: QueryKeys.masterData.inventoryUnits.all,
@@ -277,7 +239,6 @@ const INVENTORY_UNITS_CONFIG: EntityConfig<
       'id, code, name, kind, source_package_id, source_dosage_id, description, created_at, updated_at',
     orderByField: 'name',
     entityDisplayName: 'unit stok/jual',
-    entityType: () => ({}) as ItemInventoryUnitEntity,
   },
   mutation: {
     tableName: 'item_inventory_units',
@@ -285,8 +246,6 @@ const INVENTORY_UNITS_CONFIG: EntityConfig<
     selectFields:
       'id, code, name, kind, source_package_id, source_dosage_id, description, created_at, updated_at',
     entityDisplayName: 'unit stok/jual',
-    createInputType: () => ({}) as ItemInventoryUnitCreateInput,
-    updateInputType: () => ({}) as ItemInventoryUnitUpdateInput,
   },
   external: {
     dataHookImportPath: '@/hooks/queries/useMasterData',
@@ -299,26 +258,19 @@ const INVENTORY_UNITS_CONFIG: EntityConfig<
 /**
  * Units entity configuration
  */
-const UNITS_CONFIG: EntityConfig<
-  ItemUnitEntity,
-  ItemUnitCreateInput,
-  ItemUnitUpdateInput
-> = {
+const UNITS_CONFIG: EntityConfig = {
   query: {
     tableName: 'item_units',
     queryKey: QueryKeys.masterData.itemUnits.all,
     selectFields: 'id, code, name, description, created_at, updated_at',
     orderByField: 'code',
     entityDisplayName: 'satuan',
-    entityType: () => ({}) as ItemUnitEntity,
   },
   mutation: {
     tableName: 'item_units',
     queryKey: QueryKeys.masterData.itemUnits.all,
     selectFields: 'id, code, name, description, created_at, updated_at',
     entityDisplayName: 'satuan',
-    createInputType: () => ({}) as ItemUnitCreateInput,
-    updateInputType: () => ({}) as ItemUnitUpdateInput,
   },
   external: {
     dataHookImportPath: '@/hooks/queries/useMasterData',
@@ -331,26 +283,19 @@ const UNITS_CONFIG: EntityConfig<
 /**
  * Dosages entity configuration
  */
-const DOSAGES_CONFIG: EntityConfig<
-  ItemDosageEntity,
-  ItemDosageCreateInput,
-  ItemDosageUpdateInput
-> = {
+const DOSAGES_CONFIG: EntityConfig = {
   query: {
     tableName: 'item_dosages',
     queryKey: QueryKeys.masterData.dosages.all,
     selectFields: 'id, code, name, description, created_at, updated_at',
     orderByField: 'code',
     entityDisplayName: 'sediaan',
-    entityType: () => ({}) as ItemDosageEntity,
   },
   mutation: {
     tableName: 'item_dosages',
     queryKey: QueryKeys.masterData.dosages.all,
     selectFields: 'id, code, name, description, created_at, updated_at',
     entityDisplayName: 'sediaan',
-    createInputType: () => ({}) as ItemDosageCreateInput,
-    updateInputType: () => ({}) as ItemDosageUpdateInput,
   },
   external: {
     dataHookImportPath: '@/hooks/queries/useDosages',
@@ -363,26 +308,19 @@ const DOSAGES_CONFIG: EntityConfig<
 /**
  * Manufacturers entity configuration
  */
-const MANUFACTURERS_CONFIG: EntityConfig<
-  ItemManufacturerEntity,
-  ItemManufacturerCreateInput,
-  ItemManufacturerUpdateInput
-> = {
+const MANUFACTURERS_CONFIG: EntityConfig = {
   query: {
     tableName: 'item_manufacturers',
     queryKey: QueryKeys.masterData.manufacturers.all,
     selectFields: 'id, code, name, address, created_at, updated_at', // Note: address instead of description
     orderByField: 'name', // Note: order by name instead of code
     entityDisplayName: 'produsen',
-    entityType: () => ({}) as ItemManufacturerEntity,
   },
   mutation: {
     tableName: 'item_manufacturers',
     queryKey: QueryKeys.masterData.manufacturers.all,
     selectFields: 'id, code, name, address, created_at, updated_at',
     entityDisplayName: 'produsen',
-    createInputType: () => ({}) as ItemManufacturerCreateInput,
-    updateInputType: () => ({}) as ItemManufacturerUpdateInput,
   },
   external: {
     dataHookImportPath: '@/hooks/queries/useManufacturers',
@@ -429,7 +367,7 @@ export function getEntityConfig<T extends EntityTypeKey>(
  * Get all supported entity types
  */
 export function getSupportedEntityTypes(): EntityTypeKey[] {
-  return Object.keys(ENTITY_CONFIGURATIONS) as EntityTypeKey[];
+  return [...ENTITY_TYPE_KEYS];
 }
 
 /**
@@ -438,7 +376,19 @@ export function getSupportedEntityTypes(): EntityTypeKey[] {
 export function isEntityTypeSupported(
   entityType: string
 ): entityType is EntityTypeKey {
-  return entityType in ENTITY_CONFIGURATIONS;
+  return Object.prototype.hasOwnProperty.call(
+    ENTITY_CONFIGURATIONS,
+    entityType
+  );
+}
+
+export function getEntityTypeForTableName(
+  tableName: string
+): EntityTypeKey | undefined {
+  return ENTITY_TYPE_KEYS.find(
+    entityType =>
+      ENTITY_CONFIGURATIONS[entityType].query.tableName === tableName
+  );
 }
 
 // ============================================================================

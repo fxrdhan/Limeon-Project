@@ -24,6 +24,16 @@ const createRect = (top: number, bottom: number): DOMRect =>
     toJSON: () => ({}),
   }) as DOMRect;
 
+const stubScrollTo = (
+  element: HTMLDivElement,
+  scrollTo: (options: ScrollToOptions) => void
+) => {
+  Object.defineProperty(element, 'scrollTo', {
+    configurable: true,
+    value: scrollTo,
+  });
+};
+
 describe('useChatViewport', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -999,8 +1009,7 @@ describe('useChatViewport', () => {
     const scrollTo = vi.fn(({ top }: ScrollToOptions) => {
       scrollTop = top ?? scrollTop;
     });
-    messagesContainer.scrollTo =
-      scrollTo as unknown as typeof messagesContainer.scrollTo;
+    stubScrollTo(messagesContainer, scrollTo);
     Object.defineProperty(composerContainer, 'offsetHeight', {
       configurable: true,
       value: 80,
@@ -1142,8 +1151,7 @@ describe('useChatViewport', () => {
     const scrollTo = vi.fn(({ top }: ScrollToOptions) => {
       scrollTop = top ?? scrollTop;
     });
-    messagesContainer.scrollTo =
-      scrollTo as unknown as typeof messagesContainer.scrollTo;
+    stubScrollTo(messagesContainer, scrollTo);
     Object.defineProperty(composerContainer, 'offsetHeight', {
       configurable: true,
       get: () => composerHeight,
@@ -1293,8 +1301,7 @@ describe('useChatViewport', () => {
     const scrollTo = vi.fn(({ top }: ScrollToOptions) => {
       scrollTop = top ?? scrollTop;
     });
-    messagesContainer.scrollTo =
-      scrollTo as unknown as typeof messagesContainer.scrollTo;
+    stubScrollTo(messagesContainer, scrollTo);
     Object.defineProperty(composerContainer, 'offsetHeight', {
       configurable: true,
       value: composerHeight,
@@ -1439,8 +1446,7 @@ describe('useChatViewport', () => {
     const scrollTo = vi.fn(({ top }: ScrollToOptions) => {
       scrollTop = top ?? scrollTop;
     });
-    messagesContainer.scrollTo =
-      scrollTo as unknown as typeof messagesContainer.scrollTo;
+    stubScrollTo(messagesContainer, scrollTo);
     Object.defineProperty(composerContainer, 'offsetHeight', {
       configurable: true,
       value: composerHeight,
@@ -1585,8 +1591,7 @@ describe('useChatViewport', () => {
     const scrollTo = vi.fn(({ top }: ScrollToOptions) => {
       scrollTop = top ?? scrollTop;
     });
-    messagesContainer.scrollTo =
-      scrollTo as unknown as typeof messagesContainer.scrollTo;
+    stubScrollTo(messagesContainer, scrollTo);
     Object.defineProperty(composerContainer, 'offsetHeight', {
       configurable: true,
       value: composerHeight,
@@ -1710,8 +1715,7 @@ describe('useChatViewport', () => {
     const scrollTo = vi.fn(({ top }: ScrollToOptions) => {
       scrollTop = top ?? scrollTop;
     });
-    messagesContainer.scrollTo =
-      scrollTo as unknown as typeof messagesContainer.scrollTo;
+    stubScrollTo(messagesContainer, scrollTo);
     Object.defineProperty(composerContainer, 'offsetHeight', {
       configurable: true,
       get: () => composerHeight,
@@ -1967,8 +1971,7 @@ describe('useChatViewport', () => {
     const scrollTo = vi.fn(({ top }: ScrollToOptions) => {
       scrollTop = top ?? scrollTop;
     });
-    messagesContainer.scrollTo =
-      scrollTo as unknown as typeof messagesContainer.scrollTo;
+    stubScrollTo(messagesContainer, scrollTo);
     Object.defineProperty(composerContainer, 'offsetHeight', {
       configurable: true,
       get: () => composerHeight,

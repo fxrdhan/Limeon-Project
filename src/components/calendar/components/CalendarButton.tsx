@@ -49,6 +49,12 @@ const CalendarButton: React.FC<CalendarButtonProps> = ({
     (!ariaLabelledBy && !label && !hasAssociatedLabel
       ? placeholder
       : undefined);
+  const comboboxAttributes = {
+    'aria-controls': isOpen ? portalId : undefined,
+    'aria-expanded': isOpen,
+    'aria-haspopup': 'dialog' as const,
+    role: 'combobox' as const,
+  };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLInputElement>) => {
     if (
@@ -127,13 +133,9 @@ const CalendarButton: React.FC<CalendarButtonProps> = ({
             trigger === 'hover' ? handleTriggerMouseLeave : undefined
           }
           onKeyDown={handleInputKeyDown}
-          role="combobox"
+          {...comboboxAttributes}
           aria-label={fallbackAriaLabel}
           aria-labelledby={ariaLabelledBy}
-          aria-controls={isOpen ? portalId : undefined}
-          aria-expanded={isOpen}
-          // eslint-disable-next-line jsx-a11y/role-supports-aria-props
-          aria-haspopup="dialog"
           aria-disabled={disabled ? true : undefined}
           aria-readonly={readOnly ? true : undefined}
           disabled={disabled}

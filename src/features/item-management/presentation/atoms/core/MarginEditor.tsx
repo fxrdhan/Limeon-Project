@@ -1,23 +1,10 @@
 /**
- * MarginEditor - Refactored using GenericEditInPlaceFactory
- *
- * This component maintains 100% backward compatibility with the original MarginEditor
- * while using the generic factory foundation to eliminate code duplication.
- *
- * Before: 90 lines of duplicated edit-in-place logic
- * After: 25 lines using shared factory system
- *
- * Benefits:
- * - Eliminates 70+ lines of duplicate code
- * - Consistent behavior across all edit-in-place components
- * - Easier maintenance and testing
- * - Same exact API for drop-in replacement
+ * Inline margin editor used by the item pricing form.
  */
 
 import React from 'react';
 import { MarginEditInPlace } from './GenericEditInPlaceFactory';
 
-// Maintain exact same interface as original MarginEditor
 interface LocalMarginEditorProps {
   isEditing: boolean;
   marginPercentage: string;
@@ -30,12 +17,6 @@ interface LocalMarginEditorProps {
   disabled?: boolean;
 }
 
-/**
- * Refactored MarginEditor with identical API
- *
- * Drop-in replacement for the original MarginEditor component.
- * All props and behavior remain exactly the same.
- */
 export default function MarginEditor({
   isEditing,
   marginPercentage,

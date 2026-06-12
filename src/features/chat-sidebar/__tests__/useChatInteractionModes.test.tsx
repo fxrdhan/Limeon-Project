@@ -51,6 +51,16 @@ vi.mock('../utils/message-file', async importOriginal => {
   };
 });
 
+const stubScrollTo = (
+  element: HTMLDivElement,
+  scrollTo: (options: ScrollToOptions) => void = vi.fn()
+) => {
+  Object.defineProperty(element, 'scrollTo', {
+    configurable: true,
+    value: scrollTo,
+  });
+};
+
 const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
   id: overrides.id ?? 'message-1',
   sender_id: overrides.sender_id ?? 'user-a',
@@ -216,8 +226,7 @@ describe('useChatInteractionModes', () => {
     const scrollTo = vi.fn(({ top }: ScrollToOptions) => {
       messagesContainer.scrollTop = top ?? messagesContainer.scrollTop;
     });
-    messagesContainer.scrollTo =
-      scrollTo as unknown as typeof messagesContainer.scrollTo;
+    stubScrollTo(messagesContainer, scrollTo);
     messagesContainerRef.current = messagesContainer;
     const selectionMessages = [
       buildMessage({
@@ -339,8 +348,7 @@ describe('useChatInteractionModes', () => {
   it('clears the current selection without leaving selection mode', async () => {
     const messagesContainerRef = createRef<HTMLDivElement>();
     const messagesContainer = document.createElement('div');
-    messagesContainer.scrollTo =
-      vi.fn() as unknown as typeof messagesContainer.scrollTo;
+    stubScrollTo(messagesContainer);
     messagesContainerRef.current = messagesContainer;
     const selectionMessages = [
       buildMessage({
@@ -402,8 +410,7 @@ describe('useChatInteractionModes', () => {
   it('allows deleting selected incoming messages', async () => {
     const messagesContainerRef = createRef<HTMLDivElement>();
     const messagesContainer = document.createElement('div');
-    messagesContainer.scrollTo =
-      vi.fn() as unknown as typeof messagesContainer.scrollTo;
+    stubScrollTo(messagesContainer);
     messagesContainerRef.current = messagesContainer;
     const selectionMessages = [
       buildMessage({
@@ -454,8 +461,7 @@ describe('useChatInteractionModes', () => {
   it('toggles grouped selections as a single bubble selection', async () => {
     const messagesContainerRef = createRef<HTMLDivElement>();
     const messagesContainer = document.createElement('div');
-    messagesContainer.scrollTo =
-      vi.fn() as unknown as typeof messagesContainer.scrollTo;
+    stubScrollTo(messagesContainer);
     messagesContainerRef.current = messagesContainer;
     const selectionMessages = Array.from({ length: 4 }, (_, index) =>
       buildMessage({

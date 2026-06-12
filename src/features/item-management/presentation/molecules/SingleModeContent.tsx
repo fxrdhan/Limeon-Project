@@ -32,11 +32,9 @@ const SingleModeContent: React.FC<SingleModeContentProps> = ({
       seg => seg.type === 'removed' || seg.type === 'added'
     );
 
-    // If has any differences, use purple
     if (hasDifferences) {
       return 'border-purple-500 ring-3 ring-purple-500/20';
     }
-    // Default (no difference)
     return 'border-slate-300';
   };
 

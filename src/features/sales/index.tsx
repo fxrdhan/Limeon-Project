@@ -4,7 +4,7 @@ import { SearchBar } from '@/components/search-bar';
 import PageTitle from '@/components/page-title';
 import DataGrid from '@/components/ag-grid/DataGrid';
 import { Card } from '@/components/card';
-import { useConfirmDialog } from '@/components/dialog-box';
+import { useConfirmDialog } from '@/components/dialog-box/useConfirmDialog';
 import { QueryKeys, getInvalidationKeys } from '@/constants/queryKeys';
 import { formatDateOnlyDisplayValue } from '@/lib/formatters';
 import { salesService, type SalesListItem } from '@/services/api/sales.service';

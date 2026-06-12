@@ -1,20 +1,8 @@
 /**
  * Generic Edit-in-Place Component Factory
  *
- * This factory eliminates duplication between MarginEditor, MinStockEditor, and similar
- * edit-in-place components by providing a configurable foundation for inline editing.
- *
- * Replaces:
- * - MarginEditor.tsx (~80 lines)
- * - MinStockEditor.tsx (~80 lines)
- * - Other similar edit-in-place components
- *
- * Benefits:
- * - Single source of truth for edit-in-place behavior
- * - Type-safe configuration system
- * - Consistent keyboard handling and focus management
- * - Reusable display formatters and validation
- * - Backward-compatible API
+ * Provides a configurable foundation for inline editing components such as
+ * margin and minimum-stock editors.
  */
 
 import React, { useRef, useEffect } from 'react';
@@ -248,8 +236,7 @@ export function GenericEditInPlace<T = unknown>({
 /**
  * Configuration for margin percentage fields
  */
-// eslint-disable-next-line react-refresh/only-export-components
-export const MARGIN_CONFIG: EditInPlaceConfig = {
+const MARGIN_CONFIG: EditInPlaceConfig = {
   label: 'Margin',
   inputType: 'number',
   inputProps: {
@@ -280,8 +267,7 @@ export const MARGIN_CONFIG: EditInPlaceConfig = {
 /**
  * Configuration for minimum stock fields
  */
-// eslint-disable-next-line react-refresh/only-export-components
-export const MIN_STOCK_CONFIG: EditInPlaceConfig = {
+const MIN_STOCK_CONFIG: EditInPlaceConfig = {
   label: 'Stok Minimal:',
   inputType: 'number',
   inputProps: {
@@ -305,48 +291,37 @@ export const MIN_STOCK_CONFIG: EditInPlaceConfig = {
   },
 };
 
-// ============================================================================
-// FACTORY FUNCTION FOR CREATING SPECIALIZED COMPONENTS
-// ============================================================================
+type SpecializedEditInPlaceProps<T> = Omit<
+  GenericEditInPlaceProps<T>,
+  'config'
+> & {
+  config?: Partial<EditInPlaceConfig>;
+};
 
-/**
- * Factory function to create specialized edit-in-place components
- *
- * This allows creating backward-compatible components while using the generic foundation.
- */
-// eslint-disable-next-line react-refresh/only-export-components
-export function createEditInPlaceComponent<T>(
-  defaultConfig: EditInPlaceConfig
-) {
-  return function EditInPlaceComponent(
-    props: Omit<GenericEditInPlaceProps<T>, 'config'> & {
-      config?: Partial<EditInPlaceConfig>;
-    }
-  ) {
-    const mergedConfig = {
-      ...defaultConfig,
-      ...props.config,
-      classes: {
-        ...defaultConfig.classes,
-        ...props.config?.classes,
-      },
-      display: {
-        ...defaultConfig.display,
-        ...props.config?.display,
-      },
-      inputProps: {
-        ...defaultConfig.inputProps,
-        ...props.config?.inputProps,
-      },
-      accessibility: {
-        ...defaultConfig.accessibility,
-        ...props.config?.accessibility,
-      },
-    } as EditInPlaceConfig;
-
-    return <GenericEditInPlace {...props} config={mergedConfig} />;
-  };
-}
+const mergeEditInPlaceConfig = (
+  defaultConfig: EditInPlaceConfig,
+  config?: Partial<EditInPlaceConfig>
+): EditInPlaceConfig =>
+  ({
+    ...defaultConfig,
+    ...config,
+    classes: {
+      ...defaultConfig.classes,
+      ...config?.classes,
+    },
+    display: {
+      ...defaultConfig.display,
+      ...config?.display,
+    },
+    inputProps: {
+      ...defaultConfig.inputProps,
+      ...config?.inputProps,
+    },
+    accessibility: {
+      ...defaultConfig.accessibility,
+      ...config?.accessibility,
+    },
+  }) as EditInPlaceConfig;
 
 // ============================================================================
 // SPECIALIZED COMPONENT FACTORIES
@@ -355,9 +330,29 @@ export function createEditInPlaceComponent<T>(
 /**
  * Margin editor component factory
  */
-export const MarginEditInPlace = createEditInPlaceComponent(MARGIN_CONFIG);
+export function MarginEditInPlace(
+  props: SpecializedEditInPlaceProps<number | null>
+) {
+  const { config, ...genericProps } = props;
+  return (
+    <GenericEditInPlace
+      {...genericProps}
+      config={mergeEditInPlaceConfig(MARGIN_CONFIG, config)}
+    />
+  );
+}
 
 /**
  * Minimum stock editor component factory
  */
-export const MinStockEditInPlace = createEditInPlaceComponent(MIN_STOCK_CONFIG);
+export function MinStockEditInPlace(
+  props: SpecializedEditInPlaceProps<number>
+) {
+  const { config, ...genericProps } = props;
+  return (
+    <GenericEditInPlace
+      {...genericProps}
+      config={mergeEditInPlaceConfig(MIN_STOCK_CONFIG, config)}
+    />
+  );
+}

@@ -1,9 +1,5 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
-import {
-  useCallback,
-  useRef,
-  type KeyboardEvent as ReactKeyboardEvent,
-} from 'react';
+import { useCallback, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
 import { type ChatMessage } from '../data/chatSidebarGateway';
@@ -22,6 +18,16 @@ import { useChatMessageForwardAction } from './useChatMessageForwardAction';
 type PendingSendRegistryRef = MutableRefObject<
   Map<string, { cancelled: boolean }>
 >;
+
+export interface ChatComposerKeyEvent {
+  key: string;
+  keyCode?: number;
+  nativeEvent: {
+    isComposing?: boolean;
+  };
+  preventDefault: () => void;
+  shiftKey?: boolean;
+}
 
 interface UseChatConversationMutationsProps {
   user: {
@@ -286,7 +292,7 @@ export const useChatConversationMutations = ({
   ]);
 
   const handleKeyPress = useCallback(
-    (event: ReactKeyboardEvent) => {
+    (event: ChatComposerKeyEvent) => {
       if (event.nativeEvent.isComposing || event.keyCode === 229) {
         return;
       }

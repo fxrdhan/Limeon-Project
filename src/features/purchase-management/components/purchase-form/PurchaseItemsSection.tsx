@@ -16,6 +16,7 @@ import { getItemUnitOptions } from '@/lib/item-units';
 import { extractNumericValue, formatRupiah } from '@/lib/formatters';
 import { TbTrash } from 'react-icons/tb';
 import type { ColDef, ICellRendererParams } from 'ag-grid-community';
+import type { PurchaseFormChangeEvent } from '@/features/purchase-management/hooks/purchaseForm';
 
 interface PurchaseItemsSectionProps {
   searchItem: string;
@@ -43,11 +44,7 @@ interface PurchaseItemsSectionProps {
   updateItemBatchNo: (id: string, value: string) => void;
   updateItemExpiry: (id: string, value: string) => void;
   removeItem: (id: string) => void;
-  handleChange: (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
-  ) => void;
+  handleChange: (event: PurchaseFormChangeEvent) => void;
 }
 
 type PurchaseItemGridRow = PurchaseItem & {
@@ -94,25 +91,23 @@ const PurchaseItemsSection: React.FC<PurchaseItemsSectionProps> = ({
   );
 
   const handleVatCheckboxChange = (isChecked: boolean) => {
-    const event = {
+    handleChange({
       target: {
         name: 'is_vat_included',
         type: 'checkbox',
         checked: isChecked,
         value: String(isChecked),
       },
-    } as unknown as React.ChangeEvent<HTMLInputElement>;
-    handleChange(event);
+    });
   };
 
   const handleVatPercentageChange = (value: number) => {
-    const fakeEvent = {
+    handleChange({
       target: {
         name: 'vat_percentage',
         value: value.toString(),
       },
-    } as React.ChangeEvent<HTMLInputElement>;
-    handleChange(fakeEvent);
+    });
   };
 
   const handlePercentageInput = React.useCallback(

@@ -1,4 +1,7 @@
 {
-  "*.{ts,tsx,js,jsx}": ["oxlint --fix --deny-warnings", "vp fmt --write"],
+  "*.{ts,tsx,js,jsx}": [
+    "node_modules/.bin/oxlint --fix --deny-warnings",
+    "vp fmt --write"
+  ],
   "*.{json,md,yml,yaml}": ["vp fmt --write"]
 }

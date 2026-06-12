@@ -1,15 +1,14 @@
 import { useEffect } from 'react';
 import { useAddItemForm } from '../core/useItemCrud';
-import type { ItemTypeEntity } from '../../../shared/types';
+import { useItemQueries } from '../core/useItemQueries';
+import { useAddItemEventHandlers } from '../ui/useEventHandlers';
+import { useAddItemUIState } from '../ui/useUIState';
+import { useAddItemRefs } from '../ui/useRefs';
 import type { UseItemManagementProps } from '../../../shared/types';
 
 interface AddItemPageHandlersProps extends UseItemManagementProps {
   expiryCheckboxRef?: React.RefObject<HTMLLabelElement | null>;
 }
-import { useItemQueries } from '../core/useItemQueries';
-import { useAddItemEventHandlers } from '../ui/useEventHandlers';
-import { useAddItemUIState } from '../ui/useUIState';
-import { useAddItemRefs } from '../ui/useRefs';
 
 export const useAddItemPageHandlers = ({
   itemId,
@@ -71,7 +70,7 @@ export const useAddItemPageHandlers = ({
   }, [categoriesData, addItemForm.setCategories, addItemForm]);
 
   useEffect(() => {
-    if (typesData) addItemForm.setTypes(typesData as ItemTypeEntity[]);
+    if (typesData) addItemForm.setTypes(typesData);
   }, [typesData, addItemForm.setTypes, addItemForm]);
 
   useEffect(() => {

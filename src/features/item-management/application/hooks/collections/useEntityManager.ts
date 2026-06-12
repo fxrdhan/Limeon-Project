@@ -1,7 +1,9 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { useConfirmDialog } from '@/components/dialog-box';
+import { useConfirmDialog } from '@/components/dialog-box/useConfirmDialog';
 import { useEntityCrudOperations } from './useEntityCrudOperations';
 import type {
+  ItemMasterEntityTab,
+  ItemMasterTab,
   ItemCategory,
   ItemTypeEntity,
   ItemPackage,
@@ -11,14 +13,8 @@ import type {
 } from '../../../shared/types';
 
 // Define entity types
-export type EntityType =
-  | 'categories'
-  | 'types'
-  | 'packages'
-  | 'dosages'
-  | 'manufacturers'
-  | 'units'
-  | 'items';
+export type EntityType = ItemMasterTab;
+export type ManagedEntityType = ItemMasterEntityTab;
 export type EntityData =
   | ItemCategory
   | ItemTypeEntity
@@ -41,6 +37,17 @@ export interface EntityConfig {
   hasNciCode?: boolean;
   hasAddress?: boolean;
   hasAbbreviation?: boolean;
+}
+
+interface EntityManagerState {
+  activeType: ManagedEntityType;
+  currentType: ManagedEntityType;
+  page: number;
+  searchTerm: string;
+  isAddOpen: boolean;
+  isEditOpen: boolean;
+  editing: EntityData | null;
+  itemsPerPage: number;
 }
 
 export const entityConfigs: Record<EntityType, EntityConfig> = {
@@ -128,9 +135,9 @@ export const entityConfigs: Record<EntityType, EntityConfig> = {
 
 // Entity manager hook options
 export interface UseEntityManagerOptions {
-  activeEntityType?: EntityType;
+  activeEntityType?: ManagedEntityType;
   searchInputRef?: React.RefObject<HTMLInputElement>;
-  onEntityChange?: (entityType: EntityType) => void;
+  onEntityChange?: (entityType: ManagedEntityType) => void;
 }
 
 // Main entity manager hook
@@ -143,14 +150,14 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
   } = options || {};
 
   // State management - use getDerivedStateFromProps to reset state when activeEntityType changes
-  const [entityState, setEntityState] = useState({
+  const [entityState, setEntityState] = useState<EntityManagerState>({
     activeType: activeEntityType,
     currentType: activeEntityType,
     page: 1,
     searchTerm: '',
     isAddOpen: false,
     isEditOpen: false,
-    editing: null as EntityData | null,
+    editing: null,
     itemsPerPage: 25,
   });
   if (activeEntityType !== entityState.activeType) {
@@ -186,7 +193,7 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
   const itemsPerPage = entityState.itemsPerPage;
 
   // Setter functions
-  const setCurrentEntityType = (type: EntityType) => {
+  const setCurrentEntityType = (type: ManagedEntityType) => {
     setEntityState(prev => ({ ...prev, currentType: type }));
   };
   const setIsAddModalOpen = (open: boolean) => {
@@ -221,7 +228,7 @@ export const useEntityManager = (options?: UseEntityManagerOptions) => {
 
   // Change active entity type
   const handleEntityTypeChange = useCallback(
-    (entityType: EntityType) => {
+    (entityType: ManagedEntityType) => {
       if (entityType !== currentEntityType) {
         setCurrentEntityType(entityType);
         setCurrentPage(1);

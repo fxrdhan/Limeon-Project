@@ -84,10 +84,10 @@ export const useItemModalRealtime = ({
               if (nextValue === prevValue) return true;
               if (!nextValue || !prevValue) return false;
 
-              const normalizeJson = (value: unknown) => {
+              const normalizeJson = (value: unknown): unknown => {
                 if (typeof value !== 'string') return value;
                 try {
-                  return JSON.parse(value) as unknown;
+                  return JSON.parse(value);
                 } catch {
                   return value;
                 }

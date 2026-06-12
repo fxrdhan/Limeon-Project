@@ -21,6 +21,10 @@ export interface ServiceResponse<T> {
   count?: number | null;
 }
 
+function readSupabaseData<TData>(data: unknown, fallback: TData): TData {
+  return data ? (data as TData) : fallback;
+}
+
 export class BaseService<T extends BaseEntity> {
   protected tableName: string;
 
@@ -64,7 +68,7 @@ export class BaseService<T extends BaseEntity> {
       const result = await query;
 
       return {
-        data: result.data ? (result.data as unknown as T[]) : [],
+        data: readSupabaseData<T[]>(result.data, []),
         error: result.error,
         count: result.count,
       };
@@ -86,7 +90,7 @@ export class BaseService<T extends BaseEntity> {
         .single();
 
       return {
-        data: result.data ? (result.data as unknown as T) : null,
+        data: readSupabaseData<T | null>(result.data, null),
         error: result.error,
       };
     } catch (error) {
@@ -110,7 +114,7 @@ export class BaseService<T extends BaseEntity> {
         .single();
 
       return {
-        data: result.data ? (result.data as unknown as T) : null,
+        data: readSupabaseData<T | null>(result.data, null),
         error: result.error,
       };
     } catch (error) {
@@ -134,7 +138,7 @@ export class BaseService<T extends BaseEntity> {
         .single();
 
       return {
-        data: result.data ? (result.data as unknown as T) : null,
+        data: readSupabaseData<T | null>(result.data, null),
         error: result.error,
       };
     } catch (error) {
@@ -203,7 +207,7 @@ export class BaseService<T extends BaseEntity> {
       const result = await searchQuery;
 
       return {
-        data: result.data ? (result.data as unknown as T[]) : [],
+        data: readSupabaseData<T[]>(result.data, []),
         error: result.error,
         count: result.count,
       };
@@ -226,7 +230,7 @@ export class BaseService<T extends BaseEntity> {
         .select();
 
       return {
-        data: result.data ? (result.data as unknown as T[]) : [],
+        data: readSupabaseData<T[]>(result.data, []),
         error: result.error,
       };
     } catch (error) {

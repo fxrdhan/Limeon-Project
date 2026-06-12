@@ -74,7 +74,9 @@ type MessagesPaneRuntimeOverrides = {
   previews?: Partial<MessagesPaneRuntime['previews']>;
 };
 
-const createRuntime = (overrides: MessagesPaneRuntimeOverrides = {}) => {
+const createRuntime = (
+  overrides: MessagesPaneRuntimeOverrides = {}
+): MessagesPaneRuntime => {
   const { conversation, viewport, item, previews } = overrides;
 
   return {
@@ -83,6 +85,8 @@ const createRuntime = (overrides: MessagesPaneRuntimeOverrides = {}) => {
       loading: false,
       loadError: null,
       retryLoadMessages: vi.fn(),
+      renderItems: [],
+      ...conversation,
       history: {
         hasOlderMessages: false,
         isLoadingOlderMessages: false,
@@ -90,13 +94,11 @@ const createRuntime = (overrides: MessagesPaneRuntimeOverrides = {}) => {
         loadOlderMessages: vi.fn(),
         ...conversation?.history,
       },
-      renderItems: [],
       search: {
         matchedMessageIds: new Set<string>(),
         activeMessageId: null,
         ...conversation?.search,
       },
-      ...conversation,
     },
     viewport: {
       messagesContainerRef: createRef<HTMLDivElement>(),
@@ -121,6 +123,7 @@ const createRuntime = (overrides: MessagesPaneRuntimeOverrides = {}) => {
         handleToggleExpand: vi.fn(),
         flashingMessageId: null,
         isFlashHighlightVisible: false,
+        isInitialOpenPinPending: false,
         normalizedMessageSearchQuery: '',
         ...item?.interaction,
       },
@@ -129,6 +132,7 @@ const createRuntime = (overrides: MessagesPaneRuntimeOverrides = {}) => {
         dimmingMessageId: null,
         placement: 'up',
         sideAnchor: 'middle',
+        verticalAnchor: 'left',
         shouldAnimateOpen: false,
         transitionSourceId: null,
         offsetX: 0,
@@ -146,17 +150,25 @@ const createRuntime = (overrides: MessagesPaneRuntimeOverrides = {}) => {
         getPdfMessagePreview: vi.fn(() => undefined),
         getAttachmentFileName: () => 'Lampiran',
         getAttachmentFileKind: () => 'document',
+        getReplyTargetMessage: vi.fn(() => null),
         openImageInPortal: vi.fn(async () => {}),
         openImageGroupInPortal: vi.fn(async () => {}),
         openDocumentInPortal: vi.fn(async () => {}),
+        focusReplyTargetMessage: vi.fn(),
         ...item?.content,
       },
       actions: {
         handleEditMessage: vi.fn(),
+        handleReplyMessage: vi.fn(),
         handleCopyMessage: vi.fn(async () => {}),
         handleDownloadMessage: vi.fn(async () => {}),
         handleDownloadImageGroup: vi.fn(async () => {}),
         handleDownloadDocumentGroup: vi.fn(async () => {}),
+        handleDeleteMessages: vi.fn(async () => ({
+          deletedTargetMessageIds: [],
+          failedTargetMessageIds: [],
+          cleanupWarningTargetMessageIds: [],
+        })),
         handleOpenForwardMessagePicker: vi.fn(),
         handleDeleteMessage: vi.fn(async () => true),
         ...item?.actions,
@@ -185,7 +197,7 @@ const createRuntime = (overrides: MessagesPaneRuntimeOverrides = {}) => {
       activeImageGroupPreviewMessage: null,
       ...previews,
     },
-  } as unknown as MessagesPaneRuntime;
+  } satisfies MessagesPaneRuntime;
 };
 
 describe('MessagesPane', () => {

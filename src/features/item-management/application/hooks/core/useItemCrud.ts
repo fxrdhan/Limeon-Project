@@ -20,6 +20,7 @@ import type {
   ItemFormData,
   UseItemManagementProps,
 } from '../../../shared/types';
+import { prepareConversionsForSave } from './pendingPackageConversion';
 
 /**
  * Core Item CRUD Hook
@@ -29,8 +30,6 @@ import type {
  * - Data validation
  * - CRUD operations
  * - Unit conversion handling
- *
- * REFACTORED: Now orchestrates multiple specialized hooks while maintaining exact same API
  */
 
 export const useAddItemForm = ({
@@ -127,37 +126,51 @@ export const useAddItemForm = ({
     },
   });
 
-  const setInitialDataForForm = (data?: ItemFormData) => {
-    formState.setInitialDataForForm(data);
+  const {
+    hasInitialized,
+    setInitialDataForForm: setInitialDataForFormState,
+    setInitialPackageConversions,
+    setIsEditMode,
+  } = formState;
+  const { fetchItemData, hydrateItemData } = itemData;
+  const { clearCache, loadFromCache, updateCacheWithSearchQuery } = cache;
+  const { setBaseInventoryUnitId, setBasePrice, setConversions, setSellPrice } =
+    packageConversionHook;
 
-    if (data) {
-      packageConversionHook.setBaseInventoryUnitId(
-        data.base_inventory_unit_id || ''
-      );
-      packageConversionHook.setBasePrice(data.base_price || 0);
-      packageConversionHook.setSellPrice(data.sell_price || 0);
-    }
-  };
+  const setInitialDataForForm = useCallback(
+    (data?: ItemFormData) => {
+      setInitialDataForFormState(data);
 
-  // Use the initialization ref from formState
-  const hasInitialized = formState.hasInitialized;
+      if (data) {
+        setBaseInventoryUnitId(data.base_inventory_unit_id || '');
+        setBasePrice(data.base_price || 0);
+        setSellPrice(data.sell_price || 0);
+      }
+    },
+    [
+      setBaseInventoryUnitId,
+      setBasePrice,
+      setInitialDataForFormState,
+      setSellPrice,
+    ]
+  );
 
   useEffect(() => {
     if (hasInitialized.current) return;
     hasInitialized.current = true;
 
     if (itemId) {
-      formState.setIsEditMode(true);
+      setIsEditMode(true);
       if (initialItemData && initialItemData.id === itemId) {
-        itemData.hydrateItemData(initialItemData);
+        hydrateItemData(initialItemData);
       }
-      void itemData.fetchItemData(itemId);
-      cache.clearCache();
+      void fetchItemData(itemId);
+      clearCache();
     } else {
-      const cachedData = cache.loadFromCache();
+      const cachedData = loadFromCache();
       if (cachedData) {
         try {
-          const updatedCacheData = cache.updateCacheWithSearchQuery(
+          const updatedCacheData = updateCacheWithSearchQuery(
             cachedData,
             initialSearchQuery
           );
@@ -168,12 +181,8 @@ export const useAddItemForm = ({
             quantity: updatedCacheData.formData.quantity ?? 0,
             unit_id: updatedCacheData.formData.unit_id ?? '',
           });
-          packageConversionHook.setConversions(
-            updatedCacheData.conversions || []
-          );
-          formState.setInitialPackageConversions(
-            updatedCacheData.conversions || []
-          );
+          setConversions(updatedCacheData.conversions || []);
+          setInitialPackageConversions(updatedCacheData.conversions || []);
         } catch (e) {
           console.error('Failed to parse item form cache, starting fresh.', e);
           setInitialDataForForm();
@@ -182,8 +191,21 @@ export const useAddItemForm = ({
         setInitialDataForForm();
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [itemId, initialSearchQuery, formState.units]);
+  }, [
+    clearCache,
+    fetchItemData,
+    hasInitialized,
+    hydrateItemData,
+    initialItemData,
+    initialSearchQuery,
+    itemId,
+    loadFromCache,
+    setConversions,
+    setInitialDataForForm,
+    setInitialPackageConversions,
+    setIsEditMode,
+    updateCacheWithSearchQuery,
+  ]);
 
   // Cache management on component unmount
   useEffect(() => {
@@ -282,123 +304,40 @@ export const useAddItemForm = ({
       formState.setSaving(true);
 
       try {
-        let conversionsForSave = packageConversionHook.conversions;
-        const pendingConversion =
-          packageConversionHook.packageConversionFormData;
         const dosageBackedUnit = createInventoryUnitFromDosage(
           formState.dosages.find(
             dosage => dosage.id === formState.formData.dosage_id
           ) || null
         );
-        const availableUnits = [
+        const selectableUnits = [
           ...packageConversionHook.availableUnits,
           ...(dosageBackedUnit ? [dosageBackedUnit] : []),
         ];
 
-        if (
-          pendingConversion.inventory_unit_id &&
-          pendingConversion.parent_inventory_unit_id &&
-          pendingConversion.contains_quantity > 0
-        ) {
-          const selectedUnit = availableUnits.find(
-            unit => unit.id === pendingConversion.inventory_unit_id
-          );
+        const preparedConversions = prepareConversionsForSave({
+          conversions: packageConversionHook.conversions,
+          pendingConversion: packageConversionHook.packageConversionFormData,
+          selectableUnits,
+          factorLookupUnits: packageConversionHook.availableUnits,
+          baseInventoryUnitId: packageConversionHook.baseInventoryUnitId,
+        });
 
-          if (!selectedUnit) {
-            toast.error('Unit tidak valid!');
-            return;
-          }
-
-          if (
-            packageConversionHook.baseInventoryUnitId &&
-            selectedUnit.id === packageConversionHook.baseInventoryUnitId
-          ) {
-            toast.error('Unit tambahan tidak boleh sama dengan Unit Dasar!');
-            return;
-          }
-
-          const existingUnit = packageConversionHook.conversions.find(
-            conversion =>
-              (conversion.inventory_unit_id ||
-                conversion.to_unit_id ||
-                conversion.unit.id) === selectedUnit.id
-          );
-
-          if (existingUnit) {
-            toast.error('Unit tersebut sudah ada dalam struktur!');
-            return;
-          }
-
-          conversionsForSave = [
-            ...packageConversionHook.conversions,
-            {
-              id: `${Date.now().toString()}-${Math.random()
-                .toString(36)
-                .slice(2, 9)}`,
-              unit: selectedUnit,
-              unit_name: selectedUnit.name,
-              to_unit_id: selectedUnit.id,
-              inventory_unit_id: selectedUnit.id,
-              parent_inventory_unit_id:
-                pendingConversion.parent_inventory_unit_id,
-              contains_quantity: pendingConversion.contains_quantity,
-              factor_to_base:
-                packageConversionHook.availableUnits.find(
-                  unit => unit.id === pendingConversion.parent_inventory_unit_id
-                ) &&
-                packageConversionHook.conversions.find(
-                  conversion =>
-                    (conversion.inventory_unit_id ||
-                      conversion.to_unit_id ||
-                      conversion.unit.id) ===
-                    pendingConversion.parent_inventory_unit_id
-                )
-                  ? (packageConversionHook.conversions.find(
-                      conversion =>
-                        (conversion.inventory_unit_id ||
-                          conversion.to_unit_id ||
-                          conversion.unit.id) ===
-                        pendingConversion.parent_inventory_unit_id
-                    )?.factor_to_base || 1) *
-                    pendingConversion.contains_quantity
-                  : pendingConversion.contains_quantity,
-              conversion_rate:
-                packageConversionHook.availableUnits.find(
-                  unit => unit.id === pendingConversion.parent_inventory_unit_id
-                ) &&
-                packageConversionHook.conversions.find(
-                  conversion =>
-                    (conversion.inventory_unit_id ||
-                      conversion.to_unit_id ||
-                      conversion.unit.id) ===
-                    pendingConversion.parent_inventory_unit_id
-                )
-                  ? (packageConversionHook.conversions.find(
-                      conversion =>
-                        (conversion.inventory_unit_id ||
-                          conversion.to_unit_id ||
-                          conversion.unit.id) ===
-                        pendingConversion.parent_inventory_unit_id
-                    )?.factor_to_base || 1) *
-                    pendingConversion.contains_quantity
-                  : pendingConversion.contains_quantity,
-              base_price: 0,
-              sell_price: 0,
-            },
-          ];
+        if (preparedConversions.errorMessage) {
+          toast.error(preparedConversions.errorMessage);
+          return;
         }
 
         if (formState.isEditMode) {
           logger.info('Submitting item update to Supabase', {
             component: 'useAddItemForm',
             itemId,
-            conversionsCount: conversionsForSave.length,
+            conversionsCount: preparedConversions.conversions.length,
           });
         }
 
         await saveItemMutation.mutateAsync({
           formData: formState.formData,
-          conversions: conversionsForSave,
+          conversions: preparedConversions.conversions,
           baseUnit: packageConversionHook.baseUnit,
           baseInventoryUnitId:
             formState.formData.base_inventory_unit_id ||

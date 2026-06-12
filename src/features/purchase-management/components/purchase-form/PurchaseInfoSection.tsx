@@ -12,6 +12,7 @@ import {
   type CalendarDateValue,
 } from '@/components/calendar';
 import DescriptiveTextarea from '@/components/descriptive-textarea';
+import type { PurchaseFormChangeEvent } from '@/features/purchase-management/hooks/purchaseForm';
 
 interface PurchaseInfoSectionProps {
   formData: {
@@ -25,11 +26,7 @@ interface PurchaseInfoSectionProps {
   };
   suppliers: Array<{ id: string; name: string }>;
   invoiceNumberInputRef: React.RefObject<HTMLInputElement | null>;
-  handleChange: (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
-  ) => void;
+  handleChange: (event: PurchaseFormChangeEvent) => void;
 }
 
 const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
@@ -39,19 +36,18 @@ const PurchaseInfoSection: React.FC<PurchaseInfoSectionProps> = ({
   handleChange,
 }) => {
   const handleDateChange = (fieldName: string, newDate: CalendarDateValue) => {
-    const fakeEvent = {
+    handleChange({
       target: {
         name: fieldName,
         value: newDate ? formatDateOnlyValue(newDate) : '',
       },
-    } as React.ChangeEvent<HTMLInputElement>;
-    handleChange(fakeEvent);
+    });
   };
 
   const handleDropdownChange = (fieldName: string, value: string) => {
     handleChange({
       target: { name: fieldName, value },
-    } as React.ChangeEvent<HTMLSelectElement>);
+    });
   };
   const paymentStatusItems = ['unpaid', 'partial', 'paid'];
   const paymentStatusLabels = new Map([

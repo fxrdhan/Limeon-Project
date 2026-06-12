@@ -1,23 +1,10 @@
 /**
- * MinStockEditor - Refactored using GenericEditInPlaceFactory
- *
- * This component maintains 100% backward compatibility with the original MinStockEditor
- * while using the generic factory foundation to eliminate code duplication.
- *
- * Before: 80 lines of duplicated edit-in-place logic
- * After: 25 lines using shared factory system
- *
- * Benefits:
- * - Eliminates 55+ lines of duplicate code
- * - Consistent behavior across all edit-in-place components
- * - Easier maintenance and testing
- * - Same exact API for drop-in replacement
+ * Inline minimum-stock editor used by the item settings form.
  */
 
 import React from 'react';
 import { MinStockEditInPlace } from './GenericEditInPlaceFactory';
 
-// Maintain exact same interface as original MinStockEditor
 interface LocalMinStockEditorProps {
   isEditing: boolean;
   minStockValue: string;
@@ -30,12 +17,6 @@ interface LocalMinStockEditorProps {
   disabled?: boolean;
 }
 
-/**
- * Refactored MinStockEditor with identical API
- *
- * Drop-in replacement for the original MinStockEditor component.
- * All props and behavior remain exactly the same.
- */
 export default function MinStockEditor({
   isEditing,
   minStockValue,

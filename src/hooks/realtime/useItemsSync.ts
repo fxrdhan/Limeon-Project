@@ -41,17 +41,7 @@ export const useItemsSync = ({ enabled = true }: ItemsSyncOptions = {}) => {
     }, 2000); // 2 second delay
 
     const setupRealtimeConnection = () => {
-      const handleTableChange = (
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        _tableName: string,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        _payload: {
-          eventType: string;
-          new?: Record<string, unknown>;
-          old?: Record<string, unknown>;
-          commit_timestamp?: string;
-        }
-      ) => {
+      const handleTableChange = () => {
         // Invalidate all item master queries
         void queryClient.invalidateQueries({ queryKey: QueryKeys.items.all });
         void queryClient.invalidateQueries({
@@ -95,7 +85,7 @@ export const useItemsSync = ({ enabled = true }: ItemsSyncOptions = {}) => {
             table: 'items',
             event: '*',
           },
-          payload => handleTableChange('items', payload)
+          handleTableChange
         )
         .on(
           'postgres_changes',
@@ -104,7 +94,7 @@ export const useItemsSync = ({ enabled = true }: ItemsSyncOptions = {}) => {
             table: 'item_categories',
             event: '*',
           },
-          payload => handleTableChange('item_categories', payload)
+          handleTableChange
         )
         .on(
           'postgres_changes',
@@ -113,7 +103,7 @@ export const useItemsSync = ({ enabled = true }: ItemsSyncOptions = {}) => {
             table: 'item_types',
             event: '*',
           },
-          payload => handleTableChange('item_types', payload)
+          handleTableChange
         )
         .on(
           'postgres_changes',
@@ -122,7 +112,7 @@ export const useItemsSync = ({ enabled = true }: ItemsSyncOptions = {}) => {
             table: 'item_units',
             event: '*',
           },
-          payload => handleTableChange('item_units', payload)
+          handleTableChange
         )
         .on(
           'postgres_changes',
@@ -131,7 +121,7 @@ export const useItemsSync = ({ enabled = true }: ItemsSyncOptions = {}) => {
             table: 'item_packages',
             event: '*',
           },
-          payload => handleTableChange('item_packages', payload)
+          handleTableChange
         )
         .on(
           'postgres_changes',
@@ -140,7 +130,7 @@ export const useItemsSync = ({ enabled = true }: ItemsSyncOptions = {}) => {
             table: 'item_dosages',
             event: '*',
           },
-          payload => handleTableChange('item_dosages', payload)
+          handleTableChange
         )
         .on(
           'postgres_changes',
@@ -149,7 +139,7 @@ export const useItemsSync = ({ enabled = true }: ItemsSyncOptions = {}) => {
             table: 'item_manufacturers',
             event: '*',
           },
-          payload => handleTableChange('item_manufacturers', payload)
+          handleTableChange
         )
         .subscribe(status => {
           if (status === 'SUBSCRIBED') {
