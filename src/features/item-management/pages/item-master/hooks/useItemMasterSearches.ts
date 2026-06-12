@@ -7,7 +7,7 @@ import type { EntityData } from '@/features/item-management/application/hooks/co
 import {
   useUnifiedSearch,
   type UnifiedSearchReturn,
-} from '@/hooks/data/useUnifiedSearch';
+} from '@/hooks/ag-grid/useUnifiedSearch';
 import { buildAdvancedFilterModel } from '@/utils/advancedFilterBuilder';
 import type { FilterSearch } from '@/types/search';
 import type { Item as ItemDataType } from '@/types/database';

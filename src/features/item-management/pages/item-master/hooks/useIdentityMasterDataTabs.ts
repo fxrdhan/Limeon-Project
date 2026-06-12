@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { useCustomerLevels } from '@/features/item-management/application/hooks/data/useCustomerLevels';
-import { useMasterDataManagement } from '@/hooks/data/useMasterDataManagement';
+import { useMasterDataManagement } from '@/features/item-management/application/hooks/data/useMasterDataManagement';
 import type {
   Customer as CustomerType,
   Doctor as DoctorType,

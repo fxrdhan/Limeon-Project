@@ -2,11 +2,9 @@ import { useCallback, useEffect, useMemo } from 'react';
 import type { StoreApi, UseBoundStore } from 'zustand';
 import { useAuthStore } from '@/store/authStore';
 import { usePresenceStore } from '@/store/presenceStore';
+import type { DirectoryStoreState } from '@/store/createDirectoryStore';
 import type { OnlineUser } from '@/types';
-import type {
-  DirectoryStoreState,
-  DirectoryUser,
-} from '@/store/createDirectoryStore';
+import type { DirectoryUser } from '@/types/directory';
 
 const DIRECTORY_CACHE_MAX_AGE_MS = 60_000;
 const EMPTY_DIRECTORY_USERS: DirectoryUser[] = [];

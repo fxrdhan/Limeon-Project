@@ -14,3 +14,4 @@ export * from './auth';
 export * from './realtime';
 export * from './grid';
 export * from './search';
+export * from './directory';

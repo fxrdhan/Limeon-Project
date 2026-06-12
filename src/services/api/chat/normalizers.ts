@@ -1,5 +1,5 @@
-import type { DirectoryUser } from '@/store/createDirectoryStore';
 import type { ChatMessageRow, UserPresenceRow } from '@/types/supabase-chat';
+import type { DirectoryUser } from '@/types/directory';
 import type {
   ChatDirectoryUser,
   ChatForwardMessageResult,

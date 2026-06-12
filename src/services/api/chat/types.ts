@@ -4,7 +4,7 @@ import type {
   UserPresenceRow,
   UserPresenceUpdateRow,
 } from '@/types/supabase-chat';
-import type { DirectoryUser } from '@/store/createDirectoryStore';
+import type { DirectoryUser } from '@/types/directory';
 import type {
   ChatForwardMessageResponse as SharedChatForwardMessageResponse,
   ChatSharedLinkResponse as SharedChatSharedLinkResponse,

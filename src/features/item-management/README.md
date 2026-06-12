@@ -55,8 +55,8 @@ tested outside React.
   unit tested without rendering React.
 - Do not move reusable app-wide hooks or services into this feature unless the
   dependency is only used here.
-- Keep feature public exports in `index.ts` or `public/`; avoid importing deep
-  presentation paths from outside this module unless there is already an
-  established route-level lazy import.
+- Keep cross-feature access behind `public/`; avoid broad root barrels that
+  re-export feature internals. Deep presentation paths are acceptable only for
+  established route-level lazy imports owned by this feature.
 - Put cross-feature testing-only access behind `public/testing.ts` instead of
   importing from `application/`, `presentation/`, or `shared/` directly.

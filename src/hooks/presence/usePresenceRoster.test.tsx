@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { useAuthStore } from '../../store/authStore';
-import type { DirectoryUser } from '../../store/createDirectoryStore';
+import type { DirectoryUser } from '../../types/directory';
 import { usePresenceDirectoryStore } from '../../store/presenceDirectoryStore';
 import { usePresenceStore } from '../../store/presenceStore';
 import type { UserDetails } from '../../types/database';

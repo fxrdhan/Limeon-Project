@@ -6,7 +6,7 @@ import Badge from '@/components/badge';
 import DataGrid from '@/components/ag-grid/DataGrid';
 
 import UploadInvoicePortal from '@/features/purchase-management/components/UploadInvoicePortal';
-import { AddPurchasePortal } from '@/features/purchase-management';
+import AddPurchasePortal from '@/features/purchase-management/components/AddPurchasePortal';
 
 import { useConfirmDialog } from '@/components/dialog-box/useConfirmDialog';
 import { Card } from '@/components/card';

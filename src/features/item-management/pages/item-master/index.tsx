@@ -8,7 +8,7 @@ import { useItemsSync } from '@/hooks/realtime/useItemsSync';
 
 // Hooks and utilities
 import { useItemGridColumns } from '@/features/item-management/application/hooks/ui';
-import { useItemsManagement } from '@/hooks/data/useItemsManagement';
+import { useItemsManagement } from '@/features/item-management/application/hooks/data/useItemsManagement';
 import { useConfirmDialog } from '@/components/dialog-box/useConfirmDialog';
 import { useSupplierTab } from './hooks/useSupplierTab';
 import { ItemMasterHeader } from './components/ItemMasterHeader';

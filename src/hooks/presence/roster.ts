@@ -1,5 +1,5 @@
-import type { DirectoryUser } from '@/store/createDirectoryStore';
 import type { OnlineUser } from '@/types';
+import type { DirectoryUser } from '@/types/directory';
 
 export const mergePresenceUsers = (
   onlineUsersList: OnlineUser[],

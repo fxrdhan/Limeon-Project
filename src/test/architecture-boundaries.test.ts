@@ -165,6 +165,36 @@ const formatViolations = (violations: string[]) =>
   violations.length === 0 ? 'none' : violations.sort().join('\n');
 
 describe('architecture boundaries', () => {
+  it('keeps item-management data owners out of shared hooks', () => {
+    const forbiddenSharedPaths = [...sourcePaths].filter(
+      filePath =>
+        filePath === 'src/hooks/data/useItemsManagement.ts' ||
+        filePath === 'src/hooks/data/useMasterDataManagement.ts' ||
+        filePath === 'src/hooks/data/searchCore.ts' ||
+        filePath.startsWith('src/hooks/data/master-data-management/')
+    );
+    const forbiddenSpecifiers = new Set([
+      '@/hooks/data/useItemsManagement',
+      '@/hooks/data/useMasterDataManagement',
+      '@/hooks/data/searchCore',
+    ]);
+    const forbiddenImports = [...sourceByPath.entries()].flatMap(
+      ([filePath, source]) => {
+        if (!isRuntimeSource(filePath) && !isTestSource(filePath)) return [];
+
+        return getModuleSpecifiers(filePath, source).flatMap(specifier =>
+          forbiddenSpecifiers.has(specifier)
+            ? [`${filePath} imports deprecated shared data owner ${specifier}`]
+            : []
+        );
+      }
+    );
+
+    expect(
+      formatViolations([...forbiddenSharedPaths, ...forbiddenImports])
+    ).toBe('none');
+  });
+
   it('keeps feature modules from importing other feature modules directly', () => {
     const violations = [...sourceByPath.entries()].flatMap(
       ([filePath, source]) => {
@@ -215,6 +245,30 @@ describe('architecture boundaries', () => {
     expect(formatViolations(violations)).toBe('none');
   });
 
+  it('keeps service and lib runtime modules independent from stores', () => {
+    const violations = [...sourceByPath.entries()].flatMap(
+      ([filePath, source]) => {
+        if (
+          !isRuntimeSource(filePath) ||
+          (!filePath.startsWith('src/services/') &&
+            !filePath.startsWith('src/lib/'))
+        ) {
+          return [];
+        }
+
+        return getModuleSpecifiers(filePath, source).flatMap(specifier => {
+          const target = resolveImportTarget(filePath, specifier);
+
+          return target.startsWith('src/store/')
+            ? [`${filePath} imports store module ${specifier}`]
+            : [];
+        });
+      }
+    );
+
+    expect(formatViolations(violations)).toBe('none');
+  });
+
   it('keeps shared runtime modules from depending on features by default', () => {
     const violations = [...sourceByPath.entries()].flatMap(
       ([filePath, source]) => {
@@ -243,6 +297,26 @@ describe('architecture boundaries', () => {
     const violations = [...sourceByPath.entries()].flatMap(
       ([filePath, source]) => {
         if (!isRuntimeSource(filePath) || !isAppLayoutSource(filePath)) {
+          return [];
+        }
+
+        return getModuleSpecifiers(filePath, source).flatMap(specifier => {
+          const target = resolveImportTarget(filePath, specifier);
+
+          return getFeatureName(target) && !isFeaturePublicApiTarget(target)
+            ? [`${filePath} imports feature internal ${specifier}`]
+            : [];
+        });
+      }
+    );
+
+    expect(formatViolations(violations)).toBe('none');
+  });
+
+  it('keeps testing utility feature access on public APIs', () => {
+    const violations = [...sourceByPath.entries()].flatMap(
+      ([filePath, source]) => {
+        if (!isRuntimeSource(filePath) || !isTestingUtility(filePath)) {
           return [];
         }
 

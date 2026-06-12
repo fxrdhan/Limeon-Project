@@ -3,5 +3,6 @@
 
 export * from './useAgGridSearch';
 export * from './useEnhancedAgGridSearch';
+export * from './useUnifiedSearch';
 export * from './useDynamicGridHeight';
 export * from './useTableHeight';

@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
-import type { DirectoryUser } from '@/store/createDirectoryStore';
 import type { OnlineUser } from '@/types';
+import type { DirectoryUser } from '@/types/directory';
 import type { PostgrestError } from '@supabase/supabase-js';
 import type { ServiceResponse } from './base.service';
 import {

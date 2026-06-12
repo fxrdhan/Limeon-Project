@@ -3,7 +3,6 @@ import { getBrowserLogoutCleanupContributors } from '@/lib/browserLogoutCleanupR
 import { resetPharmacyQueryPersistence } from '@/lib/indexedDBPersistence';
 import { queryClient } from '@/lib/queryClient';
 import { supabase } from '@/lib/supabase';
-import { useInvoiceUploadStore } from '@/store/invoiceUploadStore';
 import { resetImageCache } from '@/utils/imageCache';
 
 const KNOWN_INDEXED_DB_NAMES = [
@@ -79,7 +78,6 @@ const clearCacheStorage = async () => {
 };
 
 const resetRuntimeStores = () => {
-  useInvoiceUploadStore.getState().clearCachedInvoiceFile();
   getBrowserLogoutCleanupContributors().forEach(contributor => {
     contributor.resetRuntimeState?.();
   });

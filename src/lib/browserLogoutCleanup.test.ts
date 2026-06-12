@@ -12,7 +12,6 @@ const clearQueries = vi.fn();
 const removeAllChannels = vi.fn();
 const resetPharmacyQueryPersistence = vi.fn();
 const resetImageCache = vi.fn();
-const clearCachedInvoiceFile = vi.fn();
 
 vi.mock('@/lib/queryClient', () => ({
   queryClient: {
@@ -35,14 +34,6 @@ vi.mock('@/utils/imageCache', () => ({
   resetImageCache,
 }));
 
-vi.mock('@/store/invoiceUploadStore', () => ({
-  useInvoiceUploadStore: {
-    getState: () => ({
-      clearCachedInvoiceFile,
-    }),
-  },
-}));
-
 const createDeleteRequest = () => {
   const request: Partial<IDBOpenDBRequest> = {};
 
@@ -63,7 +54,6 @@ describe('clearClientBrowserState', () => {
     resetPharmacyQueryPersistence.mockResolvedValue(undefined);
     resetImageCache.mockResolvedValue(undefined);
     clearQueries.mockClear();
-    clearCachedInvoiceFile.mockClear();
 
     deleteDatabase = vi.fn(() => createDeleteRequest());
     listDatabases = vi.fn().mockResolvedValue([{ name: 'runtime-cache' }]);
@@ -89,9 +79,14 @@ describe('clearClientBrowserState', () => {
   it('runs registered cleanup contributors and deletes known browser storage', async () => {
     const { registerBrowserLogoutCleanupContributor } =
       await import('./browserLogoutCleanupRegistry');
+    const { useInvoiceUploadStore } =
+      await import('../store/invoiceUploadStore');
     const { clearClientBrowserState } = await import('./browserLogoutCleanup');
     const resetRuntimeState = vi.fn();
     const resetPersistentState = vi.fn().mockResolvedValue(undefined);
+    const invoiceFile = new File(['invoice'], 'invoice.pdf', {
+      type: 'application/pdf',
+    });
 
     const unregister = registerBrowserLogoutCleanupContributor({
       id: 'feature-runtime',
@@ -100,10 +95,12 @@ describe('clearClientBrowserState', () => {
       resetPersistentState,
     });
 
+    useInvoiceUploadStore.getState().setCachedInvoiceFile(invoiceFile);
+
     await clearClientBrowserState();
     unregister();
 
-    expect(clearCachedInvoiceFile).toHaveBeenCalledTimes(1);
+    expect(useInvoiceUploadStore.getState().cachedInvoiceFile).toBeNull();
     expect(resetRuntimeState).toHaveBeenCalledTimes(1);
     expect(cancelQueries).toHaveBeenCalledTimes(1);
     expect(removeAllChannels).toHaveBeenCalledTimes(1);

@@ -1,4 +1,4 @@
-import { filterAndRank } from '@/hooks/data/searchCore';
+import { filterAndRank } from '../data/searchCore';
 import { fuzzyMatch } from '@/utils/search';
 
 interface EntityFilterItem {

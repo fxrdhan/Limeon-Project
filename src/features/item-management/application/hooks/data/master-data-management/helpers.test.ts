@@ -4,7 +4,7 @@ import type {
   Doctor,
   Patient,
   Supplier,
-} from '../../../types/database';
+} from '../../../../../../types/database';
 import { normalizeMasterDataAutosaveField } from './autosave';
 import {
   getMasterDataCreateMutation,
