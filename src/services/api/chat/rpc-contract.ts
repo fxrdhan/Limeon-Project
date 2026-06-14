@@ -1,3 +1,4 @@
+import { normalizeUuidList } from '@/lib/uuid';
 import type {
   CreateChatMessageRpcArgs,
   DeleteChatMessageThreadRpcArgs,
@@ -115,13 +116,13 @@ export const buildEditChatMessageTextRpcArgs = (
 export const buildMarkChatMessageIdsAsDeliveredRpcArgs = (
   messageIds: string[]
 ): MarkChatMessageIdsAsDeliveredRpcArgs => ({
-  p_message_ids: messageIds,
+  p_message_ids: normalizeUuidList(messageIds),
 });
 
 export const buildMarkChatMessageIdsAsReadRpcArgs = (
   messageIds: string[]
 ): MarkChatMessageIdsAsReadRpcArgs => ({
-  p_message_ids: messageIds,
+  p_message_ids: normalizeUuidList(messageIds),
 });
 
 export const buildListUndeliveredIncomingMessageIdsRpcArgs = (options?: {

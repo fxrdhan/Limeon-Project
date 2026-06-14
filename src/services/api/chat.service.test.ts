@@ -176,6 +176,70 @@ describe('chatService', () => {
     });
   });
 
+  it('marks only persisted message UUIDs as delivered', async () => {
+    const persistedMessageId = '3c18b4a7-eef1-4eaa-acce-50ae7362b763';
+    mockRpc.mockResolvedValueOnce({
+      data: [
+        buildRpcMessage({
+          id: persistedMessageId,
+          is_delivered: true,
+        }),
+      ],
+      error: null,
+    });
+    const { chatService } = await import('./chat.service');
+
+    const result = await chatService.markMessageIdsAsDelivered([
+      'temp_3c18b4a7-eef1-4eaa-acce-50ae7362b763',
+      ` ${persistedMessageId} `,
+      persistedMessageId,
+      'message-1',
+    ]);
+
+    expect(mockRpc).toHaveBeenCalledWith('mark_chat_message_ids_as_delivered', {
+      p_message_ids: [persistedMessageId],
+    });
+    expect(result.error).toBeNull();
+  });
+
+  it('marks only persisted message UUIDs as read', async () => {
+    const persistedMessageId = '3c18b4a7-eef1-4eaa-acce-50ae7362b763';
+    mockRpc.mockResolvedValueOnce({
+      data: [
+        buildRpcMessage({
+          id: persistedMessageId,
+          is_delivered: true,
+          is_read: true,
+        }),
+      ],
+      error: null,
+    });
+    const { chatService } = await import('./chat.service');
+
+    const result = await chatService.markMessageIdsAsRead([
+      'message-1',
+      persistedMessageId,
+      'temp_3c18b4a7-eef1-4eaa-acce-50ae7362b763',
+    ]);
+
+    expect(mockRpc).toHaveBeenCalledWith('mark_chat_message_ids_as_read', {
+      p_message_ids: [persistedMessageId],
+    });
+    expect(result.error).toBeNull();
+  });
+
+  it('skips read receipt rpc when all message ids are temporary', async () => {
+    const { chatService } = await import('./chat.service');
+
+    const result = await chatService.markMessageIdsAsRead([
+      'temp_3c18b4a7-eef1-4eaa-acce-50ae7362b763',
+      'message-1',
+    ]);
+
+    expect(result).toEqual({ data: [], error: null });
+    expect(mockRpc).not.toHaveBeenCalled();
+  });
+
   it('surfaces malformed chat message payloads instead of inventing defaults', async () => {
     mockRpc.mockResolvedValueOnce({
       data: buildRpcMessage({
@@ -786,6 +850,8 @@ describe('chatService', () => {
   });
 
   it('starts keepalive read receipt sync through the rpc endpoint', async () => {
+    const firstMessageId = '3c18b4a7-eef1-4eaa-acce-50ae7362b763';
+    const secondMessageId = '4d28c4bb-52a7-4edc-9b7a-3b99d9c70501';
     const fetchSpy = vi
       .spyOn(globalThis, 'fetch')
       .mockResolvedValue(new Response(null, { status: 204 }));
@@ -793,7 +859,12 @@ describe('chatService', () => {
     const { chatService } = await import('./chat.service');
 
     const didStartKeepalive = chatService.sendReadReceiptKeepalive(
-      ['message-1', 'message-2', 'message-1'],
+      [
+        ` ${firstMessageId} `,
+        secondMessageId,
+        firstMessageId,
+        'temp_3c18b4a7-eef1-4eaa-acce-50ae7362b763',
+      ],
       'access-token'
     );
 
@@ -804,10 +875,27 @@ describe('chatService', () => {
         method: 'POST',
         keepalive: true,
         body: JSON.stringify({
-          p_message_ids: ['message-1', 'message-2'],
+          p_message_ids: [firstMessageId, secondMessageId],
         }),
       })
     );
+    fetchSpy.mockRestore();
+  });
+
+  it('does not start keepalive read receipt sync without persisted message UUIDs', async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(null, { status: 204 }));
+
+    const { chatService } = await import('./chat.service');
+
+    const didStartKeepalive = chatService.sendReadReceiptKeepalive(
+      ['message-1', 'temp_3c18b4a7-eef1-4eaa-acce-50ae7362b763'],
+      'access-token'
+    );
+
+    expect(didStartKeepalive).toBe(false);
+    expect(fetchSpy).not.toHaveBeenCalled();
     fetchSpy.mockRestore();
   });
 });

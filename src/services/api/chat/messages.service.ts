@@ -1,4 +1,5 @@
 import { supabase, supabaseAnonKey, supabaseUrl } from '@/lib/supabase';
+import { normalizeUuidList } from '@/lib/uuid';
 import type { ServiceResponse } from '../base.service';
 import {
   DEFAULT_CHAT_MESSAGES_PAGE_SIZE,
@@ -198,12 +199,13 @@ export const chatMessagesService = {
   async markMessageIdsAsDelivered(
     messageIds: string[]
   ): Promise<ServiceResponse<ChatMessage[]>> {
-    if (messageIds.length === 0) return { data: [], error: null };
+    const normalizedMessageIds = normalizeUuidList(messageIds);
+    if (normalizedMessageIds.length === 0) return { data: [], error: null };
 
     try {
       const { data, error } = await supabase.rpc(
         CHAT_RPC_NAMES.markMessageIdsAsDelivered,
-        buildMarkChatMessageIdsAsDeliveredRpcArgs(messageIds)
+        buildMarkChatMessageIdsAsDeliveredRpcArgs(normalizedMessageIds)
       );
 
       if (error) {
@@ -219,12 +221,13 @@ export const chatMessagesService = {
   async markMessageIdsAsRead(
     messageIds: string[]
   ): Promise<ServiceResponse<ChatMessage[]>> {
-    if (messageIds.length === 0) return { data: [], error: null };
+    const normalizedMessageIds = normalizeUuidList(messageIds);
+    if (normalizedMessageIds.length === 0) return { data: [], error: null };
 
     try {
       const { data, error } = await supabase.rpc(
         CHAT_RPC_NAMES.markMessageIdsAsRead,
-        buildMarkChatMessageIdsAsReadRpcArgs(messageIds)
+        buildMarkChatMessageIdsAsReadRpcArgs(normalizedMessageIds)
       );
 
       if (error) {
@@ -238,7 +241,7 @@ export const chatMessagesService = {
   },
 
   sendReadReceiptKeepalive(messageIds: string[], accessToken?: string | null) {
-    const normalizedMessageIds = [...new Set(messageIds)].filter(Boolean);
+    const normalizedMessageIds = normalizeUuidList(messageIds);
     if (
       typeof window === 'undefined' ||
       typeof fetch !== 'function' ||

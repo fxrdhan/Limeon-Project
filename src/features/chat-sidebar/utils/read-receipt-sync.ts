@@ -1,7 +1,8 @@
+import { normalizeUuidList } from '@/lib/uuid';
 import { chatRuntimeCache } from './chatRuntimeCache';
 
 const normalizeReadReceiptMessageIds = (messageIds: string[]) =>
-  [...new Set(messageIds)].map(messageId => messageId.trim()).filter(Boolean);
+  normalizeUuidList(messageIds);
 
 export const queueReadReceiptMessageIdsForSync = (
   userId: string,

@@ -7,6 +7,8 @@ import {
   buildFetchChatMessagesPageRpcArgs,
   buildListChatDirectoryUsersRpcArgs,
   buildListUndeliveredIncomingMessageIdsRpcArgs,
+  buildMarkChatMessageIdsAsDeliveredRpcArgs,
+  buildMarkChatMessageIdsAsReadRpcArgs,
   buildSearchChatMessagesRpcArgs,
   buildSyncUserPresenceOnExitRpcArgs,
   buildUpsertUserPresenceRpcArgs,
@@ -123,6 +125,33 @@ describe('chat RPC contracts', () => {
     expect(buildListChatDirectoryUsersRpcArgs(30)).toEqual({
       p_limit: 30,
       p_offset: 0,
+    });
+  });
+
+  it('keeps read receipt RPC args limited to persisted message UUIDs', () => {
+    expect(
+      buildMarkChatMessageIdsAsReadRpcArgs([
+        'temp_3c18b4a7-eef1-4eaa-acce-50ae7362b763',
+        ' 3c18b4a7-eef1-4eaa-acce-50ae7362b763 ',
+        'message-1',
+        '3c18b4a7-eef1-4eaa-acce-50ae7362b763',
+        '4d28c4bb-52a7-4edc-9b7a-3b99d9c70501',
+      ])
+    ).toEqual({
+      p_message_ids: [
+        '3c18b4a7-eef1-4eaa-acce-50ae7362b763',
+        '4d28c4bb-52a7-4edc-9b7a-3b99d9c70501',
+      ],
+    });
+
+    expect(
+      buildMarkChatMessageIdsAsDeliveredRpcArgs([
+        '',
+        'not-a-uuid',
+        '4d28c4bb-52a7-4edc-9b7a-3b99d9c70501',
+      ])
+    ).toEqual({
+      p_message_ids: ['4d28c4bb-52a7-4edc-9b7a-3b99d9c70501'],
     });
   });
 });
