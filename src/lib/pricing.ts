@@ -5,8 +5,16 @@ import type {
   ItemUnitHierarchyEntry,
 } from '@/types/database';
 
+type UnitPricingItem = Pick<
+  Item,
+  'base_price' | 'base_unit' | 'inventory_units' | 'sell_price' | 'unit'
+>;
+
+type CustomerPricingItem = UnitPricingItem &
+  Pick<Item, 'customer_level_discounts' | 'is_level_pricing_active'>;
+
 export interface PricingContext {
-  item: Item;
+  item: CustomerPricingItem;
   customerLevel?: CustomerLevel | null;
   unitName?: string | null;
   unitId?: string | null;
@@ -60,7 +68,7 @@ export const getItemDiscountForLevel = (
 };
 
 export const resolveUnitPrice = (
-  item: Item,
+  item: UnitPricingItem,
   unitId?: string | null,
   unitName?: string | null
 ) => {

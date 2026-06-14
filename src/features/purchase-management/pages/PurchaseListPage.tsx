@@ -8,181 +8,49 @@ import DataGrid from '@/components/ag-grid/DataGrid';
 import UploadInvoicePortal from '@/features/purchase-management/components/UploadInvoicePortal';
 import AddPurchasePortal from '@/features/purchase-management/components/AddPurchasePortal';
 
-import { useConfirmDialog } from '@/components/dialog-box/useConfirmDialog';
 import { Card } from '@/components/card';
 import { Link } from 'react-router-dom';
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useMemo, type ChangeEvent } from 'react';
 import { TbEdit, TbEye, TbFileUpload, TbPlus, TbTrash } from 'react-icons/tb';
 import type { ColDef, ICellRendererParams } from 'ag-grid-community';
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  keepPreviousData,
-} from '@tanstack/react-query';
 import { getSearchState } from '@/utils/search';
-import { purchasesService } from '@/services/api/purchases.service';
-import { QueryKeys } from '@/constants/queryKeys';
 import { formatDateOnlyDisplayValue } from '@/lib/formatters';
-
-interface Purchase {
-  id: string;
-  invoice_number: string;
-  date: string;
-  total: number;
-  payment_status: string;
-  payment_method: string;
-  supplier: {
-    name: string;
-  } | null;
-}
+import {
+  buildPurchaseNoRowsTemplate,
+  getPurchasePaymentMethodLabel,
+  getPurchaseStatusBadgeVariant,
+  getPurchaseStatusLabel,
+} from './purchase-list/purchaseListLabels';
+import type { PurchaseListItem } from './purchase-list/types';
+import { usePurchaseListPage } from './purchase-list/usePurchaseListPage';
 
 const PurchaseList = () => {
-  const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [showUploadPortal, setShowUploadPortal] = useState(false);
-  const [showAddPurchasePortal, setShowAddPurchasePortal] = useState(false);
-  const [isAddPurchaseClosing, setIsAddPurchaseClosing] = useState(false);
-  const queryClient = useQueryClient();
-  const { openConfirmDialog } = useConfirmDialog();
-  const searchInputRef = useRef<HTMLInputElement>(
-    null
-  ) as React.RefObject<HTMLInputElement>;
-  const { data, isLoading, isFetching } = useQuery({
-    queryKey: QueryKeys.purchases.paginated(
-      currentPage,
-      debouncedSearch,
-      itemsPerPage
-    ),
-    queryFn: () => fetchPurchases(currentPage, debouncedSearch, itemsPerPage),
-    placeholderData: keepPreviousData,
-    staleTime: 0,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
-  });
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search);
-    }, 250);
-    return () => clearTimeout(timer);
-  }, [search]);
-
-  const fetchPurchases = async (
-    page: number,
-    searchTerm: string,
-    limit: number
-  ) => {
-    try {
-      const { data, error } = await purchasesService.getPaginatedPurchases({
-        page,
-        limit,
-        searchTerm,
-      });
-
-      if (error || !data) {
-        throw error ?? new Error('Gagal memuat data pembelian');
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Error fetching purchases:', error);
-      throw error;
-    }
-  };
-
-  useEffect(() => {
-    void queryClient.invalidateQueries({ queryKey: QueryKeys.purchases.all });
-  }, [queryClient]);
-
-  const purchases = useMemo(() => data?.purchases || [], [data?.purchases]);
-  const totalItems = data?.totalItems || 0;
-
-  const deletePurchaseMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } =
-        await purchasesService.deletePurchaseWithStockRestore(id);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: QueryKeys.purchases.all });
-    },
-    onError: error => {
-      console.error('Error deleting purchase:', error);
-      alert(`Gagal menghapus pembelian: ${error.message}`);
-    },
-  });
-
-  const handlePageChange = (newPage: number) => {
-    setCurrentPage(newPage);
-  };
-
-  const handleItemsPerPageChange = (
-    e: React.ChangeEvent<HTMLSelectElement>
-  ) => {
-    setItemsPerPage(Number(e.target.value));
-    setCurrentPage(1);
-  };
-
-  const handleDelete = useCallback(
-    (purchase: Purchase) => {
-      openConfirmDialog({
-        title: 'Konfirmasi Hapus',
-        message: `Apakah Anda yakin ingin menghapus pembelian dengan nomor faktur "${purchase.invoice_number}"? Tindakan ini juga akan mengembalikan stok item yang terkait.`,
-        variant: 'danger',
-        confirmText: 'Hapus',
-        onConfirm: () => {
-          deletePurchaseMutation.mutate(purchase.id);
-        },
-      });
-    },
-    [deletePurchaseMutation, openConfirmDialog]
-  );
-
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case 'paid':
-        return 'success';
-      case 'partial':
-        return 'warning';
-      case 'unpaid':
-        return 'danger';
-      default:
-        return 'secondary';
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'paid':
-        return 'Lunas';
-      case 'partial':
-        return 'Sebagian';
-      case 'unpaid':
-        return 'Belum Bayar';
-      default:
-        return status;
-    }
-  };
-
-  const getPaymentMethodLabel = (method: string) => {
-    switch (method) {
-      case 'cash':
-        return 'Tunai';
-      case 'transfer':
-        return 'Transfer';
-      case 'credit':
-        return 'Kredit';
-      default:
-        return method;
-    }
-  };
-
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const columnDefs = useMemo<ColDef<Purchase>[]>(
+  const {
+    search,
+    setSearch,
+    debouncedSearch,
+    currentPage,
+    itemsPerPage,
+    searchInputRef,
+    purchases,
+    totalItems,
+    totalPages,
+    isLoading,
+    isFetching,
+    showUploadPortal,
+    openUploadPortal,
+    closeUploadPortal,
+    showAddPurchasePortal,
+    openAddPurchasePortal,
+    closeAddPurchasePortal,
+    isAddPurchaseClosing,
+    setIsAddPurchaseClosing,
+    deletePurchaseMutation,
+    handleDelete,
+    handlePageChange,
+    handleItemsPerPageChange,
+  } = usePurchaseListPage();
+  const columnDefs = useMemo<ColDef<PurchaseListItem>[]>(
     () => [
       {
         field: 'invoice_number',
@@ -226,13 +94,13 @@ const PurchaseList = () => {
         headerName: 'Status Pembayaran',
         minWidth: 160,
         cellStyle: { textAlign: 'center' },
-        cellRenderer: (params: ICellRendererParams<Purchase>) => {
+        cellRenderer: (params: ICellRendererParams<PurchaseListItem>) => {
           const status = params.data?.payment_status;
           if (!status) return null;
 
           return (
-            <Badge variant={getStatusBadgeVariant(status)}>
-              {getStatusLabel(status)}
+            <Badge variant={getPurchaseStatusBadgeVariant(status)}>
+              {getPurchaseStatusLabel(status)}
             </Badge>
           );
         },
@@ -242,7 +110,8 @@ const PurchaseList = () => {
         headerName: 'Metode Pembayaran',
         minWidth: 160,
         cellStyle: { textAlign: 'center' },
-        valueFormatter: params => getPaymentMethodLabel(String(params.value)),
+        valueFormatter: params =>
+          getPurchasePaymentMethodLabel(String(params.value)),
       },
       {
         colId: 'actions',
@@ -251,7 +120,7 @@ const PurchaseList = () => {
         sortable: false,
         filter: false,
         cellStyle: { textAlign: 'center' },
-        cellRenderer: (params: ICellRendererParams<Purchase>) => {
+        cellRenderer: (params: ICellRendererParams<PurchaseListItem>) => {
           const purchase = params.data;
           if (!purchase) return null;
           const isDeleting =
@@ -293,9 +162,7 @@ const PurchaseList = () => {
       handleDelete,
     ]
   );
-  const overlayNoRowsTemplate = debouncedSearch
-    ? `<span style="padding: 10px; color: oklch(55.4% 0.041 257.4);">Tidak ada pembelian dengan kata kunci "${debouncedSearch}"</span>`
-    : '<span style="padding: 10px; color: oklch(55.4% 0.041 257.4);">Tidak ada data pembelian yang ditemukan</span>';
+  const overlayNoRowsTemplate = buildPurchaseNoRowsTemplate(debouncedSearch);
 
   return (
     <>
@@ -311,7 +178,7 @@ const PurchaseList = () => {
           <SearchBar
             inputRef={searchInputRef}
             value={search}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            onChange={(e: ChangeEvent<HTMLInputElement>) =>
               setSearch(e.target.value)
             }
             placeholder="Cari nomor faktur..."
@@ -319,19 +186,11 @@ const PurchaseList = () => {
             searchState={getSearchState(search, debouncedSearch, purchases)}
           />
           <div className="flex space-x-2 ml-4 mb-4">
-            <Button
-              variant="primary"
-              onClick={() => setShowUploadPortal(true)}
-              withGlow
-            >
+            <Button variant="primary" onClick={openUploadPortal} withGlow>
               <TbFileUpload className="mr-2" />
               Upload Faktur
             </Button>
-            <Button
-              variant="primary"
-              withGlow
-              onClick={() => setShowAddPurchasePortal(true)}
-            >
+            <Button variant="primary" withGlow onClick={openAddPurchasePortal}>
               <TbPlus className="mr-2" />
               Tambah Pembelian Baru
             </Button>
@@ -365,21 +224,12 @@ const PurchaseList = () => {
 
       <UploadInvoicePortal
         isOpen={showUploadPortal}
-        onClose={() => setShowUploadPortal(false)}
+        onClose={closeUploadPortal}
       />
 
       <AddPurchasePortal
         isOpen={showAddPurchasePortal}
-        onClose={() => {
-          setIsAddPurchaseClosing(true);
-          setTimeout(() => {
-            setShowAddPurchasePortal(false);
-            setIsAddPurchaseClosing(false);
-            void queryClient.invalidateQueries({
-              queryKey: QueryKeys.purchases.all,
-            });
-          }, 200);
-        }}
+        onClose={closeAddPurchasePortal}
         isClosing={isAddPurchaseClosing}
         setIsClosing={setIsAddPurchaseClosing}
         initialInvoiceNumber={debouncedSearch}

@@ -8,7 +8,6 @@ import {
 import { useChatAttachmentCleanup } from './useChatAttachmentCleanup';
 import { buildChatFilePath } from '../utils/attachment';
 import {
-  buildFailedAttachmentPreviewFields,
   buildReadyImagePreviewFields,
   buildReadyPdfPreviewFields,
   prepareImagePreviewPersistence,
@@ -17,6 +16,7 @@ import {
 import { chatRuntime } from '../utils/chatRuntime';
 import { mapPersistedMessageForDisplay } from '../utils/conversation-sync';
 import { buildPdfMessagePreviewCacheKey } from '../utils/pdf-message-preview';
+import type { PreparedComposerAttachmentOptimisticState } from '../utils/attachment-send';
 import type {
   ChatSidebarPanelTargetUser,
   PendingComposerAttachment,
@@ -26,11 +26,15 @@ import type {
 import { useChatImagePreviewSync } from './useChatImagePreviewSync';
 import { useChatPdfPreviewSync } from './useChatPdfPreviewSync';
 import type { AttachmentComposerRemoteFile } from '../utils/composer-attachment-link';
-import {
-  useAttachmentMessageTransaction,
-  type PreparedComposerAttachmentOptimisticState,
-} from './useAttachmentMessageTransaction';
+import { useAttachmentMessageTransaction } from './useAttachmentMessageTransaction';
 import { useChatImageAttachmentSender } from './useChatImageAttachmentSender';
+import {
+  buildFileAttachmentMetadata,
+  buildFilePreviewSyncMessage,
+  buildInitialFilePreviewFields,
+  getFileAttachmentSendFailureToast,
+  resolvePendingFileWithPreparedPdfPreview,
+} from './chatAttachmentFileSendPlan';
 
 interface ChatAttachmentMutationScope {
   conversationScopeKey: string | null;
@@ -177,10 +181,13 @@ export const useChatAttachmentSend = ({
         pendingFile.file,
         pendingFile.fileKind
       );
-      const sendFailureToast =
-        pendingFile.fileKind === 'audio'
-          ? 'Gagal mengirim audio'
-          : 'Gagal mengirim dokumen';
+      const fileAttachmentMetadata = buildFileAttachmentMetadata(
+        pendingFile,
+        filePath
+      );
+      const sendFailureToast = getFileAttachmentSendFailureToast(
+        pendingFile.fileKind
+      );
       const shouldPersistImagePreview = isImagePendingFile(pendingFile);
       const shouldPersistPdfPreview = isPdfPendingFile(pendingFile);
       const preparedImagePreview = shouldPersistImagePreview
@@ -203,25 +210,14 @@ export const useChatAttachmentSend = ({
             }
           )
         : null;
-      let filePreviewFields =
-        shouldPersistImagePreview || shouldPersistPdfPreview
-          ? buildFailedAttachmentPreviewFields(
-              shouldPersistImagePreview
-                ? 'Thumbnail gambar tidak tersedia'
-                : 'Preview dokumen tidak tersedia'
-            )
-          : null;
-      const resolvedPdfPendingFile =
-        preparedPdfPreview &&
-        (!pendingFile.pdfCoverUrl || !pendingFile.pdfPageCount)
-          ? {
-              ...pendingFile,
-              pdfCoverUrl:
-                pendingFile.pdfCoverUrl ?? preparedPdfPreview.coverDataUrl,
-              pdfPageCount:
-                pendingFile.pdfPageCount ?? preparedPdfPreview.pageCount,
-            }
-          : pendingFile;
+      let filePreviewFields = buildInitialFilePreviewFields({
+        shouldPersistImagePreview,
+        shouldPersistPdfPreview,
+      });
+      const resolvedPdfPendingFile = resolvePendingFileWithPreparedPdfPreview(
+        pendingFile,
+        preparedPdfPreview
+      );
 
       return sendAttachmentMessage({
         tempIdPrefix: 'temp_file',
@@ -243,11 +239,7 @@ export const useChatAttachmentSend = ({
           channel_id: currentChannelId,
           message: localPreviewUrl,
           message_type: 'file',
-          file_name: pendingFile.fileName,
-          file_kind: pendingFile.fileKind,
-          file_mime_type: pendingFile.mimeType,
-          file_size: pendingFile.file.size,
-          file_storage_path: filePath,
+          ...fileAttachmentMetadata,
           created_at: timestamp,
           updated_at: timestamp,
           is_read: false,
@@ -315,22 +307,14 @@ export const useChatAttachmentSend = ({
             message: filePath,
             message_type: 'file',
             reply_to_id: replyToId ?? undefined,
-            file_name: pendingFile.fileName,
-            file_kind: pendingFile.fileKind,
-            file_mime_type: pendingFile.mimeType,
-            file_size: pendingFile.file.size,
-            file_storage_path: filePath,
+            ...fileAttachmentMetadata,
             ...filePreviewFields,
           }),
         mapPersistedMessage: (persistedMessage, _uploadedPath, stableKey) =>
           mapPersistedMessageForDisplay(
             {
               ...persistedMessage,
-              file_name: pendingFile.fileName,
-              file_kind: pendingFile.fileKind,
-              file_mime_type: pendingFile.mimeType,
-              file_size: pendingFile.file.size,
-              file_storage_path: filePath,
+              ...fileAttachmentMetadata,
             },
             user,
             targetUser,
@@ -346,13 +330,12 @@ export const useChatAttachmentSend = ({
           if (shouldPersistImagePreview) {
             pendingImagePreviewUrlsRef.current.delete(tempMessageId);
             await syncPersistedImagePreview({
-              realMessage: {
-                ...realMessage,
-                sender_id: user.id,
-                file_name: pendingFile.fileName,
-                file_mime_type: pendingFile.mimeType,
-                file_storage_path: realMessage.file_storage_path || filePath,
-              },
+              realMessage: buildFilePreviewSyncMessage({
+                realMessage,
+                pendingFile,
+                filePath,
+                senderId: user.id,
+              }),
               file: pendingFile.file,
             });
           }
@@ -363,13 +346,12 @@ export const useChatAttachmentSend = ({
 
           seedLocalPdfPreviewCache(realMessage, resolvedPdfPendingFile);
           await syncPersistedPdfPreview({
-            realMessage: {
-              ...realMessage,
-              sender_id: user.id,
-              file_name: pendingFile.fileName,
-              file_mime_type: pendingFile.mimeType,
-              file_storage_path: realMessage.file_storage_path || filePath,
-            },
+            realMessage: buildFilePreviewSyncMessage({
+              realMessage,
+              pendingFile,
+              filePath,
+              senderId: user.id,
+            }),
             pendingFile: resolvedPdfPendingFile,
           });
         },

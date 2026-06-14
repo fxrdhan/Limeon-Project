@@ -16,7 +16,13 @@ import {
   isDuplicateCodeError,
   isForeignKeyDeleteError,
 } from './errors';
-import { getIdentityImageUrl } from './identityImages';
+import { getMasterDataModalPayload } from './modalPayload';
+import {
+  getIdentityImageUploadPath,
+  getIdentityImageUrl,
+  getIdentityImageUrlForEntity,
+  getSupersededIdentityImagePath,
+} from './identityImages';
 import { filterMasterDataIdentities } from './filtering';
 import type { MasterDataIdentity } from './types';
 
@@ -106,6 +112,38 @@ describe('master-data mutation helpers', () => {
   });
 });
 
+describe('master-data modal payload helpers', () => {
+  it('builds payloads from only submitted default fields', () => {
+    expect(
+      getMasterDataModalPayload({
+        name: 'Acme',
+        description: undefined,
+        address: '',
+        code: 'SUP-001',
+      })
+    ).toEqual({
+      name: 'Acme',
+      address: '',
+      code: 'SUP-001',
+    });
+  });
+
+  it('uses explicit form data instead of default field projection', () => {
+    const data = {
+      custom: true,
+      name: 'Projected elsewhere',
+    };
+
+    expect(
+      getMasterDataModalPayload({
+        name: 'Ignored',
+        code: 'IGNORED',
+        data,
+      })
+    ).toBe(data);
+  });
+});
+
 describe('master-data error helpers', () => {
   it('extracts error messages from supported error shapes', () => {
     expect(
@@ -161,6 +199,65 @@ describe('master-data image helpers', () => {
     expect(getIdentityImageUrl({ ...supplier, image_url: '   ' })).toBeNull();
     expect(getIdentityImageUrl(customer)).toBeNull();
     expect(getIdentityImageUrl(null)).toBeNull();
+  });
+
+  it('builds deterministic image upload paths from entity and file names', () => {
+    expect(
+      getIdentityImageUploadPath('suppliers', 'supplier-1', 'Logo.PNG')
+    ).toBe('suppliers/supplier-1/image.png');
+    expect(getIdentityImageUploadPath('doctors', 'doctor-1', '')).toBe(
+      'doctors/doctor-1/image.jpg'
+    );
+  });
+
+  it('prefers the editing identity when resolving an entity image url', () => {
+    const staleSupplier: Supplier = {
+      id: 'supplier-1',
+      name: 'Acme',
+      address: null,
+      image_url: 'https://example.test/stale.png',
+    };
+    const editingSupplier: Supplier = {
+      ...staleSupplier,
+      image_url: 'https://example.test/editing.png',
+    };
+
+    expect(
+      getIdentityImageUrlForEntity({
+        entityId: 'supplier-1',
+        editingIdentity: editingSupplier,
+        identities: [staleSupplier],
+      })
+    ).toBe('https://example.test/editing.png');
+  });
+
+  it('returns only same-entity superseded image paths', () => {
+    expect(
+      getSupersededIdentityImagePath({
+        oldImagePath: 'suppliers/supplier-1/image.png',
+        nextImagePath: 'suppliers/supplier-1/image.webp',
+        tableName: 'suppliers',
+        entityId: 'supplier-1',
+      })
+    ).toBe('suppliers/supplier-1/image.png');
+
+    expect(
+      getSupersededIdentityImagePath({
+        oldImagePath: 'suppliers/supplier-1/image.png',
+        nextImagePath: 'suppliers/supplier-1/image.png',
+        tableName: 'suppliers',
+        entityId: 'supplier-1',
+      })
+    ).toBeNull();
+
+    expect(
+      getSupersededIdentityImagePath({
+        oldImagePath: 'suppliers/supplier-2/image.png',
+        nextImagePath: 'suppliers/supplier-1/image.webp',
+        tableName: 'suppliers',
+        entityId: 'supplier-1',
+      })
+    ).toBeNull();
   });
 });
 

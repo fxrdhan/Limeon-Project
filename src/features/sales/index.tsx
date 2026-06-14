@@ -4,132 +4,38 @@ import { SearchBar } from '@/components/search-bar';
 import PageTitle from '@/components/page-title';
 import DataGrid from '@/components/ag-grid/DataGrid';
 import { Card } from '@/components/card';
-import { useConfirmDialog } from '@/components/dialog-box/useConfirmDialog';
-import { QueryKeys, getInvalidationKeys } from '@/constants/queryKeys';
 import { formatDateOnlyDisplayValue } from '@/lib/formatters';
-import { salesService, type SalesListItem } from '@/services/api/sales.service';
 import { getSearchState } from '@/utils/search';
 import type { ColDef, ICellRendererParams } from 'ag-grid-community';
-import {
-  keepPreviousData,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, type ChangeEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { TbPlus, TbTrash } from 'react-icons/tb';
-
-const getPaymentMethodLabel = (method: string) => {
-  switch (method) {
-    case 'cash':
-      return 'Tunai';
-    case 'transfer':
-      return 'Transfer';
-    case 'credit':
-      return 'Kredit';
-    default:
-      return method;
-  }
-};
-
-const getBuyerName = (sale: SalesListItem) =>
-  sale.customer?.name || sale.patient?.name || 'Umum';
+import {
+  buildSalesNoRowsTemplate,
+  getSalesBuyerName,
+  getSalesPaymentMethodLabel,
+} from './list/salesListLabels';
+import type { SalesListItem } from './list/types';
+import { useSalesListPage } from './list/useSalesListPage';
 
 const SalesListPage = () => {
-  const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-  const queryClient = useQueryClient();
-  const { openConfirmDialog } = useConfirmDialog();
-  const searchInputRef = useRef<HTMLInputElement>(
-    null
-  ) as React.RefObject<HTMLInputElement>;
-
-  const { data, isLoading, isFetching } = useQuery({
-    queryKey: QueryKeys.sales.paginated(
-      currentPage,
-      debouncedSearch,
-      itemsPerPage
-    ),
-    queryFn: () => fetchSales(currentPage, debouncedSearch, itemsPerPage),
-    placeholderData: keepPreviousData,
-    staleTime: 0,
-    refetchOnMount: 'always',
-    refetchOnWindowFocus: true,
-  });
-
-  const fetchSales = async (
-    page: number,
-    searchTerm: string,
-    limit: number
-  ) => {
-    const { data, error } = await salesService.getPaginatedSales({
-      page,
-      limit,
-      searchTerm,
-    });
-
-    if (error || !data) {
-      throw error ?? new Error('Gagal memuat data penjualan');
-    }
-
-    return data;
-  };
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search);
-      setCurrentPage(1);
-    }, 250);
-    return () => clearTimeout(timer);
-  }, [search]);
-
-  const sales = useMemo(() => data?.sales || [], [data?.sales]);
-  const totalItems = data?.totalItems || 0;
-
-  const deleteSaleMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await salesService.deleteSaleWithStockRestore(id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      for (const queryKey of getInvalidationKeys.sales.related()) {
-        void queryClient.invalidateQueries({ queryKey });
-      }
-    },
-    onError: error => {
-      console.error('Error deleting sale:', error);
-      alert(`Gagal menghapus penjualan: ${error.message}`);
-    },
-  });
-
-  const handleDelete = useCallback(
-    (sale: SalesListItem) => {
-      const invoiceLabel = sale.invoice_number || sale.id.slice(0, 8);
-
-      openConfirmDialog({
-        title: 'Konfirmasi Hapus',
-        message: `Apakah Anda yakin ingin menghapus penjualan "${invoiceLabel}"? Tindakan ini juga akan mengembalikan stok item yang terkait.`,
-        variant: 'danger',
-        confirmText: 'Hapus',
-        onConfirm: () => {
-          deleteSaleMutation.mutate(sale.id);
-        },
-      });
-    },
-    [deleteSaleMutation, openConfirmDialog]
-  );
-
-  const handleItemsPerPageChange = (
-    e: React.ChangeEvent<HTMLSelectElement>
-  ) => {
-    setItemsPerPage(Number(e.target.value));
-    setCurrentPage(1);
-  };
-
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const {
+    search,
+    setSearch,
+    debouncedSearch,
+    currentPage,
+    setCurrentPage,
+    itemsPerPage,
+    searchInputRef,
+    sales,
+    totalItems,
+    totalPages,
+    isLoading,
+    isFetching,
+    deleteSaleMutation,
+    handleDelete,
+    handleItemsPerPageChange,
+  } = useSalesListPage();
 
   const columnDefs = useMemo<ColDef<SalesListItem>[]>(
     () => [
@@ -158,7 +64,7 @@ const SalesListPage = () => {
         minWidth: 180,
         flex: 1,
         valueGetter: params =>
-          params.data ? getBuyerName(params.data) : 'Umum',
+          params.data ? getSalesBuyerName(params.data) : 'Umum',
       },
       {
         headerName: 'Dokter',
@@ -182,7 +88,8 @@ const SalesListPage = () => {
         headerName: 'Metode Pembayaran',
         minWidth: 160,
         cellStyle: { textAlign: 'center' },
-        valueFormatter: params => getPaymentMethodLabel(String(params.value)),
+        valueFormatter: params =>
+          getSalesPaymentMethodLabel(String(params.value)),
       },
       {
         colId: 'actions',
@@ -218,9 +125,7 @@ const SalesListPage = () => {
     [deleteSaleMutation.isPending, deleteSaleMutation.variables, handleDelete]
   );
 
-  const overlayNoRowsTemplate = debouncedSearch
-    ? `<span style="padding: 10px; color: oklch(55.4% 0.041 257.4);">Tidak ada penjualan dengan kata kunci "${debouncedSearch}"</span>`
-    : '<span style="padding: 10px; color: oklch(55.4% 0.041 257.4);">Tidak ada data penjualan yang ditemukan</span>';
+  const overlayNoRowsTemplate = buildSalesNoRowsTemplate(debouncedSearch);
 
   return (
     <Card
@@ -233,7 +138,7 @@ const SalesListPage = () => {
         <SearchBar
           inputRef={searchInputRef}
           value={search}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+          onChange={(e: ChangeEvent<HTMLInputElement>) =>
             setSearch(e.target.value)
           }
           placeholder="Cari nomor faktur..."

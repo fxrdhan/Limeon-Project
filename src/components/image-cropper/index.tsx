@@ -10,7 +10,9 @@ import React, {
 import { classNames } from '@/lib/classNames';
 import {
   constrainCropRectToBounds,
+  getCanvasOutputSize,
   getCropBounds,
+  getDragCursor,
   getInitialCropRect,
   getNextCropRect,
   getRenderedImageRect,
@@ -105,55 +107,6 @@ const CROP_HANDLES: Array<{
       'left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize',
   },
 ];
-
-const getCanvasOutputSize = (
-  sourceRect: CropperRect,
-  aspectRatio: number | null,
-  options?: Pick<ImageCropperExportOptions, 'width' | 'height'>
-) => {
-  const requestedWidth =
-    typeof options?.width === 'number' && options.width > 0
-      ? Math.round(options.width)
-      : null;
-  const requestedHeight =
-    typeof options?.height === 'number' && options.height > 0
-      ? Math.round(options.height)
-      : null;
-  const sourceAspectRatio = sourceRect.width / sourceRect.height;
-  const outputAspectRatio = aspectRatio || sourceAspectRatio;
-
-  if (requestedWidth && requestedHeight) {
-    return { width: requestedWidth, height: requestedHeight };
-  }
-
-  if (requestedWidth) {
-    return {
-      width: requestedWidth,
-      height: Math.max(1, Math.round(requestedWidth / outputAspectRatio)),
-    };
-  }
-
-  if (requestedHeight) {
-    return {
-      width: Math.max(1, Math.round(requestedHeight * outputAspectRatio)),
-      height: requestedHeight,
-    };
-  }
-
-  return {
-    width: Math.max(1, Math.round(sourceRect.width)),
-    height: Math.max(1, Math.round(sourceRect.height)),
-  };
-};
-
-const getDragCursor = (action: ImageCropperDragAction) => {
-  if (action === 'move') return 'move';
-  if (action === 'n' || action === 's') return 'ns-resize';
-  if (action === 'e' || action === 'w') return 'ew-resize';
-  if (action === 'ne' || action === 'sw') return 'nesw-resize';
-
-  return 'nwse-resize';
-};
 
 const ImageCropper = forwardRef<ImageCropperHandle, ImageCropperProps>(
   (

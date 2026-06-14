@@ -15,6 +15,10 @@ import type { RestoreMode } from './HistoryRestoreDialog';
 import { useHistorySelection } from '../hooks/useHistoryManagement';
 import { TbHistoryToggle } from 'react-icons/tb';
 import { itemHistoryService } from '../../infrastructure/itemHistory.service';
+import {
+  getItemHistoryPortalPosition,
+  getItemHistoryPortalShape,
+} from './itemHistoryPortalGeometry';
 
 interface HistoryItem {
   id: string;
@@ -43,11 +47,6 @@ interface ItemHistoryPortalProps {
   entityId?: string;
 }
 
-const PORTAL_MARGIN = 16;
-const PORTAL_WIDTH = 350;
-const PORTAL_TAB_WIDTH = 180;
-const PORTAL_TAB_HEIGHT = 44;
-const PORTAL_RADIUS = 16;
 const HISTORY_PORTAL_TITLE = 'Riwayat Perubahan';
 
 const historyPortalTitleVariants = {
@@ -138,25 +137,13 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
     if (!trigger) return;
 
     const rect = trigger.getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const width = Math.min(PORTAL_WIDTH, viewportWidth - PORTAL_MARGIN * 2);
-    const right = Math.min(viewportWidth - PORTAL_MARGIN, rect.right);
-    const left = Math.max(PORTAL_MARGIN, right - width);
-    const top = Math.max(PORTAL_MARGIN, rect.top - 12);
-    const availableHeight = viewportHeight - top - PORTAL_MARGIN;
-    const bodyMaxHeight = Math.max(
-      180,
-      availableHeight - PORTAL_TAB_HEIGHT + 1
+    setPosition(
+      getItemHistoryPortalPosition({
+        triggerRect: rect,
+        viewportWidth: window.innerWidth,
+        viewportHeight: window.innerHeight,
+      })
     );
-
-    setPosition({
-      top,
-      left,
-      width,
-      bodyMaxHeight,
-      bodyMinHeight: Math.min(460, bodyMaxHeight),
-    });
     setIsPositioned(true);
   }, [triggerRef]);
 
@@ -288,27 +275,10 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
     }
   };
 
-  const surfaceHeight = PORTAL_TAB_HEIGHT + position.bodyMinHeight;
-  const tabLeft = Math.max(
-    PORTAL_RADIUS * 2,
-    position.width - PORTAL_TAB_WIDTH
-  );
-  const historyPortalPath = [
-    `M 0 ${PORTAL_TAB_HEIGHT + PORTAL_RADIUS}`,
-    `Q 0 ${PORTAL_TAB_HEIGHT} ${PORTAL_RADIUS} ${PORTAL_TAB_HEIGHT}`,
-    `H ${tabLeft - PORTAL_RADIUS}`,
-    `Q ${tabLeft} ${PORTAL_TAB_HEIGHT} ${tabLeft} ${PORTAL_TAB_HEIGHT - PORTAL_RADIUS}`,
-    `V ${PORTAL_RADIUS}`,
-    `Q ${tabLeft} 0 ${tabLeft + PORTAL_RADIUS} 0`,
-    `H ${position.width - PORTAL_RADIUS}`,
-    `Q ${position.width} 0 ${position.width} ${PORTAL_RADIUS}`,
-    `V ${surfaceHeight - PORTAL_RADIUS}`,
-    `Q ${position.width} ${surfaceHeight} ${position.width - PORTAL_RADIUS} ${surfaceHeight}`,
-    `H ${PORTAL_RADIUS}`,
-    `Q 0 ${surfaceHeight} 0 ${surfaceHeight - PORTAL_RADIUS}`,
-    `V ${PORTAL_TAB_HEIGHT + PORTAL_RADIUS}`,
-    'Z',
-  ].join(' ');
+  const { path: historyPortalPath, surfaceHeight } = getItemHistoryPortalShape({
+    width: position.width,
+    bodyMinHeight: position.bodyMinHeight,
+  });
 
   const portalContent = (
     <AnimatePresence>

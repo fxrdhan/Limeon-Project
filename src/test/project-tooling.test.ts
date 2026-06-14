@@ -1,3 +1,5 @@
+/// <reference types="node" />
+
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -44,6 +46,19 @@ const collectFiles = (
 
   visit(rootDirectory);
   return files;
+};
+
+const collectDirectories = (relativeDirectory: string) => {
+  const rootDirectory = path.join(repoRoot, relativeDirectory);
+
+  if (!fs.existsSync(rootDirectory)) {
+    return [];
+  }
+
+  return fs
+    .readdirSync(rootDirectory, { withFileTypes: true })
+    .filter(entry => entry.isDirectory())
+    .map(entry => `${relativeDirectory}/${entry.name}`);
 };
 
 describe('project tooling guardrails', () => {
@@ -126,6 +141,46 @@ describe('project tooling guardrails', () => {
       return /from\s+['"]vitest['"]/.test(source)
         ? [`${filePath} imports vitest directly`]
         : [];
+    });
+
+    expect(formatViolations(violations)).toBe('none');
+  });
+
+  it('keeps Supabase migration filenames valid and uniquely named', () => {
+    const migrationFiles = collectFiles('supabase/migrations', ['.sql']);
+    const seenMigrationNames = new Map<string, string>();
+    const violations = migrationFiles.flatMap(filePath => {
+      const fileName = path.basename(filePath);
+      const match = /^(\d{14})_([a-z0-9_]+)\.sql$/.exec(fileName);
+
+      if (!match) {
+        return [`${filePath} does not use <14-digit-version>_<name>.sql`];
+      }
+
+      const migrationName = match[2];
+      const previousFilePath = seenMigrationNames.get(migrationName);
+      seenMigrationNames.set(migrationName, filePath);
+
+      return previousFilePath
+        ? [
+            `${filePath} duplicates migration name ${migrationName} from ${previousFilePath}`,
+          ]
+        : [];
+    });
+
+    expect(formatViolations(violations)).toBe('none');
+  });
+
+  it('keeps Supabase Edge Function directories deployable from local source', () => {
+    const functionDirectories = collectDirectories('supabase/functions').filter(
+      directory => path.basename(directory) !== '_shared'
+    );
+    const violations = functionDirectories.flatMap(directory => {
+      const entrypointPath = path.join(repoRoot, directory, 'index.ts');
+
+      return fs.existsSync(entrypointPath)
+        ? []
+        : [`${directory} is missing index.ts`];
     });
 
     expect(formatViolations(violations)).toBe('none');

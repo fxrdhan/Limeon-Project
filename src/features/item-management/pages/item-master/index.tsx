@@ -1,8 +1,5 @@
 import { memo, useMemo, useState } from 'react';
 
-import EntityGrid from '@/features/item-management/presentation/organisms/EntityGrid';
-import SearchToolbar from '@/components/SearchToolbar';
-
 // Simple realtime for all item master data
 import { useItemsSync } from '@/hooks/realtime/useItemsSync';
 
@@ -11,14 +8,10 @@ import { useItemGridColumns } from '@/features/item-management/application/hooks
 import { useItemsManagement } from '@/features/item-management/application/hooks/data/useItemsManagement';
 import { useConfirmDialog } from '@/components/dialog-box/useConfirmDialog';
 import { useSupplierTab } from './hooks/useSupplierTab';
+import ItemMasterGridSection from './components/ItemMasterGridSection';
 import { ItemMasterHeader } from './components/ItemMasterHeader';
 import { ItemMasterModalStack } from './components/ItemMasterModalStack';
-import {
-  isItemMasterEntityTab,
-  isItemMasterTab,
-  isOtherMasterDataTab,
-} from '@/features/item-management/shared/types';
-import { OTHER_MASTER_DATA_CONFIG } from './config';
+import ItemMasterSearchToolbarSection from './components/ItemMasterSearchToolbarSection';
 
 // Entity management hooks
 import {
@@ -40,21 +33,30 @@ import { useItemMasterTabSelectorState } from './hooks/useItemMasterTabSelectorS
 import { useItemMasterTabNavigation } from './hooks/useItemMasterTabNavigation';
 import { useItemModalState } from './hooks/useItemModalState';
 import { useVisibleGridColumns } from './hooks/useVisibleGridColumns';
+import {
+  getIsAnyMasterDataModalOpen,
+  getItemMasterActiveEntityType,
+  getItemMasterOtherMasterDataConfig,
+  getItemMasterPageTitle,
+  getItemMasterTabFlags,
+  getItemMasterTabSelectorLayerClass,
+} from './itemMasterPageState';
 
 const ItemMasterNew = memo(() => {
   const { activeTab, navigate } = useItemMasterRouting();
   const { openConfirmDialog } = useConfirmDialog();
 
-  const isItemTab = activeTab === 'items';
-  const isSupplierTab = activeTab === 'suppliers';
-  const isCustomerTab = activeTab === 'customers';
-  const isPatientTab = activeTab === 'patients';
-  const isDoctorTab = activeTab === 'doctors';
-  const isItemEntityTab = isItemMasterEntityTab(activeTab);
-  const isOtherMasterTab = isOtherMasterDataTab(activeTab);
-  const otherMasterDataConfig = isOtherMasterTab
-    ? OTHER_MASTER_DATA_CONFIG[activeTab]
-    : null;
+  const tabFlags = getItemMasterTabFlags(activeTab);
+  const {
+    isItemTab,
+    isSupplierTab,
+    isCustomerTab,
+    isPatientTab,
+    isDoctorTab,
+    isItemEntityTab,
+    isOtherMasterTab,
+  } = tabFlags;
+  const otherMasterDataConfig = getItemMasterOtherMasterDataConfig(activeTab);
 
   const {
     searchInputRef,
@@ -73,7 +75,6 @@ const ItemMasterNew = memo(() => {
     resetVisibleColumns,
   } = useVisibleGridColumns();
 
-  // ✅ REALTIME WORKING! Use postgres_changes approach
   useItemsSync({ enabled: true });
 
   const supplierTab = useSupplierTab({ enabled: isSupplierTab });
@@ -142,33 +143,21 @@ const ItemMasterNew = memo(() => {
     close: closeAddItemModal,
   } = itemModalState;
 
-  // Enhanced row grouping state with multi-grouping support (client-side only, no persistence)
   const [isRowGroupingEnabled] = useState(true);
   const showGroupPanel = true;
-  const defaultExpanded = -1; // -1 means expand all groups by default
+  const defaultExpanded = -1;
 
-  // No event handling needed for simple client-side row grouping
-
-  // Clean and simple - no persistence logic needed
-
-  // Simple client-side row grouping - no complex state management needed
-
-  // Items tab management (only for items tab)
   const itemsManagement = useItemsManagement({
     enabled: true,
   });
 
-  // Entity management (for entity tabs)
-  const activeEntityType = isItemMasterEntityTab(activeTab)
-    ? activeTab
-    : 'categories';
+  const activeEntityType = getItemMasterActiveEntityType(activeTab);
 
   const entityManager = useEntityManager({
     activeEntityType,
     searchInputRef: searchInputRef as React.RefObject<HTMLInputElement>,
   });
 
-  // Memoize entity options to prevent unnecessary re-renders
   const entityManagementOptions = useMemo(
     () => ({
       entityType: activeEntityType,
@@ -184,10 +173,8 @@ const ItemMasterNew = memo(() => {
     ]
   );
 
-  // Generic entity data management
   const entityData = useEntity(entityManagementOptions);
 
-  // Preload item_units data in background for better caching
   useEntity({
     entityType: 'units',
     enabled: activeTab === 'units' || isAddItemModalOpen,
@@ -195,7 +182,6 @@ const ItemMasterNew = memo(() => {
 
   const { columnDefs: itemColumnDefs } = useItemGridColumns();
 
-  // Entity column visibility management
   const entityCurrentConfig = useMemo(
     () =>
       isItemEntityTab ? entityManager.entityConfigs[activeEntityType] : null,
@@ -376,11 +362,11 @@ const ItemMasterNew = memo(() => {
     openEditSupplierModal,
   });
 
-  const showTabSelector = isItemMasterTab(activeTab);
-  const pageTitle =
-    activeTab === 'suppliers'
-      ? 'Daftar Supplier'
-      : (otherMasterDataConfig?.title ?? 'Item Master');
+  const showTabSelector = tabFlags.isItemMasterTab;
+  const pageTitle = getItemMasterPageTitle(
+    activeTab,
+    otherMasterDataConfig?.title
+  );
 
   const coordinatedSearchBarProps = useMemo(
     () => ({
@@ -397,21 +383,24 @@ const ItemMasterNew = memo(() => {
     ]
   );
 
-  const enableTabShortcuts = isItemMasterTab(activeTab);
-  const isAnyMasterDataModalOpen =
-    isAddItemModalOpen ||
-    isItemModalClosing ||
-    entityManager.isAddModalOpen ||
-    entityManager.isEditModalOpen ||
-    isAddSupplierModalOpen ||
-    isEditSupplierModalOpen ||
-    isAddCustomerModalOpen ||
-    isEditCustomerModalOpen ||
-    isAddPatientModalOpen ||
-    isEditPatientModalOpen ||
-    isAddDoctorModalOpen ||
-    isEditDoctorModalOpen;
-  const tabSelectorLayerClass = isAnyMasterDataModalOpen ? 'z-40' : 'z-[70]';
+  const enableTabShortcuts = tabFlags.isItemMasterTab;
+  const isAnyMasterDataModalOpen = getIsAnyMasterDataModalOpen({
+    isAddItemModalOpen,
+    isItemModalClosing,
+    isEntityAddModalOpen: entityManager.isAddModalOpen,
+    isEntityEditModalOpen: entityManager.isEditModalOpen,
+    isAddSupplierModalOpen,
+    isEditSupplierModalOpen,
+    isAddCustomerModalOpen,
+    isEditCustomerModalOpen,
+    isAddPatientModalOpen,
+    isEditPatientModalOpen,
+    isAddDoctorModalOpen,
+    isEditDoctorModalOpen,
+  });
+  const tabSelectorLayerClass = getItemMasterTabSelectorLayerClass(
+    isAnyMasterDataModalOpen
+  );
 
   useItemMasterItemsGridSync({
     gridApi: unifiedGridApi,
@@ -422,11 +411,6 @@ const ItemMasterNew = memo(() => {
     itemsData: itemsManagement.data as ItemDataType[],
   });
 
-  // Removed unified column handlers - now handled by live save in EntityGrid
-
-  // No need for mouse handlers - handled by SlidingSelector
-
-  // Unified rendering - keep tabs always mounted for smooth animation
   return (
     <>
       <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden p-6">
@@ -441,60 +425,50 @@ const ItemMasterNew = memo(() => {
           onTabSelectorExpandedChange={handleTabSelectorExpandedChange}
         />
 
-        {/* Unified SearchToolbar */}
-        <div className="flex items-center pt-8">
-          <div className="grow">
-            <SearchToolbar
-              searchScopeKey={activeTab}
-              searchInputRef={
-                searchInputRef as React.RefObject<HTMLInputElement>
-              }
-              searchBarProps={coordinatedSearchBarProps}
-              search={activeSearchValue}
-              placeholder={activePlaceholder}
-              onAdd={activeOnAdd}
-              addTooltipLabel={activeAddTooltipLabel}
-              onKeyDown={activeOnKeyDown}
-              items={activeItemsSelection}
-              onItemSelect={activeOnItemSelect}
-              gridApi={unifiedGridApi}
-              exportFilename={activeExportFilename}
-              exportTooltipLabel={activeExportTooltipLabel}
-              onTabNext={enableTabShortcuts ? handleTabNext : undefined}
-              onTabPrevious={enableTabShortcuts ? handleTabPrevious : undefined}
-            />
-          </div>
-        </div>
+        <ItemMasterSearchToolbarSection
+          searchScopeKey={activeTab}
+          searchInputRef={searchInputRef as React.RefObject<HTMLInputElement>}
+          searchBarProps={coordinatedSearchBarProps}
+          search={activeSearchValue}
+          placeholder={activePlaceholder}
+          onAdd={activeOnAdd}
+          addTooltipLabel={activeAddTooltipLabel}
+          onKeyDown={activeOnKeyDown}
+          items={activeItemsSelection}
+          onItemSelect={activeOnItemSelect}
+          gridApi={unifiedGridApi}
+          exportFilename={activeExportFilename}
+          exportTooltipLabel={activeExportTooltipLabel}
+          onTabNext={enableTabShortcuts ? handleTabNext : undefined}
+          onTabPrevious={enableTabShortcuts ? handleTabPrevious : undefined}
+        />
 
-        {/* Unified EntityGrid */}
-        <div className="min-h-0 flex-1">
-          <EntityGrid
-            activeTab={activeTab}
-            itemsData={itemsManagement.data as ItemDataType[]}
-            suppliersData={suppliersForDisplay}
-            entityData={masterDataRows}
-            isLoading={activeIsLoading}
-            isError={activeIsError}
-            error={activeError}
-            search={activeSearchValue}
-            itemColumnDefs={itemColumnDefs}
-            entityConfig={masterDataConfig}
-            entityColumnDefs={masterDataColumnDefs}
-            supplierColumnDefs={supplierColumnDefs}
-            onRowClick={unifiedRowClickHandler}
-            onGridReady={handleActiveGridReady}
-            isExternalFilterPresent={activeIsExternalFilterPresent}
-            doesExternalFilterPass={activeDoesExternalFilterPass}
-            onGridApiReady={handleUnifiedGridApiReady}
-            itemsPerPage={activeItemsPerPage}
-            hideFloatingPagination={isAnyMasterDataModalOpen}
-            isRowGroupingEnabled={
-              activeTab === 'items' ? isRowGroupingEnabled : false
-            }
-            defaultExpanded={activeTab === 'items' ? defaultExpanded : 1}
-            showGroupPanel={activeTab === 'items' ? showGroupPanel : true}
-          />
-        </div>
+        <ItemMasterGridSection
+          activeTab={activeTab}
+          itemsData={itemsManagement.data as ItemDataType[]}
+          suppliersData={suppliersForDisplay}
+          entityData={masterDataRows}
+          isLoading={activeIsLoading}
+          isError={activeIsError}
+          error={activeError}
+          search={activeSearchValue}
+          itemColumnDefs={itemColumnDefs}
+          entityConfig={masterDataConfig}
+          entityColumnDefs={masterDataColumnDefs}
+          supplierColumnDefs={supplierColumnDefs}
+          onRowClick={unifiedRowClickHandler}
+          onGridReady={handleActiveGridReady}
+          isExternalFilterPresent={activeIsExternalFilterPresent}
+          doesExternalFilterPass={activeDoesExternalFilterPass}
+          onGridApiReady={handleUnifiedGridApiReady}
+          itemsPerPage={activeItemsPerPage}
+          hideFloatingPagination={isAnyMasterDataModalOpen}
+          isRowGroupingEnabled={
+            activeTab === 'items' ? isRowGroupingEnabled : false
+          }
+          defaultExpanded={activeTab === 'items' ? defaultExpanded : 1}
+          showGroupPanel={activeTab === 'items' ? showGroupPanel : true}
+        />
       </div>
 
       <ItemMasterModalStack

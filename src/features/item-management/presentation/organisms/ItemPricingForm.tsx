@@ -27,9 +27,8 @@ import {
 import {
   buildBaselineDrafts,
   buildBaselineUpdates,
+  getBaselineCreateState,
   getBaselinePlaceholderName,
-  normalizeDiscount,
-  parseDiscountInput,
 } from './item-pricing-form/baselineUtils';
 import { BaselineSettingsPortal } from './item-pricing-form/BaselineSettingsPortal';
 import { LevelPricingPanel } from './item-pricing-form/LevelPricingPanel';
@@ -173,13 +172,11 @@ export default function ItemPricingForm({
     });
   };
 
-  const parsedNewBaselineDiscount = parseDiscountInput(baselineNewDiscount);
-  const normalizedNewBaselineDiscount = normalizeDiscount(
-    parsedNewBaselineDiscount
-  );
-  const canCreateBaselineLevel =
-    baselineNewDiscount.trim().length > 0 &&
-    !Number.isNaN(parsedNewBaselineDiscount);
+  const {
+    canCreate: canCreateBaselineLevel,
+    normalizedDiscount: normalizedNewBaselineDiscount,
+    pricePercentage: newBaselinePricePercentage,
+  } = getBaselineCreateState(baselineNewDiscount);
 
   const handleAddBaselineLevel = async () => {
     if (!levelPricing) return;
@@ -197,7 +194,7 @@ export default function ItemPricingForm({
       level_name:
         baselineNewName.trim() ||
         getBaselinePlaceholderName(levelPricing.levels),
-      price_percentage: Math.max(0, 100 - normalizedNewBaselineDiscount),
+      price_percentage: newBaselinePricePercentage,
       description: null,
     });
 

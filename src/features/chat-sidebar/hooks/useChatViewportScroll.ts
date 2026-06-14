@@ -11,6 +11,10 @@ import {
   getElementClientHeight,
 } from './chat-viewport-scroll/resizeSizeGetters';
 import { scrollElementToTop } from './chat-viewport-scroll/scrollElement';
+import {
+  getComposerResizePreservedScrollTop,
+  isViewportAtTop,
+} from './chat-viewport-scroll/scrollState';
 import type { UseChatViewportScrollProps } from './chat-viewport-scroll/types';
 import { useChatViewportBottomScroll } from './chat-viewport-scroll/useChatViewportBottomScroll';
 import { usePinnedViewportResizeSync } from './chat-viewport-scroll/usePinnedViewportResizeSync';
@@ -169,18 +173,14 @@ export const useChatViewportScroll = ({
         return;
       }
 
-      const composerHeightDelta =
-        nextComposerContainerHeight - previousComposerContainerHeight;
-      if (Math.abs(composerHeightDelta) < 0.5) {
-        return;
-      }
-
-      const nextScrollTop = Math.min(
-        Math.max(container.scrollTop + composerHeightDelta, 0),
-        Math.max(0, container.scrollHeight - container.clientHeight)
-      );
-
-      if (Math.abs(nextScrollTop - container.scrollTop) < 0.5) {
+      const nextScrollTop = getComposerResizePreservedScrollTop({
+        scrollTop: container.scrollTop,
+        scrollHeight: container.scrollHeight,
+        clientHeight: container.clientHeight,
+        previousComposerContainerHeight,
+        nextComposerContainerHeight,
+      });
+      if (nextScrollTop === null) {
         return;
       }
 
@@ -194,10 +194,10 @@ export const useChatViewportScroll = ({
   const checkIfAtTop = useCallback(() => {
     if (messagesContainerRef.current) {
       const { scrollTop } = messagesContainerRef.current;
-      if (atTopVisibilityRef.current) {
-        return scrollTop <= 14;
-      }
-      return scrollTop <= 2;
+      return isViewportAtTop({
+        scrollTop,
+        wasAtTopVisible: atTopVisibilityRef.current,
+      });
     }
 
     return true;

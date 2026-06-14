@@ -9,8 +9,6 @@ import {
   CardFooter,
 } from '@/components/card';
 import DataGrid from '@/components/ag-grid/DataGrid';
-import { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
 import {
   TbArrowLeft,
   TbCheck,
@@ -19,102 +17,24 @@ import {
   TbRefresh,
 } from 'react-icons/tb';
 import {
-  saveInvoiceToDatabase,
-  regenerateInvoiceData,
-} from '@/services/invoiceExtractor';
-import type { ExtractedInvoiceData, ProductListItem } from '@/types';
-import type { ColDef } from 'ag-grid-community';
-
-type ProductListGridRow = ProductListItem & {
-  gridId: string;
-};
+  buildConfirmInvoiceProductRows,
+  confirmInvoiceProductColumnDefs,
+  formatConfirmInvoiceCurrency,
+} from './confirmInvoiceDisplay';
+import { useConfirmInvoicePage } from './useConfirmInvoicePage';
 
 const ConfirmInvoicePage = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [invoiceData, setInvoiceData] = useState<ExtractedInvoiceData | null>(
-    null
-  );
-  const [isSaving, setIsSaving] = useState(false);
-  const [isRegenerating, setIsRegenerating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [processingTime, setProcessingTime] = useState<string | null>(null);
-  const [imageIdentifier, setImageIdentifier] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (location.state?.extractedData) {
-      setInvoiceData(JSON.parse(JSON.stringify(location.state.extractedData)));
-      if (location.state.processingTime) {
-        setProcessingTime(location.state.processingTime);
-      }
-      if (location.state.imageIdentifier) {
-        setImageIdentifier(location.state.imageIdentifier);
-      }
-    } else {
-      console.warn(
-        'Tidak ada data faktur yang diterima. Kembali ke halaman purchase list.'
-      );
-      void navigate('/purchases');
-    }
-  }, [location.state, navigate]);
-
-  const formatCurrency = (
-    value: number | string | undefined | null,
-    prefix = ''
-  ) => {
-    if (value === null || value === undefined) return '-';
-    const numValue = typeof value === 'string' ? parseFloat(value) : value;
-    if (isNaN(numValue)) return '-';
-
-    const formatter = new Intl.NumberFormat('id-ID', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    });
-    return `${prefix}${formatter.format(numValue)}`;
-  };
-
-  const handleRegenerate = async () => {
-    if (!imageIdentifier) {
-      setError(
-        'Tidak dapat memproses ulang: Identifier gambar tidak ditemukan.'
-      );
-      return;
-    }
-    setIsRegenerating(true);
-    setError(null);
-    try {
-      const startTime = Date.now();
-      const regeneratedData = await regenerateInvoiceData(imageIdentifier);
-      const newProcessingTime = (Date.now() - startTime) / 1000;
-      setInvoiceData(regeneratedData);
-      setProcessingTime(newProcessingTime.toFixed(1));
-    } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : 'Gagal memproses ulang data faktur'
-      );
-      console.error('Error regenerating invoice:', err);
-    } finally {
-      setIsRegenerating(false);
-    }
-  };
-
-  const handleConfirm = async () => {
-    if (!invoiceData || !imageIdentifier) return;
-    try {
-      setIsSaving(true);
-      setError(null);
-      await saveInvoiceToDatabase(invoiceData, imageIdentifier);
-      alert('Faktur berhasil disimpan!');
-      void navigate('/purchases');
-    } catch (err: unknown) {
-      setError(
-        err instanceof Error ? err.message : 'Gagal menyimpan data faktur'
-      );
-      console.error('Error saving invoice:', err);
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  const {
+    invoiceData,
+    isSaving,
+    isRegenerating,
+    error,
+    processingTime,
+    imageIdentifier,
+    navigateToPurchaseList,
+    handleRegenerate,
+    handleConfirm,
+  } = useConfirmInvoicePage();
 
   if (!invoiceData) {
     return <Loading message="Memuat data konfirmasi..." />;
@@ -133,16 +53,6 @@ const ConfirmInvoicePage = () => {
     );
   };
 
-  const renderProductField = (
-    value: string | number | undefined | null | boolean,
-    isDiscount = false
-  ) => {
-    const displayValue = value ?? '-';
-    return isDiscount && displayValue !== '-'
-      ? `${displayValue}%`
-      : displayValue.toLocaleString();
-  };
-
   const renderCurrencyField = (
     label: string,
     value: number | string | undefined | null
@@ -150,7 +60,9 @@ const ConfirmInvoicePage = () => {
     return (
       <div className="mb-2">
         <span className="font-medium text-slate-600">{label}:</span>{' '}
-        <span className="text-slate-800">Rp {formatCurrency(value)}</span>
+        <span className="text-slate-800">
+          Rp {formatConfirmInvoiceCurrency(value)}
+        </span>
       </div>
     );
   };
@@ -169,78 +81,7 @@ const ConfirmInvoicePage = () => {
       {title}
     </h4>
   );
-  const productRows: ProductListGridRow[] = (
-    invoiceData.product_list ?? []
-  ).map((product, index) => ({
-    ...product,
-    gridId: product.sku
-      ? `product-${product.sku}-${index}`
-      : `product-${product.product_name ?? 'unknown'}-${index}`,
-  }));
-  const productColumnDefs: ColDef<ProductListGridRow>[] = [
-    {
-      field: 'sku',
-      headerName: 'SKU',
-      minWidth: 100,
-      valueFormatter: params => String(renderProductField(params.value)),
-    },
-    {
-      field: 'product_name',
-      headerName: 'Nama Produk',
-      minWidth: 220,
-      flex: 1,
-      valueFormatter: params => String(renderProductField(params.value)),
-    },
-    {
-      field: 'quantity',
-      headerName: 'Qty',
-      minWidth: 80,
-      cellStyle: { textAlign: 'center' },
-      valueFormatter: params => String(renderProductField(params.value)),
-    },
-    {
-      field: 'unit',
-      headerName: 'Satuan',
-      minWidth: 90,
-      cellStyle: { textAlign: 'center' },
-      valueFormatter: params => String(renderProductField(params.value)),
-    },
-    {
-      field: 'batch_number',
-      headerName: 'No. Batch',
-      minWidth: 110,
-      cellStyle: { textAlign: 'center' },
-      valueFormatter: params => String(renderProductField(params.value)),
-    },
-    {
-      field: 'expiry_date',
-      headerName: 'Exp',
-      minWidth: 110,
-      cellStyle: { textAlign: 'center' },
-      valueFormatter: params => String(renderProductField(params.value)),
-    },
-    {
-      field: 'unit_price',
-      headerName: 'Harga',
-      minWidth: 110,
-      cellStyle: { textAlign: 'right' },
-      valueFormatter: params => String(renderProductField(params.value)),
-    },
-    {
-      field: 'discount',
-      headerName: 'Disk',
-      minWidth: 80,
-      cellStyle: { textAlign: 'right' },
-      valueFormatter: params => String(renderProductField(params.value, true)),
-    },
-    {
-      field: 'total_price',
-      headerName: 'Total',
-      minWidth: 120,
-      cellStyle: { textAlign: 'right' },
-      valueFormatter: params => String(renderProductField(params.value)),
-    },
-  ];
+  const productRows = buildConfirmInvoiceProductRows(invoiceData.product_list);
 
   return (
     <Card className="shadow-lg max-w-7xl mx-auto">
@@ -329,7 +170,7 @@ const ConfirmInvoicePage = () => {
               <SectionTitle number="4" title="Daftar Produk" />
               <DataGrid
                 rowData={productRows}
-                columnDefs={productColumnDefs}
+                columnDefs={confirmInvoiceProductColumnDefs}
                 disableFiltering={true}
                 suppressMovableColumns={true}
                 overlayNoRowsTemplate="<span style='padding: 10px; color: oklch(55.4% 0.041 257.4);'>Tidak ada produk di faktur ini</span>"
@@ -372,7 +213,7 @@ const ConfirmInvoicePage = () => {
                       Total Faktur:
                       <span className="text-blue-600 ml-2">
                         Rp{' '}
-                        {formatCurrency(
+                        {formatConfirmInvoiceCurrency(
                           invoiceData.payment_summary?.invoice_total
                         )}
                       </span>
@@ -388,7 +229,7 @@ const ConfirmInvoicePage = () => {
         <Button
           type="button"
           variant="secondary"
-          onClick={() => navigate('/purchases')}
+          onClick={navigateToPurchaseList}
         >
           <span className="flex items-center">
             <TbArrowLeft className="mr-2" />

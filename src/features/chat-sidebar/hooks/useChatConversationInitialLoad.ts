@@ -2,10 +2,6 @@ import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import { useEffect } from 'react';
 import type { UserDetails } from '@/types/database';
 import {
-  CHAT_CONVERSATION_CACHE_MAX_MESSAGES,
-  CHAT_CONVERSATION_PAGE_SIZE,
-} from '../constants';
-import {
   chatSidebarMessagesGateway,
   type ChatMessage,
 } from '../data/chatSidebarGateway';
@@ -15,18 +11,18 @@ import {
   applyConversationSnapshot,
   mergeLatestConversationPageWithExisting,
 } from '../utils/conversation-sync';
-import {
-  isCacheableChannelImageMessage,
-  loadCachedChannelImageAssetUrl,
-} from '../utils/channel-image-asset-cache';
+import { loadCachedChannelImageAssetUrl } from '../utils/channel-image-asset-cache';
 import { mapConversationMessagesForDisplay } from '../utils/message-display';
 import { resolveChatAssetUrl } from '../utils/message-file';
 import { replayPendingConversationRealtimeEvents } from './useChatConversationRealtime';
 import type { ChatConversationSessionState } from './useChatConversationSessionState';
-
-const INITIAL_IMAGE_PREVIEW_PRIME_LIMIT = 12;
-const INITIAL_CACHED_IMAGE_ASSET_PRIME_LIMIT = 8;
-const INITIAL_CACHED_IMAGE_ASSET_PRIME_TIMEOUT_MS = 80;
+import {
+  getInitialConversationRefreshPageSize,
+  getRecentCacheableImageMessages,
+  getRecentPreviewableImageMessages,
+  getUndeliveredIncomingMessageIds,
+  INITIAL_CACHED_IMAGE_ASSET_PRIME_TIMEOUT_MS,
+} from './chatConversationInitialLoadPlan';
 
 interface UseChatConversationInitialLoadProps {
   isOpen: boolean;
@@ -134,14 +130,8 @@ export const useChatConversationInitialLoad = ({
 
     const loadMessages = async () => {
       const primeRecentImagePreviewUrls = async (messages: ChatMessage[]) => {
-        const recentPreviewableMessages = [...messages]
-          .reverse()
-          .filter(
-            messageItem =>
-              isCacheableChannelImageMessage(messageItem) &&
-              Boolean(messageItem.file_preview_url?.trim())
-          )
-          .slice(0, INITIAL_IMAGE_PREVIEW_PRIME_LIMIT);
+        const recentPreviewableMessages =
+          getRecentPreviewableImageMessages(messages);
 
         if (recentPreviewableMessages.length === 0) {
           return;
@@ -163,10 +153,8 @@ export const useChatConversationInitialLoad = ({
           return;
         }
 
-        const recentCacheableMessages = [...messages]
-          .reverse()
-          .filter(messageItem => isCacheableChannelImageMessage(messageItem))
-          .slice(0, INITIAL_CACHED_IMAGE_ASSET_PRIME_LIMIT);
+        const recentCacheableMessages =
+          getRecentCacheableImageMessages(messages);
         if (recentCacheableMessages.length === 0) {
           return;
         }
@@ -194,13 +182,8 @@ export const useChatConversationInitialLoad = ({
         chatRuntimeCache.conversation.getFreshEntry(currentChannelId);
       const hasCachedConversation = Boolean(cachedConversation);
       const cachedPersistedMessages = cachedConversation?.messages || [];
-      const refreshPageSize = Math.max(
-        CHAT_CONVERSATION_PAGE_SIZE,
+      const boundedRefreshPageSize = getInitialConversationRefreshPageSize(
         cachedPersistedMessages.length
-      );
-      const boundedRefreshPageSize = Math.min(
-        refreshPageSize,
-        CHAT_CONVERSATION_CACHE_MAX_MESSAGES
       );
 
       if (cachedConversation) {
@@ -323,14 +306,11 @@ export const useChatConversationInitialLoad = ({
         setHasOlderMessages(nextHasOlderMessages);
         setLoadError(null);
 
-        const undeliveredIncomingMessageIds = latestPersistedMessages
-          .filter(
-            messageItem =>
-              messageItem.sender_id === targetUser.id &&
-              messageItem.receiver_id === user.id &&
-              !messageItem.is_delivered
-          )
-          .map(messageItem => messageItem.id);
+        const undeliveredIncomingMessageIds = getUndeliveredIncomingMessageIds({
+          messages: latestPersistedMessages,
+          userId: user.id,
+          targetUserId: targetUser.id,
+        });
 
         void markMessageIdsAsDelivered(
           undeliveredIncomingMessageIds,

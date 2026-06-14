@@ -77,3 +77,46 @@ export const getPrioritizedImageGroupPreviewMessageIds = (
     .map(message => message.id)
     .filter(messageId => messageId !== activePreviewId),
 ];
+
+export const withImageGroupPreviewThumbnailUrl = (
+  items: ImageGroupPreviewItem[],
+  messageId: string,
+  thumbnailUrl: string
+) =>
+  items.map(item =>
+    item.id === messageId
+      ? {
+          ...item,
+          thumbnailUrl,
+        }
+      : item
+  );
+
+export const withImageGroupPreviewResolvedUrl = (
+  items: ImageGroupPreviewItem[],
+  {
+    messageId,
+    previewName,
+    previewUrl,
+    preserveExistingFullPreviewUrl = false,
+  }: {
+    messageId: string;
+    previewName?: string;
+    previewUrl: string;
+    preserveExistingFullPreviewUrl?: boolean;
+  }
+) =>
+  items.map(item =>
+    item.id === messageId
+      ? {
+          ...item,
+          thumbnailUrl: item.thumbnailUrl || previewUrl,
+          previewUrl,
+          fullPreviewUrl:
+            preserveExistingFullPreviewUrl && item.fullPreviewUrl
+              ? item.fullPreviewUrl
+              : previewUrl,
+          ...(previewName ? { previewName } : {}),
+        }
+      : item
+  );

@@ -39,6 +39,28 @@ export interface OptimisticAttachmentThread {
   optimisticCaptionMessage: ChatMessage | null;
 }
 
+export interface PreparedComposerAttachmentOptimisticState {
+  appendBeforeSend?: boolean;
+  localPreviewUrl: string;
+  thread: OptimisticAttachmentThread;
+}
+
+interface PrepareAttachmentOptimisticTransactionParams extends Omit<
+  CreateOptimisticAttachmentThreadParams,
+  'localPreviewUrl' | 'timestamp'
+> {
+  file: File;
+  optimistic?: PreparedComposerAttachmentOptimisticState;
+  createLocalPreviewUrl?: (file: File) => string;
+  timestamp?: string;
+}
+
+export interface PreparedAttachmentOptimisticTransaction {
+  localPreviewUrl: string;
+  optimisticThread: OptimisticAttachmentThread;
+  shouldAppendOptimistic: boolean;
+}
+
 export const createOptimisticAttachmentThread = ({
   tempIdPrefix,
   stableKeySuffix,
@@ -96,6 +118,45 @@ export const createOptimisticAttachmentThread = ({
     captionStableKey,
     optimisticMessage,
     optimisticCaptionMessage,
+  };
+};
+
+export const prepareAttachmentOptimisticTransaction = ({
+  optimistic,
+  file,
+  tempIdPrefix,
+  stableKeySuffix,
+  captionText,
+  currentChannelId,
+  user,
+  targetUser,
+  replyToId,
+  buildOptimisticMessage,
+  createLocalPreviewUrl = attachmentFile => URL.createObjectURL(attachmentFile),
+  timestamp = new Date().toISOString(),
+}: PrepareAttachmentOptimisticTransactionParams): PreparedAttachmentOptimisticTransaction => {
+  const optimisticThread =
+    optimistic?.thread ??
+    createOptimisticAttachmentThread({
+      tempIdPrefix,
+      stableKeySuffix,
+      captionText,
+      currentChannelId,
+      localPreviewUrl:
+        optimistic?.localPreviewUrl ?? createLocalPreviewUrl(file),
+      timestamp,
+      user,
+      targetUser,
+      replyToId,
+      buildOptimisticMessage,
+    });
+  const localPreviewUrl =
+    optimistic?.localPreviewUrl ?? optimisticThread.optimisticMessage.message;
+
+  return {
+    localPreviewUrl,
+    optimisticThread,
+    shouldAppendOptimistic: optimistic?.appendBeforeSend !== false,
   };
 };
 

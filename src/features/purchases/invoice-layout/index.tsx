@@ -1,6 +1,14 @@
 import React from 'react';
 import { formatDateOnlyDisplayValue } from '@/lib/formatters';
 import type { InvoiceLayoutProps } from '@/types';
+import {
+  getPurchaseDocumentItemCode,
+  getPurchaseDocumentItemName,
+  getPurchaseDocumentPaymentMethodLabel,
+  getPurchaseDocumentPaymentStatusClass,
+  getPurchaseDocumentPaymentStatusLabel,
+  getPurchaseDocumentPositivePercentageLabel,
+} from '../purchaseDocument';
 
 const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
   purchase,
@@ -112,10 +120,10 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
                     {index + 1}
                   </td>
                   <td className="border p-1 pt-2 pb-2">
-                    {item.item?.code || '-'}
+                    {getPurchaseDocumentItemCode(item)}
                   </td>
                   <td className="border p-1 pt-2 pb-2">
-                    {item.item?.name || 'Item tidak ditemukan'}
+                    {getPurchaseDocumentItemName(item)}
                   </td>
                   <td className="border p-1 pt-2 pb-2 text-center">
                     {item.batch_no || '-'}
@@ -139,13 +147,13 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
                     {item.price.toLocaleString('id-ID')}
                   </td>
                   <td className="border p-1 pt-2 pb-2 text-right">
-                    {item.discount > 0 ? `${item.discount}%` : '-'}
+                    {getPurchaseDocumentPositivePercentageLabel(item.discount)}
                   </td>
                   {!purchase.is_vat_included && (
                     <td className="border p-1 pt-2 pb-2 text-right">
-                      {item.vat_percentage > 0
-                        ? `${item.vat_percentage}%`
-                        : '-'}
+                      {getPurchaseDocumentPositivePercentageLabel(
+                        item.vat_percentage
+                      )}
                     </td>
                   )}
                   <td className="border p-1 pt-2 pb-2 text-right">
@@ -172,19 +180,11 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
             <span className="text-left w-[120px]">Status Pembayaran</span>
             <span className="px-2">:</span>
             <span
-              className={`${
-                purchase.payment_status === 'paid'
-                  ? 'text-green-600'
-                  : purchase.payment_status === 'partial'
-                    ? 'text-orange-600'
-                    : 'text-red-600'
-              }`}
+              className={getPurchaseDocumentPaymentStatusClass(
+                purchase.payment_status
+              )}
             >
-              {purchase.payment_status === 'paid'
-                ? 'Lunas'
-                : purchase.payment_status === 'partial'
-                  ? 'Sebagian'
-                  : 'Belum Dibayar'}
+              {getPurchaseDocumentPaymentStatusLabel(purchase.payment_status)}
             </span>
           </div>
 
@@ -192,13 +192,7 @@ const InvoiceLayout: React.FC<InvoiceLayoutProps> = ({
             <span className="text-left w-[120px]">Metode Pembayaran</span>
             <span className="px-2">:</span>
             <span>
-              {purchase.payment_method === 'cash'
-                ? 'Tunai'
-                : purchase.payment_method === 'transfer'
-                  ? 'Transfer'
-                  : purchase.payment_method === 'credit'
-                    ? 'Kredit'
-                    : purchase.payment_method}
+              {getPurchaseDocumentPaymentMethodLabel(purchase.payment_method)}
             </span>
           </div>
 

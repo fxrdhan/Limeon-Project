@@ -16,7 +16,19 @@ Keep the global store small. All conversation runtime lives inside the feature.
 - `hooks/useChatSession.ts`: owns conversation data, initial load, pagination, realtime recovery, presence, receipts, and cache sync.
 - `hooks/useChatInteractionModes.ts`: owns search, selection, copy, and per-message interaction state.
 - `hooks/useChatSidebarUiState.ts`: owns composer state, viewport/menu behavior, and preview portals.
+- `hooks/messages-pane-image-previews`: single and grouped image preview
+  orchestration plus pure preview item derivation helpers.
 - `hooks/useChatConversationMutations.ts`: owns send, edit, delete, download, and forward mutations.
+- `hooks/chatComposerSendPlan.ts`: pure send-plan helpers for remote
+  attachments, caption placement, and bulk image optimistic batches.
+- `utils/channel-image-asset-cache`: runtime and persisted channel image asset
+  cache, including pure retention/pruning helpers.
+- `utils/message-file.ts`: public chat file utility facade used by message
+  rendering, previews, copy, and transfer flows.
+- `utils/message-file-assets.ts`: signed URL, blob fallback, cache, and
+  open/download implementation behind the public file utility facade.
+- `components/messages/messageDocumentAttachmentData.ts`: pure document
+  attachment metadata for grouped file rendering.
 
 ## Change Guide
 
@@ -25,7 +37,16 @@ Start from the layer that matches the behavior you want to change.
 - Conversation loading or realtime sync: `hooks/useChatSession.ts`, `hooks/useChatConversationInitialLoad.ts`, `hooks/useChatConversationRealtime.ts`
 - Search and selection behavior: `hooks/useChatInteractionModes.ts`
 - Composer attachments, paste handling, and local previews: `hooks/useChatComposer.ts`, `hooks/useChatSidebarPreviewState.ts`
+- Composer send-plan derivation: `hooks/chatComposerSendPlan.ts`
+- Message image preview item derivation:
+  `hooks/messages-pane-image-previews/imageGroupPreviewItems.ts`
+- Channel image asset cache retention/pruning:
+  `utils/channel-image-asset-cache`
 - Message actions such as send/edit/delete/forward: `hooks/useChatConversationMutations.ts`
+- File preview/copy/download asset behavior: `utils/message-file.ts` public API
+  and `utils/message-file-assets.ts` implementation details.
+- Grouped document attachment labels/previews:
+  `components/messages/messageDocumentAttachmentData.ts`
 
 ## State Ownership
 

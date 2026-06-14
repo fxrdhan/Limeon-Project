@@ -14,7 +14,6 @@ import {
   createCurrencyColumn,
 } from '@/components/ag-grid/columns';
 import DataGrid from '@/components/ag-grid/DataGrid';
-import { getInventoryUnitMetaLabel } from '@/lib/item-units';
 import {
   COLLAPSIBLE_SECTION_HEADER_CLASS,
   SURFACE_CARD_CLASS,
@@ -25,6 +24,14 @@ import type {
   PackageConversionLogicFormData,
 } from '../../shared/types';
 import type { ItemInventoryUnit } from '@/types/database';
+import {
+  getFilteredAvailablePackageConversionUnits,
+  getPackageConversionBaseUnitOption,
+  getPackageConversionExistingUnitOptions,
+  getUniquePackageConversions,
+  parsePackageConversionCurrencyValue,
+  resolvePackageConversionParentUnitName,
+} from './item-package-conversion-form/helpers';
 
 const DeleteButton = React.memo(
   ({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) => (
@@ -41,16 +48,6 @@ const DeleteButton = React.memo(
 );
 
 DeleteButton.displayName = 'DeleteButton';
-
-const parseCurrencyValue = (value: unknown) => {
-  if (typeof value === 'number') return Math.max(0, value);
-  if (typeof value === 'string') {
-    const numeric = value.replace(/[^0-9]/g, '');
-    const parsed = Number(numeric);
-    return Math.max(0, Number.isNaN(parsed) ? 0 : parsed);
-  }
-  return 0;
-};
 
 interface LocalItemPackageConversionManagerProps {
   isExpanded?: boolean;
@@ -98,62 +95,43 @@ export default function ItemPackageConversionManager({
     typeof document !== 'undefined' ? document.body : undefined;
   const filteredAvailableUnits = useMemo(
     () =>
-      availableUnits
-        .filter(unit => unit.id !== baseUnitId)
-        .filter(
-          unit =>
-            !conversions.some(
-              uc =>
-                (uc.inventory_unit_id || uc.to_unit_id || uc.unit.id) ===
-                unit.id
-            )
-        ),
+      getFilteredAvailablePackageConversionUnits({
+        availableUnits,
+        baseUnitId,
+        conversions,
+      }),
     [availableUnits, baseUnitId, conversions]
   );
 
   const filteredConversions = useMemo(
-    () =>
-      conversions.filter(
-        (uc, index, self) =>
-          index ===
-            self.findIndex(
-              u =>
-                (u.inventory_unit_id || u.to_unit_id || u.unit.id) ===
-                (uc.inventory_unit_id || uc.to_unit_id || uc.unit.id)
-            ) && uc.unit
-      ),
+    () => getUniquePackageConversions(conversions),
     [conversions]
   );
 
+  const baseUnitOption = useMemo(
+    () =>
+      getPackageConversionBaseUnitOption({
+        availableUnits,
+        baseUnit,
+        baseUnitId,
+      }),
+    [availableUnits, baseUnit, baseUnitId]
+  );
+
+  const existingUnitOptions = useMemo(
+    () => getPackageConversionExistingUnitOptions(filteredConversions),
+    [filteredConversions]
+  );
+
   const resolveParentUnitName = useCallback(
-    (parentInventoryUnitId?: string | null) => {
-      if (!parentInventoryUnitId) {
-        return baseUnit || 'Unit Dasar';
-      }
-
-      if (parentInventoryUnitId === baseUnitId) {
-        return baseUnit || 'Unit Dasar';
-      }
-
-      const parentFromConversions = filteredConversions.find(
-        conversion =>
-          (conversion.inventory_unit_id ||
-            conversion.to_unit_id ||
-            conversion.unit.id) === parentInventoryUnitId
-      );
-      if (parentFromConversions?.unit?.name) {
-        return parentFromConversions.unit.name;
-      }
-
-      const parentFromAvailableUnits = availableUnits.find(
-        unit => unit.id === parentInventoryUnitId
-      );
-      if (parentFromAvailableUnits?.name) {
-        return parentFromAvailableUnits.name;
-      }
-
-      return baseUnit || 'Unit Dasar';
-    },
+    (parentInventoryUnitId?: string | null) =>
+      resolvePackageConversionParentUnitName({
+        parentInventoryUnitId,
+        baseUnit,
+        baseUnitId,
+        availableUnits,
+        conversions: filteredConversions,
+      }),
     [availableUnits, baseUnit, baseUnitId, filteredConversions]
   );
 
@@ -260,7 +238,7 @@ export default function ItemPackageConversionManager({
     }) => {
       if (event.colDef.field !== 'sell_price') return;
       if (!event.data) return;
-      const nextValue = parseCurrencyValue(event.newValue);
+      const nextValue = parsePackageConversionCurrencyValue(event.newValue);
       onUpdateSellPrice(event.data.id, nextValue);
     },
     [onUpdateSellPrice]
@@ -317,7 +295,8 @@ export default function ItemPackageConversionManager({
         ...headerMenuDisabled,
         enableCellChangeFlash: false,
         editable: !disabled,
-        valueParser: params => parseCurrencyValue(params.newValue),
+        valueParser: params =>
+          parsePackageConversionCurrencyValue(params.newValue),
       },
       {
         field: 'actions',
@@ -412,34 +391,8 @@ export default function ItemPackageConversionManager({
                   baseUnit={baseUnit}
                   baseUnitId={baseUnitId}
                   availableUnits={filteredAvailableUnits}
-                  baseUnitOption={
-                    baseUnitId
-                      ? (() => {
-                          const baseUnitDetail = availableUnits.find(
-                            unit => unit.id === baseUnitId
-                          );
-                          return {
-                            id: baseUnitId,
-                            name: baseUnit,
-                            code: baseUnitDetail?.code,
-                            description:
-                              baseUnitDetail?.description ?? undefined,
-                            updated_at: baseUnitDetail?.updated_at,
-                          };
-                        })()
-                      : null
-                  }
-                  existingUnits={filteredConversions.map(conversion => ({
-                    id:
-                      conversion.inventory_unit_id ||
-                      conversion.to_unit_id ||
-                      conversion.unit.id,
-                    name: conversion.unit.name,
-                    code: conversion.unit.code,
-                    description: conversion.unit.description ?? undefined,
-                    updated_at: conversion.unit.updated_at,
-                    metaLabel: getInventoryUnitMetaLabel(conversion.unit),
-                  }))}
+                  baseUnitOption={baseUnitOption}
+                  existingUnits={existingUnitOptions}
                   formData={formData}
                   onFormDataChange={onFormDataChange}
                   onAddConversion={onAddConversion}

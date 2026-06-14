@@ -17,7 +17,9 @@ import {
 } from './master-data-management/errors';
 import { filterMasterDataIdentities } from './master-data-management/filtering';
 import {
-  getIdentityImageUrl,
+  getIdentityImageUploadPath,
+  getIdentityImageUrlForEntity,
+  getSupersededIdentityImagePath,
   IDENTITY_IMAGE_BUCKET,
   IMAGE_ENABLED_TABLES,
 } from './master-data-management/identityImages';
@@ -26,6 +28,10 @@ import {
   getMasterDataDeleteMutation,
   getMasterDataUpdateMutation,
 } from './master-data-management/mutations';
+import {
+  getMasterDataModalPayload,
+  type MasterDataModalSubmitData,
+} from './master-data-management/modalPayload';
 import { getHooksForTable } from './master-data-management/tableHooks';
 import type { MasterDataIdentity } from './master-data-management/types';
 
@@ -194,17 +200,17 @@ export const useMasterDataManagement = (
         return;
       }
 
-      const extension =
-        file.name.split('.').pop()?.toLowerCase().trim() || 'jpg';
-      const nextImagePath = `${tableName}/${entityId}/image.${extension}`;
-      const existingImageUrl =
-        editingIdentity?.id === entityId
-          ? getIdentityImageUrl(editingIdentity)
-          : getIdentityImageUrl(
-              (allData as MasterDataIdentity[]).find(
-                identity => identity.id === entityId
-              )
-            );
+      const identities = allData as MasterDataIdentity[];
+      const nextImagePath = getIdentityImageUploadPath(
+        tableName,
+        entityId,
+        file.name
+      );
+      const existingImageUrl = getIdentityImageUrlForEntity({
+        entityId,
+        editingIdentity,
+        identities,
+      });
 
       const { publicUrl } = await StorageService.uploadFile(
         IDENTITY_IMAGE_BUCKET,
@@ -219,15 +225,16 @@ export const useMasterDataManagement = (
               IDENTITY_IMAGE_BUCKET
             )
           : null;
-      const expectedImagePathPrefix = `${tableName}/${entityId}/`;
-      if (
-        oldImagePath &&
-        oldImagePath !== nextImagePath &&
-        oldImagePath.startsWith(expectedImagePathPrefix)
-      ) {
+      const supersededImagePath = getSupersededIdentityImagePath({
+        oldImagePath,
+        nextImagePath,
+        tableName,
+        entityId,
+      });
+      if (supersededImagePath) {
         await StorageService.deleteEntityImage(
           IDENTITY_IMAGE_BUCKET,
-          oldImagePath
+          supersededImagePath
         );
       }
 
@@ -262,14 +269,11 @@ export const useMasterDataManagement = (
         return;
       }
 
-      const existingImageUrl =
-        editingIdentity?.id === entityId
-          ? getIdentityImageUrl(editingIdentity)
-          : getIdentityImageUrl(
-              (allData as MasterDataIdentity[]).find(
-                identity => identity.id === entityId
-              )
-            );
+      const existingImageUrl = getIdentityImageUrlForEntity({
+        entityId,
+        editingIdentity,
+        identities: allData as MasterDataIdentity[],
+      });
 
       const oldImagePath =
         typeof existingImageUrl === 'string'
@@ -307,30 +311,9 @@ export const useMasterDataManagement = (
   );
 
   const handleModalSubmit = useCallback(
-    async (identityData: {
-      id?: string;
-      code?: string;
-      name?: string;
-      description?: string;
-      address?: string;
-      data?: Record<string, unknown>;
-    }): Promise<unknown> => {
+    async (identityData: MasterDataModalSubmitData): Promise<unknown> => {
       try {
-        const defaultData: Record<string, unknown> = {};
-        if (identityData.name !== undefined) {
-          defaultData.name = identityData.name;
-        }
-        if (identityData.description !== undefined) {
-          defaultData.description = identityData.description;
-        }
-        if (identityData.address !== undefined) {
-          defaultData.address = identityData.address;
-        }
-        if (identityData.code !== undefined) {
-          defaultData.code = identityData.code;
-        }
-
-        const payloadData = identityData.data ?? defaultData;
+        const payloadData = getMasterDataModalPayload(identityData);
 
         let mutationResult: unknown;
 

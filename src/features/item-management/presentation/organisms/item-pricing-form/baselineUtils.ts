@@ -9,6 +9,18 @@ export const parseDiscountInput = (value: string) =>
 export const normalizeDiscount = (value: number) =>
   Number.isNaN(value) ? 0 : Math.min(Math.max(value, 0), 100);
 
+export const getBaselineCreateState = (discountInput: string) => {
+  const parsedDiscount = parseDiscountInput(discountInput);
+  const normalizedDiscount = normalizeDiscount(parsedDiscount);
+
+  return {
+    parsedDiscount,
+    normalizedDiscount,
+    canCreate: discountInput.trim().length > 0 && !Number.isNaN(parsedDiscount),
+    pricePercentage: Math.max(0, 100 - normalizedDiscount),
+  };
+};
+
 export const buildBaselineDrafts = (levels: CustomerLevel[]) => {
   const drafts: Record<string, string> = {};
 

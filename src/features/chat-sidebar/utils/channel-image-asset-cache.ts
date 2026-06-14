@@ -20,6 +20,7 @@ import {
   touchPersistedChannelImageAssetRecord,
   writePersistedChannelImageAssetRecord,
 } from './channel-image-asset-cache/persistence';
+import { getChannelImageAssetKeysToPrune } from './channel-image-asset-cache/pruning';
 import type {
   CacheableImageMessage,
   ChannelImageAssetVariant,
@@ -116,30 +117,13 @@ const prunePersistedFullChannelImageAssets = async (
     return;
   }
 
-  let totalBytes = persistedFullRecords.reduce(
-    (totalSize, record) => totalSize + record.byteSize,
-    0
-  );
-  if (totalBytes <= CHANNEL_IMAGE_ASSET_FULL_BUDGET_BYTES) {
+  const assetKeysToDelete = getChannelImageAssetKeysToPrune({
+    budgetBytes: CHANNEL_IMAGE_ASSET_FULL_BUDGET_BYTES,
+    protectedAssetKey,
+    records: persistedFullRecords,
+  });
+  if (assetKeysToDelete.length === 0) {
     return;
-  }
-
-  const deletableRecords = persistedFullRecords
-    .filter(record => record.key !== protectedAssetKey)
-    .sort(
-      (leftRecord, rightRecord) =>
-        leftRecord.lastAccessedAt - rightRecord.lastAccessedAt
-    );
-
-  const assetKeysToDelete: string[] = [];
-
-  for (const record of deletableRecords) {
-    if (totalBytes <= CHANNEL_IMAGE_ASSET_FULL_BUDGET_BYTES) {
-      break;
-    }
-
-    totalBytes -= record.byteSize;
-    assetKeysToDelete.push(record.key);
   }
 
   await deletePersistedChannelImageAssetKeys(assetKeysToDelete);

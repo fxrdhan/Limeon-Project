@@ -14,11 +14,9 @@ import {
   buildReadyImagePreviewFields,
   prepareImagePreviewPersistence,
 } from '../utils/attachment-preview-persistence';
+import type { PreparedComposerAttachmentOptimisticState } from '../utils/attachment-send';
 import { mapPersistedMessageForDisplay } from '../utils/conversation-sync';
-import type {
-  PreparedComposerAttachmentOptimisticState,
-  SendAttachmentMessageOptions,
-} from './useAttachmentMessageTransaction';
+import type { SendAttachmentMessageOptions } from './useAttachmentMessageTransaction';
 
 interface UseChatImageAttachmentSenderParams {
   user: {

@@ -5,6 +5,8 @@ shell used by item, supplier, customer, patient, and doctor tabs.
 
 - Route mount: `src/app/routes/master-data/layout.tsx`
 - Unified grid page: `pages/item-master`
+- Unified grid page-state helpers: `pages/item-master/itemMasterPageState.ts`
+- Unified grid render sections: `pages/item-master/components/ItemMaster*Section.tsx`
 - Item modal workflow: `presentation/templates/item`
 - Generic entity modal workflow: `presentation/templates/entity`
 - Feature public route constants: `public/masterDataNavigation.ts`
@@ -35,14 +37,26 @@ Start from the behavior owner, then move pure logic downward when it can be
 tested outside React.
 
 - Item form state or dirty/cache behavior: `application/hooks/form`
+- Pure item form defaults and dirty comparison:
+  `application/hooks/form/itemFormStateHelpers.ts`
 - Item save/update/delete behavior: `application/hooks/core`
+- Item CRUD cache/submit data derivation:
+  `application/hooks/core/itemCrudData.ts`
 - Pending package conversion payloads: `application/hooks/core/pendingPackageConversion.ts`
 - Package conversion editing behavior before submit: `application/hooks/utils`
+- Package conversion form derivations:
+  `presentation/organisms/item-package-conversion-form/helpers.ts`
+- Item pricing baseline derivations:
+  `presentation/organisms/item-pricing-form/baselineUtils.ts`
 - Item fetch/hydration behavior: `application/hooks/data`
 - Master-data tab routing from outside this feature:
   `public/masterDataNavigation.ts`
 - Master-data tab routing implementation and internal config:
   `shared/masterDataNavigation.ts`
+- Item-master page flags, title, active entity fallback, and modal layer
+  derivation: `pages/item-master/itemMasterPageState.ts`
+- Item-master page toolbar/grid layout wrappers:
+  `pages/item-master/components/ItemMaster*Section.tsx`
 - App-wide item-management testing integration: `public/testing.ts`
 - Modal layout and visible form sections: `presentation/templates`
 

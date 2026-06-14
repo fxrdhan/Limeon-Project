@@ -46,7 +46,9 @@ describe('message-file utils', () => {
   it('falls back to the chat storage gateway when direct fetch fails', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockRejectedValue(new Error('network failed')) as typeof fetch
+      vi.fn(async () => {
+        throw new Error('network failed');
+      })
     );
     mockStorageService.downloadFile.mockResolvedValue(
       new Blob(['pdf'], { type: 'application/pdf' })
@@ -59,6 +61,24 @@ describe('message-file utils', () => {
     expect(mockStorageService.downloadFile).toHaveBeenCalledWith(
       'documents/channel/stok.pdf'
     );
+    expect(pdfBlob).toBeInstanceOf(Blob);
+    expect(pdfBlob?.type).toBe('application/pdf');
+  });
+
+  it('coerces direct fetched pdf blobs with missing mime type', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        blob: async () => new Blob(['pdf']),
+      })
+    );
+
+    const pdfBlob = await fetchPdfBlobWithFallback(
+      'https://example.com/storage/v1/object/public/chat/documents/channel/stok.pdf'
+    );
+
+    expect(mockStorageService.downloadFile).not.toHaveBeenCalled();
     expect(pdfBlob).toBeInstanceOf(Blob);
     expect(pdfBlob?.type).toBe('application/pdf');
   });

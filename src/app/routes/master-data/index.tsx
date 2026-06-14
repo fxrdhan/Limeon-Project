@@ -12,11 +12,11 @@ export const MasterDataRoutes = (
       />
 
       {/* Unified grid shell: Item Master + Suppliers + Customers + Patients + Doctors */}
-      <Route path="item-master/*" element={<></>} />
-      <Route path="suppliers" element={<></>} />
-      <Route path="customers" element={<></>} />
-      <Route path="patients" element={<></>} />
-      <Route path="doctors" element={<></>} />
+      <Route path="item-master/*" element={null} />
+      <Route path="suppliers" element={null} />
+      <Route path="customers" element={null} />
+      <Route path="patients" element={null} />
+      <Route path="doctors" element={null} />
     </Route>
   </>
 );

@@ -22,6 +22,12 @@ export type TableType =
   | 'patients'
   | 'doctors';
 
+type GridApiAvailability = Pick<GridApi, 'isDestroyed'>;
+export type GridPaginationStateApi = GridApiAvailability &
+  Pick<GridApi, 'getGridOption'>;
+export type GridStatePersistenceApi = GridPaginationStateApi &
+  Pick<GridApi, 'getState'>;
+
 // Get storage key for specific table
 const getStorageKey = (tableType: TableType): string => {
   return `${GRID_STATE_PREFIX}${tableType}`;
@@ -62,12 +68,12 @@ const stripTransientGridState = (state: GridState): GridState => ({
   rangeSelection: undefined,
 });
 
-const getPaginationEnabled = (gridApi: GridApi): boolean => {
+const getPaginationEnabled = (gridApi: GridPaginationStateApi): boolean => {
   return gridApi.getGridOption('pagination') !== false;
 };
 
 export const savePaginationEnabledState = (
-  gridApi: GridApi,
+  gridApi: GridPaginationStateApi,
   tableType: TableType
 ): boolean => {
   try {
@@ -105,7 +111,7 @@ export const loadSavedPaginationEnabledState = (
 
 // Save current grid state to sessionStorage (including pagination state)
 export const saveGridState = (
-  gridApi: GridApi,
+  gridApi: GridStatePersistenceApi,
   tableType: TableType
 ): boolean => {
   try {
@@ -136,7 +142,7 @@ export const saveGridState = (
 
 // Auto-save grid state silently (no toast notifications for live save)
 export const autoSaveGridState = (
-  gridApi: GridApi,
+  gridApi: GridStatePersistenceApi,
   tableType: TableType
 ): boolean => {
   try {

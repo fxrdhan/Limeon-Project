@@ -91,6 +91,28 @@ const getModuleSpecifiers = (filePath: string, source: string) => {
   return moduleSpecifiers;
 };
 
+const getDynamicImportSpecifiers = (filePath: string, source: string) => {
+  const sourceFile = parseSource(filePath, source);
+  const moduleSpecifiers: string[] = [];
+
+  const visit = (node: ts.Node) => {
+    if (
+      ts.isCallExpression(node) &&
+      node.expression.kind === ts.SyntaxKind.ImportKeyword
+    ) {
+      const [specifier] = node.arguments;
+      if (specifier && ts.isStringLiteral(specifier)) {
+        moduleSpecifiers.push(specifier.text);
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
+  return moduleSpecifiers;
+};
+
 const resolveKnownPath = (pathWithoutExtension: string) => {
   const candidates = [
     pathWithoutExtension,
@@ -160,6 +182,26 @@ const isSharedLayerSource = (filePath: string) =>
 
 const isAppLayoutSource = (filePath: string) =>
   filePath.startsWith('src/app/layout/');
+
+const isAppRouteSource = (filePath: string) =>
+  filePath === 'src/app/App.tsx' || filePath.startsWith('src/app/routes/');
+
+const getRouteMountedFeatureTargets = () =>
+  new Set(
+    [...sourceByPath.entries()].flatMap(([filePath, source]) => {
+      if (!isRuntimeSource(filePath) || !isAppRouteSource(filePath)) return [];
+
+      const routeSpecifiers = [
+        ...getModuleSpecifiers(filePath, source),
+        ...getDynamicImportSpecifiers(filePath, source),
+      ];
+
+      return routeSpecifiers.flatMap(specifier => {
+        const target = resolveImportTarget(filePath, specifier);
+        return getFeatureName(target) ? [target] : [];
+      });
+    })
+  );
 
 const formatViolations = (violations: string[]) =>
   violations.length === 0 ? 'none' : violations.sort().join('\n');
@@ -365,6 +407,44 @@ describe('architecture boundaries', () => {
 
         visit(sourceFile);
         return fileViolations;
+      }
+    );
+
+    expect(formatViolations(violations)).toBe('none');
+  });
+
+  it('keeps route-mounted feature screens free of direct React Query orchestration', () => {
+    const violations = [...getRouteMountedFeatureTargets()].flatMap(
+      filePath => {
+        const source = sourceByPath.get(filePath);
+
+        if (!source) return [`${filePath} is missing`];
+
+        return getModuleSpecifiers(filePath, source).flatMap(specifier =>
+          specifier === '@tanstack/react-query'
+            ? [`${filePath} imports ${specifier}`]
+            : []
+        );
+      }
+    );
+
+    expect(formatViolations(violations)).toBe('none');
+  });
+
+  it('keeps route-mounted feature screens from importing data services directly', () => {
+    const violations = [...getRouteMountedFeatureTargets()].flatMap(
+      filePath => {
+        const source = sourceByPath.get(filePath);
+
+        if (!source) return [`${filePath} is missing`];
+
+        return getModuleSpecifiers(filePath, source).flatMap(specifier => {
+          const target = resolveImportTarget(filePath, specifier);
+
+          return target.startsWith('src/services/')
+            ? [`${filePath} imports data service ${specifier}`]
+            : [];
+        });
       }
     );
 

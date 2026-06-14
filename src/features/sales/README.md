@@ -3,6 +3,8 @@
 This feature owns the sales list entrypoint and create-sale workflow.
 
 - Sales list route entry: `index.tsx`
+- Sales list orchestration: `list/useSalesListPage.ts`
+- Sales list labels: `list/salesListLabels.ts`
 - Create-sale page: `create-sale/index.tsx`
 - Sale form state: `hooks/useSaleForm.ts`
 - Item-selection side effects: `hooks/useSaleItemSelectionEffect.ts`
@@ -14,6 +16,8 @@ This feature owns the sales list entrypoint and create-sale workflow.
 Use the narrowest owner for changes.
 
 - `index.tsx`: sales list route-level screen.
+- `list`: sales-list query/mutation orchestration, table state, pagination, and
+  display labels.
 - `create-sale`: page composition, navigation, add-item modal state, and submit
   wiring.
 - `hooks`: form state, sale item updates, total calculation, and item-selection
@@ -31,6 +35,8 @@ Use the narrowest owner for changes.
 
 - Do not add Supabase calls directly to sales components.
 - Keep sale calculations in the form hook or a future pure helper.
+- Keep `index.tsx` focused on rendering the list screen; sales-list
+  query/mutation orchestration belongs in `list/useSalesListPage.ts`.
 - Keep create-sale page focused on orchestration; move growing workflow state
   into hooks before adding more UI branches.
 - Do not import item-management internals for item creation or item modal flows.

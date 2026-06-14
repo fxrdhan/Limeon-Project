@@ -1,39 +1,17 @@
-import { useEffect, useState } from 'react';
 import { formatDateOnlyDisplayValue } from '@/lib/formatters';
-import type { PurchaseData, PurchaseItem, Subtotals } from '@/types';
+import {
+  formatPurchaseDocumentCurrency,
+  getPurchaseDocumentItemCode,
+  getPurchaseDocumentItemName,
+  getPurchaseDocumentPaymentMethodLabel,
+  getPurchaseDocumentPaymentStatusClass,
+  getPurchaseDocumentPaymentStatusLabel,
+  getPurchaseDocumentPositivePercentageLabel,
+} from '../purchaseDocument';
+import { usePrintPurchasePage } from './usePrintPurchasePage';
 
 const PrintPurchase = () => {
-  // Use lazy initializers to load from sessionStorage once
-  const [purchase] = useState<PurchaseData | null>(() => {
-    const storedData = sessionStorage.getItem('purchaseData');
-    return storedData ? JSON.parse(storedData).purchase : null;
-  });
-  const [items] = useState<PurchaseItem[]>(() => {
-    const storedData = sessionStorage.getItem('purchaseData');
-    return storedData ? JSON.parse(storedData).items : [];
-  });
-  const [subtotals] = useState<Subtotals | null>(() => {
-    const storedData = sessionStorage.getItem('purchaseData');
-    return storedData ? JSON.parse(storedData).subtotals : null;
-  });
-  const [loading] = useState(false);
-
-  const formatCurrency = (value: number | bigint, prefix = '') => {
-    const formatter = new Intl.NumberFormat('id-ID', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    });
-    return `${prefix}${formatter.format(value)}`;
-  };
-
-  // Trigger print after component mounts
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      window.print();
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, []);
+  const { purchase, items, subtotals, loading } = usePrintPurchasePage();
 
   if (loading) {
     return <div className="text-center p-6">Memuat data...</div>;
@@ -141,10 +119,10 @@ const PrintPurchase = () => {
                     {index + 1}
                   </td>
                   <td className="border p-1 pt-2 pb-2">
-                    {item.item?.code || '-'}
+                    {getPurchaseDocumentItemCode(item)}
                   </td>
                   <td className="border p-1 pt-2 pb-2">
-                    {item.item?.name || 'Item tidak ditemukan'}
+                    {getPurchaseDocumentItemName(item)}
                   </td>
                   <td className="border p-1 pt-2 pb-2 text-center">
                     {item.batch_no || '-'}
@@ -165,20 +143,20 @@ const PrintPurchase = () => {
                     {item.unit}
                   </td>
                   <td className="border p-1 pt-2 pb-2 text-right">
-                    {formatCurrency(item.price)}
+                    {formatPurchaseDocumentCurrency(item.price)}
                   </td>
                   <td className="border p-1 pt-2 pb-2 text-right">
-                    {item.discount > 0 ? `${item.discount}%` : '-'}
+                    {getPurchaseDocumentPositivePercentageLabel(item.discount)}
                   </td>
                   {!purchase.is_vat_included && (
                     <td className="border p-1 pt-2 pb-2 text-right">
-                      {item.vat_percentage > 0
-                        ? `${item.vat_percentage}%`
-                        : '-'}
+                      {getPurchaseDocumentPositivePercentageLabel(
+                        item.vat_percentage
+                      )}
                     </td>
                   )}
                   <td className="border p-1 pt-2 pb-2 text-right">
-                    {formatCurrency(item.subtotal)}
+                    {formatPurchaseDocumentCurrency(item.subtotal)}
                   </td>
                 </tr>
               ))
@@ -201,19 +179,11 @@ const PrintPurchase = () => {
             <span className="text-left">Status Pembayaran</span>
             <span className="px-2">:</span>
             <span
-              className={`${
-                purchase.payment_status === 'paid'
-                  ? 'text-green-600'
-                  : purchase.payment_status === 'partial'
-                    ? 'text-orange-600'
-                    : 'text-red-600'
-              }`}
+              className={getPurchaseDocumentPaymentStatusClass(
+                purchase.payment_status
+              )}
             >
-              {purchase.payment_status === 'paid'
-                ? 'Lunas'
-                : purchase.payment_status === 'partial'
-                  ? 'Sebagian'
-                  : 'Belum Dibayar'}
+              {getPurchaseDocumentPaymentStatusLabel(purchase.payment_status)}
             </span>
           </div>
 
@@ -221,13 +191,7 @@ const PrintPurchase = () => {
             <span className="text-left">Metode Pembayaran</span>
             <span className="px-2">:</span>
             <span>
-              {purchase.payment_method === 'cash'
-                ? 'Tunai'
-                : purchase.payment_method === 'transfer'
-                  ? 'Transfer'
-                  : purchase.payment_method === 'credit'
-                    ? 'Kredit'
-                    : purchase.payment_method}
+              {getPurchaseDocumentPaymentMethodLabel(purchase.payment_method)}
             </span>
           </div>
 
@@ -251,7 +215,7 @@ const PrintPurchase = () => {
               <span className="text-left">Subtotal</span>
               <span className="px-2">:</span>
               <span className="text-right">
-                {formatCurrency(subtotals.baseTotal)}
+                {formatPurchaseDocumentCurrency(subtotals.baseTotal)}
               </span>
             </div>
 
@@ -259,7 +223,7 @@ const PrintPurchase = () => {
               <span className="text-left">Diskon</span>
               <span className="px-2">:</span>
               <span className="text-right">
-                {formatCurrency(subtotals.discountTotal, '-')}
+                {formatPurchaseDocumentCurrency(subtotals.discountTotal, '-')}
               </span>
             </div>
 
@@ -267,7 +231,7 @@ const PrintPurchase = () => {
               <span className="text-left">Setelah Diskon</span>
               <span className="px-2">:</span>
               <span className="text-right">
-                {formatCurrency(subtotals.afterDiscountTotal)}
+                {formatPurchaseDocumentCurrency(subtotals.afterDiscountTotal)}
               </span>
             </div>
 
@@ -276,7 +240,7 @@ const PrintPurchase = () => {
                 <span className="text-left">PPN</span>
                 <span className="px-2">:</span>
                 <span className="text-right">
-                  {formatCurrency(subtotals.vatTotal, '+')}
+                  {formatPurchaseDocumentCurrency(subtotals.vatTotal, '+')}
                 </span>
               </div>
             )}
@@ -285,7 +249,7 @@ const PrintPurchase = () => {
               <span className="text-left">TOTAL</span>
               <span className="px-2">:</span>
               <span className="text-right">
-                {formatCurrency(subtotals.grandTotal)}
+                {formatPurchaseDocumentCurrency(subtotals.grandTotal)}
               </span>
             </div>
           </div>

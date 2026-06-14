@@ -17,6 +17,12 @@ import {
   deletePersistedPdfPreviewEntriesByMessageIds,
   persistPdfPreviewEntry,
 } from './pdf-preview-persistence';
+import {
+  cloneBoundedConversationMessages,
+  getOldestConversationCacheKey,
+  pruneExpiredSignedAssetEntries,
+  setSignedAssetEntryWithLimit,
+} from './chatRuntimeCacheHelpers';
 
 const MAX_SIGNED_CHAT_ASSET_URL_CACHE_ENTRIES = 128;
 
@@ -124,16 +130,6 @@ const pruneEmptyPendingReadReceiptUsers = (
 
 export { type ConversationCacheEntry, type PdfMessagePreviewCacheEntry };
 
-const pruneExpiredSignedAssetEntries = (now = Date.now()) => {
-  for (const [storagePath, cachedEntry] of signedChatAssetUrlStore) {
-    if (cachedEntry.expiresAt > now) {
-      continue;
-    }
-
-    signedChatAssetUrlStore.delete(storagePath);
-  }
-};
-
 export const chatRuntimeCache = {
   conversation: {
     getFreshEntry(
@@ -160,13 +156,11 @@ export const chatRuntimeCache = {
       hasOlderMessages: boolean,
       cache: Map<string, ConversationCacheEntry> = conversationCacheStore
     ) {
-      const boundedMessages =
-        messages.length > CHAT_CONVERSATION_CACHE_MAX_MESSAGES
-          ? messages.slice(-CHAT_CONVERSATION_CACHE_MAX_MESSAGES)
-          : messages;
-
       cache.set(channelId, {
-        messages: boundedMessages.map(messageItem => ({ ...messageItem })),
+        messages: cloneBoundedConversationMessages(
+          messages,
+          CHAT_CONVERSATION_CACHE_MAX_MESSAGES
+        ),
         hasOlderMessages,
         cachedAt: Date.now(),
       });
@@ -175,10 +169,10 @@ export const chatRuntimeCache = {
         return;
       }
 
-      const oldestEntry = [...cache.entries()].reduce((oldest, currentEntry) =>
-        currentEntry[1].cachedAt < oldest[1].cachedAt ? currentEntry : oldest
-      );
-      cache.delete(oldestEntry[0]);
+      const oldestCacheKey = getOldestConversationCacheKey(cache);
+      if (oldestCacheKey) {
+        cache.delete(oldestCacheKey);
+      }
     },
 
     reset(cache: Map<string, ConversationCacheEntry> = conversationCacheStore) {
@@ -290,11 +284,11 @@ export const chatRuntimeCache = {
 
   signedAssets: {
     pruneExpired(now = Date.now()) {
-      pruneExpiredSignedAssetEntries(now);
+      pruneExpiredSignedAssetEntries(signedChatAssetUrlStore, now);
     },
 
     getEntry(storagePath: string, now = Date.now()) {
-      pruneExpiredSignedAssetEntries(now);
+      pruneExpiredSignedAssetEntries(signedChatAssetUrlStore, now);
 
       const cachedEntry = signedChatAssetUrlStore.get(storagePath);
       if (!cachedEntry || cachedEntry.expiresAt <= now) {
@@ -306,25 +300,15 @@ export const chatRuntimeCache = {
     },
 
     setEntry(storagePath: string, signedUrl: string, expiresAt: number) {
-      if (signedChatAssetUrlStore.has(storagePath)) {
-        signedChatAssetUrlStore.delete(storagePath);
-      }
-
-      signedChatAssetUrlStore.set(storagePath, {
-        signedUrl,
-        expiresAt,
+      setSignedAssetEntryWithLimit({
+        store: signedChatAssetUrlStore,
+        storagePath,
+        entry: {
+          signedUrl,
+          expiresAt,
+        },
+        maxEntries: MAX_SIGNED_CHAT_ASSET_URL_CACHE_ENTRIES,
       });
-
-      while (
-        signedChatAssetUrlStore.size > MAX_SIGNED_CHAT_ASSET_URL_CACHE_ENTRIES
-      ) {
-        const oldestStoragePath = signedChatAssetUrlStore.keys().next().value;
-        if (!oldestStoragePath) {
-          break;
-        }
-
-        signedChatAssetUrlStore.delete(oldestStoragePath);
-      }
     },
 
     reset() {

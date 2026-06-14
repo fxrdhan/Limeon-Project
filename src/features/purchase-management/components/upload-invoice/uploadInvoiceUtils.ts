@@ -1,5 +1,20 @@
 const VALID_INVOICE_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/jpg'];
 const MAX_INVOICE_IMAGE_SIZE = 5 * 1024 * 1024;
+const INVOICE_PREVIEW_MIN_ZOOM = 1;
+const INVOICE_PREVIEW_MAX_ZOOM = 3;
+const INVOICE_PREVIEW_ZOOM_STEP = 0.1;
+
+interface PointerPosition {
+  x: number;
+  y: number;
+}
+
+interface RectBounds {
+  bottom: number;
+  left: number;
+  right: number;
+  top: number;
+}
 
 export const getGlowEffect = (intensity: number) => {
   const baseIntensity = 0.4 + intensity * 0.5;
@@ -32,3 +47,29 @@ export const getInvoiceImageValidationError = (file: File) => {
 
 export const formatInvoiceFileSize = (file: File) =>
   `${(file.size / (1024 * 1024)).toFixed(2)} MB`;
+
+export const isPointerWithinRect = (
+  pointer: PointerPosition,
+  rect: RectBounds
+) =>
+  pointer.x >= rect.left &&
+  pointer.x <= rect.right &&
+  pointer.y >= rect.top &&
+  pointer.y <= rect.bottom;
+
+export const getNextInvoicePreviewZoomLevel = (
+  currentZoom: number,
+  deltaY: number
+) => {
+  const direction = deltaY > 0 ? 1 : -1;
+  const nextZoom = currentZoom + direction * INVOICE_PREVIEW_ZOOM_STEP;
+  return Math.min(
+    Math.max(nextZoom, INVOICE_PREVIEW_MIN_ZOOM),
+    INVOICE_PREVIEW_MAX_ZOOM
+  );
+};
+
+export const getInvoiceExtractionErrorMessage = (error: unknown) =>
+  `Gagal mengunggah dan mengekstrak faktur: ${
+    error instanceof Error ? error.message : 'Terjadi kesalahan tidak dikenal'
+  }`;

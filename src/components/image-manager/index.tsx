@@ -3,6 +3,12 @@ import type { ImageUploaderProps } from '@/types';
 import { ClipLoader } from 'react-spinners';
 import { getImageUploaderBorderRadiusClass } from './image-uploader/borderRadius';
 import ImageUploaderPopupPortal from './image-uploader/ImageUploaderPopupPortal';
+import {
+  getImageUploaderAnchoredPopupGeometry,
+  getImageUploaderClickPopupCoordinates,
+  getImageUploaderPopupSize,
+  type ImageUploaderPopupPosition,
+} from './image-uploader/popupGeometry';
 import { getImageUploaderPopupOptions } from './image-uploader/popupOptions';
 
 const ImageUploader: React.FC<ImageUploaderProps> = ({
@@ -30,7 +36,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [isPopupMounted, setIsPopupMounted] = useState(false);
   const [isPopupVisible, setIsPopupVisible] = useState(false);
-  const [popupPosition, setPopupPosition] = useState<'left' | 'right'>('right');
+  const [popupPosition, setPopupPosition] =
+    useState<ImageUploaderPopupPosition>('right');
   const [popupCoordinates, setPopupCoordinates] = useState({ x: 0, y: 0 });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -170,21 +177,23 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       const popupRect = portalRef.current?.getBoundingClientRect();
       const options = getPopupOptions();
       const hasDelete = options.some(option => option.label === 'Hapus');
+      const { height: popupHeight, width: popupWidth } =
+        getImageUploaderPopupSize({
+          hasDelete,
+          measuredRect: popupRect,
+          optionCount: options.length,
+        });
 
-      const popupWidth = popupRect?.width || (hasDelete ? 120 : 100);
-      const popupHeight = popupRect?.height || options.length * 36 + 8;
-      const margin = 8;
-
-      const clampedX = Math.min(
-        Math.max(clickX, margin),
-        viewportWidth - popupWidth - margin
+      setPopupCoordinates(
+        getImageUploaderClickPopupCoordinates({
+          clickX,
+          clickY,
+          popupHeight,
+          popupWidth,
+          viewportHeight,
+          viewportWidth,
+        })
       );
-      const clampedY = Math.min(
-        Math.max(clickY, margin),
-        viewportHeight - popupHeight - margin
-      );
-
-      setPopupCoordinates({ x: clampedX, y: clampedY });
     },
     [getPopupOptions]
   );
@@ -266,39 +275,14 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       popupWidth = hasDelete ? 120 : 100; // Wider if delete option exists
     }
 
-    const margin = 8; // Margin from container edge
-    const spaceOnRight = viewportWidth - containerRect.right - margin;
-    const spaceOnLeft = containerRect.left - margin;
-
-    // Calculate popup coordinates relative to viewport
-    const centerY = containerRect.top + containerRect.height / 2;
-    let popupX: number;
-    let position: 'left' | 'right';
-
-    // Prefer right if there's enough space, otherwise use left if there's space there
-    if (spaceOnRight >= popupWidth) {
-      position = 'right';
-      popupX = containerRect.right + margin;
-    } else if (spaceOnLeft >= popupWidth) {
-      position = 'left';
-      popupX = containerRect.left - popupWidth - margin;
-    } else {
-      // If neither side has enough space, use the side with more space
-      // But still respect the minimum space requirements
-      if (spaceOnRight >= spaceOnLeft) {
-        position = 'right';
-        popupX = Math.min(
-          containerRect.right + margin,
-          viewportWidth - popupWidth - 8
-        );
-      } else {
-        position = 'left';
-        popupX = Math.max(containerRect.left - popupWidth - margin, 8);
-      }
-    }
+    const { coordinates, position } = getImageUploaderAnchoredPopupGeometry({
+      containerRect,
+      popupWidth,
+      viewportWidth,
+    });
 
     setPopupPosition(position);
-    setPopupCoordinates({ x: popupX, y: centerY });
+    setPopupCoordinates(coordinates);
   }, [getPopupOptions]);
 
   useEffect(() => {

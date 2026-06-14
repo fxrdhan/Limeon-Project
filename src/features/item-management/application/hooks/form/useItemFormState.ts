@@ -10,6 +10,10 @@ import type {
   ItemManufacturerEntity,
   ItemUnitEntity,
 } from '../../../shared/types';
+import {
+  createItemFormDataDefaults,
+  hasItemFormStateChanged,
+} from './itemFormStateHelpers';
 
 interface UseAddItemFormStateProps {
   initialSearchQuery?: string;
@@ -25,32 +29,9 @@ export const useAddItemFormState = ({
   initialSearchQuery,
 }: UseAddItemFormStateProps) => {
   // Core form state
-  const [formData, setFormDataState] = useState<ItemFormData>({
-    code: '',
-    name: initialSearchQuery || '',
-    manufacturer_id: '',
-    type_id: '',
-    category_id: '',
-    package_id: '',
-    base_inventory_unit_id: '',
-    dosage_id: '',
-    barcode: '',
-    description: '',
-    image_urls: [],
-    base_price: 0,
-    sell_price: 0,
-    is_level_pricing_active: true,
-    min_stock: 10,
-    quantity: 0,
-    unit_id: '',
-    measurement_denominator_value: null,
-    measurement_denominator_unit_id: '',
-    is_active: true,
-    is_medicine: true,
-    has_expiry_date: false,
-    updated_at: null,
-    customer_level_discounts: [],
-  });
+  const [formData, setFormDataState] = useState<ItemFormData>(() =>
+    createItemFormDataDefaults({ initialSearchQuery })
+  );
 
   // Initial state tracking for dirty detection
   const [initialFormData, setInitialFormData] = useState<ItemFormData | null>(
@@ -325,92 +306,24 @@ export const useAddItemFormState = ({
    * Checks if form has unsaved changes
    */
   const isDirty = (currentConversions: PackageConversion[] = []): boolean => {
-    if (!initialFormData) return false;
-
-    const formDataChanged =
-      JSON.stringify(formData) !== JSON.stringify(initialFormData);
-
-    // Compare unit conversions if provided
-    type ConversionForCompare = {
-      inventory_unit_id: string;
-      parent_inventory_unit_id: string | null;
-      to_unit_id: string;
-      conversion_rate: number;
-      base_price_override: number | null;
-      sell_price_override: number | null;
-    };
-
-    const mapConversionForComparison = (
-      conv: PackageConversion
-    ): ConversionForCompare | null => {
-      const unitId = conv?.unit?.id || conv?.to_unit_id;
-      if (!conv || !unitId) return null;
-      return {
-        inventory_unit_id: conv.inventory_unit_id || conv.to_unit_id || unitId,
-        parent_inventory_unit_id: conv.parent_inventory_unit_id || null,
-        to_unit_id: unitId,
-        conversion_rate: conv.factor_to_base || conv.conversion_rate || 1,
-        base_price_override:
-          conv.base_price_override ?? conv.base_price ?? null,
-        sell_price_override:
-          conv.sell_price_override ?? conv.sell_price ?? null,
-      };
-    };
-
-    const currentConversionsForCompare = currentConversions
-      .map(mapConversionForComparison)
-      .filter(Boolean) as ConversionForCompare[];
-
-    const initialConversionsForCompare = Array.isArray(
-      initialPackageConversions
-    )
-      ? (initialPackageConversions
-          .map(mapConversionForComparison)
-          .filter(Boolean) as ConversionForCompare[])
-      : [];
-
-    const safeSortByUnitId = (arr: ConversionForCompare[]) => {
-      return [...arr].sort((a, b) => a.to_unit_id.localeCompare(b.to_unit_id));
-    };
-
-    const sortedCurrent = safeSortByUnitId(currentConversionsForCompare);
-    const sortedInitial = safeSortByUnitId(initialConversionsForCompare);
-
-    const conversionsChanged =
-      JSON.stringify(sortedCurrent) !== JSON.stringify(sortedInitial);
-
-    return formDataChanged || conversionsChanged;
+    return hasItemFormStateChanged({
+      formData,
+      initialFormData,
+      currentConversions,
+      initialPackageConversions,
+    });
   };
 
   /**
    * Sets initial data for the form
    */
   const setInitialDataForForm = (data?: ItemFormData) => {
-    const initialState = data || {
-      code: '',
-      name: initialSearchQuery || '',
-      manufacturer_id: '',
-      type_id: '',
-      category_id: '',
-      package_id: '',
-      base_inventory_unit_id: '',
-      dosage_id: '',
-      barcode: '',
-      description: '',
-      base_price: 0,
-      sell_price: 0,
-      is_level_pricing_active: true,
-      min_stock: 10,
-      quantity: 0,
-      unit_id: '',
-      measurement_denominator_value: null,
-      measurement_denominator_unit_id: '',
-      is_active: true,
-      is_medicine: true,
-      has_expiry_date: false,
-      updated_at: null,
-      customer_level_discounts: [],
-    };
+    const initialState =
+      data ||
+      createItemFormDataDefaults({
+        initialSearchQuery,
+        includeImageUrls: false,
+      });
 
     const normalizedInitialState = {
       ...initialState,

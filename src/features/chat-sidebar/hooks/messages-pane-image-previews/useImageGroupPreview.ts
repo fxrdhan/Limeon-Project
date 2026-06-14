@@ -15,6 +15,8 @@ import {
   getInitialImageGroupPreviewId,
   getInitialImageGroupPreviewMessage,
   getPrioritizedImageGroupPreviewMessageIds,
+  withImageGroupPreviewResolvedUrl,
+  withImageGroupPreviewThumbnailUrl,
 } from './imageGroupPreviewItems';
 import type {
   ImageGroupPreviewItem,
@@ -132,13 +134,10 @@ export const useImageGroupPreview = ({
       if (runtimeThumbnailUrl) {
         imageGroupPreviewResolvedIdsRef.current.add(loadKey);
         setImageGroupPreviewItems(previousItems =>
-          previousItems.map(previousItem =>
-            previousItem.id === normalizedMessageId
-              ? {
-                  ...previousItem,
-                  thumbnailUrl: runtimeThumbnailUrl,
-                }
-              : previousItem
+          withImageGroupPreviewThumbnailUrl(
+            previousItems,
+            normalizedMessageId,
+            runtimeThumbnailUrl
           )
         );
         return;
@@ -169,13 +168,10 @@ export const useImageGroupPreview = ({
 
         imageGroupPreviewResolvedIdsRef.current.add(loadKey);
         setImageGroupPreviewItems(previousItems =>
-          previousItems.map(previousItem =>
-            previousItem.id === normalizedMessageId
-              ? {
-                  ...previousItem,
-                  thumbnailUrl,
-                }
-              : previousItem
+          withImageGroupPreviewThumbnailUrl(
+            previousItems,
+            normalizedMessageId,
+            thumbnailUrl
           )
         );
       } finally {
@@ -227,18 +223,11 @@ export const useImageGroupPreview = ({
       if (runtimeFullPreviewUrl) {
         imageGroupPreviewResolvedIdsRef.current.add(loadKey);
         setImageGroupPreviewItems(previousItems =>
-          previousItems.map(previousItem =>
-            previousItem.id === normalizedMessageId
-              ? {
-                  ...previousItem,
-                  thumbnailUrl:
-                    previousItem.thumbnailUrl || runtimeFullPreviewUrl,
-                  previewUrl: runtimeFullPreviewUrl,
-                  fullPreviewUrl:
-                    previousItem.fullPreviewUrl || runtimeFullPreviewUrl,
-                }
-              : previousItem
-          )
+          withImageGroupPreviewResolvedUrl(previousItems, {
+            messageId: normalizedMessageId,
+            previewUrl: runtimeFullPreviewUrl,
+            preserveExistingFullPreviewUrl: true,
+          })
         );
         return;
       }
@@ -271,17 +260,11 @@ export const useImageGroupPreview = ({
           imageGroupEntry.index
         );
         setImageGroupPreviewItems(previousItems =>
-          previousItems.map(previousItem =>
-            previousItem.id === normalizedMessageId
-              ? {
-                  ...previousItem,
-                  thumbnailUrl: previousItem.thumbnailUrl || previewUrl,
-                  previewUrl,
-                  fullPreviewUrl: previewUrl,
-                  previewName,
-                }
-              : previousItem
-          )
+          withImageGroupPreviewResolvedUrl(previousItems, {
+            messageId: normalizedMessageId,
+            previewUrl,
+            previewName,
+          })
         );
       } finally {
         imageGroupPreviewInflightIdsRef.current.delete(loadKey);
@@ -429,16 +412,10 @@ export const useImageGroupPreview = ({
       const applyResolvedPreviewUrl = (resolvedPreviewUrl: string) => {
         setActiveImageGroupPreviewId(messageId);
         setImageGroupPreviewItems(previousItems =>
-          previousItems.map(previousItem =>
-            previousItem.id === messageId
-              ? {
-                  ...previousItem,
-                  thumbnailUrl: previousItem.thumbnailUrl || resolvedPreviewUrl,
-                  previewUrl: resolvedPreviewUrl,
-                  fullPreviewUrl: resolvedPreviewUrl,
-                }
-              : previousItem
-          )
+          withImageGroupPreviewResolvedUrl(previousItems, {
+            messageId,
+            previewUrl: resolvedPreviewUrl,
+          })
         );
       };
 

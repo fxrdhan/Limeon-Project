@@ -3,20 +3,35 @@
 This feature owns purchase document and invoice-facing screens that are separate
 from the editable purchase-management workflow.
 
-- Confirm extracted invoice: `confirm-invoice/index.tsx`
+- Confirm extracted invoice route: `confirm-invoice/index.tsx`
+- Confirm extracted invoice orchestration:
+  `confirm-invoice/useConfirmInvoicePage.ts`
+- Confirm extracted invoice display helpers:
+  `confirm-invoice/confirmInvoiceDisplay.ts`
 - Invoice layout: `invoice-layout/index.tsx`
+- Purchase document helpers: `purchaseDocument.ts`
 - Print purchase: `print-purchase/index.tsx`
-- View purchase: `view-purchase/index.tsx`
+- Print purchase orchestration: `print-purchase/usePrintPurchasePage.ts`
+- View purchase route: `view-purchase/index.tsx`
+- View purchase orchestration: `view-purchase/useViewPurchasePage.ts`
 
 ## Runtime Layers
 
 This area is intentionally route-screen oriented today.
 
-- `confirm-invoice`: review and confirmation flow after invoice extraction.
+- `confirm-invoice`: review and confirmation flow after invoice extraction;
+  route state, regeneration, save, and navigation side effects stay in
+  `useConfirmInvoicePage`, while grid row/formatting helpers stay in
+  `confirmInvoiceDisplay`.
 - `invoice-layout`: printable invoice composition shared by purchase document
   screens.
-- `print-purchase`: print-focused route output.
-- `view-purchase`: read-only purchase detail route.
+- `purchaseDocument.ts`: pure helpers for purchase-document currency formatting,
+  subtotal calculation, item-table display fallbacks, payment display labels,
+  and print-session key ownership.
+- `print-purchase`: print-focused route output; session reads and auto-print
+  timing stay in `usePrintPurchasePage`.
+- `view-purchase`: read-only purchase detail route; data loading, navigation,
+  zoom state, and print-session persistence stay in `useViewPurchasePage`.
 
 ## Data Boundaries
 
@@ -33,3 +48,5 @@ This area is intentionally route-screen oriented today.
 - Do not place purchase creation or mutation orchestration in this folder.
 - Keep print layout logic deterministic and easy to render without external UI
   state.
+- Keep purchase-document calculations local to this feature; do not import
+  editable purchase-form calculation helpers from `purchase-management`.

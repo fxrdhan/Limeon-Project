@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vite-plus/test';
 import {
+  getCanvasOutputSize,
+  getDragCursor,
   getNextCropRect,
   getRenderedImageRect,
   getSourceCropRect,
@@ -75,5 +77,37 @@ describe('image cropper geometry', () => {
         { width: 800, height: 400 }
       )
     ).toEqual({ x: 100, y: 50, width: 200, height: 200 });
+  });
+
+  it('calculates canvas output size from requested dimensions and crop ratio', () => {
+    const sourceRect = { x: 0, y: 0, width: 300, height: 150 };
+
+    expect(getCanvasOutputSize(sourceRect, null)).toEqual({
+      width: 300,
+      height: 150,
+    });
+    expect(getCanvasOutputSize(sourceRect, 1, { width: 128 })).toEqual({
+      width: 128,
+      height: 128,
+    });
+    expect(getCanvasOutputSize(sourceRect, null, { height: 64 })).toEqual({
+      width: 128,
+      height: 64,
+    });
+    expect(
+      getCanvasOutputSize(sourceRect, 1, { width: 127.6, height: 63.4 })
+    ).toEqual({ width: 128, height: 63 });
+  });
+
+  it('maps drag actions to document cursors', () => {
+    expect(getDragCursor('move')).toBe('move');
+    expect(getDragCursor('n')).toBe('ns-resize');
+    expect(getDragCursor('s')).toBe('ns-resize');
+    expect(getDragCursor('e')).toBe('ew-resize');
+    expect(getDragCursor('w')).toBe('ew-resize');
+    expect(getDragCursor('ne')).toBe('nesw-resize');
+    expect(getDragCursor('sw')).toBe('nesw-resize');
+    expect(getDragCursor('nw')).toBe('nwse-resize');
+    expect(getDragCursor('se')).toBe('nwse-resize');
   });
 });

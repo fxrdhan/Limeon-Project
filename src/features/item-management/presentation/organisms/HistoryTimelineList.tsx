@@ -4,6 +4,11 @@ import '@/features/item-management/presentation/organisms/styles/scrollbar.scss'
 import { TbHistory } from 'react-icons/tb';
 import { HistoryItemCard } from './history-timeline-list/HistoryItemCard';
 import { HistoryTimelineSkeleton } from './history-timeline-list/HistoryTimelineSkeleton';
+import {
+  getHistoryTimelineItemBgColor,
+  getNextHistoryCompareSelection,
+  isHistoryTimelineItemSelected,
+} from './history-timeline-list/historySelection';
 import type {
   HistoryItem,
   HistoryTimelineListProps,
@@ -273,68 +278,21 @@ const HistoryTimelineList = ({
 
   const handleItemClick = (item: HistoryItem) => {
     if (allowMultiSelect) {
-      const isSelected = selectedForCompare.find(
-        selected => selected.id === item.id
-      );
-      if (isSelected) {
-        const newSelection = selectedForCompare.filter(
-          selected => selected.id !== item.id
-        );
-        setSelectedForCompare(newSelection);
+      const newSelection = getNextHistoryCompareSelection({
+        item,
+        maxSelections,
+        selectedItems: selectedForCompare,
+      });
+      setSelectedForCompare(newSelection);
 
-        if (newSelection.length === 0 && onSelectionEmpty) {
-          onSelectionEmpty();
-        } else if (onCompareSelected) {
-          onCompareSelected(newSelection);
-        }
-      } else if (selectedForCompare.length < maxSelections) {
-        const newSelection = [...selectedForCompare, item];
-        setSelectedForCompare(newSelection);
-
-        if (onCompareSelected) {
-          onCompareSelected(newSelection);
-        }
-      } else {
-        const newSelection = [...selectedForCompare.slice(1), item];
-        setSelectedForCompare(newSelection);
-
-        if (onCompareSelected) {
-          onCompareSelected(newSelection);
-        }
+      if (newSelection.length === 0 && onSelectionEmpty) {
+        onSelectionEmpty();
+      } else if (onCompareSelected) {
+        onCompareSelected(newSelection);
       }
     } else {
       onVersionClick(item);
     }
-  };
-
-  const isItemSelected = (item: HistoryItem): boolean => {
-    if (allowMultiSelect) {
-      return selectedForCompare.some(selected => selected.id === item.id);
-    }
-    return (
-      selectedVersions.includes(item.version_number) ||
-      selectedVersion === item.version_number
-    );
-  };
-
-  const getItemBgColor = (item: HistoryItem): string => {
-    if (allowMultiSelect) {
-      const selectionIndex = selectedForCompare.findIndex(
-        selected => selected.id === item.id
-      );
-      if (selectionIndex >= 0) {
-        return '';
-      }
-      return 'hover:bg-slate-50';
-    }
-
-    if (selectedVersions.includes(item.version_number)) {
-      return '';
-    }
-    if (selectedVersion === item.version_number) {
-      return '';
-    }
-    return 'hover:bg-slate-50';
   };
 
   if (!history || history.length === 0) {
@@ -378,7 +336,15 @@ const HistoryTimelineList = ({
         >
           <AnimatePresence mode="popLayout">
             {history.map((item, index) => {
-              const isSelected = isItemSelected(item);
+              const selectionOptions = {
+                allowMultiSelect,
+                item,
+                selectedForCompare,
+                selectedVersion,
+                selectedVersions,
+              };
+              const isSelected =
+                isHistoryTimelineItemSelected(selectionOptions);
               const isExpanded =
                 isSelected ||
                 (!disableHoverDetails &&
@@ -401,7 +367,7 @@ const HistoryTimelineList = ({
                   isFlipped={isFlipped}
                   latestVersion={latestVersion}
                   showRestoreButton={showRestoreButton}
-                  bgColor={getItemBgColor(item)}
+                  bgColor={getHistoryTimelineItemBgColor(selectionOptions)}
                   skipEntranceAnimation={skipEntranceAnimation}
                   showExpandedRestoreActions={showExpandedRestoreActions}
                   onMouseEnter={handleMouseEnter}

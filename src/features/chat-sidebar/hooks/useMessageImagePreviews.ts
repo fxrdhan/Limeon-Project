@@ -19,6 +19,11 @@ import {
   FULL_IMAGE_PREFETCH_DELAY_MS,
   IMAGE_PREFETCH_DEBOUNCE_MS,
 } from './message-image-previews/constants';
+import {
+  getNextPreviewAssetExpiryAt,
+  pruneExpiredPreviewAssetEntries,
+  pruneRecordByActiveIds,
+} from './message-image-previews/assetEntryState';
 import { resolveImageMessageUrl } from './message-image-previews/imageMessageUrl';
 import { collectVisibleImageMessages as collectVisibleImageMessagesForPreview } from './message-image-previews/visibleImageMessages';
 
@@ -249,43 +254,13 @@ export const useMessageImagePreviews = ({
     const activeMessageIds = new Set(
       messages.map(messageItem => messageItem.id)
     );
-    const pruneResolvedPreviewEntries = (
-      previousEntries: Record<string, ResolvedChatAssetUrlEntry>
-    ): Record<string, ResolvedChatAssetUrlEntry> => {
-      let hasChanges = false;
-      const nextEntries: Record<string, ResolvedChatAssetUrlEntry> = {};
 
-      Object.entries(previousEntries).forEach(([messageId, previewEntry]) => {
-        if (!activeMessageIds.has(messageId)) {
-          hasChanges = true;
-          return;
-        }
-
-        nextEntries[messageId] = previewEntry;
-      });
-
-      return hasChanges ? nextEntries : previousEntries;
-    };
-    const pruneResolvedUrls = (
-      previousUrls: Record<string, string>
-    ): Record<string, string> => {
-      let hasChanges = false;
-      const nextUrls: Record<string, string> = {};
-
-      Object.entries(previousUrls).forEach(([messageId, previewUrl]) => {
-        if (!activeMessageIds.has(messageId)) {
-          hasChanges = true;
-          return;
-        }
-
-        nextUrls[messageId] = previewUrl;
-      });
-
-      return hasChanges ? nextUrls : previousUrls;
-    };
-
-    setResolvedPreviewAssetEntriesByMessageId(pruneResolvedPreviewEntries);
-    setResolvedFullAssetUrlsByMessageId(pruneResolvedUrls);
+    setResolvedPreviewAssetEntriesByMessageId(previousEntries =>
+      pruneRecordByActiveIds(previousEntries, activeMessageIds)
+    );
+    setResolvedFullAssetUrlsByMessageId(previousUrls =>
+      pruneRecordByActiveIds(previousUrls, activeMessageIds)
+    );
   }, [messages]);
 
   useEffect(() => {
@@ -294,22 +269,9 @@ export const useMessageImagePreviews = ({
       previewAssetExpiryTimeoutRef.current = null;
     }
 
-    const nextExpiryAt = Object.values(
+    const nextExpiryAt = getNextPreviewAssetExpiryAt(
       resolvedPreviewAssetEntriesByMessageId
-    ).reduce<number | null>((closestExpiryAt, previewEntry) => {
-      if (previewEntry.expiresAt === null) {
-        return closestExpiryAt;
-      }
-
-      if (
-        closestExpiryAt === null ||
-        previewEntry.expiresAt < closestExpiryAt
-      ) {
-        return previewEntry.expiresAt;
-      }
-
-      return closestExpiryAt;
-    }, null);
+    );
 
     if (nextExpiryAt === null) {
       return;
@@ -319,21 +281,7 @@ export const useMessageImagePreviews = ({
       () => {
         setResolvedPreviewAssetEntriesByMessageId(previousEntries => {
           const now = Date.now();
-          let hasChanges = false;
-          const nextEntries: Record<string, ResolvedChatAssetUrlEntry> = {};
-
-          Object.entries(previousEntries).forEach(
-            ([messageId, previewEntry]) => {
-              if (!getFreshResolvedChatAssetUrl(previewEntry, now)) {
-                hasChanges = true;
-                return;
-              }
-
-              nextEntries[messageId] = previewEntry;
-            }
-          );
-
-          return hasChanges ? nextEntries : previousEntries;
+          return pruneExpiredPreviewAssetEntries(previousEntries, now);
         });
 
         scheduleVisibleImageAssetPrefetch();

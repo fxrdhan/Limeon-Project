@@ -4,22 +4,22 @@ import toast from 'react-hot-toast';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
 import { type ChatMessage } from '../data/chatSidebarGateway';
 import {
-  type AttachmentComposerRemoteFile,
   extractAttachmentComposerLinkFromMessageText,
   fetchAttachmentComposerRemoteFile,
 } from '../utils/composer-attachment-link';
-import { buildPendingFileComposerAttachment } from '../utils/pending-composer-attachment';
 import { clearPersistedComposerDraftAttachments } from '../utils/composer-draft-persistence';
 import {
   appendOptimisticAttachmentThread,
   createOptimisticAttachmentThread,
+  type PreparedComposerAttachmentOptimisticState,
 } from '../utils/attachment-send';
-import {
-  useChatAttachmentSend,
-  type SendableComposerAttachment,
-} from './useChatAttachmentSend';
-import type { PreparedComposerAttachmentOptimisticState } from './useAttachmentMessageTransaction';
+import { useChatAttachmentSend } from './useChatAttachmentSend';
 import { sendTextChatMessage } from '../utils/text-message-send';
+import {
+  buildPendingAttachmentSendPlan,
+  buildRemoteComposerAttachment,
+  shouldPreappendBulkImageOptimisticBatch,
+} from './chatComposerSendPlan';
 import type {
   ChatSidebarPanelTargetUser,
   PendingSendRegistration,
@@ -60,55 +60,6 @@ interface UseChatComposerSendProps {
   registerPendingSend: (tempMessageId: string) => PendingSendRegistration;
   mutationScope: ChatComposerSendMutationScope;
 }
-
-const buildRemoteComposerAttachment = (
-  attachmentRemoteFile: AttachmentComposerRemoteFile
-): SendableComposerAttachment => {
-  if (attachmentRemoteFile.fileKind === 'image') {
-    return attachmentRemoteFile;
-  }
-
-  const pendingAttachment = buildPendingFileComposerAttachment(
-    attachmentRemoteFile.file,
-    'document'
-  );
-
-  return {
-    file: pendingAttachment.file,
-    fileName: pendingAttachment.fileName,
-    fileTypeLabel: pendingAttachment.fileTypeLabel,
-    fileKind: 'document' as const,
-    mimeType: pendingAttachment.mimeType,
-    pdfCoverUrl: pendingAttachment.pdfCoverUrl,
-    pdfPageCount: pendingAttachment.pdfPageCount,
-  };
-};
-
-const buildPendingAttachmentSendPlan = (
-  attachments: PendingComposerAttachment[],
-  messageText: string
-) => {
-  const shouldAttachCaption =
-    attachments.length > 0 && messageText.trim().length > 0;
-  const lastAttachmentIndex = attachments.length - 1;
-
-  return {
-    shouldAttachCaption,
-    jobs: attachments.map((attachment, attachmentIndex) => ({
-      attachment,
-      captionText:
-        shouldAttachCaption && attachmentIndex === lastAttachmentIndex
-          ? messageText
-          : undefined,
-    })),
-  };
-};
-
-const shouldPreappendBulkImageOptimisticBatch = (
-  attachments: PendingComposerAttachment[]
-) =>
-  attachments.length > 1 &&
-  attachments.every(attachment => attachment.fileKind === 'image');
 
 export const useChatComposerSend = ({
   user,

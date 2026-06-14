@@ -14,16 +14,10 @@ import {
 import {
   appendOptimisticAttachmentThread,
   commitOptimisticAttachmentThread,
-  createOptimisticAttachmentThread,
+  prepareAttachmentOptimisticTransaction,
   removeOptimisticAttachmentThread,
-  type OptimisticAttachmentThread,
+  type PreparedComposerAttachmentOptimisticState,
 } from '../utils/attachment-send';
-
-export interface PreparedComposerAttachmentOptimisticState {
-  appendBeforeSend?: boolean;
-  localPreviewUrl: string;
-  thread: OptimisticAttachmentThread;
-}
 
 export interface SendAttachmentMessageOptions {
   tempIdPrefix: string;
@@ -177,16 +171,14 @@ export const useAttachmentMessageTransaction = ({
         return null;
       }
 
-      const optimisticThread =
-        optimistic?.thread ??
-        createOptimisticAttachmentThread({
+      const { optimisticThread, localPreviewUrl, shouldAppendOptimistic } =
+        prepareAttachmentOptimisticTransaction({
+          optimistic,
+          file,
           tempIdPrefix,
           stableKeySuffix,
           captionText,
           currentChannelId,
-          localPreviewUrl:
-            optimistic?.localPreviewUrl ?? URL.createObjectURL(file),
-          timestamp: new Date().toISOString(),
           user,
           targetUser,
           replyToId: replyingMessageId,
@@ -200,10 +192,6 @@ export const useAttachmentMessageTransaction = ({
         captionTempId,
         captionStableKey,
       } = optimisticThread;
-      const localPreviewUrl =
-        optimistic?.localPreviewUrl ??
-        optimisticThread.optimisticMessage.message;
-      const shouldAppendOptimistic = optimistic?.appendBeforeSend !== false;
       const pendingSend = registerPendingSend(tempId);
       pendingImagePreviewUrlsRef.current.set(tempId, localPreviewUrl);
       onBeforeAppendOptimistic?.(optimisticThread.optimisticMessage);

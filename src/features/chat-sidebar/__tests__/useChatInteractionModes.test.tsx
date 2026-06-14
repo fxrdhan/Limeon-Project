@@ -8,6 +8,7 @@ import {
   it,
   vi,
 } from 'vite-plus/test';
+import { SEARCH_CONSTANTS } from '../../../components/search-bar/constants';
 import type { ChatMessage } from '../../../services/api/chat.service';
 import { useChatInteractionModes } from '../hooks/useChatInteractionModes';
 import { getAttachmentCaptionData } from '../utils/message-derivations';
@@ -142,6 +143,7 @@ describe('useChatInteractionModes', () => {
   });
 
   it('tracks search matches and navigates active search message', async () => {
+    vi.useFakeTimers();
     const messagesContainerRef = createRef<HTMLDivElement>();
     messagesContainerRef.current = document.createElement('div');
 
@@ -196,6 +198,11 @@ describe('useChatInteractionModes', () => {
       result.current.handleEnterMessageSearchMode();
       result.current.handleMessageSearchQueryChange('stok');
     });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(SEARCH_CONSTANTS.DEBOUNCE_DELAY);
+    });
+    vi.useRealTimers();
 
     await waitFor(() => {
       expect(result.current.searchMatchedMessageIds).toEqual([

@@ -3,6 +3,10 @@
  */
 
 import { QueryClient } from '@tanstack/react-query';
+import {
+  getCriticalPersistedQueryKeys,
+  shouldPersistQueryRootKey,
+} from './indexedDBPersistencePolicy';
 
 interface PersistedQuery {
   queryKey: unknown[];
@@ -338,9 +342,9 @@ export const setupIndexedDBPersistence = async (queryClient: QueryClient) => {
       if (query.state.status === 'success' && query.state.data) {
         // Only persist stable master data queries
         const queryKey = query.queryKey;
-        const firstKey = queryKey[0] as string;
+        const firstKey = queryKey[0];
 
-        if (shouldPersistQuery(firstKey)) {
+        if (shouldPersistQueryRootKey(firstKey)) {
           void pharmacyDB.saveQuery(
             [...queryKey], // Convert readonly array to mutable
             query.state.data,
@@ -359,17 +363,6 @@ export const setupIndexedDBPersistence = async (queryClient: QueryClient) => {
 };
 
 /**
- * Determine which queries should be persisted
- */
-function shouldPersistQuery(queryKey: string): boolean {
-  return [
-    'masterData', // All master data (categories, types, packages, dosages, manufacturers)
-    'items', // Items list
-    'item_units', // Item units (units tab)
-  ].includes(queryKey);
-}
-
-/**
  * Load persisted queries back into React Query cache
  */
 async function loadPersistedQueries(queryClient: QueryClient): Promise<void> {
@@ -377,20 +370,7 @@ async function loadPersistedQueries(queryClient: QueryClient): Promise<void> {
   const { QueryKeys } = await import('@/constants/queryKeys');
 
   // Load critical queries with CORRECT query keys
-  const criticalQueries = [
-    // Items - exact match with useItems hook
-    QueryKeys.items.list(undefined), // ['items', 'list', { filters: undefined }]
-
-    // Master Data - exact match with hooks
-    QueryKeys.masterData.categories.list(undefined),
-    QueryKeys.masterData.types.list(undefined),
-    QueryKeys.masterData.packages.list(undefined),
-    QueryKeys.masterData.dosages.list(undefined),
-    QueryKeys.masterData.manufacturers.list(undefined),
-
-    // Item Units
-    QueryKeys.masterData.itemUnits.list(undefined),
-  ];
+  const criticalQueries = getCriticalPersistedQueryKeys(QueryKeys);
 
   await Promise.all(
     criticalQueries.map(async queryKey => {

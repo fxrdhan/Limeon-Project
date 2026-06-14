@@ -1,22 +1,15 @@
 import { createPortal } from 'react-dom';
 import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import type { ChatMessage } from '../../data/chatSidebarGateway';
-import type { PdfMessagePreview } from '../../hooks/useMessagePdfPreviews';
+import type { PdfMessagePreview } from '../../utils/pdf-message-preview';
 import type {
   MenuPlacement,
   MenuSideAnchor,
   MenuVerticalAnchor,
 } from '../../types';
-import {
-  formatFileFallbackLabel,
-  formatFileSize,
-  isDirectChatAssetUrl,
-  isImageFileExtensionOrMime,
-  resolveFileExtension,
-} from '../../utils/message-file';
-import { getPdfMessagePreviewUrl } from '../../utils/pdf-message-preview';
 import { renderHighlightedText } from '../../utils/message-search';
 import { MessageActionPopover } from './MessageActionPopover';
+import { getDocumentAttachmentData } from './messageDocumentAttachmentData';
 import {
   buildMessageMenuActions,
   getFileIcon,
@@ -205,36 +198,17 @@ export const MessageDocumentAttachmentGroupContent = ({
 
   const attachmentRows = messages.map(message => {
     const fileName = getAttachmentFileName(message);
-    const fileExtension = resolveFileExtension(
-      fileName,
-      message.message,
-      message.file_mime_type
-    );
-    const isImageFile = isImageFileExtensionOrMime(
+    const {
       fileExtension,
-      message.file_mime_type
-    );
-    const isPdfFile =
-      fileExtension === 'pdf' ||
-      message.file_mime_type?.toLowerCase().includes('pdf') === true;
-    const persistedPdfPreviewUrl = isPdfFile
-      ? (() => {
-          const previewUrl = message.file_preview_url?.trim() || null;
-          return previewUrl && isDirectChatAssetUrl(previewUrl)
-            ? previewUrl
-            : null;
-        })()
-      : null;
-    const resolvedPdfPreviewUrl = isPdfFile
-      ? persistedPdfPreviewUrl ||
-        getPdfMessagePreviewUrl(getPdfMessagePreview(message, fileName)) ||
-        null
-      : null;
-    const fileSizeLabel = formatFileSize(message.file_size);
-    const fileTypeLabel = formatFileFallbackLabel(fileExtension, 'document');
-    const fileSecondaryLabel =
-      [fileTypeLabel, fileSizeLabel].filter(Boolean).join(' · ') ||
-      fileTypeLabel;
+      fileSecondaryLabel,
+      isImageFile,
+      isPdfFile,
+      resolvedPdfPreviewUrl,
+    } = getDocumentAttachmentData({
+      fileName,
+      getPdfMessagePreview,
+      message,
+    });
     const menuActions = buildMessageMenuActions({
       message,
       isCurrentUser: message.sender_id === userId,

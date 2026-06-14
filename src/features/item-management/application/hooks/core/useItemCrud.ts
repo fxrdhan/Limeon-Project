@@ -15,11 +15,14 @@ import {
   useItemFormReset,
 } from '../form';
 import { useItemPricingLogic } from '../utils';
-import { createInventoryUnitFromDosage } from '@/lib/item-units';
 import type {
   ItemFormData,
   UseItemManagementProps,
 } from '../../../shared/types';
+import {
+  getItemSubmitSelectableUnits,
+  normalizeCachedItemFormData,
+} from './itemCrudData';
 import { prepareConversionsForSave } from './pendingPackageConversion';
 
 /**
@@ -174,13 +177,8 @@ export const useAddItemForm = ({
             cachedData,
             initialSearchQuery
           );
-          setInitialDataForForm({
-            ...updatedCacheData.formData,
-            base_inventory_unit_id:
-              updatedCacheData.formData.base_inventory_unit_id || '',
-            quantity: updatedCacheData.formData.quantity ?? 0,
-            unit_id: updatedCacheData.formData.unit_id ?? '',
-          });
+          const cachedFormData = updatedCacheData.formData as ItemFormData;
+          setInitialDataForForm(normalizeCachedItemFormData(cachedFormData));
           setConversions(updatedCacheData.conversions || []);
           setInitialPackageConversions(updatedCacheData.conversions || []);
         } catch (e) {
@@ -304,20 +302,14 @@ export const useAddItemForm = ({
       formState.setSaving(true);
 
       try {
-        const dosageBackedUnit = createInventoryUnitFromDosage(
-          formState.dosages.find(
-            dosage => dosage.id === formState.formData.dosage_id
-          ) || null
-        );
-        const selectableUnits = [
-          ...packageConversionHook.availableUnits,
-          ...(dosageBackedUnit ? [dosageBackedUnit] : []),
-        ];
-
         const preparedConversions = prepareConversionsForSave({
           conversions: packageConversionHook.conversions,
           pendingConversion: packageConversionHook.packageConversionFormData,
-          selectableUnits,
+          selectableUnits: getItemSubmitSelectableUnits({
+            availableUnits: packageConversionHook.availableUnits,
+            dosageId: formState.formData.dosage_id,
+            dosages: formState.dosages,
+          }),
           factorLookupUnits: packageConversionHook.availableUnits,
           baseInventoryUnitId: packageConversionHook.baseInventoryUnitId,
         });

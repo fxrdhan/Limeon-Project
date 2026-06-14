@@ -1,103 +1,24 @@
 import Button from '@/components/button';
-import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/card';
 import { TbCheck, TbPencil, TbX } from 'react-icons/tb';
-import type { CompanyProfile, ProfileKey } from '@/types';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { companyProfileService } from '@/services/api/companyProfile.service';
-import { QueryKeys } from '@/constants/queryKeys';
+import type { ProfileKey } from '@/types';
+import { useProfilePage } from './useProfilePage';
 
 const Profile = () => {
-  const [editMode, setEditMode] = useState<Record<string, boolean>>({});
-  const [editValues, setEditValues] = useState<Record<string, string | null>>(
-    {}
-  );
-  const queryClient = useQueryClient();
-
-  const fetchProfile = async () => {
-    const { data, error } = await companyProfileService.getProfile();
-    if (error) throw new Error(error.message);
-    return data;
-  };
-
   const {
-    data: profile,
+    profile,
     isLoading,
     isError,
     error,
-  } = useQuery<CompanyProfile | null>({
-    queryKey: QueryKeys.companyProfile.all,
-    queryFn: fetchProfile,
-    staleTime: 30 * 1000,
-    refetchOnMount: true,
-    refetchOnWindowFocus: false,
-  });
-
-  useEffect(() => {
-    if (profile) {
-      const initialValues: Record<string, string | null> = {};
-      (Object.keys(profile) as Array<ProfileKey>).forEach((key: ProfileKey) => {
-        initialValues[key] = profile[key] ?? '';
-      });
-      setEditValues(initialValues);
-    }
-  }, [profile]);
-
-  const updateProfileMutation = useMutation({
-    mutationFn: async ({
-      field,
-      value,
-    }: {
-      field: string;
-      value: string | null;
-    }) => {
-      if (!profile?.id)
-        throw new Error('Profil ID tidak ditemukan untuk diperbarui.');
-
-      const { error } = await companyProfileService.updateProfileField(
-        profile.id,
-        field,
-        value
-      );
-
-      if (error) throw new Error(error.message);
-    },
-    onSuccess: (_, variables) => {
-      void queryClient.invalidateQueries({
-        queryKey: QueryKeys.companyProfile.all,
-      });
-      setEditMode(prev => ({ ...prev, [variables.field]: false }));
-    },
-    onError: error => {
-      console.error('Error updating profile:', error);
-      alert(`Gagal memperbarui profil: ${error.message}`);
-    },
-  });
-
-  const toggleEdit = (field: ProfileKey) => {
-    setEditMode(prev => ({ ...prev, [field]: !prev[field] }));
-    if (editMode[field] && profile) {
-      setEditValues(prev => ({ ...prev, [field]: profile[field] ?? '' }));
-    }
-  };
-
-  const handleSave = (field: string) => {
-    updateProfileMutation.mutate({ field, value: editValues[field] });
-  };
-
-  const handleCancel = (field: ProfileKey) => {
-    if (profile) {
-      setEditValues(prev => ({ ...prev, [field]: profile[field] ?? '' }));
-    }
-    setEditMode(prev => ({ ...prev, [field]: false }));
-  };
-
-  const handleChange = (field: string, value: string) => {
-    setEditValues((prev: Record<string, string | null>) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
+    editMode,
+    editValues,
+    updateProfileMutation,
+    toggleEdit,
+    handleSave,
+    handleCancel,
+    handleChange,
+    createProfile,
+  } = useProfilePage();
 
   const ProfileField = ({
     label,
@@ -106,13 +27,21 @@ const Profile = () => {
     label: string;
     field: ProfileKey;
   }) => {
+    const inputId = `company-profile-${field}`;
+
     return (
       <div className="mb-4">
         <div className="flex justify-between items-center mb-1">
-          <label className="text-sm font-medium text-slate-600">{label}</label>
+          <label
+            htmlFor={inputId}
+            className="text-sm font-medium text-slate-600"
+          >
+            {label}
+          </label>
           {editMode[field] ? (
             <div className="flex space-x-1">
               <Button
+                aria-label={`Batal edit ${label}`}
                 variant="text"
                 size="sm"
                 onClick={() => handleCancel(field)}
@@ -121,6 +50,7 @@ const Profile = () => {
                 <TbX />
               </Button>
               <Button
+                aria-label={`Simpan ${label}`}
                 variant="text"
                 size="sm"
                 onClick={() => handleSave(field)}
@@ -137,6 +67,7 @@ const Profile = () => {
             </div>
           ) : (
             <Button
+              aria-label={`Edit ${label}`}
               variant="text"
               size="sm"
               onClick={() => toggleEdit(field)}
@@ -148,6 +79,8 @@ const Profile = () => {
         </div>
         {editMode[field] ? (
           <input
+            id={inputId}
+            aria-label={label}
             type="text"
             value={editValues[field] || ''}
             onChange={e => handleChange(field, e.target.value)}
@@ -217,40 +150,6 @@ const Profile = () => {
       </CardContent>
     </Card>
   );
-
-  async function createProfile() {
-    try {
-      const { data, error } = await companyProfileService.createProfile({
-        name: 'Nama Apotek/Klinik Anda',
-        address: 'Alamat Lengkap Apotek/Klinik Anda',
-      });
-
-      if (error) {
-        console.error('Error creating profile:', error);
-        alert(`Gagal membuat profil: ${error.message}`);
-        return;
-      }
-
-      if (data) {
-        void queryClient.invalidateQueries({
-          queryKey: QueryKeys.companyProfile.all,
-        });
-        const initialValues: Record<string, string | null> = {};
-        (Object.keys(data) as Array<ProfileKey>).forEach((key: ProfileKey) => {
-          initialValues[key] = data[key] ?? '';
-        });
-        setEditValues(initialValues);
-        alert('Profil berhasil dibuat. Silakan lengkapi data.');
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      alert(
-        `Terjadi kesalahan saat membuat profil: ${
-          error instanceof Error ? error.message : 'Kesalahan tidak diketahui'
-        }`
-      );
-    }
-  }
 };
 
 export default Profile;

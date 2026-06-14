@@ -10,6 +10,13 @@ import type { MergeSearchContextMessagesOptions } from './useChatSession';
 import { useChatSidebarPreviewState } from './useChatSidebarPreviewState';
 import { useChatSidebarRefs } from './useChatSidebarRefs';
 import { useChatViewport } from './useChatViewport';
+import {
+  getOldestReplyTargetContextMessage,
+  getReplyTargetContextHasOlderMessages,
+  mergeAndOrderReplyTargetContextMessages,
+  REPLY_TARGET_CONTEXT_AFTER_LIMIT,
+  REPLY_TARGET_CONTEXT_BEFORE_LIMIT,
+} from './replyTargetContext';
 
 interface UseChatSidebarUiStateProps {
   isOpen: boolean;
@@ -33,9 +40,6 @@ interface UseChatSidebarUiStateProps {
   getAttachmentFileKind: (targetMessage: ChatMessage) => 'audio' | 'document';
   captionData: AttachmentCaptionData;
 }
-
-const REPLY_TARGET_CONTEXT_BEFORE_LIMIT = 20;
-const REPLY_TARGET_CONTEXT_AFTER_LIMIT = 20;
 
 export const useChatSidebarUiState = ({
   isOpen,
@@ -150,31 +154,6 @@ export const useChatSidebarUiState = ({
     [captionData.captionMessagesByAttachmentId, getAttachmentFileKind]
   );
 
-  const getReplyTargetContextHasOlderMessages = useCallback(
-    (messageId: string, contextMessages: ChatMessage[]) => {
-      const targetMessage = contextMessages.find(
-        messageItem => messageItem.id === messageId
-      );
-      if (!targetMessage) {
-        return undefined;
-      }
-
-      const replyTargetAndOlderCount = contextMessages.filter(messageItem => {
-        const createdAtOrder = messageItem.created_at.localeCompare(
-          targetMessage.created_at
-        );
-        return (
-          createdAtOrder < 0 ||
-          (createdAtOrder === 0 &&
-            messageItem.id.localeCompare(targetMessage.id) <= 0)
-        );
-      }).length;
-
-      return replyTargetAndOlderCount > REPLY_TARGET_CONTEXT_BEFORE_LIMIT;
-    },
-    []
-  );
-
   const confirmReplyTargetContextHasOlderMessages = useCallback(
     async (
       targetConversationUserId: string,
@@ -185,23 +164,8 @@ export const useChatSidebarUiState = ({
         return inferredHasOlderMessages;
       }
 
-      const oldestContextMessage = contextMessages.reduce<ChatMessage | null>(
-        (oldestMessage, messageItem) => {
-          if (!oldestMessage) {
-            return messageItem;
-          }
-
-          const createdAtOrder = messageItem.created_at.localeCompare(
-            oldestMessage.created_at
-          );
-          return createdAtOrder < 0 ||
-            (createdAtOrder === 0 &&
-              messageItem.id.localeCompare(oldestMessage.id) < 0)
-            ? messageItem
-            : oldestMessage;
-        },
-        null
-      );
+      const oldestContextMessage =
+        getOldestReplyTargetContextMessage(contextMessages);
       if (!oldestContextMessage) {
         return inferredHasOlderMessages;
       }
@@ -409,23 +373,9 @@ export const useChatSidebarUiState = ({
             hasOlderMessages,
           });
 
-          const mergedMessages = [...messages, ...searchContextMessages].reduce<
-            Map<string, ChatMessage>
-          >((messagesById, messageItem) => {
-            messagesById.set(messageItem.id, messageItem);
-            return messagesById;
-          }, new Map());
-          const orderedMergedMessages = [...mergedMessages.values()].sort(
-            (leftMessage, rightMessage) => {
-              const createdAtOrder = leftMessage.created_at.localeCompare(
-                rightMessage.created_at
-              );
-              if (createdAtOrder !== 0) {
-                return createdAtOrder;
-              }
-
-              return leftMessage.id.localeCompare(rightMessage.id);
-            }
+          const orderedMergedMessages = mergeAndOrderReplyTargetContextMessages(
+            messages,
+            searchContextMessages
           );
 
           const imageGroupRenderItem = getReplyTargetImageGroup(
@@ -454,7 +404,6 @@ export const useChatSidebarUiState = ({
     [
       confirmReplyTargetContextHasOlderMessages,
       currentChannelId,
-      getReplyTargetContextHasOlderMessages,
       getReplyTargetImageGroup,
       focusReplyTargetFromMessages,
       isOpen,

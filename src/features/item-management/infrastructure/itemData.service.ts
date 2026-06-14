@@ -6,57 +6,12 @@ import type {
   ItemInventoryUnit,
   ItemUnitHierarchyEntry,
 } from '@/types/database';
-
-type InventoryUnitRelation =
-  | ItemInventoryUnit
-  | ItemInventoryUnit[]
-  | null
-  | undefined;
-
-interface RawItemUnitHierarchyEntry {
-  id: string;
-  item_id?: string | null;
-  inventory_unit_id: string;
-  parent_inventory_unit_id?: string | null;
-  contains_quantity: number;
-  factor_to_base: number;
-  base_price_override?: number | null;
-  sell_price_override?: number | null;
-  inventory_unit: InventoryUnitRelation;
-  parent_unit?: InventoryUnitRelation;
-}
-
-const normalizeInventoryUnitRelation = (
-  relation: InventoryUnitRelation
-): ItemInventoryUnit | null => {
-  if (Array.isArray(relation)) {
-    return relation[0] ?? null;
-  }
-  return relation ?? null;
-};
-
-const toItemUnitHierarchyEntry = (
-  entry: RawItemUnitHierarchyEntry
-): ItemUnitHierarchyEntry => ({
-  id: entry.id,
-  item_id: entry.item_id ?? undefined,
-  inventory_unit_id: entry.inventory_unit_id,
-  parent_inventory_unit_id: entry.parent_inventory_unit_id,
-  contains_quantity: entry.contains_quantity,
-  factor_to_base: entry.factor_to_base,
-  base_price_override: entry.base_price_override,
-  sell_price_override: entry.sell_price_override,
-  unit:
-    normalizeInventoryUnitRelation(entry.inventory_unit) ??
-    ({
-      id: entry.inventory_unit_id,
-      name: '',
-      kind: 'custom',
-    } satisfies ItemInventoryUnit),
-  parent_unit: normalizeInventoryUnitRelation(entry.parent_unit),
-  base_price: entry.base_price_override ?? 0,
-  sell_price: entry.sell_price_override ?? 0,
-});
+import {
+  buildCustomerLevelDiscountInsertPayload,
+  buildItemUnitHierarchyInsertPayload,
+  toItemUnitHierarchyEntry,
+  type ReplaceItemUnitHierarchyEntry,
+} from './itemDataMappers';
 
 export const itemDataService = {
   async fetchItemDataById(
@@ -203,11 +158,10 @@ export const itemDataService = {
         return { data: null, error: null };
       }
 
-      const insertPayload = discounts.map(discount => ({
-        item_id: itemId,
-        customer_level_id: discount.customer_level_id,
-        discount_percentage: discount.discount_percentage,
-      }));
+      const insertPayload = buildCustomerLevelDiscountInsertPayload(
+        itemId,
+        discounts
+      );
 
       const { error: insertError } = await supabase
         .from('customer_level_discounts')
@@ -349,14 +303,7 @@ export const itemDataService = {
 
   async replaceItemUnitHierarchy(
     itemId: string,
-    entries: Array<{
-      inventory_unit_id: string;
-      parent_inventory_unit_id?: string | null;
-      contains_quantity: number;
-      factor_to_base: number;
-      base_price_override?: number | null;
-      sell_price_override?: number | null;
-    }>
+    entries: ReplaceItemUnitHierarchyEntry[]
   ): Promise<ServiceResponse<ItemUnitHierarchyEntry[]>> {
     try {
       const { error: deleteError } = await supabase
@@ -372,15 +319,7 @@ export const itemDataService = {
         return { data: [] as ItemUnitHierarchyEntry[], error: null };
       }
 
-      const payload = entries.map(entry => ({
-        item_id: itemId,
-        inventory_unit_id: entry.inventory_unit_id,
-        parent_inventory_unit_id: entry.parent_inventory_unit_id ?? null,
-        contains_quantity: entry.contains_quantity,
-        factor_to_base: entry.factor_to_base,
-        base_price_override: entry.base_price_override ?? null,
-        sell_price_override: entry.sell_price_override ?? null,
-      }));
+      const payload = buildItemUnitHierarchyInsertPayload(itemId, entries);
 
       const { data, error } = await supabase
         .from('item_unit_hierarchy')

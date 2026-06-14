@@ -10,6 +10,12 @@ import {
   useState,
   type RefObject,
 } from 'react';
+import {
+  getDisplayedComposerAttachmentMenuPosition,
+  isComposerAttachmentMenuVisible,
+  resolveComposerAttachmentMenuStyle,
+  type ComposerAttachmentMenuPosition,
+} from './composerAttachmentActionMenuState';
 
 const CHAT_POPOVER_ICON_CLASS_NAME =
   '[&>svg]:!text-black hover:[&>svg]:!text-black data-[preselected=true]:[&>svg]:!text-black';
@@ -32,19 +38,9 @@ const MENU_INSTANT_TRANSITION = {
 } as const;
 const MENU_EXIT_ANIMATION_DURATION_MS = 140;
 
-type MenuPosition = {
-  top: number;
-  left: number;
-};
-
-const HIDDEN_MENU_STYLE = {
-  top: -10_000,
-  left: -10_000,
-  visibility: 'hidden' as const,
-  pointerEvents: 'none' as const,
-};
-
-const useVerticalMenuReposition = (position: MenuPosition | null) => {
+const useVerticalMenuReposition = (
+  position: ComposerAttachmentMenuPosition | null
+) => {
   const previousTopRef = useRef<number | null>(null);
   const [offsetY, setOffsetY] = useState(0);
   const [isRepositionAnimationEnabled, setIsRepositionAnimationEnabled] =
@@ -94,24 +90,11 @@ const useVerticalMenuReposition = (position: MenuPosition | null) => {
   };
 };
 
-const resolveMenuStyle = (position: MenuPosition | null, offsetY: number) => {
-  if (!position) {
-    return HIDDEN_MENU_STYLE;
-  }
-
-  return {
-    top: position.top,
-    left: position.left,
-    willChange:
-      offsetY !== 0 ? ('transform, opacity' as const) : ('opacity' as const),
-  };
-};
-
 interface ComposerAttachmentActionMenusProps {
   openImageActionsAttachmentId: string | null;
   isMenuRepositionPaused?: boolean;
-  imageActionsMenuPosition: MenuPosition | null;
-  pdfCompressionMenuPosition: MenuPosition | null;
+  imageActionsMenuPosition: ComposerAttachmentMenuPosition | null;
+  pdfCompressionMenuPosition: ComposerAttachmentMenuPosition | null;
   imageActions: PopupMenuAction[];
   pdfCompressionLevelActions: PopupMenuAction[];
   imageActionsMenuRef: RefObject<HTMLDivElement | null>;
@@ -131,9 +114,9 @@ export const ComposerAttachmentActionMenus = ({
   const [cachedImageActions, setCachedImageActions] =
     useState<PopupMenuAction[]>(imageActions);
   const [cachedImageActionsMenuPosition, setCachedImageActionsMenuPosition] =
-    useState<MenuPosition | null>(imageActionsMenuPosition);
+    useState<ComposerAttachmentMenuPosition | null>(imageActionsMenuPosition);
   const [settledImageActionsMenuPosition, setSettledImageActionsMenuPosition] =
-    useState<MenuPosition | null>(imageActionsMenuPosition);
+    useState<ComposerAttachmentMenuPosition | null>(imageActionsMenuPosition);
   const [hasImageActionsMenuBeenVisible, setHasImageActionsMenuBeenVisible] =
     useState(false);
   const [
@@ -143,11 +126,15 @@ export const ComposerAttachmentActionMenus = ({
   const [
     cachedPdfCompressionMenuPosition,
     setCachedPdfCompressionMenuPosition,
-  ] = useState<MenuPosition | null>(pdfCompressionMenuPosition);
+  ] = useState<ComposerAttachmentMenuPosition | null>(
+    pdfCompressionMenuPosition
+  );
   const [
     settledPdfCompressionMenuPosition,
     setSettledPdfCompressionMenuPosition,
-  ] = useState<MenuPosition | null>(pdfCompressionMenuPosition);
+  ] = useState<ComposerAttachmentMenuPosition | null>(
+    pdfCompressionMenuPosition
+  );
   const [
     hasPdfCompressionMenuBeenVisible,
     setHasPdfCompressionMenuBeenVisible,
@@ -174,16 +161,30 @@ export const ComposerAttachmentActionMenus = ({
     isImageActionsMenuOpen || resolvedImageActions.length > 0;
   const shouldRenderPdfCompressionMenu =
     isPdfCompressionMenuOpen || resolvedPdfCompressionLevelActions.length > 0;
-  const displayedImageActionsMenuPosition = isMenuRepositionPaused
-    ? hasImageActionsMenuBeenVisible
-      ? settledImageActionsMenuPosition
-      : null
-    : resolvedImageActionsMenuPosition;
-  const displayedPdfCompressionMenuPosition = isMenuRepositionPaused
-    ? hasPdfCompressionMenuBeenVisible
-      ? settledPdfCompressionMenuPosition
-      : null
-    : resolvedPdfCompressionMenuPosition;
+  const displayedImageActionsMenuPosition =
+    getDisplayedComposerAttachmentMenuPosition({
+      hasBeenVisible: hasImageActionsMenuBeenVisible,
+      isRepositionPaused: isMenuRepositionPaused,
+      resolvedPosition: resolvedImageActionsMenuPosition,
+      settledPosition: settledImageActionsMenuPosition,
+    });
+  const displayedPdfCompressionMenuPosition =
+    getDisplayedComposerAttachmentMenuPosition({
+      hasBeenVisible: hasPdfCompressionMenuBeenVisible,
+      isRepositionPaused: isMenuRepositionPaused,
+      resolvedPosition: resolvedPdfCompressionMenuPosition,
+      settledPosition: settledPdfCompressionMenuPosition,
+    });
+  const isImageActionsMenuVisuallyVisible = isComposerAttachmentMenuVisible({
+    displayedPosition: displayedImageActionsMenuPosition,
+    hasBeenVisible: hasImageActionsMenuBeenVisible,
+    isRepositionPaused: isMenuRepositionPaused,
+  });
+  const isPdfCompressionMenuVisuallyVisible = isComposerAttachmentMenuVisible({
+    displayedPosition: displayedPdfCompressionMenuPosition,
+    hasBeenVisible: hasPdfCompressionMenuBeenVisible,
+    isRepositionPaused: isMenuRepositionPaused,
+  });
   const imageActionsMenuMotion = useVerticalMenuReposition(
     displayedImageActionsMenuPosition
   );
@@ -329,7 +330,7 @@ export const ComposerAttachmentActionMenus = ({
     return null;
   }
 
-  const imageActionsMenuStyle = resolveMenuStyle(
+  const imageActionsMenuStyle = resolveComposerAttachmentMenuStyle(
     displayedImageActionsMenuPosition,
     imageActionsMenuOffsetY
   );
@@ -349,20 +350,8 @@ export const ComposerAttachmentActionMenus = ({
                 y: imageActionsMenuOffsetY,
               }}
               animate={{
-                opacity: (
-                  isMenuRepositionPaused
-                    ? hasImageActionsMenuBeenVisible
-                    : Boolean(displayedImageActionsMenuPosition)
-                )
-                  ? 1
-                  : 0,
-                scale: (
-                  isMenuRepositionPaused
-                    ? hasImageActionsMenuBeenVisible
-                    : Boolean(displayedImageActionsMenuPosition)
-                )
-                  ? 1
-                  : 0.98,
+                opacity: isImageActionsMenuVisuallyVisible ? 1 : 0,
+                scale: isImageActionsMenuVisuallyVisible ? 1 : 0.98,
                 x: 0,
                 y: imageActionsMenuOffsetY,
               }}
@@ -404,7 +393,7 @@ export const ComposerAttachmentActionMenus = ({
             <PopupMenuPopover
               isOpen={isPdfCompressionMenuOpen}
               className={PDF_COMPRESSION_MENU_CLASS_NAME}
-              style={resolveMenuStyle(
+              style={resolveComposerAttachmentMenuStyle(
                 displayedPdfCompressionMenuPosition,
                 pdfCompressionMenuOffsetY
               )}
@@ -415,20 +404,8 @@ export const ComposerAttachmentActionMenus = ({
                 y: pdfCompressionMenuOffsetY,
               }}
               animate={{
-                opacity: (
-                  isMenuRepositionPaused
-                    ? hasPdfCompressionMenuBeenVisible
-                    : Boolean(displayedPdfCompressionMenuPosition)
-                )
-                  ? 1
-                  : 0,
-                scale: (
-                  isMenuRepositionPaused
-                    ? hasPdfCompressionMenuBeenVisible
-                    : Boolean(displayedPdfCompressionMenuPosition)
-                )
-                  ? 1
-                  : 0.98,
+                opacity: isPdfCompressionMenuVisuallyVisible ? 1 : 0,
+                scale: isPdfCompressionMenuVisuallyVisible ? 1 : 0.98,
                 x: 0,
                 y: pdfCompressionMenuOffsetY,
               }}

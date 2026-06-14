@@ -1,121 +1,32 @@
 import Button from '@/components/button';
 import Loading from '@/components/loading';
 import { Card } from '@/components/card';
-import { useEffect, useState, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import type { PurchaseData, PurchaseItem } from '@/types';
 import { TbArrowLeft, TbPrinter, TbZoomIn, TbZoomOut } from 'react-icons/tb';
-import { purchasesService } from '@/services/api/purchases.service';
 import { formatDateOnlyDisplayValue } from '@/lib/formatters';
+import {
+  formatPurchaseDocumentCurrency,
+  getPurchaseDocumentItemCode,
+  getPurchaseDocumentItemName,
+  getPurchaseDocumentPaymentMethodLabel,
+  getPurchaseDocumentPaymentStatusClass,
+  getPurchaseDocumentPaymentStatusLabel,
+  getPurchaseDocumentPositivePercentageLabel,
+} from '../purchaseDocument';
+import { useViewPurchasePage } from './useViewPurchasePage';
 
 const ViewPurchase = () => {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const printRef = useRef<HTMLDivElement>(null);
-
-  const [purchase, setPurchase] = useState<PurchaseData | null>(null);
-  const [items, setItems] = useState<PurchaseItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [scale, setScale] = useState(1);
-
-  useEffect(() => {
-    if (id) {
-      void fetchPurchaseData(id);
-    }
-  }, [id]);
-
-  const fetchPurchaseData = async (purchaseId: string) => {
-    try {
-      setLoading(true);
-      const [purchaseResult, itemsResult] = await Promise.all([
-        purchasesService.getPurchaseWithDetails(purchaseId),
-        purchasesService.getPurchaseItems(purchaseId),
-      ]);
-
-      if (purchaseResult.error || !purchaseResult.data) {
-        throw (
-          purchaseResult.error ?? new Error('Data pembelian tidak ditemukan')
-        );
-      }
-
-      if (itemsResult.error) {
-        throw itemsResult.error;
-      }
-
-      setPurchase(purchaseResult.data);
-      setItems(itemsResult.data || []);
-    } catch (error) {
-      console.error('Error fetching purchase data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const calculateSubtotals = () => {
-    const baseTotal = items.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
-    );
-
-    const discountTotal = items.reduce((sum, item) => {
-      const itemTotal = item.price * item.quantity;
-      const discountAmount = (itemTotal * item.discount) / 100;
-      return sum + discountAmount;
-    }, 0);
-
-    const afterDiscountTotal = baseTotal - discountTotal;
-
-    const vatTotal = purchase?.is_vat_included
-      ? 0
-      : items.reduce((sum, item) => {
-          const itemTotal = item.price * item.quantity;
-          const afterDiscount = itemTotal - (itemTotal * item.discount) / 100;
-          const vatAmount = afterDiscount * (item.vat_percentage / 100);
-          return sum + vatAmount;
-        }, 0);
-
-    const grandTotal = purchase?.is_vat_included
-      ? afterDiscountTotal
-      : afterDiscountTotal + vatTotal;
-
-    return {
-      baseTotal,
-      discountTotal,
-      afterDiscountTotal,
-      vatTotal,
-      grandTotal,
-    };
-  };
-
-  const openPrintableVersion = () => {
-    sessionStorage.setItem(
-      'purchaseData',
-      JSON.stringify({
-        purchase: purchase,
-        items: items,
-        subtotals: calculateSubtotals(),
-      })
-    );
-
-    const printWindow = window.open('/purchases/print-view', '_blank');
-    if (printWindow) printWindow.focus();
-  };
-
-  const increaseScale = () => {
-    setScale(prev => Math.min(prev + 0.1, 1.5));
-  };
-
-  const decreaseScale = () => {
-    setScale(prev => Math.max(prev - 0.1, 0.5));
-  };
-
-  const formatCurrency = (value: number | bigint, prefix = '') => {
-    const formatter = new Intl.NumberFormat('id-ID', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    });
-    return `${prefix}${formatter.format(value)}`;
-  };
+  const {
+    purchase,
+    items,
+    loading,
+    scale,
+    printRef,
+    subtotals,
+    navigateToPurchaseList,
+    openPrintableVersion,
+    increaseScale,
+    decreaseScale,
+  } = useViewPurchasePage();
 
   if (loading) {
     return <Loading message="Memuat data pembelian..." />;
@@ -125,7 +36,7 @@ const ViewPurchase = () => {
     return (
       <div className="text-center p-6">
         <p className="text-red-500 mb-4">Data pembelian tidak ditemukan</p>
-        <Button onClick={() => navigate('/purchases')}>
+        <Button onClick={navigateToPurchaseList}>
           <TbArrowLeft className="mr-2" /> Kembali ke Daftar Pembelian
         </Button>
       </div>
@@ -133,7 +44,7 @@ const ViewPurchase = () => {
   }
 
   const { baseTotal, discountTotal, afterDiscountTotal, vatTotal, grandTotal } =
-    calculateSubtotals();
+    subtotals;
 
   return (
     <Card>
@@ -141,7 +52,7 @@ const ViewPurchase = () => {
         <Button
           type="button"
           variant="secondary"
-          onClick={() => navigate('/purchases')}
+          onClick={navigateToPurchaseList}
         >
           <div className="flex items-center">
             <TbArrowLeft className="mr-2" /> <span>Kembali</span>
@@ -272,9 +183,11 @@ const ViewPurchase = () => {
                   items.map((item, index) => (
                     <tr key={item.id} className="hover:bg-slate-50 text-xs">
                       <td className="border p-1 text-center">{index + 1}</td>
-                      <td className="border p-1">{item.item?.code || '-'}</td>
                       <td className="border p-1">
-                        {item.item?.name || 'Item tidak ditemukan'}
+                        {getPurchaseDocumentItemCode(item)}
+                      </td>
+                      <td className="border p-1">
+                        {getPurchaseDocumentItemName(item)}
                       </td>
                       <td className="border p-1 text-center">
                         {item.batch_no || '-'}
@@ -293,20 +206,22 @@ const ViewPurchase = () => {
                       </td>
                       <td className="border p-1 text-center">{item.unit}</td>
                       <td className="border p-1 text-right">
-                        {formatCurrency(item.price)}
+                        {formatPurchaseDocumentCurrency(item.price)}
                       </td>
                       <td className="border p-1 text-right">
-                        {item.discount > 0 ? `${item.discount}%` : '-'}
+                        {getPurchaseDocumentPositivePercentageLabel(
+                          item.discount
+                        )}
                       </td>
                       {!purchase.is_vat_included && (
                         <td className="border p-1 text-right">
-                          {item.vat_percentage > 0
-                            ? `${item.vat_percentage}%`
-                            : '-'}
+                          {getPurchaseDocumentPositivePercentageLabel(
+                            item.vat_percentage
+                          )}
                         </td>
                       )}
                       <td className="border p-1 text-right">
-                        {formatCurrency(item.subtotal)}
+                        {formatPurchaseDocumentCurrency(item.subtotal)}
                       </td>
                     </tr>
                   ))
@@ -331,19 +246,13 @@ const ViewPurchase = () => {
                 <span className="text-left">Status Pembayaran</span>
                 <span className="px-2">:</span>
                 <span
-                  className={`${
-                    purchase.payment_status === 'paid'
-                      ? 'text-green-600'
-                      : purchase.payment_status === 'partial'
-                        ? 'text-orange-600'
-                        : 'text-red-600'
-                  }`}
+                  className={getPurchaseDocumentPaymentStatusClass(
+                    purchase.payment_status
+                  )}
                 >
-                  {purchase.payment_status === 'paid'
-                    ? 'Lunas'
-                    : purchase.payment_status === 'partial'
-                      ? 'Sebagian'
-                      : 'Belum Dibayar'}
+                  {getPurchaseDocumentPaymentStatusLabel(
+                    purchase.payment_status
+                  )}
                 </span>
               </div>
 
@@ -351,13 +260,9 @@ const ViewPurchase = () => {
                 <span className="text-left">Metode Pembayaran</span>
                 <span className="px-2">:</span>
                 <span>
-                  {purchase.payment_method === 'cash'
-                    ? 'Tunai'
-                    : purchase.payment_method === 'transfer'
-                      ? 'Transfer'
-                      : purchase.payment_method === 'credit'
-                        ? 'Kredit'
-                        : purchase.payment_method}
+                  {getPurchaseDocumentPaymentMethodLabel(
+                    purchase.payment_method
+                  )}
                 </span>
               </div>
 
@@ -381,14 +286,16 @@ const ViewPurchase = () => {
               <div className="grid grid-cols-[1fr_auto_1fr] mb-1">
                 <span className="text-left">Subtotal</span>
                 <span className="px-2">:</span>
-                <span className="text-right">{formatCurrency(baseTotal)}</span>
+                <span className="text-right">
+                  {formatPurchaseDocumentCurrency(baseTotal)}
+                </span>
               </div>
 
               <div className="grid grid-cols-[1fr_auto_1fr] mb-1">
                 <span className="text-left">Diskon</span>
                 <span className="px-2">:</span>
                 <span className="text-right">
-                  {formatCurrency(discountTotal, '-')}
+                  {formatPurchaseDocumentCurrency(discountTotal, '-')}
                 </span>
               </div>
 
@@ -396,7 +303,7 @@ const ViewPurchase = () => {
                 <span className="text-left">Setelah Diskon</span>
                 <span className="px-2">:</span>
                 <span className="text-right">
-                  {formatCurrency(afterDiscountTotal)}
+                  {formatPurchaseDocumentCurrency(afterDiscountTotal)}
                 </span>
               </div>
 
@@ -405,7 +312,7 @@ const ViewPurchase = () => {
                   <span className="text-left">PPN</span>
                   <span className="px-2">:</span>
                   <span className="text-right">
-                    {formatCurrency(vatTotal, '+')}
+                    {formatPurchaseDocumentCurrency(vatTotal, '+')}
                   </span>
                 </div>
               )}
@@ -413,7 +320,9 @@ const ViewPurchase = () => {
               <div className="border-t pt-2 grid grid-cols-[1fr_auto_1fr] font-bold">
                 <span className="text-left">TOTAL</span>
                 <span className="px-2">:</span>
-                <span className="text-right">{formatCurrency(grandTotal)}</span>
+                <span className="text-right">
+                  {formatPurchaseDocumentCurrency(grandTotal)}
+                </span>
               </div>
             </div>
           </div>
