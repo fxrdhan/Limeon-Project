@@ -228,6 +228,7 @@ const EntityGrid = memo<EntityGridProps>(function EntityGrid({
           }}
           pagination={true}
           paginationPageSize={itemsPerPage}
+          paginationPageSizeSelector={false}
           suppressPaginationPanel={true}
           rowGroupPanelShow={
             activeTab === 'items' && isRowGroupingEnabled && showGroupPanel
