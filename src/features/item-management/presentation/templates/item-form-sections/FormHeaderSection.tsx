@@ -4,7 +4,7 @@ import {
   useItemHistory,
   useItemUI,
 } from '../../../shared/contexts/useItemFormContext';
-import { ItemFormHeader } from '../../molecules';
+import ItemFormHeader from '../../molecules/ItemFormHeader';
 
 interface FormHeaderSectionProps {
   onReset?: () => void;

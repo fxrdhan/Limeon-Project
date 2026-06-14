@@ -1,29 +1,14 @@
 import { QueryKeys } from '@/constants/queryKeys';
-import { companyProfileService } from '@/services/api/companyProfile.service';
 import type { CompanyProfile, ProfileKey } from '@/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-
-type ProfileFieldUpdate = {
-  field: ProfileKey;
-  value: string | null;
-};
-
-const buildProfileEditValues = (profile: CompanyProfile) => {
-  const initialValues: Record<string, string | null> = {};
-
-  (Object.keys(profile) as Array<ProfileKey>).forEach((key: ProfileKey) => {
-    initialValues[key] = profile[key] ?? '';
-  });
-
-  return initialValues;
-};
-
-const fetchProfile = async () => {
-  const { data, error } = await companyProfileService.getProfile();
-  if (error) throw new Error(error.message);
-  return data;
-};
+import {
+  buildProfileEditValues,
+  createDefaultCompanyProfile,
+  fetchCompanyProfile,
+  updateCompanyProfileField,
+  type ProfileFieldUpdate,
+} from './profileData';
 
 export const useProfilePage = () => {
   const [editMode, setEditMode] = useState<Record<string, boolean>>({});
@@ -39,7 +24,7 @@ export const useProfilePage = () => {
     error,
   } = useQuery<CompanyProfile | null>({
     queryKey: QueryKeys.companyProfile.all,
-    queryFn: fetchProfile,
+    queryFn: fetchCompanyProfile,
     staleTime: 30 * 1000,
     refetchOnMount: true,
     refetchOnWindowFocus: false,
@@ -51,23 +36,18 @@ export const useProfilePage = () => {
     }
   }, [profile]);
 
+  const invalidateProfile = () => {
+    void queryClient.invalidateQueries({
+      queryKey: QueryKeys.companyProfile.all,
+    });
+  };
+
   const updateProfileMutation = useMutation<void, Error, ProfileFieldUpdate>({
     mutationFn: async ({ field, value }) => {
-      if (!profile?.id)
-        throw new Error('Profil ID tidak ditemukan untuk diperbarui.');
-
-      const { error } = await companyProfileService.updateProfileField(
-        profile.id,
-        field,
-        value
-      );
-
-      if (error) throw new Error(error.message);
+      await updateCompanyProfileField(profile?.id, { field, value });
     },
     onSuccess: (_, variables) => {
-      void queryClient.invalidateQueries({
-        queryKey: QueryKeys.companyProfile.all,
-      });
+      invalidateProfile();
       setEditMode(prev => ({ ...prev, [variables.field]: false }));
     },
     onError: error => {
@@ -103,10 +83,7 @@ export const useProfilePage = () => {
 
   const createProfile = async () => {
     try {
-      const { data, error } = await companyProfileService.createProfile({
-        name: 'Nama Apotek/Klinik Anda',
-        address: 'Alamat Lengkap Apotek/Klinik Anda',
-      });
+      const { data, error } = await createDefaultCompanyProfile();
 
       if (error) {
         console.error('Error creating profile:', error);
@@ -115,9 +92,7 @@ export const useProfilePage = () => {
       }
 
       if (data) {
-        void queryClient.invalidateQueries({
-          queryKey: QueryKeys.companyProfile.all,
-        });
+        invalidateProfile();
         setEditValues(buildProfileEditValues(data));
         alert('Profil berhasil dibuat. Silakan lengkapi data.');
       }

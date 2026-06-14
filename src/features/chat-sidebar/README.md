@@ -4,14 +4,14 @@ This feature is mounted once from the main shell and opened from the navbar.
 
 - Shell mount: `src/app/layout/main/index.tsx`
 - Launcher entry: `src/app/layout/navbar/index.tsx`
-- Global open/target state only: `src/store/chatSidebarStore.ts`
+- Shell integration API: `public/chatSidebarStore.ts`, backed by
+  `store/chatSidebarStore.ts`
 
 ## Runtime Layers
 
 Keep the global store small. All conversation runtime lives inside the feature.
 
-- `hooks/useChatSidebarHost.ts`: boots chat runtime and syncs page-focus blocking with open state.
-- `index.tsx`: creates shared refs, resolves the DM channel id, loads the target photo, and passes focused runtime slices into each pane.
+- `index.tsx`: panel host that creates shared refs, resolves the DM channel id, loads the target photo, and passes focused runtime slices into each pane.
 - `hooks/useChatSidebarRuntimeState.ts`: top-level runtime composition for session, interaction modes, UI state, and mutations.
 - `hooks/useChatSession.ts`: owns conversation data, initial load, pagination, realtime recovery, presence, receipts, and cache sync.
 - `hooks/useChatInteractionModes.ts`: owns search, selection, copy, and per-message interaction state.
@@ -52,7 +52,8 @@ Start from the layer that matches the behavior you want to change.
 
 Follow this map before adding new chat state.
 
-- Shell-wide open/target state: `src/store/chatSidebarStore.ts`
+- Shell open/target state: `store/chatSidebarStore.ts`, exported through
+  `public/chatSidebarStore.ts`
 - Conversation and presence state from Supabase: `hooks/useChatSession.ts`
 - Search, selection, and per-message interaction state: `hooks/useChatInteractionModes.ts`
 - Composer text, edit mode, attach modal, and local attachment queues: `hooks/useChatComposer.ts`, `hooks/useChatComposerAttachments.ts`
@@ -70,9 +71,12 @@ Persistence layers:
 Frontend code should not query chat tables directly from components or hooks.
 
 - Feature gateway: `data/chatSidebarGateway.ts`
+- Realtime gateway: `data/chatSidebarRealtimeGateway.ts`
+- Storage asset gateway: `data/chatSidebarAssetsGateway.ts`
 - RPC services: `src/services/api/chat/messages.service.ts`, `src/services/api/chat/presence.service.ts`, `src/services/api/chat/directory.service.ts`
 - Edge Function services: `src/services/api/chat/cleanup.service.ts`, `src/services/api/chat/link.service.ts`, `src/services/api/chat/forward.service.ts`, `src/services/api/chat/pdf-compress.service.ts`, `src/services/api/chat/remote-asset.service.ts`
-- Shared request/response contracts: `shared/chatFunctionContracts.ts`
+- Shared request/response contracts: `shared/chatFunctionContracts.ts` at the
+  repository root.
 - Edge Function source: `supabase/functions/chat-cleanup`, `supabase/functions/chat-link`, `supabase/functions/chat-forward-message`, `supabase/functions/chat-pdf-compress`, `supabase/functions/chat-remote-asset`
 
 ## Shared-Link Contract

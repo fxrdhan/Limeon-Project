@@ -2,9 +2,11 @@ import { useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import type { CustomerLevel } from '@/types/database';
-import type { RealtimeChannel } from '@supabase/supabase-js';
-import { realtimeService } from '@/services/realtime/realtime.service';
-import { customerLevelsService } from '@/services/api/customerLevels.service';
+import { itemMasterDataService } from '../../../infrastructure/itemMasterData.service';
+import {
+  itemRealtimeService,
+  type RealtimeChannel,
+} from '../../../infrastructure/itemRealtime.service';
 
 const CUSTOMER_LEVELS_QUERY_KEY = ['customer-levels'];
 const DEFAULT_LEVELS: CreateCustomerLevelInput[] = [
@@ -60,7 +62,7 @@ export const useCustomerLevels = (options?: { enabled?: boolean }) => {
   const levelsQuery = useQuery({
     queryKey: CUSTOMER_LEVELS_QUERY_KEY,
     queryFn: async () => {
-      const { data, error } = await customerLevelsService.getAll();
+      const { data, error } = await itemMasterDataService.getCustomerLevels();
 
       if (error) {
         throw error;
@@ -73,7 +75,8 @@ export const useCustomerLevels = (options?: { enabled?: boolean }) => {
 
   const createLevelMutation = useMutation({
     mutationFn: async (payload: CreateCustomerLevelInput) => {
-      const { data, error } = await customerLevelsService.create(payload);
+      const { data, error } =
+        await itemMasterDataService.createCustomerLevel(payload);
 
       if (error) {
         throw error;
@@ -110,7 +113,7 @@ export const useCustomerLevels = (options?: { enabled?: boolean }) => {
             updatePayload.level_name = update.level_name;
           }
 
-          const { error } = await customerLevelsService.update(
+          const { error } = await itemMasterDataService.updateCustomerLevel(
             update.id,
             updatePayload
           );
@@ -139,7 +142,7 @@ export const useCustomerLevels = (options?: { enabled?: boolean }) => {
     mutationFn: async (payload: DeleteCustomerLevelInput) => {
       const { id, levels } = payload;
 
-      const { error } = await customerLevelsService.delete(id);
+      const { error } = await itemMasterDataService.deleteCustomerLevel(id);
 
       if (error) {
         throw error;
@@ -163,12 +166,10 @@ export const useCustomerLevels = (options?: { enabled?: boolean }) => {
 
       await Promise.all(
         renameUpdates.map(async update => {
-          const { error: updateError } = await customerLevelsService.update(
-            update.id,
-            {
+          const { error: updateError } =
+            await itemMasterDataService.updateCustomerLevel(update.id, {
               level_name: update.level_name,
-            }
-          );
+            });
 
           if (updateError) {
             throw updateError;
@@ -193,7 +194,7 @@ export const useCustomerLevels = (options?: { enabled?: boolean }) => {
   const seedDefaultsMutation = useMutation({
     mutationFn: async () => {
       const { error } =
-        await customerLevelsService.seedDefaults(DEFAULT_LEVELS);
+        await itemMasterDataService.seedDefaultCustomerLevels(DEFAULT_LEVELS);
 
       if (error) {
         throw error;
@@ -232,7 +233,7 @@ export const useCustomerLevels = (options?: { enabled?: boolean }) => {
     if (!enabled) return;
     if (channelRef.current) return;
 
-    const channel = realtimeService
+    const channel = itemRealtimeService
       .createChannel(channelNameRef.current)
       .on(
         'postgres_changes',
@@ -250,7 +251,7 @@ export const useCustomerLevels = (options?: { enabled?: boolean }) => {
     return () => {
       if (!channelRef.current) return;
       void channelRef.current.unsubscribe();
-      void realtimeService.removeChannel(channelRef.current);
+      void itemRealtimeService.removeChannel(channelRef.current);
       channelRef.current = null;
     };
   }, [enabled, queryClient]);

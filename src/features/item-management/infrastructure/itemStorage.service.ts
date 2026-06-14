@@ -1,16 +1,18 @@
 import type { FileObject } from '@supabase/storage-js';
 import type { PostgrestError } from '@supabase/supabase-js';
 import type { ServiceResponse } from '@/services/api/base.service';
-import { StorageService } from '@/services/api/storage.service';
+import {
+  StorageService,
+  type UploadResult,
+} from '@/services/api/storage.service';
+
+const ITEM_IMAGE_BUCKET = 'item_images';
 
 export const itemStorageService = {
-  async listItemImages(
-    bucketName: string,
-    itemId: string
-  ): Promise<ServiceResponse<FileObject[]>> {
+  async listItemImages(itemId: string): Promise<ServiceResponse<FileObject[]>> {
     try {
       const data = await StorageService.listFiles(
-        bucketName,
+        ITEM_IMAGE_BUCKET,
         `items/${itemId}`,
         {
           limit: 20,
@@ -25,14 +27,18 @@ export const itemStorageService = {
   },
 
   async uploadItemImage(params: {
-    bucketName: string;
     path: string;
     file: File;
     contentType: string;
   }): Promise<ServiceResponse<null>> {
     try {
-      const { bucketName, path, file, contentType } = params;
-      await StorageService.uploadRawFile(bucketName, file, path, contentType);
+      const { path, file, contentType } = params;
+      await StorageService.uploadRawFile(
+        ITEM_IMAGE_BUCKET,
+        file,
+        path,
+        contentType
+      );
 
       return {
         data: null,
@@ -41,5 +47,30 @@ export const itemStorageService = {
     } catch (error) {
       return { data: null, error: error as PostgrestError };
     }
+  },
+
+  uploadRawItemImage(params: {
+    path: string;
+    file: File;
+    contentType: string;
+  }): Promise<UploadResult> {
+    return StorageService.uploadRawFile(
+      ITEM_IMAGE_BUCKET,
+      params.file,
+      params.path,
+      params.contentType
+    );
+  },
+
+  deleteItemImage(path: string): Promise<void> {
+    return StorageService.deleteFile(ITEM_IMAGE_BUCKET, path);
+  },
+
+  extractItemImagePathFromUrl(url: string): string | null {
+    return StorageService.extractPathFromUrl(url, ITEM_IMAGE_BUCKET);
+  },
+
+  getItemImagePublicUrl(path: string): string {
+    return StorageService.getPublicUrl(ITEM_IMAGE_BUCKET, path);
   },
 };

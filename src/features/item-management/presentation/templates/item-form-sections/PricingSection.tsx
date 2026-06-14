@@ -5,7 +5,7 @@ import {
   getInventoryUnitMetaLabel,
   mergeInventoryUnitsWithDosagePreference,
 } from '@/lib/item-units';
-import { useCustomerLevels } from '../../../application/hooks/data';
+import { useCustomerLevels } from '../../../application/hooks/data/useCustomerLevels';
 import { useItemPriceCalculations } from '../../../application/hooks/utils/useItemPriceCalculator';
 import { itemDataService } from '../../../infrastructure/itemData.service';
 import {

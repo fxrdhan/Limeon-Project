@@ -8,7 +8,7 @@ import { logger } from '@/utils/logger';
 import { QueryKeys } from '@/constants/queryKeys';
 import type { Item } from '@/types/database';
 import { useEntityMutations } from './GenericHookFactories';
-import { itemsService } from '@/services/api/items.service';
+import { itemCatalogService } from '../../../infrastructure/itemCatalog.service';
 import {
   saveItemBusinessLogic,
   saveEntityHelpers,
@@ -126,7 +126,7 @@ export const useAddItemMutations = ({
         table: 'items',
         action: 'delete',
       });
-      const { error } = await itemsService.delete(itemIdToDelete);
+      const { error } = await itemCatalogService.deleteItem(itemIdToDelete);
       if (error) throw error;
     },
     onSuccess: () => {

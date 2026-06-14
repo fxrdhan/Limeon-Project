@@ -4,8 +4,8 @@ import Navbar from '@/app/layout/navbar';
 import Sidebar from '@/app/layout/sidebar';
 import ChatSidebar from '@/app/layout/chat-sidebar';
 import { preloadChatSidebarPanels } from '@/app/layout/chat-sidebar/panelLoaders';
+import { useChatSidebarStore } from '@/features/chat-sidebar/public/chatSidebarStore';
 import { usePageFocusBlockStore } from '@/store/pageFocusBlockStore';
-import { useChatSidebarStore } from '@/store/chatSidebarStore';
 
 const PresenceRuntimeHost = lazy(
   () => import('@/features/chat-sidebar/public/PresenceRuntimeHost')

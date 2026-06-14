@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'motion/react';
 import { TbLayoutSidebarLeftCollapse } from 'react-icons/tb';
+import { useChatSidebarStore } from '@/features/chat-sidebar/public/chatSidebarStore';
 import { useChatSidebarLauncher } from '@/features/chat-sidebar/public/useChatSidebarLauncher';
-import { useChatSidebarStore } from '@/store/chatSidebarStore';
 import UserPresenceAvatar from '@/components/shared/user-presence-avatar';
 
 const OnlineUsersControl = () => {

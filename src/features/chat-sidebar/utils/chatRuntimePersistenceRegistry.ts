@@ -1,4 +1,4 @@
-import { resetChatSidebarStore } from '@/store/chatSidebarStore';
+import { resetChatSidebarStore } from '../store/chatSidebarStore';
 import { chatRuntime } from './chatRuntime';
 import { deleteRuntimeStorage } from './chatRuntimeState';
 import { resetPersistedComposerDrafts } from './composer-draft-persistence';

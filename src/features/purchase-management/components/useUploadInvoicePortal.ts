@@ -9,14 +9,14 @@ import {
   type WheelEvent,
 } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { uploadAndExtractInvoice } from '@/services/invoiceExtractor';
-import { useInvoiceUploadStore } from '@/store/invoiceUploadStore';
+import { useInvoiceUploadStore } from './invoiceUploadStore';
 import {
   getInvoiceExtractionErrorMessage,
   getInvoiceImageValidationError,
   getNextInvoicePreviewZoomLevel,
   isPointerWithinRect,
 } from './upload-invoice/uploadInvoiceUtils';
+import { uploadAndExtractPurchaseInvoice } from './uploadInvoiceData';
 
 interface UseUploadInvoicePortalOptions {
   isOpen: boolean;
@@ -242,7 +242,7 @@ export function useUploadInvoicePortal({
       setLoading(true);
       setError(null);
       const startTime = Date.now();
-      const data = await uploadAndExtractInvoice(file!);
+      const data = await uploadAndExtractPurchaseInvoice(file!);
       const imageIdentifier = data.imageIdentifier;
       const processingTime = (Date.now() - startTime) / 1000;
       clearCachedInvoiceFile();

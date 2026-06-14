@@ -50,8 +50,8 @@ jobs:
               - 'bun.lock'
               - 'tsconfig*.json'
               - 'vite.config.*'
-              - 'vitest.config.*'
-              - '.swcrc'
+              - 'tailwind.config.*'
+              - 'postcss.config.*'
               - 'index.html'
               - '.env'
               - '.env.*'
@@ -67,7 +67,8 @@ jobs:
               - 'bun.lock'
               - 'tsconfig*.json'
               - 'vite.config.*'
-              - '.swcrc'
+              - 'tailwind.config.*'
+              - 'postcss.config.*'
               - 'index.html'
               - '.env'
               - '.env.*'
@@ -77,11 +78,16 @@ jobs:
             config:
               - '.mergify.yml'
               - '.github/dependabot.yml'
+              - '.codex/**'
+              - '.credential.example'
+              - '.ignore'
               - '.oxfmtrc*'
               - '.oxfmtignore'
               - '.oxlintrc*'
-              - 'tailwind.config.*'
-              - 'postcss.config.*'
+              - 'opencode.json.example'
+              - 'playwright.config.*'
+              - 'skills-lock.json'
+              - 'ts-to-zod.config.*'
               - '.husky/**'
               - '.gitignore'
               - '.gitattributes'
@@ -100,7 +106,7 @@ jobs:
               - '**/*.md'
               - 'LICENSE'
               - '.github/ISSUE_TEMPLATE/**'
-              - '.github/PULL_REQUEST_TEMPLATE.md'
+              - '.github/pull_request_template.md'
 
   # ⚡ Fast checks - run in parallel for quick feedback
   typecheck:
@@ -120,8 +126,11 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Add local binaries to PATH
+        run: echo "$PWD/node_modules/.bin" >> "$GITHUB_PATH"
+
       - name: Check TypeScript
-        run: bun run typecheck
+        run: vp exec tsc -b --noEmit
 
       - name: Check chat schema drift
         run: bun run check:chat-schema
@@ -150,8 +159,11 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Add local binaries to PATH
+        run: echo "$PWD/node_modules/.bin" >> "$GITHUB_PATH"
+
       - name: Lint code
-        run: bun run lint
+        run: vp lint . --deny-warnings
 
   format:
     name: Check Formatting
@@ -177,8 +189,11 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Add local binaries to PATH
+        run: echo "$PWD/node_modules/.bin" >> "$GITHUB_PATH"
+
       - name: Check formatting
-        run: bun run format:check
+        run: vp fmt . --check
 
   # 🧪 Tests with coverage - runs after quick checks pass
   test:
@@ -210,8 +225,11 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Add local binaries to PATH
+        run: echo "$PWD/node_modules/.bin" >> "$GITHUB_PATH"
+
       - name: Run tests with coverage
-        run: bun run test:coverage
+        run: vp test run --coverage
         env:
           VITE_SUPABASE_URL: https://example.com
           VITE_SUPABASE_ANON_KEY: dummy
@@ -281,9 +299,13 @@ jobs:
         if: steps.check.outputs.needed == 'true'
         run: bun install --frozen-lockfile
 
+      - name: Add local binaries to PATH
+        if: steps.check.outputs.needed == 'true'
+        run: echo "$PWD/node_modules/.bin" >> "$GITHUB_PATH"
+
       - name: Build application
         if: steps.check.outputs.needed == 'true'
-        run: bun run build
+        run: vp build
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
@@ -323,8 +345,11 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Add local binaries to PATH
+        run: echo "$PWD/node_modules/.bin" >> "$GITHUB_PATH"
+
       - name: Check formatting
-        run: bun run format:check
+        run: vp fmt . --check
 
       - name: Success message
         run: |
@@ -357,10 +382,13 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Add local binaries to PATH
+        run: echo "$PWD/node_modules/.bin" >> "$GITHUB_PATH"
+
       - name: Lint and format check
         run: |
-          bun run lint
-          bun run format:check
+          vp lint . --deny-warnings
+          vp fmt . --check
 
       - name: Success message
         run: |

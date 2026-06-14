@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { getInvalidationKeys } from '@/constants/queryKeys';
 import { resolveItemUnitEntry } from '@/lib/item-units';
-import { salesService } from '@/services/api/sales.service';
 import { useCustomers, useDoctors, usePatients } from '@/hooks/queries';
 import type {
   Customer,
@@ -13,6 +12,7 @@ import type {
   SaleFormData,
   SaleItem,
 } from '@/types';
+import { createSaleWithItems } from './saleFormData';
 
 const isValidISODate = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value);
 
@@ -204,7 +204,7 @@ export const useSaleForm = ({ enabled = true }: UseSaleFormProps = {}) => {
         unit_conversion_rate: item.unit_conversion_rate,
       }));
 
-      const { error } = await salesService.createSaleWithItems(
+      const { error } = await createSaleWithItems(
         {
           customer_id: formData.customer_id || undefined,
           patient_id: formData.patient_id || undefined,

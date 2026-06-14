@@ -1,8 +1,8 @@
 import type { ExtractedInvoiceData } from '@/types';
 import {
-  regenerateInvoiceData,
-  saveInvoiceToDatabase,
-} from '@/services/invoiceExtractor';
+  regenerateConfirmedInvoiceData,
+  saveConfirmedInvoiceToDatabase,
+} from './confirmInvoiceData';
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -58,7 +58,8 @@ export const useConfirmInvoicePage = () => {
     setError(null);
     try {
       const startTime = Date.now();
-      const regeneratedData = await regenerateInvoiceData(imageIdentifier);
+      const regeneratedData =
+        await regenerateConfirmedInvoiceData(imageIdentifier);
       const newProcessingTime = (Date.now() - startTime) / 1000;
       setInvoiceData(regeneratedData);
       setProcessingTime(newProcessingTime.toFixed(1));
@@ -77,7 +78,7 @@ export const useConfirmInvoicePage = () => {
     try {
       setIsSaving(true);
       setError(null);
-      await saveInvoiceToDatabase(invoiceData, imageIdentifier);
+      await saveConfirmedInvoiceToDatabase(invoiceData, imageIdentifier);
       alert('Faktur berhasil disimpan!');
       void navigate('/purchases');
     } catch (err: unknown) {

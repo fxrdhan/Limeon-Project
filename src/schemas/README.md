@@ -15,8 +15,6 @@ src/schemas/
 ├── manual/            # Manual schemas with custom business logic
 │   ├── itemValidation.ts
 │   └── index.ts
-├── __tests__/         # Schema tests
-│   └── generated-schemas.test.ts
 └── index.ts           # Main export file
 ```
 
@@ -200,12 +198,14 @@ Some types are excluded from generation (e.g., React component props):
 
 ## Testing
 
-All generated schemas are tested in `__tests__/generated-schemas.test.ts`.
+Schema generation and consumers are covered by the project test suite. When you
+change manual runtime validation, add focused tests near the changed schema or
+the consuming feature.
 
 Run tests:
 
 ```bash
-vp test run src/schemas/__tests__/generated-schemas.test.ts --passWithNoTests
+vp test run --passWithNoTests
 ```
 
 ## Migration Notes

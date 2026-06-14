@@ -4,9 +4,7 @@ import type { useConfirmDialog } from '@/components/dialog-box/useConfirmDialog'
 import type { useSupplierMutations } from '@/hooks/queries';
 
 import IdentityDataModal from '@/components/identity-data-modal';
-import { StorageService } from '@/services/api/storage.service';
-
-const SUPPLIER_IMAGE_BUCKET = 'profiles';
+import { identityImageStorageService } from '../../../infrastructure/identityImageStorage.service';
 
 type SupplierModalData = Record<string, string | number | boolean | null>;
 
@@ -185,17 +183,16 @@ const SupplierModals: React.FC<SupplierModalsProps> = ({
           const extension =
             file.name.split('.').pop()?.toLowerCase().trim() || 'jpg';
           const nextImagePath = `suppliers/${entityId}/image.${extension}`;
-          const { publicUrl } = await StorageService.uploadFile(
-            SUPPLIER_IMAGE_BUCKET,
-            file,
-            nextImagePath
-          );
+          const { publicUrl } =
+            await identityImageStorageService.uploadIdentityImage(
+              file,
+              nextImagePath
+            );
 
           const oldImagePath =
             latestImageUrlRef.current &&
-            StorageService.extractPathFromUrl(
-              latestImageUrlRef.current,
-              SUPPLIER_IMAGE_BUCKET
+            identityImageStorageService.extractIdentityImagePath(
+              latestImageUrlRef.current
             );
           const expectedImagePathPrefix = `suppliers/${entityId}/`;
           if (
@@ -203,10 +200,7 @@ const SupplierModals: React.FC<SupplierModalsProps> = ({
             oldImagePath !== nextImagePath &&
             oldImagePath.startsWith(expectedImagePathPrefix)
           ) {
-            await StorageService.deleteEntityImage(
-              SUPPLIER_IMAGE_BUCKET,
-              oldImagePath
-            );
+            await identityImageStorageService.deleteIdentityImage(oldImagePath);
           }
 
           await supplierMutations.updateSupplier.mutateAsync({
@@ -223,16 +217,12 @@ const SupplierModals: React.FC<SupplierModalsProps> = ({
 
           const currentImageUrl = latestImageUrlRef.current;
           const oldImagePath = currentImageUrl
-            ? StorageService.extractPathFromUrl(
-                currentImageUrl,
-                SUPPLIER_IMAGE_BUCKET
+            ? identityImageStorageService.extractIdentityImagePath(
+                currentImageUrl
               )
             : null;
           if (oldImagePath) {
-            await StorageService.deleteEntityImage(
-              SUPPLIER_IMAGE_BUCKET,
-              oldImagePath
-            );
+            await identityImageStorageService.deleteIdentityImage(oldImagePath);
           }
 
           await supplierMutations.updateSupplier.mutateAsync({

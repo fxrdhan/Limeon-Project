@@ -5,6 +5,7 @@ This feature owns application settings screens.
 - Route mount: `src/app/routes/settings/index.tsx`
 - Company profile screen: `profile/ProfilePage.tsx`
 - Company profile orchestration: `profile/useProfilePage.ts`
+- Company profile service-call boundary: `profile/profileData.ts`
 
 ## Runtime Layers
 
@@ -14,6 +15,8 @@ Use the narrowest owner for changes.
   layout.
 - `profile/useProfilePage.ts`: company-profile query/mutation orchestration,
   edit-state transitions, and create-profile action.
+- `profile/profileData.ts`: company-profile service calls, edit-value
+  normalization, and default create-profile payload.
 
 ## Data Boundaries
 

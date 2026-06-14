@@ -14,7 +14,8 @@ on:
       - 'bun.lock'
       - 'tsconfig*.json'
       - 'vite.config.*'
-      - 'vitest.config.*'
+      - 'tailwind.config.*'
+      - 'postcss.config.*'
       - 'index.html'
   pull_request:
     branches: [main, develop]
@@ -29,7 +30,8 @@ on:
       - 'bun.lock'
       - 'tsconfig*.json'
       - 'vite.config.*'
-      - 'vitest.config.*'
+      - 'tailwind.config.*'
+      - 'postcss.config.*'
       - 'index.html'
   schedule:
     - cron: '23 3 * * 1'

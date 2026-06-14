@@ -7,7 +7,7 @@ import type {
   ItemManufacturerEntity,
   ItemUnitEntity,
 } from './EntityTypes';
-import type { UsePackageConversionReturn } from '@/types/hooks';
+import type { UsePackageConversionReturn } from './HookTypes';
 import type { ItemFormData } from './FormTypes';
 import type { PackageConversion, VersionData } from './ItemTypes';
 

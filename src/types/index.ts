@@ -9,7 +9,6 @@ export * from './invoice';
 export * from './dashboard';
 export * from './dialogs';
 export * from './alerts';
-export * from './hooks';
 export * from './auth';
 export * from './realtime';
 export * from './grid';

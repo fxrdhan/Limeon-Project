@@ -6,7 +6,7 @@ import SaleInfoSection from '@/features/sales/components/SaleInfoSection';
 import SaleItemsSection from '@/features/sales/components/SaleItemsSection';
 import { useSaleForm } from '@/features/sales/hooks/useSaleForm';
 import { useSaleItemSelectionEffect } from '@/features/sales/hooks/useSaleItemSelectionEffect';
-import { useItemSelection } from '@/hooks/items/useItemSelection';
+import { useItemSelection } from '@/features/item-management/public/useItemSelection';
 import type { ItemSearchBarRef } from '@/types';
 import { useNavigate } from 'react-router-dom';
 

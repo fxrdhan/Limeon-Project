@@ -1,8 +1,8 @@
 import { useCallback } from 'react';
 import { useAuthStore } from '@/store/authStore';
-import { useChatSidebarStore } from '@/store/chatSidebarStore';
 import type { ChatTargetUser } from '@/types';
 import { chatSidebarMessagesGateway } from '../data/chatSidebarGateway';
+import { useChatSidebarStore } from '../store/chatSidebarStore';
 import { CHAT_CONVERSATION_PAGE_SIZE } from '../constants';
 import { useChatDirectoryRoster } from './useChatDirectoryRoster';
 import { chatRuntimeCache } from '../utils/chatRuntimeCache';

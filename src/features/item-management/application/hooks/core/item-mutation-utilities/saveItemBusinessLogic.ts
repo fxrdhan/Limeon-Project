@@ -1,7 +1,7 @@
-import { itemsService } from '@/services/api/items.service';
 import { logger } from '@/utils/logger';
 import type { PackageConversion } from '../../../../shared/types';
 import type { Item } from '@/types/database';
+import { itemCatalogService } from '../../../../infrastructure/itemCatalog.service';
 import { itemDataService } from '../../../../infrastructure/itemData.service';
 import { syncCustomerLevelDiscounts } from './customerLevelDiscounts';
 import { generateItemCode } from './itemCode';
@@ -246,7 +246,7 @@ export const saveItemBusinessLogic = async ({
       action: 'update',
     });
     const { data: updatedItem, error: updatedItemError } =
-      await itemsService.getItemWithDetails(itemId);
+      await itemCatalogService.getItemWithDetails(itemId);
     if (updatedItemError || !updatedItem) {
       logger.warn('Item update refetch failed after save', {
         component: 'ItemMutationUtilities',
@@ -301,7 +301,7 @@ export const saveItemBusinessLogic = async ({
     finalFormData.customer_level_discounts
   );
   const { data: createdItem, error: createdItemError } =
-    await itemsService.getItemWithDetails(insertedItem.id);
+    await itemCatalogService.getItemWithDetails(insertedItem.id);
   if (createdItemError || !createdItem) {
     logger.warn('Item create refetch failed after save', {
       component: 'ItemMutationUtilities',

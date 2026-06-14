@@ -1,6 +1,5 @@
 import { useConfirmDialog } from '@/components/dialog-box/useConfirmDialog';
 import { QueryKeys } from '@/constants/queryKeys';
-import { purchasesService } from '@/services/api/purchases.service';
 import {
   keepPreviousData,
   useMutation,
@@ -17,32 +16,13 @@ import {
   type RefObject,
 } from 'react';
 import type { PurchaseListItem } from './types';
+import {
+  deletePurchaseWithStockRestore,
+  fetchPurchaseListPage,
+} from './purchaseListData';
 
 const PURCHASE_SEARCH_DEBOUNCE_MS = 250;
 const PURCHASE_ADD_MODAL_CLOSE_MS = 200;
-
-const fetchPurchases = async (
-  page: number,
-  searchTerm: string,
-  limit: number
-) => {
-  try {
-    const { data, error } = await purchasesService.getPaginatedPurchases({
-      page,
-      limit,
-      searchTerm,
-    });
-
-    if (error || !data) {
-      throw error ?? new Error('Gagal memuat data pembelian');
-    }
-
-    return data;
-  } catch (error) {
-    console.error('Error fetching purchases:', error);
-    throw error;
-  }
-};
 
 export const usePurchaseListPage = () => {
   const [search, setSearch] = useState('');
@@ -67,7 +47,8 @@ export const usePurchaseListPage = () => {
       debouncedSearch,
       itemsPerPage
     ),
-    queryFn: () => fetchPurchases(currentPage, debouncedSearch, itemsPerPage),
+    queryFn: () =>
+      fetchPurchaseListPage(currentPage, debouncedSearch, itemsPerPage),
     placeholderData: keepPreviousData,
     staleTime: 0,
     refetchOnMount: 'always',
@@ -98,12 +79,7 @@ export const usePurchaseListPage = () => {
   const totalItems = data?.totalItems || 0;
 
   const deletePurchaseMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } =
-        await purchasesService.deletePurchaseWithStockRestore(id);
-
-      if (error) throw error;
-    },
+    mutationFn: deletePurchaseWithStockRestore,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: QueryKeys.purchases.all });
     },

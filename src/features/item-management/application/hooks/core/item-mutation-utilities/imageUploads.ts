@@ -1,8 +1,7 @@
-import { StorageService } from '@/services/api/storage.service';
 import { compressImageIfNeeded } from '@/utils/image';
 import { itemDataService } from '../../../../infrastructure/itemData.service';
+import { itemStorageService } from '../../../../infrastructure/itemStorage.service';
 
-const ITEM_IMAGE_BUCKET = 'item_images';
 const MAX_ITEM_IMAGE_UPLOAD_BYTES = 1024 * 1024;
 const ALLOWED_ITEM_IMAGE_MIME_TYPES = new Set([
   'image/jpeg',
@@ -84,12 +83,11 @@ export const uploadPendingItemImages = async (
                 lastModified: Date.now(),
               });
         const path = buildHistoryImagePath(itemId, index, file);
-        const { publicUrl } = await StorageService.uploadRawFile(
-          ITEM_IMAGE_BUCKET,
-          uploadFile,
+        const { publicUrl } = await itemStorageService.uploadRawItemImage({
+          file: uploadFile,
           path,
-          uploadFile.type
-        );
+          contentType: uploadFile.type,
+        });
         return publicUrl;
       } catch (error) {
         console.error('Failed to upload item image', error);

@@ -11,7 +11,6 @@ import {
   useQueryClient,
   type UseQueryOptions,
 } from '@tanstack/react-query';
-import { GenericEntityService } from '@/services/api/genericEntity.service';
 import {
   useCategories,
   useMedicineTypes,
@@ -37,6 +36,7 @@ import {
   getQueryConfig,
   getMutationConfig,
 } from './EntityHookConfigurations';
+import { itemMasterDataService } from '../../../infrastructure/itemMasterData.service';
 
 // Re-export commonly used types
 export type { EntityTypeKey };
@@ -68,7 +68,9 @@ export function createEntityQuery<TEntityType extends EntityTypeKey>(
   type TEntity = EntityForType<TEntityType>;
 
   const config = getQueryConfig(entityType);
-  const service = new GenericEntityService<TEntity>(config.tableName);
+  const service = itemMasterDataService.createGenericEntityService<TEntity>(
+    config.tableName
+  );
 
   return function useGenericEntityQuery(
     options: GenericQueryOptions = {},
@@ -162,7 +164,9 @@ export function createEntityMutations<TEntityType extends EntityTypeKey>(
   type TUpdateInput = UpdateInputForEntityType<TEntityType>;
 
   const config = getMutationConfig(entityType);
-  const service = new GenericEntityService<TEntity>(config.tableName);
+  const service = itemMasterDataService.createGenericEntityService<TEntity>(
+    config.tableName
+  );
 
   // Note: queryClient is obtained inside individual hooks, not at factory level
 

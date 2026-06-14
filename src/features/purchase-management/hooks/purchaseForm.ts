@@ -12,11 +12,13 @@ import type {
   PurchaseFormData,
   PurchaseItem,
 } from '@/types';
-import { purchasesService } from '@/services/api/purchases.service';
 import { useSuppliers } from '@/hooks/queries';
 import { useSuppliersSync } from '@/hooks/realtime/useSuppliersSync';
-import { companyProfileService } from '@/services/api/companyProfile.service';
 import { resolveItemUnitEntry } from '@/lib/item-units';
+import {
+  createPurchaseWithItems,
+  fetchPurchaseFormCompanyProfile,
+} from './purchaseFormData';
 
 interface UsePurchaseFormProps {
   initialInvoiceNumber?: string;
@@ -65,7 +67,7 @@ export const usePurchaseForm = ({
 
   const fetchCompanyProfile = useCallback(async () => {
     try {
-      const { data, error } = await companyProfileService.getProfile();
+      const { data, error } = await fetchPurchaseFormCompanyProfile();
       if (error) {
         console.error('Error fetching company profile:', error);
         return;
@@ -289,25 +291,24 @@ export const usePurchaseForm = ({
         expiry_date: item.expiry_date,
       }));
 
-      const { error: purchaseError } =
-        await purchasesService.createPurchaseWithItems(
-          {
-            supplier_id: formData.supplier_id,
-            invoice_number: formData.invoice_number,
-            date: formData.date,
-            total,
-            payment_status: formData.payment_status,
-            payment_method: formData.payment_method,
-            vat_percentage: formData.vat_percentage,
-            is_vat_included: formData.is_vat_included,
-            vat_amount: calculateTotalVat(),
-            notes: formData.notes || null,
-            due_date: formData.due_date || null,
-            customer_name: companyProfile?.name ?? undefined,
-            customer_address: companyProfile?.address ?? undefined,
-          },
-          purchaseItemsData
-        );
+      const { error: purchaseError } = await createPurchaseWithItems(
+        {
+          supplier_id: formData.supplier_id,
+          invoice_number: formData.invoice_number,
+          date: formData.date,
+          total,
+          payment_status: formData.payment_status,
+          payment_method: formData.payment_method,
+          vat_percentage: formData.vat_percentage,
+          is_vat_included: formData.is_vat_included,
+          vat_amount: calculateTotalVat(),
+          notes: formData.notes || null,
+          due_date: formData.due_date || null,
+          customer_name: companyProfile?.name ?? undefined,
+          customer_address: companyProfile?.address ?? undefined,
+        },
+        purchaseItemsData
+      );
 
       if (purchaseError) throw purchaseError;
 

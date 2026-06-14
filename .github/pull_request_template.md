@@ -35,10 +35,12 @@ Relates to #
 
 <!-- Describe the testing you've done -->
 
+- [ ] `vp check`
+- [ ] `vp test run --passWithNoTests`
+- [ ] `vp build`
 - [ ] Unit tests added/updated
 - [ ] Integration tests added/updated
 - [ ] Manual testing completed
-- [ ] All tests passing
 
 ### Test Coverage
 
@@ -61,10 +63,15 @@ Relates to #
 - [ ] I have made corresponding changes to the documentation
 - [ ] My changes generate no new warnings or errors
 - [ ] I have added tests that prove my fix is effective or that my feature works
-- [ ] New and existing unit tests pass locally with my changes
+- [ ] New and existing tests pass locally with my changes
+- [ ] Cross-feature imports use explicit feature public APIs or route/page entries
+- [ ] App route/layout code does not import service/data clients directly
+- [ ] Direct Supabase client access stays inside service or feature data boundaries
+- [ ] Feature-owned UI state stays inside the owning feature
+- [ ] React Query keys use `src/constants/queryKeys.ts`
 - [ ] Any dependent changes have been merged and published
 - [ ] I have checked my code and corrected any misspellings
-- [ ] No console.log statements (using logger utility instead)
+- [ ] No stray debug logging in runtime code
 - [ ] No `any` types (proper TypeScript typing used)
 
 ## Additional Notes

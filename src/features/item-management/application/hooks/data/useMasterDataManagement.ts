@@ -3,12 +3,13 @@ import {
   useEffect,
   useCallback,
   useMemo,
+  type ChangeEvent,
   type KeyboardEvent,
+  type RefObject,
 } from 'react';
 import { useConfirmDialog } from '@/components/dialog-box/useConfirmDialog';
 import { useAlert } from '@/components/alert/hooks';
-import { StorageService } from '@/services/api/storage.service';
-import type { UseMasterDataManagementOptions } from '@/types';
+import { identityImageStorageService } from '../../../infrastructure/identityImageStorage.service';
 import { normalizeMasterDataAutosaveField } from './master-data-management/autosave';
 import {
   getMasterDataErrorMessage,
@@ -20,7 +21,6 @@ import {
   getIdentityImageUploadPath,
   getIdentityImageUrlForEntity,
   getSupersededIdentityImagePath,
-  IDENTITY_IMAGE_BUCKET,
   IMAGE_ENABLED_TABLES,
 } from './master-data-management/identityImages';
 import {
@@ -34,6 +34,14 @@ import {
 } from './master-data-management/modalPayload';
 import { getHooksForTable } from './master-data-management/tableHooks';
 import type { MasterDataIdentity } from './master-data-management/types';
+
+interface UseMasterDataManagementOptions {
+  enabled?: boolean;
+  searchInputRef?: RefObject<HTMLInputElement>;
+  isCustomModalOpen?: boolean;
+  locationKey?: string;
+  handleSearchChange?: (e: ChangeEvent<HTMLInputElement>) => void;
+}
 
 export const useMasterDataManagement = (
   tableName: string,
@@ -212,17 +220,16 @@ export const useMasterDataManagement = (
         identities,
       });
 
-      const { publicUrl } = await StorageService.uploadFile(
-        IDENTITY_IMAGE_BUCKET,
-        file,
-        nextImagePath
-      );
+      const { publicUrl } =
+        await identityImageStorageService.uploadIdentityImage(
+          file,
+          nextImagePath
+        );
 
       const oldImagePath =
         typeof existingImageUrl === 'string'
-          ? StorageService.extractPathFromUrl(
-              existingImageUrl,
-              IDENTITY_IMAGE_BUCKET
+          ? identityImageStorageService.extractIdentityImagePath(
+              existingImageUrl
             )
           : null;
       const supersededImagePath = getSupersededIdentityImagePath({
@@ -232,8 +239,7 @@ export const useMasterDataManagement = (
         entityId,
       });
       if (supersededImagePath) {
-        await StorageService.deleteEntityImage(
-          IDENTITY_IMAGE_BUCKET,
+        await identityImageStorageService.deleteIdentityImage(
           supersededImagePath
         );
       }
@@ -277,16 +283,12 @@ export const useMasterDataManagement = (
 
       const oldImagePath =
         typeof existingImageUrl === 'string'
-          ? StorageService.extractPathFromUrl(
-              existingImageUrl,
-              IDENTITY_IMAGE_BUCKET
+          ? identityImageStorageService.extractIdentityImagePath(
+              existingImageUrl
             )
           : null;
       if (oldImagePath) {
-        await StorageService.deleteEntityImage(
-          IDENTITY_IMAGE_BUCKET,
-          oldImagePath
-        );
+        await identityImageStorageService.deleteIdentityImage(oldImagePath);
       }
 
       await updateMutation.mutateAsync({

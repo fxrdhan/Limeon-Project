@@ -5,12 +5,15 @@ shell used by item, supplier, customer, patient, and doctor tabs.
 
 - Route mount: `src/app/routes/master-data/layout.tsx`
 - Unified grid page: `pages/item-master`
+- Unified grid page orchestration: `pages/item-master/useItemMasterPage.ts`
 - Unified grid page-state helpers: `pages/item-master/itemMasterPageState.ts`
 - Unified grid render sections: `pages/item-master/components/ItemMaster*Section.tsx`
 - Item modal workflow: `presentation/templates/item`
 - Generic entity modal workflow: `presentation/templates/entity`
 - Feature public route constants: `public/masterDataNavigation.ts`
-  re-exporting `shared/masterDataNavigation.ts`
+  re-exporting `src/features/item-management/shared/masterDataNavigation.ts`
+- Feature public item-selection hook: `public/useItemSelection.ts` for purchase
+  and sales forms that need item lookup/dropdown state.
 - Feature testing facade: `public/testing.ts` for app-wide testing utilities
   that need controlled access to item-management internals.
 
@@ -25,8 +28,8 @@ Use the narrowest layer that matches the change.
 - `application/hooks/form`: form state, cache, modal orchestration, and user
   interactions.
 - `application/hooks/utils`: package conversion and pricing calculations.
-- `infrastructure`: Supabase, history, and storage adapters used by this
-  feature.
+- `infrastructure`: Supabase, history, storage, master-data service, and
+  realtime adapters used by this feature.
 - `presentation`: UI templates, organisms, molecules, and atoms.
 - `shared`: feature types, contexts, navigation constants, and validation
   helpers.
@@ -40,6 +43,14 @@ tested outside React.
 - Pure item form defaults and dirty comparison:
   `application/hooks/form/itemFormStateHelpers.ts`
 - Item save/update/delete behavior: `application/hooks/core`
+- Item detail/delete calls used by item save/delete flows:
+  `infrastructure/itemCatalog.service.ts`
+- Item image storage calls: `infrastructure/itemStorage.service.ts`
+- Identity image storage calls:
+  `infrastructure/identityImageStorage.service.ts`
+- Item master-data/customer-level service calls:
+  `infrastructure/itemMasterData.service.ts`
+- Item-management realtime channels: `infrastructure/itemRealtime.service.ts`
 - Item CRUD cache/submit data derivation:
   `application/hooks/core/itemCrudData.ts`
 - Pending package conversion payloads: `application/hooks/core/pendingPackageConversion.ts`
@@ -49,10 +60,14 @@ tested outside React.
 - Item pricing baseline derivations:
   `presentation/organisms/item-pricing-form/baselineUtils.ts`
 - Item fetch/hydration behavior: `application/hooks/data`
+- Item-master route-level orchestration:
+  `pages/item-master/useItemMasterPage.ts`
 - Master-data tab routing from outside this feature:
   `public/masterDataNavigation.ts`
 - Master-data tab routing implementation and internal config:
-  `shared/masterDataNavigation.ts`
+  `src/features/item-management/shared/masterDataNavigation.ts`
+- Item lookup/dropdown state reused by transaction forms:
+  `public/useItemSelection.ts`
 - Item-master page flags, title, active entity fallback, and modal layer
   derivation: `pages/item-master/itemMasterPageState.ts`
 - Item-master page toolbar/grid layout wrappers:
@@ -69,6 +84,10 @@ tested outside React.
   unit tested without rendering React.
 - Do not move reusable app-wide hooks or services into this feature unless the
   dependency is only used here.
+- Keep application, page, presentation, and shared modules behind feature
+  infrastructure for service, storage, Supabase, and realtime access.
+- Import application hooks from their concrete files; do not add
+  `application/hooks/*/index.ts` barrels for internal convenience.
 - Keep cross-feature access behind `public/`; avoid broad root barrels that
   re-export feature internals. Deep presentation paths are acceptable only for
   established route-level lazy imports owned by this feature.

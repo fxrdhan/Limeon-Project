@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { RealtimeChannel } from '@supabase/supabase-js';
-import { realtimeService } from '@/services/realtime/realtime.service';
 import {
   entityHistoryService,
   type EntityHistoryItem,
 } from '../../../infrastructure/entityHistory.service';
 import { itemHistoryService } from '../../../infrastructure/itemHistory.service';
+import {
+  itemRealtimeService,
+  type RealtimeChannel,
+} from '../../../infrastructure/itemRealtime.service';
 
 export const useEntityHistory = (entityTable: string, entityId: string) => {
   const [history, setHistory] = useState<EntityHistoryItem[]>([]);
@@ -169,7 +171,7 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
     // Cleanup previous subscription if exists
     if (channelRef.current) {
       void channelRef.current.unsubscribe();
-      void realtimeService.removeChannel(channelRef.current);
+      void itemRealtimeService.removeChannel(channelRef.current);
       channelRef.current = null;
     }
 
@@ -181,7 +183,7 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
     // Setup realtime subscription with postgres_changes
     // NOTE: Supabase doesn't support multi-column filters like "table=eq.X,id=eq.Y"
     // So we filter by entity_table only, then check entity_id in the callback
-    const channel = realtimeService
+    const channel = itemRealtimeService
       .createChannel(channelName)
       .on(
         'postgres_changes',
@@ -218,7 +220,7 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
     return () => {
       if (channelRef.current) {
         void channelRef.current.unsubscribe();
-        void realtimeService.removeChannel(channelRef.current);
+        void itemRealtimeService.removeChannel(channelRef.current);
         channelRef.current = null;
       }
     };
@@ -235,7 +237,7 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
     // Cleanup previous subscription if exists
     if (entityChannelRef.current) {
       void entityChannelRef.current.unsubscribe();
-      void realtimeService.removeChannel(entityChannelRef.current);
+      void itemRealtimeService.removeChannel(entityChannelRef.current);
       entityChannelRef.current = null;
     }
 
@@ -246,7 +248,7 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
 
     // Setup realtime subscription for entity table UPDATE events
     // This catches hard rollback which updates the entity directly via RPC
-    const entityChannel = realtimeService
+    const entityChannel = itemRealtimeService
       .createChannel(entityChannelName)
       .on(
         'postgres_changes',
@@ -276,7 +278,7 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
     return () => {
       if (entityChannelRef.current) {
         void entityChannelRef.current.unsubscribe();
-        void realtimeService.removeChannel(entityChannelRef.current);
+        void itemRealtimeService.removeChannel(entityChannelRef.current);
         entityChannelRef.current = null;
       }
     };

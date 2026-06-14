@@ -5,7 +5,7 @@ import { useEntityModalLogic } from '../../../application/hooks/instances/useEnt
 import { useEntityHistory } from '../../../application/hooks/instances/useEntityHistory';
 import EntityModalTemplate from '../EntityModalTemplate';
 import EntityModalContent from './EntityModalContent';
-import { ComparisonModal } from '../comparison';
+import ComparisonModal from '../comparison/ComparisonModal';
 import type { AddEditModalProps } from '@/types';
 
 type EntityModalProps = AddEditModalProps;

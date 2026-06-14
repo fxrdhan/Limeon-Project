@@ -43,7 +43,7 @@ By participating in this project, you agree to abide by our [Code of Conduct](CO
 
 4. **Start the development server**
    ```bash
-   bun run dev
+   vp dev
    ```
 
 ## Development Workflow
@@ -143,10 +143,24 @@ We use a feature branch workflow:
 - [ ] Tests pass locally (`vp test run --passWithNoTests`)
 - [ ] Linting passes (`vp lint . --deny-warnings`)
 - [ ] Build succeeds (`vp build`)
-- [ ] Cross-feature imports only target explicit feature public APIs (`src/features/*/public/`)
+- [ ] Cross-feature static/dynamic imports only target explicit feature public APIs (`src/features/*/public/`)
+- [ ] App integration imports feature public APIs or route/page entry points, not implementation internals
+- [ ] App route/layout modules do not import service/data clients directly; bootstrap-only side effects stay in `src/app/main.tsx`
+- [ ] Feature public APIs do not import service/data-access modules directly
+- [ ] Feature `public/testing.ts` APIs are imported only by tests or `src/utils/testing/`
 - [ ] Shared runtime modules (`src/components/`, `src/hooks/`, `src/lib/`, `src/store/`, `src/utils/`) do not import feature internals
+- [ ] Shared UI/util modules (`src/components/`, `src/utils/`) do not import service/data-access modules
+- [ ] Shared UI/util modules (`src/components/`, `src/utils/`) do not import app/store modules directly
+- [ ] Shared hook service/data-access imports stay inside query/realtime/presence sync hooks
+- [ ] Shared hook store imports stay inside explicit presence/directory bridge hooks
+- [ ] Store service/data-access and auth/logout side-effect imports stay inside explicit `src/store/*Services.ts` helpers
+- [ ] Feature-owned UI state stays inside the owning feature and is exposed through `public/` only when app shell integration needs it
+- [ ] Service modules do not import UI, app, store, hook, or feature modules
+- [ ] Feature service/data-access imports stay inside explicit data boundary modules (`data/`, `infrastructure/`, or named route/form service-call helpers; `use*Data.ts` files are hooks)
+- [ ] Direct Supabase client imports stay inside service modules, feature infrastructure, or explicit auth/logout realtime helpers in `src/lib`
 - [ ] All React Query keys use `src/constants/queryKeys.ts`
 - [ ] No direct Supabase calls in hooks/components (use services/infrastructure)
+- [ ] No hooks/components/features import `src/services/repositories/*` directly
 - [ ] PR title follows conventional commit format
 - [ ] PR description clearly describes the changes
 - [ ] Related issues are linked (if applicable)
@@ -202,10 +216,42 @@ We use a feature branch workflow:
 
 - Keep related files together in feature folders
 - Separate concerns (presentation, domain, infrastructure)
-- Use index files for clean imports
+- Use index files for route/page entries and explicit public surfaces; prefer
+  direct module imports inside feature internals so ownership stays visible.
 - Avoid deep nesting (max 3-4 levels)
 - Put intentionally shared feature capabilities behind `src/features/[feature-name]/public/`
+- Keep feature `public/` modules as API wrappers; do not put service/data-access
+  imports there directly.
+- Keep `src/features/*/public/testing.ts` imports inside tests or
+  `src/utils/testing/`.
+- Keep reusable UI/util modules independent from app state; app/store-specific
+  UI belongs under `src/app` or an explicit feature boundary.
 - Do not import another feature's presentation/application/infrastructure internals directly
+- From `src/app`, import feature public APIs, route `index.tsx` files, or
+  named `*Page.tsx` entries only; do not reach into feature application, data,
+  domain, infrastructure, presentation, shared, hook, or component internals.
+- Keep feature-owned UI state inside the owning feature; expose shell-facing
+  stores or launchers through `src/features/[feature-name]/public/`.
+- Keep app-level data/realtime/cache bootstrap side effects in `src/app/main.tsx`;
+  app routes and layouts should not import service/data clients directly.
+- Treat dynamic imports as normal imports for boundary rules; lazy loading does
+  not bypass `public/` APIs.
+- Keep shared hook service calls in `src/hooks/queries/`,
+  `src/hooks/realtime/`, or explicit presence sync hooks.
+- Keep shared hook store access in explicit presence/directory bridge hooks;
+  general form, grid, UI, and item hooks should stay store-agnostic.
+- Keep store service calls and auth/logout side-effect imports in explicit
+  `src/store/*Services.ts` helpers; store modules should orchestrate state, not
+  own service imports.
+- Keep `src/services/` independent from React/UI/app/store/hooks/features; route
+  service output through explicit feature data boundaries.
+- Keep direct `@/lib/supabase` and `@/lib/authSupabase` imports in
+  `src/services/`, feature `infrastructure/`, or explicit auth/logout realtime
+  helpers under `src/lib/`.
+- Use `src/services/api/*` from explicit feature data boundaries only
+  (`data/`, `infrastructure/`, or named route/form service-call helpers;
+  `use*Data.ts` files are hooks); keep
+  `src/services/repositories/*` internal to service-owned modules.
 
 ## Testing Guidelines
 
@@ -308,7 +354,7 @@ This project uses pre-commit hooks to ensure code quality:
 - **Code formatting** (Oxfmt)
 - **Linting** (Oxlint)
 - **Type checking** (TypeScript)
-- **Tests** (Vitest)
+- **Tests** (VitePlus Test)
 - **Build validation**
 
 These run automatically on `git commit`. If they fail, fix the issues before committing.

@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
-import { useChatSidebarStore } from '@/store/chatSidebarStore';
 import type { UserDetails } from '@/types/database';
 import { getInitials, getInitialsColor } from '@/utils/avatar';
+import { useChatSidebarStore } from '../store/chatSidebarStore';
 import type { ChatSidebarPanelProps } from '../types';
 import {
   getAttachmentFileKind,

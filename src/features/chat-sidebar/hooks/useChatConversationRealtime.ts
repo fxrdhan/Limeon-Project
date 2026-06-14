@@ -1,12 +1,10 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { useEffect, useRef } from 'react';
 import type { UserDetails } from '@/types/database';
-import { realtimeService } from '@/services/realtime/realtime.service';
-import type { RealtimeChannel } from '@supabase/supabase-js';
 import {
-  extractRealtimeChatMessageId,
-  normalizeRealtimeChatMessage,
-} from '@/services/api/chat/normalizers';
+  chatSidebarRealtimeGateway,
+  type RealtimeChannel,
+} from '../data/chatSidebarRealtimeGateway';
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import type { ChatSidebarPanelTargetUser } from '../types';
 import { deleteChannelImageAssetsByMessageIds } from '../utils/channel-image-asset-cache';
@@ -95,7 +93,9 @@ export const useChatConversationRealtime = ({
   useEffect(() => {
     if (!isOpen || !user || !targetUser || !currentChannelId) {
       if (conversationChannelRef.current) {
-        void realtimeService.removeChannel(conversationChannelRef.current);
+        void chatSidebarRealtimeGateway.removeChannel(
+          conversationChannelRef.current
+        );
         conversationChannelRef.current = null;
       }
       markConversationRecoverySuccess();
@@ -103,11 +103,15 @@ export const useChatConversationRealtime = ({
     }
 
     if (conversationChannelRef.current) {
-      void realtimeService.removeChannel(conversationChannelRef.current);
+      void chatSidebarRealtimeGateway.removeChannel(
+        conversationChannelRef.current
+      );
       conversationChannelRef.current = null;
     }
 
-    const channel = realtimeService.createChannel(`chat_${currentChannelId}`);
+    const channel = chatSidebarRealtimeGateway.createChannel(
+      `chat_${currentChannelId}`
+    );
 
     channel.on(
       'postgres_changes',
@@ -118,7 +122,8 @@ export const useChatConversationRealtime = ({
         filter: `channel_id=eq.${currentChannelId}`,
       },
       payload => {
-        const insertedMessage = normalizeRealtimeChatMessage(payload.new);
+        const insertedMessage =
+          chatSidebarRealtimeGateway.normalizeRealtimeChatMessage(payload.new);
         if (!insertedMessage?.id) {
           return;
         }
@@ -158,7 +163,8 @@ export const useChatConversationRealtime = ({
         filter: `channel_id=eq.${currentChannelId}`,
       },
       payload => {
-        const updatedMessage = normalizeRealtimeChatMessage(payload.new);
+        const updatedMessage =
+          chatSidebarRealtimeGateway.normalizeRealtimeChatMessage(payload.new);
         if (!updatedMessage?.id) return;
         const mappedUpdatedMessage =
           mapMessageForActiveConversation(updatedMessage);
@@ -183,7 +189,8 @@ export const useChatConversationRealtime = ({
         filter: `channel_id=eq.${currentChannelId}`,
       },
       payload => {
-        const deletedMessageId = extractRealtimeChatMessageId(payload.old);
+        const deletedMessageId =
+          chatSidebarRealtimeGateway.extractRealtimeChatMessageId(payload.old);
         if (!deletedMessageId) return;
 
         if (isInitialConversationLoadPendingRef.current) {
@@ -224,7 +231,7 @@ export const useChatConversationRealtime = ({
         console.error('Failed to connect to chat channel');
         if (conversationChannelRef.current === channel) {
           conversationChannelRef.current = null;
-          void realtimeService.removeChannel(channel);
+          void chatSidebarRealtimeGateway.removeChannel(channel);
         }
         if (scheduleConversationRecovery()) {
           setLoadError('Realtime chat terputus. Mencoba menyambungkan ulang');
@@ -236,7 +243,7 @@ export const useChatConversationRealtime = ({
         console.error('Timed out while connecting to chat channel');
         if (conversationChannelRef.current === channel) {
           conversationChannelRef.current = null;
-          void realtimeService.removeChannel(channel);
+          void chatSidebarRealtimeGateway.removeChannel(channel);
         }
         if (scheduleConversationRecovery()) {
           setLoadError('Realtime chat terputus. Mencoba menyambungkan ulang');
@@ -248,7 +255,7 @@ export const useChatConversationRealtime = ({
 
     return () => {
       if (conversationChannelRef.current === channel) {
-        void realtimeService.removeChannel(channel);
+        void chatSidebarRealtimeGateway.removeChannel(channel);
         conversationChannelRef.current = null;
       }
     };

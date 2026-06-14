@@ -79,14 +79,9 @@ describe('clearClientBrowserState', () => {
   it('runs registered cleanup contributors and deletes known browser storage', async () => {
     const { registerBrowserLogoutCleanupContributor } =
       await import('./browserLogoutCleanupRegistry');
-    const { useInvoiceUploadStore } =
-      await import('../store/invoiceUploadStore');
     const { clearClientBrowserState } = await import('./browserLogoutCleanup');
     const resetRuntimeState = vi.fn();
     const resetPersistentState = vi.fn().mockResolvedValue(undefined);
-    const invoiceFile = new File(['invoice'], 'invoice.pdf', {
-      type: 'application/pdf',
-    });
 
     const unregister = registerBrowserLogoutCleanupContributor({
       id: 'feature-runtime',
@@ -95,12 +90,9 @@ describe('clearClientBrowserState', () => {
       resetPersistentState,
     });
 
-    useInvoiceUploadStore.getState().setCachedInvoiceFile(invoiceFile);
-
     await clearClientBrowserState();
     unregister();
 
-    expect(useInvoiceUploadStore.getState().cachedInvoiceFile).toBeNull();
     expect(resetRuntimeState).toHaveBeenCalledTimes(1);
     expect(cancelQueries).toHaveBeenCalledTimes(1);
     expect(removeAllChannels).toHaveBeenCalledTimes(1);

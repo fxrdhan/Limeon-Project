@@ -8,7 +8,7 @@ import PurchaseInfoSection from '@/features/purchase-management/components/purch
 import PurchaseItemsSection from '@/features/purchase-management/components/purchase-form/PurchaseItemsSection';
 import type { ItemSearchBarRef, AddPurchasePortalProps } from '@/types';
 import { usePurchaseForm } from '@/features/purchase-management/hooks/purchaseForm';
-import { useItemSelection } from '@/hooks/items/useItemSelection';
+import { useItemSelection } from '@/features/item-management/public/useItemSelection';
 import { useItemSelectionEffect } from '@/features/purchase-management/hooks/useItemSelectionEffect';
 import { usePurchaseModalAnimation } from '@/features/purchase-management/hooks/usePurchaseModalAnimation';
 

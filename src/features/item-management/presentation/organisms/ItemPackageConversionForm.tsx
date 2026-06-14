@@ -8,7 +8,7 @@ import type {
   FirstDataRenderedEvent,
 } from 'ag-grid-community';
 import Button from '@/components/button';
-import { PackageConversionInput } from '../atoms';
+import PackageConversionInput from '../atoms/PackageConversionInput';
 import {
   createTextColumn,
   createCurrencyColumn,

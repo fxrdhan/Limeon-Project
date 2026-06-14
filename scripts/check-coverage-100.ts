@@ -41,7 +41,7 @@ const percent = (covered: number, total: number) => {
 
 if (!fs.existsSync(COVERAGE_FILE)) {
   console.error('Coverage file not found:', COVERAGE_FILE);
-  console.error('Run: bun run test:coverage');
+  console.error('Run: vp test run --coverage');
   process.exit(1);
 }
 
@@ -57,6 +57,19 @@ const coverage = JSON.parse(fs.readFileSync(COVERAGE_FILE, 'utf8')) as Record<
 const nonRuntimeList = new Set<string>(
   JSON.parse(fs.readFileSync(NON_RUNTIME_FILE, 'utf8')) as string[]
 );
+const staleNonRuntimeFiles = [...nonRuntimeList].filter(
+  filePath => !fs.existsSync(path.resolve(filePath))
+);
+
+if (staleNonRuntimeFiles.length > 0) {
+  staleNonRuntimeFiles.sort((a, b) => a.localeCompare(b));
+  console.error('\nNon-runtime coverage list contains missing files:\n');
+  for (const filePath of staleNonRuntimeFiles) {
+    console.error(`- ${filePath}`);
+  }
+  console.error(`\nMissing non-runtime files: ${staleNonRuntimeFiles.length}`);
+  process.exit(1);
+}
 
 const violations: CoverageViolation[] = [];
 const missingCoverageFiles: string[] = [];

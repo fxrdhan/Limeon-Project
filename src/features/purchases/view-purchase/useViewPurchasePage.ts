@@ -1,11 +1,11 @@
 import type { PurchaseData, PurchaseItem } from '@/types';
-import { purchasesService } from '@/services/api/purchases.service';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   PURCHASE_PRINT_SESSION_KEY,
   calculatePurchaseDocumentSubtotals,
 } from '../purchaseDocument';
+import { fetchViewPurchaseData } from './viewPurchaseData';
 
 export const useViewPurchasePage = () => {
   const { id } = useParams<{ id: string }>();
@@ -20,23 +20,9 @@ export const useViewPurchasePage = () => {
     const fetchPurchaseData = async (purchaseId: string) => {
       try {
         setLoading(true);
-        const [purchaseResult, itemsResult] = await Promise.all([
-          purchasesService.getPurchaseWithDetails(purchaseId),
-          purchasesService.getPurchaseItems(purchaseId),
-        ]);
-
-        if (purchaseResult.error || !purchaseResult.data) {
-          throw (
-            purchaseResult.error ?? new Error('Data pembelian tidak ditemukan')
-          );
-        }
-
-        if (itemsResult.error) {
-          throw itemsResult.error;
-        }
-
-        setPurchase(purchaseResult.data);
-        setItems(itemsResult.data || []);
+        const purchaseData = await fetchViewPurchaseData(purchaseId);
+        setPurchase(purchaseData.purchase);
+        setItems(purchaseData.items);
       } catch (error) {
         console.error('Error fetching purchase data:', error);
       } finally {

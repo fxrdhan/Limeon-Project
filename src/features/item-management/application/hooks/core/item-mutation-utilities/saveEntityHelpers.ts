@@ -1,10 +1,4 @@
-import {
-  categoryService,
-  itemDosageService,
-  itemManufacturerService,
-  itemPackageService,
-  medicineTypeService,
-} from '@/services/api/masterData.service';
+import { itemMasterDataService } from '../../../../infrastructure/itemMasterData.service';
 
 export const saveEntityHelpers = {
   async saveCategory(categoryData: {
@@ -14,14 +8,12 @@ export const saveEntityHelpers = {
     address?: string;
   }) {
     const { data: newCategory, error } =
-      await categoryService.create(categoryData);
+      await itemMasterDataService.createCategory(categoryData);
 
     if (error) throw new Error('Gagal menyimpan kategori baru.');
 
-    const { data: updatedCategories } = await categoryService.getAll({
-      select: 'id, code, name, description, created_at, updated_at',
-      orderBy: { column: 'name', ascending: true },
-    });
+    const { data: updatedCategories } =
+      await itemMasterDataService.listCategories();
 
     return {
       newCategory: newCategory ?? undefined,
@@ -35,14 +27,12 @@ export const saveEntityHelpers = {
     description?: string;
     address?: string;
   }) {
-    const { data: newType, error } = await medicineTypeService.create(typeData);
+    const { data: newType, error } =
+      await itemMasterDataService.createType(typeData);
 
     if (error) throw new Error('Gagal menyimpan jenis item baru.');
 
-    const { data: updatedTypes } = await medicineTypeService.getAll({
-      select: 'id, code, name, description, created_at, updated_at',
-      orderBy: { column: 'name', ascending: true },
-    });
+    const { data: updatedTypes } = await itemMasterDataService.listTypes();
 
     return { newType: newType ?? undefined, updatedTypes: updatedTypes || [] };
   },
@@ -52,14 +42,13 @@ export const saveEntityHelpers = {
     name: string;
     description?: string;
   }) {
-    const { data: newUnit, error } = await itemPackageService.create(unitData);
+    const { data: newUnit, error } =
+      await itemMasterDataService.createPackage(unitData);
 
     if (error) throw new Error('Gagal menyimpan satuan baru.');
 
-    const { data: updatedPackages } = await itemPackageService.getAll({
-      select: 'id, code, name, description, created_at, updated_at',
-      orderBy: { column: 'name', ascending: true },
-    });
+    const { data: updatedPackages } =
+      await itemMasterDataService.listPackages();
 
     return {
       newUnit: newUnit ?? undefined,
@@ -74,14 +63,11 @@ export const saveEntityHelpers = {
     address?: string;
   }) {
     const { data: newDosage, error } =
-      await itemDosageService.create(dosageData);
+      await itemMasterDataService.createDosage(dosageData);
 
     if (error) throw new Error('Gagal menyimpan sediaan baru.');
 
-    const { data: updatedDosages } = await itemDosageService.getAll({
-      select: 'id, code, name, description, created_at, updated_at',
-      orderBy: { column: 'name', ascending: true },
-    });
+    const { data: updatedDosages } = await itemMasterDataService.listDosages();
 
     return {
       newDosage: newDosage ?? undefined,
@@ -95,16 +81,12 @@ export const saveEntityHelpers = {
     address?: string;
   }) {
     const { data: newManufacturer, error } =
-      await itemManufacturerService.create(manufacturerData);
+      await itemMasterDataService.createManufacturer(manufacturerData);
 
     if (error) throw new Error('Gagal menyimpan produsen baru.');
 
-    const { data: updatedManufacturers } = await itemManufacturerService.getAll(
-      {
-        select: 'id, code, name, address, created_at, updated_at',
-        orderBy: { column: 'name', ascending: true },
-      }
-    );
+    const { data: updatedManufacturers } =
+      await itemMasterDataService.listManufacturers();
 
     return {
       newManufacturer: newManufacturer ?? undefined,

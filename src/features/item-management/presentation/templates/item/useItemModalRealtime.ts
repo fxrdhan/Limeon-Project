@@ -4,10 +4,12 @@ import toast from 'react-hot-toast';
 import { useSmartFormSync } from '@/hooks/realtime/useSmartFormSync';
 import { logger } from '@/utils/logger';
 import type { CustomerLevelDiscount } from '@/types/database';
-import type { RealtimeChannel } from '@supabase/supabase-js';
-import { realtimeService } from '@/services/realtime/realtime.service';
 import { QueryKeys, getInvalidationKeys } from '@/constants/queryKeys';
 import { itemDataService } from '../../../infrastructure/itemData.service';
+import {
+  itemRealtimeService,
+  type RealtimeChannel,
+} from '../../../infrastructure/itemRealtime.service';
 
 interface UseItemModalRealtimeProps {
   itemId?: string;
@@ -60,7 +62,7 @@ export const useItemModalRealtime = ({
       channel: channelName,
     });
 
-    const channel = realtimeService
+    const channel = itemRealtimeService
       .createChannel(channelName)
       .on(
         'postgres_changes',
@@ -253,7 +255,7 @@ export const useItemModalRealtime = ({
           channel: channelName,
         });
         void channelRef.current.unsubscribe();
-        void realtimeService.removeChannel(channelRef.current);
+        void itemRealtimeService.removeChannel(channelRef.current);
         channelRef.current = null;
         setIsConnected(false);
       }

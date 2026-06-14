@@ -4,7 +4,7 @@ import type { UserDetails } from '../types/database';
 import {
   deleteAuthProfilePhotoAssets,
   updateAuthProfilePhotoAssets,
-} from './authStoreProfilePhoto';
+} from './authStoreProfilePhotoServices';
 
 const { mockBuildProfilePhotoUploadPlan, mockStorageService } = vi.hoisted(
   () => ({

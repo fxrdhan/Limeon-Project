@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import type { ImageCropperHandle } from '@/components/image-cropper';
-import { StorageService } from '@/services/api/storage.service';
 import {
   preloadImages,
   removeCachedImageBlob,
@@ -11,7 +10,6 @@ import {
 import { itemStorageService } from '../../../infrastructure/itemStorage.service';
 import {
   ALLOWED_ITEM_IMAGE_TYPES,
-  ITEM_IMAGE_BUCKET,
   ITEM_IMAGE_SLOT_COUNT,
   MAX_ITEM_IMAGE_SOURCE_BYTES,
   appendCacheBust,
@@ -91,7 +89,10 @@ export const useItemImageSection = ({
   });
 
   const buildSlotsFromUrls = useCallback(
-    (urls: string[]) => buildItemImageSlotsFromUrls(urls, itemId),
+    (urls: string[]) =>
+      buildItemImageSlotsFromUrls(urls, itemId, url =>
+        itemStorageService.extractItemImagePathFromUrl(url)
+      ),
     [itemId]
   );
 
@@ -212,10 +213,7 @@ export const useItemImageSection = ({
 
     const loadItemImages = async () => {
       setIsLoadingImages(true);
-      const { data, error } = await itemStorageService.listItemImages(
-        ITEM_IMAGE_BUCKET,
-        itemId
-      );
+      const { data, error } = await itemStorageService.listItemImages(itemId);
 
       if (!isMounted) return;
 
@@ -240,7 +238,7 @@ export const useItemImageSection = ({
         nextSlots[slotIndex] = {
           path,
           url: appendCacheBust(
-            StorageService.getPublicUrl(ITEM_IMAGE_BUCKET, path),
+            itemStorageService.getItemImagePublicUrl(path),
             versionToken
           ),
         };
@@ -359,7 +357,7 @@ export const useItemImageSection = ({
           await removeCachedImageBlob(targetSlot.url);
         }
         if (targetSlot.path && !targetSlot.url.startsWith('blob:')) {
-          await StorageService.deleteFile(ITEM_IMAGE_BUCKET, targetSlot.path);
+          await itemStorageService.deleteItemImage(targetSlot.path);
         }
         setImageSlots(prevSlots => {
           const nextSlots = prevSlots.map((slot, index) =>

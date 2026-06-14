@@ -4,9 +4,11 @@ This feature owns the sales list entrypoint and create-sale workflow.
 
 - Sales list route entry: `index.tsx`
 - Sales list orchestration: `list/useSalesListPage.ts`
+- Sales list service-call boundary: `list/salesListData.ts`
 - Sales list labels: `list/salesListLabels.ts`
 - Create-sale page: `create-sale/index.tsx`
 - Sale form state: `hooks/useSaleForm.ts`
+- Sale form service-call boundary: `hooks/saleFormData.ts`
 - Item-selection side effects: `hooks/useSaleItemSelectionEffect.ts`
 - Visible form sections: `components/SaleInfoSection.tsx`,
   `components/SaleItemsSection.tsx`
@@ -16,12 +18,12 @@ This feature owns the sales list entrypoint and create-sale workflow.
 Use the narrowest owner for changes.
 
 - `index.tsx`: sales list route-level screen.
-- `list`: sales-list query/mutation orchestration, table state, pagination, and
-  display labels.
+- `list`: sales-list query/mutation orchestration, table state, pagination,
+  service-call wrappers, and display labels.
 - `create-sale`: page composition, navigation, add-item modal state, and submit
   wiring.
 - `hooks`: form state, sale item updates, total calculation, and item-selection
-  effects.
+  effects. Submit service calls stay in `hooks/saleFormData.ts`.
 - `components`: visible fields, item rows, and user interaction controls.
 
 ## Data Boundaries
@@ -29,7 +31,8 @@ Use the narrowest owner for changes.
 - Sale persistence should stay behind `src/services/api/sales.service.ts`.
 - Item lookup should use shared item-selection hooks or item-management public
   APIs.
-- New item creation must go through `src/features/item-management/public/ItemModal`.
+- New item creation must go through
+  `src/features/item-management/public/ItemModal.tsx`.
 
 ## Boundary Rules
 

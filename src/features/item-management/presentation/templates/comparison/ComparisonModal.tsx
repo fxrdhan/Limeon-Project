@@ -2,9 +2,10 @@ import React from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import type { VersionData } from '../../../shared/types';
-import { useComparisonData } from './hooks';
-import { ComparisonHeader, DualModeContent } from '../../organisms';
-import { SingleModeContent } from '../../molecules';
+import { useComparisonData } from './hooks/useComparisonData';
+import ComparisonHeader from '../../organisms/ComparisonHeader';
+import DualModeContent from '../../organisms/DualModeContent';
+import SingleModeContent from '../../molecules/SingleModeContent';
 
 interface ComparisonModalProps {
   isOpen: boolean;
@@ -80,7 +81,11 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
         >
           <div className="relative bg-white rounded-xl shadow-xl max-w-[90vw] w-[340px]">
             {/* Hidden element to capture initial focus */}
-            <div tabIndex={0} className="sr-only"></div>
+            <button
+              type="button"
+              className="sr-only"
+              aria-label="Fokus dialog perbandingan"
+            />
 
             {/* Header */}
             <ComparisonHeader isDualMode={isDualMode} compData={compData} />

@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { useChatSidebarLauncher } from '../hooks/useChatSidebarLauncher';
-import { useChatSidebarStore } from '../../../store/chatSidebarStore';
+import { useChatSidebarStore } from '../store/chatSidebarStore';
 
 const {
   useAuthStoreMock,

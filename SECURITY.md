@@ -80,9 +80,9 @@ When contributing to or using PharmaSys, please follow these security best pract
    - Use secure session management
 
 5. **Keep dependencies updated**
-   - Regularly update npm packages
+   - Regularly update Bun-managed packages
    - Monitor security advisories
-   - Use `yarn audit` to check for vulnerabilities
+   - Use `bun audit` to check for vulnerabilities
    - Address high/critical vulnerabilities promptly
 
 6. **Implement proper error handling**
@@ -137,7 +137,7 @@ When contributing to or using PharmaSys, please follow these security best pract
 
 ### Dependencies
 
-- Regular dependency audits via `yarn audit`
+- Regular dependency audits via `bun audit`
 - Automated dependency updates via Dependabot
 - Review security advisories
 
@@ -194,10 +194,10 @@ We regularly monitor security advisories for:
 
 - React
 - TypeScript
-- Vite
-- All npm dependencies
+- VitePlus
+- All package dependencies
 
-Run `yarn audit` to check for known vulnerabilities.
+Run `bun audit` to check for known vulnerabilities.
 
 ## Security Updates
 
@@ -228,6 +228,6 @@ _No vulnerabilities have been reported yet._
 
 ---
 
-**Last Updated**: 2025-11-08
+**Last Updated**: 2026-06-14
 
 We review and update this security policy regularly to ensure it remains current and effective.

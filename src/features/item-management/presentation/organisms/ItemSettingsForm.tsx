@@ -8,7 +8,7 @@ import {
   COLLAPSIBLE_SECTION_HEADER_CLASS,
   SURFACE_CARD_CLASS,
 } from '@/styles/uiPrimitives';
-import { MinStockEditor } from '../atoms';
+import MinStockEditor from '../atoms/core/MinStockEditor';
 import FefoTooltip from '../molecules/FefoTooltip';
 
 interface ItemSettingsFormProps {

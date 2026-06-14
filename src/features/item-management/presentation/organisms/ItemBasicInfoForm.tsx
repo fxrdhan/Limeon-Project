@@ -11,7 +11,7 @@ import {
   SECTION_HEADER_CLASS,
   SURFACE_CARD_CLASS,
 } from '@/styles/uiPrimitives';
-import { useItemCodeGenerator } from '../../application/hooks/utils';
+import { useItemCodeGenerator } from '../../application/hooks/utils/useItemCodeGenerator';
 import { useItemRealtime } from '../../shared/contexts/useItemFormContext';
 import { inferDosageFromDisplayName } from '@/lib/item-dosage-inference';
 import {

@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import Button from '@/components/button';
 import { TbArrowLeft, TbHistory } from 'react-icons/tb';
 import { useEntityModal } from '../../../shared/contexts/EntityModalContext';
-import { EntityFormFields } from '../../molecules';
-import { HistoryListContent } from '../../organisms';
+import EntityFormFields from '../../molecules/EntityFormFields';
+import HistoryListContent from '../../organisms/HistoryListContent';
 import type { HistoryRollbackAction } from '../../organisms/HistoryListContent.types';
 import type { EntityData } from '../../../shared/types';
 

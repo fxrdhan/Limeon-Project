@@ -9,7 +9,7 @@ import {
 } from 'vite-plus/test';
 import { useUploadInvoicePortal } from './useUploadInvoicePortal';
 import type { ChangeEvent } from 'react';
-import { useInvoiceUploadStore } from '../../../store/invoiceUploadStore';
+import { useInvoiceUploadStore } from './invoiceUploadStore';
 import type { ExtractedInvoiceData } from '../../../types';
 
 const { navigateMock, uploadAndExtractInvoiceMock } = vi.hoisted(() => ({

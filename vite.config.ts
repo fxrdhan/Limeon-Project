@@ -205,11 +205,6 @@ export default defineConfig({
             return 'ag-grid-react';
           }
 
-          // Charts library - lazy load separately
-          if (id.includes('chart.js') || id.includes('react-chartjs-2')) {
-            return 'charts';
-          }
-
           // React Router - separate from React core
           if (id.includes('react-router')) {
             return 'router';

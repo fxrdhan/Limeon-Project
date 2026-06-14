@@ -1,5 +1,5 @@
 import { PDF_MESSAGE_PREVIEW_CACHE_MAX_ENTRIES } from '../constants';
-import type { PdfMessagePreviewCacheEntry } from './chatRuntimeCache';
+import type { PdfMessagePreviewCacheEntry } from './chatRuntimeState';
 import {
   CHAT_RUNTIME_INDEXED_DB_NAMES,
   closeRuntimeIndexedDb,

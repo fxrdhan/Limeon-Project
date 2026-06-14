@@ -7,14 +7,12 @@ import { logger } from '@/utils/logger';
 import { useAddItemFormState } from '../form/useItemFormState';
 import { useAddItemMutations } from './useItemMutations';
 import { useItemData } from '../data/useItemData';
-import {
-  useItemModalOrchestrator,
-  useItemCacheManager,
-  useItemFormHandlers,
-  useItemUserInteractions,
-  useItemFormReset,
-} from '../form';
-import { useItemPricingLogic } from '../utils';
+import { useItemCacheManager } from '../form/useItemCacheManager';
+import { useItemFormHandlers } from '../form/useItemFormHandlers';
+import { useItemFormReset } from '../form/useItemFormReset';
+import { useItemModalOrchestrator } from '../form/useItemModalOrchestrator';
+import { useItemUserInteractions } from '../form/useItemUserInteractions';
+import { useItemPricingLogic } from '../utils/useItemPricingLogic';
 import type {
   ItemFormData,
   UseItemManagementProps,

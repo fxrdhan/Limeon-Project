@@ -12,7 +12,7 @@ const OUTPUT_FILE = path.resolve('scripts/coverage/non-runtime-files.json');
 
 if (!fs.existsSync(COVERAGE_FILE)) {
   console.error('Coverage file not found:', COVERAGE_FILE);
-  console.error('Run: bun run test:coverage');
+  console.error('Run: vp test run --coverage');
   process.exit(1);
 }
 
@@ -25,6 +25,7 @@ const nonRuntimeFiles: string[] = [];
 for (const [absPath, fileCoverage] of Object.entries(coverage)) {
   const filePath = absPath.replace(`${process.cwd()}/`, '');
   if (!filePath.startsWith('src/')) continue;
+  if (!fs.existsSync(path.resolve(filePath))) continue;
 
   const statementCount = Object.keys(fileCoverage.s || {}).length;
   const functionCount = Object.keys(fileCoverage.f || {}).length;

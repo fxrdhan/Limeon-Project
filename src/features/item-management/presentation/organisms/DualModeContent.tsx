@@ -1,6 +1,6 @@
 import React from 'react';
 import type { VersionData } from '../../shared/types/ItemTypes';
-import { DiffText } from '../molecules';
+import DiffText from '../molecules/DiffText';
 
 interface DualModeContentProps {
   compData: {

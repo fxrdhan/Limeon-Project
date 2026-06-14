@@ -1,6 +1,5 @@
 import { useConfirmDialog } from '@/components/dialog-box/useConfirmDialog';
 import { QueryKeys, getInvalidationKeys } from '@/constants/queryKeys';
-import { salesService } from '@/services/api/sales.service';
 import {
   keepPreviousData,
   useMutation,
@@ -17,22 +16,12 @@ import {
   type RefObject,
 } from 'react';
 import type { SalesListItem } from './types';
+import {
+  deleteSaleWithStockRestore,
+  fetchSalesListPage,
+} from './salesListData';
 
 const SALES_SEARCH_DEBOUNCE_MS = 250;
-
-const fetchSales = async (page: number, searchTerm: string, limit: number) => {
-  const { data, error } = await salesService.getPaginatedSales({
-    page,
-    limit,
-    searchTerm,
-  });
-
-  if (error || !data) {
-    throw error ?? new Error('Gagal memuat data penjualan');
-  }
-
-  return data;
-};
 
 export const useSalesListPage = () => {
   const [search, setSearch] = useState('');
@@ -51,7 +40,8 @@ export const useSalesListPage = () => {
       debouncedSearch,
       itemsPerPage
     ),
-    queryFn: () => fetchSales(currentPage, debouncedSearch, itemsPerPage),
+    queryFn: () =>
+      fetchSalesListPage(currentPage, debouncedSearch, itemsPerPage),
     placeholderData: keepPreviousData,
     staleTime: 0,
     refetchOnMount: 'always',
@@ -70,10 +60,7 @@ export const useSalesListPage = () => {
   const totalItems = data?.totalItems || 0;
 
   const deleteSaleMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await salesService.deleteSaleWithStockRestore(id);
-      if (error) throw error;
-    },
+    mutationFn: deleteSaleWithStockRestore,
     onSuccess: () => {
       for (const queryKey of getInvalidationKeys.sales.related()) {
         void queryClient.invalidateQueries({ queryKey });

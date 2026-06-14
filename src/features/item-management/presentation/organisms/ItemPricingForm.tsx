@@ -19,7 +19,8 @@ import {
   COLLAPSIBLE_SECTION_HEADER_CLASS,
   SURFACE_CARD_CLASS,
 } from '@/styles/uiPrimitives';
-import { PriceInput, MarginEditor } from '../atoms';
+import PriceInput from '../atoms/PriceInput';
+import MarginEditor from '../atoms/core/MarginEditor';
 import {
   basePriceSchema,
   sellPriceComparisonSchema,

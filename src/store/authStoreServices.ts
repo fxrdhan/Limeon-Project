@@ -56,12 +56,29 @@ export const loadUserProfileById = async (userId: string) => {
   }
 };
 
+export const markUserOfflineForLogout = async (userId: string) => {
+  const { chatPresenceService } = await import('@/services/api/chat.service');
+  await chatPresenceService.upsertUserPresence(userId, {
+    is_online: false,
+  });
+};
+
+export const syncRealtimeAuthToken = (accessToken?: string | null) => {
+  syncSupabaseRealtimeAuthToken(accessToken);
+};
+
+export const clearClientBrowserStateForLogout = async () => {
+  const { clearClientBrowserState } =
+    await import('@/lib/browserLogoutCleanup');
+  await clearClientBrowserState();
+};
+
 const syncStoreFromSession = async (
   session: Session | null,
   set: AuthStoreSet,
   get: AuthStoreGet
 ) => {
-  syncSupabaseRealtimeAuthToken(session?.access_token ?? null);
+  syncRealtimeAuthToken(session?.access_token ?? null);
 
   if (!session?.user?.id) {
     set({ session: null, user: null, loading: false, error: null });

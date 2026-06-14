@@ -1,12 +1,6 @@
-import {
-  categoryService,
-  itemDosageService,
-  itemManufacturerService,
-  itemPackageService,
-  medicineTypeService,
-} from '@/services/api/masterData.service';
 import type { ItemFormData } from '../../../../shared/types';
 import { itemDataService } from '../../../../infrastructure/itemData.service';
+import { itemMasterDataService } from '../../../../infrastructure/itemMasterData.service';
 import { generateItemCodeWithSequence } from '../../utils/useItemCodeGenerator';
 
 export const checkExistingCodes = async (
@@ -27,11 +21,11 @@ export const generateItemCode = async (
 ): Promise<string> => {
   const [categoryData, typeData, packageData, dosageData, manufacturerData] =
     await Promise.all([
-      categoryService.getById(formData.category_id, 'code'),
-      medicineTypeService.getById(formData.type_id, 'code'),
-      itemPackageService.getById(formData.package_id, 'code'),
-      itemDosageService.getById(formData.dosage_id, 'code'),
-      itemManufacturerService.getById(formData.manufacturer_id, 'code'),
+      itemMasterDataService.getCategoryCode(formData.category_id),
+      itemMasterDataService.getMedicineTypeCode(formData.type_id),
+      itemMasterDataService.getPackageCode(formData.package_id),
+      itemMasterDataService.getDosageCode(formData.dosage_id),
+      itemMasterDataService.getManufacturerCode(formData.manufacturer_id),
     ]);
 
   const parts = [

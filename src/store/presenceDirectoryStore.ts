@@ -1,9 +1,8 @@
-import { usersService } from '@/services/api/users.service';
 import { createDirectoryStore } from '@/store/createDirectoryStore';
+import { getPresenceDirectoryUsersPage } from './presenceDirectoryStoreServices';
 
 export const usePresenceDirectoryStore = createDirectoryStore({
-  getUsersPage: (pageSize, offset) =>
-    usersService.getUsersPage(pageSize, offset),
+  getUsersPage: getPresenceDirectoryUsersPage,
   onLoadError: error => {
     console.error('Error loading presence user directory:', error);
   },

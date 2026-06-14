@@ -4,6 +4,6 @@
  */
 
 export { saveItemBusinessLogic } from '../application/hooks/core/ItemMutationUtilities';
-export { useEntity } from '../application/hooks/collections';
+export { useEntity } from '../application/hooks/collections/useEntity';
 export type { EntityData } from '../application/hooks/collections/useEntityManager';
 export type { ItemFormData } from '../shared/types';

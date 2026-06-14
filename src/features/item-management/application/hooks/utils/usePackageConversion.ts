@@ -1,11 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { PackageConversion, UsePackageConversionReturn } from '@/types';
+import type {
+  PackageConversion,
+  UsePackageConversionReturn,
+} from '../../../shared/types';
 import type { ItemInventoryUnit, InventoryUnitKind } from '@/types/database';
-import { itemInventoryUnitService } from '@/services/api/masterData.service';
 import {
   calculateFactorToBase,
   calculateUnitPricesFromBase,
 } from '@/lib/item-units';
+import { itemMasterDataService } from '../../../infrastructure/itemMasterData.service';
 
 export const usePackageConversion = (): UsePackageConversionReturn => {
   const [baseUnit, setBaseUnit] = useState<string>('');
@@ -27,7 +30,7 @@ export const usePackageConversion = (): UsePackageConversionReturn => {
   });
 
   const refreshAvailableUnits = useCallback(async () => {
-    const { data } = await itemInventoryUnitService.getActiveInventoryUnits();
+    const { data } = await itemMasterDataService.getActiveInventoryUnits();
 
     if (data) {
       setAvailableUnits(data);

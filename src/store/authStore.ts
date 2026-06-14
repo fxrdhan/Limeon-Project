@@ -1,14 +1,16 @@
 import { create } from 'zustand';
 import type { AuthState } from '@/types';
-import { syncSupabaseRealtimeAuthToken } from '@/lib/supabaseRealtimeAuth';
 import {
   deleteAuthProfilePhotoAssets,
   updateAuthProfilePhotoAssets,
-} from './authStoreProfilePhoto';
+} from './authStoreProfilePhotoServices';
 import {
+  clearClientBrowserStateForLogout,
   ensureAuthStateSubscription,
   loadAuthService,
   loadUserProfileById,
+  markUserOfflineForLogout,
+  syncRealtimeAuthToken,
 } from './authStoreServices';
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -25,7 +27,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const user = session?.user?.id
         ? await loadUserProfileById(session.user.id)
         : null;
-      syncSupabaseRealtimeAuthToken(session?.access_token ?? null);
+      syncRealtimeAuthToken(session?.access_token ?? null);
       set({ session, user, loading: false, error: null });
     } catch (error) {
       console.error('Error initializing auth:', error);
@@ -45,7 +47,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const user = session.user.id
         ? await loadUserProfileById(session.user.id)
         : null;
-      syncSupabaseRealtimeAuthToken(session.access_token);
+      syncRealtimeAuthToken(session.access_token);
 
       set({
         session,
@@ -68,11 +70,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ loading: true, error: null });
       if (user?.id) {
         try {
-          const { chatPresenceService } =
-            await import('@/services/api/chat.service');
-          await chatPresenceService.upsertUserPresence(user.id, {
-            is_online: false,
-          });
+          await markUserOfflineForLogout(user.id);
         } catch (presenceError) {
           console.warn(
             'Failed to mark user offline during logout:',
@@ -82,10 +80,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       const authService = await loadAuthService();
       await authService.signOut();
-      syncSupabaseRealtimeAuthToken(null);
-      const { clearClientBrowserState } =
-        await import('@/lib/browserLogoutCleanup');
-      await clearClientBrowserState();
+      syncRealtimeAuthToken(null);
+      await clearClientBrowserStateForLogout();
       set({ session: null, user: null, loading: false });
 
       if (typeof window !== 'undefined') {

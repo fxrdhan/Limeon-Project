@@ -1,6 +1,6 @@
 import type { GridApi } from 'ag-grid-community';
 import { useCallback, useMemo } from 'react';
-import { useColumnDisplayMode } from '@/features/item-management/application/hooks/ui';
+import { useColumnDisplayMode } from '@/features/item-management/application/hooks/ui/useColumnDisplayMode';
 import { useItemsDisplayTransform } from '@/features/item-management/application/hooks/ui/useItemsDisplayTransform';
 import type { MasterDataType } from '@/features/item-management/shared/types';
 import type {

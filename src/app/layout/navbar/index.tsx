@@ -4,7 +4,7 @@ import type { NavbarProps } from '@/types';
 import { useAuthStore } from '@/store/authStore';
 import DateTimeDisplay from './live-datetime';
 
-const Profile = lazy(() => import('@/components/profile'));
+const Profile = lazy(() => import('./Profile'));
 const OnlineUsersControl = lazy(() => import('./online-users-control'));
 
 const OnlineUsersFallback = ({ onInteract }: { onInteract: () => void }) => (

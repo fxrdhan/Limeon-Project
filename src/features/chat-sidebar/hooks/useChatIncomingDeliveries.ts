@@ -1,13 +1,15 @@
 import { useAuthStore } from '@/store/authStore';
 import { useRealtimeChannelRecovery } from '@/hooks/realtime/useRealtimeChannelRecovery';
-import { realtimeService } from '@/services/realtime/realtime.service';
 import { useCallback, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
-import type { RealtimeChannel } from '@supabase/supabase-js';
 import {
   chatSidebarMessagesGateway,
   type ChatMessage,
 } from '../data/chatSidebarGateway';
+import {
+  chatSidebarRealtimeGateway,
+  type RealtimeChannel,
+} from '../data/chatSidebarRealtimeGateway';
 import { useChatReceiptMutationQueue } from './useChatReceiptMutationQueue';
 
 const DELIVERY_BATCH_WINDOW_MS = 90;
@@ -217,11 +219,13 @@ export const useChatIncomingDeliveries = () => {
     const queuedDeliveryMessageIds = queuedDeliveryMessageIdsRef.current;
 
     if (incomingMessagesChannelRef.current) {
-      void realtimeService.removeChannel(incomingMessagesChannelRef.current);
+      void chatSidebarRealtimeGateway.removeChannel(
+        incomingMessagesChannelRef.current
+      );
       incomingMessagesChannelRef.current = null;
     }
 
-    const incomingMessagesChannel = realtimeService.createChannel(
+    const incomingMessagesChannel = chatSidebarRealtimeGateway.createChannel(
       `incoming_messages_${user.id}`
     );
 
@@ -251,7 +255,9 @@ export const useChatIncomingDeliveries = () => {
         clearBackfillRetryTimer();
         if (incomingMessagesChannelRef.current === incomingMessagesChannel) {
           incomingMessagesChannelRef.current = null;
-          void realtimeService.removeChannel(incomingMessagesChannel);
+          void chatSidebarRealtimeGateway.removeChannel(
+            incomingMessagesChannel
+          );
         }
         toast.error(
           'Realtime chat terputus. Status delivered bisa terlambat diperbarui.',
@@ -268,7 +274,9 @@ export const useChatIncomingDeliveries = () => {
         clearBackfillRetryTimer();
         if (incomingMessagesChannelRef.current === incomingMessagesChannel) {
           incomingMessagesChannelRef.current = null;
-          void realtimeService.removeChannel(incomingMessagesChannel);
+          void chatSidebarRealtimeGateway.removeChannel(
+            incomingMessagesChannel
+          );
         }
         toast.error(
           'Realtime chat terputus. Status delivered bisa terlambat diperbarui.',
@@ -291,7 +299,7 @@ export const useChatIncomingDeliveries = () => {
       clearBackfillRetryTimer();
       isBackfillInFlightRef.current = false;
       queuedDeliveryMessageIds.clear();
-      void realtimeService.removeChannel(activeChannel);
+      void chatSidebarRealtimeGateway.removeChannel(activeChannel);
       if (incomingMessagesChannelRef.current === activeChannel) {
         incomingMessagesChannelRef.current = null;
       }
