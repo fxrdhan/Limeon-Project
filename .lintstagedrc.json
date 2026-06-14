@@ -1,7 +1,7 @@
 {
   "*.{ts,tsx,js,jsx}": [
-    "node_modules/.bin/oxlint --fix --deny-warnings",
-    "vp fmt --write"
+    "node_modules/.bin/oxlint --fix --deny-warnings --no-error-on-unmatched-pattern",
+    "vp fmt --write --no-error-on-unmatched-pattern"
   ],
   "*.{json,md,yml,yaml}": ["vp fmt --write"]
 }
