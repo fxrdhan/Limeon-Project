@@ -7,8 +7,11 @@ import {
   TbShoppingBag,
   TbShoppingCart,
 } from 'react-icons/tb';
-import { formatCurrency, formatPercentage } from '../constants';
-import type { DashboardStatsSummary, MonthlyRevenueSummary } from '../types';
+import { formatCurrency, formatPercentage } from '../domain/dashboardDisplay';
+import type {
+  DashboardStatsSummary,
+  MonthlyRevenueSummary,
+} from '../domain/types';
 import { InfoChip, MetricRailItem } from './DashboardPrimitives';
 
 interface HeroSectionProps {

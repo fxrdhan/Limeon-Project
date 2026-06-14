@@ -2,7 +2,7 @@ import type { MouseEvent, RefObject, WheelEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { TbZoomIn, TbZoomOut } from 'react-icons/tb';
 import { AnimatePresence, motion } from 'motion/react';
-import { getSafeImageUrl } from './uploadInvoiceUtils';
+import { getSafeImageUrl } from '../../domain/uploadInvoiceUtils';
 
 interface InvoiceFullPreviewPortalProps {
   imageContainerRef: RefObject<HTMLDivElement | null>;

@@ -7,10 +7,10 @@ import PurchaseModalHeader from '@/features/purchase-management/components/purch
 import PurchaseInfoSection from '@/features/purchase-management/components/purchase-form/PurchaseInfoSection';
 import PurchaseItemsSection from '@/features/purchase-management/components/purchase-form/PurchaseItemsSection';
 import type { ItemSearchBarRef, AddPurchasePortalProps } from '@/types';
-import { usePurchaseForm } from '@/features/purchase-management/hooks/purchaseForm';
 import { useItemSelection } from '@/features/item-management/public/useItemSelection';
-import { useItemSelectionEffect } from '@/features/purchase-management/hooks/useItemSelectionEffect';
-import { usePurchaseModalAnimation } from '@/features/purchase-management/hooks/usePurchaseModalAnimation';
+import { usePurchaseForm } from '@/features/purchase-management/application/form/usePurchaseForm';
+import { useItemSelectionEffect } from '@/features/purchase-management/application/form/useItemSelectionEffect';
+import { usePurchaseModalAnimation } from '@/features/purchase-management/components/purchase-form/usePurchaseModalAnimation';
 
 const ItemModal = lazy(
   () => import('@/features/item-management/public/ItemModal')

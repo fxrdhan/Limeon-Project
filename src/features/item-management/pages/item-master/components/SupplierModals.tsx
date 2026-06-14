@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import type { FieldConfig, Supplier as SupplierType } from '@/types';
 import type { useConfirmDialog } from '@/components/dialog-box/useConfirmDialog';
-import type { useSupplierMutations } from '@/hooks/queries';
+import type { useSupplierMutations } from '@/features/item-management/public/useSupplierData';
 
 import IdentityDataModal from '@/components/identity-data-modal';
 import { identityImageStorageService } from '../../../infrastructure/identityImageStorage.service';

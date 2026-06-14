@@ -5,8 +5,8 @@ import {
   FormLoadingFallback,
 } from '@/components/loading-fallback';
 
-const SalesList = lazy(() => import('@/features/sales'));
-const CreateSalePage = lazy(() => import('@/features/sales/create-sale'));
+const SalesList = lazy(() => import('@/features/sales/pages/list'));
+const CreateSalePage = lazy(() => import('@/features/sales/pages/create-sale'));
 
 /**
  * SalesRoutes

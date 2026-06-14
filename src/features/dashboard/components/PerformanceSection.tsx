@@ -6,12 +6,12 @@ import {
   type ChartConfig,
 } from '@/components/ui/chart';
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
-import { formatCurrency } from '../constants';
+import { formatCurrency } from '../domain/dashboardDisplay';
 import type {
   SalesAnalyticsSummary,
   SalesPeakSummary,
   TopMedicineSummary,
-} from '../types';
+} from '../domain/types';
 import { PanelMessage, SectionHeader } from './DashboardPrimitives';
 
 interface PerformanceSectionProps {

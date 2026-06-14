@@ -1,8 +1,8 @@
 import React from 'react';
 import { TbShoppingBag, TbShoppingCart } from 'react-icons/tb';
 import { formatDateOnlyDisplayValue } from '@/lib/formatters';
-import { formatCurrency } from '../constants';
-import type { LowStockItem, RecentTransaction } from '../types';
+import { formatCurrency } from '../domain/dashboardDisplay';
+import type { LowStockItem, RecentTransaction } from '../domain/types';
 import { PanelMessage, SectionHeader } from './DashboardPrimitives';
 
 interface OperationsSectionProps {

@@ -5,9 +5,11 @@ import {
   useDoctors,
   usePatientMutations,
   usePatients,
+} from '@/features/item-management/public/useIdentityData';
+import {
   useSupplierMutations,
   useSuppliers,
-} from '@/hooks/queries';
+} from '@/features/item-management/public/useSupplierData';
 import type { MasterDataQueryOptions } from './types';
 
 export const getHooksForTable = (tableName: string) => {

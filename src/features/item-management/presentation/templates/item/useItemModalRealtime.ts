@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { useSmartFormSync } from '@/hooks/realtime/useSmartFormSync';
+import { useSmartFormSync } from '../../../application/hooks/instances/useSmartFormSync';
 import { logger } from '@/utils/logger';
 import type { CustomerLevelDiscount } from '@/types/database';
 import { QueryKeys, getInvalidationKeys } from '@/constants/queryKeys';

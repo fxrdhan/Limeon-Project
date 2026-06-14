@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useItems } from '@/hooks/queries';
+import { useItems } from '@/features/item-management/public/useItemData';
 import { getItemUnitOptions } from '@/lib/item-units';
 import type { Item } from '@/types/database';
 import { fuzzyMatch } from '@/utils/search';

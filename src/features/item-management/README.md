@@ -14,6 +14,14 @@ shell used by item, supplier, customer, patient, and doctor tabs.
   re-exporting `src/features/item-management/shared/masterDataNavigation.ts`
 - Feature public item-selection hook: `public/useItemSelection.ts` for purchase
   and sales forms that need item lookup/dropdown state.
+- Feature public item-data hooks: `public/useItemData.ts` for item lookup,
+  item mutations, and item-master realtime sync.
+- Feature public supplier-data hooks: `public/useSupplierData.ts` for purchase
+  forms and item-master supplier tab state that need supplier lookup/mutations.
+- Feature public identity-data hooks: `public/useIdentityData.ts` for sales
+  forms and master-data tabs that need customer, patient, or doctor data.
+- Feature public reference-data hooks: `public/useReferenceData.ts` for item
+  category, type, package, unit, dosage, and manufacturer data.
 - Feature testing facade: `public/testing.ts` for app-wide testing utilities
   that need controlled access to item-management internals.
 
@@ -68,6 +76,14 @@ tested outside React.
   `src/features/item-management/shared/masterDataNavigation.ts`
 - Item lookup/dropdown state reused by transaction forms:
   `public/useItemSelection.ts`
+- Item lookup, mutations, and realtime sync:
+  `public/useItemData.ts`
+- Supplier lookup, mutations, and realtime sync reused by transaction forms:
+  `public/useSupplierData.ts`
+- Customer, patient, and doctor lookup/mutations reused by sales forms:
+  `public/useIdentityData.ts`
+- Item reference-data lookup and mutations:
+  `public/useReferenceData.ts`
 - Item-master page flags, title, active entity fallback, and modal layer
   derivation: `pages/item-master/itemMasterPageState.ts`
 - Item-master page toolbar/grid layout wrappers:

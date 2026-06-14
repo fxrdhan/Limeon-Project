@@ -4,7 +4,7 @@ import { useEntity } from '@/features/item-management/application/hooks/collecti
 import { useEntityManager } from '@/features/item-management/application/hooks/collections/useEntityManager';
 import { useItemsManagement } from '@/features/item-management/application/hooks/data/useItemsManagement';
 import { useItemGridColumns } from '@/features/item-management/application/hooks/ui/useItemGridColumns';
-import { useItemsSync } from '@/hooks/realtime/useItemsSync';
+import { useItemsSync } from '@/features/item-management/public/useItemData';
 import type { Item as ItemDataType } from '@/types/database';
 import { buildEntityColumnDefs } from './entityColumnDefs';
 import { useIdentityMasterDataTabs } from './hooks/useIdentityMasterDataTabs';

@@ -183,17 +183,6 @@ const isDataAccessLayer = (filePath: string) =>
   supabaseClientBoundarySources.has(filePath) ||
   /^src\/features\/[^/]+\/infrastructure\//.test(filePath);
 
-const localDataAccessHelperSources = new Set([
-  'src/features/purchase-management/components/uploadInvoiceData.ts',
-  'src/features/purchase-management/hooks/purchaseFormData.ts',
-  'src/features/purchase-management/pages/purchase-list/purchaseListData.ts',
-  'src/features/purchases/confirm-invoice/confirmInvoiceData.ts',
-  'src/features/purchases/view-purchase/viewPurchaseData.ts',
-  'src/features/sales/hooks/saleFormData.ts',
-  'src/features/sales/list/salesListData.ts',
-  'src/features/settings/profile/profileData.ts',
-]);
-
 const storeDataAccessHelperSources = new Set([
   'src/store/authStoreProfilePhotoServices.ts',
   'src/store/authStoreServices.ts',
@@ -227,7 +216,9 @@ const isUiOrApplicationLayerTarget = (target: string) =>
   target.startsWith('src/components/') ||
   target.startsWith('src/hooks/') ||
   target.startsWith('src/store/') ||
-  /^src\/features\/[^/]+\/(components|hooks|pages|presentation)\//.test(target);
+  /^src\/features\/[^/]+\/(application|components|hooks|pages|presentation)\//.test(
+    target
+  );
 
 const isModuleTarget = (target: string, modulePath: string) =>
   target === modulePath ||
@@ -245,8 +236,7 @@ const isStoreSideEffectTarget = (target: string) =>
 
 const isFeatureDataAccessBoundary = (filePath: string) =>
   /^src\/features\/[^/]+\/data\//.test(filePath) ||
-  /^src\/features\/[^/]+\/infrastructure\//.test(filePath) ||
-  localDataAccessHelperSources.has(filePath);
+  /^src\/features\/[^/]+\/infrastructure\//.test(filePath);
 
 const isTestingUtility = (filePath: string) =>
   filePath.startsWith('src/utils/testing/');
@@ -294,12 +284,24 @@ const formatViolations = (violations: string[]) =>
 
 describe('architecture boundaries', () => {
   it('keeps item-management data owners out of shared hooks', () => {
+    const requiredSources = [
+      'src/features/item-management/public/useItemData.ts',
+      'src/features/item-management/public/useReferenceData.ts',
+      'src/features/item-management/application/hooks/instances/useEntityModalRealtime.ts',
+      'src/features/item-management/application/hooks/instances/useSmartFormSync.ts',
+      'src/features/item-management/application/hooks/data/useItemsSync.ts',
+      'src/features/item-management/application/hooks/data/useSuppliersSync.ts',
+    ];
     const forbiddenSharedPaths = [...sourcePaths].filter(
       filePath =>
         filePath === 'src/hooks/data/useItemsManagement.ts' ||
         filePath === 'src/hooks/data/useMasterDataManagement.ts' ||
         filePath === 'src/hooks/data/searchCore.ts' ||
         filePath === 'src/hooks/items/useItemSelection.ts' ||
+        filePath === 'src/hooks/realtime/useEntityModalRealtime.ts' ||
+        filePath === 'src/hooks/realtime/useItemsSync.ts' ||
+        filePath === 'src/hooks/realtime/useSmartFormSync.ts' ||
+        filePath === 'src/hooks/realtime/useSuppliersSync.ts' ||
         filePath.startsWith('src/hooks/data/master-data-management/')
     );
     const forbiddenSpecifiers = new Set([
@@ -319,9 +321,68 @@ describe('architecture boundaries', () => {
         );
       }
     );
+    const itemDataConsumerRoots = [
+      'src/features/item-management/application/hooks/data/',
+      'src/features/item-management/application/hooks/instances/',
+      'src/features/item-management/pages/item-master/',
+    ];
+    const forbiddenItemDataImports = [...sourceByPath.entries()].flatMap(
+      ([filePath, source]) => {
+        if (
+          !isRuntimeSource(filePath) ||
+          !itemDataConsumerRoots.some(root => filePath.startsWith(root)) ||
+          filePath.startsWith('src/features/item-management/public/')
+        ) {
+          return [];
+        }
+
+        return getAllModuleSpecifiers(filePath, source).flatMap(specifier =>
+          specifier === '@/hooks/queries' ||
+          specifier === '@/hooks/queries/useItems' ||
+          specifier === '@/hooks/realtime/useItemsSync'
+            ? [
+                `${filePath} imports item data outside item-management public API`,
+              ]
+            : []
+        );
+      }
+    );
+    const referenceDataConsumerRoots = [
+      'src/features/item-management/application/hooks/core/',
+    ];
+    const forbiddenReferenceDataImports = [...sourceByPath.entries()].flatMap(
+      ([filePath, source]) => {
+        if (
+          !isRuntimeSource(filePath) ||
+          !referenceDataConsumerRoots.some(root => filePath.startsWith(root))
+        ) {
+          return [];
+        }
+
+        return getAllModuleSpecifiers(filePath, source).flatMap(specifier =>
+          specifier === '@/hooks/queries/useMasterData' ||
+          specifier === '@/hooks/queries/useDosages' ||
+          specifier === '@/hooks/queries/useManufacturers'
+            ? [
+                `${filePath} imports item reference data outside item-management public API`,
+              ]
+            : []
+        );
+      }
+    );
 
     expect(
-      formatViolations([...forbiddenSharedPaths, ...forbiddenImports])
+      formatViolations([
+        ...requiredSources.flatMap(filePath =>
+          sourcePaths.has(filePath)
+            ? []
+            : [`item-management public item data API is missing ${filePath}`]
+        ),
+        ...forbiddenSharedPaths,
+        ...forbiddenImports,
+        ...forbiddenItemDataImports,
+        ...forbiddenReferenceDataImports,
+      ])
     ).toBe('none');
   });
 
@@ -633,6 +694,247 @@ describe('architecture boundaries', () => {
     expect(formatViolations(violations)).toBe('none');
   });
 
+  it('keeps settings profile workflow on layered feature ownership', () => {
+    const requiredSources = [
+      'src/features/settings/pages/profile/ProfilePage.tsx',
+      'src/features/settings/application/profile/useProfilePage.ts',
+      'src/features/settings/domain/profileEditValues.ts',
+      'src/features/settings/infrastructure/companyProfileData.ts',
+    ];
+    const forbiddenLegacySources = [...sourcePaths].filter(filePath =>
+      filePath.startsWith('src/features/settings/profile/')
+    );
+    const violations = [
+      ...requiredSources.flatMap(filePath =>
+        sourcePaths.has(filePath)
+          ? []
+          : [`settings profile layer is missing ${filePath}`]
+      ),
+      ...forbiddenLegacySources.map(
+        filePath => `${filePath} uses legacy unlayered settings profile path`
+      ),
+    ];
+
+    expect(formatViolations(violations)).toBe('none');
+  });
+
+  it('keeps dashboard workflow on layered feature ownership', () => {
+    const requiredSources = [
+      'src/features/dashboard/pages/index.tsx',
+      'src/features/dashboard/application/useDashboardData.ts',
+      'src/features/dashboard/application/useDashboardRealtime.ts',
+      'src/features/dashboard/domain/dashboardDisplay.ts',
+      'src/features/dashboard/domain/types.ts',
+      'src/features/dashboard/infrastructure/dashboardData.ts',
+      'src/features/dashboard/infrastructure/dashboardRealtime.ts',
+    ];
+    const forbiddenLegacySources = [...sourcePaths].filter(
+      filePath =>
+        filePath === 'src/features/dashboard/index.tsx' ||
+        filePath === 'src/features/dashboard/constants.ts' ||
+        filePath === 'src/features/dashboard/types.ts' ||
+        filePath === 'src/hooks/queries/useDashboard.ts' ||
+        filePath === 'src/hooks/realtime/useDashboardRealtime.ts'
+    );
+    const violations = [
+      ...requiredSources.flatMap(filePath =>
+        sourcePaths.has(filePath)
+          ? []
+          : [`dashboard layer is missing ${filePath}`]
+      ),
+      ...forbiddenLegacySources.map(
+        filePath => `${filePath} uses legacy dashboard ownership path`
+      ),
+    ];
+
+    expect(formatViolations(violations)).toBe('none');
+  });
+
+  it('keeps sales workflows on layered feature ownership', () => {
+    const requiredSources = [
+      'src/features/sales/pages/list/index.tsx',
+      'src/features/sales/pages/create-sale/index.tsx',
+      'src/features/sales/application/list/useSalesListPage.ts',
+      'src/features/sales/application/create-sale/useSaleForm.ts',
+      'src/features/sales/application/create-sale/useSaleItemSelectionEffect.ts',
+      'src/features/sales/domain/salesListLabels.ts',
+      'src/features/sales/domain/types.ts',
+      'src/features/sales/infrastructure/salesListData.ts',
+      'src/features/sales/infrastructure/saleFormData.ts',
+      'src/features/item-management/public/useIdentityData.ts',
+    ];
+    const forbiddenLegacySources = [...sourcePaths].filter(
+      filePath =>
+        filePath === 'src/features/sales/index.tsx' ||
+        filePath.startsWith('src/features/sales/create-sale/') ||
+        filePath.startsWith('src/features/sales/hooks/') ||
+        filePath.startsWith('src/features/sales/list/')
+    );
+    const salesCreateSources = [...sourceByPath.entries()].filter(
+      ([filePath]) =>
+        filePath.startsWith('src/features/sales/application/create-sale/')
+    );
+    const violations = [
+      ...requiredSources.flatMap(filePath =>
+        sourcePaths.has(filePath) ? [] : [`sales layer is missing ${filePath}`]
+      ),
+      ...forbiddenLegacySources.map(
+        filePath => `${filePath} uses legacy unlayered sales path`
+      ),
+      ...salesCreateSources.flatMap(([filePath, source]) =>
+        getAllModuleSpecifiers(filePath, source).flatMap(specifier =>
+          specifier === '@/hooks/queries'
+            ? [
+                `${filePath} imports master-data identities outside item-management public API`,
+              ]
+            : []
+        )
+      ),
+    ];
+
+    expect(formatViolations(violations)).toBe('none');
+  });
+
+  it('keeps purchase list workflow on layered feature ownership', () => {
+    const requiredSources = [
+      'src/features/purchase-management/pages/list/index.tsx',
+      'src/features/purchase-management/application/list/usePurchaseListPage.ts',
+      'src/features/purchase-management/domain/purchaseListLabels.ts',
+      'src/features/purchase-management/domain/types.ts',
+      'src/features/purchase-management/infrastructure/purchaseListData.ts',
+    ];
+    const forbiddenLegacySources = [...sourcePaths].filter(
+      filePath =>
+        filePath ===
+          'src/features/purchase-management/pages/PurchaseListPage.tsx' ||
+        filePath.startsWith(
+          'src/features/purchase-management/pages/purchase-list/'
+        ) ||
+        filePath === 'src/hooks/queries/usePurchases.ts'
+    );
+    const violations = [
+      ...requiredSources.flatMap(filePath =>
+        sourcePaths.has(filePath)
+          ? []
+          : [`purchase list layer is missing ${filePath}`]
+      ),
+      ...forbiddenLegacySources.map(
+        filePath => `${filePath} uses legacy purchase-list path`
+      ),
+    ];
+
+    expect(formatViolations(violations)).toBe('none');
+  });
+
+  it('keeps purchase form workflow on layered feature ownership', () => {
+    const requiredSources = [
+      'src/features/purchase-management/application/form/usePurchaseForm.ts',
+      'src/features/purchase-management/application/form/useItemSelectionEffect.ts',
+      'src/features/purchase-management/domain/purchaseCalculations.ts',
+      'src/features/purchase-management/infrastructure/purchaseFormData.ts',
+      'src/features/purchase-management/components/purchase-form/usePurchaseModalAnimation.ts',
+      'src/features/item-management/public/useSupplierData.ts',
+    ];
+    const forbiddenLegacySources = [...sourcePaths].filter(filePath =>
+      filePath.startsWith('src/features/purchase-management/hooks/')
+    );
+    const purchaseFormSources = [...sourceByPath.entries()].filter(
+      ([filePath]) =>
+        filePath.startsWith(
+          'src/features/purchase-management/application/form/'
+        )
+    );
+    const violations = [
+      ...requiredSources.flatMap(filePath =>
+        sourcePaths.has(filePath)
+          ? []
+          : [`purchase form layer is missing ${filePath}`]
+      ),
+      ...forbiddenLegacySources.map(
+        filePath => `${filePath} uses legacy purchase form hooks path`
+      ),
+      ...purchaseFormSources.flatMap(([filePath, source]) =>
+        getAllModuleSpecifiers(filePath, source).flatMap(specifier =>
+          specifier === '@/hooks/queries' ||
+          specifier === '@/hooks/realtime/useSuppliersSync'
+            ? [
+                `${filePath} imports supplier data outside item-management public API`,
+              ]
+            : []
+        )
+      ),
+    ];
+
+    expect(formatViolations(violations)).toBe('none');
+  });
+
+  it('keeps purchase upload workflow on layered feature ownership', () => {
+    const requiredSources = [
+      'src/features/purchase-management/application/upload/useUploadInvoicePortal.ts',
+      'src/features/purchase-management/application/upload/invoiceUploadStore.ts',
+      'src/features/purchase-management/domain/uploadInvoiceUtils.ts',
+      'src/features/purchase-management/infrastructure/uploadInvoiceData.ts',
+    ];
+    const forbiddenLegacySources = [...sourcePaths].filter(
+      filePath =>
+        filePath ===
+          'src/features/purchase-management/components/useUploadInvoicePortal.ts' ||
+        filePath ===
+          'src/features/purchase-management/components/invoiceUploadStore.ts' ||
+        filePath ===
+          'src/features/purchase-management/components/uploadInvoiceData.ts' ||
+        filePath ===
+          'src/features/purchase-management/components/upload-invoice/uploadInvoiceUtils.ts'
+    );
+    const violations = [
+      ...requiredSources.flatMap(filePath =>
+        sourcePaths.has(filePath)
+          ? []
+          : [`purchase upload layer is missing ${filePath}`]
+      ),
+      ...forbiddenLegacySources.map(
+        filePath => `${filePath} uses legacy purchase upload component path`
+      ),
+    ];
+
+    expect(formatViolations(violations)).toBe('none');
+  });
+
+  it('keeps purchase document workflows on layered feature ownership', () => {
+    const requiredSources = [
+      'src/features/purchases/pages/confirm-invoice/index.tsx',
+      'src/features/purchases/pages/view-purchase/index.tsx',
+      'src/features/purchases/pages/print-purchase/index.tsx',
+      'src/features/purchases/application/confirm-invoice/useConfirmInvoicePage.ts',
+      'src/features/purchases/application/view-purchase/useViewPurchasePage.ts',
+      'src/features/purchases/application/print-purchase/usePrintPurchasePage.ts',
+      'src/features/purchases/domain/confirmInvoiceDisplay.ts',
+      'src/features/purchases/domain/purchaseDocument.ts',
+      'src/features/purchases/infrastructure/confirmInvoiceData.ts',
+      'src/features/purchases/infrastructure/viewPurchaseData.ts',
+    ];
+    const forbiddenLegacySources = [...sourcePaths].filter(
+      filePath =>
+        filePath.startsWith('src/features/purchases/confirm-invoice/') ||
+        filePath.startsWith('src/features/purchases/view-purchase/') ||
+        filePath.startsWith('src/features/purchases/print-purchase/') ||
+        filePath.startsWith('src/features/purchases/invoice-layout/') ||
+        filePath === 'src/features/purchases/purchaseDocument.ts'
+    );
+    const violations = [
+      ...requiredSources.flatMap(filePath =>
+        sourcePaths.has(filePath)
+          ? []
+          : [`purchase document layer is missing ${filePath}`]
+      ),
+      ...forbiddenLegacySources.map(
+        filePath => `${filePath} uses legacy purchases route-oriented path`
+      ),
+    ];
+
+    expect(formatViolations(violations)).toBe('none');
+  });
+
   it('keeps feature-owned UI state inside feature boundaries', () => {
     const forbiddenGlobalStatePaths = new Map([
       ['src/store/chatSidebarStore.ts', 'chat-sidebar open/target state'],
@@ -692,7 +994,6 @@ describe('architecture boundaries', () => {
 
   it('keeps explicit data access helper lists pointed at existing sources', () => {
     const violations = [
-      ...localDataAccessHelperSources,
       ...sharedHookStoreBridgeSources,
       ...storeDataAccessHelperSources,
       ...supabaseClientBoundarySources,
@@ -956,17 +1257,16 @@ describe('architecture boundaries', () => {
     expect(formatViolations(violations)).toBe('none');
   });
 
-  it('keeps transaction form hooks behind local data helpers', () => {
+  it('keeps transaction form hooks behind feature infrastructure', () => {
     const formHookRoots = [
-      'src/features/purchase-management/hooks/',
-      'src/features/sales/hooks/',
+      'src/features/purchase-management/application/form/',
+      'src/features/sales/application/create-sale/',
     ];
     const violations = [...sourceByPath.entries()].flatMap(
       ([filePath, source]) => {
         if (
           !isRuntimeSource(filePath) ||
-          !formHookRoots.some(root => filePath.startsWith(root)) ||
-          localDataAccessHelperSources.has(filePath)
+          !formHookRoots.some(root => filePath.startsWith(root))
         ) {
           return [];
         }
@@ -984,7 +1284,7 @@ describe('architecture boundaries', () => {
     expect(formatViolations(violations)).toBe('none');
   });
 
-  it('keeps purchase and invoice UI orchestration behind local data helpers', () => {
+  it('keeps purchase and invoice UI orchestration behind feature infrastructure', () => {
     const guardedRoots = [
       'src/features/purchases/',
       'src/features/purchase-management/components/',
@@ -994,7 +1294,7 @@ describe('architecture boundaries', () => {
         if (
           !isRuntimeSource(filePath) ||
           !guardedRoots.some(root => filePath.startsWith(root)) ||
-          localDataAccessHelperSources.has(filePath)
+          isFeatureDataAccessBoundary(filePath)
         ) {
           return [];
         }

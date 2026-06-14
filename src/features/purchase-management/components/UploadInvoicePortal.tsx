@@ -1,6 +1,6 @@
 import { UploadInvoiceDialogPortal } from './upload-invoice/UploadInvoiceDialogPortal';
 import { InvoiceFullPreviewPortal } from './upload-invoice/InvoiceFullPreviewPortal';
-import { useUploadInvoicePortal } from './useUploadInvoicePortal';
+import { useUploadInvoicePortal } from '../application/upload/useUploadInvoicePortal';
 
 interface UploadInvoicePortalProps {
   isOpen: boolean;

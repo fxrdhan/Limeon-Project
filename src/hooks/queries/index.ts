@@ -18,15 +18,5 @@ export {
 } from './useItems';
 export { useDosageMutations } from './useDosages';
 export { useManufacturerMutations, useManufacturers } from './useManufacturers';
-export * from './usePurchases';
-export {
-  useDashboardStats,
-  useSalesAnalytics,
-  useTopSellingMedicines,
-  useLowStockItems as useDashboardLowStock,
-  useRecentTransactions,
-  useMonthlyRevenueComparison,
-  useDashboardData,
-} from './useDashboard';
 export * from './usePatientsDoctors';
 export * from './useCustomers';

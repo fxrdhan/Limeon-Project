@@ -3,7 +3,9 @@ import { Suspense, lazy } from 'react';
 import ComingSoon from '@/features/blank-page';
 import { FormLoadingFallback } from '@/components/loading-fallback';
 
-const Profile = lazy(() => import('@/features/settings/profile/ProfilePage'));
+const Profile = lazy(
+  () => import('@/features/settings/pages/profile/ProfilePage')
+);
 
 /**
  * SettingsRoutes

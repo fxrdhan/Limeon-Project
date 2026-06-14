@@ -16,10 +16,12 @@ import { Suspense, lazy, useEffect } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 
 const AppToaster = lazy(() => import('@/app/toaster'));
-const Dashboard = lazy(() => import('@/features/dashboard'));
+const Dashboard = lazy(() => import('@/features/dashboard/pages'));
 const Login = lazy(() => import('@/features/auth/login'));
 const MainLayout = lazy(() => import('@/app/layout/main'));
-const PrintPurchase = lazy(() => import('@/features/purchases/print-purchase'));
+const PrintPurchase = lazy(
+  () => import('@/features/purchases/pages/print-purchase')
+);
 const ToastTester = lazy(() => import('@/components/ToastTester'));
 
 const MainLayoutFallback = () => (

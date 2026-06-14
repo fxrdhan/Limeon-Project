@@ -7,12 +7,14 @@ import {
 } from '@/components/loading-fallback';
 
 const PurchaseList = lazy(
-  () => import('@/features/purchase-management/pages/PurchaseListPage')
+  () => import('@/features/purchase-management/pages/list')
 );
 const ConfirmInvoicePage = lazy(
-  () => import('@/features/purchases/confirm-invoice')
+  () => import('@/features/purchases/pages/confirm-invoice')
 );
-const ViewPurchase = lazy(() => import('@/features/purchases/view-purchase'));
+const ViewPurchase = lazy(
+  () => import('@/features/purchases/pages/view-purchase')
+);
 
 /**
  * Purchases route group

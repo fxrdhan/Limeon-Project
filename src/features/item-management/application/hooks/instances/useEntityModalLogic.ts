@@ -1,4 +1,4 @@
-import { useEntityModalRealtime } from '@/hooks/realtime/useEntityModalRealtime';
+import { useEntityModalRealtime } from './useEntityModalRealtime';
 import { formatDateTime } from '@/lib/formatters';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';

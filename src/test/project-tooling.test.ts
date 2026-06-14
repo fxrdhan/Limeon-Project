@@ -518,7 +518,7 @@ describe('project tooling guardrails', () => {
     );
     const sourceRootPattern = /^(src|supabase|scripts|tests|docs|shared)\//;
     const featureRelativePattern =
-      /^(public|data|store|hooks|utils|components|application|domain|infrastructure|presentation|pages|config|confirm-invoice|invoice-layout|print-purchase|view-purchase|create-sale|list|profile)\//;
+      /^(public|data|store|hooks|utils|components|application|domain|infrastructure|presentation|pages|config|login)\//;
     const sourceFilePattern = /^[\w.-]+\.(ts|tsx|md|sql)$/;
 
     const pathExists = (readmeFilePath: string, token: string) => {
@@ -553,6 +553,19 @@ describe('project tooling guardrails', () => {
           ? []
           : [`${filePath} references missing source path ${token}`];
       });
+    });
+
+    expect(formatViolations(violations)).toBe('none');
+  });
+
+  it('keeps runtime feature directories documented with ownership maps', () => {
+    const featureDirectories = collectDirectories('src/features');
+    const violations = featureDirectories.flatMap(directory => {
+      const readmePath = path.join(repoRoot, directory, 'README.md');
+
+      return fs.existsSync(readmePath)
+        ? []
+        : [`${directory} is missing README.md ownership map`];
     });
 
     expect(formatViolations(violations)).toBe('none');

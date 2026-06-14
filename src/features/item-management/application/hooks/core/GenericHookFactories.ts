@@ -22,12 +22,11 @@ import {
   usePackageMutations,
   useItemUnitMutations,
   useInventoryUnitMutations,
-} from '@/hooks/queries/useMasterData';
-import { useDosages, useDosageMutations } from '@/hooks/queries/useDosages';
-import {
+  useDosages,
+  useDosageMutations,
   useManufacturers,
   useManufacturerMutations,
-} from '@/hooks/queries/useManufacturers';
+} from '@/features/item-management/public/useReferenceData';
 import {
   type EntityTypeKey,
   type EntityForType,

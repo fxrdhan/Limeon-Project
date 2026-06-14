@@ -5,7 +5,10 @@ import type {
 } from 'react';
 import { TbPhoto, TbX } from 'react-icons/tb';
 import { motion } from 'motion/react';
-import { formatInvoiceFileSize, getSafeImageUrl } from './uploadInvoiceUtils';
+import {
+  formatInvoiceFileSize,
+  getSafeImageUrl,
+} from '../../domain/uploadInvoiceUtils';
 
 interface SelectedInvoiceFilePreviewProps {
   file: File;

@@ -5,7 +5,7 @@ import Checkbox from '@/components/checkbox';
 import DataGrid from '@/components/ag-grid/DataGrid';
 import VatPercentageEditor from '@/features/purchase-management/components/purchase-form/VatPercentageEditor';
 import type { PurchaseItem, ItemSearchBarRef, Item } from '@/types';
-import type { PurchaseFormChangeEvent } from '@/features/purchase-management/hooks/purchaseForm';
+import type { PurchaseFormChangeEvent } from '@/features/purchase-management/domain/types';
 import { usePurchaseItemsGrid } from './usePurchaseItemsGrid';
 
 interface PurchaseItemsSectionProps {

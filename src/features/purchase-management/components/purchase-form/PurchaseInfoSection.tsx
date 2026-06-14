@@ -12,7 +12,7 @@ import {
   type CalendarDateValue,
 } from '@/components/calendar';
 import DescriptiveTextarea from '@/components/descriptive-textarea';
-import type { PurchaseFormChangeEvent } from '@/features/purchase-management/hooks/purchaseForm';
+import type { PurchaseFormChangeEvent } from '@/features/purchase-management/domain/types';
 
 interface PurchaseInfoSectionProps {
   formData: {

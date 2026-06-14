@@ -3,8 +3,11 @@ import type { ColDef } from 'ag-grid-community';
 
 import { createTextColumn } from '@/components/ag-grid/columns';
 import type { FieldConfig, Supplier as SupplierType } from '@/types';
-import { useSuppliers, useSupplierMutations } from '@/hooks/queries';
-import { useSuppliersSync } from '@/hooks/realtime/useSuppliersSync';
+import {
+  useSupplierMutations,
+  useSuppliers,
+  useSuppliersSync,
+} from '@/features/item-management/public/useSupplierData';
 
 const TEXT_ADVANCED_FILTER_COLUMN_PROPS = {
   filter: 'agTextColumnFilter',

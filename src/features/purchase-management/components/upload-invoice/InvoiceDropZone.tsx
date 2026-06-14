@@ -1,7 +1,7 @@
 import type { ChangeEvent, DragEvent, MouseEvent, RefObject } from 'react';
 import { TbUpload } from 'react-icons/tb';
 import { motion } from 'motion/react';
-import { getGlowEffect } from './uploadInvoiceUtils';
+import { getGlowEffect } from '../../domain/uploadInvoiceUtils';
 
 interface InvoiceDropZoneProps {
   fileInputKey: number;

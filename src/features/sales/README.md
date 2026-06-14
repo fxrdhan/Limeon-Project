@@ -2,14 +2,16 @@
 
 This feature owns the sales list entrypoint and create-sale workflow.
 
-- Sales list route entry: `index.tsx`
-- Sales list orchestration: `list/useSalesListPage.ts`
-- Sales list service-call boundary: `list/salesListData.ts`
-- Sales list labels: `list/salesListLabels.ts`
-- Create-sale page: `create-sale/index.tsx`
-- Sale form state: `hooks/useSaleForm.ts`
-- Sale form service-call boundary: `hooks/saleFormData.ts`
-- Item-selection side effects: `hooks/useSaleItemSelectionEffect.ts`
+- Sales list route entry: `pages/list/index.tsx`
+- Sales list orchestration: `application/list/useSalesListPage.ts`
+- Sales list service-call boundary: `infrastructure/salesListData.ts`
+- Sales list labels: `domain/salesListLabels.ts`
+- Sales list view model types: `domain/types.ts`
+- Create-sale page: `pages/create-sale/index.tsx`
+- Sale form state: `application/create-sale/useSaleForm.ts`
+- Sale form service-call boundary: `infrastructure/saleFormData.ts`
+- Item-selection side effects:
+  `application/create-sale/useSaleItemSelectionEffect.ts`
 - Visible form sections: `components/SaleInfoSection.tsx`,
   `components/SaleItemsSection.tsx`
 
@@ -17,13 +19,13 @@ This feature owns the sales list entrypoint and create-sale workflow.
 
 Use the narrowest owner for changes.
 
-- `index.tsx`: sales list route-level screen.
-- `list`: sales-list query/mutation orchestration, table state, pagination,
-  service-call wrappers, and display labels.
-- `create-sale`: page composition, navigation, add-item modal state, and submit
-  wiring.
-- `hooks`: form state, sale item updates, total calculation, and item-selection
-  effects. Submit service calls stay in `hooks/saleFormData.ts`.
+- `pages`: route-level screen rendering, navigation, add-item modal state, and
+  visible page composition.
+- `application`: sales-list query/mutation orchestration, sale form state, sale
+  item updates, total calculation, and item-selection effects.
+- `domain`: pure labels, template escaping, and list view model types.
+- `infrastructure`: service-call wrappers for sales list and create-sale
+  persistence.
 - `components`: visible fields, item rows, and user interaction controls.
 
 ## Data Boundaries
@@ -37,9 +39,11 @@ Use the narrowest owner for changes.
 ## Boundary Rules
 
 - Do not add Supabase calls directly to sales components.
-- Keep sale calculations in the form hook or a future pure helper.
-- Keep `index.tsx` focused on rendering the list screen; sales-list
-  query/mutation orchestration belongs in `list/useSalesListPage.ts`.
-- Keep create-sale page focused on orchestration; move growing workflow state
-  into hooks before adding more UI branches.
+- Keep sale calculations in `application` or a future pure `domain` helper.
+- Keep `pages/list/index.tsx` focused on rendering the list screen; sales-list
+  query/mutation orchestration belongs in `application/list/useSalesListPage.ts`.
+- Keep create-sale page focused on screen composition; move growing workflow
+  state into `application/create-sale` before adding more UI branches.
+- Keep service calls in `infrastructure`; application hooks should not import
+  `src/services` directly.
 - Do not import item-management internals for item creation or item modal flows.

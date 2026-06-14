@@ -171,9 +171,10 @@ const CATEGORIES_CONFIG: EntityConfig = {
     entityDisplayName: 'kategori',
   },
   external: {
-    dataHookImportPath: '@/hooks/queries/useMasterData',
+    dataHookImportPath: '@/features/item-management/public/useReferenceData',
     dataHookName: 'useCategories',
-    mutationsHookImportPath: '@/hooks/queries/useMasterData',
+    mutationsHookImportPath:
+      '@/features/item-management/public/useReferenceData',
     mutationsHookName: 'useCategoryMutations',
   },
 };
@@ -196,9 +197,10 @@ const TYPES_CONFIG: EntityConfig = {
     entityDisplayName: 'jenis item',
   },
   external: {
-    dataHookImportPath: '@/hooks/queries/useMasterData',
+    dataHookImportPath: '@/features/item-management/public/useReferenceData',
     dataHookName: 'useMedicineTypes',
-    mutationsHookImportPath: '@/hooks/queries/useMasterData',
+    mutationsHookImportPath:
+      '@/features/item-management/public/useReferenceData',
     mutationsHookName: 'useMedicineTypeMutations',
   },
 };
@@ -221,9 +223,10 @@ const PACKAGES_CONFIG: EntityConfig = {
     entityDisplayName: 'kemasan',
   },
   external: {
-    dataHookImportPath: '@/hooks/queries/useMasterData',
+    dataHookImportPath: '@/features/item-management/public/useReferenceData',
     dataHookName: 'usePackages',
-    mutationsHookImportPath: '@/hooks/queries/useMasterData',
+    mutationsHookImportPath:
+      '@/features/item-management/public/useReferenceData',
     mutationsHookName: 'usePackageMutations',
   },
 };
@@ -248,9 +251,10 @@ const INVENTORY_UNITS_CONFIG: EntityConfig = {
     entityDisplayName: 'unit stok/jual',
   },
   external: {
-    dataHookImportPath: '@/hooks/queries/useMasterData',
+    dataHookImportPath: '@/features/item-management/public/useReferenceData',
     dataHookName: 'useInventoryUnits',
-    mutationsHookImportPath: '@/hooks/queries/useMasterData',
+    mutationsHookImportPath:
+      '@/features/item-management/public/useReferenceData',
     mutationsHookName: 'useInventoryUnitMutations',
   },
 };
@@ -273,9 +277,10 @@ const UNITS_CONFIG: EntityConfig = {
     entityDisplayName: 'satuan',
   },
   external: {
-    dataHookImportPath: '@/hooks/queries/useMasterData',
+    dataHookImportPath: '@/features/item-management/public/useReferenceData',
     dataHookName: 'useItemUnits',
-    mutationsHookImportPath: '@/hooks/queries/useMasterData',
+    mutationsHookImportPath:
+      '@/features/item-management/public/useReferenceData',
     mutationsHookName: 'useItemUnitMutations',
   },
 };
@@ -298,9 +303,10 @@ const DOSAGES_CONFIG: EntityConfig = {
     entityDisplayName: 'sediaan',
   },
   external: {
-    dataHookImportPath: '@/hooks/queries/useDosages',
+    dataHookImportPath: '@/features/item-management/public/useReferenceData',
     dataHookName: 'useDosages',
-    mutationsHookImportPath: '@/hooks/queries/useDosages',
+    mutationsHookImportPath:
+      '@/features/item-management/public/useReferenceData',
     mutationsHookName: 'useDosageMutations',
   },
 };
@@ -323,9 +329,10 @@ const MANUFACTURERS_CONFIG: EntityConfig = {
     entityDisplayName: 'produsen',
   },
   external: {
-    dataHookImportPath: '@/hooks/queries/useManufacturers',
+    dataHookImportPath: '@/features/item-management/public/useReferenceData',
     dataHookName: 'useManufacturers',
-    mutationsHookImportPath: '@/hooks/queries/useManufacturers',
+    mutationsHookImportPath:
+      '@/features/item-management/public/useReferenceData',
     mutationsHookName: 'useManufacturerMutations',
   },
 };
