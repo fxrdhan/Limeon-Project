@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { getInvalidationKeys, QueryKeys } from '@/constants/queryKeys';
+import { invalidateQueryKeys } from '@/lib/queryInvalidation';
 import { masterDataService } from '@/services/api/masterData.service';
 import type { MedicineType } from '@/types/database';
 import type { MutationOptions } from './types';
@@ -43,9 +44,10 @@ export const useMedicineTypeMutations = () => {
     },
     onSuccess: () => {
       toast.success('Jenis obat berhasil ditambahkan');
-      void queryClient.invalidateQueries({
-        queryKey: getInvalidationKeys.masterData.types(),
-      });
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.masterData.types()
+      );
     },
     onError: error => {
       console.error('Error creating medicine type:', error);
@@ -71,9 +73,10 @@ export const useMedicineTypeMutations = () => {
       if (!variables.options?.silent) {
         toast.success('Jenis obat berhasil diperbarui');
       }
-      void queryClient.invalidateQueries({
-        queryKey: getInvalidationKeys.masterData.types(),
-      });
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.masterData.types()
+      );
     },
     onError: (error, variables) => {
       console.error('Error updating medicine type:', error);
@@ -91,9 +94,10 @@ export const useMedicineTypeMutations = () => {
     },
     onSuccess: () => {
       toast.success('Jenis obat berhasil dihapus');
-      void queryClient.invalidateQueries({
-        queryKey: getInvalidationKeys.masterData.types(),
-      });
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.masterData.types()
+      );
     },
     onError: error => {
       console.error('Error deleting medicine type:', error);

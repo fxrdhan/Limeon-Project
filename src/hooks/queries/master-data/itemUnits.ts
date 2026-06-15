@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { getInvalidationKeys, QueryKeys } from '@/constants/queryKeys';
+import { invalidateQueryKeys } from '@/lib/queryInvalidation';
 import {
   masterDataService,
   type ItemUnit,
@@ -42,10 +43,10 @@ export const useItemUnitMutations = () => {
     },
     onSuccess: () => {
       toast.success('Satuan ukur berhasil ditambahkan');
-      const keysToInvalidate = getInvalidationKeys.masterData.itemUnits();
-      keysToInvalidate.forEach((keySet: readonly string[]) => {
-        void queryClient.invalidateQueries({ queryKey: keySet });
-      });
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.masterData.itemUnits()
+      );
     },
     onError: error => {
       console.error('Error creating item unit:', error);
@@ -71,10 +72,10 @@ export const useItemUnitMutations = () => {
       if (!variables.options?.silent) {
         toast.success('Satuan ukur berhasil diperbarui');
       }
-      const keysToInvalidate = getInvalidationKeys.masterData.itemUnits();
-      keysToInvalidate.forEach((keySet: readonly string[]) => {
-        void queryClient.invalidateQueries({ queryKey: keySet });
-      });
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.masterData.itemUnits()
+      );
     },
     onError: (error, variables) => {
       console.error('Error updating item unit:', error);
@@ -92,10 +93,10 @@ export const useItemUnitMutations = () => {
     },
     onSuccess: () => {
       toast.success('Satuan ukur berhasil dihapus');
-      const keysToInvalidate = getInvalidationKeys.masterData.itemUnits();
-      keysToInvalidate.forEach((keySet: readonly string[]) => {
-        void queryClient.invalidateQueries({ queryKey: keySet });
-      });
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.masterData.itemUnits()
+      );
     },
     onError: error => {
       console.error('Error deleting item unit:', error);

@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { QueryKeys } from '@/constants/queryKeys';
+import { invalidateQueryKeys } from '@/lib/queryInvalidation';
 import {
   itemRealtimeService,
   type RealtimeChannel,
@@ -16,6 +17,15 @@ interface ItemsSyncOptions {
  */
 let globalSetupRef = false;
 let globalChannelRef: RealtimeChannel | null = null;
+const ITEM_MASTER_REALTIME_QUERY_KEYS = [
+  QueryKeys.items.all,
+  QueryKeys.masterData.categories.all,
+  QueryKeys.masterData.types.all,
+  QueryKeys.masterData.itemUnits.all,
+  QueryKeys.masterData.packages.all,
+  QueryKeys.masterData.dosages.all,
+  QueryKeys.masterData.manufacturers.all,
+] as const;
 
 export const useItemsSync = ({ enabled = true }: ItemsSyncOptions = {}) => {
   const queryClient = useQueryClient();
@@ -39,25 +49,7 @@ export const useItemsSync = ({ enabled = true }: ItemsSyncOptions = {}) => {
 
     const setupRealtimeConnection = () => {
       const handleTableChange = () => {
-        void queryClient.invalidateQueries({ queryKey: QueryKeys.items.all });
-        void queryClient.invalidateQueries({
-          queryKey: QueryKeys.masterData.categories.all,
-        });
-        void queryClient.invalidateQueries({
-          queryKey: QueryKeys.masterData.types.all,
-        });
-        void queryClient.invalidateQueries({
-          queryKey: QueryKeys.masterData.itemUnits.all,
-        });
-        void queryClient.invalidateQueries({
-          queryKey: QueryKeys.masterData.packages.all,
-        });
-        void queryClient.invalidateQueries({
-          queryKey: QueryKeys.masterData.dosages.all,
-        });
-        void queryClient.invalidateQueries({
-          queryKey: QueryKeys.masterData.manufacturers.all,
-        });
+        void invalidateQueryKeys(queryClient, ITEM_MASTER_REALTIME_QUERY_KEYS);
       };
 
       const channel = itemRealtimeService

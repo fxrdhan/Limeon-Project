@@ -118,6 +118,28 @@ const getAllModuleSpecifiers = (filePath: string, source: string) => [
   ...getDynamicImportSpecifiers(filePath, source),
 ];
 
+const getPropertyAccessRootIdentifier = (node: ts.Node): string | null => {
+  let currentNode = node;
+
+  while (ts.isPropertyAccessExpression(currentNode)) {
+    currentNode = currentNode.expression;
+  }
+
+  return ts.isIdentifier(currentNode) ? currentNode.text : null;
+};
+
+const getPropertyAccessSegments = (node: ts.Node): string[] | null => {
+  if (ts.isIdentifier(node)) return [node.text];
+  if (!ts.isPropertyAccessExpression(node)) return null;
+
+  const parentSegments = getPropertyAccessSegments(node.expression);
+  return parentSegments ? [...parentSegments, node.name.text] : null;
+};
+
+const isGetInvalidationKeysCall = (node: ts.Node) =>
+  ts.isCallExpression(node) &&
+  getPropertyAccessRootIdentifier(node.expression) === 'getInvalidationKeys';
+
 const resolveKnownPath = (pathWithoutExtension: string) => {
   const candidates = [
     pathWithoutExtension,
@@ -1164,6 +1186,116 @@ describe('architecture boundaries', () => {
                 );
               fileViolations.push(
                 `${filePath}:${line + 1}:${character + 1} uses queryKey string literal "${firstElement.text}"`
+              );
+            }
+          }
+
+          ts.forEachChild(node, visit);
+        };
+
+        visit(sourceFile);
+        return fileViolations;
+      }
+    );
+
+    expect(formatViolations(violations)).toBe('none');
+  });
+
+  it('keeps invalidation key sets out of single queryKey filters', () => {
+    const violations = [...sourceByPath.entries()].flatMap(
+      ([filePath, source]) => {
+        if (!isRuntimeSource(filePath)) return [];
+
+        const sourceFile = parseSource(filePath, source);
+        const fileViolations: string[] = [];
+
+        const visit = (node: ts.Node) => {
+          if (
+            ts.isPropertyAssignment(node) &&
+            ts.isIdentifier(node.name) &&
+            node.name.text === 'queryKey' &&
+            isGetInvalidationKeysCall(node.initializer)
+          ) {
+            const { line, character } =
+              sourceFile.getLineAndCharacterOfPosition(
+                node.initializer.getStart(sourceFile)
+              );
+            fileViolations.push(
+              `${filePath}:${line + 1}:${character + 1} passes invalidation key set as one queryKey`
+            );
+          }
+
+          ts.forEachChild(node, visit);
+        };
+
+        visit(sourceFile);
+        return fileViolations;
+      }
+    );
+
+    expect(formatViolations(violations)).toBe('none');
+  });
+
+  it('keeps party invalidation tied to transaction caches', () => {
+    const forbiddenInvalidationCalls = new Set([
+      'getInvalidationKeys.customers.all',
+      'getInvalidationKeys.doctors.all',
+      'getInvalidationKeys.patients.all',
+    ]);
+    const violations = [...sourceByPath.entries()].flatMap(
+      ([filePath, source]) => {
+        if (!isRuntimeSource(filePath)) return [];
+
+        const sourceFile = parseSource(filePath, source);
+        const fileViolations: string[] = [];
+
+        const visit = (node: ts.Node) => {
+          if (ts.isCallExpression(node)) {
+            const callPath = getPropertyAccessSegments(node.expression)?.join(
+              '.'
+            );
+            if (callPath && forbiddenInvalidationCalls.has(callPath)) {
+              const { line, character } =
+                sourceFile.getLineAndCharacterOfPosition(
+                  node.expression.getStart(sourceFile)
+                );
+              fileViolations.push(
+                `${filePath}:${line + 1}:${character + 1} uses ${callPath} instead of related party invalidation`
+              );
+            }
+          }
+
+          ts.forEachChild(node, visit);
+        };
+
+        visit(sourceFile);
+        return fileViolations;
+      }
+    );
+
+    expect(formatViolations(violations)).toBe('none');
+  });
+
+  it('keeps item invalidation tied to dashboard caches', () => {
+    const violations = [...sourceByPath.entries()].flatMap(
+      ([filePath, source]) => {
+        if (!isRuntimeSource(filePath)) return [];
+
+        const sourceFile = parseSource(filePath, source);
+        const fileViolations: string[] = [];
+
+        const visit = (node: ts.Node) => {
+          if (ts.isCallExpression(node)) {
+            const callPath = getPropertyAccessSegments(node.expression)?.join(
+              '.'
+            );
+            if (callPath === 'getInvalidationKeys.items.all') {
+              const { line, character } =
+                sourceFile.getLineAndCharacterOfPosition(
+                  node.expression.getStart(sourceFile)
+                );
+              fileViolations.push(
+                `${filePath}:${line + 1}:${character + 1} uses ${callPath} instead of item-related invalidation`
               );
             }
           }

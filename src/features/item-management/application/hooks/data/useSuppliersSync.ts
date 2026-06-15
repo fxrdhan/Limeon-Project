@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { getInvalidationKeys } from '@/constants/queryKeys';
+import { invalidateQueryKeys } from '@/lib/queryInvalidation';
 import {
   itemRealtimeService,
   type RealtimeChannel,
@@ -34,9 +35,10 @@ export const useSuppliersSync = ({
             event: '*',
           },
           () => {
-            getInvalidationKeys.masterData.suppliers().forEach(queryKey => {
-              void queryClient.invalidateQueries({ queryKey });
-            });
+            void invalidateQueryKeys(
+              queryClient,
+              getInvalidationKeys.masterData.suppliers()
+            );
           }
         )
         .subscribe();

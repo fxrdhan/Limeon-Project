@@ -1,4 +1,5 @@
 import { QueryKeys, getInvalidationKeys } from '@/constants/queryKeys';
+import { invalidateQueryKeys, refetchQueryKeys } from '@/lib/queryInvalidation';
 import { itemsService } from '@/services/api/items.service';
 import type { DBItem, DBPackageConversion } from '@/types/database';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -153,11 +154,9 @@ export const useItemMutations = () => {
     },
     onSuccess: () => {
       // Local cache update
-      const keysToInvalidate = getInvalidationKeys.items.all();
-      keysToInvalidate.forEach(keySet => {
-        void queryClient.invalidateQueries({ queryKey: keySet });
-        void queryClient.refetchQueries({ queryKey: keySet });
-      });
+      const keysToInvalidate = getInvalidationKeys.items.related();
+      void invalidateQueryKeys(queryClient, keysToInvalidate);
+      void refetchQueryKeys(queryClient, keysToInvalidate);
     },
   });
 
@@ -181,11 +180,9 @@ export const useItemMutations = () => {
     },
     onSuccess: (_data, variables) => {
       // Local cache update
-      const keysToInvalidate = getInvalidationKeys.items.all();
-      keysToInvalidate.forEach(keySet => {
-        void queryClient.invalidateQueries({ queryKey: keySet });
-        void queryClient.refetchQueries({ queryKey: keySet });
-      });
+      const keysToInvalidate = getInvalidationKeys.items.related();
+      void invalidateQueryKeys(queryClient, keysToInvalidate);
+      void refetchQueryKeys(queryClient, keysToInvalidate);
       void queryClient.invalidateQueries({
         queryKey: QueryKeys.items.detail(variables.id),
       });
@@ -200,11 +197,9 @@ export const useItemMutations = () => {
     },
     onSuccess: () => {
       // Local cache update
-      const keysToInvalidate = getInvalidationKeys.items.all();
-      keysToInvalidate.forEach(keySet => {
-        void queryClient.invalidateQueries({ queryKey: keySet });
-        void queryClient.refetchQueries({ queryKey: keySet });
-      });
+      const keysToInvalidate = getInvalidationKeys.items.related();
+      void invalidateQueryKeys(queryClient, keysToInvalidate);
+      void refetchQueryKeys(queryClient, keysToInvalidate);
     },
   });
 
@@ -215,9 +210,10 @@ export const useItemMutations = () => {
       return result.data;
     },
     onSuccess: (_, variables) => {
-      void queryClient.invalidateQueries({
-        queryKey: getInvalidationKeys.items.all(),
-      });
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.items.related()
+      );
       void queryClient.invalidateQueries({
         queryKey: QueryKeys.items.detail(variables.id),
       });
@@ -231,9 +227,10 @@ export const useItemMutations = () => {
       return result.data;
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: getInvalidationKeys.items.all(),
-      });
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.items.related()
+      );
     },
   });
 

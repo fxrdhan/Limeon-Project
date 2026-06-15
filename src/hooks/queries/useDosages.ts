@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { QueryKeys, getInvalidationKeys } from '@/constants/queryKeys';
+import { invalidateQueryKeys } from '@/lib/queryInvalidation';
 import toast from 'react-hot-toast';
 import type { ItemDosage } from '@/types/database';
 import { itemDosageService } from '@/services/api/masterData.service';
@@ -53,10 +54,10 @@ export const useDosageMutations = () => {
     },
     onSuccess: () => {
       toast.success('Dosis berhasil ditambahkan');
-      const keysToInvalidate = getInvalidationKeys.masterData.dosages();
-      keysToInvalidate.forEach((keySet: readonly string[]) => {
-        void queryClient.invalidateQueries({ queryKey: keySet });
-      });
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.masterData.dosages()
+      );
     },
     onError: error => {
       console.error('Error creating dosage:', error);
@@ -79,10 +80,10 @@ export const useDosageMutations = () => {
       if (!variables.options?.silent) {
         toast.success('Dosis berhasil diperbarui');
       }
-      const keysToInvalidate = getInvalidationKeys.masterData.dosages();
-      keysToInvalidate.forEach((keySet: readonly string[]) => {
-        void queryClient.invalidateQueries({ queryKey: keySet });
-      });
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.masterData.dosages()
+      );
     },
     onError: (error, variables) => {
       console.error('Error updating dosage:', error);
@@ -100,10 +101,10 @@ export const useDosageMutations = () => {
     },
     onSuccess: () => {
       toast.success('Dosis berhasil dihapus');
-      const keysToInvalidate = getInvalidationKeys.masterData.dosages();
-      keysToInvalidate.forEach((keySet: readonly string[]) => {
-        void queryClient.invalidateQueries({ queryKey: keySet });
-      });
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.masterData.dosages()
+      );
     },
     onError: error => {
       console.error('Error deleting dosage:', error);

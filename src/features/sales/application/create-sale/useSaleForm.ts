@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { getInvalidationKeys } from '@/constants/queryKeys';
+import { invalidateQueryKeys } from '@/lib/queryInvalidation';
 import {
   useCustomers,
   useDoctors,
@@ -121,9 +122,10 @@ export const useSaleForm = ({ enabled = true }: UseSaleFormProps = {}) => {
 
       if (error) throw error;
 
-      for (const queryKey of getInvalidationKeys.sales.related()) {
-        void queryClient.invalidateQueries({ queryKey });
-      }
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.sales.related()
+      );
 
       void navigate('/sales');
     } catch (error) {

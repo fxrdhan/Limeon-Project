@@ -5,6 +5,7 @@ import { useSmartFormSync } from '../../../application/hooks/instances/useSmartF
 import { logger } from '@/utils/logger';
 import type { CustomerLevelDiscount } from '@/types/database';
 import { QueryKeys, getInvalidationKeys } from '@/constants/queryKeys';
+import { invalidateQueryKeys, refetchQueryKeys } from '@/lib/queryInvalidation';
 import { itemDataService } from '../../../infrastructure/itemData.service';
 import {
   itemRealtimeService,
@@ -145,11 +146,9 @@ export const useItemModalRealtime = ({
           }
 
           // Invalidate item queries for fresh data (list + detail)
-          const keysToInvalidate = getInvalidationKeys.items.all();
-          keysToInvalidate.forEach(keySet => {
-            void queryClient.invalidateQueries({ queryKey: keySet });
-            void queryClient.refetchQueries({ queryKey: keySet });
-          });
+          const keysToInvalidate = getInvalidationKeys.items.related();
+          void invalidateQueryKeys(queryClient, keysToInvalidate);
+          void refetchQueryKeys(queryClient, keysToInvalidate);
           void queryClient.invalidateQueries({
             queryKey: QueryKeys.items.detail(itemId),
           });

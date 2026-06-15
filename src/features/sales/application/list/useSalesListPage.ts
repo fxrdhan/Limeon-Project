@@ -1,5 +1,6 @@
 import { useConfirmDialog } from '@/components/dialog-box/useConfirmDialog';
 import { QueryKeys, getInvalidationKeys } from '@/constants/queryKeys';
+import { invalidateQueryKeys } from '@/lib/queryInvalidation';
 import {
   keepPreviousData,
   useMutation,
@@ -62,9 +63,10 @@ export const useSalesListPage = () => {
   const deleteSaleMutation = useMutation({
     mutationFn: deleteSaleWithStockRestore,
     onSuccess: () => {
-      for (const queryKey of getInvalidationKeys.sales.related()) {
-        void queryClient.invalidateQueries({ queryKey });
-      }
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.sales.related()
+      );
     },
     onError: error => {
       console.error('Error deleting sale:', error);

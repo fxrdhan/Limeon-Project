@@ -15,6 +15,7 @@ import {
   saveItemBusinessLogic,
   useEntity,
 } from '@/features/item-management/public/testing';
+import { invalidateQueryKeys, refetchQueryKeys } from '@/lib/queryInvalidation';
 
 // Testing utilities
 import {
@@ -129,11 +130,9 @@ export function useRandomItemCreation(
       });
 
       // Trigger cache invalidation to refresh UI
-      const keysToInvalidate = getInvalidationKeys.items.all();
-      keysToInvalidate.forEach(keySet => {
-        void queryClient.invalidateQueries({ queryKey: keySet });
-        void queryClient.refetchQueries({ queryKey: keySet });
-      });
+      const keysToInvalidate = getInvalidationKeys.items.related();
+      void invalidateQueryKeys(queryClient, keysToInvalidate);
+      void refetchQueryKeys(queryClient, keysToInvalidate);
 
       return result;
     };

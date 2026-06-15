@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { QueryKeys } from '@/constants/queryKeys';
+import { QueryKeys, getInvalidationKeys } from '@/constants/queryKeys';
+import { invalidateQueryKeys, refetchQueryKeys } from '@/lib/queryInvalidation';
 import { masterDataService } from '@/services/api/masterData.service';
 import type { Category } from '@/types/database';
 import type { MutationOptions } from './types';
@@ -43,13 +44,9 @@ export const useCategoryMutations = () => {
     },
     onSuccess: () => {
       toast.success('Kategori berhasil ditambahkan');
-      void queryClient.invalidateQueries({
-        queryKey: QueryKeys.masterData.categories.all,
-      });
-      void queryClient.refetchQueries({
-        queryKey: QueryKeys.masterData.categories.all,
-      });
-      void queryClient.invalidateQueries({ queryKey: QueryKeys.items.all });
+      const keysToInvalidate = getInvalidationKeys.masterData.categories();
+      void invalidateQueryKeys(queryClient, keysToInvalidate);
+      void refetchQueryKeys(queryClient, [QueryKeys.masterData.categories.all]);
     },
     onError: error => {
       console.error('Error creating category:', error);
@@ -78,13 +75,9 @@ export const useCategoryMutations = () => {
       if (!variables.options?.silent) {
         toast.success('Kategori berhasil diperbarui');
       }
-      void queryClient.invalidateQueries({
-        queryKey: QueryKeys.masterData.categories.all,
-      });
-      void queryClient.refetchQueries({
-        queryKey: QueryKeys.masterData.categories.all,
-      });
-      void queryClient.invalidateQueries({ queryKey: QueryKeys.items.all });
+      const keysToInvalidate = getInvalidationKeys.masterData.categories();
+      void invalidateQueryKeys(queryClient, keysToInvalidate);
+      void refetchQueryKeys(queryClient, [QueryKeys.masterData.categories.all]);
     },
     onError: (error, variables) => {
       console.error('Error updating category:', error);
@@ -102,13 +95,9 @@ export const useCategoryMutations = () => {
     },
     onSuccess: () => {
       toast.success('Kategori berhasil dihapus');
-      void queryClient.invalidateQueries({
-        queryKey: QueryKeys.masterData.categories.all,
-      });
-      void queryClient.refetchQueries({
-        queryKey: QueryKeys.masterData.categories.all,
-      });
-      void queryClient.invalidateQueries({ queryKey: QueryKeys.items.all });
+      const keysToInvalidate = getInvalidationKeys.masterData.categories();
+      void invalidateQueryKeys(queryClient, keysToInvalidate);
+      void refetchQueryKeys(queryClient, [QueryKeys.masterData.categories.all]);
     },
     onError: error => {
       console.error('Error deleting category:', error);

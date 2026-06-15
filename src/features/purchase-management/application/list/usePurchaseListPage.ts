@@ -1,5 +1,6 @@
 import { useConfirmDialog } from '@/components/dialog-box/useConfirmDialog';
-import { QueryKeys } from '@/constants/queryKeys';
+import { QueryKeys, getInvalidationKeys } from '@/constants/queryKeys';
+import { invalidateQueryKeys } from '@/lib/queryInvalidation';
 import {
   keepPreviousData,
   useMutation,
@@ -81,7 +82,10 @@ export const usePurchaseListPage = () => {
   const deletePurchaseMutation = useMutation({
     mutationFn: deletePurchaseWithStockRestore,
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: QueryKeys.purchases.all });
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.purchases.related()
+      );
     },
     onError: error => {
       console.error('Error deleting purchase:', error);
@@ -121,9 +125,10 @@ export const usePurchaseListPage = () => {
     addPurchaseCloseTimerRef.current = setTimeout(() => {
       setShowAddPurchasePortal(false);
       setIsAddPurchaseClosing(false);
-      void queryClient.invalidateQueries({
-        queryKey: QueryKeys.purchases.all,
-      });
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.purchases.related()
+      );
       addPurchaseCloseTimerRef.current = null;
     }, PURCHASE_ADD_MODAL_CLOSE_MS);
   }, [queryClient]);

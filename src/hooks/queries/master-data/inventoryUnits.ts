@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { getInvalidationKeys, QueryKeys } from '@/constants/queryKeys';
+import { invalidateQueryKeys } from '@/lib/queryInvalidation';
 import { masterDataService } from '@/services/api/masterData.service';
 import type { ItemInventoryUnit } from '@/types/database';
 import type { MutationOptions } from './types';
@@ -46,9 +47,10 @@ export const useInventoryUnitMutations = () => {
     },
     onSuccess: () => {
       toast.success('Unit stok/jual berhasil ditambahkan');
-      void queryClient.invalidateQueries({
-        queryKey: getInvalidationKeys.masterData.inventoryUnits(),
-      });
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.masterData.inventoryUnits()
+      );
     },
     onError: error => {
       console.error('Error creating inventory unit:', error);
@@ -74,9 +76,10 @@ export const useInventoryUnitMutations = () => {
       if (!variables.options?.silent) {
         toast.success('Unit stok/jual berhasil diperbarui');
       }
-      void queryClient.invalidateQueries({
-        queryKey: getInvalidationKeys.masterData.inventoryUnits(),
-      });
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.masterData.inventoryUnits()
+      );
     },
     onError: (error, variables) => {
       console.error('Error updating inventory unit:', error);
@@ -94,9 +97,10 @@ export const useInventoryUnitMutations = () => {
     },
     onSuccess: () => {
       toast.success('Unit stok/jual berhasil dihapus');
-      void queryClient.invalidateQueries({
-        queryKey: getInvalidationKeys.masterData.inventoryUnits(),
-      });
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.masterData.inventoryUnits()
+      );
     },
     onError: error => {
       console.error('Error deleting inventory unit:', error);

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { QueryKeys, getInvalidationKeys } from '@/constants/queryKeys';
+import { invalidateQueryKeys } from '@/lib/queryInvalidation';
 import toast from 'react-hot-toast';
 import type { ItemManufacturer } from '@/types/database';
 import { itemManufacturerService } from '@/services/api/masterData.service';
@@ -60,10 +61,10 @@ export const useManufacturerMutations = () => {
     },
     onSuccess: () => {
       toast.success('Manufaktur berhasil ditambahkan');
-      const keysToInvalidate = getInvalidationKeys.masterData.manufacturers();
-      keysToInvalidate.forEach((keySet: readonly string[]) => {
-        void queryClient.invalidateQueries({ queryKey: keySet });
-      });
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.masterData.manufacturers()
+      );
     },
     onError: error => {
       console.error('Error creating manufacturer:', error);
@@ -92,10 +93,10 @@ export const useManufacturerMutations = () => {
       if (!variables.options?.silent) {
         toast.success('Manufaktur berhasil diperbarui');
       }
-      const keysToInvalidate = getInvalidationKeys.masterData.manufacturers();
-      keysToInvalidate.forEach((keySet: readonly string[]) => {
-        void queryClient.invalidateQueries({ queryKey: keySet });
-      });
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.masterData.manufacturers()
+      );
     },
     onError: (error, variables) => {
       console.error('Error updating manufacturer:', error);
@@ -113,10 +114,10 @@ export const useManufacturerMutations = () => {
     },
     onSuccess: () => {
       toast.success('Manufaktur berhasil dihapus');
-      const keysToInvalidate = getInvalidationKeys.masterData.manufacturers();
-      keysToInvalidate.forEach((keySet: readonly string[]) => {
-        void queryClient.invalidateQueries({ queryKey: keySet });
-      });
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.masterData.manufacturers()
+      );
     },
     onError: error => {
       console.error('Error deleting manufacturer:', error);

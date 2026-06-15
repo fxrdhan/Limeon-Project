@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { QueryKeys, getInvalidationKeys } from '@/constants/queryKeys';
+import { invalidateQueryKeys } from '@/lib/queryInvalidation';
 import { useEffect } from 'react';
 import { preloadImage, setCachedImage } from '@/utils/imageCache';
 import {
@@ -105,9 +106,10 @@ export const usePatientMutations = () => {
       return result.data;
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: getInvalidationKeys.patients.all(),
-      });
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.patients.related()
+      );
     },
   });
 
@@ -131,9 +133,10 @@ export const usePatientMutations = () => {
           queryKey: QueryKeys.patients.detail(data.id),
         });
       }
-      void queryClient.invalidateQueries({
-        queryKey: getInvalidationKeys.patients.all(),
-      });
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.patients.related()
+      );
     },
   });
 
@@ -145,9 +148,10 @@ export const usePatientMutations = () => {
     },
     onSuccess: (_, id) => {
       queryClient.removeQueries({ queryKey: QueryKeys.patients.detail(id) });
-      void queryClient.invalidateQueries({
-        queryKey: getInvalidationKeys.patients.all(),
-      });
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.patients.related()
+      );
     },
   });
 
@@ -267,9 +271,10 @@ export const useDoctorMutations = () => {
       return result.data;
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: getInvalidationKeys.doctors.all(),
-      });
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.doctors.related()
+      );
     },
   });
 
@@ -293,9 +298,10 @@ export const useDoctorMutations = () => {
           queryKey: QueryKeys.doctors.detail(data.id),
         });
       }
-      void queryClient.invalidateQueries({
-        queryKey: getInvalidationKeys.doctors.all(),
-      });
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.doctors.related()
+      );
     },
   });
 
@@ -307,9 +313,10 @@ export const useDoctorMutations = () => {
     },
     onSuccess: (_, id) => {
       queryClient.removeQueries({ queryKey: QueryKeys.doctors.detail(id) });
-      void queryClient.invalidateQueries({
-        queryKey: getInvalidationKeys.doctors.all(),
-      });
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.doctors.related()
+      );
     },
   });
 

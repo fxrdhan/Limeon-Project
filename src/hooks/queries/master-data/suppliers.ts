@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { getInvalidationKeys, QueryKeys } from '@/constants/queryKeys';
+import { invalidateQueryKeys } from '@/lib/queryInvalidation';
 import { masterDataService } from '@/services/api/masterData.service';
 import { preloadImage, setCachedImage } from '@/utils/imageCache';
 import type { Supplier } from '@/types/database';
@@ -72,12 +73,10 @@ export const useSupplierMutations = () => {
     },
     onSuccess: () => {
       toast.success('Supplier berhasil ditambahkan');
-      const keysToInvalidate = getInvalidationKeys.masterData.suppliers();
-      keysToInvalidate.forEach((keySet: readonly string[]) => {
-        void queryClient.invalidateQueries({
-          queryKey: keySet,
-        });
-      });
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.masterData.suppliers()
+      );
     },
     onError: error => {
       console.error('Error creating supplier:', error);
@@ -103,12 +102,10 @@ export const useSupplierMutations = () => {
       if (!variables.options?.silent) {
         toast.success('Supplier berhasil diperbarui');
       }
-      const keysToInvalidate = getInvalidationKeys.masterData.suppliers();
-      keysToInvalidate.forEach((keySet: readonly string[]) => {
-        void queryClient.invalidateQueries({
-          queryKey: keySet,
-        });
-      });
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.masterData.suppliers()
+      );
     },
     onError: (error, variables) => {
       console.error('Error updating supplier:', error);
@@ -126,12 +123,10 @@ export const useSupplierMutations = () => {
     },
     onSuccess: () => {
       toast.success('Supplier berhasil dihapus');
-      const keysToInvalidate = getInvalidationKeys.masterData.suppliers();
-      keysToInvalidate.forEach((keySet: readonly string[]) => {
-        void queryClient.invalidateQueries({
-          queryKey: keySet,
-        });
-      });
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.masterData.suppliers()
+      );
     },
     onError: error => {
       console.error('Error deleting supplier:', error);

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { getInvalidationKeys, QueryKeys } from '@/constants/queryKeys';
+import { invalidateQueryKeys } from '@/lib/queryInvalidation';
 import { masterDataService } from '@/services/api/masterData.service';
 import type { ItemPackage } from '@/types/database';
 import type { MutationOptions } from './types';
@@ -40,9 +41,10 @@ export const usePackageMutations = () => {
     },
     onSuccess: () => {
       toast.success('Kemasan berhasil ditambahkan');
-      void queryClient.invalidateQueries({
-        queryKey: getInvalidationKeys.masterData.packages(),
-      });
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.masterData.packages()
+      );
     },
     onError: error => {
       console.error('Error creating package:', error);
@@ -68,9 +70,10 @@ export const usePackageMutations = () => {
       if (!variables.options?.silent) {
         toast.success('Kemasan berhasil diperbarui');
       }
-      void queryClient.invalidateQueries({
-        queryKey: getInvalidationKeys.masterData.packages(),
-      });
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.masterData.packages()
+      );
     },
     onError: (error, variables) => {
       console.error('Error updating package:', error);
@@ -88,9 +91,10 @@ export const usePackageMutations = () => {
     },
     onSuccess: () => {
       toast.success('Kemasan berhasil dihapus');
-      void queryClient.invalidateQueries({
-        queryKey: getInvalidationKeys.masterData.packages(),
-      });
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.masterData.packages()
+      );
     },
     onError: error => {
       console.error('Error deleting package:', error);

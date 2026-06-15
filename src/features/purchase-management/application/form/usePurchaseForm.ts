@@ -1,9 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
+import { getInvalidationKeys } from '@/constants/queryKeys';
 import {
   recalculateItems,
   validatePurchaseForm,
 } from '../../domain/purchaseCalculations';
+import { invalidateQueryKeys } from '@/lib/queryInvalidation';
 import type { PurchaseFormChangeEvent } from '../../domain/types';
 import type {
   Item,
@@ -45,6 +48,7 @@ export const usePurchaseForm = ({
   enabled = true,
 }: UsePurchaseFormProps = {}) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   useSuppliersSync({ enabled });
   const suppliersQuery = useSuppliers({ enabled });
@@ -177,6 +181,10 @@ export const usePurchaseForm = ({
 
       if (purchaseError) throw purchaseError;
 
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.purchases.related()
+      );
       void navigate('/purchases');
     } catch (error) {
       console.error('Error creating purchase:', error);

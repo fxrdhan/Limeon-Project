@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { QueryKeys, getInvalidationKeys } from '@/constants/queryKeys';
+import { invalidateQueryKeys } from '@/lib/queryInvalidation';
 import { customersService } from '@/services/api/customers.service';
 import type { Customer } from '@/types/database';
 
@@ -43,9 +44,10 @@ export const useCustomerMutations = () => {
       return result.data;
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: getInvalidationKeys.customers.all(),
-      });
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.customers.related()
+      );
     },
   });
 
@@ -69,9 +71,10 @@ export const useCustomerMutations = () => {
           queryKey: QueryKeys.customers.detail(data.id),
         });
       }
-      void queryClient.invalidateQueries({
-        queryKey: getInvalidationKeys.customers.all(),
-      });
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.customers.related()
+      );
     },
   });
 
@@ -83,9 +86,10 @@ export const useCustomerMutations = () => {
     },
     onSuccess: (_, id) => {
       queryClient.removeQueries({ queryKey: QueryKeys.customers.detail(id) });
-      void queryClient.invalidateQueries({
-        queryKey: getInvalidationKeys.customers.all(),
-      });
+      void invalidateQueryKeys(
+        queryClient,
+        getInvalidationKeys.customers.related()
+      );
     },
   });
 
