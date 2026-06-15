@@ -6,7 +6,6 @@ import {
 } from '../constants';
 import {
   conversationCacheStore,
-  pendingReadReceiptsStore,
   pdfMessagePreviewStore,
   signedChatAssetUrlStore,
   type ConversationCacheEntry,
@@ -23,6 +22,7 @@ import {
   pruneExpiredSignedAssetEntries,
   setSignedAssetEntryWithLimit,
 } from './chatRuntimeCacheHelpers';
+import { readReceiptRuntimeCache } from './readReceiptRuntimeCache';
 
 const MAX_SIGNED_CHAT_ASSET_URL_CACHE_ENTRIES = 128;
 
@@ -105,29 +105,6 @@ const deleteCachedPdfPreviewsByMessageIds = (
   }
 };
 
-const getPendingReadReceiptMessageIdsForUser = (
-  userId: string,
-  store = pendingReadReceiptsStore.value
-) => {
-  let messageIds = store.get(userId);
-  if (!messageIds) {
-    messageIds = new Set<string>();
-    store.set(userId, messageIds);
-  }
-
-  return messageIds;
-};
-
-const pruneEmptyPendingReadReceiptUsers = (
-  store = pendingReadReceiptsStore.value
-) => {
-  [...store.entries()].forEach(([userId, messageIds]) => {
-    if (messageIds.size === 0) {
-      store.delete(userId);
-    }
-  });
-};
-
 export { type ConversationCacheEntry, type PdfMessagePreviewCacheEntry };
 
 export const chatRuntimeCache = {
@@ -180,107 +157,7 @@ export const chatRuntimeCache = {
     },
   },
 
-  readReceipts: {
-    queueMessageIds(userId: string, messageIds: string[]) {
-      pendingReadReceiptsStore.hydrate();
-      if (!userId.trim()) {
-        return false;
-      }
-
-      const userMessageIds = getPendingReadReceiptMessageIdsForUser(userId);
-      let hasChanges = false;
-
-      messageIds.forEach(messageId => {
-        const normalizedMessageId = messageId.trim();
-        if (!normalizedMessageId || userMessageIds.has(normalizedMessageId)) {
-          return;
-        }
-
-        userMessageIds.add(normalizedMessageId);
-        hasChanges = true;
-      });
-
-      if (!hasChanges) {
-        return false;
-      }
-
-      pendingReadReceiptsStore.persist();
-      pendingReadReceiptsStore.notify();
-      return true;
-    },
-
-    peekMessageIds(userId: string, limit = 200) {
-      pendingReadReceiptsStore.hydrate();
-      if (!userId.trim()) {
-        return [];
-      }
-
-      return [...getPendingReadReceiptMessageIdsForUser(userId)].slice(
-        0,
-        Math.max(1, limit)
-      );
-    },
-
-    ackMessageIds(userId: string, messageIds: string[]) {
-      pendingReadReceiptsStore.hydrate();
-      if (!userId.trim()) {
-        return false;
-      }
-
-      const userMessageIds = getPendingReadReceiptMessageIdsForUser(userId);
-      let hasChanges = false;
-
-      messageIds.forEach(messageId => {
-        if (!userMessageIds.delete(messageId)) {
-          return;
-        }
-
-        hasChanges = true;
-      });
-
-      if (!hasChanges) {
-        return false;
-      }
-
-      pruneEmptyPendingReadReceiptUsers();
-      pendingReadReceiptsStore.persist();
-      pendingReadReceiptsStore.notify();
-      return true;
-    },
-
-    hasPendingMessageIds(userId?: string | null) {
-      pendingReadReceiptsStore.hydrate();
-      if (!userId) {
-        return [...pendingReadReceiptsStore.value.values()].some(
-          messageIds => messageIds.size > 0
-        );
-      }
-
-      return getPendingReadReceiptMessageIdsForUser(userId).size > 0;
-    },
-
-    subscribe(listener: () => void) {
-      return pendingReadReceiptsStore.subscribe(listener);
-    },
-
-    reset(userId?: string | null) {
-      pendingReadReceiptsStore.hydrate();
-
-      if (userId) {
-        if (!pendingReadReceiptsStore.value.delete(userId)) {
-          return;
-        }
-      } else if (pendingReadReceiptsStore.value.size === 0) {
-        return;
-      } else {
-        pendingReadReceiptsStore.value.clear();
-      }
-
-      pruneEmptyPendingReadReceiptUsers();
-      pendingReadReceiptsStore.persist();
-      pendingReadReceiptsStore.notify();
-    },
-  },
+  readReceipts: readReceiptRuntimeCache,
 
   signedAssets: {
     pruneExpired(now = Date.now()) {
