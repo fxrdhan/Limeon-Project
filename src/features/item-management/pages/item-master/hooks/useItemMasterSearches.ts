@@ -4,10 +4,7 @@ import {
   isOtherMasterDataTab,
 } from '@/features/item-management/shared/types';
 import type { EntityData } from '@/features/item-management/application/hooks/collections/useEntityManager';
-import {
-  useUnifiedSearch,
-  type UnifiedSearchReturn,
-} from '@/hooks/ag-grid/useUnifiedSearch';
+import { useUnifiedSearch } from '@/hooks/ag-grid/useUnifiedSearch';
 import { buildAdvancedFilterModel } from '@/utils/advancedFilterBuilder';
 import type { FilterSearch } from '@/types/search';
 import type { Item as ItemDataType } from '@/types/database';
@@ -21,13 +18,12 @@ import type { GridApi, GridReadyEvent } from 'ag-grid-community';
 import { useCallback, useEffect, useMemo, type RefObject } from 'react';
 import { filterSuppliersForDisplay } from '../supplierDisplay';
 import { saveFilterSearchPatternToSession } from '../sessionState';
+import { getActiveItemMasterSearchRuntime } from '../itemMasterSearchState';
 import { useItemMasterSearchColumns } from './useItemMasterSearchColumns';
 import {
   useItemMasterSearchSession,
   useItemMasterSearchSnapshots,
 } from './useItemMasterSearchSession';
-
-type SearchBarProps = UnifiedSearchReturn['searchBarProps'];
 
 interface UseItemMasterSearchesParams {
   activeTab: MasterDataType;
@@ -46,31 +42,6 @@ interface UseItemMasterSearchesParams {
   setPatientDataSearch: (search: string) => void;
   setDoctorDataSearch: (search: string) => void;
 }
-
-const getActiveSearchBarProps = ({
-  activeTab,
-  itemSearchBarProps,
-  supplierSearchBarProps,
-  customerSearchBarProps,
-  patientSearchBarProps,
-  doctorSearchBarProps,
-  entitySearchBarProps,
-}: {
-  activeTab: MasterDataType;
-  itemSearchBarProps: SearchBarProps;
-  supplierSearchBarProps: SearchBarProps;
-  customerSearchBarProps: SearchBarProps;
-  patientSearchBarProps: SearchBarProps;
-  doctorSearchBarProps: SearchBarProps;
-  entitySearchBarProps: SearchBarProps;
-}) => {
-  if (activeTab === 'items') return itemSearchBarProps;
-  if (activeTab === 'suppliers') return supplierSearchBarProps;
-  if (activeTab === 'customers') return customerSearchBarProps;
-  if (activeTab === 'patients') return patientSearchBarProps;
-  if (activeTab === 'doctors') return doctorSearchBarProps;
-  return entitySearchBarProps;
-};
 
 export const useItemMasterSearches = ({
   activeTab,
@@ -91,7 +62,6 @@ export const useItemMasterSearches = ({
 }: UseItemMasterSearchesParams) => {
   const searchSnapshotsByTabRef = useItemMasterSearchSnapshots();
 
-  const isItemTab = activeTab === 'items';
   const isSupplierTab = activeTab === 'suppliers';
   const isCustomerTab = activeTab === 'customers';
   const isPatientTab = activeTab === 'patients';
@@ -367,29 +337,25 @@ export const useItemMasterSearches = ({
     ]
   );
 
-  const activeSearchBarProps = getActiveSearchBarProps({
-    activeTab,
-    itemSearchBarProps,
-    supplierSearchBarProps,
-    customerSearchBarProps,
-    patientSearchBarProps,
-    doctorSearchBarProps,
-    entitySearchBarProps,
+  const activeSearchBarProps = getActiveItemMasterSearchRuntime(activeTab, {
+    items: itemSearchBarProps,
+    suppliers: supplierSearchBarProps,
+    customers: customerSearchBarProps,
+    patients: patientSearchBarProps,
+    doctors: doctorSearchBarProps,
+    itemEntity: entitySearchBarProps,
   });
 
   const activeSearchColumns = activeSearchBarProps.columns;
 
-  const activeSearchValue = isItemTab
-    ? itemSearch
-    : isSupplierTab
-      ? supplierSearch
-      : isCustomerTab
-        ? customerSearch
-        : isPatientTab
-          ? patientSearch
-          : isDoctorTab
-            ? doctorSearch
-            : entitySearch;
+  const activeSearchValue = getActiveItemMasterSearchRuntime(activeTab, {
+    items: itemSearch,
+    suppliers: supplierSearch,
+    customers: customerSearch,
+    patients: patientSearch,
+    doctors: doctorSearch,
+    itemEntity: entitySearch,
+  });
 
   const searchSetters = useMemo(
     () => ({
@@ -421,19 +387,14 @@ export const useItemMasterSearches = ({
 
   const handleActiveGridReady = useCallback(
     (params: GridReadyEvent) => {
-      if (activeTab === 'items') {
-        itemOnGridReady(params);
-      } else if (activeTab === 'suppliers') {
-        supplierOnGridReady(params);
-      } else if (activeTab === 'customers') {
-        customerOnGridReady(params);
-      } else if (activeTab === 'patients') {
-        patientOnGridReady(params);
-      } else if (activeTab === 'doctors') {
-        doctorOnGridReady(params);
-      } else {
-        entityOnGridReady(params);
-      }
+      getActiveItemMasterSearchRuntime(activeTab, {
+        items: itemOnGridReady,
+        suppliers: supplierOnGridReady,
+        customers: customerOnGridReady,
+        patients: patientOnGridReady,
+        doctors: doctorOnGridReady,
+        itemEntity: entityOnGridReady,
+      })(params);
     },
     [
       activeTab,
@@ -456,29 +417,29 @@ export const useItemMasterSearches = ({
     } as GridReadyEvent);
   }, [activeTab, handleActiveGridReady, unifiedGridApi]);
 
-  const activeIsExternalFilterPresent = isItemTab
-    ? itemIsExternalFilterPresent
-    : isSupplierTab
-      ? supplierIsExternalFilterPresent
-      : isCustomerTab
-        ? customerIsExternalFilterPresent
-        : isPatientTab
-          ? patientIsExternalFilterPresent
-          : isDoctorTab
-            ? doctorIsExternalFilterPresent
-            : entityIsExternalFilterPresent;
+  const activeIsExternalFilterPresent = getActiveItemMasterSearchRuntime(
+    activeTab,
+    {
+      items: itemIsExternalFilterPresent,
+      suppliers: supplierIsExternalFilterPresent,
+      customers: customerIsExternalFilterPresent,
+      patients: patientIsExternalFilterPresent,
+      doctors: doctorIsExternalFilterPresent,
+      itemEntity: entityIsExternalFilterPresent,
+    }
+  );
 
-  const activeDoesExternalFilterPass = isItemTab
-    ? itemDoesExternalFilterPass
-    : isSupplierTab
-      ? supplierDoesExternalFilterPass
-      : isCustomerTab
-        ? customerDoesExternalFilterPass
-        : isPatientTab
-          ? patientDoesExternalFilterPass
-          : isDoctorTab
-            ? doctorDoesExternalFilterPass
-            : entityDoesExternalFilterPass;
+  const activeDoesExternalFilterPass = getActiveItemMasterSearchRuntime(
+    activeTab,
+    {
+      items: itemDoesExternalFilterPass,
+      suppliers: supplierDoesExternalFilterPass,
+      customers: customerDoesExternalFilterPass,
+      patients: patientDoesExternalFilterPass,
+      doctors: doctorDoesExternalFilterPass,
+      itemEntity: entityDoesExternalFilterPass,
+    }
+  );
 
   return {
     activeSearchBarProps,

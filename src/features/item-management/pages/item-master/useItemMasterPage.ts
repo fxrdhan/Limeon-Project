@@ -1,12 +1,9 @@
-import { useMemo, useState, type RefObject } from 'react';
+import { useMemo, type RefObject } from 'react';
 import { useConfirmDialog } from '@/components/dialog-box/useConfirmDialog';
-import { useEntity } from '@/features/item-management/application/hooks/collections/useEntity';
-import { useEntityManager } from '@/features/item-management/application/hooks/collections/useEntityManager';
 import { useItemsManagement } from '@/features/item-management/application/hooks/data/useItemsManagement';
-import { useItemGridColumns } from '@/features/item-management/application/hooks/ui/useItemGridColumns';
 import { useItemsSync } from '@/features/item-management/public/useItemData';
 import type { Item as ItemDataType } from '@/types/database';
-import { buildEntityColumnDefs } from './entityColumnDefs';
+import { useItemMasterEntityResources } from './hooks/useItemMasterEntityResources';
 import { useIdentityMasterDataTabs } from './hooks/useIdentityMasterDataTabs';
 import { useItemMasterActiveView } from './hooks/useItemMasterActiveView';
 import { useItemMasterItemActions } from './hooks/useItemMasterItemActions';
@@ -20,10 +17,12 @@ import { useItemModalState } from './hooks/useItemModalState';
 import { useSupplierTab } from './hooks/useSupplierTab';
 import { useVisibleGridColumns } from './hooks/useVisibleGridColumns';
 import {
+  getItemMasterCoordinatedSearchBarProps,
   getIsAnyMasterDataModalOpen,
-  getItemMasterActiveEntityType,
+  getItemMasterGridGroupingState,
   getItemMasterOtherMasterDataConfig,
   getItemMasterPageTitle,
+  getItemMasterTabInteractionState,
   getItemMasterTabFlags,
   getItemMasterTabSelectorLayerClass,
 } from './itemMasterPageState';
@@ -129,62 +128,28 @@ export const useItemMasterPage = () => {
     close: closeAddItemModal,
   } = itemModalState;
 
-  const [isRowGroupingEnabled] = useState(true);
-  const showGroupPanel = true;
-  const defaultExpanded = -1;
-
   const itemsManagement = useItemsManagement({
     enabled: true,
   });
+  const itemsData = itemsManagement.data as ItemDataType[];
+  const allItemsData = itemsManagement.allData as ItemDataType[];
 
-  const activeEntityType = getItemMasterActiveEntityType(activeTab);
-
-  const entityManager = useEntityManager({
-    activeEntityType,
+  const {
+    entityManager,
+    entityData,
+    itemColumnDefs,
+    entityCurrentConfig,
+    entityColumnDefs,
+  } = useItemMasterEntityResources({
+    activeTab,
+    isAddItemModalOpen,
+    isItemEntityTab,
     searchInputRef: searchInputRef as RefObject<HTMLInputElement>,
   });
 
-  const entityManagementOptions = useMemo(
-    () => ({
-      entityType: activeEntityType,
-      search: entityManager.search,
-      itemsPerPage: entityManager.itemsPerPage,
-      enabled: isItemEntityTab,
-    }),
-    [
-      activeEntityType,
-      entityManager.search,
-      entityManager.itemsPerPage,
-      isItemEntityTab,
-    ]
-  );
-
-  const entityData = useEntity(entityManagementOptions);
-
-  useEntity({
-    entityType: 'units',
-    enabled: activeTab === 'units' || isAddItemModalOpen,
-  });
-
-  const { columnDefs: itemColumnDefs } = useItemGridColumns();
-
-  const entityCurrentConfig = useMemo(
-    () =>
-      isItemEntityTab ? entityManager.entityConfigs[activeEntityType] : null,
-    [activeEntityType, entityManager.entityConfigs, isItemEntityTab]
-  );
-
-  const entityColumnDefs = useMemo(
-    () =>
-      isItemEntityTab
-        ? buildEntityColumnDefs(activeTab, entityCurrentConfig)
-        : [],
-    [activeTab, entityCurrentConfig, isItemEntityTab]
-  );
-
   const { handleAddItem, handleItemEdit, handleItemSelect } =
     useItemMasterItemActions({
-      itemsData: itemsManagement.allData as ItemDataType[],
+      itemsData: allItemsData,
       openAddItemModal,
     });
 
@@ -202,7 +167,7 @@ export const useItemMasterPage = () => {
     visibleColumns,
     unifiedGridApi,
     isTabSwitchingRef,
-    itemsData: itemsManagement.data as ItemDataType[],
+    itemsData,
     setItemsSearch: itemsManagement.setSearch,
     entityData: entityData.data,
     handleEntitySearch: entityManager.handleSearch,
@@ -247,7 +212,7 @@ export const useItemMasterPage = () => {
       otherMasterDataConfig,
     },
     data: {
-      itemsData: itemsManagement.data as ItemDataType[],
+      itemsData,
       entityRows: entityData.data,
       customers: customersDataTyped,
       patients: patientsDataTyped,
@@ -348,19 +313,20 @@ export const useItemMasterPage = () => {
     openEditSupplierModal,
   });
 
-  const showTabSelector = tabFlags.isItemMasterTab;
+  const { showTabSelector, enableTabShortcuts } =
+    getItemMasterTabInteractionState(tabFlags.isItemMasterTab);
   const pageTitle = getItemMasterPageTitle(
     activeTab,
     otherMasterDataConfig?.title
   );
 
   const coordinatedSearchBarProps = useMemo(
-    () => ({
-      ...activeSearchBarProps,
-      onSelectorOpenChange: handleSearchSelectorOpenChange,
-      suppressSelectors: isTabSelectorExpanded,
-      selectorOutsideIgnoreRefs: [tabSelectorContainerRef],
-    }),
+    () =>
+      getItemMasterCoordinatedSearchBarProps(activeSearchBarProps, {
+        onSelectorOpenChange: handleSearchSelectorOpenChange,
+        suppressSelectors: isTabSelectorExpanded,
+        selectorOutsideIgnoreRefs: [tabSelectorContainerRef],
+      }),
     [
       activeSearchBarProps,
       handleSearchSelectorOpenChange,
@@ -369,7 +335,6 @@ export const useItemMasterPage = () => {
     ]
   );
 
-  const enableTabShortcuts = tabFlags.isItemMasterTab;
   const isAnyMasterDataModalOpen = getIsAnyMasterDataModalOpen({
     isAddItemModalOpen,
     isItemModalClosing,
@@ -387,6 +352,7 @@ export const useItemMasterPage = () => {
   const tabSelectorLayerClass = getItemMasterTabSelectorLayerClass(
     isAnyMasterDataModalOpen
   );
+  const gridGroupingState = getItemMasterGridGroupingState(activeTab);
 
   useItemMasterItemsGridSync({
     gridApi: unifiedGridApi,
@@ -394,7 +360,7 @@ export const useItemMasterPage = () => {
     isItemModalClosing,
     isItemTab,
     isLoading: activeIsLoading,
-    itemsData: itemsManagement.data as ItemDataType[],
+    itemsData,
   });
 
   return {
@@ -427,7 +393,7 @@ export const useItemMasterPage = () => {
     },
     gridSectionProps: {
       activeTab,
-      itemsData: itemsManagement.data as ItemDataType[],
+      itemsData,
       suppliersData: suppliersForDisplay,
       entityData: masterDataRows,
       isLoading: activeIsLoading,
@@ -445,10 +411,9 @@ export const useItemMasterPage = () => {
       onGridApiReady: handleUnifiedGridApiReady,
       itemsPerPage: activeItemsPerPage,
       hideFloatingPagination: isAnyMasterDataModalOpen,
-      isRowGroupingEnabled:
-        activeTab === 'items' ? isRowGroupingEnabled : false,
-      defaultExpanded: activeTab === 'items' ? defaultExpanded : 1,
-      showGroupPanel: activeTab === 'items' ? showGroupPanel : true,
+      isRowGroupingEnabled: gridGroupingState.isRowGroupingEnabled,
+      defaultExpanded: gridGroupingState.defaultExpanded,
+      showGroupPanel: gridGroupingState.showGroupPanel,
     },
     modalStackProps: {
       activeTab,

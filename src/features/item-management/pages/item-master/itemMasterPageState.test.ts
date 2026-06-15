@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vite-plus/test';
 import {
+  getItemMasterCoordinatedSearchBarProps,
   getIsAnyMasterDataModalOpen,
   getItemMasterActiveEntityType,
+  getItemMasterGridGroupingState,
   getItemMasterOtherMasterDataConfig,
   getItemMasterPageTitle,
   getItemMasterTabFlags,
+  getItemMasterTabInteractionState,
   getItemMasterTabSelectorLayerClass,
 } from './itemMasterPageState';
 
@@ -62,5 +65,59 @@ describe('item master page state helpers', () => {
     ).toBe(true);
     expect(getItemMasterTabSelectorLayerClass(false)).toBe('z-[70]');
     expect(getItemMasterTabSelectorLayerClass(true)).toBe('z-40');
+  });
+
+  it('derives tab interaction state from item-master tab membership', () => {
+    expect(getItemMasterTabInteractionState(true)).toEqual({
+      showTabSelector: true,
+      enableTabShortcuts: true,
+    });
+    expect(getItemMasterTabInteractionState(false)).toEqual({
+      showTabSelector: false,
+      enableTabShortcuts: false,
+    });
+  });
+
+  it('keeps grid grouping enabled only for the item tab', () => {
+    const itemGroupingState = getItemMasterGridGroupingState('items');
+    expect(itemGroupingState).toEqual({
+      defaultExpanded: -1,
+      isRowGroupingEnabled: true,
+      showGroupPanel: true,
+    });
+
+    const supplierGroupingState = getItemMasterGridGroupingState('suppliers');
+    expect(supplierGroupingState).toEqual({
+      defaultExpanded: 1,
+      isRowGroupingEnabled: false,
+      showGroupPanel: true,
+    });
+  });
+
+  it('coordinates search selector props without dropping active search props', () => {
+    const onChange = () => undefined;
+    const onSelectorOpenChange = () => undefined;
+    const ignoreRef = { current: null };
+    const searchBarProps = {
+      value: 'amoxicillin',
+      onChange,
+    };
+
+    const coordinatedProps = getItemMasterCoordinatedSearchBarProps(
+      searchBarProps,
+      {
+        onSelectorOpenChange,
+        selectorOutsideIgnoreRefs: [ignoreRef],
+        suppressSelectors: true,
+      }
+    );
+
+    expect(coordinatedProps).toEqual({
+      value: 'amoxicillin',
+      onChange,
+      onSelectorOpenChange,
+      selectorOutsideIgnoreRefs: [ignoreRef],
+      suppressSelectors: true,
+    });
   });
 });

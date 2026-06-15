@@ -2,10 +2,9 @@ import type { MasterDataType } from '@/features/item-management/shared/types';
 import type { SearchColumn } from '@/types/search';
 import type { NavigateFunction } from 'react-router-dom';
 import { useCallback, useEffect, useRef, type RefObject } from 'react';
-import {
-  ITEM_MASTER_SWITCHER_TAB_OPTIONS,
-  getMasterDataPathForTab,
-} from '../config';
+import { getMasterDataPathForTab } from '../config';
+import { getActiveItemMasterSearchRuntime } from '../itemMasterSearchState';
+import { getAdjacentItemMasterSwitcherTab } from '../itemMasterTabNavigationState';
 import {
   normalizePendingOperatorPattern,
   saveLastTabToSession,
@@ -51,18 +50,6 @@ interface UseItemMasterTabNavigationParams {
     setIsEditDoctorModalOpen: (isOpen: boolean) => void;
   };
 }
-
-const getSearchRuntimeForTab = (
-  activeTab: MasterDataType,
-  searchRuntimes: UseItemMasterTabNavigationParams['searchRuntimes']
-): SearchRuntime => {
-  if (activeTab === 'items') return searchRuntimes.items;
-  if (activeTab === 'suppliers') return searchRuntimes.suppliers;
-  if (activeTab === 'customers') return searchRuntimes.customers;
-  if (activeTab === 'patients') return searchRuntimes.patients;
-  if (activeTab === 'doctors') return searchRuntimes.doctors;
-  return searchRuntimes.itemEntity;
-};
 
 export const useItemMasterTabNavigation = ({
   activeTab,
@@ -121,7 +108,7 @@ export const useItemMasterTabNavigation = ({
 
   const performNavigation = useCallback(
     (targetTab: MasterDataType) => {
-      const currentSearchRuntime = getSearchRuntimeForTab(
+      const currentSearchRuntime = getActiveItemMasterSearchRuntime(
         activeTab,
         searchRuntimes
       );
@@ -195,29 +182,13 @@ export const useItemMasterTabNavigation = ({
   );
 
   const handleTabNext = useCallback(() => {
-    const currentIndex = ITEM_MASTER_SWITCHER_TAB_OPTIONS.findIndex(
-      option => option.value === activeTab
-    );
-    const safeIndex = currentIndex === -1 ? 0 : currentIndex;
-    const nextIndex =
-      safeIndex < ITEM_MASTER_SWITCHER_TAB_OPTIONS.length - 1
-        ? safeIndex + 1
-        : 0;
-    const nextTab = ITEM_MASTER_SWITCHER_TAB_OPTIONS[nextIndex];
+    const nextTab = getAdjacentItemMasterSwitcherTab(activeTab, 'next');
     handleTabChange(nextTab.key, nextTab.value);
   }, [activeTab, handleTabChange]);
 
   const handleTabPrevious = useCallback(() => {
-    const currentIndex = ITEM_MASTER_SWITCHER_TAB_OPTIONS.findIndex(
-      option => option.value === activeTab
-    );
-    const safeIndex = currentIndex === -1 ? 0 : currentIndex;
-    const prevIndex =
-      safeIndex > 0
-        ? safeIndex - 1
-        : ITEM_MASTER_SWITCHER_TAB_OPTIONS.length - 1;
-    const prevTab = ITEM_MASTER_SWITCHER_TAB_OPTIONS[prevIndex];
-    handleTabChange(prevTab.key, prevTab.value);
+    const previousTab = getAdjacentItemMasterSwitcherTab(activeTab, 'previous');
+    handleTabChange(previousTab.key, previousTab.value);
   }, [activeTab, handleTabChange]);
 
   return {
