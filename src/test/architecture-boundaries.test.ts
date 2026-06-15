@@ -992,6 +992,33 @@ describe('architecture boundaries', () => {
     expect(formatViolations(violations)).toBe('none');
   });
 
+  it('keeps feature domain modules free of React, app state, and data access dependencies', () => {
+    const violations = [...sourceByPath.entries()].flatMap(
+      ([filePath, source]) => {
+        if (
+          !isRuntimeSource(filePath) ||
+          !/^src\/features\/[^/]+\/domain\//.test(filePath)
+        ) {
+          return [];
+        }
+
+        return getAllModuleSpecifiers(filePath, source).flatMap(specifier => {
+          const target = resolveImportTarget(filePath, specifier);
+
+          return isUiRuntimeSpecifier(specifier) ||
+            isUiOrApplicationLayerTarget(target) ||
+            isFeatureDataAccessBoundary(target) ||
+            target.startsWith('src/services/') ||
+            isSupabaseClientTarget(target)
+            ? [`${filePath} imports non-domain runtime dependency ${specifier}`]
+            : [];
+        });
+      }
+    );
+
+    expect(formatViolations(violations)).toBe('none');
+  });
+
   it('keeps explicit data access helper lists pointed at existing sources', () => {
     const violations = [
       ...sharedHookStoreBridgeSources,

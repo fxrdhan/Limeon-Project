@@ -23,6 +23,15 @@ interface PackageConversionBaseUnitOptionOptions {
   availableUnits: ItemInventoryUnit[];
 }
 
+interface ShouldEndPackageConversionInteractionOptions {
+  activeElement: Node | null;
+  nextTarget: Node | null;
+  sectionElement: HTMLElement | null;
+}
+
+const AG_GRID_FLOATING_LAYER_SELECTOR =
+  '.ag-popup, .ag-menu, .ag-dialog, .ag-tooltip';
+
 export const parsePackageConversionCurrencyValue = (value: unknown) => {
   if (typeof value === 'number') return Math.max(0, value);
   if (typeof value === 'string') {
@@ -123,3 +132,25 @@ export const getPackageConversionExistingUnitOptions = (
     updated_at: conversion.unit.updated_at,
     metaLabel: getInventoryUnitMetaLabel(conversion.unit),
   }));
+
+export const isPackageConversionAgFloatingLayerTarget = (node: Node | null) => {
+  if (!node || !(node instanceof HTMLElement)) return false;
+  return Boolean(node.closest(AG_GRID_FLOATING_LAYER_SELECTOR));
+};
+
+export const shouldEndPackageConversionInteraction = ({
+  activeElement,
+  nextTarget,
+  sectionElement,
+}: ShouldEndPackageConversionInteractionOptions) => {
+  if (
+    sectionElement?.contains(nextTarget) ||
+    sectionElement?.contains(activeElement) ||
+    isPackageConversionAgFloatingLayerTarget(nextTarget) ||
+    isPackageConversionAgFloatingLayerTarget(activeElement)
+  ) {
+    return false;
+  }
+
+  return !sectionElement?.contains(nextTarget);
+};

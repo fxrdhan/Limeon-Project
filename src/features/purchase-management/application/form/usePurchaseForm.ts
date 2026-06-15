@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   recalculateItems,
-  computeItemFinancials,
   validatePurchaseForm,
 } from '../../domain/purchaseCalculations';
 import type { PurchaseFormChangeEvent } from '../../domain/types';
@@ -17,7 +16,20 @@ import {
   useSuppliers,
   useSuppliersSync,
 } from '@/features/item-management/public/useSupplierData';
-import { resolveItemUnitEntry } from '@/lib/item-units';
+import {
+  appendPurchaseItem,
+  buildPurchaseCreatePayload,
+  buildPurchaseItemCreatePayloads,
+  calculatePurchaseTotal,
+  calculatePurchaseTotalVat,
+  formatPurchaseValidationMessage,
+  updatePurchaseItemAmount,
+  updatePurchaseItemBatchNo,
+  updatePurchaseItemExpiry,
+  updatePurchaseItemUnit,
+  updatePurchaseItemVat,
+  type PurchaseItemAmountField,
+} from '../../domain/purchaseForm';
 import {
   createPurchaseWithItems,
   fetchPurchaseFormCompanyProfile,
@@ -57,7 +69,7 @@ export const usePurchaseForm = ({
     notes: '',
   });
 
-  const total = purchaseItems.reduce((sum, item) => sum + item.subtotal, 0);
+  const total = calculatePurchaseTotal(purchaseItems);
 
   const fetchCompanyProfile = useCallback(async () => {
     try {
@@ -95,162 +107,47 @@ export const usePurchaseForm = ({
   };
 
   const addItem = (newItem: PurchaseItem) => {
-    const itemsWithNewOne = [
-      ...purchaseItems,
-      {
-        ...newItem,
-        vat_percentage: newItem.vat_percentage ?? 0,
-        batch_no: newItem.batch_no ?? null,
-        expiry_date: newItem.expiry_date ?? null,
-        unit: newItem.unit || 'Unit',
-        unit_id: newItem.unit_id ?? null,
-        unit_conversion_rate: newItem.unit_conversion_rate ?? 1,
-      },
-    ];
-    const recalculatedItems = recalculateItems(
-      itemsWithNewOne,
-      formData.is_vat_included
+    setPurchaseItems(prev =>
+      appendPurchaseItem(prev, newItem, formData.is_vat_included)
     );
-    setPurchaseItems(recalculatedItems);
   };
 
   const updateItem = (
     id: string,
-    field: 'quantity' | 'price' | 'discount',
+    field: PurchaseItemAmountField,
     value: number
   ) => {
-    const updatedItems = purchaseItems.map(item => {
-      if (item.id === id) {
-        const quantity = field === 'quantity' ? value : item.quantity;
-        const price = field === 'price' ? value : item.price;
-        const discount = field === 'discount' ? value : item.discount;
-
-        let subtotal = quantity * price;
-        if (discount > 0) {
-          const discountAmount = subtotal * (discount / 100);
-          subtotal -= discountAmount;
-        }
-
-        if (item.vat_percentage > 0 && !formData.is_vat_included) {
-          const vatAmount = subtotal * (item.vat_percentage / 100);
-          subtotal += vatAmount;
-        }
-        return {
-          ...item,
-          [field]: value,
-          subtotal: subtotal,
-        };
-      }
-      return item;
-    });
-
-    setPurchaseItems(updatedItems);
+    setPurchaseItems(prev =>
+      updatePurchaseItemAmount(prev, id, field, value, formData.is_vat_included)
+    );
   };
 
   const updateItemVat = (id: string, vatPercentage: number) => {
-    const updatedItems = purchaseItems.map(item => {
-      if (item.id === id) {
-        let subtotal = item.quantity * item.price;
-        if (item.discount > 0) {
-          const discountAmount = subtotal * (item.discount / 100);
-          subtotal -= discountAmount;
-        }
-
-        if (vatPercentage > 0 && !formData.is_vat_included) {
-          const vatAmount = subtotal * (vatPercentage / 100);
-          subtotal += vatAmount;
-        }
-
-        return {
-          ...item,
-          vat_percentage: vatPercentage,
-          subtotal: subtotal,
-        };
-      }
-      return item;
-    });
-
-    setPurchaseItems(updatedItems);
+    setPurchaseItems(prev =>
+      updatePurchaseItemVat(prev, id, vatPercentage, formData.is_vat_included)
+    );
   };
 
   const updateItemExpiry = (id: string, expiryDate: string) => {
-    setPurchaseItems(
-      purchaseItems.map(item =>
-        item.id === id ? { ...item, expiry_date: expiryDate } : item
-      )
-    );
+    setPurchaseItems(prev => updatePurchaseItemExpiry(prev, id, expiryDate));
   };
 
   const updateItemBatchNo = (id: string, batchNo: string) => {
-    setPurchaseItems(
-      purchaseItems.map(item =>
-        item.id === id ? { ...item, batch_no: batchNo } : item
-      )
-    );
+    setPurchaseItems(prev => updatePurchaseItemBatchNo(prev, id, batchNo));
   };
-
-  // removed unused recalculateSubtotal after refactor
 
   const handleUnitChange = (
     id: string,
     unitName: string,
     getItemByID: (itemId: string) => Item | undefined
   ) => {
-    const updatedItems = purchaseItems.map(item => {
-      if (item.id === id) {
-        const itemData = getItemByID(item.item_id);
-        if (!itemData) return item;
-
-        let price = itemData.base_price;
-        let conversionRate = 1;
-        let inventoryUnitId = itemData.base_inventory_unit_id || null;
-
-        const selectedUnit =
-          resolveItemUnitEntry(
-            itemData.inventory_units || [],
-            item.inventory_unit_id,
-            unitName
-          ) ||
-          resolveItemUnitEntry(
-            itemData.inventory_units || [],
-            undefined,
-            unitName
-          );
-
-        if (selectedUnit) {
-          price = selectedUnit.base_price || itemData.base_price;
-          conversionRate = selectedUnit.factor_to_base || 1;
-          inventoryUnitId = selectedUnit.inventory_unit_id || null;
-        }
-
-        const discountAmount = price * item.quantity * (item.discount / 100);
-
-        return {
-          ...item,
-          unit: unitName,
-          inventory_unit_id: inventoryUnitId,
-          unit_id: null,
-          price: price,
-          subtotal: price * item.quantity - discountAmount,
-          unit_conversion_rate: conversionRate,
-        };
-      }
-      return item;
-    });
-
-    setPurchaseItems(updatedItems);
+    setPurchaseItems(prev =>
+      updatePurchaseItemUnit(prev, id, unitName, getItemByID)
+    );
   };
 
   const removeItem = (id: string) => {
     setPurchaseItems(purchaseItems.filter(item => item.id !== id));
-  };
-
-  const calculateTotalVat = () => {
-    return purchaseItems.reduce(
-      (total, item) =>
-        total + computeItemFinancials(item, formData.is_vat_included).vatAmount,
-      0
-    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -258,50 +155,24 @@ export const usePurchaseForm = ({
 
     const validation = validatePurchaseForm(formData, purchaseItems);
     if (!validation.isValid) {
-      const message = [
-        ...validation.formErrors,
-        ...validation.itemErrors.flatMap(it =>
-          it.errors.map(err => `Item ${it.id}: ${err}`)
-        ),
-      ].join('\n');
-      alert(message || 'Form tidak valid.');
+      alert(formatPurchaseValidationMessage(validation));
       return;
     }
 
     try {
       setLoading(true);
 
-      const purchaseItemsData = purchaseItems.map(item => ({
-        item_id: item.item_id,
-        quantity: item.quantity,
-        discount: item.discount,
-        price: item.price,
-        subtotal: item.subtotal,
-        unit: item.unit,
-        unit_id: item.unit_id,
-        unit_conversion_rate: item.unit_conversion_rate,
-        vat_percentage: item.vat_percentage,
-        batch_no: item.batch_no,
-        expiry_date: item.expiry_date,
-      }));
-
       const { error: purchaseError } = await createPurchaseWithItems(
-        {
-          supplier_id: formData.supplier_id,
-          invoice_number: formData.invoice_number,
-          date: formData.date,
+        buildPurchaseCreatePayload({
+          companyProfile,
+          formData,
           total,
-          payment_status: formData.payment_status,
-          payment_method: formData.payment_method,
-          vat_percentage: formData.vat_percentage,
-          is_vat_included: formData.is_vat_included,
-          vat_amount: calculateTotalVat(),
-          notes: formData.notes || null,
-          due_date: formData.due_date || null,
-          customer_name: companyProfile?.name ?? undefined,
-          customer_address: companyProfile?.address ?? undefined,
-        },
-        purchaseItemsData
+          vatAmount: calculatePurchaseTotalVat(
+            purchaseItems,
+            formData.is_vat_included
+          ),
+        }),
+        buildPurchaseItemCreatePayloads(purchaseItems)
       );
 
       if (purchaseError) throw purchaseError;

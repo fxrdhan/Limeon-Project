@@ -6,8 +6,10 @@ import {
   getPackageConversionBaseUnitOption,
   getPackageConversionExistingUnitOptions,
   getUniquePackageConversions,
+  isPackageConversionAgFloatingLayerTarget,
   parsePackageConversionCurrencyValue,
   resolvePackageConversionParentUnitName,
+  shouldEndPackageConversionInteraction,
 } from './helpers';
 
 const unit = (
@@ -145,5 +147,57 @@ describe('item package conversion form helpers', () => {
         metaLabel: 'Kemasan',
       },
     ]);
+  });
+
+  it('detects AG Grid floating layer targets during blur handling', () => {
+    const popup = document.createElement('div');
+    popup.className = 'ag-popup';
+    const popupChild = document.createElement('button');
+    popup.appendChild(popupChild);
+
+    expect(isPackageConversionAgFloatingLayerTarget(popupChild)).toBe(true);
+    expect(isPackageConversionAgFloatingLayerTarget(document.body)).toBe(false);
+    expect(isPackageConversionAgFloatingLayerTarget(null)).toBe(false);
+  });
+
+  it('keeps package conversion interaction active for section and AG Grid popup targets', () => {
+    const section = document.createElement('section');
+    const field = document.createElement('input');
+    section.appendChild(field);
+
+    const outside = document.createElement('button');
+    const popup = document.createElement('div');
+    popup.className = 'ag-menu';
+    const popupButton = document.createElement('button');
+    popup.appendChild(popupButton);
+
+    expect(
+      shouldEndPackageConversionInteraction({
+        activeElement: document.body,
+        nextTarget: field,
+        sectionElement: section,
+      })
+    ).toBe(false);
+    expect(
+      shouldEndPackageConversionInteraction({
+        activeElement: popupButton,
+        nextTarget: outside,
+        sectionElement: section,
+      })
+    ).toBe(false);
+    expect(
+      shouldEndPackageConversionInteraction({
+        activeElement: document.body,
+        nextTarget: popupButton,
+        sectionElement: section,
+      })
+    ).toBe(false);
+    expect(
+      shouldEndPackageConversionInteraction({
+        activeElement: document.body,
+        nextTarget: outside,
+        sectionElement: section,
+      })
+    ).toBe(true);
   });
 });

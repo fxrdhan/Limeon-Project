@@ -1,18 +1,5 @@
 import type { BadgeVariant } from '@/types';
-
-const NO_ROWS_TEXT_COLOR = 'oklch(55.4% 0.041 257.4)';
-
-const escapeOverlayText = (value: string) =>
-  value.replace(/[&<>"']/g, char => {
-    const replacements: Record<string, string> = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#39;',
-    };
-    return replacements[char] ?? char;
-  });
+import { buildAgGridNoRowsOverlayTemplate } from '@/lib/agGridOverlayTemplate';
 
 export const getPurchaseStatusBadgeVariant = (status: string): BadgeVariant => {
   switch (status) {
@@ -55,5 +42,9 @@ export const getPurchasePaymentMethodLabel = (method: string) => {
 
 export const buildPurchaseNoRowsTemplate = (search: string) =>
   search
-    ? `<span style="padding: 10px; color: ${NO_ROWS_TEXT_COLOR};">Tidak ada pembelian dengan kata kunci "${escapeOverlayText(search)}"</span>`
-    : `<span style="padding: 10px; color: ${NO_ROWS_TEXT_COLOR};">Tidak ada data pembelian yang ditemukan</span>`;
+    ? buildAgGridNoRowsOverlayTemplate(
+        `Tidak ada pembelian dengan kata kunci "${search}"`
+      )
+    : buildAgGridNoRowsOverlayTemplate(
+        'Tidak ada data pembelian yang ditemukan'
+      );

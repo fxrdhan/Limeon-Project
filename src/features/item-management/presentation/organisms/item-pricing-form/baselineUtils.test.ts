@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vite-plus/test';
 import {
+  appendBaselineDraft,
   buildBaselineDrafts,
   buildBaselineUpdates,
   getBaselineCreateState,
   getBaselineDiscount,
   getBaselinePlaceholderName,
+  getIsBaselineAddActive,
+  getIsLevelPricingSwitchChecked,
+  getPricingSectionTitle,
   normalizeDiscount,
   parseDiscountInput,
+  removeBaselineDraft,
 } from './baselineUtils';
 import type { CustomerLevel } from '../../../../../types/database';
 
@@ -79,5 +84,65 @@ describe('item pricing baseline utils', () => {
         price_percentage: 80,
       },
     ]);
+  });
+
+  it('updates baseline drafts immutably after create and delete actions', () => {
+    const drafts = {
+      regular: '0',
+      vip: '15',
+    };
+
+    expect(appendBaselineDraft(drafts, 'reseller', 12.5)).toEqual({
+      regular: '0',
+      vip: '15',
+      reseller: '12.5',
+    });
+    expect(removeBaselineDraft(drafts, 'vip')).toEqual({
+      regular: '0',
+    });
+    expect(removeBaselineDraft(drafts, 'missing')).toBe(drafts);
+  });
+
+  it('derives pricing form header and baseline active states', () => {
+    expect(getPricingSectionTitle(false)).toBe('Unit & Harga Dasar');
+    expect(getPricingSectionTitle(true)).toBe('Pengaturan Level Pelanggan');
+
+    expect(
+      getIsBaselineAddActive({
+        baselineAddOpen: true,
+        canCreateBaselineLevel: true,
+        disabled: false,
+        isCreating: false,
+      })
+    ).toBe(true);
+    expect(
+      getIsBaselineAddActive({
+        baselineAddOpen: true,
+        canCreateBaselineLevel: true,
+        disabled: false,
+        isCreating: true,
+      })
+    ).toBe(false);
+  });
+
+  it('keeps level pricing switch fallback order', () => {
+    expect(
+      getIsLevelPricingSwitchChecked({
+        formIsLevelPricingActive: false,
+        isLevelPricingActive: true,
+      })
+    ).toBe(true);
+    expect(
+      getIsLevelPricingSwitchChecked({
+        formIsLevelPricingActive: false,
+        isLevelPricingActive: undefined,
+      })
+    ).toBe(false);
+    expect(
+      getIsLevelPricingSwitchChecked({
+        formIsLevelPricingActive: undefined,
+        isLevelPricingActive: undefined,
+      })
+    ).toBe(true);
   });
 });

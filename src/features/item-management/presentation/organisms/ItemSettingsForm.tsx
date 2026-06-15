@@ -10,6 +10,8 @@ import {
 } from '@/styles/uiPrimitives';
 import MinStockEditor from '../atoms/core/MinStockEditor';
 import FefoTooltip from '../molecules/FefoTooltip';
+import { focusFirstSectionField } from './sectionFocus';
+import { shouldRequestItemSettingsNextSection } from './itemSettingsFormState';
 
 interface ItemSettingsFormProps {
   isExpanded?: boolean;
@@ -55,16 +57,7 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
     ref
   ) => {
     const sectionRef = useRef<HTMLElement>(null);
-    const focusFirstField = () => {
-      const container = sectionRef.current?.querySelector<HTMLElement>(
-        '[data-section-content]'
-      );
-      if (!container) return;
-      const firstFocusable = container.querySelector<HTMLElement>(
-        'input, select, textarea, button, [tabindex]:not([tabindex="-1"])'
-      );
-      firstFocusable?.focus();
-    };
+    const focusFirstField = () => focusFirstSectionField(sectionRef.current);
 
     return (
       <section
@@ -73,19 +66,18 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
         style={stackStyle}
         data-stack-card="true"
         onKeyDownCapture={event => {
-          if (event.key !== 'Tab' || event.shiftKey) return;
-          const target = event.target as HTMLElement | null;
-          if (!target) return;
-          const isExpiryLabel =
-            target.tagName === 'LABEL' &&
-            target.getAttribute('for') === 'has_expiry_date';
-          const isExpiryInput =
-            target.tagName === 'INPUT' &&
-            target.getAttribute('id') === 'has_expiry_date';
-          if (!isExpiryLabel && !isExpiryInput) return;
-          if (!onRequestNextSection) return;
+          if (
+            !shouldRequestItemSettingsNextSection({
+              hasRequestNextSection: Boolean(onRequestNextSection),
+              key: event.key,
+              shiftKey: event.shiftKey,
+              target: event.target,
+            })
+          ) {
+            return;
+          }
           event.preventDefault();
-          onRequestNextSection();
+          onRequestNextSection?.();
         }}
       >
         <div

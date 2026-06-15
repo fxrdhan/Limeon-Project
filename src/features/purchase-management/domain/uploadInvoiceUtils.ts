@@ -1,8 +1,24 @@
+import type { ExtractedInvoiceData } from '@/types';
+
 const VALID_INVOICE_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/jpg'];
 const MAX_INVOICE_IMAGE_SIZE = 5 * 1024 * 1024;
 const INVOICE_PREVIEW_MIN_ZOOM = 1;
 const INVOICE_PREVIEW_MAX_ZOOM = 3;
 const INVOICE_PREVIEW_ZOOM_STEP = 0.1;
+
+interface BuildConfirmInvoiceNavigationStateParams {
+  completedAtMs: number;
+  extractedData: ExtractedInvoiceData;
+  filePreview: string | null;
+  startedAtMs: number;
+}
+
+export interface ConfirmInvoiceNavigationState {
+  extractedData: ExtractedInvoiceData;
+  filePreview: string | null;
+  imageIdentifier: string | undefined;
+  processingTime: string;
+}
 
 interface PointerPosition {
   x: number;
@@ -73,3 +89,15 @@ export const getInvoiceExtractionErrorMessage = (error: unknown) =>
   `Gagal mengunggah dan mengekstrak faktur: ${
     error instanceof Error ? error.message : 'Terjadi kesalahan tidak dikenal'
   }`;
+
+export const buildConfirmInvoiceNavigationState = ({
+  completedAtMs,
+  extractedData,
+  filePreview,
+  startedAtMs,
+}: BuildConfirmInvoiceNavigationStateParams): ConfirmInvoiceNavigationState => ({
+  extractedData,
+  filePreview,
+  imageIdentifier: extractedData.imageIdentifier,
+  processingTime: ((completedAtMs - startedAtMs) / 1000).toFixed(1),
+});

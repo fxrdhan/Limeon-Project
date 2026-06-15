@@ -28,6 +28,8 @@ invoice upload entry workflow.
   `application/form/useItemSelectionEffect.ts`
 - Purchase form service-call boundary:
   `infrastructure/purchaseFormData.ts`
+- Purchase form pure item, validation-message, and payload helpers:
+  `domain/purchaseForm.ts`
 - Purchase calculations: `domain/purchaseCalculations.ts`
 - Purchase modal animation settings:
   `components/purchase-form/usePurchaseModalAnimation.ts`
@@ -42,7 +44,8 @@ Use the current folders as ownership boundaries.
   pagination, modal visibility, purchase form state, item-selection side
   effects, invoice upload state, and invoice upload navigation.
 - `domain`: pure purchase-list labels, template escaping, purchase
-  calculations, invoice upload utilities, and view model types.
+  calculations, purchase form helpers, invoice upload utilities, and view model
+  types.
 - `infrastructure`: purchase-list, purchase-form, and invoice-upload
   service-call wrappers.
 - `components/purchase-form`: visible purchase form sections and field binding.
@@ -70,8 +73,8 @@ Use the current folders as ownership boundaries.
 - Do not import from item-management internals; use
   `src/features/item-management/public/ItemModal.tsx`.
 - Keep Supabase calls out of components and hooks in this feature.
-- Keep purchase math in `domain/purchaseCalculations.ts`, not in visible form
-  sections.
+- Keep purchase math in `domain/purchaseCalculations.ts` and purchase form data
+  shaping in `domain/purchaseForm.ts`, not in visible form sections.
 - Keep `pages/list/index.tsx` focused on rendering the route-level screen;
   purchase-list query/mutation orchestration belongs in
   `application/list/usePurchaseListPage.ts`.

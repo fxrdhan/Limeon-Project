@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vite-plus/test';
 import {
+  buildConfirmInvoiceNavigationState,
   getInvoiceExtractionErrorMessage,
   getInvoiceImageValidationError,
   getNextInvoicePreviewZoomLevel,
@@ -62,5 +63,26 @@ describe('upload invoice utilities', () => {
     expect(getInvoiceExtractionErrorMessage('unknown')).toBe(
       'Gagal mengunggah dan mengekstrak faktur: Terjadi kesalahan tidak dikenal'
     );
+  });
+
+  it('builds confirm-invoice route state with existing processing time formatting', () => {
+    const extractedData = {
+      imageIdentifier: 'invoice-image-1',
+      product_list: [],
+    };
+
+    expect(
+      buildConfirmInvoiceNavigationState({
+        completedAtMs: 2_350,
+        extractedData,
+        filePreview: 'blob:invoice-preview',
+        startedAtMs: 1_000,
+      })
+    ).toEqual({
+      extractedData,
+      filePreview: 'blob:invoice-preview',
+      imageIdentifier: 'invoice-image-1',
+      processingTime: '1.4',
+    });
   });
 });

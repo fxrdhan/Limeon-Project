@@ -5,8 +5,12 @@ import type { useSupplierMutations } from '@/features/item-management/public/use
 
 import IdentityDataModal from '@/components/identity-data-modal';
 import { identityImageStorageService } from '../../../infrastructure/identityImageStorage.service';
-
-type SupplierModalData = Record<string, string | number | boolean | null>;
+import {
+  buildSupplierCreatePayload,
+  buildSupplierModalData,
+  buildSupplierUpdatePayload,
+  normalizeSupplierInlineFieldValue,
+} from '../supplierModalData';
 
 interface SupplierModalsProps {
   isActive: boolean;
@@ -41,57 +45,10 @@ const SupplierModals: React.FC<SupplierModalsProps> = ({
     latestImageUrlRef.current = editingSupplier?.image_url ?? null;
   }, [editingSupplier?.id, editingSupplier?.image_url]);
 
-  const toNormalizedText = (input: unknown): string => {
-    if (input === null || input === undefined) return '';
-    if (
-      typeof input === 'string' ||
-      typeof input === 'number' ||
-      typeof input === 'boolean' ||
-      typeof input === 'bigint'
-    ) {
-      return String(input).trim();
-    }
-    if (input instanceof Date) {
-      return input.toISOString().trim();
-    }
-    return '';
-  };
-
-  const normalizeSupplierFieldValue = (key: string, value: unknown) => {
-    if (key === 'name') {
-      const normalizedName = toNormalizedText(value);
-      return normalizedName === '' ? null : normalizedName;
-    }
-
-    if (
-      key === 'address' ||
-      key === 'phone' ||
-      key === 'email' ||
-      key === 'contact_person'
-    ) {
-      const normalizedValue = toNormalizedText(value);
-      return normalizedValue === '' ? null : normalizedValue;
-    }
-
-    return value;
-  };
-
-  const supplierModalData = useMemo(() => {
-    const modalData: SupplierModalData = {};
-    if (editingSupplier) {
-      Object.entries(editingSupplier).forEach(([key, value]) => {
-        if (
-          value === null ||
-          typeof value === 'string' ||
-          typeof value === 'number' ||
-          typeof value === 'boolean'
-        ) {
-          modalData[key] = value;
-        }
-      });
-    }
-    return modalData;
-  }, [editingSupplier]);
+  const supplierModalData = useMemo(
+    () => buildSupplierModalData(editingSupplier),
+    [editingSupplier]
+  );
 
   return (
     <>
@@ -102,14 +59,9 @@ const SupplierModals: React.FC<SupplierModalsProps> = ({
         isOpen={isActive && isAddSupplierModalOpen}
         onClose={closeAddSupplierModal}
         onSave={async data => {
-          const result = await supplierMutations.createSupplier.mutateAsync({
-            name: String(data.name || ''),
-            address: String(data.address || '') || null,
-            phone: String(data.phone || '') || null,
-            email: String(data.email || '') || null,
-            contact_person: String(data.contact_person || '') || null,
-            image_url: String(data.image_url || '') || null,
-          });
+          const result = await supplierMutations.createSupplier.mutateAsync(
+            buildSupplierCreatePayload(data)
+          );
           closeAddSupplierModal();
           return result;
         }}
@@ -130,13 +82,7 @@ const SupplierModals: React.FC<SupplierModalsProps> = ({
           if (!editingSupplier?.id) return;
           const result = await supplierMutations.updateSupplier.mutateAsync({
             id: editingSupplier.id,
-            data: {
-              name: String(data.name || ''),
-              address: String(data.address || '') || null,
-              phone: String(data.phone || '') || null,
-              email: String(data.email || '') || null,
-              contact_person: String(data.contact_person || '') || null,
-            },
+            data: buildSupplierUpdatePayload(data),
           });
           closeEditSupplierModal();
           return result;
@@ -144,7 +90,7 @@ const SupplierModals: React.FC<SupplierModalsProps> = ({
         onFieldSave={async (key, value) => {
           if (!editingSupplier?.id) return;
 
-          const normalizedValue = normalizeSupplierFieldValue(key, value);
+          const normalizedValue = normalizeSupplierInlineFieldValue(key, value);
           if (key === 'name' && normalizedValue === null) {
             return;
           }

@@ -86,6 +86,14 @@ tested outside React.
   `public/useReferenceData.ts`
 - Item-master page flags, title, active entity fallback, and modal layer
   derivation: `pages/item-master/itemMasterPageState.ts`
+- Supplier modal data normalization and mutation payload shaping:
+  `pages/item-master/supplierModalData.ts`
+- Item basic-info generated-code state derivation:
+  `presentation/organisms/itemBasicInfoFormState.ts`
+- Item settings keyboard-flow predicates:
+  `presentation/organisms/itemSettingsFormState.ts`
+- Reusable item form section focus helpers:
+  `presentation/organisms/sectionFocus.ts`
 - Item-master page toolbar/grid layout wrappers:
   `pages/item-master/components/ItemMaster*Section.tsx`
 - App-wide item-management testing integration: `public/testing.ts`

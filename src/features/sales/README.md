@@ -9,6 +9,7 @@ This feature owns the sales list entrypoint and create-sale workflow.
 - Sales list view model types: `domain/types.ts`
 - Create-sale page: `pages/create-sale/index.tsx`
 - Sale form state: `application/create-sale/useSaleForm.ts`
+- Sale form pure validation and payload helpers: `domain/saleForm.ts`
 - Sale form service-call boundary: `infrastructure/saleFormData.ts`
 - Item-selection side effects:
   `application/create-sale/useSaleItemSelectionEffect.ts`
@@ -23,7 +24,8 @@ Use the narrowest owner for changes.
   visible page composition.
 - `application`: sales-list query/mutation orchestration, sale form state, sale
   item updates, total calculation, and item-selection effects.
-- `domain`: pure labels, template escaping, and list view model types.
+- `domain`: pure labels, template escaping, sale form validation/payload
+  helpers, and list view model types.
 - `infrastructure`: service-call wrappers for sales list and create-sale
   persistence.
 - `components`: visible fields, item rows, and user interaction controls.
@@ -39,7 +41,7 @@ Use the narrowest owner for changes.
 ## Boundary Rules
 
 - Do not add Supabase calls directly to sales components.
-- Keep sale calculations in `application` or a future pure `domain` helper.
+- Keep sale calculations and validation in `domain/saleForm.ts`.
 - Keep `pages/list/index.tsx` focused on rendering the list screen; sales-list
   query/mutation orchestration belongs in `application/list/useSalesListPage.ts`.
 - Keep create-sale page focused on screen composition; move growing workflow

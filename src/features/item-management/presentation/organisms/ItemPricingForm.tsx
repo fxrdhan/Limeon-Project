@@ -26,10 +26,15 @@ import {
   sellPriceComparisonSchema,
 } from '@/schemas/manual/itemValidation';
 import {
+  appendBaselineDraft,
   buildBaselineDrafts,
   buildBaselineUpdates,
   getBaselineCreateState,
   getBaselinePlaceholderName,
+  getIsBaselineAddActive,
+  getIsLevelPricingSwitchChecked,
+  getPricingSectionTitle,
+  removeBaselineDraft,
 } from './item-pricing-form/baselineUtils';
 import { BaselineSettingsPortal } from './item-pricing-form/BaselineSettingsPortal';
 import { LevelPricingPanel } from './item-pricing-form/LevelPricingPanel';
@@ -163,14 +168,7 @@ export default function ItemPricingForm({
       levels: levelPricing.levels,
     });
 
-    setBaselineDrafts(prev => {
-      if (!Object.prototype.hasOwnProperty.call(prev, levelId)) {
-        return prev;
-      }
-      const next = { ...prev };
-      delete next[levelId];
-      return next;
-    });
+    setBaselineDrafts(prev => removeBaselineDraft(prev, levelId));
   };
 
   const {
@@ -199,20 +197,20 @@ export default function ItemPricingForm({
       description: null,
     });
 
-    setBaselineDrafts(prev => ({
-      ...prev,
-      [created.id]: normalizedNewBaselineDiscount.toString(),
-    }));
+    setBaselineDrafts(prev =>
+      appendBaselineDraft(prev, created.id, normalizedNewBaselineDiscount)
+    );
     setBaselineAddOpen(false);
     setBaselineNewName('');
     setBaselineNewDiscount('');
   };
 
-  const isBaselineAddActive =
-    baselineAddOpen &&
-    canCreateBaselineLevel &&
-    !disabled &&
-    !levelPricing?.isCreating;
+  const isBaselineAddActive = getIsBaselineAddActive({
+    baselineAddOpen,
+    canCreateBaselineLevel,
+    disabled,
+    isCreating: levelPricing?.isCreating,
+  });
 
   const handleSaveBaseline = async () => {
     if (!levelPricing) return;
@@ -300,9 +298,7 @@ export default function ItemPricingForm({
         aria-expanded={isExpanded}
       >
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
-          {showLevelPricing
-            ? 'Pengaturan Level Pelanggan'
-            : 'Unit & Harga Dasar'}
+          {getPricingSectionTitle(showLevelPricing)}
         </h2>
         <div className="flex items-center gap-1">
           {showLevelPricing ? (
@@ -313,11 +309,10 @@ export default function ItemPricingForm({
             >
               <Switch
                 size="small"
-                checked={
-                  isLevelPricingActive ??
-                  formData.is_level_pricing_active ??
-                  true
-                }
+                checked={getIsLevelPricingSwitchChecked({
+                  formIsLevelPricingActive: formData.is_level_pricing_active,
+                  isLevelPricingActive,
+                })}
                 disabled={disabled}
                 onChange={(checked: boolean) =>
                   onLevelPricingActiveChange?.(checked)

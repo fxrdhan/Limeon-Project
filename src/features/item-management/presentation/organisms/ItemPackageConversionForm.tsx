@@ -31,7 +31,9 @@ import {
   getUniquePackageConversions,
   parsePackageConversionCurrencyValue,
   resolvePackageConversionParentUnitName,
+  shouldEndPackageConversionInteraction,
 } from './item-package-conversion-form/helpers';
+import { focusFirstSectionField } from './sectionFocus';
 
 const DeleteButton = React.memo(
   ({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) => (
@@ -191,22 +193,14 @@ export default function ItemPackageConversionManager({
       }
       const nextTarget = event.relatedTarget as Node | null;
       const activeElement = document.activeElement as Node | null;
-      const isAgPopupTarget = (node: Node | null) => {
-        if (!node || !(node instanceof HTMLElement)) return false;
-        return Boolean(
-          node.closest('.ag-popup, .ag-menu, .ag-dialog, .ag-tooltip')
-        );
-      };
 
       if (
-        sectionRef.current?.contains(nextTarget) ||
-        sectionRef.current?.contains(activeElement) ||
-        isAgPopupTarget(nextTarget) ||
-        isAgPopupTarget(activeElement)
+        shouldEndPackageConversionInteraction({
+          activeElement,
+          nextTarget,
+          sectionElement: sectionRef.current,
+        })
       ) {
-        return;
-      }
-      if (!sectionRef.current?.contains(nextTarget)) {
         onInteractionEnd?.();
       }
     },
@@ -321,16 +315,7 @@ export default function ItemPackageConversionManager({
     ] as (ColDef | ColGroupDef)[];
   }, [disabled, onRemoveConversion, resolveParentUnitName]);
 
-  const focusFirstField = () => {
-    const container = sectionRef.current?.querySelector<HTMLElement>(
-      '[data-section-content]'
-    );
-    if (!container) return;
-    const firstFocusable = container.querySelector<HTMLElement>(
-      'input, select, textarea, button, [tabindex]:not([tabindex="-1"])'
-    );
-    firstFocusable?.focus();
-  };
+  const focusFirstField = () => focusFirstSectionField(sectionRef.current);
 
   return (
     <section

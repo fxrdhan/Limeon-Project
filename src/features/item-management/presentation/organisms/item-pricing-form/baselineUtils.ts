@@ -34,6 +34,51 @@ export const buildBaselineDrafts = (levels: CustomerLevel[]) => {
 export const getBaselinePlaceholderName = (levels: CustomerLevel[]) =>
   `Level ${levels.length + 1}`;
 
+export const removeBaselineDraft = (
+  baselineDrafts: Record<string, string>,
+  levelId: string
+) => {
+  if (!Object.prototype.hasOwnProperty.call(baselineDrafts, levelId)) {
+    return baselineDrafts;
+  }
+
+  const next = { ...baselineDrafts };
+  delete next[levelId];
+  return next;
+};
+
+export const appendBaselineDraft = (
+  baselineDrafts: Record<string, string>,
+  levelId: string,
+  normalizedDiscount: number
+) => ({
+  ...baselineDrafts,
+  [levelId]: normalizedDiscount.toString(),
+});
+
+export const getIsBaselineAddActive = ({
+  baselineAddOpen,
+  canCreateBaselineLevel,
+  disabled,
+  isCreating,
+}: {
+  baselineAddOpen: boolean;
+  canCreateBaselineLevel: boolean;
+  disabled: boolean;
+  isCreating: boolean | undefined;
+}) => baselineAddOpen && canCreateBaselineLevel && !disabled && !isCreating;
+
+export const getPricingSectionTitle = (showLevelPricing: boolean) =>
+  showLevelPricing ? 'Pengaturan Level Pelanggan' : 'Unit & Harga Dasar';
+
+export const getIsLevelPricingSwitchChecked = ({
+  formIsLevelPricingActive,
+  isLevelPricingActive,
+}: {
+  formIsLevelPricingActive: boolean | undefined;
+  isLevelPricingActive: boolean | undefined;
+}) => isLevelPricingActive ?? formIsLevelPricingActive ?? true;
+
 export const buildBaselineUpdates = (
   levels: CustomerLevel[],
   baselineDrafts: Record<string, string>

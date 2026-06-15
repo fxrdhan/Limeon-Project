@@ -22,6 +22,10 @@ import {
   createOptimizedTypeDetailFetcher,
 } from '@/utils/optimizedCategoryDetailFetcher';
 import type { HoverDetailData } from '@/types/components';
+import {
+  getItemBasicInfoDisplayCode,
+  shouldApplyGeneratedItemCode,
+} from './itemBasicInfoFormState';
 
 interface ItemBasicInfoFormProps {
   isEditMode: boolean;
@@ -143,15 +147,13 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
 
     // Update formData.code whenever the generated code changes
     useEffect(() => {
-      if (!codeGeneration.generatedCode) return;
-
-      const shouldUpdateCode =
-        !isEditMode ||
-        !formData.code?.trim() ||
-        formData.code.includes('[XXX]') ||
-        formData.code.includes('-...');
-
-      if (shouldUpdateCode && codeGeneration.generatedCode !== formData.code) {
+      if (
+        shouldApplyGeneratedItemCode({
+          currentCode: formData.code,
+          generatedCode: codeGeneration.generatedCode,
+          isEditMode,
+        })
+      ) {
         onFieldChange('code', codeGeneration.generatedCode);
       }
     }, [
@@ -161,13 +163,11 @@ const ItemBasicInfoForm = forwardRef<HTMLInputElement, ItemBasicInfoFormProps>(
       onFieldChange,
     ]);
 
-    const displayCode =
-      isEditMode &&
-      formData.code?.trim() &&
-      !formData.code.includes('[XXX]') &&
-      !formData.code.includes('-...')
-        ? formData.code
-        : codeGeneration.generatedCode || formData.code || 'Auto-generated';
+    const displayCode = getItemBasicInfoDisplayCode({
+      currentCode: formData.code,
+      generatedCode: codeGeneration.generatedCode,
+      isEditMode,
+    });
     const productTypeItems = ['obat', 'non-obat'];
     const productTypeLabels = new Map([
       ['obat', 'Obat'],

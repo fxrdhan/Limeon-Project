@@ -8,6 +8,7 @@ import {
   COLLAPSIBLE_SECTION_HEADER_CLASS,
   SURFACE_CARD_CLASS,
 } from '@/styles/uiPrimitives';
+import { focusFirstSectionField } from './sectionFocus';
 
 interface ItemAdditionalInfoFormProps {
   isExpanded?: boolean;
@@ -35,16 +36,7 @@ const ItemAdditionalInfoForm: React.FC<ItemAdditionalInfoFormProps> = ({
 }) => {
   const sectionRef = useRef<HTMLDivElement>(null);
 
-  const focusFirstField = () => {
-    const container = sectionRef.current?.querySelector<HTMLElement>(
-      '[data-section-content]'
-    );
-    if (!container) return;
-    const firstFocusable = container.querySelector<HTMLElement>(
-      'input, select, textarea, button, [tabindex]:not([tabindex="-1"])'
-    );
-    firstFocusable?.focus();
-  };
+  const focusFirstField = () => focusFirstSectionField(sectionRef.current);
 
   return (
     <div

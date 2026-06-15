@@ -11,6 +11,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useInvoiceUploadStore } from './invoiceUploadStore';
 import {
+  buildConfirmInvoiceNavigationState,
   getInvoiceExtractionErrorMessage,
   getInvoiceImageValidationError,
   getNextInvoicePreviewZoomLevel,
@@ -243,17 +244,16 @@ export function useUploadInvoicePortal({
       setError(null);
       const startTime = Date.now();
       const data = await uploadAndExtractPurchaseInvoice(file!);
-      const imageIdentifier = data.imageIdentifier;
-      const processingTime = (Date.now() - startTime) / 1000;
+      const completedAtMs = Date.now();
       clearCachedInvoiceFile();
       onClose();
       void navigate('/purchases/confirm-invoice', {
-        state: {
+        state: buildConfirmInvoiceNavigationState({
+          completedAtMs,
           extractedData: data,
           filePreview: previewUrl,
-          processingTime: processingTime.toFixed(1),
-          imageIdentifier: imageIdentifier,
-        },
+          startedAtMs: startTime,
+        }),
       });
     } catch (err: unknown) {
       setError(getInvoiceExtractionErrorMessage(err));
