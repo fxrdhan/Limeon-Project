@@ -1,7 +1,51 @@
 import { supabase } from '@/lib/supabase';
 import type { CustomerLevel } from '@/types/database';
-import type { PostgrestError } from '@supabase/supabase-js';
-import type { ServiceResponse } from './base.service';
+import { toServiceError, type ServiceResponse } from './base.service';
+
+const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const normalizeCustomerLevelPercentage = (value: unknown) => {
+  const percentage =
+    typeof value === 'number'
+      ? value
+      : typeof value === 'string'
+        ? Number(value)
+        : 0;
+
+  return Number.isFinite(percentage) ? percentage : 0;
+};
+
+export const normalizeCustomerLevel = (
+  value: unknown
+): CustomerLevel | null => {
+  if (!isObjectRecord(value)) {
+    return null;
+  }
+
+  const { description, id, level_name, price_percentage } = value;
+  if (typeof id !== 'string' || typeof level_name !== 'string') {
+    return null;
+  }
+
+  return {
+    id,
+    level_name,
+    price_percentage: normalizeCustomerLevelPercentage(price_percentage),
+    description:
+      typeof description === 'string' || description === null
+        ? description
+        : null,
+  };
+};
+
+export const normalizeCustomerLevels = (value: unknown) =>
+  Array.isArray(value)
+    ? value.flatMap(level => {
+        const normalizedLevel = normalizeCustomerLevel(level);
+        return normalizedLevel ? [normalizedLevel] : [];
+      })
+    : [];
 
 export class CustomerLevelsService {
   async getAll(): Promise<ServiceResponse<CustomerLevel[]>> {
@@ -15,9 +59,9 @@ export class CustomerLevelsService {
         return { data: null, error };
       }
 
-      return { data: (data || []) as CustomerLevel[], error: null };
+      return { data: normalizeCustomerLevels(data), error: null };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -35,9 +79,14 @@ export class CustomerLevelsService {
         return { data: null, error };
       }
 
-      return { data: data as CustomerLevel, error: null };
+      const customerLevel = normalizeCustomerLevel(data);
+      if (!customerLevel) {
+        throw new Error('Customer level response is malformed');
+      }
+
+      return { data: customerLevel, error: null };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -53,7 +102,7 @@ export class CustomerLevelsService {
 
       return { data: null, error };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -66,7 +115,7 @@ export class CustomerLevelsService {
 
       return { data: null, error };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -88,7 +137,7 @@ export class CustomerLevelsService {
 
       return { data: null, error };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 }

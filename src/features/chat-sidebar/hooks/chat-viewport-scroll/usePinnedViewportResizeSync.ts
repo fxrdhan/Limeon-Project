@@ -1,4 +1,5 @@
 import { useEffect, type MutableRefObject, type RefObject } from 'react';
+import { cancelAnimationFrameSafely } from './animationFrame';
 
 interface UsePinnedViewportResizeSyncProps<TElement extends Element> {
   isOpen: boolean;
@@ -30,8 +31,10 @@ export const usePinnedViewportResizeSync = <TElement extends Element>({
     }
 
     let previousSize = getObservedSize(observedElement);
+    let pendingResizeFrame: number | null = null;
 
     const syncPinnedViewport = () => {
+      pendingResizeFrame = null;
       const nextSize = getObservedSize(observedElement);
       if (Math.abs(nextSize - previousSize) < 0.5) {
         return;
@@ -56,11 +59,17 @@ export const usePinnedViewportResizeSync = <TElement extends Element>({
     };
 
     const resizeObserver = new ResizeObserver(() => {
-      requestAnimationFrame(syncPinnedViewport);
+      if (pendingResizeFrame !== null) {
+        cancelAnimationFrameSafely(pendingResizeFrame);
+      }
+
+      pendingResizeFrame = requestAnimationFrame(syncPinnedViewport);
     });
     resizeObserver.observe(observedElement);
 
     return () => {
+      cancelAnimationFrameSafely(pendingResizeFrame);
+      pendingResizeFrame = null;
       resizeObserver.disconnect();
     };
   }, [

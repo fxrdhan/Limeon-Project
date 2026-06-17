@@ -3,9 +3,11 @@ import {
   useEffect,
   useCallback,
   useMemo,
+  useRef,
   type ChangeEvent,
   type KeyboardEvent,
   type RefObject,
+  type SetStateAction,
 } from 'react';
 import { useConfirmDialog } from '@/components/dialog-box/useConfirmDialog';
 import { useAlert } from '@/components/alert/hooks';
@@ -57,6 +59,7 @@ export const useMasterDataManagement = (
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingIdentity, setEditingIdentity] =
     useState<MasterDataIdentity | null>(null);
+  const modalSessionRef = useRef(0);
 
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -129,7 +132,7 @@ export const useMasterDataManagement = (
   // Filter locally; AG Grid owns pagination and page-size state.
   const { currentData, totalItems: totalEntities } = useMemo(() => {
     const filteredData = filterMasterDataIdentities({
-      data: allData as MasterDataIdentity[],
+      data: allData,
       searchTerm: debouncedSearch,
       tableName,
     });
@@ -144,7 +147,56 @@ export const useMasterDataManagement = (
 
   const queryError = error instanceof Error ? error : null;
 
+  const setManagedAddModalOpen = useCallback(
+    (value: SetStateAction<boolean>) => {
+      setIsAddModalOpen(prev => {
+        const next = typeof value === 'function' ? value(prev) : value;
+        if (next !== prev) {
+          modalSessionRef.current += 1;
+        }
+        return next;
+      });
+    },
+    []
+  );
+
+  const setManagedEditModalOpen = useCallback(
+    (value: SetStateAction<boolean>) => {
+      setIsEditModalOpen(prev => {
+        const next = typeof value === 'function' ? value(prev) : value;
+        if (next !== prev) {
+          modalSessionRef.current += 1;
+        }
+        return next;
+      });
+    },
+    []
+  );
+
+  const setManagedEditingIdentity = useCallback(
+    (value: SetStateAction<MasterDataIdentity | null>) => {
+      setEditingIdentity(prev => {
+        const next = typeof value === 'function' ? value(prev) : value;
+        if (next?.id !== prev?.id) {
+          modalSessionRef.current += 1;
+        }
+        return next;
+      });
+    },
+    []
+  );
+
+  const closeModalIfCurrentSession = useCallback((sessionId: number) => {
+    if (modalSessionRef.current !== sessionId) return;
+
+    modalSessionRef.current += 1;
+    setIsAddModalOpen(false);
+    setIsEditModalOpen(false);
+    setEditingIdentity(null);
+  }, []);
+
   const handleEdit = useCallback((identity: MasterDataIdentity) => {
+    modalSessionRef.current += 1;
     setEditingIdentity(identity);
     setIsEditModalOpen(true);
   }, []);
@@ -208,7 +260,7 @@ export const useMasterDataManagement = (
         return;
       }
 
-      const identities = allData as MasterDataIdentity[];
+      const identities = allData;
       const nextImagePath = getIdentityImageUploadPath(
         tableName,
         entityId,
@@ -254,10 +306,13 @@ export const useMasterDataManagement = (
         if (!prev || prev.id !== entityId) {
           return prev;
         }
+        if (!('image_url' in prev)) {
+          return prev;
+        }
         return {
           ...prev,
           image_url: publicUrl,
-        } as MasterDataIdentity;
+        };
       });
 
       await refetch();
@@ -278,7 +333,7 @@ export const useMasterDataManagement = (
       const existingImageUrl = getIdentityImageUrlForEntity({
         entityId,
         editingIdentity,
-        identities: allData as MasterDataIdentity[],
+        identities: allData,
       });
 
       const oldImagePath =
@@ -301,10 +356,13 @@ export const useMasterDataManagement = (
         if (!prev || prev.id !== entityId) {
           return prev;
         }
+        if (!('image_url' in prev)) {
+          return prev;
+        }
         return {
           ...prev,
           image_url: null,
-        } as MasterDataIdentity;
+        };
       });
 
       await refetch();
@@ -314,6 +372,8 @@ export const useMasterDataManagement = (
 
   const handleModalSubmit = useCallback(
     async (identityData: MasterDataModalSubmitData): Promise<unknown> => {
+      const modalSession = modalSessionRef.current;
+
       try {
         const payloadData = getMasterDataModalPayload(identityData);
 
@@ -336,9 +396,7 @@ export const useMasterDataManagement = (
           }
         }
 
-        setIsAddModalOpen(false);
-        setIsEditModalOpen(false);
-        setEditingIdentity(null);
+        closeModalIfCurrentSession(modalSession);
 
         // Manually refetch to ensure current tab updates immediately after mutation
         await refetch();
@@ -359,11 +417,20 @@ export const useMasterDataManagement = (
         throw error;
       }
     },
-    [getUpdateMutation, mutations, entityNameLabel, alert, refetch]
+    [
+      getUpdateMutation,
+      mutations,
+      closeModalIfCurrentSession,
+      entityNameLabel,
+      alert,
+      refetch,
+    ]
   );
 
   const handleDelete = useCallback(
     async (identityId: string) => {
+      const modalSession = modalSessionRef.current;
+
       try {
         const deleteMutation = getMasterDataDeleteMutation(mutations);
 
@@ -371,8 +438,7 @@ export const useMasterDataManagement = (
           await deleteMutation.mutateAsync(identityId);
         }
 
-        setIsEditModalOpen(false);
-        setEditingIdentity(null);
+        closeModalIfCurrentSession(modalSession);
 
         // Manually refetch to ensure current tab updates immediately after mutation
         await refetch();
@@ -388,7 +454,7 @@ export const useMasterDataManagement = (
         }
       }
     },
-    [mutations, entityNameLabel, alert, refetch]
+    [mutations, closeModalIfCurrentSession, entityNameLabel, alert, refetch]
   );
 
   const handlePageChange = (newPage: number) => setCurrentPage(newPage);
@@ -404,25 +470,25 @@ export const useMasterDataManagement = (
         e.preventDefault();
 
         if (currentData.length > 0) {
-          const firstIdentity = currentData[0] as MasterDataIdentity;
+          const firstIdentity = currentData[0];
           handleEdit(firstIdentity);
         } else if (debouncedSearch.trim() !== '') {
-          setIsAddModalOpen(true);
+          setManagedAddModalOpen(true);
         }
       }
     },
-    [currentData, handleEdit, debouncedSearch]
+    [currentData, handleEdit, debouncedSearch, setManagedAddModalOpen]
   );
 
   const totalPages = Math.ceil(totalEntities / identitiesPerPage);
 
   return {
     isAddModalOpen,
-    setIsAddModalOpen,
+    setIsAddModalOpen: setManagedAddModalOpen,
     isEditModalOpen,
-    setIsEditModalOpen,
+    setIsEditModalOpen: setManagedEditModalOpen,
     editingItem: editingIdentity,
-    setEditingItem: setEditingIdentity,
+    setEditingItem: setManagedEditingIdentity,
     search,
     setSearch,
     debouncedSearch,

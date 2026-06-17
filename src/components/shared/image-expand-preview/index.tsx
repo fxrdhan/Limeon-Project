@@ -25,27 +25,29 @@ const ImageExpandPreview = ({
   closeOnContentBackgroundClick = false,
   backdropClassName = '',
   contentClassName = '',
-  backdropRole,
-  backdropTabIndex,
-  backdropAriaLabel,
+  backdropRole = 'button',
+  backdropTabIndex = 0,
+  backdropAriaLabel = 'Tutup preview',
   onBackdropKeyDown,
 }: ImageExpandPreviewProps) => {
   if (!isOpen) return null;
 
+  const backdropProps = {
+    onClick: onClose,
+    role: backdropRole,
+    tabIndex: backdropTabIndex,
+    'aria-label': backdropAriaLabel,
+    onKeyDown: onBackdropKeyDown,
+  };
+
   return createPortal(
     <div
+      {...backdropProps}
       className={`fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm transition-opacity duration-200 ${
         isVisible
           ? 'bg-black/70 opacity-100 pointer-events-auto'
           : 'bg-black/70 opacity-0 pointer-events-none'
       } ${backdropClassName}`}
-      onClick={onClose}
-      role="button"
-      tabIndex={0}
-      data-backdrop-role={backdropRole}
-      data-backdrop-tab-index={backdropTabIndex}
-      aria-label={backdropAriaLabel}
-      onKeyDown={onBackdropKeyDown}
     >
       <div
         className={`max-h-[90vh] max-w-[90vw] p-3 transform-gpu will-change-transform transition-all duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] ${

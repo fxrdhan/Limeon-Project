@@ -54,6 +54,13 @@ export const useItemImageSection = ({
   const [isCropping, setIsCropping] = useState(false);
   const imageCropperRef = useRef<ImageCropperHandle | null>(null);
   const cropperCloseTimerRef = useRef<number | null>(null);
+  const cropPreviewUrlRef = useRef<string | null>(null);
+  const imageUploadRequestVersionsRef = useRef<Record<number, number>>({});
+  const cropConfirmRequestVersionRef = useRef(0);
+  const isImageSectionMountedRef = useRef(true);
+  const imageSectionScopeKey = `${itemId ?? 'draft'}:${isEditMode ? 'edit' : 'create'}`;
+  const imageSectionScopeKeyRef = useRef(imageSectionScopeKey);
+  imageSectionScopeKeyRef.current = imageSectionScopeKey;
   const { revokeLocalPreview, setLocalPreviewForSlot } =
     useLocalImagePreviews();
 
@@ -110,7 +117,14 @@ export const useItemImageSection = ({
       return;
     }
 
-    setCropState({ slotIndex, file, previewUrl: URL.createObjectURL(file) });
+    const previousPreviewUrl = cropPreviewUrlRef.current;
+    if (previousPreviewUrl?.startsWith('blob:')) {
+      URL.revokeObjectURL(previousPreviewUrl);
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    cropPreviewUrlRef.current = previewUrl;
+    setCropState({ slotIndex, file, previewUrl });
   }, []);
 
   const closeCropper = useCallback(() => {
@@ -119,12 +133,12 @@ export const useItemImageSection = ({
       window.clearTimeout(cropperCloseTimerRef.current);
     }
     cropperCloseTimerRef.current = window.setTimeout(() => {
-      setCropState(previousCropState => {
-        if (previousCropState?.previewUrl.startsWith('blob:')) {
-          URL.revokeObjectURL(previousCropState.previewUrl);
-        }
-        return null;
-      });
+      const previewUrl = cropPreviewUrlRef.current;
+      if (previewUrl?.startsWith('blob:')) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      cropPreviewUrlRef.current = null;
+      setCropState(null);
       cropperCloseTimerRef.current = null;
     }, cropperExitDurationMs);
   }, []);
@@ -143,9 +157,17 @@ export const useItemImageSection = ({
 
   useEffect(() => {
     return () => {
+      isImageSectionMountedRef.current = false;
+      imageUploadRequestVersionsRef.current = {};
+      cropConfirmRequestVersionRef.current += 1;
       if (cropperCloseTimerRef.current) {
         window.clearTimeout(cropperCloseTimerRef.current);
       }
+      const previewUrl = cropPreviewUrlRef.current;
+      if (previewUrl?.startsWith('blob:')) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      cropPreviewUrlRef.current = null;
     };
   }, []);
 
@@ -269,6 +291,11 @@ export const useItemImageSection = ({
 
   const handleImageUpload = useCallback(
     async (slotIndex: number, file: File) => {
+      const requestVersion =
+        (imageUploadRequestVersionsRef.current[slotIndex] ?? 0) + 1;
+      imageUploadRequestVersionsRef.current[slotIndex] = requestVersion;
+      const requestScopeKey = imageSectionScopeKeyRef.current;
+
       if (
         file.size > MAX_ITEM_IMAGE_SOURCE_BYTES ||
         !ALLOWED_ITEM_IMAGE_TYPES.has(file.type)
@@ -279,17 +306,48 @@ export const useItemImageSection = ({
 
       try {
         const { width, height } = await getImageDimensions(file);
+        if (
+          !isImageSectionMountedRef.current ||
+          imageUploadRequestVersionsRef.current[slotIndex] !== requestVersion ||
+          imageSectionScopeKeyRef.current !== requestScopeKey
+        ) {
+          return;
+        }
+
         if (width !== height) {
           openCropper(slotIndex, file);
           return;
         }
       } catch {
+        if (
+          !isImageSectionMountedRef.current ||
+          imageUploadRequestVersionsRef.current[slotIndex] !== requestVersion ||
+          imageSectionScopeKeyRef.current !== requestScopeKey
+        ) {
+          return;
+        }
+
         toast.error('Gagal membaca ukuran gambar.');
+        return;
+      }
+
+      if (
+        !isImageSectionMountedRef.current ||
+        imageUploadRequestVersionsRef.current[slotIndex] !== requestVersion ||
+        imageSectionScopeKeyRef.current !== requestScopeKey
+      ) {
         return;
       }
 
       const previewUrl = setLocalPreviewForSlot(slotIndex, file);
       setImageSlots(prevSlots => {
+        if (
+          imageUploadRequestVersionsRef.current[slotIndex] !== requestVersion ||
+          imageSectionScopeKeyRef.current !== requestScopeKey
+        ) {
+          return prevSlots;
+        }
+
         const nextSlots = prevSlots.map((slot, index) =>
           index === slotIndex ? { path: '', url: previewUrl } : slot
         );
@@ -308,6 +366,19 @@ export const useItemImageSection = ({
 
   const handleCropConfirm = useCallback(async () => {
     if (!cropState || !imageCropperRef.current) return;
+    const targetSlot = cropState.slotIndex;
+    const uploadRequestVersion =
+      imageUploadRequestVersionsRef.current[targetSlot] ?? 0;
+    const cropConfirmRequestVersion = cropConfirmRequestVersionRef.current + 1;
+    cropConfirmRequestVersionRef.current = cropConfirmRequestVersion;
+    const requestScopeKey = imageSectionScopeKeyRef.current;
+    const isCurrentCropConfirm = () =>
+      isImageSectionMountedRef.current &&
+      cropConfirmRequestVersionRef.current === cropConfirmRequestVersion &&
+      imageUploadRequestVersionsRef.current[targetSlot] ===
+        uploadRequestVersion &&
+      imageSectionScopeKeyRef.current === requestScopeKey;
+
     setIsCropping(true);
 
     try {
@@ -319,15 +390,22 @@ export const useItemImageSection = ({
         quality: 0.9,
       });
 
+      if (!isCurrentCropConfirm()) {
+        return;
+      }
+
       const croppedFile = new File([blob], cropState.file.name, {
         type: blob.type,
         lastModified: Date.now(),
       });
 
-      const targetSlot = cropState.slotIndex;
       closeCropper();
       const previewUrl = setLocalPreviewForSlot(targetSlot, croppedFile);
       setImageSlots(prevSlots => {
+        if (!isCurrentCropConfirm()) {
+          return prevSlots;
+        }
+
         const nextSlots = prevSlots.map((slot, index) =>
           index === targetSlot ? { path: '', url: previewUrl } : slot
         );
@@ -336,9 +414,16 @@ export const useItemImageSection = ({
         return nextSlots;
       });
     } catch {
-      toast.error('Gagal memproses gambar.');
+      if (isCurrentCropConfirm()) {
+        toast.error('Gagal memproses gambar.');
+      }
     } finally {
-      setIsCropping(false);
+      if (
+        isImageSectionMountedRef.current &&
+        cropConfirmRequestVersionRef.current === cropConfirmRequestVersion
+      ) {
+        setIsCropping(false);
+      }
     }
   }, [
     closeCropper,
@@ -360,6 +445,14 @@ export const useItemImageSection = ({
           await itemStorageService.deleteItemImage(targetSlot.path);
         }
         setImageSlots(prevSlots => {
+          const currentSlot = prevSlots[slotIndex];
+          if (
+            currentSlot?.path !== targetSlot.path ||
+            currentSlot.url !== targetSlot.url
+          ) {
+            return prevSlots;
+          }
+
           const nextSlots = prevSlots.map((slot, index) =>
             index === slotIndex ? { path: '', url: '' } : slot
           );

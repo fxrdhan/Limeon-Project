@@ -26,7 +26,11 @@ import {
   CHAT_RPC_NAMES,
 } from './rpc-contract';
 import { toChatServiceError } from './contractErrors';
-import { normalizeChatMessage, normalizeChatMessages } from './normalizers';
+import {
+  normalizeChatMessage,
+  normalizeChatMessages,
+  normalizeStringList,
+} from './normalizers';
 
 export const chatMessagesService = {
   async getMessageById(id: string): Promise<ServiceResponse<ChatMessage>> {
@@ -298,14 +302,13 @@ export const chatMessagesService = {
         return { data: null, error };
       }
 
-      const orderedMessageIds = ((data || []) as string[])
-        .filter((messageId): messageId is string => Boolean(messageId))
-        .slice(0, pageSize);
+      const messageIds = normalizeStringList(data, 'undelivered_message_ids');
+      const orderedMessageIds = messageIds.slice(0, pageSize);
 
       return {
         data: {
           messageIds: orderedMessageIds,
-          hasMore: ((data || []) as string[]).length > pageSize,
+          hasMore: messageIds.length > pageSize,
         },
         error: null,
       };

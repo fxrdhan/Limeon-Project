@@ -78,16 +78,15 @@ const getRequiredTimestamp = (
   return timestampCandidate;
 };
 
-const normalizeStringList = (
-  values: Array<string | null | undefined> | null | undefined,
-  fieldName: string
-) => {
+export const normalizeStringList = (values: unknown, fieldName: string) => {
   invariantChatContract(
     values === null || values === undefined || Array.isArray(values),
     `Chat contract violation: ${fieldName} must be an array.`
   );
 
-  return [...new Set(values ?? [])].flatMap((value, valueIndex) => {
+  const list = Array.isArray(values) ? values : [];
+
+  return [...new Set(list)].flatMap((value, valueIndex) => {
     invariantChatContract(
       value === null || value === undefined || typeof value === 'string',
       `Chat contract violation: ${fieldName}[${valueIndex}] must be a string.`

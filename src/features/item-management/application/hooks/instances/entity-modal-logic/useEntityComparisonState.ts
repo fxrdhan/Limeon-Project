@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { VersionData } from '../../../../shared/contexts/EntityModalContext';
 
 export type ComparisonData = {
@@ -22,6 +22,7 @@ const createClosedComparisonData = (): ComparisonData => ({
 });
 
 export const useEntityComparisonState = (isOpen: boolean) => {
+  const resetTimerRef = useRef<number | null>(null);
   const [comparisonState, setComparisonState] = useState<{
     modalOpen: boolean;
     data: ComparisonData;
@@ -29,6 +30,15 @@ export const useEntityComparisonState = (isOpen: boolean) => {
     modalOpen: false,
     data: createClosedComparisonData(),
   });
+
+  const clearResetTimer = useCallback(() => {
+    if (resetTimerRef.current === null) {
+      return;
+    }
+
+    window.clearTimeout(resetTimerRef.current);
+    resetTimerRef.current = null;
+  }, []);
 
   if (
     isOpen !== comparisonState.modalOpen &&
@@ -59,6 +69,7 @@ export const useEntityComparisonState = (isOpen: boolean) => {
 
   const openComparison = useCallback(
     (version: VersionData) => {
+      clearResetTimer();
       setComparisonData({
         isOpen: true,
         isClosing: false,
@@ -69,11 +80,12 @@ export const useEntityComparisonState = (isOpen: boolean) => {
         isFlipped: false,
       });
     },
-    [setComparisonData]
+    [clearResetTimer, setComparisonData]
   );
 
   const openDualComparison = useCallback(
     (versionA: VersionData, versionB: VersionData) => {
+      clearResetTimer();
       setComparisonData({
         isOpen: true,
         isClosing: false,
@@ -84,7 +96,7 @@ export const useEntityComparisonState = (isOpen: boolean) => {
         isFlipped: false,
       });
     },
-    [setComparisonData]
+    [clearResetTimer, setComparisonData]
   );
 
   const flipVersions = useCallback(() => {
@@ -95,13 +107,19 @@ export const useEntityComparisonState = (isOpen: boolean) => {
   }, [setComparisonData]);
 
   const closeComparison = useCallback(() => {
+    clearResetTimer();
     setComparisonData(prev => ({
       ...prev,
       isClosing: true,
     }));
 
-    setTimeout(resetComparisonData, 250);
-  }, [resetComparisonData, setComparisonData]);
+    resetTimerRef.current = window.setTimeout(() => {
+      resetTimerRef.current = null;
+      resetComparisonData();
+    }, 250);
+  }, [clearResetTimer, resetComparisonData, setComparisonData]);
+
+  useEffect(() => clearResetTimer, [clearResetTimer]);
 
   return {
     comparisonData: comparisonState.data,

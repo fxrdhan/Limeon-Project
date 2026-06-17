@@ -26,6 +26,25 @@ interface UseIdentityMasterDataTabsParams {
   isPatientTab: boolean;
 }
 
+const hasIdentityName = (data: unknown): data is { id: string; name: string } =>
+  data !== null &&
+  typeof data === 'object' &&
+  'id' in data &&
+  'name' in data &&
+  typeof data.id === 'string' &&
+  typeof data.name === 'string';
+
+const isCustomerMasterData = (data: unknown): data is CustomerType =>
+  hasIdentityName(data) &&
+  'customer_level_id' in data &&
+  typeof data.customer_level_id === 'string';
+
+const isPatientMasterData = (data: unknown): data is PatientType =>
+  hasIdentityName(data);
+
+const isDoctorMasterData = (data: unknown): data is DoctorType =>
+  hasIdentityName(data);
+
 export const useIdentityMasterDataTabs = ({
   isCustomerTab,
   isDoctorTab,
@@ -36,7 +55,7 @@ export const useIdentityMasterDataTabs = ({
     setIsAddModalOpen: setIsAddCustomerModalOpen,
     isEditModalOpen: isEditCustomerModalOpen,
     setIsEditModalOpen: setIsEditCustomerModalOpen,
-    editingItem: editingCustomer,
+    editingItem: rawEditingCustomer,
     data: customersData,
     isLoading: isCustomersLoading,
     isError: isCustomersError,
@@ -58,7 +77,7 @@ export const useIdentityMasterDataTabs = ({
     setIsAddModalOpen: setIsAddPatientModalOpen,
     isEditModalOpen: isEditPatientModalOpen,
     setIsEditModalOpen: setIsEditPatientModalOpen,
-    editingItem: editingPatient,
+    editingItem: rawEditingPatient,
     data: patientsData,
     isLoading: isPatientsLoading,
     isError: isPatientsError,
@@ -82,7 +101,7 @@ export const useIdentityMasterDataTabs = ({
     setIsAddModalOpen: setIsAddDoctorModalOpen,
     isEditModalOpen: isEditDoctorModalOpen,
     setIsEditModalOpen: setIsEditDoctorModalOpen,
-    editingItem: editingDoctor,
+    editingItem: rawEditingDoctor,
     data: doctorsData,
     isLoading: isDoctorsLoading,
     isError: isDoctorsError,
@@ -104,9 +123,27 @@ export const useIdentityMasterDataTabs = ({
   const { levels: customerLevels } = useCustomerLevels({
     enabled: isCustomerTab,
   });
-  const customersDataTyped = customersData as CustomerType[];
-  const patientsDataTyped = patientsData as PatientType[];
-  const doctorsDataTyped = doctorsData as DoctorType[];
+  const customersDataTyped = useMemo(
+    () => customersData.filter(isCustomerMasterData),
+    [customersData]
+  );
+  const patientsDataTyped = useMemo(
+    () => patientsData.filter(isPatientMasterData),
+    [patientsData]
+  );
+  const doctorsDataTyped = useMemo(
+    () => doctorsData.filter(isDoctorMasterData),
+    [doctorsData]
+  );
+  const editingCustomer = isCustomerMasterData(rawEditingCustomer)
+    ? rawEditingCustomer
+    : null;
+  const editingPatient = isPatientMasterData(rawEditingPatient)
+    ? rawEditingPatient
+    : null;
+  const editingDoctor = isDoctorMasterData(rawEditingDoctor)
+    ? rawEditingDoctor
+    : null;
 
   const customerLevelOptions = useMemo(
     () => toCustomerLevelOptions(customerLevels),

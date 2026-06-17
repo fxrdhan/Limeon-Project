@@ -1,7 +1,14 @@
-import { BaseService, ServiceResponse } from './base.service';
+import {
+  BaseService,
+  toServiceError,
+  type ServiceResponse,
+} from './base.service';
 import { supabase } from '@/lib/supabase';
+import {
+  getSingleSupabaseRelation,
+  type SupabaseRelationValue,
+} from '@/lib/supabaseRelations';
 import type { PurchaseData, PurchaseItem } from '@/types/purchase';
-import type { PostgrestError } from '@supabase/supabase-js';
 import {
   fetchRecordWithItems,
   getRecordsByDateRange,
@@ -14,7 +21,7 @@ import {
   updateRecordWithLinkedItems,
 } from './transaction.base';
 
-interface DBPurchase {
+export interface DBPurchase {
   id: string;
   invoice_number: string;
   supplier_id: string;
@@ -34,7 +41,7 @@ interface DBPurchase {
   updated_at?: string | null;
 }
 
-interface DBPurchaseItem {
+export interface DBPurchaseItem {
   id: string;
   purchase_id: string;
   item_id: string;
@@ -48,8 +55,33 @@ interface DBPurchaseItem {
   vat_percentage: number;
   batch_no: string | null;
   expiry_date: string | null;
-  unit_conversion_rate?: number;
+  unit_conversion_rate?: number | string | null;
   created_at?: string;
+}
+
+export interface PurchaseSupplierRelation {
+  name?: string | null;
+  address?: string | null;
+  contact_person?: string | null;
+}
+
+export interface PurchaseItemRelation {
+  id?: string;
+  name?: string | null;
+  code?: string | null;
+  manufacturer?: string | null;
+}
+
+export interface PurchaseListRecord extends Omit<PurchaseListItem, 'supplier'> {
+  supplier?: SupabaseRelationValue<PurchaseListItem['supplier']>;
+}
+
+export interface PurchaseDetailRecord extends DBPurchase {
+  suppliers?: SupabaseRelationValue<PurchaseSupplierRelation>;
+}
+
+export interface PurchaseItemRecord extends DBPurchaseItem {
+  items?: SupabaseRelationValue<PurchaseItemRelation>;
 }
 
 export interface PurchaseListItem {
@@ -61,6 +93,44 @@ export interface PurchaseListItem {
   payment_method: string;
   supplier: { name: string } | null;
 }
+
+export const mapPurchaseListItem = (
+  item: PurchaseListRecord
+): PurchaseListItem => ({
+  ...item,
+  supplier: getSingleSupabaseRelation(item.supplier),
+});
+
+export const mapPurchaseDetail = (
+  purchase: PurchaseDetailRecord
+): PurchaseData => {
+  const supplier = getSingleSupabaseRelation(purchase.suppliers);
+
+  return {
+    ...purchase,
+    supplier: {
+      name: supplier?.name || '',
+      address: supplier?.address || null,
+      contact_person: supplier?.contact_person || null,
+    },
+  };
+};
+
+export const mapPurchaseItem = (item: PurchaseItemRecord): PurchaseItem => {
+  const itemRelation = getSingleSupabaseRelation(item.items);
+
+  return {
+    ...item,
+    item_name: itemRelation?.name || '',
+    item: {
+      name: itemRelation?.name || '',
+      code: itemRelation?.code || '',
+    },
+    inventory_unit_id: item.inventory_unit_id ?? item.unit_id ?? null,
+    unit_id: item.unit_id ?? null,
+    unit_conversion_rate: Number(item.unit_conversion_rate) || 1,
+  };
+};
 
 export class PurchasesService extends BaseService<DBPurchase> {
   constructor() {
@@ -107,23 +177,18 @@ export class PurchasesService extends BaseService<DBPurchase> {
 
       const { data, error } = await query
         .order('date', { ascending: false })
-        .range(from, to);
+        .range(from, to)
+        .returns<PurchaseListRecord[]>();
 
       if (error) {
         return { data: null, error };
       }
 
-      const purchases =
-        data?.map(item => ({
-          ...item,
-          supplier: Array.isArray(item.supplier)
-            ? item.supplier[0]
-            : item.supplier,
-        })) || [];
+      const purchases = (data || []).map(mapPurchaseListItem);
 
       return { data: { purchases, totalItems: count || 0 }, error: null };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -170,25 +235,19 @@ export class PurchasesService extends BaseService<DBPurchase> {
         `
         )
         .eq('id', id)
+        .returns<PurchaseDetailRecord[]>()
         .single();
 
       if (error || !purchase) {
         return { data: null, error };
       }
 
-      // Transform to PurchaseData
-      const transformedPurchase: PurchaseData = {
-        ...purchase,
-        supplier: {
-          name: purchase.suppliers?.name || '',
-          address: purchase.suppliers?.address || null,
-          contact_person: purchase.suppliers?.contact_person || null,
-        },
+      return {
+        data: mapPurchaseDetail(purchase),
+        error: null,
       };
-
-      return { data: transformedPurchase, error: null };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -211,28 +270,18 @@ export class PurchasesService extends BaseService<DBPurchase> {
         `
         )
         .eq('purchase_id', purchaseId)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: true })
+        .returns<PurchaseItemRecord[]>();
 
       if (error || !data) {
         return { data: null, error };
       }
 
-      // Transform to PurchaseItem
-      const transformedItems: PurchaseItem[] = data.map(item => ({
-        ...item,
-        item_name: item.items?.name || '',
-        item: {
-          name: item.items?.name || '',
-          code: item.items?.code || '',
-        },
-        inventory_unit_id: item.inventory_unit_id ?? item.unit_id ?? null,
-        unit_id: item.unit_id ?? null,
-        unit_conversion_rate: Number(item.unit_conversion_rate) || 1,
-      }));
+      const transformedItems: PurchaseItem[] = data.map(mapPurchaseItem);
 
       return { data: transformedItems, error: null };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -301,7 +350,7 @@ export class PurchasesService extends BaseService<DBPurchase> {
         error: null,
       };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -317,13 +366,16 @@ export class PurchasesService extends BaseService<DBPurchase> {
       DBPurchase,
       PurchaseItem,
       Omit<DBPurchaseItem, 'id' | 'purchase_id' | 'created_at'>,
-      Omit<DBPurchaseItem, 'id' | 'purchase_id' | 'created_at'>
+      DBPurchaseItem
     >({
       updateRecord: () => this.update(id, purchaseData),
       nextItems: items,
       fetchExistingItems: () => this.getPurchaseItems(id),
       replaceItems: nextItems =>
-        replaceLinkedItems({
+        replaceLinkedItems<
+          Omit<DBPurchaseItem, 'id' | 'purchase_id' | 'created_at'>,
+          DBPurchaseItem
+        >({
           tableName: 'purchase_items',
           foreignKey: 'purchase_id',
           parentId: id,
@@ -340,7 +392,7 @@ export class PurchasesService extends BaseService<DBPurchase> {
     return {
       data: {
         purchase: result.data.record,
-        items: result.data.items as DBPurchaseItem[] | undefined,
+        items: result.data.items,
       },
       error: null,
     };
@@ -360,7 +412,7 @@ export class PurchasesService extends BaseService<DBPurchase> {
 
       return { data: null, error };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -428,7 +480,7 @@ export class PurchasesService extends BaseService<DBPurchase> {
       }),
       getNewDelta: item => ({
         itemId: item.item_id,
-        delta: item.quantity * (item.unit_conversion_rate ?? 1),
+        delta: item.quantity * Number(item.unit_conversion_rate ?? 1),
       }),
     });
 

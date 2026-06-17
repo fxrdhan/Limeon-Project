@@ -63,8 +63,8 @@ class PharmacyIndexedDB {
         resolve();
       };
 
-      request.onupgradeneeded = event => {
-        const db = (event.target as IDBOpenDBRequest).result;
+      request.onupgradeneeded = () => {
+        const db = request.result;
 
         // Delete existing store if it exists (clean slate)
         if (db.objectStoreNames.contains(this.storeName)) {
@@ -240,8 +240,8 @@ class PharmacyIndexedDB {
         IDBKeyRange.upperBound(sevenDaysAgo)
       );
 
-      oldEntriesRequest.onsuccess = event => {
-        const cursor = (event.target as IDBRequest).result;
+      oldEntriesRequest.onsuccess = () => {
+        const cursor = oldEntriesRequest.result;
         if (cursor) {
           cursor.delete();
           cursor.continue();

@@ -84,4 +84,15 @@ describe('MutationAdapter', () => {
     expect(firstError({ error }, { error: new Error('second') })).toBe(error);
     expect(firstError()).toBeNull();
   });
+
+  it('ignores non-object and partial mutation providers', () => {
+    expect(toNormalizedMutations(null)).toEqual({});
+    expect(
+      toNormalizedMutations({
+        createSupplier: { isPending: true },
+        updateSupplier: null,
+        deleteSupplier: { mutateAsync: 'not-a-function' },
+      })
+    ).toEqual({});
+  });
 });

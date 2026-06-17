@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
-import type { PostgrestError } from '@supabase/supabase-js';
-import type { ServiceResponse } from '../base.service';
+import { toServiceError, type ServiceResponse } from '../base.service';
+import { createPostgrestError } from './contractErrors';
 import type { ChatRemoteAssetRequest } from '../../../../shared/chatFunctionContracts';
 
 export interface ChatRemoteAssetResult {
@@ -32,10 +32,20 @@ export const chatRemoteAssetService = {
         }
       );
 
-      if (error || !(data instanceof Blob)) {
+      if (error) {
         return {
           data: null,
-          error: error as PostgrestError,
+          error: toServiceError(error),
+        };
+      }
+
+      if (!(data instanceof Blob)) {
+        return {
+          data: null,
+          error: createPostgrestError(
+            'Invalid chat remote asset response',
+            'CHAT_REMOTE_ASSET_INVALID_RESPONSE'
+          ),
         };
       }
 
@@ -69,7 +79,7 @@ export const chatRemoteAssetService = {
     } catch (error) {
       return {
         data: null,
-        error: error as PostgrestError,
+        error: toServiceError(error),
       };
     }
   },

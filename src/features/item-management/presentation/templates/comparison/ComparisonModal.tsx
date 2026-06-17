@@ -74,8 +74,8 @@ const ComparisonModal: React.FC<ComparisonModalProps> = ({
           aria-label={`Perbandingan ${entityName}`}
           onAnimationComplete={() => {
             // Prevent auto-focus on form elements
-            if (document.activeElement) {
-              (document.activeElement as HTMLElement).blur();
+            if (document.activeElement instanceof HTMLElement) {
+              document.activeElement.blur();
             }
           }}
         >

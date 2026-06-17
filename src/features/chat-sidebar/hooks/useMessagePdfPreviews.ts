@@ -302,6 +302,11 @@ export const useMessagePdfPreviews = ({
       }));
     };
 
+    const schedulePdfPreviewRetryIfCurrent = (messageId: string) => {
+      if (isCancelled) return;
+      schedulePdfPreviewRetry(messageId);
+    };
+
     const renderPdfPreviews = async () => {
       try {
         await runConcurrentPdfPreviewTasks(
@@ -326,24 +331,26 @@ export const useMessagePdfPreviews = ({
                 )) ??
                 (await renderPdfMessagePreview(pendingMessage, cacheKey));
               if (!nextPreview) {
-                schedulePdfPreviewRetry(pendingMessage.id);
+                schedulePdfPreviewRetryIfCurrent(pendingMessage.id);
                 return;
               }
 
               if (isCancelled) return;
               syncResolvedPreview(pendingMessage, nextPreview);
             } catch (error) {
+              if (isCancelled) return;
               console.error('Error rendering PDF message preview:', error);
-              schedulePdfPreviewRetry(pendingMessage.id);
+              schedulePdfPreviewRetryIfCurrent(pendingMessage.id);
             } finally {
               pdfPreviewRenderingIdsRef.current.delete(pendingMessage.id);
             }
           }
         );
       } catch (error) {
+        if (isCancelled) return;
         console.error('Error preparing PDF preview renderer:', error);
         for (const pendingMessage of pendingPdfMessages) {
-          schedulePdfPreviewRetry(pendingMessage.id);
+          schedulePdfPreviewRetryIfCurrent(pendingMessage.id);
         }
       }
     };

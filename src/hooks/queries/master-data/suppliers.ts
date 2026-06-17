@@ -14,7 +14,7 @@ export const useSuppliers = (options?: { enabled?: boolean }) => {
     queryFn: async () => {
       const result = await masterDataService.suppliers.getActiveSuppliers();
       if (result.error) throw result.error;
-      return result.data;
+      return result.data ?? [];
     },
     enabled: options?.enabled ?? true,
     staleTime: 0,
@@ -56,7 +56,7 @@ export const useSearchSuppliers = (
     queryFn: async () => {
       const result = await masterDataService.suppliers.searchSuppliers(query);
       if (result.error) throw result.error;
-      return result.data;
+      return result.data ?? [];
     },
     enabled: (options?.enabled ?? true) && query.length > 0,
   });

@@ -25,6 +25,7 @@ export const useEntityGridStatePersistence = ({
   const currentPageSizeRef = useRef<number>(itemsPerPage);
   const isApplyingTabStateRef = useRef(false);
   const previousActiveTabRef = useRef<TableType | null>(null);
+  const applyGridStateFrameRef = useRef<number | null>(null);
 
   const hasPersistedSearchPattern = useCallback(
     (targetTableType: TableType) => {
@@ -45,13 +46,8 @@ export const useEntityGridStatePersistence = ({
   );
 
   const sanitizeSavedGridState = useCallback(
-    (targetTableType: TableType, state: unknown): GridState | undefined => {
-      if (!state || typeof state !== 'object') {
-        return undefined;
-      }
-
+    (targetTableType: TableType, gridState: GridState): GridState => {
       if (hasPersistedSearchPattern(targetTableType)) {
-        const gridState = state as GridState;
         const savedPageSize = gridState.pagination?.pageSize;
         if (
           savedPageSize === undefined ||
@@ -80,7 +76,6 @@ export const useEntityGridStatePersistence = ({
         return normalizedState;
       }
 
-      const gridState = state as GridState;
       const advancedFilterModel = gridState.filter?.advancedFilterModel;
       const savedPageSize = gridState.pagination?.pageSize;
       const normalizedPageSize =
@@ -191,6 +186,30 @@ export const useEntityGridStatePersistence = ({
     gridStateManager.autoSaveGridState(gridApi, tableType);
   }, [gridApi, tableType]);
 
+  const clearScheduledGridStateApply = useCallback(() => {
+    if (applyGridStateFrameRef.current !== null) {
+      cancelAnimationFrame(applyGridStateFrameRef.current);
+      applyGridStateFrameRef.current = null;
+    }
+    isApplyingTabStateRef.current = false;
+  }, []);
+
+  const scheduleGridStateApply = useCallback(
+    (apply: () => void) => {
+      clearScheduledGridStateApply();
+      isApplyingTabStateRef.current = true;
+      applyGridStateFrameRef.current = requestAnimationFrame(() => {
+        applyGridStateFrameRef.current = null;
+        try {
+          apply();
+        } finally {
+          isApplyingTabStateRef.current = false;
+        }
+      });
+    },
+    [clearScheduledGridStateApply]
+  );
+
   useEffect(() => {
     if (!gridApi || gridApi.isDestroyed()) {
       return;
@@ -198,8 +217,7 @@ export const useEntityGridStatePersistence = ({
 
     if (previousActiveTabRef.current === null) {
       previousActiveTabRef.current = tableType;
-      isApplyingTabStateRef.current = true;
-      requestAnimationFrame(() => {
+      scheduleGridStateApply(() => {
         if (gridApi && !gridApi.isDestroyed()) {
           applySavedPaginationState(
             gridApi,
@@ -209,14 +227,12 @@ export const useEntityGridStatePersistence = ({
           );
           syncPaginationUiState(gridApi);
         }
-        isApplyingTabStateRef.current = false;
       });
-      return;
+      return clearScheduledGridStateApply;
     }
 
     if (previousActiveTabRef.current !== tableType) {
       previousActiveTabRef.current = tableType;
-      isApplyingTabStateRef.current = true;
 
       gridApi.clearFocusedCell();
       gridApi.clearCellSelection();
@@ -224,7 +240,7 @@ export const useEntityGridStatePersistence = ({
       const savedState = readSavedGridState(tableType);
 
       if (savedState) {
-        requestAnimationFrame(() => {
+        scheduleGridStateApply(() => {
           if (gridApi && !gridApi.isDestroyed()) {
             gridApi.setState(savedState);
             applySavedPaginationState(
@@ -237,10 +253,9 @@ export const useEntityGridStatePersistence = ({
             gridApi.clearFocusedCell();
             gridApi.clearCellSelection();
           }
-          isApplyingTabStateRef.current = false;
         });
       } else {
-        requestAnimationFrame(() => {
+        scheduleGridStateApply(() => {
           if (gridApi && !gridApi.isDestroyed()) {
             applySavedPaginationState(
               gridApi,
@@ -253,16 +268,18 @@ export const useEntityGridStatePersistence = ({
             gridApi.clearFocusedCell();
             gridApi.clearCellSelection();
           }
-          isApplyingTabStateRef.current = false;
         });
       }
+      return clearScheduledGridStateApply;
     }
   }, [
     applySavedPaginationState,
+    clearScheduledGridStateApply,
     gridApi,
     initialGridState,
     itemsPerPage,
     readSavedGridState,
+    scheduleGridStateApply,
     syncPaginationUiState,
     tableType,
   ]);

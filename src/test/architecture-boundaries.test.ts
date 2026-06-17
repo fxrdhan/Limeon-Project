@@ -304,6 +304,115 @@ const getRouteMountedFeatureTargets = () =>
 const formatViolations = (violations: string[]) =>
   violations.length === 0 ? 'none' : violations.sort().join('\n');
 
+const browserDialogCalls = new Set([
+  'alert',
+  'confirm',
+  'globalThis.alert',
+  'globalThis.confirm',
+  'globalThis.prompt',
+  'prompt',
+  'window.alert',
+  'window.confirm',
+  'window.prompt',
+]);
+
+type TypeAssertionDetails = {
+  expressionIdentifier: string | null;
+  location: string;
+  text: string;
+  typeIdentifiers: string[];
+};
+
+const unwrapExpression = (expression: ts.Expression): ts.Expression => {
+  let currentExpression = expression;
+
+  while (ts.isParenthesizedExpression(currentExpression)) {
+    currentExpression = currentExpression.expression;
+  }
+
+  return currentExpression;
+};
+
+const getExpressionIdentifier = (expression: ts.Expression) => {
+  const unwrappedExpression = unwrapExpression(expression);
+
+  return ts.isIdentifier(unwrappedExpression) ? unwrappedExpression.text : null;
+};
+
+const getTypeIdentifiers = (typeNode: ts.TypeNode) => {
+  const identifiers = new Set<string>();
+
+  const visit = (node: ts.Node) => {
+    if (ts.isIdentifier(node)) {
+      identifiers.add(node.text);
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(typeNode);
+  return [...identifiers];
+};
+
+const getTypeAssertions = (filePath: string, source: string) => {
+  const sourceFile = parseSource(filePath, source);
+  const assertions: TypeAssertionDetails[] = [];
+
+  const recordAssertion = (node: ts.AsExpression | ts.TypeAssertion) => {
+    const { line, character } = sourceFile.getLineAndCharacterOfPosition(
+      node.getStart(sourceFile)
+    );
+
+    assertions.push({
+      expressionIdentifier: getExpressionIdentifier(node.expression),
+      location: `${filePath}:${line + 1}:${character + 1}`,
+      text: node.getText(sourceFile),
+      typeIdentifiers: getTypeIdentifiers(node.type),
+    });
+  };
+
+  const visit = (node: ts.Node) => {
+    if (ts.isAsExpression(node) || ts.isTypeAssertionExpression(node)) {
+      recordAssertion(node);
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
+  return assertions;
+};
+
+const isMatureUiComponentSource = (filePath: string) =>
+  filePath.startsWith('src/components/calendar/') ||
+  filePath.startsWith('src/components/combobox/') ||
+  filePath.startsWith('src/components/search-bar/');
+
+const getBrowserDialogViolations = (filePath: string, source: string) => {
+  const sourceFile = parseSource(filePath, source);
+  const fileViolations: string[] = [];
+
+  const visit = (node: ts.Node) => {
+    if (ts.isCallExpression(node)) {
+      const callPath = getPropertyAccessSegments(node.expression)?.join('.');
+
+      if (callPath && browserDialogCalls.has(callPath)) {
+        const { line, character } = sourceFile.getLineAndCharacterOfPosition(
+          node.expression.getStart(sourceFile)
+        );
+        fileViolations.push(
+          `${filePath}:${line + 1}:${character + 1} uses browser dialog ${callPath}`
+        );
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  };
+
+  visit(sourceFile);
+  return fileViolations;
+};
+
 describe('architecture boundaries', () => {
   it('keeps item-management data owners out of shared hooks', () => {
     const requiredSources = [
@@ -630,6 +739,20 @@ describe('architecture boundaries', () => {
             ? [`${filePath} imports app state module ${specifier}`]
             : [];
         });
+      }
+    );
+
+    expect(formatViolations(violations)).toBe('none');
+  });
+
+  it('keeps runtime feedback on app-managed dialogs', () => {
+    const violations = [...sourceByPath.entries()].flatMap(
+      ([filePath, source]) => {
+        if (!isRuntimeSource(filePath) || isMatureUiComponentSource(filePath)) {
+          return [];
+        }
+
+        return getBrowserDialogViolations(filePath, source);
       }
     );
 
@@ -1337,6 +1460,69 @@ describe('architecture boundaries', () => {
     expect(formatViolations(violations)).toBe('none');
   });
 
+  it('keeps service exception boundaries on normalized service errors', () => {
+    const guardedSources = [...sourceByPath.entries()].filter(([filePath]) => {
+      if (!isRuntimeSource(filePath)) return false;
+      if (filePath === 'src/services/api/chat/contractErrors.ts') return false;
+
+      return (
+        filePath.startsWith('src/services/api/') ||
+        filePath.startsWith('src/services/repositories/') ||
+        filePath.startsWith('src/features/item-management/infrastructure/')
+      );
+    });
+    const violations = guardedSources.flatMap(([filePath, source]) =>
+      getTypeAssertions(filePath, source).flatMap(assertion =>
+        assertion.typeIdentifiers.includes('PostgrestError')
+          ? [`${assertion.location} casts values to PostgrestError`]
+          : []
+      )
+    );
+
+    expect(formatViolations(violations)).toBe('none');
+  });
+
+  it('keeps runtime error handling on type guards instead of assertions', () => {
+    const guardedSources = [...sourceByPath.entries()].filter(([filePath]) => {
+      if (!isRuntimeSource(filePath)) return false;
+
+      return (
+        filePath.startsWith('src/services/') ||
+        filePath.startsWith('src/features/') ||
+        filePath.startsWith('src/lib/')
+      );
+    });
+    const unsafeErrorAssertionTypes = new Set([
+      'AuthError',
+      'AxiosError',
+      'Error',
+      'PostgrestError',
+    ]);
+    const violations = guardedSources.flatMap(([filePath, source]) =>
+      getTypeAssertions(filePath, source).flatMap(assertion => {
+        const assertsUnsafeErrorType = assertion.typeIdentifiers.some(
+          identifier => unsafeErrorAssertionTypes.has(identifier)
+        );
+        const assertsCaughtErrorVariable =
+          assertion.expressionIdentifier === 'error' ||
+          assertion.expressionIdentifier === 'err';
+        const isIntentionalPostgrestFactory =
+          filePath === 'src/services/api/chat/contractErrors.ts' &&
+          assertion.typeIdentifiers.includes('PostgrestError');
+
+        return isIntentionalPostgrestFactory
+          ? []
+          : assertsUnsafeErrorType || assertsCaughtErrorVariable
+            ? [
+                `${assertion.location} asserts caught error shape with "${assertion.text}"`,
+              ]
+            : [];
+      })
+    );
+
+    expect(formatViolations(violations)).toBe('none');
+  });
+
   it('keeps item-management item data access behind feature infrastructure', () => {
     const violations = [...sourceByPath.entries()].flatMap(
       ([filePath, source]) => {
@@ -1358,6 +1544,36 @@ describe('architecture boundaries', () => {
         });
       }
     );
+
+    expect(formatViolations(violations)).toBe('none');
+  });
+
+  it('keeps item detail hydration on typed infrastructure records', () => {
+    const itemDataService =
+      sourceByPath.get(
+        'src/features/item-management/infrastructure/itemData.service.ts'
+      ) ?? '';
+    const useItemData =
+      sourceByPath.get(
+        'src/features/item-management/application/hooks/data/useItemData.ts'
+      ) ?? '';
+    const violations = [
+      !itemDataService.includes('export interface ItemDataRecord')
+        ? 'itemData.service.ts must expose the typed item detail record'
+        : '',
+      itemDataService.includes('ServiceResponse<Record<string, unknown>>')
+        ? 'itemData.service.ts returns item details as Record<string, unknown>'
+        : '',
+      itemDataService.includes('error as PostgrestError')
+        ? 'itemData.service.ts casts unknown exceptions to PostgrestError'
+        : '',
+      useItemData.includes('const itemRecord = itemData as Record')
+        ? 'useItemData.ts casts hydration input to Record<string, unknown>'
+        : '',
+      useItemData.includes('hydrateItemData(itemData as Record')
+        ? 'useItemData.ts casts fetched item details before hydration'
+        : '',
+    ].filter(Boolean);
 
     expect(formatViolations(violations)).toBe('none');
   });

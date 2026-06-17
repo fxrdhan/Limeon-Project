@@ -24,7 +24,7 @@ export const useItems = (options?: {
         select: options?.select,
       });
       if (result.error) throw result.error;
-      return result.data;
+      return result.data ?? [];
     },
     enabled: options?.enabled ?? true,
     // Extended cache for master data stability
@@ -70,7 +70,7 @@ export const useSearchItems = (
         orderBy: { column: 'name', ascending: true },
       });
       if (result.error) throw result.error;
-      return result.data;
+      return result.data ?? [];
     },
     enabled: (options?.enabled ?? true) && query.length > 0,
     // Disable caching for items search data
@@ -88,7 +88,7 @@ export const useItemsByCategory = (
     queryFn: async () => {
       const result = await itemsService.getItemsByCategory(categoryId);
       if (result.error) throw result.error;
-      return result.data;
+      return result.data ?? [];
     },
     enabled: options?.enabled ?? true,
     staleTime: 0,
@@ -105,7 +105,7 @@ export const useItemsByType = (
     queryFn: async () => {
       const result = await itemsService.getItemsByType(typeId);
       if (result.error) throw result.error;
-      return result.data;
+      return result.data ?? [];
     },
     enabled: options?.enabled ?? true,
     staleTime: 0,
@@ -122,7 +122,7 @@ export const useLowStockItems = (
     queryFn: async () => {
       const result = await itemsService.getLowStockItems(threshold);
       if (result.error) throw result.error;
-      return result.data;
+      return result.data ?? [];
     },
     enabled: options?.enabled ?? true,
     staleTime: 0,

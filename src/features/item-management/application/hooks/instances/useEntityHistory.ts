@@ -9,12 +9,62 @@ import {
   type RealtimeChannel,
 } from '../../../infrastructure/itemRealtime.service';
 
+interface EntityHistoryRealtimePayload {
+  new?: unknown;
+  old?: unknown;
+}
+
+const readEntityHistoryPayloadEntityId = (record: unknown) => {
+  if (
+    typeof record === 'object' &&
+    record !== null &&
+    'entity_id' in record &&
+    typeof record.entity_id === 'string'
+  ) {
+    return record.entity_id;
+  }
+
+  return null;
+};
+
+export const getEntityHistoryRealtimeEntityId = (
+  payload: EntityHistoryRealtimePayload
+) =>
+  readEntityHistoryPayloadEntityId(payload.new) ??
+  readEntityHistoryPayloadEntityId(payload.old);
+
 export const useEntityHistory = (entityTable: string, entityId: string) => {
   const [history, setHistory] = useState<EntityHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(false); // ← Start with false for seamless pre-fetch UX
   const [error, setError] = useState<string | null>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
   const entityChannelRef = useRef<RealtimeChannel | null>(null);
+  const currentScopeRef = useRef({ entityTable, entityId });
+  const fetchGenerationRef = useRef(0);
+  const loadingGenerationRef = useRef(0);
+  const mountedRef = useRef(true);
+
+  currentScopeRef.current = { entityTable, entityId };
+
+  useEffect(() => {
+    mountedRef.current = true;
+
+    return () => {
+      mountedRef.current = false;
+      fetchGenerationRef.current += 1;
+      loadingGenerationRef.current += 1;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (entityTable && entityId) return;
+
+    fetchGenerationRef.current += 1;
+    loadingGenerationRef.current += 1;
+    setHistory([]);
+    setError(null);
+    setIsLoading(false);
+  }, [entityTable, entityId]);
 
   const fetchHistory = useCallback(
     async (silent = false) => {
@@ -23,8 +73,24 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
         return;
       }
 
+      const requestScope = { entityTable, entityId };
+      const isCurrentScope = () =>
+        mountedRef.current &&
+        currentScopeRef.current.entityTable === requestScope.entityTable &&
+        currentScopeRef.current.entityId === requestScope.entityId;
+
+      if (!isCurrentScope()) return;
+
+      const fetchGeneration = fetchGenerationRef.current + 1;
+      fetchGenerationRef.current = fetchGeneration;
+      const isCurrentFetch = () =>
+        isCurrentScope() && fetchGenerationRef.current === fetchGeneration;
+      const isCurrentLoadingFetch = () =>
+        isCurrentScope() && loadingGenerationRef.current === fetchGeneration;
+
       // Only show loading spinner for initial/manual fetch, not realtime updates
       if (!silent) {
+        loadingGenerationRef.current = fetchGeneration;
         setIsLoading(true);
       }
       setError(null);
@@ -38,14 +104,16 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
           throw new Error(fetchError.message);
         }
 
+        if (!isCurrentFetch()) return;
         setHistory(data || []);
       } catch (err) {
+        if (!isCurrentFetch()) return;
         const errorMessage =
           err instanceof Error ? err.message : 'Unknown error';
         setError(errorMessage);
       } finally {
         // Only update loading state if we set it to true (not silent mode)
-        if (!silent) {
+        if (!silent && isCurrentLoadingFetch()) {
           setIsLoading(false);
         }
       }
@@ -195,9 +263,7 @@ export const useEntityHistory = (entityTable: string, entityId: string) => {
         },
         payload => {
           // Client-side filtering by entity_id
-          const newRecord = payload.new as EntityHistoryItem | null;
-          const oldRecord = payload.old as EntityHistoryItem | null;
-          const recordEntityId = newRecord?.entity_id || oldRecord?.entity_id;
+          const recordEntityId = getEntityHistoryRealtimeEntityId(payload);
 
           // Only process events for THIS specific entity
           if (recordEntityId === entityId) {

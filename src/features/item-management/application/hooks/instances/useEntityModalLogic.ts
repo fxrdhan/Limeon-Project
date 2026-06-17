@@ -1,6 +1,13 @@
 import { useEntityModalRealtime } from './useEntityModalRealtime';
 import { formatDateTime } from '@/lib/formatters';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MutableRefObject,
+} from 'react';
 import toast from 'react-hot-toast';
 import type {
   EntityModalContextValue,
@@ -11,6 +18,8 @@ import { buildEntitySubmitData } from './entity-modal-logic/entitySubmitData';
 import { getEntityTableName } from './entity-modal-logic/entityTable';
 import { useEntityComparisonState } from './entity-modal-logic/useEntityComparisonState';
 import { useEntityHistoryState } from './entity-modal-logic/useEntityHistoryState';
+
+type TimerRef = MutableRefObject<ReturnType<typeof setTimeout> | null>;
 
 interface UseEntityModalLogicProps {
   isOpen: boolean;
@@ -76,12 +85,28 @@ export const useEntityModalLogic = ({
     comparisonData,
     setComparisonData,
     resetComparisonData,
-    openComparison,
-    closeComparison,
-    openDualComparison,
+    openComparison: openComparisonBase,
+    closeComparison: closeComparisonBase,
+    openDualComparison: openDualComparisonBase,
     flipVersions,
   } = useEntityComparisonState(isOpen);
   const nameInputRef = useRef<HTMLInputElement>(null);
+  const initializationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const nameFocusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const goBackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const closeAfterComparisonTimerRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
+  const deletedEntityCloseTimerRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
+  const modalSessionRef = useRef(0);
+  const submitAttemptRef = useRef(0);
+  const deleteAttemptRef = useRef(0);
+  const submitInFlightRef = useRef(false);
+  const deleteInFlightRef = useRef(false);
 
   // Track last synchronized state from database (for realtime updates)
   // This represents the "truth" from database, not the stale initialData snapshot
@@ -103,6 +128,44 @@ export const useEntityModalLogic = ({
 
   const entityTable = getEntityTableName(entityName);
   const entityId = initialData?.id || '';
+
+  const clearTimerRef = useCallback((timerRef: TimerRef) => {
+    if (timerRef.current === null) {
+      return;
+    }
+
+    clearTimeout(timerRef.current);
+    timerRef.current = null;
+  }, []);
+
+  useEffect(() => {
+    modalSessionRef.current += 1;
+    submitAttemptRef.current += 1;
+    deleteAttemptRef.current += 1;
+    submitInFlightRef.current = false;
+    deleteInFlightRef.current = false;
+  }, [entityName, initialData?.id, isOpen]);
+
+  const clearComparisonDeferredTimers = useCallback(() => {
+    clearTimerRef(goBackTimerRef);
+    clearTimerRef(closeAfterComparisonTimerRef);
+  }, [clearTimerRef]);
+
+  const scheduleNameFocus = useCallback(() => {
+    clearTimerRef(nameFocusTimerRef);
+    nameFocusTimerRef.current = setTimeout(() => {
+      nameFocusTimerRef.current = null;
+      nameInputRef.current?.focus();
+    }, 100);
+  }, [clearTimerRef]);
+
+  const scheduleDeletedEntityClose = useCallback(() => {
+    clearTimerRef(deletedEntityCloseTimerRef);
+    deletedEntityCloseTimerRef.current = setTimeout(() => {
+      deletedEntityCloseTimerRef.current = null;
+      onClose();
+    }, 1000);
+  }, [clearTimerRef, onClose]);
 
   // Realtime sync callback - updates form state from realtime changes
   // ANTI-LOOP: This only updates local state, doesn't trigger save
@@ -149,9 +212,7 @@ export const useEntityModalLogic = ({
         duration: 3000,
         icon: '⚠️',
       });
-      setTimeout(() => {
-        onClose();
-      }, 1000);
+      scheduleDeletedEntityClose();
     },
   });
 
@@ -184,54 +245,73 @@ export const useEntityModalLogic = ({
 
   // Initialize mode and form data when modal opens
   useEffect(() => {
-    if (isOpen) {
-      // Use setTimeout to avoid synchronous setState in effect
-      setTimeout(() => {
-        setIsClosing(false); // Reset closing state when opening
-        setIsSubmitting(false);
-        const newMode = initialData ? 'edit' : 'add';
-        setMode(newMode);
-        syncPreviousMode(newMode);
+    clearTimerRef(initializationTimerRef);
+    clearTimerRef(nameFocusTimerRef);
+    clearComparisonDeferredTimers();
 
-        if (initialData) {
-          // All tables now use 'code' field consistently
-          setCode(initialData.code || '');
-          setName(initialData.name);
-          setDescription(initialData.description || '');
-          setAddress(initialData.address || '');
-
-          // Initialize last synced state from initialData (baseline for isDirty)
-          setLastSyncedState({
-            code: initialData.code || '',
-            name: initialData.name || '',
-            description: initialData.description || '',
-            address: initialData.address || '',
-          });
-        } else if (initialNameFromSearch) {
-          setCode('');
-          setName(initialNameFromSearch);
-          setDescription('');
-          setAddress('');
-        } else {
-          resetForm();
-        }
-
-        // Focus on name input after modal opens (only for form modes)
-        setTimeout(() => {
-          nameInputRef.current?.focus();
-        }, 100);
-      }, 0);
+    if (!isOpen) {
+      clearTimerRef(deletedEntityCloseTimerRef);
+      return;
     }
-  }, [isOpen, initialData, initialNameFromSearch, resetForm, syncPreviousMode]);
+
+    clearTimerRef(deletedEntityCloseTimerRef);
+    // Use setTimeout to avoid synchronous setState in effect
+    initializationTimerRef.current = setTimeout(() => {
+      initializationTimerRef.current = null;
+      setIsClosing(false); // Reset closing state when opening
+      setIsSubmitting(false);
+      const newMode = initialData ? 'edit' : 'add';
+      setMode(newMode);
+      syncPreviousMode(newMode);
+
+      if (initialData) {
+        // All tables now use 'code' field consistently
+        setCode(initialData.code || '');
+        setName(initialData.name);
+        setDescription(initialData.description || '');
+        setAddress(initialData.address || '');
+
+        // Initialize last synced state from initialData (baseline for isDirty)
+        setLastSyncedState({
+          code: initialData.code || '',
+          name: initialData.name || '',
+          description: initialData.description || '',
+          address: initialData.address || '',
+        });
+      } else if (initialNameFromSearch) {
+        setCode('');
+        setName(initialNameFromSearch);
+        setDescription('');
+        setAddress('');
+      } else {
+        resetForm();
+      }
+
+      // Focus on name input after modal opens (only for form modes)
+      scheduleNameFocus();
+    }, 0);
+
+    return () => {
+      clearTimerRef(initializationTimerRef);
+      clearTimerRef(nameFocusTimerRef);
+    };
+  }, [
+    clearTimerRef,
+    clearComparisonDeferredTimers,
+    isOpen,
+    initialData,
+    initialNameFromSearch,
+    resetForm,
+    scheduleNameFocus,
+    syncPreviousMode,
+  ]);
 
   // Focus on name input when switching from history back to edit/add mode
   useEffect(() => {
     if (isOpen && (mode === 'edit' || mode === 'add')) {
-      setTimeout(() => {
-        nameInputRef.current?.focus();
-      }, 100);
+      scheduleNameFocus();
     }
-  }, [isOpen, mode]);
+  }, [isOpen, mode, scheduleNameFocus]);
 
   // Handle closing animation
   useEffect(() => {
@@ -247,6 +327,10 @@ export const useEntityModalLogic = ({
   // comparisonData auto-resets when modal closes (getDerivedStateFromProps pattern)
 
   const handleSubmit = useCallback(async () => {
+    if (submitInFlightRef.current) {
+      return;
+    }
+
     if (!isValid) {
       toast.error(
         `Kode dan nama ${entityName.toLowerCase()} tidak boleh kosong.`
@@ -254,6 +338,10 @@ export const useEntityModalLogic = ({
       return;
     }
 
+    submitInFlightRef.current = true;
+    const submitSession = modalSessionRef.current;
+    const submitAttempt = submitAttemptRef.current + 1;
+    submitAttemptRef.current = submitAttempt;
     setIsSubmitting(true);
 
     const submitData = buildEntitySubmitData({
@@ -267,10 +355,22 @@ export const useEntityModalLogic = ({
 
     try {
       await onSubmit(submitData);
+      if (
+        modalSessionRef.current !== submitSession ||
+        submitAttemptRef.current !== submitAttempt
+      ) {
+        return;
+      }
       // Only trigger closing animation after successful submit
       setIsClosing(true);
     } catch {
-      setIsSubmitting(false);
+      if (
+        modalSessionRef.current === submitSession &&
+        submitAttemptRef.current === submitAttempt
+      ) {
+        submitInFlightRef.current = false;
+        setIsSubmitting(false);
+      }
       // If submit fails, don't close the modal - let user retry
       // Error is already handled by the onSubmit handler
     }
@@ -286,34 +386,93 @@ export const useEntityModalLogic = ({
   ]);
 
   const handleDelete = useCallback(async () => {
-    if (initialData?.id && onDelete) {
-      try {
-        await onDelete(initialData.id);
-        // Only trigger closing animation after successful delete (user confirmed and delete succeeded)
-        setIsClosing(true);
-      } catch {
-        // If delete fails or user cancelled, don't close the modal
-        // Error is already handled by the onDelete handler (toast shown)
-        // User can retry or close manually
+    if (!initialData?.id || !onDelete || deleteInFlightRef.current) {
+      return;
+    }
+
+    deleteInFlightRef.current = true;
+    const deleteSession = modalSessionRef.current;
+    const deleteAttempt = deleteAttemptRef.current + 1;
+    deleteAttemptRef.current = deleteAttempt;
+
+    try {
+      await onDelete(initialData.id);
+      if (
+        modalSessionRef.current !== deleteSession ||
+        deleteAttemptRef.current !== deleteAttempt
+      ) {
+        return;
       }
+      // Only trigger closing animation after successful delete (user confirmed and delete succeeded)
+      setIsClosing(true);
+    } catch {
+      if (
+        modalSessionRef.current === deleteSession &&
+        deleteAttemptRef.current === deleteAttempt
+      ) {
+        deleteInFlightRef.current = false;
+      }
+      // If delete fails or user cancelled, don't close the modal
+      // Error is already handled by the onDelete handler (toast shown)
+      // User can retry or close manually
     }
   }, [initialData, onDelete]);
 
+  const openComparison = useCallback(
+    (version: Parameters<typeof openComparisonBase>[0]) => {
+      clearComparisonDeferredTimers();
+      openComparisonBase(version);
+    },
+    [clearComparisonDeferredTimers, openComparisonBase]
+  );
+
+  const openDualComparison = useCallback(
+    (
+      versionA: Parameters<typeof openDualComparisonBase>[0],
+      versionB: Parameters<typeof openDualComparisonBase>[1]
+    ) => {
+      clearComparisonDeferredTimers();
+      openDualComparisonBase(versionA, versionB);
+    },
+    [clearComparisonDeferredTimers, openDualComparisonBase]
+  );
+
+  const closeComparison = useCallback(() => {
+    clearComparisonDeferredTimers();
+    closeComparisonBase();
+  }, [clearComparisonDeferredTimers, closeComparisonBase]);
+
+  const scheduleCloseAfterComparison = useCallback(() => {
+    clearTimerRef(closeAfterComparisonTimerRef);
+    closeAfterComparisonTimerRef.current = setTimeout(() => {
+      closeAfterComparisonTimerRef.current = null;
+      setIsClosing(true);
+    }, 300);
+  }, [clearTimerRef]);
+
   const goBack = useCallback(() => {
+    clearComparisonDeferredTimers();
     // Close comparison modal when going back with animation
     setComparisonData(prev => ({
       ...prev,
       isClosing: true,
     }));
 
-    setTimeout(() => {
+    goBackTimerRef.current = setTimeout(() => {
+      goBackTimerRef.current = null;
       resetComparisonData();
 
       if (mode === 'history') {
         closeHistory();
       }
     }, 250); // Match animation duration
-  }, [closeHistory, mode, resetComparisonData, setComparisonData]);
+  }, [
+    clearComparisonDeferredTimers,
+    closeHistory,
+    mode,
+    resetComparisonData,
+    setComparisonData,
+  ]);
 
   // UI actions
   const handleClose = useCallback(() => {
@@ -322,14 +481,12 @@ export const useEntityModalLogic = ({
     if (comparisonData.isOpen) {
       closeComparison();
       // After comparison closes, schedule closing of history modal
-      setTimeout(() => {
-        setIsClosing(true);
-      }, 300); // Slight delay after comparison modal closes
+      scheduleCloseAfterComparison(); // Slight delay after comparison modal closes
     } else {
       // No comparison modal open, close normally
       setIsClosing(true);
     }
-  }, [comparisonData.isOpen, closeComparison]);
+  }, [comparisonData.isOpen, closeComparison, scheduleCloseAfterComparison]);
 
   const handleBackdropClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -339,16 +496,30 @@ export const useEntityModalLogic = ({
         if (comparisonData.isOpen) {
           closeComparison();
           // After comparison closes, schedule closing of history modal
-          setTimeout(() => {
-            setIsClosing(true);
-          }, 300); // Slight delay after comparison modal closes
+          scheduleCloseAfterComparison(); // Slight delay after comparison modal closes
         } else {
           // No comparison modal open, close normally
           setIsClosing(true);
         }
       }
     },
-    [isClosing, comparisonData.isOpen, closeComparison]
+    [
+      isClosing,
+      comparisonData.isOpen,
+      closeComparison,
+      scheduleCloseAfterComparison,
+    ]
+  );
+
+  useEffect(
+    () => () => {
+      clearTimerRef(initializationTimerRef);
+      clearTimerRef(nameFocusTimerRef);
+      clearTimerRef(goBackTimerRef);
+      clearTimerRef(closeAfterComparisonTimerRef);
+      clearTimerRef(deletedEntityCloseTimerRef);
+    },
+    [clearTimerRef]
   );
 
   // Create context value

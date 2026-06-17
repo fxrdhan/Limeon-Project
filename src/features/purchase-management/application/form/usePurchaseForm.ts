@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { getInvalidationKeys } from '@/constants/queryKeys';
+import toast from 'react-hot-toast';
 import {
   recalculateItems,
   validatePurchaseForm,
@@ -10,7 +11,6 @@ import { invalidateQueryKeys } from '@/lib/queryInvalidation';
 import type { PurchaseFormChangeEvent } from '../../domain/types';
 import type {
   Item,
-  Supplier,
   CompanyProfile,
   PurchaseFormData,
   PurchaseItem,
@@ -50,10 +50,14 @@ export const usePurchaseForm = ({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
+  const mountedRef = useRef(true);
+  const enabledRef = useRef(enabled);
+  const formScopeVersionRef = useRef(0);
+  const submitInFlightRef = useRef(false);
   useSuppliersSync({ enabled });
   const suppliersQuery = useSuppliers({ enabled });
   const suppliers = useMemo(
-    () => (suppliersQuery.data ?? []) as Supplier[],
+    () => suppliersQuery.data ?? [],
     [suppliersQuery.data]
   );
   const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(
@@ -75,7 +79,36 @@ export const usePurchaseForm = ({
 
   const total = calculatePurchaseTotal(purchaseItems);
 
+  enabledRef.current = enabled;
+
+  const isFormScopeActive = useCallback(
+    (scopeVersion: number) =>
+      mountedRef.current &&
+      enabledRef.current &&
+      formScopeVersionRef.current === scopeVersion,
+    []
+  );
+
+  useEffect(() => {
+    mountedRef.current = true;
+
+    return () => {
+      mountedRef.current = false;
+      formScopeVersionRef.current += 1;
+    };
+  }, []);
+
+  useEffect(() => {
+    formScopeVersionRef.current += 1;
+
+    if (!enabled) {
+      setLoading(false);
+    }
+  }, [enabled]);
+
   const fetchCompanyProfile = useCallback(async () => {
+    const scopeVersion = formScopeVersionRef.current;
+
     try {
       const { data, error } = await fetchPurchaseFormCompanyProfile();
       if (error) {
@@ -83,13 +116,17 @@ export const usePurchaseForm = ({
         return;
       }
 
-      if (data) {
+      if (isFormScopeActive(scopeVersion) && data) {
         setCompanyProfile(data);
       }
     } catch (error) {
+      if (!isFormScopeActive(scopeVersion)) {
+        return;
+      }
+
       console.error('Error fetching company profile:', error);
     }
-  }, []);
+  }, [isFormScopeActive]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -159,9 +196,13 @@ export const usePurchaseForm = ({
 
     const validation = validatePurchaseForm(formData, purchaseItems);
     if (!validation.isValid) {
-      alert(formatPurchaseValidationMessage(validation));
-      return;
+      toast.error(formatPurchaseValidationMessage(validation));
+      return false;
     }
+
+    if (submitInFlightRef.current) return false;
+    submitInFlightRef.current = true;
+    const scopeVersion = formScopeVersionRef.current;
 
     try {
       setLoading(true);
@@ -180,17 +221,24 @@ export const usePurchaseForm = ({
       );
 
       if (purchaseError) throw purchaseError;
+      if (!isFormScopeActive(scopeVersion)) return false;
 
       void invalidateQueryKeys(
         queryClient,
         getInvalidationKeys.purchases.related()
       );
       void navigate('/purchases');
+      return true;
     } catch (error) {
+      if (!isFormScopeActive(scopeVersion)) return false;
       console.error('Error creating purchase:', error);
-      alert('Gagal menyimpan pembelian. Silakan coba lagi.');
+      toast.error('Gagal menyimpan pembelian. Silakan coba lagi.');
+      return false;
     } finally {
-      setLoading(false);
+      submitInFlightRef.current = false;
+      if (isFormScopeActive(scopeVersion)) {
+        setLoading(false);
+      }
     }
   };
 

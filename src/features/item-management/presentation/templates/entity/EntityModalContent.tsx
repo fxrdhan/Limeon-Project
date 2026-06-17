@@ -1,4 +1,10 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import Button from '@/components/button';
 import { TbArrowLeft, TbHistory } from 'react-icons/tb';
@@ -167,6 +173,7 @@ const EntityModalContent: React.FC<EntityModalContentProps> = ({
   const latestModeRef = useRef(mode);
   const canAnimateModeResizeRef = useRef(false);
   const previousHeightRef = useRef<number | null>(null);
+  const resizeFrameRef = useRef<number | null>(null);
   const resizeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const openSettledTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null
@@ -176,6 +183,15 @@ const EntityModalContent: React.FC<EntityModalContentProps> = ({
 
   latestModeRef.current = mode;
 
+  const cancelResizeFrame = useCallback(() => {
+    if (resizeFrameRef.current === null) {
+      return;
+    }
+
+    window.cancelAnimationFrame(resizeFrameRef.current);
+    resizeFrameRef.current = null;
+  }, []);
+
   useEffect(() => {
     previousModeRef.current = latestModeRef.current;
     canAnimateModeResizeRef.current = false;
@@ -183,6 +199,7 @@ const EntityModalContent: React.FC<EntityModalContentProps> = ({
     setAnimatedHeight(null);
     setIsResizing(false);
 
+    cancelResizeFrame();
     if (resizeTimeoutRef.current) {
       clearTimeout(resizeTimeoutRef.current);
       resizeTimeoutRef.current = null;
@@ -201,7 +218,7 @@ const EntityModalContent: React.FC<EntityModalContentProps> = ({
       canAnimateModeResizeRef.current = true;
       openSettledTimeoutRef.current = null;
     }, 260);
-  }, [isOpen]);
+  }, [cancelResizeFrame, isOpen]);
 
   useLayoutEffect(() => {
     const modalElement = modalRef.current;
@@ -227,7 +244,13 @@ const EntityModalContent: React.FC<EntityModalContentProps> = ({
     setIsResizing(true);
     setAnimatedHeight(previousHeight);
 
-    requestAnimationFrame(() => {
+    cancelResizeFrame();
+    const resizeFrame = window.requestAnimationFrame(() => {
+      if (resizeFrameRef.current !== resizeFrame) {
+        return;
+      }
+
+      resizeFrameRef.current = null;
       setAnimatedHeight(currentHeight);
 
       if (resizeTimeoutRef.current) {
@@ -242,10 +265,12 @@ const EntityModalContent: React.FC<EntityModalContentProps> = ({
         resizeTimeoutRef.current = null;
       }, 240);
     });
-  }, [mode, isOpen]);
+    resizeFrameRef.current = resizeFrame;
+  }, [cancelResizeFrame, mode, isOpen]);
 
   useEffect(() => {
     return () => {
+      cancelResizeFrame();
       if (resizeTimeoutRef.current) {
         clearTimeout(resizeTimeoutRef.current);
       }
@@ -253,7 +278,7 @@ const EntityModalContent: React.FC<EntityModalContentProps> = ({
         clearTimeout(openSettledTimeoutRef.current);
       }
     };
-  }, []);
+  }, [cancelResizeFrame]);
 
   // Use getDerivedStateFromProps to track mode changes
   const [modeTracker, setModeTracker] = useState<{

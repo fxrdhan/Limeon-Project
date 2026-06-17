@@ -52,6 +52,7 @@ const VatPercentageEditor: React.FC<VatPercentageEditorProps> = ({
               onChange={e => setTempValue(e.target.value)}
               onBlur={stopEditing}
               onKeyDown={handleKeyDown}
+              aria-label="Persentase PPN"
               className="w-16 p-1 border border-slate-300 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-primary focus:border-transparent"
               min="0"
               max="100"

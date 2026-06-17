@@ -12,6 +12,7 @@ import {
 } from './constants';
 import { MENU_GROUPS } from './menu';
 import {
+  buildClosedMenusState,
   buildOpenMenusState,
   getSidebarTargetId,
   hasActiveChildRoute,
@@ -35,10 +36,7 @@ export const useSidebarInteraction = ({
   pathname,
 }: UseSidebarInteractionParams) => {
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>(
-    () =>
-      Object.fromEntries(
-        MENU_GROUPS.map(item => [item.key, false] as const)
-      ) as Record<string, boolean>
+    buildClosedMenusState
   );
   const [manuallyClosedMenus, setManuallyClosedMenus] = useState<Set<string>>(
     () => new Set()
@@ -91,6 +89,24 @@ export const useSidebarInteraction = ({
       clearTimeout(highlightClearTimeoutRef.current);
       highlightClearTimeoutRef.current = null;
     }
+  }, []);
+
+  const clearHoverTimeout = useCallback(() => {
+    if (!hoverTimeoutRef.current) {
+      return;
+    }
+
+    clearTimeout(hoverTimeoutRef.current);
+    hoverTimeoutRef.current = null;
+  }, []);
+
+  const clearMenuHoverTimeout = useCallback(() => {
+    if (!menuHoverTimeoutRef.current) {
+      return;
+    }
+
+    clearTimeout(menuHoverTimeoutRef.current);
+    menuHoverTimeoutRef.current = null;
   }, []);
 
   const setHoveredSidebarTarget = useCallback(
@@ -146,10 +162,7 @@ export const useSidebarInteraction = ({
         return;
       }
 
-      if (menuHoverTimeoutRef.current) {
-        clearTimeout(menuHoverTimeoutRef.current);
-        menuHoverTimeoutRef.current = null;
-      }
+      clearMenuHoverTimeout();
 
       const nextManuallyClosed = new Set(manuallyClosedMenus);
       nextManuallyClosed.delete(menuKey);
@@ -163,34 +176,32 @@ export const useSidebarInteraction = ({
         })
       );
     },
-    [collapsed, manuallyClosedMenus, pathname]
+    [clearMenuHoverTimeout, collapsed, manuallyClosedMenus, pathname]
   );
 
   const handleMouseEnterSidebar = useCallback(() => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-      hoverTimeoutRef.current = null;
-    }
-
-    if (menuHoverTimeoutRef.current) {
-      clearTimeout(menuHoverTimeoutRef.current);
-      menuHoverTimeoutRef.current = null;
-    }
+    clearHoverTimeout();
+    clearMenuHoverTimeout();
 
     clearHighlightClearTimeout();
 
     if (!isLocked && collapsed) {
       hoverTimeoutRef.current = setTimeout(() => {
+        hoverTimeoutRef.current = null;
         expandSidebar();
       }, 100);
     }
-  }, [clearHighlightClearTimeout, collapsed, expandSidebar, isLocked]);
+  }, [
+    clearHighlightClearTimeout,
+    clearHoverTimeout,
+    clearMenuHoverTimeout,
+    collapsed,
+    expandSidebar,
+    isLocked,
+  ]);
 
   const handleMouseLeaveSidebar = useCallback(() => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-      hoverTimeoutRef.current = null;
-    }
+    clearHoverTimeout();
 
     if (!isLocked && !collapsed) {
       collapseSidebar();
@@ -200,6 +211,7 @@ export const useSidebarInteraction = ({
     setHoveredSidebarItem(null);
 
     if (!collapsed) {
+      clearMenuHoverTimeout();
       menuHoverTimeoutRef.current = setTimeout(() => {
         setOpenMenus(
           buildOpenMenusState({
@@ -207,10 +219,13 @@ export const useSidebarInteraction = ({
             pathname,
           })
         );
+        menuHoverTimeoutRef.current = null;
       }, 200);
     }
   }, [
     clearHighlightClearTimeout,
+    clearHoverTimeout,
+    clearMenuHoverTimeout,
     collapseSidebar,
     collapsed,
     isLocked,
@@ -240,18 +255,22 @@ export const useSidebarInteraction = ({
 
   useEffect(
     () => () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
-      if (menuHoverTimeoutRef.current) {
-        clearTimeout(menuHoverTimeoutRef.current);
-      }
-      if (highlightClearTimeoutRef.current) {
-        clearTimeout(highlightClearTimeoutRef.current);
-      }
+      clearHoverTimeout();
+      clearMenuHoverTimeout();
+      clearHighlightClearTimeout();
     },
-    []
+    [clearHighlightClearTimeout, clearHoverTimeout, clearMenuHoverTimeout]
   );
+
+  useEffect(() => {
+    if (isLocked || !collapsed) {
+      clearHoverTimeout();
+    }
+  }, [clearHoverTimeout, collapsed, isLocked]);
+
+  useEffect(() => {
+    clearMenuHoverTimeout();
+  }, [clearMenuHoverTimeout, collapsed, pathname]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {

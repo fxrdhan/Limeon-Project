@@ -28,6 +28,8 @@ class EmptySelectedMessagesCopyError extends Error {
   }
 }
 
+const COPY_SELECTED_MESSAGES_LOADING_TOAST_ID = 'chat-copy-selected-messages';
+
 interface UseChatInteractionModesProps {
   isOpen: boolean;
   currentChannelId: string | null;
@@ -61,6 +63,10 @@ export const useChatInteractionModes = ({
     () => new Set()
   );
   const selectionModeScrollTopRef = useRef<number | null>(null);
+  const selectedMessagesCopyRequestIdRef = useRef(0);
+  const selectedMessagesCopyLoadingToastTimeoutRef = useRef<number | null>(
+    null
+  );
   const search = useChatMessageSearchMode({
     isOpen,
     currentChannelId,
@@ -89,18 +95,42 @@ export const useChatInteractionModes = ({
     return selectedVisibleMessages.length > 0;
   }, [selectedVisibleMessages, user]);
 
-  useEffect(() => {
-    if (isOpen) return;
-    setIsSelectionMode(false);
-    setSelectedMessageIds(new Set());
-    selectionModeScrollTopRef.current = null;
-  }, [isOpen]);
+  const clearSelectedMessagesCopyLoadingToastTimeout = useCallback(() => {
+    if (selectedMessagesCopyLoadingToastTimeoutRef.current === null) {
+      return;
+    }
+
+    window.clearTimeout(selectedMessagesCopyLoadingToastTimeoutRef.current);
+    selectedMessagesCopyLoadingToastTimeoutRef.current = null;
+  }, []);
+
+  const invalidateSelectedMessagesCopyRequest = useCallback(() => {
+    selectedMessagesCopyRequestIdRef.current += 1;
+    clearSelectedMessagesCopyLoadingToastTimeout();
+    toast.dismiss(COPY_SELECTED_MESSAGES_LOADING_TOAST_ID);
+  }, [clearSelectedMessagesCopyLoadingToastTimeout]);
 
   useEffect(() => {
+    if (isOpen) return;
+    invalidateSelectedMessagesCopyRequest();
     setIsSelectionMode(false);
     setSelectedMessageIds(new Set());
     selectionModeScrollTopRef.current = null;
-  }, [currentChannelId]);
+  }, [invalidateSelectedMessagesCopyRequest, isOpen]);
+
+  useEffect(() => {
+    invalidateSelectedMessagesCopyRequest();
+    setIsSelectionMode(false);
+    setSelectedMessageIds(new Set());
+    selectionModeScrollTopRef.current = null;
+  }, [currentChannelId, invalidateSelectedMessagesCopyRequest]);
+
+  useEffect(
+    () => () => {
+      invalidateSelectedMessagesCopyRequest();
+    },
+    [invalidateSelectedMessagesCopyRequest]
+  );
 
   useLayoutEffect(() => {
     if (!isSelectionMode) {
@@ -147,32 +177,41 @@ export const useChatInteractionModes = ({
   }, [selectableMessageIdSet]);
 
   const handleEnterMessageSearchMode = useCallback(() => {
+    invalidateSelectedMessagesCopyRequest();
     setIsSelectionMode(false);
     setSelectedMessageIds(new Set());
     search.handleEnterMessageSearchMode();
-  }, [search]);
+  }, [invalidateSelectedMessagesCopyRequest, search]);
 
   const handleExitMessageSearchMode = useCallback(() => {
     search.handleExitMessageSearchMode();
   }, [search]);
 
   const handleEnterMessageSelectionMode = useCallback(() => {
+    invalidateSelectedMessagesCopyRequest();
     selectionModeScrollTopRef.current =
       messagesContainerRef.current?.scrollTop ?? null;
     closeMessageMenu();
     search.handleExitMessageSearchMode();
     setSelectedMessageIds(new Set());
     setIsSelectionMode(true);
-  }, [closeMessageMenu, messagesContainerRef, search]);
+  }, [
+    closeMessageMenu,
+    invalidateSelectedMessagesCopyRequest,
+    messagesContainerRef,
+    search,
+  ]);
 
   const handleExitMessageSelectionMode = useCallback(() => {
+    invalidateSelectedMessagesCopyRequest();
     setIsSelectionMode(false);
     setSelectedMessageIds(new Set());
-  }, []);
+  }, [invalidateSelectedMessagesCopyRequest]);
 
   const handleClearSelectedMessages = useCallback(() => {
+    invalidateSelectedMessagesCopyRequest();
     setSelectedMessageIds(new Set());
-  }, []);
+  }, [invalidateSelectedMessagesCopyRequest]);
 
   const handleToggleMessageSelection = useCallback(
     (messageIds: string | string[]) => {
@@ -230,15 +269,35 @@ export const useChatInteractionModes = ({
     }
 
     try {
-      const loadingToastId = 'chat-copy-selected-messages';
+      const copyRequestId = selectedMessagesCopyRequestIdRef.current + 1;
       let didShowLoadingToast = false;
+      selectedMessagesCopyRequestIdRef.current = copyRequestId;
+      clearSelectedMessagesCopyLoadingToastTimeout();
       const loadingToastTimeout = window.setTimeout(() => {
+        if (selectedMessagesCopyRequestIdRef.current !== copyRequestId) {
+          return;
+        }
+
         didShowLoadingToast = true;
         toast.loading('Menyalin pesan...', {
-          id: loadingToastId,
+          id: COPY_SELECTED_MESSAGES_LOADING_TOAST_ID,
           toasterId: CHAT_SIDEBAR_TOASTER_ID,
         });
       }, CHAT_COPY_LOADING_TOAST_DELAY_MS);
+      selectedMessagesCopyLoadingToastTimeoutRef.current = loadingToastTimeout;
+
+      const clearCurrentLoadingToastTimeout = () => {
+        window.clearTimeout(loadingToastTimeout);
+        if (
+          selectedMessagesCopyLoadingToastTimeoutRef.current ===
+          loadingToastTimeout
+        ) {
+          selectedMessagesCopyLoadingToastTimeoutRef.current = null;
+        }
+      };
+
+      const isCopyRequestActive = () =>
+        selectedMessagesCopyRequestIdRef.current === copyRequestId;
 
       try {
         const serializedMessages = await serializeSelectedMessages(
@@ -255,28 +314,54 @@ export const useChatInteractionModes = ({
           throw new EmptySelectedMessagesCopyError();
         }
 
-        await copyTextToClipboard(serializedMessages);
+        if (!isCopyRequestActive()) {
+          clearCurrentLoadingToastTimeout();
+          if (didShowLoadingToast) {
+            toast.dismiss(COPY_SELECTED_MESSAGES_LOADING_TOAST_ID);
+          }
+          return;
+        }
 
-        window.clearTimeout(loadingToastTimeout);
+        await copyTextToClipboard(serializedMessages);
+        if (!isCopyRequestActive()) {
+          clearCurrentLoadingToastTimeout();
+          if (didShowLoadingToast) {
+            toast.dismiss(COPY_SELECTED_MESSAGES_LOADING_TOAST_ID);
+          }
+          return;
+        }
+
+        clearCurrentLoadingToastTimeout();
         toast.success(
           `${selectedVisibleMessages.length} pesan berhasil disalin`,
           {
-            id: didShowLoadingToast ? loadingToastId : undefined,
+            id: didShowLoadingToast
+              ? COPY_SELECTED_MESSAGES_LOADING_TOAST_ID
+              : undefined,
             toasterId: CHAT_SIDEBAR_TOASTER_ID,
           }
         );
       } catch (error) {
-        window.clearTimeout(loadingToastTimeout);
+        clearCurrentLoadingToastTimeout();
+
+        if (!isCopyRequestActive()) {
+          if (didShowLoadingToast) {
+            toast.dismiss(COPY_SELECTED_MESSAGES_LOADING_TOAST_ID);
+          }
+          return;
+        }
 
         if (error instanceof EmptySelectedMessagesCopyError) {
           if (didShowLoadingToast) {
-            toast.dismiss(loadingToastId);
+            toast.dismiss(COPY_SELECTED_MESSAGES_LOADING_TOAST_ID);
           }
           return;
         }
 
         toast.error('Gagal menyalin pesan terpilih', {
-          id: didShowLoadingToast ? loadingToastId : undefined,
+          id: didShowLoadingToast
+            ? COPY_SELECTED_MESSAGES_LOADING_TOAST_ID
+            : undefined,
           toasterId: CHAT_SIDEBAR_TOASTER_ID,
         });
         throw error;
@@ -290,6 +375,7 @@ export const useChatInteractionModes = ({
     }
   }, [
     captionMessagesByAttachmentId,
+    clearSelectedMessagesCopyLoadingToastTimeout,
     getAttachmentFileName,
     selectedVisibleMessages,
     targetUser,

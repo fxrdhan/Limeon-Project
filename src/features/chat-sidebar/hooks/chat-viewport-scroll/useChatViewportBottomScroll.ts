@@ -25,6 +25,7 @@ export const useChatViewportBottomScroll = ({
   setHasNewMessages,
 }: UseChatViewportBottomScrollProps) => {
   const scrollToBottomAnimationFrameRef = useRef<number | null>(null);
+  const scheduledScrollToBottomFrameRef = useRef<number | null>(null);
 
   const resolveBottomScrollMetrics = useCallback(
     () =>
@@ -46,11 +47,20 @@ export const useChatViewportBottomScroll = ({
     [resolveBottomScrollMetrics]
   );
 
+  const cancelScheduledScrollToBottom = useCallback(() => {
+    if (scheduledScrollToBottomFrameRef.current === null) return;
+    cancelAnimationFrameSafely(scheduledScrollToBottomFrameRef.current);
+    scheduledScrollToBottomFrameRef.current = null;
+  }, []);
+
   const scheduleScrollMessagesToBottom = useCallback(() => {
-    requestAnimationFrame(() => {
+    cancelScheduledScrollToBottom();
+
+    scheduledScrollToBottomFrameRef.current = requestAnimationFrame(() => {
+      scheduledScrollToBottomFrameRef.current = null;
       scrollMessagesToBottom('auto');
     });
-  }, [scrollMessagesToBottom]);
+  }, [cancelScheduledScrollToBottom, scrollMessagesToBottom]);
 
   const pinViewportToBottom = useCallback(() => {
     scrollMessagesToBottom('auto');
@@ -129,6 +139,7 @@ export const useChatViewportBottomScroll = ({
     scrollMessagesToBottom,
     scheduleScrollMessagesToBottom,
     pinViewportToBottom,
+    cancelScheduledScrollToBottom,
     cancelScrollToBottomAnimation,
     checkIfAtBottom,
     scrollToBottom,

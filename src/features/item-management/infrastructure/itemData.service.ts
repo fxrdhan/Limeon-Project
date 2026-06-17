@@ -1,6 +1,8 @@
 import { supabase } from '@/lib/supabase';
-import type { PostgrestError } from '@supabase/supabase-js';
-import type { ServiceResponse } from '@/services/api/base.service';
+import {
+  toServiceError,
+  type ServiceResponse,
+} from '@/services/api/base.service';
 import type {
   CustomerLevelDiscount,
   ItemInventoryUnit,
@@ -13,10 +15,170 @@ import {
   type ReplaceItemUnitHierarchyEntry,
 } from './itemDataMappers';
 
+export interface ItemDataUnitHierarchyEntry {
+  id?: string | null;
+  item_id?: string | null;
+  inventory_unit_id?: string | null;
+  parent_inventory_unit_id?: string | null;
+  contains_quantity?: number | null;
+  factor_to_base?: number | null;
+  base_price_override?: number | null;
+  sell_price_override?: number | null;
+  inventory_unit?: ItemInventoryUnit | ItemInventoryUnit[] | null;
+  parent_unit?: ItemInventoryUnit | ItemInventoryUnit[] | null;
+}
+
+export interface ItemDataRecord {
+  id?: string;
+  code?: string | null;
+  name?: string | null;
+  manufacturer_id?: string | null;
+  manufacturer?: { id?: string | null } | null;
+  type_id?: string | null;
+  category_id?: string | null;
+  package_id?: string | null;
+  base_inventory_unit_id?: string | null;
+  dosage_id?: string | null;
+  barcode?: string | null;
+  description?: string | null;
+  image_urls?: string[] | null;
+  base_price?: number | null;
+  sell_price?: number | null;
+  is_level_pricing_active?: boolean | null;
+  min_stock?: number | null;
+  is_active?: boolean | null;
+  is_medicine?: boolean | null;
+  has_expiry_date?: boolean | null;
+  measurement_value?: number | null;
+  quantity?: number | null;
+  measurement_unit_id?: string | null;
+  unit_id?: string | null;
+  measurement_denominator_value?: number | null;
+  measurement_denominator_unit_id?: string | null;
+  updated_at?: string | null;
+  base_unit?: string | null;
+  unit?: { name?: string | null } | null;
+  base_inventory_unit?: ItemInventoryUnit | null;
+  item_unit_hierarchy?: ItemDataUnitHierarchyEntry[] | null;
+  inventory_units?: ItemDataUnitHierarchyEntry[] | null;
+  customer_level_discounts?: CustomerLevelDiscount[] | null;
+}
+
+const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+export const normalizeCreatedItemResponse = (
+  value: unknown
+): { id: string } | null => {
+  if (!isObjectRecord(value) || typeof value.id !== 'string') {
+    return null;
+  }
+
+  const id = value.id.trim();
+  return id ? { id } : null;
+};
+
+export const normalizeCustomerLevelDiscount = (
+  value: unknown
+): CustomerLevelDiscount | null => {
+  if (!isObjectRecord(value) || typeof value.customer_level_id !== 'string') {
+    return null;
+  }
+
+  const discountPercentage = Number(value.discount_percentage);
+  return {
+    customer_level_id: value.customer_level_id,
+    discount_percentage: Number.isFinite(discountPercentage)
+      ? discountPercentage
+      : 0,
+  };
+};
+
+export const normalizeCustomerLevelDiscounts = (value: unknown) =>
+  Array.isArray(value)
+    ? value.flatMap(discount => {
+        const normalizedDiscount = normalizeCustomerLevelDiscount(discount);
+        return normalizedDiscount ? [normalizedDiscount] : [];
+      })
+    : [];
+
+export const normalizeItemCodeRows = (value: unknown) =>
+  Array.isArray(value)
+    ? value.flatMap(row => {
+        if (!isObjectRecord(row)) {
+          return [];
+        }
+
+        const { code } = row;
+        if (code === null || typeof code === 'string') {
+          return [{ code }];
+        }
+
+        return [];
+      })
+    : [];
+
+const normalizeInventoryUnitKind = (
+  value: unknown
+): ItemInventoryUnit['kind'] | null =>
+  value === 'packaging' || value === 'retail_unit' || value === 'custom'
+    ? value
+    : null;
+
+const normalizeOptionalString = (value: unknown) =>
+  typeof value === 'string' || value === null ? value : null;
+
+export const normalizeItemInventoryUnit = (
+  value: unknown
+): ItemInventoryUnit | null => {
+  if (!isObjectRecord(value)) {
+    return null;
+  }
+
+  const { id, kind, name } = value;
+  const normalizedKind = normalizeInventoryUnitKind(kind);
+  if (typeof id !== 'string' || typeof name !== 'string' || !normalizedKind) {
+    return null;
+  }
+
+  return {
+    id,
+    code: typeof value.code === 'string' ? value.code : undefined,
+    name,
+    description: normalizeOptionalString(value.description),
+    kind: normalizedKind,
+    source_package_id: normalizeOptionalString(value.source_package_id),
+    source_dosage_id: normalizeOptionalString(value.source_dosage_id),
+    created_at:
+      typeof value.created_at === 'string' ? value.created_at : undefined,
+    updated_at: normalizeOptionalString(value.updated_at),
+  };
+};
+
+export const normalizeItemInventoryUnits = (value: unknown) =>
+  Array.isArray(value)
+    ? value.flatMap(unit => {
+        const normalizedUnit = normalizeItemInventoryUnit(unit);
+        return normalizedUnit ? [normalizedUnit] : [];
+      })
+    : [];
+
+const requireItemInventoryUnit = (
+  value: unknown,
+  context: string
+): ItemInventoryUnit => {
+  const normalizedUnit = normalizeItemInventoryUnit(value);
+  if (!normalizedUnit) {
+    throw new Error(`${context} inventory unit response is malformed`);
+  }
+
+  return normalizedUnit;
+};
+
 export const itemDataService = {
   async fetchItemDataById(
     id: string
-  ): Promise<ServiceResponse<Record<string, unknown>>> {
+  ): Promise<ServiceResponse<ItemDataRecord>> {
     try {
       const { data, error } = await supabase
         .from('items')
@@ -66,21 +228,22 @@ export const itemDataService = {
         `
         )
         .eq('id', id)
+        .returns<ItemDataRecord[]>()
         .single();
 
       if (error || !data) {
         return { data: null, error };
       }
 
-      return { data: data as Record<string, unknown>, error: null };
+      return { data, error: null };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   },
 
-  async updateItemFields(
+  async updateItemFields<TPayload extends object>(
     itemId: string,
-    updates: Record<string, unknown>
+    updates: TPayload
   ): Promise<ServiceResponse<null>> {
     try {
       const { error } = await supabase
@@ -90,12 +253,12 @@ export const itemDataService = {
 
       return { data: null, error };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   },
 
-  async createItem(
-    payload: Record<string, unknown>
+  async createItem<TPayload extends object>(
+    payload: TPayload
   ): Promise<ServiceResponse<{ id: string }>> {
     try {
       const { data, error } = await supabase
@@ -108,9 +271,14 @@ export const itemDataService = {
         return { data: null, error };
       }
 
-      return { data: { id: data.id as string }, error: null };
+      const createdItem = normalizeCreatedItemResponse(data);
+      if (!createdItem) {
+        throw new Error('Item create response is malformed');
+      }
+
+      return { data: createdItem, error: null };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   },
 
@@ -134,9 +302,9 @@ export const itemDataService = {
         return { data: null, error };
       }
 
-      return { data: (data || []) as CustomerLevelDiscount[], error: null };
+      return { data: normalizeCustomerLevelDiscounts(data), error: null };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   },
 
@@ -169,7 +337,7 @@ export const itemDataService = {
 
       return { data: null, error: insertError };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   },
 
@@ -186,9 +354,9 @@ export const itemDataService = {
         return { data: null, error };
       }
 
-      return { data: (data || []) as { code: string | null }[], error: null };
+      return { data: normalizeItemCodeRows(data), error: null };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   },
 
@@ -205,9 +373,9 @@ export const itemDataService = {
         return { data: null, error };
       }
 
-      return { data: (data || []) as ItemInventoryUnit[], error: null };
+      return { data: normalizeItemInventoryUnits(data), error: null };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   },
 
@@ -230,7 +398,10 @@ export const itemDataService = {
       }
 
       if (existingByDosage) {
-        return { data: existingByDosage as ItemInventoryUnit, error: null };
+        return {
+          data: requireItemInventoryUnit(existingByDosage, 'Existing dosage'),
+          error: null,
+        };
       }
 
       const { data: unitsByName, error: unitsByNameError } = await supabase
@@ -244,7 +415,7 @@ export const itemDataService = {
         return { data: null, error: unitsByNameError };
       }
 
-      const matchedByName = (unitsByName || []).find(
+      const matchedByName = normalizeItemInventoryUnits(unitsByName).find(
         unit =>
           unit.name.toLowerCase() === dosageName.toLowerCase() &&
           !unit.source_package_id
@@ -271,11 +442,14 @@ export const itemDataService = {
             return { data: null, error: updateError };
           }
 
-          return { data: updatedUnit as ItemInventoryUnit, error: null };
+          return {
+            data: requireItemInventoryUnit(updatedUnit, 'Updated dosage'),
+            error: null,
+          };
         }
 
         if (matchedByName.source_dosage_id === dosageId) {
-          return { data: matchedByName as ItemInventoryUnit, error: null };
+          return { data: matchedByName, error: null };
         }
       }
 
@@ -295,9 +469,12 @@ export const itemDataService = {
         return { data: null, error: insertError };
       }
 
-      return { data: insertedUnit as ItemInventoryUnit, error: null };
+      return {
+        data: requireItemInventoryUnit(insertedUnit, 'Inserted dosage'),
+        error: null,
+      };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   },
 
@@ -316,7 +493,7 @@ export const itemDataService = {
       }
 
       if (!entries.length) {
-        return { data: [] as ItemUnitHierarchyEntry[], error: null };
+        return { data: [], error: null };
       }
 
       const payload = buildItemUnitHierarchyInsertPayload(itemId, entries);
@@ -364,7 +541,7 @@ export const itemDataService = {
         error: null,
       };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   },
 };

@@ -1,8 +1,8 @@
 import { supabase } from '@/lib/supabase';
 import type { OnlineUser } from '@/types';
 import type { DirectoryUser } from '@/types/directory';
-import type { PostgrestError } from '@supabase/supabase-js';
-import type { ServiceResponse } from './base.service';
+import { toServiceError, type ServiceResponse } from './base.service';
+import { normalizeChatDirectoryUsers } from './chat/normalizers';
 import {
   buildListChatDirectoryUsersRpcArgs,
   CHAT_RPC_NAMES,
@@ -41,7 +41,7 @@ export class UsersService {
 
       return { data: users, error: null };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -61,7 +61,7 @@ export class UsersService {
         return { data: null, error };
       }
 
-      const directoryRows = (data || []) as DirectoryUser[];
+      const directoryRows = normalizeChatDirectoryUsers(data || []);
       const users = directoryRows.slice(0, pageSize);
 
       return {
@@ -72,7 +72,7 @@ export class UsersService {
         error: null,
       };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 }

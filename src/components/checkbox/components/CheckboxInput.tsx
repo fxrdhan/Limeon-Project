@@ -3,6 +3,7 @@ import type { CheckboxInputProps } from '../types';
 
 export const CheckboxInput: React.FC<CheckboxInputProps> = ({
   id,
+  ariaLabel = 'Checkbox',
   checked,
   onChange,
   disabled = false,
@@ -18,6 +19,7 @@ export const CheckboxInput: React.FC<CheckboxInputProps> = ({
     <input
       type="checkbox"
       id={id}
+      aria-label={ariaLabel}
       checked={checked}
       onChange={handleChange}
       disabled={disabled}

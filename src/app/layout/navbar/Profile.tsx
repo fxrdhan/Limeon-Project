@@ -19,6 +19,8 @@ const Profile = () => {
   const [animatingPortal, setAnimatingPortal] = useState(false);
 
   const portalRef = useRef<HTMLDivElement>(null);
+  const profilePhotoOperationRef = useRef(0);
+  const mountedRef = useRef(true);
   const smallProfilePhotoUrl =
     user?.profilephoto_thumb ?? user?.profilephoto ?? null;
   const largeProfilePhotoUrl =
@@ -55,6 +57,23 @@ const Profile = () => {
     await logout();
   };
 
+  const runProfilePhotoOperation = async (operation: () => Promise<void>) => {
+    const operationId = profilePhotoOperationRef.current + 1;
+    profilePhotoOperationRef.current = operationId;
+
+    setIsUploading(true);
+    try {
+      await operation();
+    } finally {
+      if (
+        mountedRef.current &&
+        profilePhotoOperationRef.current === operationId
+      ) {
+        setIsUploading(false);
+      }
+    }
+  };
+
   useEffect(() => {
     if (animatingPortal) {
       const timer = setTimeout(() => {
@@ -65,8 +84,20 @@ const Profile = () => {
   }, [animatingPortal]);
 
   useEffect(() => {
+    mountedRef.current = true;
+
+    return () => {
+      mountedRef.current = false;
+      profilePhotoOperationRef.current += 1;
+    };
+  }, []);
+
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Element;
+      if (!(event.target instanceof Element)) {
+        return;
+      }
+      const target = event.target;
 
       // Check if click is inside the profile portal
       if (portalRef.current && portalRef.current.contains(target)) {
@@ -310,24 +341,16 @@ const Profile = () => {
                                 user?.profilephoto || user?.profilephoto_thumb
                               )}
                               onImageUpload={async (file: File) => {
-                                setIsUploading(true);
-                                try {
-                                  await useAuthStore
+                                await runProfilePhotoOperation(() =>
+                                  useAuthStore
                                     .getState()
-                                    .updateProfilePhoto(file);
-                                } finally {
-                                  setIsUploading(false);
-                                }
+                                    .updateProfilePhoto(file)
+                                );
                               }}
                               onImageDelete={async () => {
-                                setIsUploading(true);
-                                try {
-                                  await useAuthStore
-                                    .getState()
-                                    .deleteProfilePhoto();
-                                } finally {
-                                  setIsUploading(false);
-                                }
+                                await runProfilePhotoOperation(() =>
+                                  useAuthStore.getState().deleteProfilePhoto()
+                                );
                               }}
                               disabled={isUploading}
                               defaultIcon={

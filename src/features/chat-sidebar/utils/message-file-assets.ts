@@ -7,7 +7,7 @@ import {
 import { chatRuntimeCache } from './chatRuntimeCache';
 
 export const openInNewTab = (url: string) => {
-  window.open(url, '_blank', 'noopener,noreferrer');
+  return Boolean(window.open(url, '_blank', 'noopener,noreferrer'));
 };
 
 export const isDirectChatAssetUrl = (url: string) =>
@@ -247,11 +247,13 @@ export const openChatFileInNewTab = async (
     const objectUrl = URL.createObjectURL(fileBlob);
 
     if (isSafeInlineType) {
-      window.open(objectUrl, '_blank', 'noopener,noreferrer');
-      window.setTimeout(() => {
-        URL.revokeObjectURL(objectUrl);
-      }, 30_000);
-      return true;
+      const openedTab = window.open(objectUrl, '_blank', 'noopener,noreferrer');
+      if (openedTab) {
+        window.setTimeout(() => {
+          URL.revokeObjectURL(objectUrl);
+        }, 30_000);
+        return true;
+      }
     }
 
     const downloadLink = document.createElement('a');
@@ -272,8 +274,7 @@ export const openChatFileInNewTab = async (
     return false;
   }
 
-  openInNewTab(url);
-  return true;
+  return openInNewTab(url);
 };
 
 export const resetSignedChatAssetUrlCache = () => {

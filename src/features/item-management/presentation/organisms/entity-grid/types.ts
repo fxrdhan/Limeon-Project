@@ -20,10 +20,10 @@ export type EntityWithCode = {
   code?: string | null;
 };
 
-export interface ItemWithExtendedEntities
-  extends
-    Record<string, unknown>,
-    Omit<Item, 'category' | 'type' | 'package' | 'dosage' | 'manufacturer'> {
+export interface ItemWithExtendedEntities extends Omit<
+  Item,
+  'category' | 'type' | 'package' | 'dosage' | 'manufacturer'
+> {
   category?: EntityWithCode;
   type?: EntityWithCode;
   package?: EntityWithCode;

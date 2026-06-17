@@ -31,6 +31,9 @@ export interface RuntimePersistentStore<T> {
   notify: () => void;
 }
 
+const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
 function createRuntimePersistentStore<T>({
   storageKey,
   storage = 'session',
@@ -54,7 +57,7 @@ function createRuntimePersistentStore<T>({
     }
 
     hasHydrated = true;
-    const parsedPayload = readRuntimeStorage<unknown>(storageKey, storage);
+    const parsedPayload = readRuntimeStorage(storageKey, storage);
     if (parsedPayload === null) {
       return;
     }
@@ -106,24 +109,30 @@ export const pendingReadReceiptsStore = createRuntimePersistentStore({
       ])
     ),
   deserialize: (payload, value) => {
-    if (!payload || typeof payload !== 'object') {
+    if (!isObjectRecord(payload)) {
       return;
     }
 
     Object.entries(payload).forEach(([userId, rawMessageIds]) => {
-      if (!userId.trim() || !Array.isArray(rawMessageIds)) {
+      const normalizedUserId = userId.trim();
+      if (!normalizedUserId || !Array.isArray(rawMessageIds)) {
         return;
       }
 
-      const normalizedMessageIds = rawMessageIds.filter(
-        (messageId): messageId is string =>
-          typeof messageId === 'string' && messageId.trim().length > 0
-      );
+      const normalizedMessageIds = [
+        ...new Set(
+          rawMessageIds
+            .map(messageId =>
+              typeof messageId === 'string' ? messageId.trim() : ''
+            )
+            .filter(Boolean)
+        ),
+      ];
       if (normalizedMessageIds.length === 0) {
         return;
       }
 
-      value.set(userId, new Set(normalizedMessageIds));
+      value.set(normalizedUserId, new Set(normalizedMessageIds));
     });
   },
 });
@@ -149,23 +158,34 @@ const getRuntimeStorage = (storage: 'session' | 'local') => {
 export const canUseRuntimeStorage = (storage: 'session' | 'local') =>
   getRuntimeStorage(storage) !== null;
 
-export const readRuntimeStorage = <T>(
+export const readRuntimeStorage = (
   storageKey: string,
   storage: 'session' | 'local' = 'session'
-) => {
+): unknown => {
   const runtimeStorage = getRuntimeStorage(storage);
   if (!runtimeStorage) {
     return null;
   }
 
+  let rawValue: string | null;
   try {
-    const rawValue = runtimeStorage.getItem(storageKey);
-    if (!rawValue) {
-      return null;
-    }
-
-    return JSON.parse(rawValue) as T;
+    rawValue = runtimeStorage.getItem(storageKey);
   } catch {
+    return null;
+  }
+
+  if (!rawValue) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(rawValue);
+  } catch {
+    try {
+      runtimeStorage.removeItem(storageKey);
+    } catch {
+      // Keep storage reads resilient when a browser blocks mutation.
+    }
     return null;
   }
 };
@@ -181,7 +201,12 @@ export const writeRuntimeStorage = (
   }
 
   try {
-    runtimeStorage.setItem(storageKey, JSON.stringify(payload));
+    const serializedPayload = JSON.stringify(payload);
+    if (typeof serializedPayload !== 'string') {
+      return false;
+    }
+
+    runtimeStorage.setItem(storageKey, serializedPayload);
     return true;
   } catch {
     return false;

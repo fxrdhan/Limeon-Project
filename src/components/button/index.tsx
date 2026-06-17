@@ -39,6 +39,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       fullWidth = false,
       withGlow = false,
       withUnderline = true,
+      disabled,
       ...props
     },
     ref
@@ -72,10 +73,10 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     return (
       <button
+        {...props}
         ref={ref}
         className={buttonClasses}
-        disabled={isLoading || props.disabled}
-        {...props}
+        disabled={isLoading || disabled}
       >
         {isLoading ? (
           <span className="button__spinner">

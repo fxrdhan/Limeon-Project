@@ -668,6 +668,28 @@ describe('chatService', () => {
     });
   });
 
+  it('surfaces malformed undelivered-message id payloads instead of casting them', async () => {
+    mockRpc.mockResolvedValueOnce({
+      data: ['message-1', 123],
+      error: null,
+    });
+
+    const { chatService } = await import('./chat.service');
+
+    const result = await chatService.listUndeliveredIncomingMessageIds({
+      limit: 2,
+    });
+
+    expect(result.data).toBeNull();
+    expect(result.error).toEqual(
+      expect.objectContaining({
+        code: 'CHAT_CONTRACT_INVALID',
+        message:
+          'Chat contract violation: undelivered_message_ids[1] must be a string.',
+      })
+    );
+  });
+
   it('normalizes thrown undelivered-message paging errors at the service boundary', async () => {
     mockRpc.mockRejectedValueOnce(new Error('temporary rpc outage'));
 

@@ -1,6 +1,8 @@
+import { useConfirmDialog } from '@/components/dialog-box/useConfirmDialog';
 import { googleSheetsService } from '@/utils/googleSheetsApi';
 import type { GridApi } from 'ag-grid-community';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import toast from 'react-hot-toast';
 import { processGridDataForGoogleSheets } from './googleSheetsData';
 
 interface UseGoogleSheetsExportProps {
@@ -43,18 +45,33 @@ export const useGoogleSheetsExport = ({
     useState(false);
   const [isGoogleSheetsLoading, setIsGoogleSheetsLoading] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const { openConfirmDialog } = useConfirmDialog();
   const retryExportRef = useRef<() => void>(() => undefined);
+  const isGoogleSheetsExportInFlightRef = useRef(false);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+
+    return () => {
+      mountedRef.current = false;
+      isGoogleSheetsExportInFlightRef.current = false;
+    };
+  }, []);
 
   const performExportToTab = useCallback(
     async (placeholderTab: Window | null) => {
       if (!gridApi || gridApi.isDestroyed()) {
+        placeholderTab?.close();
         return;
       }
 
       let exportSuccess = false;
 
       try {
-        setIsGoogleSheetsLoading(true);
+        if (mountedRef.current) {
+          setIsGoogleSheetsLoading(true);
+        }
 
         const { processedData, headers } =
           await processGridDataForGoogleSheets(gridApi);
@@ -63,6 +80,11 @@ export const useGoogleSheetsExport = ({
           headers,
           filename
         );
+
+        if (!mountedRef.current) {
+          placeholderTab?.close();
+          return;
+        }
 
         if (sheetUrl) {
           if (placeholderTab && !placeholderTab.closed) {
@@ -81,9 +103,14 @@ export const useGoogleSheetsExport = ({
         } else {
           console.warn('No sheet URL returned');
           placeholderTab?.close();
-          alert('Failed to create Google Sheet. Please try again.');
+          toast.error('Failed to create Google Sheet. Please try again.');
         }
       } catch (error) {
+        if (!mountedRef.current) {
+          placeholderTab?.close();
+          return;
+        }
+
         console.error('Failed to export to Google Sheets:', error);
 
         const errorMessage =
@@ -91,29 +118,33 @@ export const useGoogleSheetsExport = ({
 
         if (errorMessage.includes('Authentication token expired')) {
           placeholderTab?.close();
-          if (
-            confirm(
-              'Your Google authentication has expired. Click OK to re-authenticate and try again.'
-            )
-          ) {
-            retryExportRef.current();
-            return;
-          }
+          openConfirmDialog({
+            title: 'Google Authentication Expired',
+            message:
+              'Your Google authentication has expired. Re-authenticate and try again?',
+            confirmText: 'Re-authenticate',
+            onConfirm: () => {
+              retryExportRef.current();
+            },
+          });
+          return;
         } else {
           if (placeholderTab && !placeholderTab.closed) {
             placeholderTab.close();
           }
-          alert(`Failed to export to Google Sheets: ${errorMessage}`);
+          toast.error(`Failed to export to Google Sheets: ${errorMessage}`);
         }
       } finally {
-        setIsGoogleSheetsLoading(false);
+        if (mountedRef.current) {
+          setIsGoogleSheetsLoading(false);
+        }
 
-        if (exportSuccess) {
+        if (exportSuccess && mountedRef.current) {
           closeDropdown();
         }
       }
     },
-    [closeDropdown, filename, gridApi]
+    [closeDropdown, filename, gridApi, openConfirmDialog]
   );
 
   const handleGoogleSheetsExport = useCallback(async () => {
@@ -121,40 +152,64 @@ export const useGoogleSheetsExport = ({
       return;
     }
 
+    if (isGoogleSheetsExportInFlightRef.current) {
+      return;
+    }
+    isGoogleSheetsExportInFlightRef.current = true;
+
     try {
       if (!googleSheetsService.isInitialized()) {
         setIsGoogleSheetsInitializing(true);
         await googleSheetsService.initialize();
+        if (!mountedRef.current) {
+          isGoogleSheetsExportInFlightRef.current = false;
+          return;
+        }
         setIsGoogleSheetsInitializing(false);
       }
 
       if (googleSheetsService.isAuthorized()) {
         const placeholderTab = window.open('about:blank', '_blank');
         if (!placeholderTab) {
-          alert('Please allow popups to open Google Sheets.');
+          isGoogleSheetsExportInFlightRef.current = false;
+          toast.error('Please allow popups to open Google Sheets.');
           return;
         }
 
         showLoadingInTab(placeholderTab);
-        void performExportToTab(placeholderTab);
+        void performExportToTab(placeholderTab).finally(() => {
+          isGoogleSheetsExportInFlightRef.current = false;
+        });
         return;
       }
 
       setIsAuthenticating(true);
 
       await googleSheetsService.authorize();
+      if (!mountedRef.current) {
+        isGoogleSheetsExportInFlightRef.current = false;
+        return;
+      }
       setIsAuthenticating(false);
 
       const placeholderTab = window.open('about:blank', '_blank');
       if (placeholderTab) showLoadingInTab(placeholderTab);
-      void performExportToTab(placeholderTab);
+      void performExportToTab(placeholderTab).finally(() => {
+        isGoogleSheetsExportInFlightRef.current = false;
+      });
     } catch (error) {
+      if (!mountedRef.current) {
+        isGoogleSheetsExportInFlightRef.current = false;
+        return;
+      }
+
       console.error('Auth process failed:', error);
+      isGoogleSheetsExportInFlightRef.current = false;
       setIsGoogleSheetsInitializing(false);
       setIsAuthenticating(false);
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      alert(`Authentication failed: ${errorMessage}`);
+      toast.error(`Authentication failed: ${errorMessage}`);
     }
   }, [gridApi, performExportToTab]);
 

@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { hasErrorStringFields } from '@/lib/errorFields';
 import type { PostgrestError } from '@supabase/supabase-js';
 
 export interface BaseEntity {
@@ -15,15 +16,40 @@ export interface QueryOptions {
   offset?: number;
 }
 
+export type ServiceError = PostgrestError | Error;
+
 export interface ServiceResponse<T> {
   data: T | null;
-  error: PostgrestError | null;
+  error: ServiceError | null;
   count?: number | null;
 }
 
-function readSupabaseData<TData>(data: unknown, fallback: TData): TData {
-  return data ? (data as TData) : fallback;
+const isPostgrestError = (error: unknown): error is PostgrestError =>
+  hasErrorStringFields(error, ['code', 'details', 'hint', 'message']);
+
+const isMessageErrorLike = (
+  error: unknown
+): error is { message: string } & Record<string, unknown> =>
+  hasErrorStringFields(error, ['message']);
+
+export function toServiceError(error: unknown): ServiceError {
+  if (isPostgrestError(error)) {
+    return error;
+  }
+
+  if (error instanceof Error) {
+    return error;
+  }
+
+  if (isMessageErrorLike(error)) {
+    return Object.assign(new Error(error.message), error);
+  }
+
+  return new Error(typeof error === 'string' ? error : 'Unknown service error');
 }
+
+const hasServiceData = <TData>(value: TData | null): value is TData =>
+  value !== null;
 
 export class BaseService<T extends BaseEntity> {
   protected tableName: string;
@@ -65,17 +91,17 @@ export class BaseService<T extends BaseEntity> {
         );
       }
 
-      const result = await query;
+      const result = await query.returns<T[]>();
 
       return {
-        data: readSupabaseData<T[]>(result.data, []),
+        data: result.data || [],
         error: result.error,
         count: result.count,
       };
     } catch (error) {
       return {
         data: null,
-        error: error as PostgrestError,
+        error: toServiceError(error),
         count: null,
       };
     }
@@ -87,16 +113,17 @@ export class BaseService<T extends BaseEntity> {
         .from(this.tableName)
         .select(select || '*')
         .eq('id', id)
+        .returns<T[]>()
         .single();
 
       return {
-        data: readSupabaseData<T | null>(result.data, null),
+        data: result.data,
         error: result.error,
       };
     } catch (error) {
       return {
         data: null,
-        error: error as PostgrestError,
+        error: toServiceError(error),
       };
     }
   }
@@ -105,22 +132,22 @@ export class BaseService<T extends BaseEntity> {
     data: Omit<T, 'id' | 'created_at' | 'updated_at'>
   ): Promise<ServiceResponse<T>> {
     try {
-      // BaseService only models the entity shape, so inserts need a narrow cast
-      // when database-generated fields are intentionally omitted.
+      const insertPayload: Record<string, unknown> = { ...data };
       const result = await supabase
         .from(this.tableName)
-        .insert(data as T)
+        .insert(insertPayload)
         .select()
+        .returns<T[]>()
         .single();
 
       return {
-        data: readSupabaseData<T | null>(result.data, null),
+        data: result.data,
         error: result.error,
       };
     } catch (error) {
       return {
         data: null,
-        error: error as PostgrestError,
+        error: toServiceError(error),
       };
     }
   }
@@ -135,16 +162,17 @@ export class BaseService<T extends BaseEntity> {
         .update({ ...data, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
+        .returns<T[]>()
         .single();
 
       return {
-        data: readSupabaseData<T | null>(result.data, null),
+        data: result.data,
         error: result.error,
       };
     } catch (error) {
       return {
         data: null,
-        error: error as PostgrestError,
+        error: toServiceError(error),
       };
     }
   }
@@ -160,7 +188,7 @@ export class BaseService<T extends BaseEntity> {
     } catch (error) {
       return {
         data: null,
-        error: error as PostgrestError,
+        error: toServiceError(error),
       };
     }
   }
@@ -204,17 +232,17 @@ export class BaseService<T extends BaseEntity> {
         searchQuery = searchQuery.limit(options.limit);
       }
 
-      const result = await searchQuery;
+      const result = await searchQuery.returns<T[]>();
 
       return {
-        data: readSupabaseData<T[]>(result.data, []),
+        data: result.data || [],
         error: result.error,
         count: result.count,
       };
     } catch (error) {
       return {
         data: null,
-        error: error as PostgrestError,
+        error: toServiceError(error),
         count: null,
       };
     }
@@ -224,19 +252,23 @@ export class BaseService<T extends BaseEntity> {
     data: Omit<T, 'id' | 'created_at' | 'updated_at'>[]
   ): Promise<ServiceResponse<T[]>> {
     try {
+      const insertPayload: Record<string, unknown>[] = data.map(item => ({
+        ...item,
+      }));
       const result = await supabase
         .from(this.tableName)
-        .insert(data as Record<string, unknown>[])
-        .select();
+        .insert(insertPayload)
+        .select()
+        .returns<T[]>();
 
       return {
-        data: readSupabaseData<T[]>(result.data, []),
+        data: result.data || [],
         error: result.error,
       };
     } catch (error) {
       return {
         data: null,
-        error: error as PostgrestError,
+        error: toServiceError(error),
       };
     }
   }
@@ -260,13 +292,13 @@ export class BaseService<T extends BaseEntity> {
       }
 
       return {
-        data: results.map(result => result.data).filter(Boolean) as T[],
+        data: results.map(result => result.data).filter(hasServiceData),
         error: null,
       };
     } catch (error) {
       return {
         data: null,
-        error: error as PostgrestError,
+        error: toServiceError(error),
       };
     }
   }

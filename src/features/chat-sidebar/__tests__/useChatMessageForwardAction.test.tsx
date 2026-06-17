@@ -60,6 +60,15 @@ const buildTargetUser = (
   profilephoto: overrides.profilephoto ?? null,
 });
 
+const createDeferred = <Value,>() => {
+  let resolve!: (value: Value) => void;
+  const promise = new Promise<Value>(promiseResolve => {
+    resolve = promiseResolve;
+  });
+
+  return { promise, resolve };
+};
+
 const buildMessage = (overrides: Partial<ChatMessage> = {}): ChatMessage => ({
   id: overrides.id ?? 'message-1',
   sender_id: overrides.sender_id ?? 'user-b',
@@ -174,6 +183,88 @@ describe('useChatMessageForwardAction', () => {
     );
     expect(result.current.isForwardPickerOpen).toBe(false);
     expect(closeMessageMenu).toHaveBeenCalledOnce();
+  });
+
+  it('does not show stale forward feedback after the reset key changes', async () => {
+    const deferredForwardResult = createDeferred<{
+      data: {
+        forwardedRecipientIds: string[];
+        failedRecipientIds: string[];
+      };
+      error: null;
+    }>();
+    mockForwardGateway.forwardMessage.mockReturnValueOnce(
+      deferredForwardResult.promise
+    );
+    const reconcileCurrentConversationMessages = vi
+      .fn()
+      .mockResolvedValue(undefined);
+    const closeMessageMenu = vi.fn();
+
+    const { result, rerender } = renderHook(
+      ({ resetKey }: { resetKey: string | null }) =>
+        useChatMessageForwardAction({
+          user: buildUser(),
+          targetUser: buildTargetUser(),
+          messages: [],
+          closeMessageMenu,
+          reconcileCurrentConversationMessages,
+          resetKey,
+        }),
+      {
+        initialProps: {
+          resetKey: 'channel-1',
+        },
+      }
+    );
+
+    act(() => {
+      result.current.openForwardPicker(
+        buildMessage({
+          id: 'message-stale-forward',
+          message: 'tolong cek stok',
+          message_type: 'text',
+        })
+      );
+      result.current.toggleForwardRecipient('user-b');
+    });
+
+    let submitPromise!: Promise<void>;
+    act(() => {
+      submitPromise = result.current.submitForwardMessage();
+    });
+
+    expect(result.current.isSubmittingForwardMessage).toBe(true);
+
+    act(() => {
+      rerender({
+        resetKey: 'channel-2',
+      });
+    });
+
+    expect(result.current.isForwardPickerOpen).toBe(false);
+    expect(result.current.isSubmittingForwardMessage).toBe(false);
+
+    await act(async () => {
+      deferredForwardResult.resolve({
+        data: {
+          forwardedRecipientIds: ['user-b'],
+          failedRecipientIds: [],
+        },
+        error: null,
+      });
+      await submitPromise;
+    });
+
+    expect(mockForwardGateway.forwardMessage).toHaveBeenCalledWith({
+      messageId: 'message-stale-forward',
+      recipientIds: ['user-b'],
+    });
+    expect(reconcileCurrentConversationMessages).not.toHaveBeenCalled();
+    expect(mockToast.success).not.toHaveBeenCalled();
+    expect(mockToast.error).not.toHaveBeenCalled();
+    expect(result.current.isForwardPickerOpen).toBe(false);
+    expect(result.current.selectedForwardRecipientIds).toEqual(new Set());
   });
 
   it('forwards attachment threads through the backend forwarding gateway', async () => {

@@ -2,7 +2,6 @@ import { useMemo, type RefObject } from 'react';
 import { useConfirmDialog } from '@/components/dialog-box/useConfirmDialog';
 import { useItemsManagement } from '@/features/item-management/application/hooks/data/useItemsManagement';
 import { useItemsSync } from '@/features/item-management/public/useItemData';
-import type { Item as ItemDataType } from '@/types/database';
 import { useItemMasterEntityResources } from './hooks/useItemMasterEntityResources';
 import { useIdentityMasterDataTabs } from './hooks/useIdentityMasterDataTabs';
 import { useItemMasterActiveView } from './hooks/useItemMasterActiveView';
@@ -131,8 +130,8 @@ export const useItemMasterPage = () => {
   const itemsManagement = useItemsManagement({
     enabled: true,
   });
-  const itemsData = itemsManagement.data as ItemDataType[];
-  const allItemsData = itemsManagement.allData as ItemDataType[];
+  const itemsData = itemsManagement.data;
+  const allItemsData = itemsManagement.allData;
 
   const {
     entityManager,

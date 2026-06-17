@@ -47,24 +47,22 @@ export const useItemFormReset = ({
       formState.initialFormData &&
       formState.initialPackageConversions
     ) {
+      const initialFormData = formState.initialFormData;
+
       // Reset unit conversions for edit mode
       packageConversionHook.resetConversions();
       const baseUnit =
         formState.units.find(
-          u => u.id === formState.initialFormData!.base_inventory_unit_id
+          u => u.id === initialFormData.base_inventory_unit_id
         ) || null;
       const baseUnitName = baseUnit?.name || '';
       packageConversionHook.setBaseUnit(baseUnitName);
       packageConversionHook.setBaseInventoryUnitId(
-        formState.initialFormData.base_inventory_unit_id || ''
+        initialFormData.base_inventory_unit_id || ''
       );
       packageConversionHook.setBaseUnitKind(baseUnit?.kind || 'packaging');
-      packageConversionHook.setBasePrice(
-        formState.initialFormData.base_price || 0
-      );
-      packageConversionHook.setSellPrice(
-        formState.initialFormData.sell_price || 0
-      );
+      packageConversionHook.setBasePrice(initialFormData.base_price || 0);
+      packageConversionHook.setSellPrice(initialFormData.sell_price || 0);
       packageConversionHook.skipNextRecalculation();
 
       formState.initialPackageConversions.forEach(convDataFromDB => {

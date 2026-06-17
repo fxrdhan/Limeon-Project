@@ -5,6 +5,21 @@ import type { TableType } from '@/utils/gridStateManager';
 import { getEntityGridOverlayNoRowsTemplate } from './overlay';
 import type { EntityGridEntityConfig } from './types';
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const getDefaultToolPanelFromState = (sideBarState: unknown) => {
+  if (!isRecord(sideBarState) || sideBarState.visible !== true) {
+    return undefined;
+  }
+
+  const openToolPanel =
+    sideBarState.openToolPanel ?? sideBarState.openToolPanelId;
+  return typeof openToolPanel === 'string' && openToolPanel
+    ? openToolPanel
+    : undefined;
+};
+
 interface UseEntityGridOptionsParams {
   activeTab: MasterDataType;
   entityConfig?: EntityGridEntityConfig | null;
@@ -49,19 +64,7 @@ export const useEntityGridOptions = ({
 
     let defaultToolPanel: string | undefined;
     if (savedState) {
-      const sideBarState = savedState.sideBar as
-        | {
-            visible?: boolean;
-            openToolPanel?: string;
-            openToolPanelId?: string;
-          }
-        | undefined;
-      const openToolPanel =
-        sideBarState?.openToolPanel || sideBarState?.openToolPanelId;
-
-      if (sideBarState?.visible && openToolPanel) {
-        defaultToolPanel = openToolPanel;
-      }
+      defaultToolPanel = getDefaultToolPanelFromState(savedState.sideBar);
     }
 
     return {

@@ -1,5 +1,5 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
 import { type ChatMessage } from '../data/chatSidebarGateway';
@@ -102,6 +102,11 @@ export const useChatConversationMutations = ({
   const pendingSendRegistryRef = useRef<Map<string, { cancelled: boolean }>>(
     new Map()
   );
+  const scheduledComposerFocusFrameRef = useRef<number | null>(null);
+  const scheduledComposerFocusTimerRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
+  const scheduledComposerFocusRequestRef = useRef(0);
 
   const {
     conversationScopeKey,
@@ -150,6 +155,7 @@ export const useChatConversationMutations = ({
     handleDownloadDocumentGroup,
   } = useChatMessageTransferActions({
     closeMessageMenu,
+    resetKey: currentChannelId,
   });
   const forward = useChatMessageForwardAction({
     user,
@@ -157,6 +163,7 @@ export const useChatConversationMutations = ({
     messages,
     closeMessageMenu,
     reconcileCurrentConversationMessages,
+    resetKey: currentChannelId,
   });
 
   const { handleUpdateMessage } = useChatMessageUpdateAction({
@@ -174,6 +181,70 @@ export const useChatConversationMutations = ({
     isCurrentConversationScopeActive,
     runInCurrentConversationScope,
   });
+
+  const clearScheduledComposerFocus = useCallback(() => {
+    scheduledComposerFocusRequestRef.current += 1;
+
+    if (scheduledComposerFocusFrameRef.current !== null) {
+      cancelAnimationFrame(scheduledComposerFocusFrameRef.current);
+      scheduledComposerFocusFrameRef.current = null;
+    }
+
+    if (scheduledComposerFocusTimerRef.current !== null) {
+      clearTimeout(scheduledComposerFocusTimerRef.current);
+      scheduledComposerFocusTimerRef.current = null;
+    }
+  }, []);
+
+  const scheduleComposerFocus = useCallback(
+    (includeDelayedRetry = false) => {
+      clearScheduledComposerFocus();
+
+      const focusRequestId = scheduledComposerFocusRequestRef.current + 1;
+      let didRunSynchronously = false;
+      scheduledComposerFocusRequestRef.current = focusRequestId;
+
+      const frameId = requestAnimationFrame(() => {
+        didRunSynchronously = true;
+
+        if (scheduledComposerFocusRequestRef.current !== focusRequestId) {
+          return;
+        }
+
+        scheduledComposerFocusFrameRef.current = null;
+        focusMessageComposer();
+      });
+
+      if (!didRunSynchronously) {
+        scheduledComposerFocusFrameRef.current = frameId;
+      }
+
+      if (!includeDelayedRetry) {
+        return;
+      }
+
+      scheduledComposerFocusTimerRef.current = setTimeout(() => {
+        if (scheduledComposerFocusRequestRef.current !== focusRequestId) {
+          return;
+        }
+
+        scheduledComposerFocusTimerRef.current = null;
+        focusMessageComposer();
+      }, 60);
+    },
+    [clearScheduledComposerFocus, focusMessageComposer]
+  );
+
+  useEffect(() => {
+    clearScheduledComposerFocus();
+  }, [clearScheduledComposerFocus, currentChannelId]);
+
+  useEffect(
+    () => () => {
+      clearScheduledComposerFocus();
+    },
+    [clearScheduledComposerFocus]
+  );
 
   const { handleDeleteMessage, handleDeleteMessages } =
     useChatMessageDeleteAction({
@@ -219,14 +290,13 @@ export const useChatConversationMutations = ({
       setReplyingMessageId(null);
       setMessage(targetMessage.message);
       closeMessageMenu();
-      requestAnimationFrame(focusMessageComposer);
-      setTimeout(focusMessageComposer, 60);
+      scheduleComposerFocus(true);
     },
     [
       closeMessageMenu,
-      focusMessageComposer,
       isComposerAttachmentLoading,
       pendingComposerAttachments.length,
+      scheduleComposerFocus,
       setEditingMessageId,
       setReplyingMessageId,
       setMessage,
@@ -243,13 +313,12 @@ export const useChatConversationMutations = ({
       }
 
       closeMessageMenu();
-      requestAnimationFrame(focusMessageComposer);
-      setTimeout(focusMessageComposer, 60);
+      scheduleComposerFocus(true);
     },
     [
       closeMessageMenu,
       editingMessageId,
-      focusMessageComposer,
+      scheduleComposerFocus,
       setEditingMessageId,
       setMessage,
       setReplyingMessageId,
@@ -260,14 +329,19 @@ export const useChatConversationMutations = ({
     setEditingMessageId(null);
     setMessage('');
     closeMessageMenu();
-    requestAnimationFrame(focusMessageComposer);
-  }, [closeMessageMenu, focusMessageComposer, setEditingMessageId, setMessage]);
+    scheduleComposerFocus();
+  }, [
+    closeMessageMenu,
+    scheduleComposerFocus,
+    setEditingMessageId,
+    setMessage,
+  ]);
 
   const handleCancelReplyMessage = useCallback(() => {
     setReplyingMessageId(null);
     closeMessageMenu();
-    requestAnimationFrame(focusMessageComposer);
-  }, [closeMessageMenu, focusMessageComposer, setReplyingMessageId]);
+    scheduleComposerFocus();
+  }, [closeMessageMenu, scheduleComposerFocus, setReplyingMessageId]);
 
   const handleSendMessage = useCallback(async () => {
     if (isComposerAttachmentLoading) {

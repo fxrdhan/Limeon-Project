@@ -148,4 +148,103 @@ describe('chatPdfCompressService', () => {
       },
     });
   });
+
+  it('falls back to status errors for malformed edge function error payloads', async () => {
+    mockGetSession.mockResolvedValue({
+      data: {
+        session: {
+          access_token: 'access-token-123',
+        },
+      },
+      error: null,
+    });
+    vi.mocked(fetch).mockResolvedValue(
+      new Response('not-json', {
+        status: 502,
+      })
+    );
+
+    const { chatPdfCompressService } = await import('./pdf-compress.service');
+
+    const result = await chatPdfCompressService.compressPdf(
+      new File(['source-pdf'], 'stok.pdf', {
+        type: 'application/pdf',
+      })
+    );
+
+    expect(result).toEqual({
+      data: null,
+      error: {
+        code: '502',
+        details: '',
+        hint: '',
+        message: 'Chat PDF compression request failed with status 502',
+        name: 'PostgrestError',
+      },
+    });
+  });
+
+  it('falls back to status errors for non-string edge function error payloads', async () => {
+    mockGetSession.mockResolvedValue({
+      data: {
+        session: {
+          access_token: 'access-token-123',
+        },
+      },
+      error: null,
+    });
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(JSON.stringify({ error: 413 }), {
+        status: 413,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+    );
+
+    const { chatPdfCompressService } = await import('./pdf-compress.service');
+
+    const result = await chatPdfCompressService.compressPdf(
+      new File(['source-pdf'], 'stok.pdf', {
+        type: 'application/pdf',
+      })
+    );
+
+    expect(result).toEqual({
+      data: null,
+      error: {
+        code: '413',
+        details: '',
+        hint: '',
+        message: 'Chat PDF compression request failed with status 413',
+        name: 'PostgrestError',
+      },
+    });
+  });
+
+  it('preserves fetch failures without PostgREST casting', async () => {
+    mockGetSession.mockResolvedValue({
+      data: {
+        session: {
+          access_token: 'access-token-123',
+        },
+      },
+      error: null,
+    });
+    const error = new Error('Network unavailable');
+    vi.mocked(fetch).mockRejectedValue(error);
+
+    const { chatPdfCompressService } = await import('./pdf-compress.service');
+
+    await expect(
+      chatPdfCompressService.compressPdf(
+        new File(['source-pdf'], 'stok.pdf', {
+          type: 'application/pdf',
+        })
+      )
+    ).resolves.toEqual({
+      data: null,
+      error,
+    });
+  });
 });

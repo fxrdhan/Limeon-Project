@@ -1,5 +1,10 @@
 import { AnimatePresence, motion } from 'motion/react';
-import { useState, type ReactNode, type RefObject } from 'react';
+import {
+  useState,
+  type MouseEvent,
+  type ReactNode,
+  type RefObject,
+} from 'react';
 import { createPortal } from 'react-dom';
 import { TbArrowUpRight, TbCopy, TbLink, TbPaperclip } from 'react-icons/tb';
 import { AnimatedMenuHighlight } from '@/components/shared/animated-menu-highlight';
@@ -113,22 +118,25 @@ const LinkPromptContent = ({
       <span>{action.label}</span>
     </button>
   );
+  const promptInteractionProps = {
+    onClick: (event: MouseEvent<HTMLDivElement>) => event.stopPropagation(),
+    onMouseEnter,
+    onMouseLeave: () => {
+      setHoveredActionIndex(null);
+      onMouseLeave();
+    },
+    role: 'dialog',
+    'aria-label': 'Aksi link composer',
+  };
 
   return (
     <div
       ref={promptRef}
+      {...promptInteractionProps}
       className={`relative rounded-xl px-0.5 py-0.5 ${CHAT_POPUP_MENU_SURFACE_CLASS_NAME}`}
       style={{
         minWidth: ATTACHMENT_LINK_PROMPT_MIN_WIDTH,
       }}
-      onClick={event => event.stopPropagation()}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={() => {
-        setHoveredActionIndex(null);
-        onMouseLeave();
-      }}
-      role="dialog"
-      aria-label="Aksi link composer"
     >
       <AnimatedMenuHighlight
         frame={highlightFrame}

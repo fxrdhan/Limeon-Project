@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
 import type { ChatMessage } from '../data/chatSidebarGateway';
@@ -18,6 +18,7 @@ interface UseChatBulkDeleteProps {
     targetMessages: ChatMessage[],
     options?: DeleteMessagesOptions
   ) => Promise<DeleteMessagesResult>;
+  resetKey?: string | null;
 }
 
 export const useChatBulkDelete = ({
@@ -25,8 +26,38 @@ export const useChatBulkDelete = ({
   selectedVisibleMessages,
   setSelectedMessageIds,
   deleteMessages,
-}: UseChatBulkDeleteProps) =>
-  useCallback(async () => {
+  resetKey = null,
+}: UseChatBulkDeleteProps) => {
+  const normalizedResetKey = resetKey?.trim() || null;
+  const activeBulkDeleteResetKeyRef = useRef<string | null>(normalizedResetKey);
+  const bulkDeleteScopeVersionRef = useRef(0);
+  const isBulkDeleteScopeMountedRef = useRef(true);
+
+  const isBulkDeleteScopeActive = useCallback(
+    (scopeVersion: number) =>
+      isBulkDeleteScopeMountedRef.current &&
+      bulkDeleteScopeVersionRef.current === scopeVersion,
+    []
+  );
+
+  useEffect(() => {
+    const previousResetKey = activeBulkDeleteResetKeyRef.current;
+    activeBulkDeleteResetKeyRef.current = normalizedResetKey;
+
+    if (previousResetKey !== normalizedResetKey) {
+      bulkDeleteScopeVersionRef.current += 1;
+    }
+  }, [normalizedResetKey]);
+
+  useEffect(
+    () => () => {
+      isBulkDeleteScopeMountedRef.current = false;
+      bulkDeleteScopeVersionRef.current += 1;
+    },
+    []
+  );
+
+  return useCallback(async () => {
     if (!user) return;
 
     const deletableMessages = selectedVisibleMessages;
@@ -38,6 +69,7 @@ export const useChatBulkDelete = ({
       return;
     }
 
+    const deleteScopeVersion = bulkDeleteScopeVersionRef.current;
     const {
       deletedTargetMessageIds,
       failedTargetMessageIds,
@@ -45,6 +77,10 @@ export const useChatBulkDelete = ({
     } = await deleteMessages(deletableMessages, {
       suppressErrorToast: true,
     });
+    if (!isBulkDeleteScopeActive(deleteScopeVersion)) {
+      return;
+    }
+
     const deletedMessageIds = new Set(deletedTargetMessageIds);
     const deletedCount = deletedTargetMessageIds.length;
     const failedCount = failedTargetMessageIds.length;
@@ -88,4 +124,11 @@ export const useChatBulkDelete = ({
     toast.error(`${deletedCount} pesan dihapus, ${failedCount} gagal`, {
       toasterId: CHAT_SIDEBAR_TOASTER_ID,
     });
-  }, [deleteMessages, selectedVisibleMessages, setSelectedMessageIds, user]);
+  }, [
+    deleteMessages,
+    isBulkDeleteScopeActive,
+    selectedVisibleMessages,
+    setSelectedMessageIds,
+    user,
+  ]);
+};

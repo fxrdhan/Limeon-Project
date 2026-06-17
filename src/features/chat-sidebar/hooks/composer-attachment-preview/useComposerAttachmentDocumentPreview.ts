@@ -10,6 +10,19 @@ interface UseComposerAttachmentDocumentPreviewProps {
   onOpenComposerImagePreview: (attachmentId: string) => void;
 }
 
+const downloadObjectUrl = (objectUrl: string, fileName: string) => {
+  const downloadLink = document.createElement('a');
+  downloadLink.href = objectUrl;
+  downloadLink.download = fileName || 'attachment';
+  downloadLink.rel = 'noopener noreferrer';
+  document.body.appendChild(downloadLink);
+  downloadLink.click();
+  downloadLink.remove();
+  window.setTimeout(() => {
+    URL.revokeObjectURL(objectUrl);
+  }, 1_000);
+};
+
 export const useComposerAttachmentDocumentPreview = ({
   onOpenComposerImagePreview,
 }: UseComposerAttachmentDocumentPreviewProps) => {
@@ -39,7 +52,7 @@ export const useComposerAttachmentDocumentPreview = ({
           'noopener,noreferrer'
         );
         if (!openedTab) {
-          URL.revokeObjectURL(nonPdfUrl);
+          downloadObjectUrl(nonPdfUrl, attachment.fileName);
           return;
         }
         window.setTimeout(() => {

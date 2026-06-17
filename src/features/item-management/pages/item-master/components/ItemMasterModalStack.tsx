@@ -2,12 +2,6 @@ import { lazy, Suspense } from 'react';
 import type { useConfirmDialog } from '@/components/dialog-box/useConfirmDialog';
 import type { useItemsManagement } from '@/features/item-management/application/hooks/data/useItemsManagement';
 import type { useEntityManager } from '@/features/item-management/application/hooks/collections/useEntityManager';
-import type { EntityData } from '@/features/item-management/application/hooks/collections/useEntityManager';
-import type {
-  Customer as CustomerType,
-  Doctor as DoctorType,
-  Patient as PatientType,
-} from '@/types';
 import { IdentityMasterDataModals } from './IdentityMasterDataModals';
 import type { useIdentityMasterDataTabs } from '../hooks/useIdentityMasterDataTabs';
 import type { useItemModalState } from '../hooks/useItemModalState';
@@ -115,6 +109,7 @@ export const ItemMasterModalStack = ({
     toDoctorPayload,
     toPatientPayload,
   } = identityTabs;
+  const editingEntity = entityManager.editingEntity;
 
   return (
     <>
@@ -145,13 +140,10 @@ export const ItemMasterModalStack = ({
                   : entityManager.closeAddModal
               }
               onSubmit={entityManager.handleSubmit}
-              initialData={entityManager.editingEntity}
+              initialData={editingEntity}
               onDelete={
-                entityManager.editingEntity
-                  ? () =>
-                      entityManager.handleDelete(
-                        entityManager.editingEntity as EntityData
-                      )
+                editingEntity
+                  ? () => entityManager.handleDelete(editingEntity)
                   : undefined
               }
               isLoading={false}
@@ -192,9 +184,9 @@ export const ItemMasterModalStack = ({
         customerFields={customerFields}
         patientFields={patientFields}
         doctorFields={doctorFields}
-        editingCustomer={editingCustomer as CustomerType | null}
-        editingPatient={editingPatient as PatientType | null}
-        editingDoctor={editingDoctor as DoctorType | null}
+        editingCustomer={editingCustomer}
+        editingPatient={editingPatient}
+        editingDoctor={editingDoctor}
         customerDebouncedSearch={customerDebouncedSearch}
         patientDebouncedSearch={patientDebouncedSearch}
         doctorDebouncedSearch={doctorDebouncedSearch}

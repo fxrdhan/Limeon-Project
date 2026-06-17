@@ -6,6 +6,7 @@ import {
 } from '@/components/tooltip';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
+import toast from 'react-hot-toast';
 import { TbTableExport } from 'react-icons/tb';
 import { getExportDropdownPortalStyle } from './export-dropdown/dropdownPosition';
 import { ExportDropdownMenu } from './export-dropdown/ExportDropdownMenu';
@@ -102,26 +103,36 @@ const ExportDropdown = memo(
     }, [closeDropdown, filename, gridApi]);
 
     const handleJsonExport = useCallback(() => {
-      if (gridApi && !gridApi.isDestroyed()) {
-        const rowData: unknown[] = [];
-        gridApi.forEachNodeAfterFilterAndSort(node => {
-          if (node.data) {
-            rowData.push(node.data);
-          }
-        });
+      try {
+        if (gridApi && !gridApi.isDestroyed()) {
+          const rowData: unknown[] = [];
+          gridApi.forEachNodeAfterFilterAndSort(node => {
+            if (node.data) {
+              rowData.push(node.data);
+            }
+          });
 
-        const jsonString = JSON.stringify(rowData, null, 2);
-        const blob = new Blob([jsonString], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = getDatedExportFilename(filename, 'json');
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+          const jsonString = JSON.stringify(rowData, null, 2);
+          const blob = new Blob([jsonString], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+
+          try {
+            link.href = url;
+            link.download = getDatedExportFilename(filename, 'json');
+            document.body.appendChild(link);
+            link.click();
+          } finally {
+            link.remove();
+            URL.revokeObjectURL(url);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to export JSON:', error);
+        toast.error('Gagal export JSON');
+      } finally {
+        closeDropdown();
       }
-      closeDropdown();
     }, [closeDropdown, filename, gridApi]);
 
     const {
@@ -138,6 +149,10 @@ const ExportDropdown = memo(
 
     useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
+        if (!(event.target instanceof Node)) {
+          return;
+        }
+
         if (
           isGoogleSheetsInitializing ||
           isAuthenticating ||
@@ -148,9 +163,9 @@ const ExportDropdown = memo(
 
         if (
           dropdownRef.current &&
-          !dropdownRef.current.contains(event.target as Node) &&
+          !dropdownRef.current.contains(event.target) &&
           buttonRef.current &&
-          !buttonRef.current.contains(event.target as Node)
+          !buttonRef.current.contains(event.target)
         ) {
           closeDropdown();
         }

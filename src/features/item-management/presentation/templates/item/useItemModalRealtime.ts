@@ -7,6 +7,7 @@ import type { CustomerLevelDiscount } from '@/types/database';
 import { QueryKeys, getInvalidationKeys } from '@/constants/queryKeys';
 import { invalidateQueryKeys, refetchQueryKeys } from '@/lib/queryInvalidation';
 import { itemDataService } from '../../../infrastructure/itemData.service';
+import { areDBPackageConversionValuesEqual } from '@/lib/packageConversions';
 import {
   itemRealtimeService,
   type RealtimeChannel,
@@ -34,21 +35,27 @@ export const useItemModalRealtime = ({
   const queryClient = useQueryClient();
   const channelRef = useRef<RealtimeChannel | null>(null);
   const lastUpdateRef = useRef<string>('');
+  const subscriptionVersionRef = useRef(0);
   const [isConnected, setIsConnected] = useState(false);
 
-  // Memoize callback to prevent useSmartFormSync from recreating functions
-  const handleDataUpdate = useCallback(
-    (updates: Record<string, unknown>) => {
-      onSmartUpdate?.(updates);
-    },
-    [onSmartUpdate]
-  );
+  const onSmartUpdateRef = useRef(onSmartUpdate);
+  const onItemUpdatedRef = useRef(onItemUpdated);
+  const onItemDeletedRef = useRef(onItemDeleted);
+
+  onSmartUpdateRef.current = onSmartUpdate;
+  onItemUpdatedRef.current = onItemUpdated;
+  onItemDeletedRef.current = onItemDeleted;
+
+  const handleDataUpdate = useCallback((updates: Record<string, unknown>) => {
+    onSmartUpdateRef.current?.(updates);
+  }, []);
 
   // Smart form sync for handling field conflicts
   const smartFormSync = useSmartFormSync({
     onDataUpdate: handleDataUpdate,
     showConflictNotification: true,
   });
+  const { handleRealtimeUpdate } = smartFormSync;
 
   useEffect(() => {
     // Don't setup if no itemId or disabled
@@ -56,15 +63,26 @@ export const useItemModalRealtime = ({
       return;
     }
 
+    const subscriptionVersion = subscriptionVersionRef.current + 1;
+    subscriptionVersionRef.current = subscriptionVersion;
+    lastUpdateRef.current = '';
     const channelName = `item-modal-${itemId}`;
+    let activeChannel: RealtimeChannel | null = null;
+    const isCurrentSubscription = () =>
+      channelRef.current === activeChannel &&
+      subscriptionVersionRef.current === subscriptionVersion;
+
     logger.debug('Realtime subscription starting', {
       component: 'useItemModalRealtime',
       itemId,
       channel: channelName,
     });
 
-    const channel = itemRealtimeService
-      .createChannel(channelName)
+    const channel = itemRealtimeService.createChannel(channelName);
+    activeChannel = channel;
+    channelRef.current = channel;
+
+    channel
       .on(
         'postgres_changes',
         {
@@ -74,6 +92,10 @@ export const useItemModalRealtime = ({
           filter: `id=eq.${itemId}`,
         },
         payload => {
+          if (!isCurrentSubscription()) {
+            return;
+          }
+
           // Prevent processing same update multiple times
           const currentTimestamp = payload.commit_timestamp || '';
           if (currentTimestamp === lastUpdateRef.current) return;
@@ -83,38 +105,6 @@ export const useItemModalRealtime = ({
           if (payload.new && payload.old) {
             // Extract only the changed fields
             const changedFields: Record<string, unknown> = {};
-            const isJsonEqual = (nextValue: unknown, prevValue: unknown) => {
-              if (nextValue === prevValue) return true;
-              if (!nextValue || !prevValue) return false;
-
-              const normalizeJson = (value: unknown): unknown => {
-                if (typeof value !== 'string') return value;
-                try {
-                  return JSON.parse(value);
-                } catch {
-                  return value;
-                }
-              };
-
-              const normalizedNext = normalizeJson(nextValue);
-              const normalizedPrev = normalizeJson(prevValue);
-              if (normalizedNext === normalizedPrev) return true;
-              if (
-                typeof normalizedNext !== 'object' ||
-                typeof normalizedPrev !== 'object'
-              ) {
-                return false;
-              }
-
-              try {
-                return (
-                  JSON.stringify(normalizedNext) ===
-                  JSON.stringify(normalizedPrev)
-                );
-              } catch {
-                return false;
-              }
-            };
 
             Object.keys(payload.new).forEach(key => {
               const nextValue = payload.new[key];
@@ -122,7 +112,7 @@ export const useItemModalRealtime = ({
 
               if (
                 key === 'package_conversions' &&
-                isJsonEqual(nextValue, prevValue)
+                areDBPackageConversionValuesEqual(nextValue, prevValue)
               ) {
                 return;
               }
@@ -142,7 +132,7 @@ export const useItemModalRealtime = ({
             });
 
             // Apply smart updates
-            smartFormSync.handleRealtimeUpdate(changedFields);
+            handleRealtimeUpdate(changedFields);
           }
 
           // Invalidate item queries for fresh data (list + detail)
@@ -154,7 +144,7 @@ export const useItemModalRealtime = ({
           });
 
           // Call custom handler
-          onItemUpdated?.(payload);
+          onItemUpdatedRef.current?.(payload);
         }
       )
       .on(
@@ -166,6 +156,10 @@ export const useItemModalRealtime = ({
           filter: `item_id=eq.${itemId}`,
         },
         async () => {
+          if (!isCurrentSubscription()) {
+            return;
+          }
+
           logger.debug('Realtime update received', {
             component: 'useItemModalRealtime',
             itemId,
@@ -176,6 +170,10 @@ export const useItemModalRealtime = ({
 
           const { data, error } =
             await itemDataService.getCustomerLevelDiscounts(itemId);
+
+          if (!isCurrentSubscription()) {
+            return;
+          }
 
           if (error) {
             console.error('Error syncing customer level discounts:', error);
@@ -196,7 +194,7 @@ export const useItemModalRealtime = ({
             count: normalized.length,
           });
 
-          smartFormSync.handleRealtimeUpdate({
+          handleRealtimeUpdate({
             customer_level_discounts: normalized,
           });
         }
@@ -210,6 +208,10 @@ export const useItemModalRealtime = ({
           filter: `id=eq.${itemId}`,
         },
         () => {
+          if (!isCurrentSubscription()) {
+            return;
+          }
+
           logger.warn('Realtime delete received for item', {
             component: 'useItemModalRealtime',
             itemId,
@@ -223,10 +225,14 @@ export const useItemModalRealtime = ({
           });
 
           // Call custom handler (usually to close modal)
-          onItemDeleted?.();
+          onItemDeletedRef.current?.();
         }
       )
       .subscribe(status => {
+        if (!isCurrentSubscription()) {
+          return;
+        }
+
         if (status === 'SUBSCRIBED') {
           setIsConnected(true);
           logger.info('Realtime channel subscribed', {
@@ -244,29 +250,21 @@ export const useItemModalRealtime = ({
         }
       });
 
-    channelRef.current = channel;
-
     return () => {
-      if (channelRef.current) {
+      if (channelRef.current === channel) {
         logger.debug('Realtime subscription closing', {
           component: 'useItemModalRealtime',
           itemId,
           channel: channelName,
         });
-        void channelRef.current.unsubscribe();
-        void itemRealtimeService.removeChannel(channelRef.current);
+        subscriptionVersionRef.current += 1;
+        void channel.unsubscribe();
+        void itemRealtimeService.removeChannel(channel);
         channelRef.current = null;
         setIsConnected(false);
       }
     };
-  }, [
-    itemId,
-    enabled,
-    queryClient,
-    onItemUpdated,
-    onItemDeleted,
-    smartFormSync,
-  ]);
+  }, [itemId, enabled, queryClient, handleRealtimeUpdate]);
 
   return {
     isConnected, // Use state instead of accessing ref during render

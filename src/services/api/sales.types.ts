@@ -43,21 +43,21 @@ export interface SaleWithDetails {
     id: string;
     name: string;
     phone?: string;
-  };
+  } | null;
   doctor?: {
     id: string;
     name: string;
     specialization?: string;
-  };
+  } | null;
   customer?: {
     id: string;
     name: string;
     phone?: string | null;
-  };
+  } | null;
   created_by_user?: {
     id: string;
     name: string;
-  };
+  } | null;
 }
 
 export interface SaleItemWithDetails {

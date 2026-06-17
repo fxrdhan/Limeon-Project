@@ -228,6 +228,11 @@ export const useChatIncomingDeliveries = () => {
     const incomingMessagesChannel = chatSidebarRealtimeGateway.createChannel(
       `incoming_messages_${user.id}`
     );
+    const channelScopeVersion = deliveryScopeVersionRef.current;
+    incomingMessagesChannelRef.current = incomingMessagesChannel;
+    const isIncomingMessagesChannelActive = () =>
+      deliveryScopeVersionRef.current === channelScopeVersion &&
+      incomingMessagesChannelRef.current === incomingMessagesChannel;
 
     incomingMessagesChannel.on(
       'postgres_changes',
@@ -238,13 +243,22 @@ export const useChatIncomingDeliveries = () => {
         filter: `receiver_id=eq.${user.id}`,
       },
       payload => {
-        const incomingMessage = payload.new as ChatMessage | undefined;
+        if (!isIncomingMessagesChannelActive()) {
+          return;
+        }
+
+        const incomingMessage =
+          chatSidebarRealtimeGateway.normalizeRealtimeChatMessage(payload.new);
         if (!incomingMessage?.id || incomingMessage.is_delivered) return;
         queueDeliveryMessageIds([incomingMessage.id]);
       }
     );
 
     incomingMessagesChannel.subscribe(status => {
+      if (!isIncomingMessagesChannelActive()) {
+        return;
+      }
+
       if (status === 'SUBSCRIBED') {
         markRecoverySuccess();
         void backfillUndeliveredIncomingMessageIdsRef.current();
@@ -287,7 +301,6 @@ export const useChatIncomingDeliveries = () => {
         void scheduleRecovery();
       }
     });
-    incomingMessagesChannelRef.current = incomingMessagesChannel;
     const activeChannel = incomingMessagesChannel;
 
     return () => {

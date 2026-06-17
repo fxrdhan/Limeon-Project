@@ -100,6 +100,43 @@ describe('sales mappers', () => {
     });
   });
 
+  it('normalizes sale detail relation arrays to single values', () => {
+    expect(
+      mapSaleWithDetails({
+        id: 'sale-1',
+        date: '2026-06-13',
+        total: 125000,
+        payment_method: 'cash',
+        patients: [
+          {
+            id: 'patient-1',
+            name: 'Budi',
+            phone: '0812',
+          },
+        ],
+        doctors: [],
+        customers: null,
+        users: [
+          {
+            id: 'user-1',
+            name: 'Admin',
+          },
+        ],
+      })
+    ).toMatchObject({
+      patient: {
+        id: 'patient-1',
+        name: 'Budi',
+      },
+      doctor: null,
+      customer: null,
+      created_by_user: {
+        id: 'user-1',
+        name: 'Admin',
+      },
+    });
+  });
+
   it('maps sale item details with empty item fallback fields', () => {
     expect(
       mapSaleItemWithDetails({

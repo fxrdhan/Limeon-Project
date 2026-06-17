@@ -22,6 +22,78 @@ let composerDraftDbPromise: Promise<IDBDatabase | null> | null = null;
 const canUseIndexedDb = () =>
   typeof window !== 'undefined' && typeof window.indexedDB !== 'undefined';
 
+const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const isPersistedComposerDraftAttachmentKind = (
+  value: unknown
+): value is PersistedComposerDraftAttachmentRecord['fileKind'] =>
+  value === 'image' || value === 'document' || value === 'audio';
+
+export const normalizePersistedComposerDraftAttachmentRecord = (
+  value: unknown
+): PersistedComposerDraftAttachmentRecord | null => {
+  if (!isObjectRecord(value) || !(value.file instanceof Blob)) {
+    return null;
+  }
+
+  const fileKind = value.fileKind;
+  if (!isPersistedComposerDraftAttachmentKind(fileKind)) {
+    return null;
+  }
+
+  return {
+    id: typeof value.id === 'string' ? value.id : '',
+    file: value.file,
+    fileKind,
+    fileName: typeof value.fileName === 'string' ? value.fileName : '',
+    fileTypeLabel:
+      typeof value.fileTypeLabel === 'string' ? value.fileTypeLabel : '',
+    mimeType: typeof value.mimeType === 'string' ? value.mimeType : '',
+    pdfCoverUrl:
+      typeof value.pdfCoverUrl === 'string' || value.pdfCoverUrl === null
+        ? value.pdfCoverUrl
+        : null,
+    pdfPageCount:
+      typeof value.pdfPageCount === 'number' ? value.pdfPageCount : null,
+  };
+};
+
+export const normalizePersistedComposerDraftRecords = (value: unknown) =>
+  Array.isArray(value)
+    ? value.flatMap(record => {
+        if (!isObjectRecord(record)) {
+          return [];
+        }
+
+        const channelId = normalizeChannelId(
+          typeof record.channelId === 'string' ? record.channelId : null
+        );
+        if (!channelId || !Array.isArray(record.attachments)) {
+          return [];
+        }
+
+        const attachments = record.attachments.flatMap(attachment => {
+          const normalizedAttachment =
+            normalizePersistedComposerDraftAttachmentRecord(attachment);
+          return normalizedAttachment ? [normalizedAttachment] : [];
+        });
+
+        if (attachments.length === 0) {
+          return [];
+        }
+
+        return [
+          {
+            channelId,
+            attachments,
+            updatedAt:
+              typeof record.updatedAt === 'number' ? record.updatedAt : 0,
+          },
+        ];
+      })
+    : [];
+
 const getComposerDraftDb = async (): Promise<IDBDatabase | null> => {
   if (!canUseIndexedDb()) {
     return null;
@@ -67,11 +139,7 @@ const listPersistedComposerDraftRecords = async (
     const request = store.getAll();
 
     request.onsuccess = () => {
-      resolve(
-        Array.isArray(request.result)
-          ? (request.result as PersistedComposerDraftRecord[])
-          : []
-      );
+      resolve(normalizePersistedComposerDraftRecords(request.result));
     };
 
     request.onerror = () => {

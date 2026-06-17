@@ -47,6 +47,7 @@ export const useChatSessionPresence = ({
 
   const loadTargetUserPresenceSnapshot = useCallback(async () => {
     if (!isOpen || !user || !targetUser || !currentChannelId) {
+      targetPresenceRequestIdRef.current += 1;
       setTargetUserPresence(null);
       setTargetUserPresenceError(null);
       return;
@@ -75,6 +76,13 @@ export const useChatSessionPresence = ({
   useEffect(() => {
     void loadTargetUserPresenceSnapshot();
   }, [loadTargetUserPresenceSnapshot]);
+
+  useEffect(
+    () => () => {
+      targetPresenceRequestIdRef.current += 1;
+    },
+    []
+  );
 
   useEffect(() => {
     if (!hasPresenceRosterChannel || !isOpen || !targetUser) {

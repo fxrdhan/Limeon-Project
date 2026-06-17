@@ -68,7 +68,7 @@ export const useCustomerLevels = (options?: { enabled?: boolean }) => {
         throw error;
       }
 
-      return normalizeCustomerLevels((data || []) as CustomerLevel[]);
+      return normalizeCustomerLevels(data || []);
     },
     enabled,
   });
@@ -82,7 +82,11 @@ export const useCustomerLevels = (options?: { enabled?: boolean }) => {
         throw error;
       }
 
-      return data as CustomerLevel;
+      if (!data) {
+        throw new Error('Customer level response is missing');
+      }
+
+      return data;
     },
     onSuccess: () => {
       toast.success('Level pelanggan berhasil ditambahkan');

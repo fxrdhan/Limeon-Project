@@ -36,6 +36,15 @@ export const useChatViewportReadReceipts = ({
 }: UseChatViewportReadReceiptsProps) => {
   const pendingReadReceiptTimeoutRef = useRef<number | null>(null);
 
+  const clearPendingReadReceiptTimeout = useCallback(() => {
+    if (pendingReadReceiptTimeoutRef.current === null) {
+      return;
+    }
+
+    window.clearTimeout(pendingReadReceiptTimeoutRef.current);
+    pendingReadReceiptTimeoutRef.current = null;
+  }, []);
+
   const flushVisibleUnreadReadReceipts = useCallback(() => {
     if (!userId || !targetUserId) {
       return;
@@ -102,24 +111,23 @@ export const useChatViewportReadReceipts = ({
   ]);
 
   const scheduleVisibleUnreadReadReceipts = useCallback(() => {
-    if (pendingReadReceiptTimeoutRef.current !== null) {
-      window.clearTimeout(pendingReadReceiptTimeoutRef.current);
-    }
+    clearPendingReadReceiptTimeout();
 
     pendingReadReceiptTimeoutRef.current = window.setTimeout(() => {
       pendingReadReceiptTimeoutRef.current = null;
       flushVisibleUnreadReadReceipts();
     }, SCROLL_READ_RECEIPT_DEBOUNCE_MS);
-  }, [flushVisibleUnreadReadReceipts]);
+  }, [clearPendingReadReceiptTimeout, flushVisibleUnreadReadReceipts]);
+
+  useEffect(() => {
+    clearPendingReadReceiptTimeout();
+  }, [clearPendingReadReceiptTimeout, targetUserId, userId]);
 
   useEffect(() => {
     return () => {
-      if (pendingReadReceiptTimeoutRef.current !== null) {
-        window.clearTimeout(pendingReadReceiptTimeoutRef.current);
-        pendingReadReceiptTimeoutRef.current = null;
-      }
+      clearPendingReadReceiptTimeout();
     };
-  }, []);
+  }, [clearPendingReadReceiptTimeout]);
 
   return {
     scheduleVisibleUnreadReadReceipts,

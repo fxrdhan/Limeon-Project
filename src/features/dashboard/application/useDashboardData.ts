@@ -61,7 +61,7 @@ export const useTopSellingMedicines = (
     queryFn: async () => {
       const result = await fetchTopSellingMedicines(limit);
       if (result.error) throw result.error;
-      return result.data;
+      return result.data ?? [];
     },
     enabled: options?.enabled ?? true,
   });
@@ -77,7 +77,7 @@ export const useLowStockItems = (
     queryFn: async () => {
       const result = await fetchLowStockItems(threshold);
       if (result.error) throw result.error;
-      return result.data;
+      return result.data ?? [];
     },
     enabled: options?.enabled ?? true,
   });
@@ -93,7 +93,7 @@ export const useRecentTransactions = (
     queryFn: async () => {
       const result = await fetchRecentTransactions(limit);
       if (result.error) throw result.error;
-      return result.data;
+      return result.data ?? [];
     },
     enabled: options?.enabled ?? true,
   });

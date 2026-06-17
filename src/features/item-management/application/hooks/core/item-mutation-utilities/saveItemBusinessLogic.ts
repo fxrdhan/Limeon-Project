@@ -201,7 +201,7 @@ export const saveItemBusinessLogic = async ({
     );
     const { error: updateError } = await itemDataService.updateItemFields(
       itemId,
-      itemUpdateData as Record<string, unknown>
+      itemUpdateData
     );
     if (updateError) throw updateError;
 
@@ -282,7 +282,7 @@ export const saveItemBusinessLogic = async ({
     false
   );
   const { data: insertedItem, error: mainError } =
-    await itemDataService.createItem(mainItemData as Record<string, unknown>);
+    await itemDataService.createItem(mainItemData);
   if (mainError) throw mainError;
   if (!insertedItem) {
     throw new Error('Gagal mendapatkan ID item baru setelah insert.');

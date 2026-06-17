@@ -1,4 +1,11 @@
-import React, { Suspense, lazy, useRef, useState } from 'react';
+import React, {
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { Card, CardContent, CardFooter } from '@/components/card';
 import FormAction from '@/components/form-action';
 import PageTitle from '@/components/page-title';
@@ -20,6 +27,8 @@ const CreateSalePage: React.FC = () => {
   const [isAddItemClosing, setIsAddItemClosing] = useState(false);
   const [portalRenderId, setPortalRenderId] = useState(0);
   const itemSearchBarRef = useRef<ItemSearchBarRef>(null);
+  const closeAddItemPortalTimerRef = useRef<number | null>(null);
+  const focusItemSearchTimerRef = useRef<number | null>(null);
 
   const {
     formData,
@@ -63,17 +72,40 @@ const CreateSalePage: React.FC = () => {
     handleUnitChange(id, unitName, getItemById);
   };
 
-  const handleCloseAddItemPortal = () => {
+  const clearAddItemPortalTimers = useCallback(() => {
+    if (closeAddItemPortalTimerRef.current !== null) {
+      window.clearTimeout(closeAddItemPortalTimerRef.current);
+      closeAddItemPortalTimerRef.current = null;
+    }
+    if (focusItemSearchTimerRef.current !== null) {
+      window.clearTimeout(focusItemSearchTimerRef.current);
+      focusItemSearchTimerRef.current = null;
+    }
+  }, []);
+
+  const handleOpenAddItemPortal = () => {
+    clearAddItemPortalTimers();
+    setIsAddItemClosing(false);
+    setIsAddItemPortalOpen(true);
+    setPortalRenderId(prev => prev + 1);
+  };
+
+  const handleCloseAddItemPortal = useCallback(() => {
+    clearAddItemPortalTimers();
     setIsAddItemClosing(true);
-    setTimeout(() => {
+    closeAddItemPortalTimerRef.current = window.setTimeout(() => {
       setIsAddItemPortalOpen(false);
       setIsAddItemClosing(false);
       void refetchItems();
-      setTimeout(() => {
+      closeAddItemPortalTimerRef.current = null;
+      focusItemSearchTimerRef.current = window.setTimeout(() => {
         itemSearchBarRef.current?.focus();
+        focusItemSearchTimerRef.current = null;
       }, 100);
     }, 200);
-  };
+  }, [clearAddItemPortalTimers, refetchItems]);
+
+  useEffect(() => clearAddItemPortalTimers, [clearAddItemPortalTimers]);
 
   return (
     <>
@@ -103,10 +135,7 @@ const CreateSalePage: React.FC = () => {
               onSelectItem={handleSelectItem}
               saleItems={saleItems}
               isAddNewItemDisabled={isAddNewItemDisabled}
-              onOpenAddItemPortal={() => {
-                setIsAddItemPortalOpen(true);
-                setPortalRenderId(prev => prev + 1);
-              }}
+              onOpenAddItemPortal={handleOpenAddItemPortal}
               itemSearchBarRef={itemSearchBarRef}
               total={total}
               getItemById={getItemById}

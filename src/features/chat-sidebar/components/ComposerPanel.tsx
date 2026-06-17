@@ -41,6 +41,8 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
   const hasComposerAttachmentTray =
     previews.isComposerAttachmentSelectionMode ||
     composer.composerAttachmentPreviewItems.length > 0;
+  const previewComposerImageAttachment =
+    composer.previewComposerImageAttachment;
 
   useLayoutEffect(() => {
     if (!hasComposerAttachmentTray) {
@@ -170,8 +172,7 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
 
       <ImageExpandPreview
         isOpen={Boolean(
-          composer.previewComposerImageAttachment &&
-          composer.isComposerImageExpanded
+          previewComposerImageAttachment && composer.isComposerImageExpanded
         )}
         isVisible={composer.isComposerImageExpandedVisible}
         onClose={composer.closeComposerImagePreview}
@@ -187,7 +188,7 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
           }
         }}
       >
-        {composer.previewComposerImageAttachment ? (
+        {previewComposerImageAttachment ? (
           <ImageUploader
             id="chat-composer-image-preview"
             shape="square"
@@ -199,12 +200,12 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
               composer.closeComposerImagePreview();
               composer.queueComposerImage(
                 file,
-                composer.previewComposerImageAttachment!.id
+                previewComposerImageAttachment.id
               );
             }}
             onImageDelete={async () => {
               composer.removePendingComposerAttachment(
-                composer.previewComposerImageAttachment!.id
+                previewComposerImageAttachment.id
               );
             }}
             validTypes={['image/png', 'image/jpeg', 'image/jpg', 'image/webp']}
@@ -212,10 +213,10 @@ const ComposerPanel = ({ runtime }: ComposerPanelProps) => {
             <img
               src={
                 composer.composerImageExpandedUrl ??
-                composer.previewComposerImageAttachment.previewUrl ??
+                previewComposerImageAttachment.previewUrl ??
                 ''
               }
-              alt={composer.previewComposerImageAttachment.fileName}
+              alt={previewComposerImageAttachment.fileName}
               className="max-h-[92vh] max-w-[92vw] object-contain shadow-xl"
               draggable={false}
             />

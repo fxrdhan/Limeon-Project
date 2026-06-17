@@ -1,6 +1,6 @@
 import type { ComponentProps } from 'react';
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import ComposerPanel from '../components/ComposerPanel';
 
@@ -453,6 +453,74 @@ describe('ComposerPanel', () => {
       rangeEnd: 10,
     });
     expect(runtime.composer.openAttachmentPastePrompt).not.toHaveBeenCalled();
+  });
+
+  it('cancels pending plain link focus after unmount', () => {
+    const queuedFrames = new Map<number, FrameRequestCallback>();
+    let nextFrameId = 1;
+    const originalRequestAnimationFrame = window.requestAnimationFrame;
+    const originalCancelAnimationFrame = window.cancelAnimationFrame;
+    const cancelAnimationFrameMock = vi.fn((frameId: number) => {
+      queuedFrames.delete(frameId);
+    });
+    vi.stubGlobal('requestAnimationFrame', ((
+      callback: FrameRequestCallback
+    ) => {
+      const frameId = nextFrameId;
+      nextFrameId += 1;
+      queuedFrames.set(frameId, callback);
+      return frameId;
+    }) as typeof requestAnimationFrame);
+    vi.stubGlobal(
+      'cancelAnimationFrame',
+      cancelAnimationFrameMock as typeof cancelAnimationFrame
+    );
+
+    const flushQueuedFrames = () => {
+      const frames = Array.from(queuedFrames.entries());
+      queuedFrames.clear();
+
+      for (const [frameId, callback] of frames) {
+        callback(frameId);
+      }
+    };
+
+    try {
+      const runtime = buildComposerRuntime();
+      runtime.composer.message = 'github.com';
+      runtime.composer.hoverableAttachmentCandidates = [];
+
+      const { unmount } = render(<ComposerPanel runtime={runtime} />);
+
+      const textarea = screen.getByPlaceholderText('Tulis pesan...');
+      expect(textarea).toBeInstanceOf(HTMLTextAreaElement);
+      const focus = vi.fn();
+      const setSelectionRange = vi.fn();
+      (textarea as HTMLTextAreaElement).focus = focus;
+      (textarea as HTMLTextAreaElement).setSelectionRange = setSelectionRange;
+
+      fireEvent.mouseDown(screen.getByRole('link', { name: 'github.com' }), {
+        clientX: 12,
+        clientY: 8,
+      });
+
+      const focusFrameId = nextFrameId - 1;
+      expect(queuedFrames.has(focusFrameId)).toBe(true);
+
+      unmount();
+
+      expect(cancelAnimationFrameMock).toHaveBeenCalledWith(focusFrameId);
+
+      act(() => {
+        flushQueuedFrames();
+      });
+
+      expect(focus).not.toHaveBeenCalled();
+      expect(setSelectionRange).not.toHaveBeenCalled();
+    } finally {
+      vi.stubGlobal('requestAnimationFrame', originalRequestAnimationFrame);
+      vi.stubGlobal('cancelAnimationFrame', originalCancelAnimationFrame);
+    }
   });
 
   it('renders the shorten action for direct chat asset links', () => {

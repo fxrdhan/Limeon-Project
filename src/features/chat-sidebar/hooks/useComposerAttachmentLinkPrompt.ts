@@ -59,7 +59,10 @@ export const useComposerAttachmentLinkPrompt = ({
     clearAttachmentPasteState,
     dismissAttachmentPastePrompt,
   } = useComposerAttachmentPromptState(message);
-  const focusComposerSelection = useComposerPromptFocus(messageInputRef);
+  const focusComposerSelection = useComposerPromptFocus(
+    messageInputRef,
+    resetKey
+  );
   const handleComposerPaste = useComposerAttachmentPasteHandler({
     attachmentPasteValidationScopeRef,
     clearAttachmentPasteState,
@@ -84,6 +87,7 @@ export const useComposerAttachmentLinkPrompt = ({
     handleUseAttachmentPasteAsAttachment,
   } = useComposerAttachmentPromptActions({
     attachmentPastePrompt,
+    attachmentPasteValidationScopeRef,
     dismissAttachmentPastePrompt,
     focusComposerSelection,
     hoverableAttachmentCandidates,

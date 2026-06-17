@@ -293,6 +293,170 @@ describe('useChatComposerActions', () => {
     );
   });
 
+  it('cancels pending composer focus when switching conversations after entering edit mode', () => {
+    const queuedFrames = new Map<number, FrameRequestCallback>();
+    let nextFrameId = 1;
+    const originalRequestAnimationFrame = window.requestAnimationFrame;
+    const originalCancelAnimationFrame = window.cancelAnimationFrame;
+    const cancelAnimationFrameMock = vi.fn((frameId: number) => {
+      queuedFrames.delete(frameId);
+    });
+    vi.useFakeTimers();
+    vi.stubGlobal('requestAnimationFrame', ((
+      callback: FrameRequestCallback
+    ) => {
+      const frameId = nextFrameId;
+      nextFrameId += 1;
+      queuedFrames.set(frameId, callback);
+      return frameId;
+    }) as typeof requestAnimationFrame);
+    vi.stubGlobal(
+      'cancelAnimationFrame',
+      cancelAnimationFrameMock as typeof cancelAnimationFrame
+    );
+
+    const flushQueuedFrames = () => {
+      const frames = Array.from(queuedFrames.entries());
+      queuedFrames.clear();
+
+      for (const [frameId, callback] of frames) {
+        callback(frameId);
+      }
+    };
+
+    try {
+      const closeMessageMenu = vi.fn();
+      const focusMessageComposer = vi.fn();
+
+      type HookProps = {
+        channelId: string;
+        messageId: string;
+        targetUserId: string;
+        targetUserName: string;
+      };
+
+      const { result, rerender } = renderHook(
+        (props: HookProps) => {
+          const [messages, setMessages] = useState<ChatMessage[]>(() => [
+            buildMessage({
+              id: props.messageId,
+              channel_id: props.channelId,
+              receiver_id: props.targetUserId,
+              message: 'pesan untuk diedit',
+              sender_name: 'Admin',
+              receiver_name: props.targetUserName,
+            }),
+          ]);
+          const [message, setMessage] = useState('');
+          const [editingMessageId, setEditingMessageId] = useState<
+            string | null
+          >(null);
+          const [replyingMessageId, setReplyingMessageId] = useState<
+            string | null
+          >(null);
+          const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(
+            new Map()
+          );
+
+          useEffect(() => {
+            setMessages([
+              buildMessage({
+                id: props.messageId,
+                channel_id: props.channelId,
+                receiver_id: props.targetUserId,
+                message: 'pesan untuk diedit',
+                sender_name: 'Admin',
+                receiver_name: props.targetUserName,
+              }),
+            ]);
+            setMessage('');
+            setEditingMessageId(null);
+            setReplyingMessageId(null);
+          }, [
+            props.channelId,
+            props.messageId,
+            props.targetUserId,
+            props.targetUserName,
+          ]);
+
+          const actions = useChatComposerActions({
+            user: { id: 'user-a', name: 'Admin' },
+            targetUser: {
+              id: props.targetUserId,
+              name: props.targetUserName,
+              email: `${props.targetUserId}@example.com`,
+              profilephoto: null,
+            },
+            currentChannelId: props.channelId,
+            messages,
+            setMessages,
+            message,
+            setMessage,
+            editingMessageId,
+            setEditingMessageId,
+            replyingMessageId,
+            setReplyingMessageId,
+            pendingComposerAttachments: [],
+            clearPendingComposerAttachments: vi.fn(),
+            restorePendingComposerAttachments: vi.fn(),
+            isComposerAttachmentLoading: false,
+            closeMessageMenu,
+            focusMessageComposer,
+            scheduleScrollMessagesToBottom: vi.fn(),
+            triggerSendSuccessGlow: vi.fn(),
+            pendingImagePreviewUrlsRef,
+          });
+
+          return {
+            ...actions,
+            editingMessageId,
+            message,
+            targetMessage: messages[0]!,
+          };
+        },
+        {
+          initialProps: {
+            channelId: 'channel-1',
+            messageId: 'message-1',
+            targetUserId: 'user-b',
+            targetUserName: 'Gudang',
+          },
+        }
+      );
+
+      act(() => {
+        result.current.handleEditMessage(result.current.targetMessage);
+      });
+
+      const focusFrameId = nextFrameId - 1;
+      expect(result.current.editingMessageId).toBe('message-1');
+      expect(result.current.message).toBe('pesan untuk diedit');
+      expect(queuedFrames.has(focusFrameId)).toBe(true);
+
+      act(() => {
+        rerender({
+          channelId: 'channel-2',
+          messageId: 'message-2',
+          targetUserId: 'user-c',
+          targetUserName: 'Kasir',
+        });
+      });
+
+      expect(cancelAnimationFrameMock).toHaveBeenCalledWith(focusFrameId);
+
+      act(() => {
+        flushQueuedFrames();
+        vi.runOnlyPendingTimers();
+      });
+
+      expect(focusMessageComposer).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+      vi.stubGlobal('requestAnimationFrame', originalRequestAnimationFrame);
+      vi.stubGlobal('cancelAnimationFrame', originalCancelAnimationFrame);
+    }
+  });
+
   it('preserves a newer draft when an edit request fails after the user keeps typing', async () => {
     let resolveUpdateMessage:
       | ((value: { data: null; error: Error }) => void)

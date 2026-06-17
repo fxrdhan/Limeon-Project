@@ -11,7 +11,7 @@ export interface PersistedComposerDraftMessageStore {
 
 export interface PersistedComposerDraftAttachmentRecord {
   id: string;
-  file: File;
+  file: File | Blob;
   fileKind: PendingComposerAttachmentKind;
   fileName: string;
   fileTypeLabel: string;

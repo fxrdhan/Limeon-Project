@@ -63,6 +63,96 @@ describe('useChatMessageSearchMode', () => {
     vi.useRealTimers();
   });
 
+  it('cancels a pending manual focus frame after exiting search mode', () => {
+    const queuedFrames = new Map<number, FrameRequestCallback>();
+    let nextFrameId = 1;
+    const requestAnimationFrameSpy = vi
+      .spyOn(window, 'requestAnimationFrame')
+      .mockImplementation(callback => {
+        const frameId = nextFrameId;
+        nextFrameId += 1;
+        queuedFrames.set(frameId, callback);
+        return frameId;
+      });
+    const cancelAnimationFrameSpy = vi
+      .spyOn(window, 'cancelAnimationFrame')
+      .mockImplementation(frameId => {
+        queuedFrames.delete(frameId);
+      });
+
+    const flushQueuedFrames = () => {
+      const frames = Array.from(queuedFrames.entries());
+      queuedFrames.clear();
+
+      for (const [frameId, callback] of frames) {
+        callback(frameId);
+      }
+    };
+
+    try {
+      const focus = vi.fn();
+      const input = document.createElement('input');
+      input.focus = focus;
+
+      const { result } = renderHook(() =>
+        useChatMessageSearchMode({
+          isOpen: true,
+          currentChannelId: 'channel-1',
+          messages: [],
+          mergeSearchContextMessages: vi.fn(),
+          user: {
+            id: 'user-a',
+            name: 'Admin',
+          },
+          targetUser: {
+            id: 'user-b',
+            name: 'Gudang',
+            email: 'gudang@example.com',
+          },
+        })
+      );
+
+      Object.defineProperty(result.current.searchInputRef, 'current', {
+        configurable: true,
+        value: input,
+        writable: true,
+      });
+
+      act(() => {
+        result.current.handleEnterMessageSearchMode();
+      });
+
+      act(() => {
+        flushQueuedFrames();
+      });
+
+      expect(focus).toHaveBeenCalledTimes(1);
+      focus.mockClear();
+
+      act(() => {
+        result.current.handleFocusSearchInput();
+      });
+
+      const manualFrameId = nextFrameId - 1;
+      expect(queuedFrames.has(manualFrameId)).toBe(true);
+
+      act(() => {
+        result.current.handleExitMessageSearchMode();
+      });
+
+      expect(cancelAnimationFrameSpy).toHaveBeenCalledWith(manualFrameId);
+
+      act(() => {
+        flushQueuedFrames();
+      });
+
+      expect(focus).not.toHaveBeenCalled();
+    } finally {
+      requestAnimationFrameSpy.mockRestore();
+      cancelAnimationFrameSpy.mockRestore();
+    }
+  });
+
   it('ignores stale search context results after the query is cleared', async () => {
     const mergeSearchContextMessages = vi.fn();
     const contextRequest = createDeferred<{

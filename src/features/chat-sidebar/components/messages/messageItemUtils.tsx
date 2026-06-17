@@ -19,6 +19,7 @@ import {
   TbPencil,
   TbTrash,
 } from 'react-icons/tb';
+import toast from 'react-hot-toast';
 import type { PopupMenuAction } from '@/components/image-manager/PopupMenuContent';
 import type {
   ComposerPendingFileKind,
@@ -27,6 +28,7 @@ import type {
 } from '../../types';
 import { openChatFileInNewTab } from '../../utils/message-file';
 import type { ChatMessage } from '../../data/chatSidebarGateway';
+import { CHAT_SIDEBAR_TOASTER_ID } from '../../constants';
 
 export const getFileIcon = (
   fileExtension: string,
@@ -153,7 +155,13 @@ export const buildMessageMenuActions = ({
           message.message,
           message.file_storage_path,
           message.file_mime_type
-        );
+        ).then(didOpenFile => {
+          if (!didOpenFile) {
+            toast.error('Browser memblokir tab baru', {
+              toasterId: CHAT_SIDEBAR_TOASTER_ID,
+            });
+          }
+        });
       },
     });
   }

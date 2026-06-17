@@ -6,7 +6,6 @@ import {
 import { COMPOSER_DRAFT_MESSAGES_STORAGE_KEY } from './constants';
 import { prunePersistedComposerDraftMessageStore } from './pruning';
 import { normalizeDraftScopeKey } from './scope';
-import type { PersistedComposerDraftMessageStore } from './types';
 
 export const readPersistedComposerDraftMessage = (
   channelId?: string | null,
@@ -17,7 +16,7 @@ export const readPersistedComposerDraftMessage = (
     return '';
   }
 
-  const payload = readRuntimeStorage<PersistedComposerDraftMessageStore>(
+  const payload = readRuntimeStorage(
     COMPOSER_DRAFT_MESSAGES_STORAGE_KEY,
     'local'
   );
@@ -45,10 +44,7 @@ export const writePersistedComposerDraftMessage = (
   }
 
   const nextPayload = prunePersistedComposerDraftMessageStore(
-    readRuntimeStorage<PersistedComposerDraftMessageStore>(
-      COMPOSER_DRAFT_MESSAGES_STORAGE_KEY,
-      'local'
-    )
+    readRuntimeStorage(COMPOSER_DRAFT_MESSAGES_STORAGE_KEY, 'local')
   ).store;
 
   if (message.length === 0) {

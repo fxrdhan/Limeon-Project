@@ -21,6 +21,42 @@ vi.mock('@/services/api/chat.service', () => ({
   },
 }));
 
+const createDeferred = <Value,>() => {
+  let resolve!: (value: Value) => void;
+  const promise = new Promise<Value>(promiseResolve => {
+    resolve = promiseResolve;
+  });
+
+  return { promise, resolve };
+};
+
+const buildConversationSession = (activeSessionTokenRef: {
+  current: number;
+}) => ({
+  getActiveSessionToken: () => activeSessionTokenRef.current,
+  isSessionTokenActive: (sessionToken: number) =>
+    sessionToken === activeSessionTokenRef.current,
+  oldestLoadedMessageCreatedAtRef: {
+    current: '2026-03-09T09:00:00.000Z',
+  },
+  oldestLoadedMessageIdRef: {
+    current: 'message-10',
+  },
+  searchContextMessageIdsRef: {
+    current: new Set<string>(),
+  },
+  hasCompletedInitialOpenLoadRef: {
+    current: true,
+  },
+  activeSessionTokenRef,
+  isInitialConversationLoadPendingRef: {
+    current: false,
+  },
+  pendingConversationRealtimeEventsRef: {
+    current: [],
+  },
+});
+
 describe('useChatConversationPagination', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -123,5 +159,70 @@ describe('useChatConversationPagination', () => {
       'Gagal memuat pesan lama'
     );
     expect(setIsLoadingOlderMessages).not.toHaveBeenCalledWith(false);
+  });
+
+  it('does not start duplicate older-message loads before loading state rerenders', async () => {
+    const deferredFetch = createDeferred<{
+      data: { messages: []; hasMore: boolean };
+      error: null;
+    }>();
+    mockGateway.fetchConversationMessages.mockReturnValue(
+      deferredFetch.promise
+    );
+
+    const setMessages = vi.fn();
+    const setHasOlderMessages = vi.fn();
+    const setIsLoadingOlderMessages = vi.fn();
+    const setOlderMessagesError = vi.fn();
+
+    const { result } = renderHook(() =>
+      useChatConversationPagination({
+        isOpen: true,
+        user: {
+          id: 'user-a',
+          name: 'Admin',
+          email: 'admin@example.com',
+          profilephoto: null,
+          role: 'admin',
+        },
+        targetUser: {
+          id: 'user-b',
+          name: 'Gudang',
+          email: 'gudang@example.com',
+          profilephoto: null,
+        },
+        currentChannelId: 'channel-1',
+        conversationSession: buildConversationSession({ current: 1 }),
+        hasOlderMessages: true,
+        isLoadingOlderMessages: false,
+        setMessages,
+        setHasOlderMessages,
+        setIsLoadingOlderMessages,
+        setOlderMessagesError,
+      })
+    );
+
+    let firstLoadPromise!: Promise<void>;
+    let secondLoadPromise!: Promise<void>;
+    act(() => {
+      firstLoadPromise = result.current();
+      secondLoadPromise = result.current();
+    });
+
+    expect(mockGateway.fetchConversationMessages).toHaveBeenCalledOnce();
+
+    await act(async () => {
+      deferredFetch.resolve({
+        data: {
+          messages: [],
+          hasMore: false,
+        },
+        error: null,
+      });
+      await Promise.all([firstLoadPromise, secondLoadPromise]);
+    });
+
+    expect(setIsLoadingOlderMessages).toHaveBeenCalledWith(true);
+    expect(setIsLoadingOlderMessages).toHaveBeenCalledWith(false);
   });
 });

@@ -8,7 +8,7 @@ import {
   COLLAPSIBLE_SECTION_HEADER_CLASS,
   SURFACE_CARD_CLASS,
 } from '@/styles/uiPrimitives';
-import { focusFirstSectionField } from './sectionFocus';
+import { useDeferredSectionFocus } from './useDeferredSectionFocus';
 
 interface ItemAdditionalInfoFormProps {
   isExpanded?: boolean;
@@ -35,8 +35,8 @@ const ItemAdditionalInfoForm: React.FC<ItemAdditionalInfoFormProps> = ({
   onChange,
 }) => {
   const sectionRef = useRef<HTMLDivElement>(null);
-
-  const focusFirstField = () => focusFirstSectionField(sectionRef.current);
+  const { scheduleFocusFirstSectionField } =
+    useDeferredSectionFocus(sectionRef);
 
   return (
     <div
@@ -51,14 +51,14 @@ const ItemAdditionalInfoForm: React.FC<ItemAdditionalInfoFormProps> = ({
         onFocus={event => {
           if (!isExpanded && event.currentTarget.matches(':focus-visible')) {
             onExpand?.();
-            setTimeout(focusFirstField, 0);
+            scheduleFocusFirstSectionField();
           }
         }}
         onKeyDown={event => {
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();
             onExpand?.();
-            setTimeout(focusFirstField, 0);
+            scheduleFocusFirstSectionField();
           }
         }}
         tabIndex={12}

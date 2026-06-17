@@ -1,6 +1,9 @@
-import { BaseService, ServiceResponse } from './base.service';
+import {
+  BaseService,
+  toServiceError,
+  type ServiceResponse,
+} from './base.service';
 import { supabase } from '@/lib/supabase';
-import type { PostgrestError } from '@supabase/supabase-js';
 import {
   fetchRecordWithItems,
   getRecordsByDateRange,
@@ -18,6 +21,9 @@ import {
   mapSaleItemWithDetails,
   mapSalesListItem,
   mapSaleWithDetails,
+  type SaleDetailsRecord,
+  type SaleItemDetailsRecord,
+  type SalesListRecord,
 } from './sales.mappers';
 import {
   SALE_DETAILS_SELECT,
@@ -66,7 +72,8 @@ export class SalesService extends BaseService<DBSale> {
       const to = from + limit - 1;
       const { data, error } = await query
         .order('date', { ascending: false })
-        .range(from, to);
+        .range(from, to)
+        .returns<SalesListRecord[]>();
 
       if (error) {
         return { data: null, error };
@@ -80,7 +87,7 @@ export class SalesService extends BaseService<DBSale> {
         error: null,
       };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -103,7 +110,7 @@ export class SalesService extends BaseService<DBSale> {
         count: result.count,
       };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -115,6 +122,7 @@ export class SalesService extends BaseService<DBSale> {
         .from('sales')
         .select(SALE_DETAILS_SELECT)
         .eq('id', id)
+        .returns<SaleDetailsRecord[]>()
         .single();
 
       if (error || !sale) {
@@ -123,7 +131,7 @@ export class SalesService extends BaseService<DBSale> {
 
       return { data: mapSaleWithDetails(sale), error: null };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -145,22 +153,19 @@ export class SalesService extends BaseService<DBSale> {
         `
         )
         .eq('sale_id', saleId)
-        .order('created_at', { ascending: true });
+        .order('created_at', { ascending: true })
+        .returns<SaleItemDetailsRecord[]>();
 
       if (error || !data) {
         return { data: null, error };
       }
 
       return {
-        data: data.map(item =>
-          mapSaleItemWithDetails(
-            item as Parameters<typeof mapSaleItemWithDetails>[0]
-          )
-        ),
+        data: data.map(mapSaleItemWithDetails),
         error: null,
       };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -207,7 +212,7 @@ export class SalesService extends BaseService<DBSale> {
         error: null,
       };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -220,13 +225,13 @@ export class SalesService extends BaseService<DBSale> {
       DBSale,
       SaleItemWithDetails,
       SaleItemInput,
-      SaleItemInput
+      DBSaleItem
     >({
       updateRecord: () => this.update(id, saleData),
       nextItems: items,
       fetchExistingItems: () => this.getSaleItems(id),
       replaceItems: nextItems =>
-        replaceLinkedItems({
+        replaceLinkedItems<SaleItemInput, DBSaleItem>({
           tableName: 'sale_items',
           foreignKey: 'sale_id',
           parentId: id,
@@ -243,7 +248,7 @@ export class SalesService extends BaseService<DBSale> {
     return {
       data: {
         sale: result.data.record,
-        items: result.data.items as DBSaleItem[] | undefined,
+        items: result.data.items,
       },
       error: null,
     };
@@ -257,7 +262,7 @@ export class SalesService extends BaseService<DBSale> {
 
       return { data: null, error };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -310,7 +315,7 @@ export class SalesService extends BaseService<DBSale> {
         error: null,
       };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 

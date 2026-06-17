@@ -68,6 +68,24 @@ const extractedInvoice: ExtractedInvoiceData = {
   product_list: [],
 };
 
+const createDeferredInvoiceExtraction = () => {
+  let resolveInvoice:
+    | ((
+        value: ExtractedInvoiceData | PromiseLike<ExtractedInvoiceData>
+      ) => void)
+    | null = null;
+  const promise = new Promise<ExtractedInvoiceData>(resolve => {
+    resolveInvoice = resolve;
+  });
+
+  return {
+    promise,
+    resolveInvoice: (value: ExtractedInvoiceData) => {
+      resolveInvoice?.(value);
+    },
+  };
+};
+
 describe('useUploadInvoicePortal', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -155,6 +173,21 @@ describe('useUploadInvoicePortal', () => {
     expect(useInvoiceUploadStore.getState().cachedInvoiceFile).toBeNull();
   });
 
+  it('does not start upload when no invoice image is selected', async () => {
+    const { result } = renderHook(() =>
+      useUploadInvoicePortal({ isOpen: true, onClose: vi.fn() })
+    );
+
+    await act(async () => {
+      await result.current.uploadDialogPortalProps.onUpload();
+    });
+
+    expect(uploadAndExtractInvoiceMock).not.toHaveBeenCalled();
+    expect(result.current.uploadDialogPortalProps.error).toBe(
+      'Pilih file faktur terlebih dahulu.'
+    );
+  });
+
   it('resets transient upload state when the portal closes', async () => {
     const { result, rerender } = renderHook(
       ({ isOpen }) => useUploadInvoicePortal({ isOpen, onClose: vi.fn() }),
@@ -180,6 +213,42 @@ describe('useUploadInvoicePortal', () => {
     expect(result.current.uploadDialogPortalProps.isDragging).toBe(false);
     expect(result.current.fullPreviewPortalProps.showFullPreview).toBe(false);
     expect(result.current.fullPreviewPortalProps.zoomLevel).toBe(1);
+  });
+
+  it('cancels pending uploader glow animation frames on unmount', () => {
+    const scheduledFrames = new Map<number, FrameRequestCallback>();
+    const cancelAnimationFrameMock = vi.fn((frameId: number) => {
+      scheduledFrames.delete(frameId);
+    });
+    let nextFrameId = 1;
+
+    vi.stubGlobal('requestAnimationFrame', ((
+      callback: FrameRequestCallback
+    ) => {
+      const frameId = nextFrameId;
+      nextFrameId += 1;
+      scheduledFrames.set(frameId, callback);
+      return frameId;
+    }) as typeof requestAnimationFrame);
+    vi.stubGlobal(
+      'cancelAnimationFrame',
+      cancelAnimationFrameMock as typeof cancelAnimationFrame
+    );
+
+    const { result, unmount } = renderHook(() =>
+      useUploadInvoicePortal({ isOpen: true, onClose: vi.fn() })
+    );
+
+    act(() => {
+      result.current.uploadDialogPortalProps.onUploaderMouseEnter();
+    });
+
+    expect(scheduledFrames.size).toBe(1);
+
+    unmount();
+
+    expect(cancelAnimationFrameMock).toHaveBeenCalledWith(1);
+    expect(scheduledFrames.size).toBe(0);
   });
 
   it('uploads the selected file and navigates with extracted invoice data', async () => {
@@ -217,5 +286,51 @@ describe('useUploadInvoicePortal', () => {
         processingTime: '1.4',
       },
     });
+  });
+
+  it('ignores invoice extraction completion after the portal closes', async () => {
+    const onClose = vi.fn();
+    const file = invoiceImage();
+    const deferredExtraction = createDeferredInvoiceExtraction();
+    uploadAndExtractInvoiceMock.mockReturnValue(deferredExtraction.promise);
+
+    const { result, rerender } = renderHook(
+      ({ isOpen }) => useUploadInvoicePortal({ isOpen, onClose }),
+      {
+        initialProps: { isOpen: true },
+      }
+    );
+
+    act(() => {
+      result.current.uploadDialogPortalProps.onFileChange(changeEvent(file));
+    });
+
+    await waitFor(() => {
+      expect(result.current.uploadDialogPortalProps.previewUrl).toBe(
+        'blob:invoice-preview'
+      );
+    });
+
+    let uploadPromise = Promise.resolve();
+    act(() => {
+      uploadPromise = result.current.uploadDialogPortalProps.onUpload();
+    });
+
+    expect(result.current.uploadDialogPortalProps.loading).toBe(true);
+
+    rerender({ isOpen: false });
+
+    expect(result.current.uploadDialogPortalProps.loading).toBe(false);
+
+    await act(async () => {
+      deferredExtraction.resolveInvoice(extractedInvoice);
+      await uploadPromise;
+    });
+
+    expect(onClose).not.toHaveBeenCalled();
+    expect(navigateMock).not.toHaveBeenCalled();
+    expect(useInvoiceUploadStore.getState().cachedInvoiceFile).toBe(file);
+    expect(result.current.uploadDialogPortalProps.error).toBeNull();
+    expect(result.current.uploadDialogPortalProps.loading).toBe(false);
   });
 });

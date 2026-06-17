@@ -1,4 +1,10 @@
+import {
+  getSingleSupabaseRelation,
+  type SupabaseRelationValue,
+} from '@/lib/supabaseRelations';
 import type {
+  DBSale,
+  DBSaleItem,
   SaleItemInput,
   SaleItemWithDetails,
   SalesAnalytics,
@@ -6,71 +12,66 @@ import type {
   SaleWithDetails,
 } from './sales.types';
 
-type RelationValue<T> = T | T[] | null | undefined;
-
-const getSingleRelation = <T>(value: RelationValue<T>): T | null => {
-  if (Array.isArray(value)) {
-    return value[0] ?? null;
-  }
-
-  return value ?? null;
-};
-
-type SalesListRecord = Omit<
+export type SalesListRecord = Omit<
   SalesListItem,
   'patient' | 'doctor' | 'customer'
 > & {
-  patient: RelationValue<SalesListItem['patient']>;
-  doctor: RelationValue<SalesListItem['doctor']>;
-  customer: RelationValue<SalesListItem['customer']>;
+  patient: SupabaseRelationValue<SalesListItem['patient']>;
+  doctor: SupabaseRelationValue<SalesListItem['doctor']>;
+  customer: SupabaseRelationValue<SalesListItem['customer']>;
 };
 
-export const mapSalesListItem = (item: unknown): SalesListItem => {
-  const sale = item as SalesListRecord;
+type SalePatient = NonNullable<SaleWithDetails['patient']>;
+type SaleDoctor = NonNullable<SaleWithDetails['doctor']>;
+type SaleCustomer = NonNullable<SaleWithDetails['customer']>;
+type SaleUser = NonNullable<SaleWithDetails['created_by_user']>;
+
+export type SaleDetailsRecord = DBSale & {
+  patients?: SupabaseRelationValue<SalePatient>;
+  doctors?: SupabaseRelationValue<SaleDoctor>;
+  customers?: SupabaseRelationValue<SaleCustomer>;
+  users?: SupabaseRelationValue<SaleUser>;
+};
+
+export type SaleItemDetailsRecord = DBSaleItem & {
+  items?: {
+    id?: string;
+    name?: string;
+    code?: string | null;
+    manufacturer?: string | null;
+  } | null;
+};
+
+export const mapSalesListItem = (sale: SalesListRecord): SalesListItem => ({
+  ...sale,
+  patient: getSingleSupabaseRelation(sale.patient),
+  doctor: getSingleSupabaseRelation(sale.doctor),
+  customer: getSingleSupabaseRelation(sale.customer),
+});
+
+export const mapSaleWithDetails = (
+  sale: SaleDetailsRecord
+): SaleWithDetails => {
   return {
     ...sale,
-    patient: getSingleRelation(sale.patient),
-    doctor: getSingleRelation(sale.doctor),
-    customer: getSingleRelation(sale.customer),
+    patient: getSingleSupabaseRelation(sale.patients),
+    doctor: getSingleSupabaseRelation(sale.doctors),
+    customer: getSingleSupabaseRelation(sale.customers),
+    created_by_user: getSingleSupabaseRelation(sale.users),
   };
 };
 
-export const mapSaleWithDetails = (sale: unknown): SaleWithDetails => {
-  const saleData = sale as Record<string, unknown>;
-  return {
-    ...saleData,
-    patient: saleData.patients as
-      | { id: string; name: string; phone?: string }
-      | undefined,
-    doctor: saleData.doctors as
-      | { id: string; name: string; specialization?: string }
-      | undefined,
-    customer: saleData.customers as
-      | { id: string; name: string; phone?: string | null }
-      | undefined,
-    created_by_user: saleData.users as { id: string; name: string } | undefined,
-  } as SaleWithDetails;
-};
-
 export const mapSaleItemWithDetails = (
-  item: Record<string, unknown> & {
-    items?: {
-      id?: string;
-      name?: string;
-      code?: string;
-      manufacturer?: string;
-    } | null;
-  }
-): SaleItemWithDetails =>
-  ({
-    ...item,
-    item: {
-      id: item.items?.id || '',
-      name: item.items?.name || '',
-      code: item.items?.code || '',
-      manufacturer: item.items?.manufacturer || '',
-    },
-  }) as SaleItemWithDetails;
+  item: SaleItemDetailsRecord
+): SaleItemWithDetails => ({
+  ...item,
+  item: {
+    id: item.items?.id || '',
+    name: item.items?.name || '',
+    code: item.items?.code || '',
+    manufacturer: item.items?.manufacturer || '',
+  },
+});
 
 export const buildSaleRpcItems = (items: SaleItemInput[]) =>
   items.map(item => ({
@@ -89,14 +90,11 @@ export const calculateSalesAnalytics = (
   const totalRevenue = sales.reduce((sum, sale) => sum + Number(sale.total), 0);
   const totalSales = sales.length;
   const averageSale = totalSales > 0 ? totalRevenue / totalSales : 0;
-  const paymentMethods = sales.reduce(
-    (acc, sale) => {
-      acc[sale.payment_method] =
-        (acc[sale.payment_method] || 0) + Number(sale.total);
-      return acc;
-    },
-    {} as Record<string, number>
-  );
+  const paymentMethods: Record<string, number> = {};
+  sales.forEach(sale => {
+    paymentMethods[sale.payment_method] =
+      (paymentMethods[sale.payment_method] || 0) + Number(sale.total);
+  });
 
   return {
     totalRevenue,

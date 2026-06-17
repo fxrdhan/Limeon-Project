@@ -18,10 +18,15 @@ const { mockAuthState, mockChatService, mockRealtimeService } = vi.hoisted(
         name: 'Admin',
         email: 'admin@example.com',
         profilephoto: 'https://example.com/admin.png',
-      },
+      } as {
+        id: string;
+        name: string;
+        email: string;
+        profilephoto: string;
+      } | null,
       session: {
         access_token: 'presence-access-token',
-      },
+      } as { access_token: string } | null,
     },
     mockChatService: {
       syncUserPresenceOnlineState: vi.fn(),
@@ -51,6 +56,20 @@ const flushPresenceEffects = async () => {
     await Promise.resolve();
     await Promise.resolve();
   });
+};
+
+const createDeferred = <T,>() => {
+  let resolvePromise: ((value: T) => void) | null = null;
+  const promise = new Promise<T>(resolve => {
+    resolvePromise = resolve;
+  });
+
+  return {
+    promise,
+    resolve: (value: T) => {
+      resolvePromise?.(value);
+    },
+  };
 };
 
 describe('usePresence', () => {
@@ -308,6 +327,56 @@ describe('usePresence', () => {
     unmount();
   });
 
+  it('ignores stale presence sync health after the user signs out', async () => {
+    const presenceSync = createDeferred<{
+      ok: boolean;
+      errorMessage: string | null;
+    }>();
+    mockChatService.syncUserPresenceOnlineState.mockReturnValueOnce(
+      presenceSync.promise
+    );
+
+    const { rerender, unmount } = renderHook(() => usePresence());
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(mockChatService.syncUserPresenceOnlineState).toHaveBeenCalledWith(
+      'user-a',
+      true
+    );
+
+    mockAuthState.user = null;
+    mockAuthState.session = null;
+
+    rerender();
+    await flushPresenceEffects();
+
+    expect(usePresenceStore.getState().presenceSyncHealth).toEqual({
+      status: 'idle',
+      errorMessage: null,
+      lastSyncedAt: null,
+    });
+
+    await act(async () => {
+      presenceSync.resolve({
+        ok: true,
+        errorMessage: null,
+      });
+      await presenceSync.promise;
+      await Promise.resolve();
+    });
+
+    expect(usePresenceStore.getState().presenceSyncHealth).toEqual({
+      status: 'idle',
+      errorMessage: null,
+      lastSyncedAt: null,
+    });
+
+    unmount();
+  });
+
   it('reconnects the roster channel after a channel error', async () => {
     presenceStateByKey = {};
 
@@ -432,8 +501,13 @@ describe('usePresence', () => {
       await Promise.resolve();
     });
 
+    const currentUser = mockAuthState.user;
+    if (!currentUser) {
+      throw new Error('Expected an authenticated test user.');
+    }
+
     mockAuthState.user = {
-      ...mockAuthState.user,
+      ...currentUser,
       name: 'Admin Updated',
     };
 
@@ -451,6 +525,167 @@ describe('usePresence', () => {
     expect(sharedChannel.on).toHaveBeenCalledTimes(3);
     expect(sharedChannel.subscribe).toHaveBeenCalledTimes(1);
     expect(usePresenceStore.getState().onlineUsers).toBe(2);
+
+    unmount();
+  });
+
+  it('removes a stale roster channel created after a newer subscription wins setup', async () => {
+    const firstReplace = createDeferred<{
+      on: ReturnType<typeof vi.fn>;
+      presenceState: ReturnType<typeof vi.fn>;
+      subscribe: ReturnType<typeof vi.fn>;
+      track: ReturnType<typeof vi.fn>;
+      untrack: ReturnType<typeof vi.fn>;
+      unsubscribe: ReturnType<typeof vi.fn>;
+    }>();
+    const createTestChannel = () => {
+      const channel = {
+        on: vi.fn(),
+        presenceState: vi.fn(() => presenceStateByKey),
+        subscribe: vi.fn(),
+        track: vi.fn(),
+        untrack: vi.fn(),
+        unsubscribe: vi.fn(),
+      };
+
+      channel.on.mockImplementation(
+        (
+          eventType: string,
+          filter: Record<string, string>,
+          callback: () => void
+        ) => {
+          if (eventType === 'presence' && filter.event === 'sync') {
+            presenceSyncHandler = callback;
+          }
+
+          return channel;
+        }
+      );
+      channel.track.mockImplementation(async payload => {
+        presenceStateByKey[payload.user_id] = [
+          {
+            ...payload,
+            presence_ref: 'presence-active',
+          },
+        ];
+        presenceSyncHandler?.();
+        return 'ok';
+      });
+      channel.subscribe.mockImplementation(
+        (callback?: (status: string) => void) => {
+          rosterChannelStatusHandler = callback ?? null;
+          callback?.('SUBSCRIBED');
+          return channel;
+        }
+      );
+
+      return channel;
+    };
+    const staleChannel = createTestChannel();
+    const activeChannel = createTestChannel();
+    mockRealtimeService.replaceChannel
+      .mockReset()
+      .mockImplementationOnce(() => firstReplace.promise)
+      .mockResolvedValueOnce(activeChannel);
+
+    const { rerender, unmount } = renderHook(() => usePresence());
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const currentUser = mockAuthState.user;
+    if (!currentUser) {
+      throw new Error('Expected an authenticated test user.');
+    }
+
+    mockAuthState.user = {
+      ...currentUser,
+      name: 'Admin Updated',
+    };
+
+    rerender();
+    await flushPresenceEffects();
+
+    expect(activeChannel.subscribe).toHaveBeenCalledOnce();
+
+    await act(async () => {
+      firstReplace.resolve(staleChannel);
+      await firstReplace.promise;
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(mockRealtimeService.removeChannel).toHaveBeenCalledWith(
+      staleChannel
+    );
+    expect(mockRealtimeService.removeChannel).not.toHaveBeenCalledWith(
+      activeChannel
+    );
+
+    unmount();
+  });
+
+  it('ignores stale roster tracking completion after the user signs out', async () => {
+    const trackRequest = createDeferred<'ok'>();
+    const staleChannel = {
+      on: vi.fn(),
+      presenceState: vi.fn(() => presenceStateByKey),
+      subscribe: vi.fn(),
+      track: vi.fn(() => trackRequest.promise),
+      untrack: vi.fn(),
+      unsubscribe: vi.fn(),
+    };
+
+    staleChannel.on.mockImplementation(
+      (
+        eventType: string,
+        filter: Record<string, string>,
+        callback: () => void
+      ) => {
+        if (eventType === 'presence' && filter.event === 'sync') {
+          presenceSyncHandler = callback;
+        }
+
+        return staleChannel;
+      }
+    );
+    staleChannel.subscribe.mockImplementation(
+      (callback?: (status: string) => void) => {
+        rosterChannelStatusHandler = callback ?? null;
+        callback?.('SUBSCRIBED');
+        return staleChannel;
+      }
+    );
+
+    mockRealtimeService.replaceChannel
+      .mockReset()
+      .mockResolvedValue(staleChannel);
+
+    const { rerender, unmount } = renderHook(() => usePresence());
+
+    await flushPresenceEffects();
+
+    expect(staleChannel.track).toHaveBeenCalledOnce();
+
+    mockAuthState.user = null;
+    mockAuthState.session = null;
+
+    rerender();
+    await flushPresenceEffects();
+
+    expect(usePresenceStore.getState().onlineUsers).toBe(0);
+    expect(usePresenceStore.getState().onlineUsersList).toEqual([]);
+
+    await act(async () => {
+      trackRequest.resolve('ok');
+      await trackRequest.promise;
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(usePresenceStore.getState().onlineUsers).toBe(0);
+    expect(usePresenceStore.getState().onlineUsersList).toEqual([]);
 
     unmount();
   });

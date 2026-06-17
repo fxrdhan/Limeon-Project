@@ -28,6 +28,60 @@ const isBrowser = typeof window !== 'undefined';
 const isCacheableUrl = (url: string) =>
   url.startsWith('http://') || url.startsWith('https://');
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const isStringArray = (value: unknown): value is string[] =>
+  Array.isArray(value) && value.every(item => typeof item === 'string');
+
+const normalizeCachedImageEntry = (value: unknown): CachedImageEntry | null => {
+  if (!isRecord(value) || typeof value.updatedAt !== 'number') return null;
+
+  if (value.type === 'single') {
+    return typeof value.url === 'string' && value.url
+      ? {
+          type: 'single',
+          url: value.url,
+          updatedAt: value.updatedAt,
+        }
+      : null;
+  }
+
+  if (value.type === 'set') {
+    return isStringArray(value.urls) && value.urls.some(Boolean)
+      ? {
+          type: 'set',
+          urls: value.urls,
+          updatedAt: value.updatedAt,
+        }
+      : null;
+  }
+
+  return null;
+};
+
+const normalizeImageCacheState = (value: unknown): ImageCacheState | null => {
+  if (
+    !isRecord(value) ||
+    value.version !== CACHE_VERSION ||
+    !isRecord(value.entries)
+  ) {
+    return null;
+  }
+
+  const entries = Object.fromEntries(
+    Object.entries(value.entries).flatMap(([key, entry]) => {
+      const normalizedEntry = normalizeCachedImageEntry(entry);
+      return normalizedEntry ? [[key, normalizedEntry]] : [];
+    })
+  );
+
+  return {
+    version: CACHE_VERSION,
+    entries,
+  };
+};
+
 const openBlobCache = async () => {
   /* c8 ignore next */
   if (!isBrowser || !('caches' in window)) return null;
@@ -73,15 +127,9 @@ const loadCacheFromStorage = () => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return;
-    const parsed = JSON.parse(raw) as ImageCacheState;
-    if (!parsed || parsed.version !== CACHE_VERSION) return;
-    Object.entries(parsed.entries || {}).forEach(([key, entry]) => {
-      if (entry.type === 'set') {
-        const urls = entry.urls || [];
-        const hasImage = urls.some(Boolean);
-        if (!hasImage) return;
-      }
-      if (entry.type === 'single' && !entry.url) return;
+    const parsed = normalizeImageCacheState(JSON.parse(raw));
+    if (!parsed) return;
+    Object.entries(parsed.entries).forEach(([key, entry]) => {
       cache.set(key, entry);
     });
     persistCache();

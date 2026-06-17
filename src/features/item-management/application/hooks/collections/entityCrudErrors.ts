@@ -1,3 +1,5 @@
+import { getErrorStringField, hasErrorStringFields } from '@/lib/errorFields';
+
 interface PostgrestLikeError {
   message: string;
   code: string;
@@ -5,9 +7,7 @@ interface PostgrestLikeError {
 }
 
 const isPostgrestLikeError = (error: unknown): error is PostgrestLikeError => {
-  if (typeof error !== 'object' || error === null) return false;
-  const record = error as Record<string, unknown>;
-  return typeof record.message === 'string' && typeof record.code === 'string';
+  return hasErrorStringFields(error, ['message', 'code']);
 };
 
 export const getEntityCrudErrorMessage = (error: unknown): string => {
@@ -17,12 +17,22 @@ export const getEntityCrudErrorMessage = (error: unknown): string => {
   return 'Unknown error';
 };
 
+export const toEntityCrudError = (error: unknown): Error | null => {
+  if (!error) return null;
+  if (error instanceof Error) return error;
+  return new Error(getEntityCrudErrorMessage(error));
+};
+
 const getEntityCrudErrorDetails = (error: unknown): string => {
-  return isPostgrestLikeError(error) ? (error.details ?? '') : '';
+  return isPostgrestLikeError(error)
+    ? (getErrorStringField(error, 'details') ?? '')
+    : '';
 };
 
 const getEntityCrudErrorCode = (error: unknown): string => {
-  return isPostgrestLikeError(error) ? error.code : '';
+  return isPostgrestLikeError(error)
+    ? (getErrorStringField(error, 'code') ?? '')
+    : '';
 };
 
 export const isDuplicateEntityCodeError = (error: unknown): boolean => {

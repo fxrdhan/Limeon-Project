@@ -58,7 +58,7 @@ export const useSupplierTab = (options?: { enabled?: boolean }) => {
   );
 
   const suppliersData: SupplierType[] = useMemo(
-    () => (suppliersQuery.data ?? []) as SupplierType[],
+    () => suppliersQuery.data ?? [],
     [suppliersQuery.data]
   );
 

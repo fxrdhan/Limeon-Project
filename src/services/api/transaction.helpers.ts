@@ -1,6 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { ServiceResponse } from './base.service';
-import type { PostgrestError } from '@supabase/supabase-js';
+import { toServiceError, type ServiceResponse } from './base.service';
 
 interface ReplaceLinkedItemsParams<TItem extends Record<string, unknown>> {
   tableName: string;
@@ -28,9 +27,12 @@ interface DateRangeQueryParams {
   ascending?: boolean;
 }
 
-export async function replaceLinkedItems<TItem extends Record<string, unknown>>(
+export async function replaceLinkedItems<
+  TItem extends Record<string, unknown>,
+  TInsertedItem = TItem,
+>(
   params: ReplaceLinkedItemsParams<TItem>
-): Promise<ServiceResponse<TItem[]>> {
+): Promise<ServiceResponse<TInsertedItem[]>> {
   const { tableName, foreignKey, parentId, items } = params;
 
   try {
@@ -47,23 +49,24 @@ export async function replaceLinkedItems<TItem extends Record<string, unknown>>(
       return { data: [], error: null };
     }
 
-    const payload = items.map(item => ({
+    const payload: Record<string, unknown>[] = items.map(item => ({
       ...item,
       [foreignKey]: parentId,
     }));
 
     const { data, error } = await supabase
       .from(tableName)
-      .insert(payload as Record<string, unknown>[])
-      .select('*');
+      .insert(payload)
+      .select('*')
+      .returns<TInsertedItem[]>();
 
     if (error) {
       return { data: null, error };
     }
 
-    return { data: (data || []) as TItem[], error: null };
+    return { data: data || [], error: null };
   } catch (error) {
-    return { data: null, error: error as PostgrestError };
+    return { data: null, error: toServiceError(error) };
   }
 }
 
@@ -84,6 +87,7 @@ export async function fetchRecordWithItems<TRecord, TItem>(
       .from(parentTable)
       .select(parentSelect)
       .eq('id', parentId)
+      .returns<TRecord[]>()
       .single();
 
     if (recordError || !record) {
@@ -93,7 +97,8 @@ export async function fetchRecordWithItems<TRecord, TItem>(
     const { data: items, error: itemsError } = await supabase
       .from(itemsTable)
       .select(itemsSelect)
-      .eq(itemsForeignKey, parentId);
+      .eq(itemsForeignKey, parentId)
+      .returns<TItem[]>();
 
     if (itemsError) {
       return { data: null, error: itemsError };
@@ -101,13 +106,13 @@ export async function fetchRecordWithItems<TRecord, TItem>(
 
     return {
       data: {
-        record: record as TRecord,
-        items: (items || []) as TItem[],
+        record,
+        items: items || [],
       },
       error: null,
     };
   } catch (error) {
-    return { data: null, error: error as PostgrestError };
+    return { data: null, error: toServiceError(error) };
   }
 }
 
@@ -155,13 +160,14 @@ export async function getRecordsByDateRange<TRecord>(
       .select(select)
       .gte(dateColumn, startDate)
       .lte(dateColumn, endDate)
-      .order(orderColumn, { ascending });
+      .order(orderColumn, { ascending })
+      .returns<TRecord[]>();
 
     return {
-      data: (data || []) as TRecord[],
+      data: data || [],
       error,
     };
   } catch (error) {
-    return { data: null, error: error as PostgrestError };
+    return { data: null, error: toServiceError(error) };
   }
 }

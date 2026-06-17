@@ -16,6 +16,7 @@ import {
   type ChangeEvent,
   type RefObject,
 } from 'react';
+import toast from 'react-hot-toast';
 import type { PurchaseListItem } from '../../domain/types';
 import {
   deletePurchaseWithStockRestore,
@@ -41,6 +42,15 @@ export const usePurchaseListPage = () => {
   const addPurchaseCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null
   );
+
+  const clearAddPurchaseCloseTimer = useCallback(() => {
+    if (!addPurchaseCloseTimerRef.current) {
+      return;
+    }
+
+    clearTimeout(addPurchaseCloseTimerRef.current);
+    addPurchaseCloseTimerRef.current = null;
+  }, []);
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: QueryKeys.purchases.paginated(
@@ -69,11 +79,9 @@ export const usePurchaseListPage = () => {
 
   useEffect(
     () => () => {
-      if (addPurchaseCloseTimerRef.current) {
-        clearTimeout(addPurchaseCloseTimerRef.current);
-      }
+      clearAddPurchaseCloseTimer();
     },
-    []
+    [clearAddPurchaseCloseTimer]
   );
 
   const purchases = useMemo(() => data?.purchases || [], [data?.purchases]);
@@ -89,7 +97,7 @@ export const usePurchaseListPage = () => {
     },
     onError: error => {
       console.error('Error deleting purchase:', error);
-      alert(`Gagal menghapus pembelian: ${error.message}`);
+      toast.error(`Gagal menghapus pembelian: ${error.message}`);
     },
   });
 
@@ -121,6 +129,7 @@ export const usePurchaseListPage = () => {
   );
 
   const closeAddPurchasePortal = useCallback(() => {
+    clearAddPurchaseCloseTimer();
     setIsAddPurchaseClosing(true);
     addPurchaseCloseTimerRef.current = setTimeout(() => {
       setShowAddPurchasePortal(false);
@@ -131,7 +140,13 @@ export const usePurchaseListPage = () => {
       );
       addPurchaseCloseTimerRef.current = null;
     }, PURCHASE_ADD_MODAL_CLOSE_MS);
-  }, [queryClient]);
+  }, [clearAddPurchaseCloseTimer, queryClient]);
+
+  const openAddPurchasePortal = useCallback(() => {
+    clearAddPurchaseCloseTimer();
+    setIsAddPurchaseClosing(false);
+    setShowAddPurchasePortal(true);
+  }, [clearAddPurchaseCloseTimer]);
 
   return {
     search,
@@ -149,7 +164,7 @@ export const usePurchaseListPage = () => {
     openUploadPortal: () => setShowUploadPortal(true),
     closeUploadPortal: () => setShowUploadPortal(false),
     showAddPurchasePortal,
-    openAddPurchasePortal: () => setShowAddPurchasePortal(true),
+    openAddPurchasePortal,
     closeAddPurchasePortal,
     isAddPurchaseClosing,
     setIsAddPurchaseClosing,

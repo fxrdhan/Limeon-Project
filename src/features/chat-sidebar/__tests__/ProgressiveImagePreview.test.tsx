@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import {
   afterEach,
   beforeEach,
@@ -155,6 +155,29 @@ describe('ProgressiveImagePreview', () => {
         'https://example.com/full-image.jpg'
       );
     });
+  });
+
+  it('keeps image clicks from bubbling to a parent preview backdrop', async () => {
+    const onBackdropClick = vi.fn();
+
+    render(
+      <button type="button" onClick={onBackdropClick}>
+        <ProgressiveImagePreview
+          alt="Preview gambar"
+          fullSrc="https://example.com/full-image.jpg"
+        />
+      </button>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByAltText('Preview gambar').getAttribute('src')).toBe(
+        'https://example.com/full-image.jpg'
+      );
+    });
+
+    fireEvent.click(screen.getByAltText('Preview gambar'));
+
+    expect(onBackdropClick).not.toHaveBeenCalled();
   });
 
   it('keeps rendering the current preview while a new sizing source is still decoding', async () => {

@@ -1,4 +1,10 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+} from 'react';
 
 interface ProgressiveImagePreviewProps {
   alt: string;
@@ -287,6 +293,11 @@ const ProgressiveImagePreview = ({
   }, [immediatePreviewSrc, normalizedFullSrc]);
 
   const stageImageClassName = `col-start-1 row-start-1 h-full w-full max-h-full max-w-full object-contain ${imageClassName}`;
+  const stageImageEventProps = {
+    onClick: (event: MouseEvent<HTMLImageElement>) => {
+      event.stopPropagation();
+    },
+  };
 
   return (
     <div
@@ -309,9 +320,7 @@ const ProgressiveImagePreview = ({
             className={`${stageImageClassName} ${
               allowPointerPassthrough ? 'pointer-events-auto' : ''
             }`}
-            onClick={event => {
-              event.stopPropagation();
-            }}
+            {...stageImageEventProps}
             draggable={false}
           />
         </div>

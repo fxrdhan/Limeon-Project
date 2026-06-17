@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import type { DBPackageConversion, ItemInventoryUnit } from '@/types/database';
+import type { ItemInventoryUnit } from '@/types/database';
 import { logger } from '@/utils/logger';
+import { parseDBPackageConversionValue } from '@/lib/packageConversions';
 import { useAddItemPageHandlers } from '../../../application/hooks/form/useItemPageHandlers';
 import { useItemFormValidation } from '../../../application/hooks/form/useItemValidation';
 import { useEntityHistory } from '../../../application/hooks/instances/useEntityHistory';
@@ -134,79 +135,74 @@ const ItemModal: React.FC<ItemModalProps> = ({
       const { package_conversions, ...restUpdates } = updates;
 
       if (package_conversions !== undefined) {
-        let parsedConversions: DBPackageConversion[] = [];
-        try {
-          if (typeof package_conversions === 'string') {
-            const parsedValue = JSON.parse(package_conversions);
-            parsedConversions = Array.isArray(parsedValue) ? parsedValue : [];
-          } else if (Array.isArray(package_conversions)) {
-            parsedConversions = package_conversions as DBPackageConversion[];
-          }
-        } catch (error) {
-          console.error('Failed to parse realtime package conversions', error);
+        const parsedConversions =
+          parseDBPackageConversionValue(package_conversions);
+
+        if (parsedConversions === null) {
+          console.error('Failed to parse realtime package conversions');
+        } else {
+          const mappedConversions = parsedConversions.map(conversion => {
+            const unitDetail =
+              packageConversionHook.availableUnits.find(
+                unit => unit.id === conversion.to_unit_id
+              ) ||
+              packageConversionHook.availableUnits.find(
+                unit => unit.name === conversion.unit_name
+              );
+
+            const fallbackUnit: ItemInventoryUnit = unitDetail
+              ? unitDetail
+              : {
+                  id: conversion.to_unit_id || '',
+                  name: conversion.unit_name || 'Unknown Unit',
+                  kind: 'custom',
+                };
+
+            const fallbackId =
+              conversion.to_unit_id || fallbackUnit.id || conversion.unit_name;
+            const rate = Number(conversion.conversion_rate) || 0;
+            const baseFromDb = Number(conversion.base_price) || 0;
+            const sellFromDb = Number(conversion.sell_price) || 0;
+
+            const computedBase =
+              packageConversionHook.basePrice > 0 && rate > 0
+                ? packageConversionHook.basePrice * rate
+                : baseFromDb;
+            const computedSell =
+              packageConversionHook.sellPrice > 0 && rate > 0
+                ? packageConversionHook.sellPrice * rate
+                : sellFromDb;
+
+            return {
+              id:
+                conversion.id ||
+                fallbackId ||
+                `${Date.now().toString()}-${Math.random().toString(36).slice(2, 9)}`,
+              unit_name: conversion.unit_name || fallbackUnit.name,
+              to_unit_id: fallbackUnit.id,
+              inventory_unit_id: fallbackUnit.id,
+              parent_inventory_unit_id: null,
+              contains_quantity: rate,
+              factor_to_base: rate,
+              unit: fallbackUnit,
+              conversion_rate: rate,
+              base_price_override: null,
+              sell_price_override: null,
+              base_price:
+                baseFromDb === 0 && packageConversionHook.basePrice > 0
+                  ? computedBase
+                  : baseFromDb,
+              sell_price:
+                sellFromDb === 0 && packageConversionHook.sellPrice > 0
+                  ? computedSell
+                  : sellFromDb,
+            };
+          });
+
+          packageConversionHook.skipNextRecalculation();
+          packageConversionHook.setConversions(mappedConversions);
+          setInitialPackageConversions(mappedConversions);
         }
-
-        const mappedConversions = parsedConversions.map(conversion => {
-          const unitDetail =
-            packageConversionHook.availableUnits.find(
-              unit => unit.id === conversion.to_unit_id
-            ) ||
-            packageConversionHook.availableUnits.find(
-              unit => unit.name === conversion.unit_name
-            );
-
-          const fallbackUnit: ItemInventoryUnit = unitDetail
-            ? unitDetail
-            : {
-                id: conversion.to_unit_id || '',
-                name: conversion.unit_name || 'Unknown Unit',
-                kind: 'custom',
-              };
-
-          const fallbackId =
-            conversion.to_unit_id || fallbackUnit.id || conversion.unit_name;
-          const rate = Number(conversion.conversion_rate) || 0;
-          const baseFromDb = Number(conversion.base_price) || 0;
-          const sellFromDb = Number(conversion.sell_price) || 0;
-
-          const computedBase =
-            packageConversionHook.basePrice > 0 && rate > 0
-              ? packageConversionHook.basePrice * rate
-              : baseFromDb;
-          const computedSell =
-            packageConversionHook.sellPrice > 0 && rate > 0
-              ? packageConversionHook.sellPrice * rate
-              : sellFromDb;
-
-          return {
-            id:
-              conversion.id ||
-              fallbackId ||
-              `${Date.now().toString()}-${Math.random().toString(36).slice(2, 9)}`,
-            unit_name: conversion.unit_name || fallbackUnit.name,
-            to_unit_id: fallbackUnit.id,
-            inventory_unit_id: fallbackUnit.id,
-            parent_inventory_unit_id: null,
-            contains_quantity: rate,
-            factor_to_base: rate,
-            unit: fallbackUnit,
-            conversion_rate: rate,
-            base_price_override: null,
-            sell_price_override: null,
-            base_price:
-              baseFromDb === 0 && packageConversionHook.basePrice > 0
-                ? computedBase
-                : baseFromDb,
-            sell_price:
-              sellFromDb === 0 && packageConversionHook.sellPrice > 0
-                ? computedSell
-                : sellFromDb,
-          };
-        });
-
-        packageConversionHook.skipNextRecalculation();
-        packageConversionHook.setConversions(mappedConversions);
-        setInitialPackageConversions(mappedConversions);
       }
 
       if (Object.keys(restUpdates).length > 0) {

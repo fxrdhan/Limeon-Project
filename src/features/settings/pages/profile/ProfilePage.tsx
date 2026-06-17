@@ -12,6 +12,7 @@ const Profile = () => {
     error,
     editMode,
     editValues,
+    isCreatingProfile,
     updateProfileMutation,
     toggleEdit,
     handleSave,
@@ -104,7 +105,7 @@ const Profile = () => {
   if (isError) {
     return (
       <div className="text-center p-6 text-red-500">
-        Error: {(error as Error).message}
+        Error: {error?.message ?? 'Gagal memuat profil perusahaan'}
       </div>
     );
   }
@@ -123,7 +124,13 @@ const Profile = () => {
             <p className="mb-4">
               Belum ada data profil. Tambahkan profil perusahaan Anda.
             </p>
-            <Button onClick={createProfile}>Tambah Profil</Button>
+            <Button
+              onClick={createProfile}
+              isLoading={isCreatingProfile}
+              disabled={isCreatingProfile}
+            >
+              Tambah Profil
+            </Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0">

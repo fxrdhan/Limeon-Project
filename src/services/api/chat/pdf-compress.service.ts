@@ -1,6 +1,6 @@
 import { supabase, supabaseUrl } from '@/lib/supabase';
 import type { PostgrestError } from '@supabase/supabase-js';
-import type { ServiceResponse } from '../base.service';
+import { toServiceError, type ServiceResponse } from '../base.service';
 import { createPostgrestError } from './contractErrors';
 import {
   CHAT_PDF_COMPRESS_DEFAULT_LEVEL,
@@ -22,6 +22,27 @@ const buildChatPdfCompressError = (
   message: string,
   code = 'CHAT_PDF_COMPRESS_REQUEST_FAILED'
 ): PostgrestError => createPostgrestError(message, code);
+
+const readChatPdfCompressErrorMessage = (payload: unknown): string | null => {
+  if (
+    typeof payload === 'object' &&
+    payload !== null &&
+    'error' in payload &&
+    typeof payload.error === 'string'
+  ) {
+    return payload.error;
+  }
+
+  return null;
+};
+
+const parseChatPdfCompressErrorMessage = (responseText: string) => {
+  try {
+    return readChatPdfCompressErrorMessage(JSON.parse(responseText));
+  } catch {
+    return null;
+  }
+};
 
 const parseNumericHeader = (
   value: string | null,
@@ -79,22 +100,15 @@ export const chatPdfCompressService = {
 
       if (!response.ok) {
         const responseText = await response.text();
-        const payload = responseText
-          ? (() => {
-              try {
-                return JSON.parse(responseText) as Record<string, unknown>;
-              } catch {
-                return null;
-              }
-            })()
+        const errorMessage = responseText
+          ? parseChatPdfCompressErrorMessage(responseText)
           : null;
 
         return {
           data: null,
           error: buildChatPdfCompressError(
-            typeof payload?.error === 'string'
-              ? payload.error
-              : `Chat PDF compression request failed with status ${response.status}`,
+            errorMessage ??
+              `Chat PDF compression request failed with status ${response.status}`,
             String(response.status)
           ),
         };
@@ -144,7 +158,7 @@ export const chatPdfCompressService = {
     } catch (error) {
       return {
         data: null,
-        error: error as PostgrestError,
+        error: toServiceError(error),
       };
     }
   },

@@ -49,6 +49,7 @@ export const useChatComposer = ({
   const [messageInputHeight, setMessageInputHeight] = useState(
     MESSAGE_INPUT_MIN_HEIGHT
   );
+  const messageInputHeightValueRef = useRef(MESSAGE_INPUT_MIN_HEIGHT);
   const [composerLayoutMode, setComposerLayoutMode] = useState<
     'inline' | 'multiline'
   >('inline');
@@ -56,22 +57,70 @@ export const useChatComposer = ({
     useState(false);
 
   const messageInputHeightRafRef = useRef<number | null>(null);
+  const sendSuccessGlowFrameRef = useRef<number | null>(null);
+  const sendSuccessGlowRequestRef = useRef(0);
   const sendSuccessGlowTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const inlineOverflowThresholdRef = useRef<number | null>(null);
 
-  const triggerSendSuccessGlow = useCallback(() => {
+  const clearPendingSendSuccessGlowFrame = useCallback(() => {
+    sendSuccessGlowRequestRef.current += 1;
+
+    if (sendSuccessGlowFrameRef.current === null) {
+      return;
+    }
+
+    cancelAnimationFrame(sendSuccessGlowFrameRef.current);
+    sendSuccessGlowFrameRef.current = null;
+  }, []);
+
+  const clearSendSuccessGlowSchedule = useCallback(() => {
+    clearPendingSendSuccessGlowFrame();
+
     if (sendSuccessGlowTimeoutRef.current) {
       clearTimeout(sendSuccessGlowTimeoutRef.current);
+      sendSuccessGlowTimeoutRef.current = null;
     }
+  }, [clearPendingSendSuccessGlowFrame]);
+
+  const clearMessageInputHeightFrame = useCallback(() => {
+    if (messageInputHeightRafRef.current === null) {
+      return;
+    }
+
+    cancelAnimationFrame(messageInputHeightRafRef.current);
+    messageInputHeightRafRef.current = null;
+  }, []);
+
+  const triggerSendSuccessGlow = useCallback(() => {
+    clearSendSuccessGlowSchedule();
+
     setIsSendSuccessGlowVisible(false);
-    requestAnimationFrame(() => {
+
+    const glowRequestId = sendSuccessGlowRequestRef.current + 1;
+    let didRunSynchronously = false;
+    sendSuccessGlowRequestRef.current = glowRequestId;
+
+    const frameId = requestAnimationFrame(() => {
+      didRunSynchronously = true;
+
+      if (sendSuccessGlowRequestRef.current !== glowRequestId) {
+        return;
+      }
+
+      sendSuccessGlowFrameRef.current = null;
       setIsSendSuccessGlowVisible(true);
     });
+
+    if (!didRunSynchronously) {
+      sendSuccessGlowFrameRef.current = frameId;
+    }
+
     sendSuccessGlowTimeoutRef.current = setTimeout(() => {
+      clearPendingSendSuccessGlowFrame();
       setIsSendSuccessGlowVisible(false);
       sendSuccessGlowTimeoutRef.current = null;
     }, SEND_SUCCESS_GLOW_DURATION + SEND_SUCCESS_GLOW_RESET_BUFFER);
-  }, []);
+  }, [clearPendingSendSuccessGlowFrame, clearSendSuccessGlowSchedule]);
 
   const setMessage = useCallback(
     (nextMessage: SetStateAction<string>) => {
@@ -206,14 +255,22 @@ export const useChatComposer = ({
 
   const resetConversationScopedComposerState = useCallback(() => {
     closeAttachModal();
+    clearMessageInputHeightFrame();
     setMessageState(
       readPersistedComposerDraftMessage(currentChannelId, userId)
     );
     setEditingMessageId(null);
     setReplyingMessageId(null);
     inlineOverflowThresholdRef.current = null;
+    clearSendSuccessGlowSchedule();
     setIsSendSuccessGlowVisible(false);
-  }, [closeAttachModal, currentChannelId, userId]);
+  }, [
+    clearMessageInputHeightFrame,
+    clearSendSuccessGlowSchedule,
+    closeAttachModal,
+    currentChannelId,
+    userId,
+  ]);
 
   const handleMessageChange = useCallback(
     (nextMessage: string) => {
@@ -231,10 +288,7 @@ export const useChatComposer = ({
       const textarea = messageInputRef.current;
       if (!textarea) return;
 
-      if (messageInputHeightRafRef.current !== null) {
-        cancelAnimationFrame(messageInputHeightRafRef.current);
-        messageInputHeightRafRef.current = null;
-      }
+      clearMessageInputHeightFrame();
 
       const currentHeight =
         textarea.getBoundingClientRect().height || MESSAGE_INPUT_MIN_HEIGHT;
@@ -274,7 +328,7 @@ export const useChatComposer = ({
 
       const shouldAnimateHeight =
         Math.abs(nextHeight - currentHeight) > 0.5 &&
-        messageInputHeight !== nextHeight;
+        messageInputHeightValueRef.current !== nextHeight;
       if (shouldAnimateHeight) {
         textarea.style.height = `${currentHeight}px`;
         if (nextHeight < currentHeight) {
@@ -293,17 +347,21 @@ export const useChatComposer = ({
         textarea.style.height = `${nextHeight}px`;
       }
 
+      messageInputHeightValueRef.current = nextHeight;
       setMessageInputHeight(previousHeight =>
         previousHeight === nextHeight ? previousHeight : nextHeight
       );
     },
-    [composerLayoutMode, messageInputHeight, messageInputRef]
+    [clearMessageInputHeightFrame, composerLayoutMode, messageInputRef]
   );
 
   useLayoutEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      clearMessageInputHeightFrame();
+      return;
+    }
     resizeMessageInput(message);
-  }, [isOpen, message, resizeMessageInput]);
+  }, [clearMessageInputHeightFrame, isOpen, message, resizeMessageInput]);
 
   useLayoutEffect(() => {
     resetConversationScopedComposerState();
@@ -311,17 +369,16 @@ export const useChatComposer = ({
 
   useEffect(() => {
     return () => {
-      if (messageInputHeightRafRef.current !== null) {
-        cancelAnimationFrame(messageInputHeightRafRef.current);
-        messageInputHeightRafRef.current = null;
-      }
+      clearMessageInputHeightFrame();
 
       if (sendSuccessGlowTimeoutRef.current) {
         clearTimeout(sendSuccessGlowTimeoutRef.current);
         sendSuccessGlowTimeoutRef.current = null;
       }
+
+      clearPendingSendSuccessGlowFrame();
     };
-  }, []);
+  }, [clearMessageInputHeightFrame, clearPendingSendSuccessGlowFrame]);
 
   useEffect(() => {
     if (message.length > 0) return;

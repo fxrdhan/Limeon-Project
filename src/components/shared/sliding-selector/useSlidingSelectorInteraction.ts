@@ -42,10 +42,27 @@ export const useSlidingSelectorInteraction = <T>({
   const mouseLeaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null
   );
+  const hoverExpandTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
   const previousCollapseSignalRef = useRef(collapseSignal);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const supportsHoverPointer = canUseHoverPointer();
+
+  const clearHoverExpandTimeout = useCallback(() => {
+    if (hoverExpandTimeoutRef.current) {
+      clearTimeout(hoverExpandTimeoutRef.current);
+      hoverExpandTimeoutRef.current = null;
+    }
+  }, []);
+
+  const clearMouseLeaveTimeout = useCallback(() => {
+    if (mouseLeaveTimeoutRef.current) {
+      clearTimeout(mouseLeaveTimeoutRef.current);
+      mouseLeaveTimeoutRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     onExpandedChange?.(isExpanded);
@@ -56,12 +73,29 @@ export const useSlidingSelectorInteraction = <T>({
     if (previousCollapseSignalRef.current === collapseSignal) return;
 
     previousCollapseSignalRef.current = collapseSignal;
+    clearHoverExpandTimeout();
+    clearMouseLeaveTimeout();
     setIsExpanded(false);
     setIsMouseOver(false);
     setHoveredIndex(null);
     setFocusedIndex(-1);
     buttonRefs.current.forEach(button => button?.blur());
-  }, [collapseSignal, collapsible]);
+  }, [
+    clearHoverExpandTimeout,
+    clearMouseLeaveTimeout,
+    collapseSignal,
+    collapsible,
+  ]);
+
+  useEffect(() => {
+    if (!disabled) return;
+
+    clearHoverExpandTimeout();
+    clearMouseLeaveTimeout();
+    setIsMouseOver(false);
+    setHoveredIndex(null);
+    setFocusedIndex(-1);
+  }, [clearHoverExpandTimeout, clearMouseLeaveTimeout, disabled]);
 
   useEffect(() => {
     if (expandDirection !== 'vertical') {
@@ -85,9 +119,14 @@ export const useSlidingSelectorInteraction = <T>({
     if (!collapsible || !isExpanded) return;
 
     const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target as Node | null;
-      if (target && rootRef.current?.contains(target)) return;
+      if (
+        event.target instanceof Node &&
+        rootRef.current?.contains(event.target)
+      ) {
+        return;
+      }
 
+      clearHoverExpandTimeout();
       setIsExpanded(false);
       setIsMouseOver(false);
       setHoveredIndex(null);
@@ -99,7 +138,7 @@ export const useSlidingSelectorInteraction = <T>({
     return () => {
       document.removeEventListener('pointerdown', handlePointerDown);
     };
-  }, [collapsible, isExpanded]);
+  }, [clearHoverExpandTimeout, collapsible, isExpanded]);
 
   useEffect(() => {
     if (!collapsible || !expandOnHover) return;
@@ -113,23 +152,24 @@ export const useSlidingSelectorInteraction = <T>({
       mouseLeaveTimeoutRef.current = setTimeout(() => {
         setIsExpanded(false);
         setFocusedIndex(-1);
+        mouseLeaveTimeoutRef.current = null;
       }, autoCollapseDelay);
     } else if (isMouseOver || hasFocus) {
-      if (mouseLeaveTimeoutRef.current) {
-        clearTimeout(mouseLeaveTimeoutRef.current);
-        mouseLeaveTimeoutRef.current = null;
-      }
-      setTimeout(() => {
+      clearMouseLeaveTimeout();
+      clearHoverExpandTimeout();
+      hoverExpandTimeoutRef.current = setTimeout(() => {
+        hoverExpandTimeoutRef.current = null;
         setIsExpanded(true);
       }, 0);
     }
 
     return () => {
-      if (mouseLeaveTimeoutRef.current) {
-        clearTimeout(mouseLeaveTimeoutRef.current);
-      }
+      clearMouseLeaveTimeout();
+      clearHoverExpandTimeout();
     };
   }, [
+    clearHoverExpandTimeout,
+    clearMouseLeaveTimeout,
     isMouseOver,
     isExpanded,
     collapsible,
@@ -171,10 +211,12 @@ export const useSlidingSelectorInteraction = <T>({
   }, [activeKey, collapsible, expandOnHover, isExpanded, options]);
 
   const handleMouseEnter = useCallback(() => {
+    if (disabled) return;
+
     if (expandOnHover && supportsHoverPointer) {
       setIsMouseOver(true);
     }
-  }, [expandOnHover, supportsHoverPointer]);
+  }, [disabled, expandOnHover, supportsHoverPointer]);
 
   const handleMouseLeave = useCallback(() => {
     if (!supportsHoverPointer) return;
@@ -193,10 +235,13 @@ export const useSlidingSelectorInteraction = <T>({
   }, [expandOnHover, supportsHoverPointer]);
 
   const toggleExpanded = useCallback(() => {
+    if (disabled) return;
+
     if (collapsible) {
+      clearHoverExpandTimeout();
       setIsExpanded(previousValue => !previousValue);
     }
-  }, [collapsible]);
+  }, [clearHoverExpandTimeout, collapsible, disabled]);
 
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
@@ -236,6 +281,7 @@ export const useSlidingSelectorInteraction = <T>({
         case 'Escape':
           event.preventDefault();
           if (collapsible) {
+            clearHoverExpandTimeout();
             setIsExpanded(false);
             setFocusedIndex(-1);
           }
@@ -249,6 +295,7 @@ export const useSlidingSelectorInteraction = <T>({
       focusedIndex,
       activeKey,
       collapsible,
+      clearHoverExpandTimeout,
       onSelectionChange,
     ]
   );
@@ -264,6 +311,8 @@ export const useSlidingSelectorInteraction = <T>({
     },
     [disabled, onSelectionChange]
   );
+
+  useEffect(() => () => clearHoverExpandTimeout(), [clearHoverExpandTimeout]);
 
   return {
     buttonRefs,

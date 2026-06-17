@@ -20,6 +20,7 @@ export const useChatRuntimeReadReceipts = () => {
   const retryTimeoutRef = useRef<number | null>(null);
   const isFlushInFlightRef = useRef(false);
   const accessTokenRef = useRef<string | null>(session?.access_token ?? null);
+  const receiptScopeVersionRef = useRef(0);
   const flushPendingReadReceiptsRef = useRef<() => Promise<void>>(
     async () => {}
   );
@@ -76,6 +77,7 @@ export const useChatRuntimeReadReceipts = () => {
       return;
     }
 
+    const receiptScopeVersion = receiptScopeVersionRef.current;
     const pendingMessageIds = getPendingReadReceiptBatch(
       user.id,
       READ_RECEIPT_BATCH_SIZE
@@ -95,6 +97,9 @@ export const useChatRuntimeReadReceipts = () => {
         submitBatch: messageIds =>
           chatSidebarMessagesGateway.markMessageIdsAsRead(messageIds),
       });
+      if (receiptScopeVersionRef.current !== receiptScopeVersion) {
+        return;
+      }
 
       if (result.status === 'retry') {
         console.error('Error syncing pending read receipts:', result.error);
@@ -115,6 +120,10 @@ export const useChatRuntimeReadReceipts = () => {
 
       toast.dismiss(CHAT_READ_SYNC_TOAST_ID);
     } catch (error) {
+      if (receiptScopeVersionRef.current !== receiptScopeVersion) {
+        return;
+      }
+
       console.error('Caught error syncing pending read receipts:', error);
       toast.error(
         'Sinkronisasi status baca chat tertunda. Akan dicoba lagi otomatis.',
@@ -124,7 +133,9 @@ export const useChatRuntimeReadReceipts = () => {
       );
       schedulePendingReadReceiptRetry();
     } finally {
-      isFlushInFlightRef.current = false;
+      if (receiptScopeVersionRef.current === receiptScopeVersion) {
+        isFlushInFlightRef.current = false;
+      }
     }
   }, [
     clearRetryTimer,
@@ -151,6 +162,8 @@ export const useChatRuntimeReadReceipts = () => {
   }, [user?.id]);
 
   useEffect(() => {
+    receiptScopeVersionRef.current += 1;
+
     if (!user?.id) {
       clearFlushTimer();
       clearRetryTimer();
@@ -168,6 +181,7 @@ export const useChatRuntimeReadReceipts = () => {
     }
 
     return () => {
+      receiptScopeVersionRef.current += 1;
       unsubscribe();
       clearFlushTimer();
       clearRetryTimer();

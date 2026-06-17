@@ -37,6 +37,7 @@ export const useEntityModalRealtime = ({
   const queryClient = useQueryClient();
   const channelRef = useRef<RealtimeChannel | null>(null);
   const lastUpdateRef = useRef<string>('');
+  const subscriptionVersionRef = useRef(0);
 
   // Use refs to store latest callbacks without triggering effect re-runs
   const onSmartUpdateRef = useRef(onSmartUpdate);
@@ -66,7 +67,14 @@ export const useEntityModalRealtime = ({
       return;
     }
 
+    const subscriptionVersion = subscriptionVersionRef.current + 1;
+    subscriptionVersionRef.current = subscriptionVersion;
+    lastUpdateRef.current = '';
     const channelName = `entity-modal-${entityTable}-${entityId}`;
+    let activeChannel: RealtimeChannel | null = null;
+    const isCurrentSubscription = () =>
+      channelRef.current === activeChannel &&
+      subscriptionVersionRef.current === subscriptionVersion;
 
     const channel = itemRealtimeService
       .createChannel(channelName)
@@ -79,6 +87,10 @@ export const useEntityModalRealtime = ({
           filter: `id=eq.${entityId}`,
         },
         payload => {
+          if (!isCurrentSubscription()) {
+            return;
+          }
+
           // ANTI-LOOP #1: Prevent processing same update multiple times
           const currentTimestamp = payload.commit_timestamp || '';
           if (currentTimestamp === lastUpdateRef.current) {
@@ -123,13 +135,20 @@ export const useEntityModalRealtime = ({
           filter: `id=eq.${entityId}`,
         },
         () => {
+          if (!isCurrentSubscription()) {
+            return;
+          }
+
+          // Call custom handler using ref (always latest callback)
+          if (onEntityDeletedRef.current) {
+            onEntityDeletedRef.current();
+            return;
+          }
+
           toast.error('Data telah dihapus dari sumber lain', {
             duration: 5000,
             icon: '⚠️',
           });
-
-          // Call custom handler using ref (always latest callback)
-          onEntityDeletedRef.current?.();
         }
       )
       .subscribe(status => {
@@ -140,12 +159,14 @@ export const useEntityModalRealtime = ({
         }
       });
 
+    activeChannel = channel;
     channelRef.current = channel;
 
     return () => {
-      if (channelRef.current) {
-        void channelRef.current.unsubscribe();
-        void itemRealtimeService.removeChannel(channelRef.current);
+      if (channelRef.current === channel) {
+        subscriptionVersionRef.current += 1;
+        void channel.unsubscribe();
+        void itemRealtimeService.removeChannel(channel);
         channelRef.current = null;
       }
     };

@@ -26,6 +26,7 @@ export const useComposerAttachmentPreviewState = ({
   const [composerImageExpandedUrl, setComposerImageExpandedUrl] = useState<
     string | null
   >(null);
+  const composerImagePreviewOpenFrameRef = useRef<number | null>(null);
   const composerImagePreviewCloseTimerRef = useRef<number | null>(null);
   const composerImageExpandedUrlRef = useRef<string | null>(null);
 
@@ -44,7 +45,17 @@ export const useComposerAttachmentPreviewState = ({
     setComposerImageExpandedUrl(null);
   }, []);
 
+  const cancelComposerImagePreviewOpenFrame = useCallback(() => {
+    if (composerImagePreviewOpenFrameRef.current === null) {
+      return;
+    }
+
+    window.cancelAnimationFrame(composerImagePreviewOpenFrameRef.current);
+    composerImagePreviewOpenFrameRef.current = null;
+  }, []);
+
   const resetComposerImagePreviewState = useCallback(() => {
+    cancelComposerImagePreviewOpenFrame();
     if (composerImagePreviewCloseTimerRef.current) {
       window.clearTimeout(composerImagePreviewCloseTimerRef.current);
       composerImagePreviewCloseTimerRef.current = null;
@@ -54,7 +65,7 @@ export const useComposerAttachmentPreviewState = ({
     setIsComposerImageExpanded(false);
     setComposerImagePreviewAttachmentId(null);
     resetComposerImageExpandedUrl();
-  }, [resetComposerImageExpandedUrl]);
+  }, [cancelComposerImagePreviewOpenFrame, resetComposerImageExpandedUrl]);
 
   useEffect(() => {
     if (previewComposerImageAttachment || !isComposerImageExpanded) {
@@ -78,6 +89,7 @@ export const useComposerAttachmentPreviewState = ({
         return;
       }
 
+      cancelComposerImagePreviewOpenFrame();
       setIsComposerImageExpandedVisible(false);
       if (composerImagePreviewCloseTimerRef.current) {
         window.clearTimeout(composerImagePreviewCloseTimerRef.current);
@@ -96,7 +108,11 @@ export const useComposerAttachmentPreviewState = ({
     return () => {
       document.removeEventListener('keydown', handleEscapeKey);
     };
-  }, [isComposerImageExpanded, resetComposerImageExpandedUrl]);
+  }, [
+    cancelComposerImagePreviewOpenFrame,
+    isComposerImageExpanded,
+    resetComposerImageExpandedUrl,
+  ]);
 
   useEffect(() => {
     resetComposerImagePreviewState();
@@ -109,11 +125,13 @@ export const useComposerAttachmentPreviewState = ({
         composerImagePreviewCloseTimerRef.current = null;
       }
 
+      cancelComposerImagePreviewOpenFrame();
       resetComposerImageExpandedUrl();
     };
-  }, [resetComposerImageExpandedUrl]);
+  }, [cancelComposerImagePreviewOpenFrame, resetComposerImageExpandedUrl]);
 
   const closeComposerImagePreview = useCallback(() => {
+    cancelComposerImagePreviewOpenFrame();
     setIsComposerImageExpandedVisible(false);
     if (composerImagePreviewCloseTimerRef.current) {
       window.clearTimeout(composerImagePreviewCloseTimerRef.current);
@@ -126,7 +144,7 @@ export const useComposerAttachmentPreviewState = ({
       resetComposerImageExpandedUrl();
       composerImagePreviewCloseTimerRef.current = null;
     }, COMPOSER_IMAGE_PREVIEW_EXIT_DURATION);
-  }, [resetComposerImageExpandedUrl]);
+  }, [cancelComposerImagePreviewOpenFrame, resetComposerImageExpandedUrl]);
 
   const openComposerImagePreview = useCallback(
     (attachmentId: string) => {
@@ -146,17 +164,25 @@ export const useComposerAttachmentPreviewState = ({
         composerImagePreviewCloseTimerRef.current = null;
       }
 
+      cancelComposerImagePreviewOpenFrame();
       resetComposerImageExpandedUrl();
       const originalImageUrl = URL.createObjectURL(targetAttachment.file);
       composerImageExpandedUrlRef.current = originalImageUrl;
       setComposerImageExpandedUrl(originalImageUrl);
       setComposerImagePreviewAttachmentId(attachmentId);
       setIsComposerImageExpanded(true);
-      window.requestAnimationFrame(() => {
+      const frameId = window.requestAnimationFrame(() => {
+        if (composerImagePreviewOpenFrameRef.current !== frameId) {
+          return;
+        }
+
+        composerImagePreviewOpenFrameRef.current = null;
         setIsComposerImageExpandedVisible(true);
       });
+      composerImagePreviewOpenFrameRef.current = frameId;
     },
     [
+      cancelComposerImagePreviewOpenFrame,
       closeAttachModal,
       closeMessageMenu,
       pendingComposerAttachments,

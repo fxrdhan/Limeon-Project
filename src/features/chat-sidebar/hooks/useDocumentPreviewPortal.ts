@@ -12,6 +12,7 @@ export const useDocumentPreviewPortal = () => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewName, setPreviewName] = useState('');
   const [isPreviewVisible, setIsPreviewVisible] = useState(false);
+  const previewOpenFrameRef = useRef<number | null>(null);
   const previewCloseTimerRef = useRef<number | null>(null);
   const previewObjectUrlRef = useRef<string | null>(null);
   const activeOpenRequestIdRef = useRef(0);
@@ -22,7 +23,18 @@ export const useDocumentPreviewPortal = () => {
     previewObjectUrlRef.current = null;
   }, []);
 
+  const cancelPreviewOpenFrame = useCallback(() => {
+    if (previewOpenFrameRef.current === null) {
+      return;
+    }
+
+    window.cancelAnimationFrame(previewOpenFrameRef.current);
+    previewOpenFrameRef.current = null;
+  }, []);
+
   const closeDocumentPreview = useCallback(() => {
+    activeOpenRequestIdRef.current += 1;
+    cancelPreviewOpenFrame();
     setIsPreviewVisible(false);
     if (previewCloseTimerRef.current) {
       window.clearTimeout(previewCloseTimerRef.current);
@@ -34,13 +46,14 @@ export const useDocumentPreviewPortal = () => {
       releasePreviewObjectUrl();
       previewCloseTimerRef.current = null;
     }, 150);
-  }, [releasePreviewObjectUrl]);
+  }, [cancelPreviewOpenFrame, releasePreviewObjectUrl]);
 
   const openDocumentPreview = useCallback(
     async ({ previewName, resolvePreviewUrl }: OpenDocumentPreviewOptions) => {
       const requestId = activeOpenRequestIdRef.current + 1;
       activeOpenRequestIdRef.current = requestId;
 
+      cancelPreviewOpenFrame();
       if (previewCloseTimerRef.current) {
         window.clearTimeout(previewCloseTimerRef.current);
         previewCloseTimerRef.current = null;
@@ -60,27 +73,33 @@ export const useDocumentPreviewPortal = () => {
         : null;
       setPreviewUrl(nextPreviewState.previewUrl);
       setPreviewName(previewName);
-      requestAnimationFrame(() => {
-        if (activeOpenRequestIdRef.current === requestId) {
+      const frameId = window.requestAnimationFrame(() => {
+        if (
+          activeOpenRequestIdRef.current === requestId &&
+          previewOpenFrameRef.current === frameId
+        ) {
+          previewOpenFrameRef.current = null;
           setIsPreviewVisible(true);
         }
       });
+      previewOpenFrameRef.current = frameId;
 
       return true;
     },
-    [releasePreviewObjectUrl]
+    [cancelPreviewOpenFrame, releasePreviewObjectUrl]
   );
 
   useEffect(() => {
     return () => {
       activeOpenRequestIdRef.current += 1;
+      cancelPreviewOpenFrame();
       if (previewCloseTimerRef.current) {
         window.clearTimeout(previewCloseTimerRef.current);
         previewCloseTimerRef.current = null;
       }
       releasePreviewObjectUrl();
     };
-  }, [releasePreviewObjectUrl]);
+  }, [cancelPreviewOpenFrame, releasePreviewObjectUrl]);
 
   return {
     previewUrl,

@@ -54,8 +54,28 @@ export const useItemModalStackSections = ({
   const [lastOpenSection, setLastOpenSection] =
     useState<AccordionSection | null>(isEditSession ? null : 'additional');
   const hoverTimerRef = useRef<number | null>(null);
+  const restoreFrameRef = useRef<number | null>(null);
+  const focusFrameRef = useRef<number | null>(null);
   const ignoreStackTapRef = useRef(false);
   const ignoreStackTapTimerRef = useRef<number | null>(null);
+
+  const cancelRestoreFrame = useCallback(() => {
+    if (restoreFrameRef.current === null) {
+      return;
+    }
+
+    window.cancelAnimationFrame(restoreFrameRef.current);
+    restoreFrameRef.current = null;
+  }, []);
+
+  const cancelFocusFrame = useCallback(() => {
+    if (focusFrameRef.current === null) {
+      return;
+    }
+
+    window.cancelAnimationFrame(focusFrameRef.current);
+    focusFrameRef.current = null;
+  }, []);
 
   const updateOpenSection = useCallback(
     (nextSection: AccordionSection | null) => {
@@ -69,6 +89,8 @@ export const useItemModalStackSections = ({
 
   const toggleSection = useCallback(
     (section: AccordionSection) => {
+      cancelFocusFrame();
+      cancelRestoreFrame();
       setHasUserToggled(true);
       if (openSection === section) {
         setOpenSection(null);
@@ -85,11 +107,13 @@ export const useItemModalStackSections = ({
 
       updateOpenSection(section);
     },
-    [openSection, updateOpenSection]
+    [cancelFocusFrame, cancelRestoreFrame, openSection, updateOpenSection]
   );
 
   const handleLevelPricingToggle = useCallback(
     (isOpenLevelPricing: boolean) => {
+      cancelFocusFrame();
+      cancelRestoreFrame();
       setIsLevelPricingMode(isOpenLevelPricing);
       if (!isOpenLevelPricing) return;
       if (hoverTimerRef.current) {
@@ -100,7 +124,7 @@ export const useItemModalStackSections = ({
       setIsStackTransitioning(false);
       updateOpenSection('pricing');
     },
-    [updateOpenSection]
+    [cancelFocusFrame, cancelRestoreFrame, updateOpenSection]
   );
 
   const autoOpenSection = useMemo<AccordionSection | null>(() => {
@@ -181,6 +205,7 @@ export const useItemModalStackSections = ({
 
   const startStackCollapse = useCallback(() => {
     if (isStackHovering || isStackTransitioning) return;
+    cancelRestoreFrame();
     if (openSection) {
       setLastOpenSection(openSection);
     }
@@ -194,7 +219,7 @@ export const useItemModalStackSections = ({
       setIsStackHovering(true);
       hoverTimerRef.current = null;
     }, 220);
-  }, [isStackHovering, isStackTransitioning, openSection]);
+  }, [cancelRestoreFrame, isStackHovering, isStackTransitioning, openSection]);
 
   const restoreStack = useCallback(() => {
     if (hoverTimerRef.current) {
@@ -209,12 +234,18 @@ export const useItemModalStackSections = ({
       (hasUserToggled ? null : isEditSession ? autoOpenSection : 'additional');
 
     if (restoreSection !== null) {
-      requestAnimationFrame(() => {
-        updateOpenSection(restoreSection);
+      cancelRestoreFrame();
+      const restoreFrame = window.requestAnimationFrame(() => {
+        if (restoreFrameRef.current === restoreFrame) {
+          restoreFrameRef.current = null;
+          updateOpenSection(restoreSection);
+        }
       });
+      restoreFrameRef.current = restoreFrame;
     }
   }, [
     autoOpenSection,
+    cancelRestoreFrame,
     hasUserToggled,
     isEditSession,
     lastOpenSection,
@@ -224,8 +255,8 @@ export const useItemModalStackSections = ({
 
   const handleStackMouseMove = useCallback(
     (event: MouseEvent<HTMLDivElement>) => {
-      const target = event.target as HTMLElement | null;
-      if (!target) return;
+      if (!(event.target instanceof HTMLElement)) return;
+      const target = event.target;
 
       const isOverIgnore = Boolean(
         target.closest('[data-stack-ignore="true"]')
@@ -277,52 +308,62 @@ export const useItemModalStackSections = ({
     restoreStack();
   }, [restoreStack]);
 
-  const focusSectionFirstField = useCallback((section: AccordionSection) => {
-    let attempts = 0;
-    const tryFocus = () => {
-      const modal = document.querySelector(
-        '[role="dialog"][aria-modal="true"]'
-      );
-      if (!modal) return;
-      const sectionEl = modal.querySelector(
-        `[data-stack-section="${section}"]`
-      );
-      const container = sectionEl?.querySelector<HTMLElement>(
-        '[data-section-content]'
-      );
-      const preferredInput =
-        section === 'pricing'
-          ? container?.querySelector<HTMLInputElement>(
-              'input[name="base_price"]'
-            )
-          : null;
-      const firstFocusable =
-        preferredInput ||
-        container?.querySelector<HTMLElement>(
-          'input, select, textarea, button, [tabindex]:not([tabindex="-1"])'
+  const focusSectionFirstField = useCallback(
+    (section: AccordionSection) => {
+      cancelFocusFrame();
+
+      let attempts = 0;
+      const tryFocus = () => {
+        focusFrameRef.current = null;
+
+        const modal = document.querySelector<HTMLElement>(
+          '[role="dialog"][aria-modal="true"]'
         );
-      if (firstFocusable) {
-        firstFocusable.focus();
-        return;
-      }
-      if (attempts < 6) {
-        attempts += 1;
-        requestAnimationFrame(tryFocus);
-      }
-    };
-    tryFocus();
-  }, []);
+        if (!modal) return;
+        const sectionEl = modal.querySelector(
+          `[data-stack-section="${section}"]`
+        );
+        const container = sectionEl?.querySelector<HTMLElement>(
+          '[data-section-content]'
+        );
+        const preferredInput =
+          section === 'pricing'
+            ? container?.querySelector<HTMLInputElement>(
+                'input[name="base_price"]'
+              )
+            : null;
+        const firstFocusable =
+          preferredInput ||
+          container?.querySelector<HTMLElement>(
+            'input, select, textarea, button, [tabindex]:not([tabindex="-1"])'
+          );
+        if (firstFocusable) {
+          firstFocusable.focus();
+          return;
+        }
+        if (attempts < 6) {
+          attempts += 1;
+          focusFrameRef.current = window.requestAnimationFrame(tryFocus);
+        }
+      };
+      tryFocus();
+    },
+    [cancelFocusFrame]
+  );
 
   const openPricingSectionAndFocus = useCallback(() => {
     toggleSection('pricing');
-    requestAnimationFrame(() => focusSectionFirstField('pricing'));
+    focusFrameRef.current = window.requestAnimationFrame(() => {
+      focusFrameRef.current = null;
+      focusSectionFirstField('pricing');
+    });
   }, [focusSectionFirstField, toggleSection]);
 
   const handleStackPointerDownCapture = useCallback(
     (event: PointerEvent<HTMLDivElement>) => {
       if (event.pointerType === 'mouse') return;
-      const target = event.target as HTMLElement | null;
-      if (!target) return;
+      if (!(event.target instanceof HTMLElement)) return;
+      const target = event.target;
       if (target.closest('[data-stack-ignore="true"]')) return;
       if (isStackHovering || isStackTransitioning) return;
 
@@ -366,6 +407,8 @@ export const useItemModalStackSections = ({
 
   useEffect(
     () => () => {
+      cancelFocusFrame();
+      cancelRestoreFrame();
       if (hoverTimerRef.current) {
         window.clearTimeout(hoverTimerRef.current);
         hoverTimerRef.current = null;
@@ -375,7 +418,7 @@ export const useItemModalStackSections = ({
         ignoreStackTapTimerRef.current = null;
       }
     },
-    []
+    [cancelFocusFrame, cancelRestoreFrame]
   );
 
   const rightColumnProps: HTMLAttributes<HTMLDivElement> | undefined =

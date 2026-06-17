@@ -17,22 +17,32 @@ export const useViewPurchasePage = () => {
   const [scale, setScale] = useState(1);
 
   useEffect(() => {
+    let isCurrentRequest = true;
+
     const fetchPurchaseData = async (purchaseId: string) => {
       try {
         setLoading(true);
         const purchaseData = await fetchViewPurchaseData(purchaseId);
+        if (!isCurrentRequest) return;
         setPurchase(purchaseData.purchase);
         setItems(purchaseData.items);
       } catch (error) {
+        if (!isCurrentRequest) return;
         console.error('Error fetching purchase data:', error);
       } finally {
-        setLoading(false);
+        if (isCurrentRequest) {
+          setLoading(false);
+        }
       }
     };
 
     if (id) {
       void fetchPurchaseData(id);
     }
+
+    return () => {
+      isCurrentRequest = false;
+    };
   }, [id]);
 
   const subtotals = useMemo(
@@ -44,19 +54,39 @@ export const useViewPurchasePage = () => {
     void navigate('/purchases');
   }, [navigate]);
 
+  const savePrintablePurchaseSession = useCallback(() => {
+    if (loading || !purchase || purchase.id !== id) {
+      return false;
+    }
+
+    try {
+      sessionStorage.setItem(
+        PURCHASE_PRINT_SESSION_KEY,
+        JSON.stringify({
+          purchase,
+          items,
+          subtotals,
+        })
+      );
+      return true;
+    } catch {
+      return false;
+    }
+  }, [id, items, loading, purchase, subtotals]);
+
   const openPrintableVersion = useCallback(() => {
-    sessionStorage.setItem(
-      PURCHASE_PRINT_SESSION_KEY,
-      JSON.stringify({
-        purchase,
-        items,
-        subtotals,
-      })
-    );
+    if (!savePrintablePurchaseSession()) {
+      return;
+    }
 
     const printWindow = window.open('/purchases/print-view', '_blank');
-    if (printWindow) printWindow.focus();
-  }, [items, purchase, subtotals]);
+    if (printWindow) {
+      printWindow.focus();
+      return;
+    }
+
+    void navigate('/purchases/print-view');
+  }, [navigate, savePrintablePurchaseSession]);
 
   const increaseScale = useCallback(() => {
     setScale(prev => Math.min(prev + 0.1, 1.5));

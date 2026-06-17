@@ -87,6 +87,20 @@ const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
   stableKey: overrides.stableKey,
 });
 
+const createDeferred = <T,>() => {
+  let resolvePromise: ((value: T) => void) | null = null;
+  const promise = new Promise<T>(resolve => {
+    resolvePromise = resolve;
+  });
+
+  return {
+    promise,
+    resolve: (value: T) => {
+      resolvePromise?.(value);
+    },
+  };
+};
+
 describe('useMessagePdfPreviews', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -342,8 +356,9 @@ describe('useMessagePdfPreviews', () => {
     );
 
     await act(async () => {
-      await Promise.resolve();
-      await Promise.resolve();
+      for (let index = 0; index < 5; index += 1) {
+        await Promise.resolve();
+      }
     });
 
     expect(
@@ -365,5 +380,51 @@ describe('useMessagePdfPreviews', () => {
         result.current.getPdfMessagePreview(message, 'report.pdf')
       )
     ).toBe('https://signed.example/previews/channel/report-v2.png');
+  });
+
+  it('does not schedule a stale retry after a pending PDF render is cancelled', async () => {
+    const pendingPdfBlob = createDeferred<Blob | null>();
+    const message = buildMessage({
+      file_preview_url: '',
+      file_preview_status: '',
+    });
+    mockFetchPdfBlobWithFallback.mockImplementation(
+      async () => await pendingPdfBlob.promise
+    );
+
+    const { rerender } = renderHook(
+      ({ messages }: { messages: ChatMessage[] }) =>
+        useMessagePdfPreviews({
+          messages,
+          getAttachmentFileName: currentMessage =>
+            currentMessage.file_name || 'Lampiran',
+          getAttachmentFileKind: () => 'document',
+        }),
+      {
+        initialProps: {
+          messages: [message],
+        },
+      }
+    );
+
+    await waitFor(() => {
+      expect(mockFetchPdfBlobWithFallback).toHaveBeenCalledTimes(1);
+    });
+
+    vi.useFakeTimers();
+
+    act(() => {
+      rerender({
+        messages: [],
+      });
+    });
+
+    await act(async () => {
+      pendingPdfBlob.resolve(null);
+      await pendingPdfBlob.promise;
+      await Promise.resolve();
+    });
+
+    expect(vi.getTimerCount()).toBe(0);
   });
 });

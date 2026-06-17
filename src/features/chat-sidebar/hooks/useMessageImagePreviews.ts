@@ -55,6 +55,14 @@ export const useMessageImagePreviews = ({
   const previewPrefetchTimeoutRef = useRef<number | null>(null);
   const fullPrefetchTimeoutRef = useRef<number | null>(null);
   const previewAssetExpiryTimeoutRef = useRef<number | null>(null);
+  const imagePreviewScopeVersionRef = useRef(0);
+  const currentChannelIdRef = useRef('');
+  const activeMessageIdsRef = useRef<Set<string>>(new Set());
+
+  currentChannelIdRef.current = currentChannelId?.trim() || '';
+  activeMessageIdsRef.current = new Set(
+    messages.map(messageItem => messageItem.id)
+  );
 
   const setResolvedPreviewAssetEntry = useCallback(
     (messageId: string, previewEntry: ResolvedChatAssetUrlEntry | null) => {
@@ -100,6 +108,28 @@ export const useMessageImagePreviews = ({
     []
   );
 
+  const getImagePreviewScope = useCallback(
+    () => ({
+      channelId: currentChannelIdRef.current,
+      version: imagePreviewScopeVersionRef.current,
+    }),
+    []
+  );
+
+  const isImagePreviewScopeCurrent = useCallback(
+    (scope: ReturnType<typeof getImagePreviewScope>, messageId?: string) => {
+      if (
+        scope.version !== imagePreviewScopeVersionRef.current ||
+        scope.channelId !== currentChannelIdRef.current
+      ) {
+        return false;
+      }
+
+      return messageId ? activeMessageIdsRef.current.has(messageId) : true;
+    },
+    []
+  );
+
   const collectVisibleImageMessages = useCallback(() => {
     return collectVisibleImageMessagesForPreview({
       chatHeaderElement: chatHeaderContainerRef.current,
@@ -121,13 +151,14 @@ export const useMessageImagePreviews = ({
   const prefetchVisibleImageAssets = useCallback(
     async ({
       requireMissingPersistedPreview = false,
+      scope = getImagePreviewScope(),
       variant = 'full',
     }: {
       requireMissingPersistedPreview?: boolean;
+      scope?: ReturnType<typeof getImagePreviewScope>;
       variant?: 'full' | 'thumbnail';
     } = {}) => {
-      const normalizedChannelId = currentChannelId?.trim() || '';
-      if (!normalizedChannelId) {
+      if (!scope.channelId || !isImagePreviewScopeCurrent(scope)) {
         return;
       }
 
@@ -144,11 +175,19 @@ export const useMessageImagePreviews = ({
         visibleImageMessages,
         3,
         async messageItem => {
+          if (!isImagePreviewScopeCurrent(scope, messageItem.id)) {
+            return;
+          }
+
           const resolvedAssetUrl = await chatRuntime.imageAssets.ensureUrl(
-            normalizedChannelId,
+            scope.channelId,
             messageItem,
             variant
           );
+          if (!isImagePreviewScopeCurrent(scope, messageItem.id)) {
+            return;
+          }
+
           if (variant === 'thumbnail') {
             setResolvedPreviewAssetEntry(
               messageItem.id,
@@ -168,54 +207,74 @@ export const useMessageImagePreviews = ({
     },
     [
       collectVisibleImageMessages,
-      currentChannelId,
+      getImagePreviewScope,
+      isImagePreviewScopeCurrent,
       setResolvedFullAssetUrl,
       setResolvedPreviewAssetEntry,
     ]
   );
 
-  const resolveVisibleImagePreviewAssetUrls = useCallback(async () => {
-    const visibleImageMessages = collectVisibleImageMessages().filter(
-      messageItem => {
-        const previewPath = messageItem.file_preview_url?.trim();
-        const resolvedPreviewEntry =
-          resolvedPreviewAssetEntriesByMessageId[messageItem.id];
-
-        return Boolean(
-          previewPath &&
-          !getFreshResolvedChatAssetUrl(resolvedPreviewEntry) &&
-          !resolvedFullAssetUrlsByMessageId[messageItem.id]
-        );
+  const resolveVisibleImagePreviewAssetUrls = useCallback(
+    async (scope = getImagePreviewScope()) => {
+      if (!isImagePreviewScopeCurrent(scope)) {
+        return;
       }
-    );
-    if (visibleImageMessages.length === 0) {
-      return;
-    }
 
-    await runTasksWithConcurrency(
-      visibleImageMessages,
-      6,
-      async messageItem => {
-        const previewPath = messageItem.file_preview_url?.trim();
-        if (!previewPath) {
-          return;
+      const visibleImageMessages = collectVisibleImageMessages().filter(
+        messageItem => {
+          const previewPath = messageItem.file_preview_url?.trim();
+          const resolvedPreviewEntry =
+            resolvedPreviewAssetEntriesByMessageId[messageItem.id];
+
+          return Boolean(
+            previewPath &&
+            !getFreshResolvedChatAssetUrl(resolvedPreviewEntry) &&
+            !resolvedFullAssetUrlsByMessageId[messageItem.id]
+          );
         }
-
-        const resolvedPreviewEntry = await resolveChatAssetUrlWithExpiry(
-          previewPath,
-          previewPath
-        );
-        setResolvedPreviewAssetEntry(messageItem.id, resolvedPreviewEntry);
+      );
+      if (visibleImageMessages.length === 0) {
+        return;
       }
-    );
-  }, [
-    collectVisibleImageMessages,
-    resolvedFullAssetUrlsByMessageId,
-    resolvedPreviewAssetEntriesByMessageId,
-    setResolvedPreviewAssetEntry,
-  ]);
+
+      await runTasksWithConcurrency(
+        visibleImageMessages,
+        6,
+        async messageItem => {
+          if (!isImagePreviewScopeCurrent(scope, messageItem.id)) {
+            return;
+          }
+
+          const previewPath = messageItem.file_preview_url?.trim();
+          if (!previewPath) {
+            return;
+          }
+
+          const resolvedPreviewEntry = await resolveChatAssetUrlWithExpiry(
+            previewPath,
+            previewPath
+          );
+          if (!isImagePreviewScopeCurrent(scope, messageItem.id)) {
+            return;
+          }
+
+          setResolvedPreviewAssetEntry(messageItem.id, resolvedPreviewEntry);
+        }
+      );
+    },
+    [
+      collectVisibleImageMessages,
+      getImagePreviewScope,
+      isImagePreviewScopeCurrent,
+      resolvedFullAssetUrlsByMessageId,
+      resolvedPreviewAssetEntriesByMessageId,
+      setResolvedPreviewAssetEntry,
+    ]
+  );
 
   const scheduleVisibleImageAssetPrefetch = useCallback(() => {
+    const scope = getImagePreviewScope();
+
     if (previewPrefetchTimeoutRef.current !== null) {
       window.clearTimeout(previewPrefetchTimeoutRef.current);
     }
@@ -226,9 +285,10 @@ export const useMessageImagePreviews = ({
     previewPrefetchTimeoutRef.current = window.setTimeout(() => {
       previewPrefetchTimeoutRef.current = null;
       void Promise.all([
-        resolveVisibleImagePreviewAssetUrls(),
+        resolveVisibleImagePreviewAssetUrls(scope),
         prefetchVisibleImageAssets({
           requireMissingPersistedPreview: true,
+          scope,
           variant: 'thumbnail',
         }),
       ]);
@@ -236,18 +296,26 @@ export const useMessageImagePreviews = ({
 
     fullPrefetchTimeoutRef.current = window.setTimeout(() => {
       fullPrefetchTimeoutRef.current = null;
-      void prefetchVisibleImageAssets();
+      void prefetchVisibleImageAssets({
+        scope,
+      });
     }, FULL_IMAGE_PREFETCH_DELAY_MS);
-  }, [prefetchVisibleImageAssets, resolveVisibleImagePreviewAssetUrls]);
+  }, [
+    getImagePreviewScope,
+    prefetchVisibleImageAssets,
+    resolveVisibleImagePreviewAssetUrls,
+  ]);
 
   useEffect(() => {
+    imagePreviewScopeVersionRef.current += 1;
     setResolvedPreviewAssetEntriesByMessageId({});
     setResolvedFullAssetUrlsByMessageId({});
-    if (!currentChannelId?.trim()) {
+    const normalizedChannelId = currentChannelId?.trim() || '';
+    if (!normalizedChannelId) {
       return;
     }
 
-    void chatRuntime.imageAssets.activateScope(currentChannelId);
+    void chatRuntime.imageAssets.activateScope(normalizedChannelId);
   }, [currentChannelId]);
 
   useEffect(() => {

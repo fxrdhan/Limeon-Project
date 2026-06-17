@@ -90,17 +90,17 @@ describe('master-data autosave helpers', () => {
 
 describe('master-data mutation helpers', () => {
   it('selects supported mutation handles by table action family', () => {
-    const updateSupplier = { mutateAsync: vi.fn() };
-    const createDoctor = { mutateAsync: vi.fn() };
-    const deleteCustomer = { mutateAsync: vi.fn() };
+    const updateSupplier = {
+      mutateAsync: vi.fn(async (payload: unknown) => payload),
+    };
+    const createDoctor = {
+      mutateAsync: vi.fn(async (payload: unknown) => payload),
+    };
+    const deleteCustomer = { mutateAsync: vi.fn(async (id: unknown) => id) };
 
-    expect(getMasterDataUpdateMutation({ updateSupplier })).toBe(
-      updateSupplier
-    );
-    expect(getMasterDataCreateMutation({ createDoctor })).toBe(createDoctor);
-    expect(getMasterDataDeleteMutation({ deleteCustomer })).toBe(
-      deleteCustomer
-    );
+    expect(getMasterDataUpdateMutation({ updateSupplier })).toBeDefined();
+    expect(getMasterDataCreateMutation({ createDoctor })).toBeDefined();
+    expect(getMasterDataDeleteMutation({ deleteCustomer })).toBeDefined();
   });
 
   it('ignores missing or unsupported mutation handles', () => {
@@ -109,6 +109,38 @@ describe('master-data mutation helpers', () => {
     expect(
       getMasterDataDeleteMutation({ deleteItem: { mutateAsync: vi.fn() } })
     ).toBeUndefined();
+  });
+
+  it('forwards master-data mutation payloads through typed wrappers', async () => {
+    const updateSupplier = {
+      mutateAsync: vi.fn(async (payload: unknown) => payload),
+    };
+    const createDoctor = {
+      mutateAsync: vi.fn(async (payload: unknown) => payload),
+    };
+    const deleteCustomer = { mutateAsync: vi.fn(async (id: unknown) => id) };
+
+    await getMasterDataUpdateMutation({ updateSupplier })?.mutateAsync({
+      id: 'supplier-1',
+      data: { name: 'Acme' },
+      options: { silent: true },
+    });
+    await getMasterDataCreateMutation({ createDoctor })?.mutateAsync({
+      name: 'Dr. B',
+    });
+    await getMasterDataDeleteMutation({ deleteCustomer })?.mutateAsync(
+      'customer-1'
+    );
+
+    expect(updateSupplier.mutateAsync.mock.calls[0]?.[0]).toEqual({
+      id: 'supplier-1',
+      data: { name: 'Acme' },
+      options: { silent: true },
+    });
+    expect(createDoctor.mutateAsync.mock.calls[0]?.[0]).toEqual({
+      name: 'Dr. B',
+    });
+    expect(deleteCustomer.mutateAsync.mock.calls[0]?.[0]).toBe('customer-1');
   });
 });
 

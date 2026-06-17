@@ -369,6 +369,115 @@ describe('useChatSession', () => {
     });
   });
 
+  it('ignores stale hydrated reply targets after switching conversations', async () => {
+    let resolveReplyTarget:
+      | ((value: { data: ChatMessage; error: null }) => void)
+      | undefined;
+    const initialMessageAnimationKeysRef = { current: new Set<string>() };
+    const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };
+    const replyMessage = buildMessage({
+      id: 'reply-stale',
+      sender_id: currentUser.id,
+      receiver_id: targetUser.id,
+      channel_id: 'channel-1',
+      message: 'Balasan lama',
+      reply_to_id: 'older-stale-parent',
+    });
+    const staleParentMessage = buildMessage({
+      id: 'older-stale-parent',
+      sender_id: targetUser.id,
+      receiver_id: currentUser.id,
+      channel_id: 'channel-1',
+      message: 'Parent stale',
+    });
+    const secondTargetUser = {
+      id: 'user-c',
+      name: 'Kasir',
+      email: 'kasir@example.com',
+      profilephoto: null,
+    };
+
+    mockChatService.fetchMessagesBetweenUsers
+      .mockResolvedValueOnce({
+        data: [replyMessage],
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: [
+          buildMessage({
+            id: 'message-active',
+            sender_id: secondTargetUser.id,
+            receiver_id: currentUser.id,
+            channel_id: 'channel-2',
+            message: 'Pesan aktif',
+          }),
+        ],
+        error: null,
+      });
+    mockChatService.getMessageById.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolveReplyTarget = resolve;
+        })
+    );
+
+    const { result, rerender } = renderHook(
+      ({
+        activeTargetUser,
+        channelId,
+      }: {
+        activeTargetUser: typeof targetUser;
+        channelId: string;
+      }) =>
+        useChatSession({
+          isOpen: true,
+          user: currentUser,
+          targetUser: activeTargetUser,
+          currentChannelId: channelId,
+          initialMessageAnimationKeysRef,
+          initialOpenJumpAnimationKeysRef,
+        }),
+      {
+        initialProps: {
+          activeTargetUser: targetUser,
+          channelId: 'channel-1',
+        },
+      }
+    );
+
+    await waitFor(() => {
+      expect(mockChatService.getMessageById).toHaveBeenCalledWith(
+        'older-stale-parent'
+      );
+    });
+
+    rerender({
+      activeTargetUser: secondTargetUser,
+      channelId: 'channel-2',
+    });
+
+    await waitFor(() => {
+      expect(
+        result.current.messages.map(messageItem => messageItem.id)
+      ).toEqual(['message-active']);
+    });
+
+    await act(async () => {
+      resolveReplyTarget?.({
+        data: staleParentMessage,
+        error: null,
+      });
+      await Promise.resolve();
+    });
+
+    expect(result.current.getReplyTargetMessage('older-stale-parent')).toBe(
+      undefined
+    );
+    expect(result.current.messages.map(messageItem => messageItem.id)).toEqual([
+      'message-active',
+    ]);
+  });
+
   it('does not block initial conversation render on preview priming or delivered receipts', async () => {
     const initialMessageAnimationKeysRef = { current: new Set<string>() };
     const initialOpenJumpAnimationKeysRef = { current: new Set<string>() };

@@ -105,6 +105,28 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
   >(null);
   const [restoreMode, setRestoreMode] = useState<RestoreMode>('soft');
   const [isRestoring, setIsRestoring] = useState(false);
+  const isRestoringRef = useRef(false);
+  const restoreResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const restoreRequestIdRef = useRef(0);
+  const isMountedRef = useRef(true);
+  const restoreScopeRef = useRef({ entityTable, entityId, isOpen });
+
+  restoreScopeRef.current = { entityTable, entityId, isOpen };
+
+  const isRestoreRequestCurrent = useCallback(
+    (
+      requestId: number,
+      requestScope: { entityTable: string; entityId: string | undefined }
+    ) =>
+      isMountedRef.current &&
+      restoreRequestIdRef.current === requestId &&
+      restoreScopeRef.current.isOpen &&
+      restoreScopeRef.current.entityTable === requestScope.entityTable &&
+      restoreScopeRef.current.entityId === requestScope.entityId,
+    []
+  );
 
   // Use shared history selection hook with keyboard navigation
   const { selectedVersion: hookSelectedVersion, handleVersionClick } =
@@ -162,6 +184,33 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
     };
   }, [isOpen, updatePosition]);
 
+  useEffect(() => {
+    isMountedRef.current = true;
+
+    return () => {
+      isMountedRef.current = false;
+      restoreRequestIdRef.current += 1;
+      if (restoreResetTimeoutRef.current) {
+        clearTimeout(restoreResetTimeoutRef.current);
+        restoreResetTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    restoreRequestIdRef.current += 1;
+    isRestoringRef.current = false;
+    setIsRestoring(false);
+    setShowRestoreDialog(false);
+    setRestoreTargetVersion(null);
+    setRestoreMode('soft');
+
+    if (restoreResetTimeoutRef.current) {
+      clearTimeout(restoreResetTimeoutRef.current);
+      restoreResetTimeoutRef.current = null;
+    }
+  }, [entityTable, entityId, isOpen]);
+
   // Close on click outside
   useEffect(() => {
     if (!isOpen) return;
@@ -196,6 +245,10 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
   }, [isOpen, onClose]);
 
   const handleRestore = async (version: number) => {
+    if (restoreResetTimeoutRef.current) {
+      clearTimeout(restoreResetTimeoutRef.current);
+      restoreResetTimeoutRef.current = null;
+    }
     setRestoreTargetVersion(version);
     setRestoreMode('soft');
     setShowRestoreDialog(true);
@@ -203,15 +256,25 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
 
   const closeRestoreDialog = () => {
     setShowRestoreDialog(false);
-    setTimeout(() => {
+    if (restoreResetTimeoutRef.current) {
+      clearTimeout(restoreResetTimeoutRef.current);
+      restoreResetTimeoutRef.current = null;
+    }
+    restoreResetTimeoutRef.current = setTimeout(() => {
       setRestoreTargetVersion(null);
       setRestoreMode('soft');
+      restoreResetTimeoutRef.current = null;
     }, 250);
   };
 
   const handleRestoreConfirm = async () => {
     if (!restoreTargetVersion || !entityId) return;
+    if (isRestoringRef.current) return;
 
+    const requestScope = { entityTable, entityId };
+    const requestId = restoreRequestIdRef.current + 1;
+    restoreRequestIdRef.current = requestId;
+    isRestoringRef.current = true;
     setIsRestoring(true);
     try {
       const targetVersion = history?.find(
@@ -231,6 +294,10 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
 
         if (rpcError) {
           throw new Error(`Hard rollback failed: ${rpcError.message}`);
+        }
+
+        if (!isRestoreRequestCurrent(requestId, requestScope)) {
+          return;
         }
 
         toast.success(
@@ -253,13 +320,25 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
           throw new Error(updateError.message);
         }
 
+        if (!isRestoreRequestCurrent(requestId, requestScope)) {
+          return;
+        }
+
         toast.success(`Berhasil restore ke versi ${restoreTargetVersion}`);
       }
 
       await queryClient.invalidateQueries();
+      if (!isRestoreRequestCurrent(requestId, requestScope)) {
+        return;
+      }
+
       closeRestoreDialog();
       onClose();
     } catch (error) {
+      if (!isRestoreRequestCurrent(requestId, requestScope)) {
+        return;
+      }
+
       console.error('Restore error:', error);
       const errorMessage =
         error instanceof Error
@@ -271,7 +350,10 @@ const ItemHistoryPortal: React.FC<ItemHistoryPortalProps> = ({
         `Gagal ${restoreMode === 'hard' ? 'rollback' : 'restore'}: ${errorMessage}`
       );
     } finally {
-      setIsRestoring(false);
+      isRestoringRef.current = false;
+      if (isRestoreRequestCurrent(requestId, requestScope)) {
+        setIsRestoring(false);
+      }
     }
   };
 

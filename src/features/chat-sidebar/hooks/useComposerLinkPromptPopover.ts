@@ -14,6 +14,7 @@ export const useComposerLinkPromptPopover = ({
   onDismissAttachmentPastePrompt,
 }: UseComposerLinkPromptPopoverProps) => {
   const attachmentPromptCloseTimerRef = useRef<number | null>(null);
+  const linkPromptUrlRef = useRef<string | null>(linkPromptUrl);
   const [attachmentPromptPosition, setAttachmentPromptPosition] = useState<{
     top: number;
     left: number;
@@ -30,7 +31,17 @@ export const useComposerLinkPromptPopover = ({
 
   const scheduleAttachmentPromptClose = useCallback(() => {
     clearAttachmentPromptCloseTimer();
+    const scheduledLinkPromptUrl = linkPromptUrlRef.current;
+    if (!scheduledLinkPromptUrl) {
+      return;
+    }
+
     attachmentPromptCloseTimerRef.current = window.setTimeout(() => {
+      if (linkPromptUrlRef.current !== scheduledLinkPromptUrl) {
+        attachmentPromptCloseTimerRef.current = null;
+        return;
+      }
+
       onDismissAttachmentPastePrompt();
       setAttachmentPromptPosition(null);
       attachmentPromptCloseTimerRef.current = null;
@@ -64,12 +75,15 @@ export const useComposerLinkPromptPopover = ({
   }, [clearAttachmentPromptCloseTimer]);
 
   useEffect(() => {
+    linkPromptUrlRef.current = linkPromptUrl;
+    clearAttachmentPromptCloseTimer();
+
     if (linkPromptUrl) {
       return;
     }
 
     setAttachmentPromptPosition(null);
-  }, [linkPromptUrl]);
+  }, [clearAttachmentPromptCloseTimer, linkPromptUrl]);
 
   return {
     attachmentPromptPosition,

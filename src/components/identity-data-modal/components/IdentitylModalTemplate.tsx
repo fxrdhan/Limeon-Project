@@ -1,6 +1,7 @@
-import React, { useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
+import { focusIdentitySearchInput } from '../focus';
 
 interface IdentityModalTemplateProps {
   isOpen: boolean;
@@ -16,19 +17,57 @@ const IdentityModalTemplate: React.FC<IdentityModalTemplateProps> = ({
   children,
 }) => {
   const dialogPanelRef = useRef<HTMLDivElement>(null);
+  const searchFocusFrameRef = useRef<number | null>(null);
+  const searchFocusTimerRef = useRef<number | null>(null);
   const [, setIsClosing] = useState(false);
+
+  const cancelScheduledSearchFocus = useCallback(() => {
+    if (searchFocusFrameRef.current !== null) {
+      window.cancelAnimationFrame(searchFocusFrameRef.current);
+      searchFocusFrameRef.current = null;
+    }
+    if (searchFocusTimerRef.current !== null) {
+      window.clearTimeout(searchFocusTimerRef.current);
+      searchFocusTimerRef.current = null;
+    }
+  }, []);
+
+  const scheduleSearchFocusFrame = useCallback(() => {
+    if (searchFocusFrameRef.current !== null) {
+      window.cancelAnimationFrame(searchFocusFrameRef.current);
+    }
+    const frameId = window.requestAnimationFrame(() => {
+      if (searchFocusFrameRef.current === frameId) {
+        searchFocusFrameRef.current = null;
+        focusIdentitySearchInput();
+      }
+    });
+    searchFocusFrameRef.current = frameId;
+  }, []);
+
+  const scheduleSearchFocusAfterExit = useCallback(() => {
+    if (searchFocusTimerRef.current !== null) {
+      window.clearTimeout(searchFocusTimerRef.current);
+    }
+    searchFocusTimerRef.current = window.setTimeout(() => {
+      searchFocusTimerRef.current = null;
+      focusIdentitySearchInput();
+    }, 50);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      cancelScheduledSearchFocus();
+    }
+  }, [cancelScheduledSearchFocus, isOpen]);
+
+  useEffect(() => {
+    return cancelScheduledSearchFocus;
+  }, [cancelScheduledSearchFocus]);
 
   const handleClose = () => {
     setIsClosing(true);
-
-    requestAnimationFrame(() => {
-      const searchInput = document.querySelector(
-        'input[placeholder*="Cari"]'
-      ) as HTMLInputElement;
-      if (searchInput) {
-        searchInput.focus();
-      }
-    });
+    scheduleSearchFocusFrame();
 
     onClose();
   };
@@ -38,15 +77,7 @@ const IdentityModalTemplate: React.FC<IdentityModalTemplateProps> = ({
       onExitComplete={() => {
         setIsClosing(false);
         if (resetInternalState) resetInternalState();
-
-        setTimeout(() => {
-          const searchInput = document.querySelector(
-            'input[placeholder*="Cari"]'
-          ) as HTMLInputElement;
-          if (searchInput) {
-            searchInput.focus();
-          }
-        }, 50);
+        scheduleSearchFocusAfterExit();
       }}
     >
       {isOpen && (

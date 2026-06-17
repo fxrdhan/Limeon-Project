@@ -45,12 +45,9 @@ const HistoryTimelineList = ({
     allowMultiSelect: boolean;
     selected: HistoryItem[];
   }>({
-    allowMultiSelect: false,
+    allowMultiSelect,
     selected: [],
   });
-  if (allowMultiSelect !== compareState.allowMultiSelect) {
-    setCompareState({ allowMultiSelect, selected: [] });
-  }
   const selectedForCompare = compareState.selected;
   const setSelectedForCompare = (items: HistoryItem[]) => {
     setCompareState(prev => ({ ...prev, selected: items }));
@@ -65,6 +62,14 @@ const HistoryTimelineList = ({
   const latestVersion = history
     ? Math.max(...history.map(item => item.version_number))
     : 0;
+
+  useEffect(() => {
+    setCompareState(prev =>
+      prev.allowMultiSelect === allowMultiSelect
+        ? prev
+        : { allowMultiSelect, selected: [] }
+    );
+  }, [allowMultiSelect]);
 
   const checkScrollPosition = () => {
     if (!scrollContainerRef.current) return;
@@ -117,12 +122,19 @@ const HistoryTimelineList = ({
     container.addEventListener('scroll', handleScroll);
 
     let resizeRaf: number | null = null;
+    let resizeSettleTimeout: ReturnType<typeof setTimeout> | null = null;
     const resizeObserver = new ResizeObserver(() => {
       if (resizeRaf !== null) return;
       resizeRaf = requestAnimationFrame(() => {
         resizeRaf = null;
         checkScrollPosition();
-        setTimeout(checkScrollPosition, 50);
+        if (resizeSettleTimeout !== null) {
+          clearTimeout(resizeSettleTimeout);
+        }
+        resizeSettleTimeout = setTimeout(() => {
+          resizeSettleTimeout = null;
+          checkScrollPosition();
+        }, 50);
       });
     });
     resizeObserver.observe(container);
@@ -136,6 +148,9 @@ const HistoryTimelineList = ({
       }
       if (resizeRaf !== null) {
         cancelAnimationFrame(resizeRaf);
+      }
+      if (resizeSettleTimeout !== null) {
+        clearTimeout(resizeSettleTimeout);
       }
       if (scrollingTimeoutRef.current) {
         clearTimeout(scrollingTimeoutRef.current);

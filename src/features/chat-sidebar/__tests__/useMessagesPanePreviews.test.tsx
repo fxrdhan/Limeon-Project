@@ -16,17 +16,27 @@ const { mockEnsureChannelImageAssetUrl, mockGetRuntimeChannelImageAssetUrl } =
   }));
 
 const {
+  mockCloseDocumentPreview,
   mockFetchChatFileBlobWithFallback,
   mockFetchPdfBlobWithFallback,
   mockGetCachedResolvedChatAssetUrl,
   mockOpenDocumentPreview,
   mockResolveChatAssetUrl,
+  mockToast,
 } = vi.hoisted(() => ({
+  mockCloseDocumentPreview: vi.fn(),
   mockFetchChatFileBlobWithFallback: vi.fn(),
   mockFetchPdfBlobWithFallback: vi.fn(),
   mockGetCachedResolvedChatAssetUrl: vi.fn(),
   mockOpenDocumentPreview: vi.fn(),
   mockResolveChatAssetUrl: vi.fn(),
+  mockToast: {
+    error: vi.fn(),
+  },
+}));
+
+vi.mock('react-hot-toast', () => ({
+  default: mockToast,
 }));
 
 vi.mock('../utils/chatRuntime', () => ({
@@ -53,13 +63,21 @@ vi.mock('../hooks/useDocumentPreviewPortal', () => ({
     previewUrl: null,
     previewName: '',
     isPreviewVisible: false,
-    closeDocumentPreview: vi.fn(),
+    closeDocumentPreview: mockCloseDocumentPreview,
     openDocumentPreview: mockOpenDocumentPreview,
   }),
 }));
 
 describe('useMessagesPanePreviews', () => {
   const closeMessageMenu = vi.fn();
+  const createDeferred = <Value,>() => {
+    let resolve!: (value: Value) => void;
+    const promise = new Promise<Value>(promiseResolve => {
+      resolve = promiseResolve;
+    });
+
+    return { promise, resolve };
+  };
   const flushMicrotasks = async (count = 4) => {
     for (let index = 0; index < count; index += 1) {
       await Promise.resolve();
@@ -441,6 +459,127 @@ describe('useMessagesPanePreviews', () => {
     expect(mockOpenDocumentPreview).not.toHaveBeenCalled();
     expect(close).not.toHaveBeenCalled();
     expect(closeMessageMenu).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not replace a stale external document preview tab after the active channel changes', async () => {
+    window.matchMedia = vi.fn().mockImplementation(query => ({
+      matches: query === '(hover: none) and (pointer: coarse)',
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
+    const deferredAssetUrl = createDeferred<string | null>();
+    mockResolveChatAssetUrl.mockReturnValue(deferredAssetUrl.promise);
+    const replace = vi.fn();
+    const close = vi.fn();
+    const openedWindow: Window = Object.create(window);
+    Object.defineProperty(openedWindow, 'close', {
+      configurable: true,
+      value: close,
+    });
+    Object.defineProperty(openedWindow, 'location', {
+      configurable: true,
+      value: { replace },
+    });
+    vi.spyOn(window, 'open').mockReturnValue(openedWindow);
+
+    const { result, rerender } = renderHook(
+      ({ currentChannelId }: { currentChannelId: string | null }) =>
+        useMessagesPanePreviews({
+          currentChannelId,
+          closeMessageMenu,
+        }),
+      {
+        initialProps: {
+          currentChannelId: 'dm_user-a_user-b',
+        },
+      }
+    );
+
+    let openPromise!: Promise<void>;
+    act(() => {
+      openPromise = result.current.openDocumentInPortal(
+        {
+          message: 'documents/channel/invoice.pdf',
+          file_storage_path: 'documents/channel/invoice.pdf',
+        },
+        'invoice.pdf',
+        true
+      );
+    });
+
+    act(() => {
+      rerender({
+        currentChannelId: 'dm_user-a_user-c',
+      });
+    });
+
+    await act(async () => {
+      deferredAssetUrl.resolve('https://example.com/invoice.pdf');
+      await openPromise;
+    });
+
+    expect(mockCloseDocumentPreview).toHaveBeenCalledTimes(1);
+    expect(close).toHaveBeenCalledOnce();
+    expect(replace).not.toHaveBeenCalled();
+    expect(mockToast.error).not.toHaveBeenCalled();
+  });
+
+  it('does not show stale document preview errors after the active channel changes', async () => {
+    const deferredAssetUrl = createDeferred<string | null>();
+    mockResolveChatAssetUrl.mockReturnValue(deferredAssetUrl.promise);
+    mockOpenDocumentPreview.mockImplementation(
+      async ({
+        resolvePreviewUrl,
+      }: {
+        resolvePreviewUrl: () => Promise<unknown>;
+      }) => {
+        await resolvePreviewUrl();
+        return true;
+      }
+    );
+
+    const { result, rerender } = renderHook(
+      ({ currentChannelId }: { currentChannelId: string | null }) =>
+        useMessagesPanePreviews({
+          currentChannelId,
+          closeMessageMenu,
+        }),
+      {
+        initialProps: {
+          currentChannelId: 'dm_user-a_user-b',
+        },
+      }
+    );
+
+    let openPromise!: Promise<void>;
+    act(() => {
+      openPromise = result.current.openDocumentInPortal(
+        {
+          message: 'documents/channel/missing.pdf',
+          file_storage_path: 'documents/channel/missing.pdf',
+        },
+        'missing.pdf'
+      );
+    });
+
+    act(() => {
+      rerender({
+        currentChannelId: 'dm_user-a_user-c',
+      });
+    });
+
+    await act(async () => {
+      deferredAssetUrl.resolve(null);
+      await openPromise;
+    });
+
+    expect(mockCloseDocumentPreview).toHaveBeenCalledTimes(1);
+    expect(mockToast.error).not.toHaveBeenCalled();
   });
 
   it('falls back to the in-app portal when coarse-pointer tab opening is blocked', async () => {

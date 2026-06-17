@@ -4,7 +4,7 @@ import type {
   MouseEvent as ReactMouseEvent,
   RefObject,
 } from 'react';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { COMPOSER_SYNC_LAYOUT_TRANSITION } from '../../constants';
 import type {
@@ -87,6 +87,19 @@ export const ComposerMessageField = ({
   });
   const shouldRenderComposerLinkOverlay =
     composerLinkOverlaySegments.length > 0;
+  const focusSelectionFrameRef = useRef<number | null>(null);
+  const focusSelectionRequestRef = useRef(0);
+
+  const clearPendingFocusSelectionFrame = useCallback(() => {
+    focusSelectionRequestRef.current += 1;
+
+    if (focusSelectionFrameRef.current === null) {
+      return;
+    }
+
+    cancelAnimationFrame(focusSelectionFrameRef.current);
+    focusSelectionFrameRef.current = null;
+  }, []);
 
   const handleComposerAttachmentLinkClick = useCallback(
     (
@@ -126,7 +139,20 @@ export const ComposerMessageField = ({
 
   const focusComposerSelection = useCallback(
     (selectionStart: number, selectionEnd = selectionStart) => {
-      requestAnimationFrame(() => {
+      clearPendingFocusSelectionFrame();
+
+      const focusRequestId = focusSelectionRequestRef.current + 1;
+      let didRunSynchronously = false;
+      focusSelectionRequestRef.current = focusRequestId;
+
+      const frameId = requestAnimationFrame(() => {
+        didRunSynchronously = true;
+
+        if (focusSelectionRequestRef.current !== focusRequestId) {
+          return;
+        }
+
+        focusSelectionFrameRef.current = null;
         const textarea = messageInputRef.current;
         if (!textarea) {
           return;
@@ -135,8 +161,21 @@ export const ComposerMessageField = ({
         textarea.focus();
         textarea.setSelectionRange(selectionStart, selectionEnd);
       });
+
+      if (didRunSynchronously) {
+        return;
+      }
+
+      focusSelectionFrameRef.current = frameId;
     },
-    [messageInputRef]
+    [clearPendingFocusSelectionFrame, messageInputRef]
+  );
+
+  useEffect(
+    () => () => {
+      clearPendingFocusSelectionFrame();
+    },
+    [clearPendingFocusSelectionFrame]
   );
 
   const handleComposerPlainLinkMouseDown = useCallback(

@@ -1,13 +1,30 @@
 import { supabase } from '@/lib/supabase';
-import type { PostgrestError } from '@supabase/supabase-js';
-import type { ServiceResponse } from '@/services/api/base.service';
+import {
+  toServiceError,
+  type ServiceResponse,
+} from '@/services/api/base.service';
+
+export interface ItemHistoryRollbackResult {
+  deleted_count: number;
+}
+
+const hasDeletedCount = (value: unknown): value is { deleted_count: unknown } =>
+  typeof value === 'object' && value !== null && 'deleted_count' in value;
+
+const normalizeRollbackResult = (value: unknown): ItemHistoryRollbackResult => {
+  if (!hasDeletedCount(value) || typeof value.deleted_count !== 'number') {
+    return { deleted_count: 0 };
+  }
+
+  return { deleted_count: value.deleted_count };
+};
 
 export const itemHistoryService = {
   async hardRollbackEntity(params: {
     entityTable: string;
     entityId: string;
     targetVersion: number;
-  }): Promise<ServiceResponse<{ deleted_count: number }>> {
+  }): Promise<ServiceResponse<ItemHistoryRollbackResult>> {
     try {
       const { entityTable, entityId, targetVersion } = params;
       const { data, error } = await supabase.rpc('hard_rollback_entity', {
@@ -20,9 +37,9 @@ export const itemHistoryService = {
         return { data: null, error };
       }
 
-      return { data: data as { deleted_count: number }, error: null };
+      return { data: normalizeRollbackResult(data), error: null };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   },
 
@@ -43,7 +60,7 @@ export const itemHistoryService = {
 
       return { data: null, error };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   },
 };

@@ -13,16 +13,10 @@ import { useMemo } from 'react';
 export type ColumnDisplayMode = 'name' | 'code';
 export type DisplayModes = Record<string, ColumnDisplayMode>;
 
-// Minimal nested entity shape expected on item references
-type RefEntity = {
-  name?: string | null;
-  code?: string | null;
-  // keep passthrough for extra fields
-  [k: string]: unknown;
-};
-
 // Supported reference keys in items data
 type RefEntityKey = 'manufacturer' | 'category' | 'type' | 'package' | 'dosage';
+type RefEntityFields = Partial<Record<RefEntityKey, unknown>>;
+type RefEntityRecord = Record<string, unknown>;
 
 /**
  * Map AG-Grid reference column ids to item entity keys
@@ -58,13 +52,22 @@ function toEntityKey(colId: string): RefEntityKey | undefined {
   return undefined;
 }
 
+const isObjectRecord = (value: unknown): value is RefEntityRecord =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const readReferenceCode = (value: unknown) =>
+  typeof value === 'string' && value.trim().length > 0 ? value : null;
+
+const readReferenceName = (value: unknown) =>
+  typeof value === 'string' || value === null ? value : undefined;
+
 /**
  * Transform a single item for display based on the reference display modes.
  * - When a ref column display mode is "code", replace entity.name with entity.code (if present).
  * - Other fields remain untouched.
  * - Returns the same object reference if no changes were applied for performance.
  */
-export function transformItemForDisplay<T extends Record<string, unknown>>(
+export function transformItemForDisplay<T extends object & RefEntityFields>(
   item: T,
   displayModes: DisplayModes
 ): T {
@@ -81,36 +84,33 @@ export function transformItemForDisplay<T extends Record<string, unknown>>(
     return item;
   }
 
-  let changed = false;
-  // Use a plain record for safe indexing
-  const outRecord: Record<string, unknown> = {
-    ...(item as Record<string, unknown>),
-  };
+  let transformedItem: T | null = null;
 
   for (const entityKey of entityKeysToMap) {
-    const maybeEntity = outRecord[entityKey];
-    if (maybeEntity && typeof maybeEntity === 'object') {
-      const entity = maybeEntity as RefEntity;
-      const codeValue = (entity as Record<string, unknown>)['code'] as
-        | string
-        | null
-        | undefined;
-      const nameValue = (entity as Record<string, unknown>)['name'] as
-        | string
-        | null
-        | undefined;
-      // Only if code exists and differs from current name, override name with code
-      if (codeValue != null && codeValue !== nameValue) {
-        outRecord[entityKey] = {
-          ...(entity as Record<string, unknown>),
-          name: codeValue,
-        } as RefEntity;
-        changed = true;
-      }
+    const entity = item[entityKey];
+    if (!isObjectRecord(entity)) {
+      continue;
     }
+
+    const codeValue = readReferenceCode(entity.code);
+    const nameValue = readReferenceName(entity.name);
+    if (codeValue === null || codeValue === nameValue) {
+      continue;
+    }
+
+    transformedItem ??= { ...item };
+    Object.defineProperty(transformedItem, entityKey, {
+      configurable: true,
+      enumerable: true,
+      value: {
+        ...entity,
+        name: codeValue,
+      },
+      writable: true,
+    });
   }
 
-  return changed ? (outRecord as T) : item;
+  return transformedItem ?? item;
 }
 
 /**
@@ -118,7 +118,7 @@ export function transformItemForDisplay<T extends Record<string, unknown>>(
  * - Non-mutating: returns new array with shallow-cloned items only when needed
  * - Preserves object identity when no change is required for a given item
  */
-export function transformItemsForDisplay<T extends Record<string, unknown>>(
+export function transformItemsForDisplay<T extends object & RefEntityFields>(
   items: T[] | undefined,
   displayModes: DisplayModes
 ): T[] {
@@ -132,7 +132,7 @@ export function transformItemsForDisplay<T extends Record<string, unknown>>(
     return t;
   });
 
-  return anyChanged ? transformed : (items as T[]);
+  return anyChanged ? transformed : items;
 }
 
 /**
@@ -153,7 +153,7 @@ export function transformItemsForDisplay<T extends Record<string, unknown>>(
  * Example:
  * const itemsForGrid = useItemsDisplayTransform(items, columnDisplayModes);
  */
-export function useItemsDisplayTransform<T extends Record<string, unknown>>(
+export function useItemsDisplayTransform<T extends object & RefEntityFields>(
   items: T[] | undefined,
   displayModes: DisplayModes
 ): T[] {

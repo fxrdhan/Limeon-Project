@@ -1,5 +1,5 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
 import { type ChatMessage } from '../data/chatSidebarGateway';
@@ -99,6 +99,10 @@ export const useChatComposerSend = ({
     registerPendingSend,
     mutationScope,
   });
+
+  useEffect(() => {
+    isSendingRef.current = false;
+  }, [currentChannelId, targetUser?.id, user?.id]);
 
   const sendTextMessage = useCallback(
     async (messageText: string, replyToId?: string | null) => {

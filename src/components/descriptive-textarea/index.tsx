@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { TbChevronDown } from 'react-icons/tb';
 import classNames from 'classnames';
@@ -23,10 +23,25 @@ const DescriptiveTextarea: React.FC<DescriptiveTextareaProps> = ({
   const [isHovered, setIsHovered] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const focusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearPendingFocus = useCallback(() => {
+    if (focusTimerRef.current === null) {
+      return;
+    }
+
+    clearTimeout(focusTimerRef.current);
+    focusTimerRef.current = null;
+  }, []);
 
   useEffect(() => {
     setShowTextarea(showInitially);
-  }, [showInitially]);
+    if (!showInitially) {
+      clearPendingFocus();
+    }
+  }, [clearPendingFocus, showInitially]);
+
+  useEffect(() => clearPendingFocus, [clearPendingFocus]);
 
   return (
     <div className={classNames('mt-2 pt-2', containerClassName)}>
@@ -39,7 +54,9 @@ const DescriptiveTextarea: React.FC<DescriptiveTextareaProps> = ({
           if (!event.currentTarget.matches(':focus-visible')) return;
           setHasInteracted(true);
           setShowTextarea(true);
-          setTimeout(() => {
+          clearPendingFocus();
+          focusTimerRef.current = setTimeout(() => {
+            focusTimerRef.current = null;
             textareaRef.current?.focus();
           }, 0);
         }}
@@ -51,7 +68,13 @@ const DescriptiveTextarea: React.FC<DescriptiveTextareaProps> = ({
         )}
         onClick={() => {
           setHasInteracted(true);
-          setShowTextarea(!showTextarea);
+          setShowTextarea(currentValue => {
+            const nextValue = !currentValue;
+            if (!nextValue) {
+              clearPendingFocus();
+            }
+            return nextValue;
+          });
         }}
       >
         <span className="mr-2 text-md text-primary focus:outline-hidden group-focus:text-primary">

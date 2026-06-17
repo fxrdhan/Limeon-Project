@@ -16,6 +16,7 @@ export const getImageUploaderPopupOptions = ({
   isDeleting,
   isUploading,
   onImageDelete,
+  onUnavailableDelete,
   onPopupClose,
 }: {
   closePortal: () => void;
@@ -25,6 +26,7 @@ export const getImageUploaderPopupOptions = ({
   isDeleting: boolean;
   isUploading: boolean;
   onImageDelete?: () => Promise<void> | void;
+  onUnavailableDelete: () => void;
   onPopupClose?: () => void;
 }): ImageUploaderPopupOption[] => {
   const disabled = isUploading || isDeleting;
@@ -64,11 +66,7 @@ export const getImageUploaderPopupOptions = ({
     {
       label: 'Hapus',
       icon: <TbTrash className="h-4 w-4" />,
-      action: onImageDelete
-        ? handleDeleteImage
-        : () => {
-            alert('Fitur hapus gambar belum tersedia untuk komponen ini');
-          },
+      action: onImageDelete ? handleDeleteImage : onUnavailableDelete,
       disabled,
     }
   );

@@ -1,7 +1,9 @@
 import { authSupabase } from '@/lib/authSupabase';
+import { getErrorCode, getErrorStringField } from '@/lib/errorFields';
 import type { Session, User, AuthError } from '@supabase/supabase-js';
 import type { UserDetails } from '@/types/database';
 import type { PostgrestError } from '@supabase/supabase-js';
+import { toServiceError } from './base.service';
 
 export interface AuthServiceResponse<T> {
   data: T | null;
@@ -29,7 +31,7 @@ export class AuthService {
       const { data, error } = await authSupabase.auth.getSession();
       return { data: data.session, error };
     } catch (error) {
-      return { data: null, error: error as Error };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -39,14 +41,14 @@ export class AuthService {
       const { data, error } = await authSupabase.auth.getUser();
       return { data: data.user, error };
     } catch (error) {
-      return { data: null, error: error as Error };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
   // Get user profile from database
   async getUserProfile(
     userId: string
-  ): Promise<AuthServiceResponse<UserDetails>> {
+  ): Promise<AuthServiceResponse<UserPublicFields>> {
     try {
       const { data, error } = await authSupabase
         .from('users')
@@ -56,7 +58,7 @@ export class AuthService {
 
       return { data, error };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -89,7 +91,7 @@ export class AuthService {
         error: null,
       };
     } catch (error) {
-      return { data: null, error: error as Error };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -99,7 +101,7 @@ export class AuthService {
       const { error } = await authSupabase.auth.signOut();
       return { data: null, error };
     } catch (error) {
-      return { data: null, error: error as Error };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -141,7 +143,7 @@ export class AuthService {
         error: null,
       };
     } catch (error) {
-      return { data: null, error: error as Error };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -149,7 +151,7 @@ export class AuthService {
   async updateUserProfile(
     userId: string,
     updates: Partial<UserDetails>
-  ): Promise<AuthServiceResponse<UserDetails>> {
+  ): Promise<AuthServiceResponse<UserPublicFields>> {
     try {
       const { data, error } = await authSupabase
         .from('users')
@@ -160,7 +162,7 @@ export class AuthService {
 
       return { data, error };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -244,7 +246,7 @@ export class AuthService {
         error: null,
       };
     } catch (error) {
-      return { data: null, error: error as Error };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -254,7 +256,7 @@ export class AuthService {
       const { error } = await authSupabase.auth.resetPasswordForEmail(email);
       return { data: null, error };
     } catch (error) {
-      return { data: null, error: error as Error };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -269,7 +271,7 @@ export class AuthService {
 
       return { data: data.user, error };
     } catch (error) {
-      return { data: null, error: error as Error };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -286,7 +288,7 @@ export class AuthService {
       const { data, error } = await authSupabase.auth.refreshSession();
       return { data: data.session, error };
     } catch (error) {
-      return { data: null, error: error as Error };
+      return { data: null, error: toServiceError(error) };
     }
   }
 }
@@ -326,14 +328,8 @@ export async function fetchUserById(
   const { data, error } = await authService.getUserProfile(userId);
 
   if (error) {
-    const errorCode =
-      typeof error === 'object' && error !== null && 'code' in error
-        ? (error as { code?: string }).code
-        : undefined;
-    const errorDetails =
-      typeof error === 'object' && error !== null && 'details' in error
-        ? (error as { details?: string }).details
-        : undefined;
+    const errorCode = getErrorCode(error);
+    const errorDetails = getErrorStringField(error, 'details');
 
     if (
       errorCode === 'PGRST116' ||
@@ -345,7 +341,7 @@ export async function fetchUserById(
     throw error;
   }
 
-  return (data as UserPublicFields) ?? null;
+  return data ?? null;
 }
 
 export async function updateUserProfilePhotoAssets(
@@ -362,7 +358,7 @@ export async function updateUserProfilePhotoAssets(
     profilephoto_path: assets.profilephoto_path,
   });
   if (error) throw error;
-  return (data as UserPublicFields) ?? null;
+  return data ?? null;
 }
 
 export async function clearUserProfilePhoto(userId: string): Promise<void> {

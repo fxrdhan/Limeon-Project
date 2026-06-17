@@ -1,6 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { PostgrestError } from '@supabase/supabase-js';
-import type { ServiceResponse } from './base.service';
+import { toServiceError, type ServiceResponse } from './base.service';
 
 interface ListOptions {
   select: string;
@@ -33,14 +32,14 @@ export class GenericEntityService<TEntity> {
         });
       }
 
-      const { data, error } = await query;
+      const { data, error } = await query.returns<TEntity[]>();
       if (error) {
         return { data: null, error };
       }
 
-      return { data: (data || []) as TEntity[], error: null };
+      return { data: data || [], error: null };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -53,15 +52,16 @@ export class GenericEntityService<TEntity> {
         .from(this.tableName)
         .insert(input)
         .select(selectFields)
+        .returns<TEntity[]>()
         .single();
 
       if (error) {
         return { data: null, error };
       }
 
-      return { data: data as TEntity, error: null };
+      return { data, error: null };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -76,15 +76,16 @@ export class GenericEntityService<TEntity> {
         .update(input)
         .eq('id', id)
         .select(selectFields)
+        .returns<TEntity[]>()
         .single();
 
       if (error) {
         return { data: null, error };
       }
 
-      return { data: data as TEntity, error: null };
+      return { data, error: null };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -97,7 +98,7 @@ export class GenericEntityService<TEntity> {
 
       return { data: null, error };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 }

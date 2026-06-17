@@ -37,6 +37,16 @@ const getPaginationEnabledStorageKey = (tableType: TableType): string => {
   return `${GRID_PAGINATION_ENABLED_PREFIX}${tableType}`;
 };
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const isGridState = (value: unknown): value is GridState => isRecord(value);
+
+const isInvalidSavedStateRaw = (savedState: string) =>
+  savedState.trim() === '' ||
+  savedState === 'undefined' ||
+  savedState === 'null';
+
 const readGridStateRaw = (tableType: TableType): string | null => {
   const storageKey = getStorageKey(tableType);
 
@@ -67,6 +77,11 @@ const stripTransientGridState = (state: GridState): GridState => ({
   cellSelection: undefined,
   rangeSelection: undefined,
 });
+
+const parseSavedGridState = (savedState: string): GridState | null => {
+  const parsed: unknown = JSON.parse(savedState);
+  return isGridState(parsed) ? stripTransientGridState(parsed) : null;
+};
 
 const getPaginationEnabled = (gridApi: GridPaginationStateApi): boolean => {
   return gridApi.getGridOption('pagination') !== false;
@@ -185,11 +200,7 @@ export const restoreGridState = (
     }
 
     // Validate that savedState is valid JSON before parsing
-    if (
-      savedState.trim() === '' ||
-      savedState === 'undefined' ||
-      savedState === 'null'
-    ) {
+    if (isInvalidSavedStateRaw(savedState)) {
       console.warn(`Invalid saved state for ${tableType}, clearing...`);
       try {
         getSessionStorage().removeItem(storageKey);
@@ -199,9 +210,9 @@ export const restoreGridState = (
       return false;
     }
 
-    let parsedState: GridState;
+    let parsedState: GridState | null;
     try {
-      parsedState = JSON.parse(savedState);
+      parsedState = parseSavedGridState(savedState);
     } catch (parseError) {
       console.warn(`Failed to parse saved state for ${tableType}:`, parseError);
       console.warn(
@@ -220,7 +231,19 @@ export const restoreGridState = (
       return false;
     }
 
-    parsedState = stripTransientGridState(parsedState);
+    if (!parsedState) {
+      console.warn(`Invalid saved state for ${tableType}, clearing...`);
+      try {
+        getSessionStorage().removeItem(storageKey);
+      } catch {
+        // ignore
+      }
+      toast.error(
+        `Layout tersimpan untuk ${tableType} rusak, menggunakan default`
+      );
+      return false;
+    }
+
     const savedPaginationEnabled = loadSavedPaginationEnabledState(tableType);
 
     // setState handles full state restoration including column order, sizing, and sort
@@ -308,11 +331,7 @@ export const loadSavedStateForInit = (
     }
 
     // Validate that savedState is valid JSON before parsing
-    if (
-      savedState.trim() === '' ||
-      savedState === 'undefined' ||
-      savedState === 'null'
-    ) {
+    if (isInvalidSavedStateRaw(savedState)) {
       console.warn(`Invalid saved state for ${tableType}, clearing...`);
       try {
         getSessionStorage().removeItem(storageKey);
@@ -322,9 +341,9 @@ export const loadSavedStateForInit = (
       return undefined;
     }
 
-    let parsedState: GridState;
+    let parsedState: GridState | null;
     try {
-      parsedState = JSON.parse(savedState);
+      parsedState = parseSavedGridState(savedState);
     } catch (parseError) {
       console.warn(
         `Failed to parse saved state for auto-restore (${tableType}):`,
@@ -339,8 +358,18 @@ export const loadSavedStateForInit = (
       return undefined;
     }
 
+    if (!parsedState) {
+      console.warn(`Invalid saved state for ${tableType}, clearing...`);
+      try {
+        getSessionStorage().removeItem(storageKey);
+      } catch {
+        // ignore
+      }
+      return undefined;
+    }
+
     // Include pagination state for complete auto-restore, excluding transient UI state
-    return stripTransientGridState(parsedState);
+    return parsedState;
     /* c8 ignore start */
   } catch (error) {
     console.error(
@@ -358,17 +387,12 @@ export const getSavedStateInfo = (tableType: TableType): GridState | null => {
     const storageKey = getStorageKey(tableType);
     const savedState = readGridStateRaw(tableType);
 
-    if (
-      !savedState ||
-      savedState.trim() === '' ||
-      savedState === 'undefined' ||
-      savedState === 'null'
-    ) {
+    if (!savedState || isInvalidSavedStateRaw(savedState)) {
       return null;
     }
 
     try {
-      return JSON.parse(savedState);
+      return parseSavedGridState(savedState);
     } catch (parseError) {
       console.warn(
         `Failed to parse saved state info for ${tableType}:`,

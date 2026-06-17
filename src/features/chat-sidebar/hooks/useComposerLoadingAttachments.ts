@@ -56,6 +56,13 @@ export const useComposerLoadingAttachments = ({
   const pdfCompressionAbortControllersRef = useRef(
     new Map<string, AbortController>()
   );
+  const resetKeyRef = useRef(resetKey);
+  const resetVersionRef = useRef(0);
+
+  if (resetKeyRef.current !== resetKey) {
+    resetKeyRef.current = resetKey;
+    resetVersionRef.current += 1;
+  }
 
   const syncLoadingComposerAttachments = useCallback(
     (nextAttachments: LoadingComposerAttachment[]) => {
@@ -260,21 +267,42 @@ export const useComposerLoadingAttachments = ({
         abortController
       );
 
-      const result = await chatSidebarAttachmentGateway.compressPdf(
-        targetAttachment.file,
-        {
-          compressionLevel,
-          signal: abortController.signal,
-        }
-      );
-      pdfCompressionAbortControllersRef.current.delete(loadingAttachment.id);
-      window.clearTimeout(processingPhaseTimer);
-
-      const isLoadingAttachmentActive =
+      const isLoadingAttachmentActive = () =>
         loadingComposerAttachmentsRef.current.some(
           attachment => attachment.id === loadingAttachment.id
         );
-      if (!isLoadingAttachmentActive) {
+
+      let result: Awaited<
+        ReturnType<typeof chatSidebarAttachmentGateway.compressPdf>
+      >;
+      try {
+        result = await chatSidebarAttachmentGateway.compressPdf(
+          targetAttachment.file,
+          {
+            compressionLevel,
+            signal: abortController.signal,
+          }
+        );
+      } catch (error) {
+        if (!isLoadingAttachmentActive()) {
+          return false;
+        }
+
+        removeLoadingComposerAttachment(loadingAttachment.id);
+        console.error('Error compressing PDF attachment:', error);
+        toast.error(
+          error instanceof Error ? error.message : 'Gagal mengompres PDF',
+          {
+            toasterId: CHAT_SIDEBAR_TOASTER_ID,
+          }
+        );
+        return false;
+      } finally {
+        pdfCompressionAbortControllersRef.current.delete(loadingAttachment.id);
+        window.clearTimeout(processingPhaseTimer);
+      }
+
+      if (!isLoadingAttachmentActive()) {
         return false;
       }
 
@@ -293,11 +321,7 @@ export const useComposerLoadingAttachments = ({
         window.setTimeout(resolve, PDF_COMPRESSION_DONE_PHASE_DELAY);
       });
 
-      const isLoadingAttachmentStillActive =
-        loadingComposerAttachmentsRef.current.some(
-          attachment => attachment.id === loadingAttachment.id
-        );
-      if (!isLoadingAttachmentStillActive) {
+      if (!isLoadingAttachmentActive()) {
         return false;
       }
 
@@ -333,10 +357,15 @@ export const useComposerLoadingAttachments = ({
       loadingAttachment: LoadingComposerAttachment,
       prefetchedRemoteFile?: AttachmentComposerRemoteFile | null
     ) => {
+      const requestResetVersion = resetVersionRef.current;
       try {
         const attachmentRemoteFile =
           prefetchedRemoteFile ??
           (await fetchAttachmentComposerRemoteFile(attachmentLink));
+        if (resetVersionRef.current !== requestResetVersion) {
+          return false;
+        }
+
         const isLoadingAttachmentActive =
           loadingComposerAttachmentsRef.current.some(
             attachment => attachment.id === loadingAttachment.id
@@ -359,6 +388,18 @@ export const useComposerLoadingAttachments = ({
 
         return queueComposerFile(attachmentRemoteFile.file, 'document');
       } catch (error) {
+        if (resetVersionRef.current !== requestResetVersion) {
+          return false;
+        }
+
+        const isLoadingAttachmentActive =
+          loadingComposerAttachmentsRef.current.some(
+            attachment => attachment.id === loadingAttachment.id
+          );
+        if (!isLoadingAttachmentActive) {
+          return false;
+        }
+
         removeLoadingComposerAttachment(loadingAttachment.id);
         console.error('Error queueing attachment composer link:', error);
         toast.error('Gagal mengambil file dari link', {

@@ -10,8 +10,8 @@ import {
 import type { ChatMessage } from '../../../services/api/chat.service';
 import { useChatIncomingDeliveries } from '../hooks/useChatIncomingDeliveries';
 
-const { createdChannels, mockGateway, mockRealtimeService } = vi.hoisted(
-  () => ({
+const { createdChannels, mockGateway, mockRealtimeService, mockToast } =
+  vi.hoisted(() => ({
     createdChannels: [] as Array<{
       emitStatus: (status: string) => void;
       on: ReturnType<typeof vi.fn>;
@@ -25,8 +25,14 @@ const { createdChannels, mockGateway, mockRealtimeService } = vi.hoisted(
       createChannel: vi.fn(),
       removeChannel: vi.fn(),
     },
-  })
-);
+    mockToast: {
+      error: vi.fn(),
+    },
+  }));
+
+vi.mock('react-hot-toast', () => ({
+  default: mockToast,
+}));
 
 vi.mock('@/store/authStore', () => ({
   useAuthStore: () => ({
@@ -71,6 +77,7 @@ describe('useChatIncomingDeliveries', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
     vi.useFakeTimers();
     createdChannels.length = 0;
 
@@ -140,6 +147,35 @@ describe('useChatIncomingDeliveries', () => {
     expect(mockGateway.markMessageIdsAsDelivered).toHaveBeenCalledWith([
       'message-1',
     ]);
+  });
+
+  it('ignores malformed incoming insert payloads', async () => {
+    renderHook(() => useChatIncomingDeliveries());
+
+    const insertListenerCall = createdChannels[0]?.on.mock.calls.find(
+      ([type, config]) =>
+        type === 'postgres_changes' && config?.event === 'INSERT'
+    );
+
+    const insertListener = insertListenerCall?.[2] as
+      | ((payload: { new: unknown }) => void)
+      | undefined;
+
+    act(() => {
+      insertListener?.({
+        new: {
+          id: 42,
+          is_delivered: false,
+        },
+      });
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(100);
+      await Promise.resolve();
+    });
+
+    expect(mockGateway.markMessageIdsAsDelivered).not.toHaveBeenCalled();
   });
 
   it('backfills undelivered incoming messages when the subscription becomes ready', async () => {
@@ -279,6 +315,24 @@ describe('useChatIncomingDeliveries', () => {
     expect(mockRealtimeService.createChannel).toHaveBeenLastCalledWith(
       'incoming_messages_user-a'
     );
+  });
+
+  it('ignores stale realtime channel callbacks after cleanup', async () => {
+    const { unmount } = renderHook(() => useChatIncomingDeliveries());
+
+    expect(mockRealtimeService.createChannel).toHaveBeenCalledTimes(1);
+
+    unmount();
+
+    await act(async () => {
+      createdChannels[0]?.emitStatus('CHANNEL_ERROR');
+      vi.advanceTimersByTime(800);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(mockToast.error).not.toHaveBeenCalled();
+    expect(mockRealtimeService.createChannel).toHaveBeenCalledTimes(1);
   });
 
   it('retries failed delivered flushes instead of dropping the queued ids', async () => {

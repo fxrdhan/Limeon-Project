@@ -19,18 +19,33 @@ export const useDashboardRealtime = ({
   const queryClient = useQueryClient();
   const channelRef = useRef<DashboardRealtimeChannel | null>(null);
   const refreshTimeoutRef = useRef<number | null>(null);
+  const subscriptionGenerationRef = useRef(0);
 
   useEffect(() => {
     if (!enabled) {
       return;
     }
 
+    const subscriptionGeneration = subscriptionGenerationRef.current + 1;
+    subscriptionGenerationRef.current = subscriptionGeneration;
+
+    const isCurrentSubscription = () =>
+      subscriptionGenerationRef.current === subscriptionGeneration;
+
     const scheduleRefresh = () => {
+      if (!isCurrentSubscription()) {
+        return;
+      }
+
       if (refreshTimeoutRef.current !== null) {
         window.clearTimeout(refreshTimeoutRef.current);
       }
 
       refreshTimeoutRef.current = window.setTimeout(() => {
+        if (!isCurrentSubscription()) {
+          return;
+        }
+
         refreshTimeoutRef.current = null;
         void queryClient.invalidateQueries({
           queryKey: QueryKeys.dashboard.all,
@@ -43,6 +58,8 @@ export const useDashboardRealtime = ({
     channelRef.current = channel;
 
     return () => {
+      subscriptionGenerationRef.current += 1;
+
       if (refreshTimeoutRef.current !== null) {
         window.clearTimeout(refreshTimeoutRef.current);
         refreshTimeoutRef.current = null;

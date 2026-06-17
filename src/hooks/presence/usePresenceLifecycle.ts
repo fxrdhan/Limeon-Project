@@ -17,9 +17,13 @@ export const usePresenceLifecycle = ({
   );
   const sessionTokenRef = useRef<string | null>(accessToken ?? null);
   const hasHandledPageExitRef = useRef(false);
+  const presenceSyncGenerationRef = useRef(0);
 
   const syncPresenceOnlineState = useCallback(
-    async (isOnline: boolean) => {
+    async (
+      isOnline: boolean,
+      presenceSyncGeneration = presenceSyncGenerationRef.current
+    ) => {
       if (!userId) {
         return false;
       }
@@ -28,6 +32,11 @@ export const usePresenceLifecycle = ({
         userId,
         isOnline
       );
+
+      if (presenceSyncGenerationRef.current !== presenceSyncGeneration) {
+        return false;
+      }
+
       setPresenceSyncHealth({
         status: result.ok ? 'healthy' : 'degraded',
         errorMessage: result.errorMessage,
@@ -45,6 +54,7 @@ export const usePresenceLifecycle = ({
 
   useEffect(() => {
     if (!userId) {
+      presenceSyncGenerationRef.current += 1;
       hasHandledPageExitRef.current = false;
       setPresenceSyncHealth({
         status: 'idle',
@@ -54,8 +64,10 @@ export const usePresenceLifecycle = ({
       return;
     }
 
+    const presenceSyncGeneration = presenceSyncGenerationRef.current + 1;
+    presenceSyncGenerationRef.current = presenceSyncGeneration;
     hasHandledPageExitRef.current = false;
-    void syncPresenceOnlineState(true);
+    void syncPresenceOnlineState(true, presenceSyncGeneration);
 
     const handleVisibilityChange = () => {
       if (!userId || document.visibilityState !== 'visible') {
@@ -63,7 +75,7 @@ export const usePresenceLifecycle = ({
       }
 
       hasHandledPageExitRef.current = false;
-      void syncPresenceOnlineState(true);
+      void syncPresenceOnlineState(true, presenceSyncGeneration);
     };
 
     const handlePageExit = () => {
@@ -93,6 +105,7 @@ export const usePresenceLifecycle = ({
     window.addEventListener('unload', handlePageExit);
 
     return () => {
+      presenceSyncGenerationRef.current += 1;
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('beforeunload', handlePageExit);
       window.removeEventListener('pagehide', handlePageHide);

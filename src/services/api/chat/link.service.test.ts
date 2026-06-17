@@ -105,4 +105,20 @@ describe('chatLinkService', () => {
       },
     });
   });
+
+  it('preserves thrown edge function errors without PostgREST casting', async () => {
+    const error = new Error('Function network failed');
+    mockInvoke.mockRejectedValue(error);
+
+    const { chatLinkService } = await import('./link.service');
+
+    await expect(
+      chatLinkService.createSharedLink({
+        storagePath: 'images/channel/image.png',
+      })
+    ).resolves.toEqual({
+      data: null,
+      error,
+    });
+  });
 });

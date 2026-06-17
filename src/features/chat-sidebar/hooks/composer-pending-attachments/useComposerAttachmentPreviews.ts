@@ -22,6 +22,7 @@ export const useComposerAttachmentPreviews = ({
   const pendingImagePreviewGenerationRef = useRef<Map<string, string>>(
     new Map()
   );
+  const isMountedRef = useRef(true);
 
   const releasePendingImagePreviewUrl = useCallback(
     (attachmentId: string, previewUrl?: string | null) => {
@@ -125,6 +126,14 @@ export const useComposerAttachmentPreviews = ({
           return;
         }
 
+        if (
+          !isMountedRef.current ||
+          pendingImagePreviewGenerationRef.current.get(attachment.id) !==
+            previewSignature
+        ) {
+          return;
+        }
+
         const nextPreviewUrl = URL.createObjectURL(previewBlob);
 
         setPendingComposerAttachments(previousAttachments => {
@@ -172,12 +181,14 @@ export const useComposerAttachmentPreviews = ({
   }, [pendingComposerAttachments, setPendingComposerAttachments]);
 
   useEffect(() => {
+    isMountedRef.current = true;
     const pendingImagePreviewUrls = pendingImagePreviewUrlsRef.current;
     const pendingAttachments = pendingComposerAttachmentsRef.current;
     const pendingImagePreviewGeneration =
       pendingImagePreviewGenerationRef.current;
 
     return () => {
+      isMountedRef.current = false;
       pendingImagePreviewUrls.forEach(previewUrl => {
         URL.revokeObjectURL(previewUrl);
       });

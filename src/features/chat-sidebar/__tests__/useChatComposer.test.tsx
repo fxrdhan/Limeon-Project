@@ -242,6 +242,175 @@ describe('useChatComposer', () => {
     });
   });
 
+  it('tidak menampilkan glow sukses kirim lama setelah berpindah channel', () => {
+    const queuedFrames = new Map<number, FrameRequestCallback>();
+    let nextFrameId = 1;
+    const originalRequestAnimationFrame = window.requestAnimationFrame;
+    const originalCancelAnimationFrame = window.cancelAnimationFrame;
+    const cancelAnimationFrameMock = vi.fn((frameId: number) => {
+      queuedFrames.delete(frameId);
+    });
+    vi.useFakeTimers();
+    vi.stubGlobal('requestAnimationFrame', ((
+      callback: FrameRequestCallback
+    ) => {
+      const frameId = nextFrameId;
+      nextFrameId += 1;
+      queuedFrames.set(frameId, callback);
+      return frameId;
+    }) as typeof requestAnimationFrame);
+    vi.stubGlobal(
+      'cancelAnimationFrame',
+      cancelAnimationFrameMock as typeof cancelAnimationFrame
+    );
+
+    const flushQueuedFrames = () => {
+      const frames = Array.from(queuedFrames.entries());
+      queuedFrames.clear();
+
+      for (const [frameId, callback] of frames) {
+        callback(frameId);
+      }
+    };
+
+    try {
+      const { result, rerender } = renderHook(
+        ({ channelId }: { channelId: string }) => {
+          const messageInputRef = useRef<HTMLTextAreaElement | null>(null);
+
+          return useChatComposer({
+            isOpen: true,
+            currentChannelId: channelId,
+            messages: [],
+            closeMessageMenu: vi.fn(),
+            messageInputRef,
+          });
+        },
+        {
+          initialProps: { channelId: 'channel-1' },
+        }
+      );
+
+      act(() => {
+        result.current.triggerSendSuccessGlow();
+      });
+
+      const glowFrameId = nextFrameId - 1;
+      expect(queuedFrames.has(glowFrameId)).toBe(true);
+      expect(result.current.isSendSuccessGlowVisible).toBe(false);
+
+      act(() => {
+        rerender({ channelId: 'channel-2' });
+      });
+
+      expect(cancelAnimationFrameMock).toHaveBeenCalledWith(glowFrameId);
+
+      act(() => {
+        flushQueuedFrames();
+        vi.runOnlyPendingTimers();
+      });
+
+      expect(result.current.isSendSuccessGlowVisible).toBe(false);
+    } finally {
+      vi.useRealTimers();
+      vi.stubGlobal('requestAnimationFrame', originalRequestAnimationFrame);
+      vi.stubGlobal('cancelAnimationFrame', originalCancelAnimationFrame);
+    }
+  });
+
+  it('membatalkan frame resize input pesan ketika composer ditutup', () => {
+    const queuedFrames = new Map<number, FrameRequestCallback>();
+    let nextFrameId = 1;
+    const closeMessageMenu = vi.fn();
+    const originalRequestAnimationFrame = window.requestAnimationFrame;
+    const originalCancelAnimationFrame = window.cancelAnimationFrame;
+    const cancelAnimationFrameMock = vi.fn((frameId: number) => {
+      queuedFrames.delete(frameId);
+    });
+    vi.stubGlobal('requestAnimationFrame', ((
+      callback: FrameRequestCallback
+    ) => {
+      const frameId = nextFrameId;
+      nextFrameId += 1;
+      queuedFrames.set(frameId, callback);
+      return frameId;
+    }) as typeof requestAnimationFrame);
+    vi.stubGlobal(
+      'cancelAnimationFrame',
+      cancelAnimationFrameMock as typeof cancelAnimationFrame
+    );
+
+    const flushQueuedFrames = () => {
+      const frames = Array.from(queuedFrames.entries());
+      queuedFrames.clear();
+
+      for (const [frameId, callback] of frames) {
+        callback(frameId);
+      }
+    };
+
+    try {
+      const textarea = document.createElement('textarea');
+      Object.defineProperty(textarea, 'scrollHeight', {
+        configurable: true,
+        value: 23,
+      });
+      textarea.getBoundingClientRect = () =>
+        ({
+          bottom: 22,
+          height: 22,
+          left: 0,
+          right: 160,
+          top: 0,
+          width: 160,
+          x: 0,
+          y: 0,
+          toJSON: () => ({}),
+        }) as DOMRect;
+
+      const { result, rerender } = renderHook(
+        ({ isOpen }: { isOpen: boolean }) => {
+          const messageInputRef = useRef<HTMLTextAreaElement | null>(textarea);
+
+          return useChatComposer({
+            isOpen,
+            currentChannelId: 'channel-1',
+            messages: [],
+            closeMessageMenu,
+            messageInputRef,
+          });
+        },
+        {
+          initialProps: { isOpen: true },
+        }
+      );
+
+      act(() => {
+        result.current.setMessage('stok');
+      });
+
+      const resizeFrameId = nextFrameId - 1;
+      expect(queuedFrames.has(resizeFrameId)).toBe(true);
+      expect(textarea.style.height).toBe('22px');
+
+      act(() => {
+        rerender({ isOpen: false });
+      });
+
+      expect(cancelAnimationFrameMock).toHaveBeenCalledWith(resizeFrameId);
+      expect(queuedFrames.has(resizeFrameId)).toBe(false);
+
+      act(() => {
+        flushQueuedFrames();
+      });
+
+      expect(textarea.style.height).toBe('22px');
+    } finally {
+      vi.stubGlobal('requestAnimationFrame', originalRequestAnimationFrame);
+      vi.stubGlobal('cancelAnimationFrame', originalCancelAnimationFrame);
+    }
+  });
+
   it('membatasi total lampiran campuran hingga 30 item per kirim', async () => {
     const closeMessageMenu = vi.fn();
 

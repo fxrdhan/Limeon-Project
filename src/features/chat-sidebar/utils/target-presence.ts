@@ -1,3 +1,4 @@
+import { getErrorCode } from '@/lib/errorFields';
 import {
   chatSidebarPresenceGateway,
   type UserPresence,
@@ -16,7 +17,7 @@ export const loadTargetPresenceSnapshot = async (
     const { data: presence, error } =
       await chatSidebarPresenceGateway.getUserPresence(targetUserId);
 
-    if (error && error.code !== 'PGRST116') {
+    if (error && getErrorCode(error) !== 'PGRST116') {
       console.error(`${errorContext}:`, error);
       return {
         presence: null,

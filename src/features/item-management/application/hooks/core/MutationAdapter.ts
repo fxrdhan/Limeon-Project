@@ -50,7 +50,7 @@ export interface NormalizedMutations {
 
 // Internal shape describing an external mutation object we can work with
 type MutationLike = {
-  mutateAsync: (...args: unknown[]) => Promise<unknown>;
+  mutateAsync: (...args: unknown[]) => unknown;
   isPending?: boolean;
   isLoading?: boolean;
   error?: unknown;
@@ -100,6 +100,15 @@ const DELETE_KEYS = [
 // INTERNAL UTILS
 // ============================================================================
 
+const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const isMutationLike = (value: unknown): value is MutationLike =>
+  isObjectRecord(value) && typeof value.mutateAsync === 'function';
+
+const readBoolean = (value: unknown) =>
+  typeof value === 'boolean' ? value : undefined;
+
 function pickFirstExistingKey<K extends string>(
   obj: Record<string, unknown>,
   keys: readonly K[]
@@ -107,12 +116,8 @@ function pickFirstExistingKey<K extends string>(
   for (const key of keys) {
     if (Object.prototype.hasOwnProperty.call(obj, key)) {
       const value = obj[key];
-      if (value && typeof value === 'object') {
-        const maybe = value as Record<string, unknown>;
-        const mutate = maybe['mutateAsync'];
-        if (typeof mutate === 'function') {
-          return { key, value: maybe as MutationLike };
-        }
+      if (isMutationLike(value)) {
+        return { key, value };
       }
     }
   }
@@ -120,15 +125,10 @@ function pickFirstExistingKey<K extends string>(
 }
 
 function extractCommonState(from: unknown): MutationState {
-  if (!from || typeof from !== 'object') return {};
-  const f = from as Record<string, unknown>;
-  const isPending =
-    (f['isPending'] as boolean | undefined) ??
-    (f['isLoading'] as boolean | undefined);
-  const isLoading =
-    (f['isLoading'] as boolean | undefined) ??
-    (f['isPending'] as boolean | undefined);
-  const error = f['error'];
+  if (!isObjectRecord(from)) return {};
+  const isPending = readBoolean(from.isPending) ?? readBoolean(from.isLoading);
+  const isLoading = readBoolean(from.isLoading) ?? readBoolean(from.isPending);
+  const error = from.error;
   return { isPending, isLoading, error };
 }
 
@@ -144,7 +144,7 @@ function extractCommonState(from: unknown): MutationState {
 export function toNormalizedMutations(
   rawMutations: unknown
 ): NormalizedMutations {
-  const mutationsObj = (rawMutations ?? {}) as Record<string, unknown>;
+  const mutationsObj = isObjectRecord(rawMutations) ? rawMutations : {};
 
   // Resolve underlying raw methods by known keys
   const createRaw = pickFirstExistingKey(mutationsObj, CREATE_KEYS);
@@ -175,7 +175,7 @@ export function toNormalizedMutations(
           unknown
         >
       ): Promise<unknown> {
-        const { id, options, ...fields } = input ?? ({} as { id: string });
+        const { id, options, ...fields } = input;
 
         // Some providers (generic "updateMutation") want a flat payload { id, ...fields }
         // Others want a nested payload { id, data: {...} }

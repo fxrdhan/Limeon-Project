@@ -1,5 +1,5 @@
 import type { GridApi } from 'ag-grid-community';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useColumnDisplayMode } from '@/features/item-management/application/hooks/ui/useColumnDisplayMode';
 import { useItemsDisplayTransform } from '@/features/item-management/application/hooks/ui/useItemsDisplayTransform';
 import type { MasterDataType } from '@/features/item-management/shared/types';
@@ -11,11 +11,7 @@ import type {
   Supplier,
 } from '@/types/database';
 import type { EntityData } from '../../../application/hooks/collections/useEntityManager';
-import type {
-  EntityGridColumnDef,
-  EntityGridRow,
-  ItemWithExtendedEntities,
-} from './types';
+import type { EntityGridColumnDef, EntityGridRow } from './types';
 
 interface UseEntityGridRowsParams {
   activeTab: MasterDataType;
@@ -38,14 +34,15 @@ export const useEntityGridRows = ({
   supplierColumnDefs,
   entityColumnDefs,
 }: UseEntityGridRowsParams) => {
+  const autoSizeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const {
     displayModeState: columnDisplayModes,
     isReferenceColumn,
     toggleColumnDisplayMode: toggleDisplayMode,
   } = useColumnDisplayMode();
 
-  const itemsForDisplay = useItemsDisplayTransform<ItemWithExtendedEntities>(
-    itemsData as ItemWithExtendedEntities[] | undefined,
+  const itemsForDisplay = useItemsDisplayTransform(
+    itemsData,
     columnDisplayModes
   );
 
@@ -75,15 +72,26 @@ export const useEntityGridRows = ({
     suppliersData,
   ]);
 
+  const clearAutoSizeTimeout = useCallback(() => {
+    if (autoSizeTimeoutRef.current) {
+      clearTimeout(autoSizeTimeoutRef.current);
+      autoSizeTimeoutRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => clearAutoSizeTimeout, [clearAutoSizeTimeout]);
+
   const toggleColumnDisplayMode = useCallback(
     (colId: string) => {
       toggleDisplayMode(colId);
+      clearAutoSizeTimeout();
 
       if (!gridApi || gridApi.isDestroyed()) {
         return;
       }
 
-      setTimeout(() => {
+      autoSizeTimeoutRef.current = setTimeout(() => {
+        autoSizeTimeoutRef.current = null;
         if (gridApi.isDestroyed()) {
           return;
         }
@@ -94,7 +102,7 @@ export const useEntityGridRows = ({
         }
       }, 100);
     },
-    [gridApi, toggleDisplayMode]
+    [clearAutoSizeTimeout, gridApi, toggleDisplayMode]
   );
 
   return {

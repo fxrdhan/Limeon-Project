@@ -26,6 +26,7 @@ import { useMenuOpenScrollAnimation } from './chat-viewport-menu/useMenuOpenScro
 interface UseChatViewportMenuProps {
   getVisibleMessagesBounds: () => VisibleBounds | null;
   messagesContainerRef: RefObject<HTMLDivElement | null>;
+  resetKey?: string | null;
 }
 
 const animationFrameController = createAnimationFrameController();
@@ -33,6 +34,7 @@ const animationFrameController = createAnimationFrameController();
 export const useChatViewportMenu = ({
   getVisibleMessagesBounds,
   messagesContainerRef,
+  resetKey,
 }: UseChatViewportMenuProps) => {
   const [openMenuMessageId, setOpenMenuMessageId] = useState<string | null>(
     null
@@ -105,6 +107,10 @@ export const useChatViewportMenu = ({
     setMenuVerticalAnchor('left');
     setShouldAnimateMenuOpen(true);
   }, [cancelMenuOpenScrollAnimation, cancelNextFrame]);
+
+  useLayoutEffect(() => {
+    closeMessageMenu();
+  }, [closeMessageMenu, resetKey]);
 
   const syncOpenMenuLayout = useCallback(
     (anchor: HTMLElement, preferredSide: 'left' | 'right') => {

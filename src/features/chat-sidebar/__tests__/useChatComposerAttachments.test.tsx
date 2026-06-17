@@ -118,6 +118,20 @@ const buildComposerPasteEvent = ({
   } satisfies ComposerPasteEvent;
 };
 
+const createDeferred = <T,>() => {
+  let resolvePromise: ((value: T) => void) | null = null;
+  const promise = new Promise<T>(resolve => {
+    resolvePromise = resolve;
+  });
+
+  return {
+    promise,
+    resolve: (value: T) => {
+      resolvePromise?.(value);
+    },
+  };
+};
+
 describe('useChatComposerAttachments', () => {
   let revokeObjectURL: ReturnType<typeof vi.fn>;
 
@@ -235,6 +249,174 @@ describe('useChatComposerAttachments', () => {
     );
   });
 
+  it('cancels pending textarea focus when queued attachments are cleared', () => {
+    const queuedFrames = new Map<number, FrameRequestCallback>();
+    let nextFrameId = 1;
+    const originalRequestAnimationFrame = window.requestAnimationFrame;
+    const originalCancelAnimationFrame = window.cancelAnimationFrame;
+    const cancelAnimationFrameMock = vi.fn((frameId: number) => {
+      queuedFrames.delete(frameId);
+    });
+    vi.stubGlobal('requestAnimationFrame', ((
+      callback: FrameRequestCallback
+    ) => {
+      const frameId = nextFrameId;
+      nextFrameId += 1;
+      queuedFrames.set(frameId, callback);
+      return frameId;
+    }) as typeof requestAnimationFrame);
+    vi.stubGlobal(
+      'cancelAnimationFrame',
+      cancelAnimationFrameMock as typeof cancelAnimationFrame
+    );
+
+    const flushQueuedFrames = () => {
+      const frames = Array.from(queuedFrames.entries());
+      queuedFrames.clear();
+
+      for (const [frameId, callback] of frames) {
+        callback(frameId);
+      }
+    };
+
+    try {
+      const focus = vi.fn();
+      const setSelectionRange = vi.fn();
+      const messageInput = document.createElement('textarea');
+      messageInput.value = 'draft';
+      messageInput.focus = focus;
+      messageInput.setSelectionRange = setSelectionRange;
+      const messageInputRef = { current: messageInput };
+
+      const { result } = renderHook(() => {
+        const [message, setMessage] = useState('');
+
+        return useChatComposerAttachments({
+          editingMessageId: null,
+          closeMessageMenu: vi.fn(),
+          messageInputRef,
+          message,
+          setMessage,
+        });
+      });
+
+      act(() => {
+        result.current.queueComposerImage(
+          new File(['image'], 'foto.png', { type: 'image/png' })
+        );
+      });
+
+      const focusFrameId = nextFrameId - 1;
+      expect(queuedFrames.has(focusFrameId)).toBe(true);
+
+      act(() => {
+        result.current.clearPendingComposerAttachments();
+      });
+
+      expect(cancelAnimationFrameMock).toHaveBeenCalledWith(focusFrameId);
+
+      act(() => {
+        flushQueuedFrames();
+      });
+
+      expect(focus).not.toHaveBeenCalled();
+      expect(setSelectionRange).not.toHaveBeenCalled();
+    } finally {
+      vi.stubGlobal('requestAnimationFrame', originalRequestAnimationFrame);
+      vi.stubGlobal('cancelAnimationFrame', originalCancelAnimationFrame);
+    }
+  });
+
+  it('cancels pending prompt focus when the channel changes', () => {
+    const queuedFrames = new Map<number, FrameRequestCallback>();
+    let nextFrameId = 1;
+    const originalRequestAnimationFrame = window.requestAnimationFrame;
+    const originalCancelAnimationFrame = window.cancelAnimationFrame;
+    const cancelAnimationFrameMock = vi.fn((frameId: number) => {
+      queuedFrames.delete(frameId);
+    });
+    vi.stubGlobal('requestAnimationFrame', ((
+      callback: FrameRequestCallback
+    ) => {
+      const frameId = nextFrameId;
+      nextFrameId += 1;
+      queuedFrames.set(frameId, callback);
+      return frameId;
+    }) as typeof requestAnimationFrame);
+    vi.stubGlobal(
+      'cancelAnimationFrame',
+      cancelAnimationFrameMock as typeof cancelAnimationFrame
+    );
+
+    const flushQueuedFrames = () => {
+      const frames = Array.from(queuedFrames.entries());
+      queuedFrames.clear();
+
+      for (const [frameId, callback] of frames) {
+        callback(frameId);
+      }
+    };
+
+    try {
+      const focus = vi.fn();
+      const setSelectionRange = vi.fn();
+      const messageInput = document.createElement('textarea');
+      messageInput.value = 'https://example.com/file.png';
+      messageInput.focus = focus;
+      messageInput.setSelectionRange = setSelectionRange;
+      const messageInputRef = { current: messageInput };
+
+      const { result, rerender } = renderHook(
+        ({ channelId }: { channelId: string }) => {
+          const [message, setMessage] = useState(
+            'https://example.com/file.png'
+          );
+
+          return useChatComposerAttachments({
+            currentChannelId: channelId,
+            editingMessageId: null,
+            closeMessageMenu: vi.fn(),
+            messageInputRef,
+            message,
+            setMessage,
+          });
+        },
+        {
+          initialProps: { channelId: 'channel-1' },
+        }
+      );
+
+      act(() => {
+        result.current.handleEditAttachmentLink({
+          id: 'candidate-1',
+          pastedText: 'https://example.com/file.png',
+          rangeEnd: 'https://example.com/file.png'.length,
+          rangeStart: 0,
+          url: 'https://example.com/file.png',
+        });
+      });
+
+      const focusFrameId = nextFrameId - 1;
+      expect(queuedFrames.has(focusFrameId)).toBe(true);
+
+      act(() => {
+        rerender({ channelId: 'channel-2' });
+      });
+
+      expect(cancelAnimationFrameMock).toHaveBeenCalledWith(focusFrameId);
+
+      act(() => {
+        flushQueuedFrames();
+      });
+
+      expect(focus).not.toHaveBeenCalled();
+      expect(setSelectionRange).not.toHaveBeenCalled();
+    } finally {
+      vi.stubGlobal('requestAnimationFrame', originalRequestAnimationFrame);
+      vi.stubGlobal('cancelAnimationFrame', originalCancelAnimationFrame);
+    }
+  });
+
   it('compresses a pending image in place without adding a new attachment', async () => {
     const compressedFile = new File(['compressed-image'], 'foto-kecil.jpg', {
       type: 'image/jpeg',
@@ -285,6 +467,55 @@ describe('useChatComposerAttachments', () => {
     ).toBeTruthy();
     expect(createObjectURLMock).toHaveBeenCalledWith(compressedFile);
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:original-preview');
+  });
+
+  it('does not finish stale image compression after the attachment is removed', async () => {
+    const compressedImage = createDeferred<File>();
+    mockCompressImageIfNeeded.mockReturnValueOnce(compressedImage.promise);
+
+    const { result } = renderHook(() => {
+      const [message, setMessage] = useState('');
+
+      return useChatComposerAttachments({
+        editingMessageId: null,
+        closeMessageMenu: vi.fn(),
+        messageInputRef: { current: null },
+        message,
+        setMessage,
+      });
+    });
+
+    act(() => {
+      result.current.queueComposerImage(
+        new File(['image'], 'foto-besar.png', { type: 'image/png' })
+      );
+    });
+
+    const attachmentId = result.current.pendingComposerAttachments[0]!.id;
+
+    let compressionPromise = Promise.resolve(false);
+    act(() => {
+      compressionPromise =
+        result.current.compressPendingComposerImage(attachmentId);
+    });
+
+    act(() => {
+      result.current.removePendingComposerAttachment(attachmentId);
+    });
+
+    let didCompress = true;
+    await act(async () => {
+      compressedImage.resolve(
+        new File(['compressed-image'], 'foto-kecil.jpg', {
+          type: 'image/jpeg',
+        })
+      );
+      didCompress = await compressionPromise;
+      await Promise.resolve();
+    });
+
+    expect(didCompress).toBe(false);
+    expect(result.current.pendingComposerAttachments).toEqual([]);
   });
 
   it('compresses a pending pdf in place while showing a loading placeholder', async () => {
@@ -550,6 +781,55 @@ describe('useChatComposerAttachments', () => {
 
     expect(mockToast.error).toHaveBeenCalledWith(
       'Vendor gagal mengompres PDF',
+      expect.objectContaining({
+        toasterId: 'chat-sidebar-toaster',
+      })
+    );
+    expect(result.current.isLoadingAttachmentComposerAttachments).toBe(false);
+    expect(result.current.composerAttachmentPreviewItems).toEqual([
+      expect.objectContaining({
+        fileName: 'stok.pdf',
+      }),
+    ]);
+  });
+
+  it('restores the original pdf attachment when compression throws', async () => {
+    mockChatSidebarAttachmentGateway.compressPdf.mockRejectedValueOnce(
+      new Error('Koneksi kompres PDF gagal')
+    );
+
+    const { result } = renderHook(() => {
+      const [message, setMessage] = useState('');
+
+      return useChatComposerAttachments({
+        editingMessageId: null,
+        closeMessageMenu: vi.fn(),
+        messageInputRef: { current: null },
+        message,
+        setMessage,
+      });
+    });
+
+    act(() => {
+      result.current.handleDocumentFileChange(
+        createFileInputChangeEvent([
+          new File(['pdf'], 'stok.pdf', {
+            type: 'application/pdf',
+          }),
+        ])
+      );
+    });
+
+    let didCompress = true;
+    await act(async () => {
+      didCompress = await result.current.compressPendingComposerPdf(
+        result.current.pendingComposerAttachments[0]!.id
+      );
+    });
+
+    expect(didCompress).toBe(false);
+    expect(mockToast.error).toHaveBeenCalledWith(
+      'Koneksi kompres PDF gagal',
       expect.objectContaining({
         toasterId: 'chat-sidebar-toaster',
       })
@@ -895,7 +1175,7 @@ describe('useChatComposerAttachments', () => {
     expect(result.current.pendingComposerAttachments).toEqual([]);
   });
 
-  it('opens the pasted link from the popover action and closes the prompt', async () => {
+  it('shows feedback when opening a pasted link from the popover is blocked', async () => {
     const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
     const messageInput = document.createElement('textarea');
 
@@ -943,6 +1223,9 @@ describe('useChatComposerAttachments', () => {
       '_blank',
       'noopener,noreferrer'
     );
+    expect(mockToast.error).toHaveBeenCalledWith('Browser memblokir tab baru', {
+      toasterId: 'chat-sidebar-toaster',
+    });
     expect(result.current.attachmentPastePromptUrl).toBeNull();
     expect(messageInput.selectionStart).toBe(
       'https://example.com/attachment/receipt.png'.length
@@ -1098,6 +1381,79 @@ describe('useChatComposerAttachments', () => {
     expect(messageInput.selectionEnd).toBe(10);
   });
 
+  it('does not finish a stale prompt copy after the channel changes', async () => {
+    let resolveCopy: (() => void) | undefined;
+    const writeText = vi.fn(
+      () =>
+        new Promise<void>(resolve => {
+          resolveCopy = resolve;
+        })
+    );
+    const messageInput = document.createElement('textarea');
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+
+    const { result, rerender } = renderHook(
+      ({ channelId }: { channelId: string }) => {
+        const [message, setMessage] = useState('github.com');
+
+        return useChatComposerAttachments({
+          currentChannelId: channelId,
+          editingMessageId: null,
+          closeMessageMenu: vi.fn(),
+          messageInputRef: { current: messageInput },
+          message,
+          setMessage,
+        });
+      },
+      {
+        initialProps: { channelId: 'channel-1' },
+      }
+    );
+
+    act(() => {
+      result.current.openComposerLinkPrompt({
+        url: 'https://github.com/',
+        pastedText: 'github.com',
+        rangeStart: 0,
+        rangeEnd: 10,
+      });
+    });
+
+    messageInput.value = 'github.com';
+    messageInput.selectionStart = 0;
+    messageInput.selectionEnd = 0;
+
+    let copyPromise = Promise.resolve();
+    act(() => {
+      copyPromise = result.current.handleCopyAttachmentPastePromptLink();
+    });
+
+    act(() => {
+      rerender({ channelId: 'channel-2' });
+    });
+
+    await act(async () => {
+      resolveCopy?.();
+      await copyPromise;
+    });
+
+    expect(writeText).toHaveBeenCalledWith('https://github.com/');
+    expect(result.current.attachmentPastePromptUrl).toBeNull();
+    expect(mockToast.success).not.toHaveBeenCalledWith(
+      'Link berhasil disalin',
+      expect.anything()
+    );
+    expect(mockToast.error).not.toHaveBeenCalledWith(
+      'Gagal menyalin link',
+      expect.anything()
+    );
+    expect(messageInput.selectionStart).toBe(0);
+    expect(messageInput.selectionEnd).toBe(0);
+  });
+
   it('shortens a direct chat asset link inside the composer prompt', async () => {
     const messageInput = document.createElement('textarea');
     const assetUrl =
@@ -1155,6 +1511,87 @@ describe('useChatComposerAttachments', () => {
       {
         toasterId: 'chat-sidebar-toaster',
       }
+    );
+  });
+
+  it('does not shorten a stale composer prompt after the channel changes', async () => {
+    const messageInput = document.createElement('textarea');
+    const assetUrl =
+      'https://example.com/storage/v1/object/sign/chat/images/channel/user-1_photo.png?token=abc';
+    let resolveSharedLink:
+      | ((value: {
+          data: {
+            slug: string;
+            shortUrl: string;
+            storagePath: string;
+          };
+          error: null;
+        }) => void)
+      | undefined;
+
+    mockChatSidebarShareGateway.createSharedLink.mockImplementationOnce(
+      () =>
+        new Promise(resolve => {
+          resolveSharedLink = resolve;
+        })
+    );
+
+    const { result, rerender } = renderHook(
+      ({ channelId }: { channelId: string }) => {
+        const [message, setMessage] = useState(assetUrl);
+
+        return {
+          message,
+          ...useChatComposerAttachments({
+            currentChannelId: channelId,
+            editingMessageId: null,
+            closeMessageMenu: vi.fn(),
+            messageInputRef: { current: messageInput },
+            message,
+            setMessage,
+          }),
+        };
+      },
+      {
+        initialProps: { channelId: 'channel-1' },
+      }
+    );
+
+    act(() => {
+      result.current.openComposerLinkPrompt({
+        url: assetUrl,
+        pastedText: assetUrl,
+        rangeStart: 0,
+        rangeEnd: assetUrl.length,
+      });
+    });
+
+    let shortenPromise = Promise.resolve();
+    act(() => {
+      shortenPromise = result.current.handleShortenAttachmentPastePromptLink();
+    });
+
+    act(() => {
+      rerender({ channelId: 'channel-2' });
+    });
+
+    await act(async () => {
+      resolveSharedLink?.({
+        data: {
+          slug: 'abc123xyzt',
+          shortUrl: 'https://shrtlink.works/abc123xyzt',
+          storagePath: 'images/channel/user-1_photo.png',
+        },
+        error: null,
+      });
+      await shortenPromise;
+    });
+
+    expect(result.current.attachmentPastePromptUrl).toBeNull();
+    expect(result.current.message).toBe(assetUrl);
+    expect(mockToast.success).not.toHaveBeenCalledWith(
+      'Link berhasil dipendekkan',
+      expect.anything()
     );
   });
 
@@ -1541,6 +1978,167 @@ describe('useChatComposerAttachments', () => {
       {
         toasterId: 'chat-sidebar-toaster',
       }
+    );
+  });
+
+  it('does not restore a pasted attachment link after the channel changes while loading it', async () => {
+    let resolveRemoteAsset: ((value: null) => void) | undefined;
+    mockFetchAttachmentComposerRemoteFile.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolveRemoteAsset = resolve;
+        })
+    );
+
+    const pastedLink = 'https://shrtlink.works/bwdrrk3ugm';
+    const { result, rerender } = renderHook(
+      ({ channelId }: { channelId: string }) => {
+        const [message, setMessage] = useState('');
+
+        return {
+          message,
+          ...useChatComposerAttachments({
+            currentChannelId: channelId,
+            editingMessageId: null,
+            closeMessageMenu: vi.fn(),
+            messageInputRef: { current: null },
+            message,
+            setMessage,
+          }),
+        };
+      },
+      {
+        initialProps: { channelId: 'channel-1' },
+      }
+    );
+
+    act(() => {
+      result.current.handleComposerPaste(
+        buildComposerPasteEvent({
+          text: pastedLink,
+        })
+      );
+    });
+
+    await waitFor(() => {
+      expect(result.current.hoverableAttachmentUrl).toBe(pastedLink);
+    });
+
+    act(() => {
+      result.current.openAttachmentPastePrompt();
+    });
+
+    act(() => {
+      result.current.handleUseAttachmentPasteAsAttachment();
+    });
+
+    expect(result.current.message).toBe('');
+    expect(result.current.loadingComposerAttachments).toEqual([
+      expect.objectContaining({
+        fileName: 'bwdrrk3ugm',
+        status: 'loading',
+      }),
+    ]);
+
+    act(() => {
+      rerender({ channelId: 'channel-2' });
+    });
+
+    await waitFor(() => {
+      expect(result.current.loadingComposerAttachments).toHaveLength(0);
+    });
+
+    await act(async () => {
+      resolveRemoteAsset?.(null);
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(result.current.message).toBe('');
+      expect(result.current.hoverableAttachmentCandidates).toHaveLength(0);
+      expect(result.current.loadingComposerAttachments).toHaveLength(0);
+    });
+    expect(mockToast.error).not.toHaveBeenCalledWith(
+      'Link harus mengarah ke gambar atau PDF yang valid',
+      expect.anything()
+    );
+  });
+
+  it('does not show a stale fetch error after cancelling a loading attachment link', async () => {
+    let rejectRemoteAsset: ((error: Error) => void) | undefined;
+    mockFetchAttachmentComposerRemoteFile.mockImplementation(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectRemoteAsset = reject;
+        })
+    );
+
+    const pastedLink = 'https://shrtlink.works/bwdrrk3ugm';
+    const { result } = renderHook(() => {
+      const [message, setMessage] = useState('');
+
+      return {
+        message,
+        ...useChatComposerAttachments({
+          editingMessageId: null,
+          closeMessageMenu: vi.fn(),
+          messageInputRef: { current: null },
+          message,
+          setMessage,
+        }),
+      };
+    });
+
+    act(() => {
+      result.current.handleComposerPaste(
+        buildComposerPasteEvent({
+          text: pastedLink,
+        })
+      );
+    });
+
+    await waitFor(() => {
+      expect(result.current.hoverableAttachmentUrl).toBe(pastedLink);
+    });
+
+    act(() => {
+      result.current.openAttachmentPastePrompt();
+    });
+
+    act(() => {
+      result.current.handleUseAttachmentPasteAsAttachment();
+    });
+
+    expect(result.current.loadingComposerAttachments).toEqual([
+      expect.objectContaining({
+        fileName: 'bwdrrk3ugm',
+        status: 'loading',
+      }),
+    ]);
+    expect(result.current.message).toBe('');
+
+    const loadingAttachmentId =
+      result.current.loadingComposerAttachments[0]!.id;
+    act(() => {
+      result.current.cancelLoadingComposerAttachment(loadingAttachmentId);
+    });
+
+    expect(result.current.loadingComposerAttachments).toHaveLength(0);
+
+    await act(async () => {
+      rejectRemoteAsset?.(new Error('network failed'));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(result.current.message).toBe(pastedLink);
+      expect(result.current.loadingComposerAttachments).toHaveLength(0);
+    });
+
+    expect(mockToast.error).not.toHaveBeenCalledWith(
+      'Gagal mengambil file dari link',
+      expect.anything()
     );
   });
 

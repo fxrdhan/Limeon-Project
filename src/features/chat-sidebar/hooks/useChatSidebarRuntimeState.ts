@@ -108,6 +108,7 @@ export const useChatSidebarRuntimeState = ({
     selectedVisibleMessages: interaction.selectedVisibleMessages,
     setSelectedMessageIds: interaction.setSelectedMessageIds,
     deleteMessages: mutations.handleDeleteMessages,
+    resetKey: currentChannelId,
   });
 
   const handleClose = useCallback(() => {

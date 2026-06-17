@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type {
   PackageConversion,
   UsePackageConversionReturn,
@@ -22,6 +22,8 @@ export const usePackageConversion = (): UsePackageConversionReturn => {
   >([]);
   const [availableUnits, setAvailableUnits] = useState<ItemInventoryUnit[]>([]);
   const [skipRecalculation, setSkipRecalculation] = useState<boolean>(false);
+  const mountedRef = useRef(true);
+  const refreshGenerationRef = useRef(0);
 
   const [packageConversionFormData, setPackageConversionFormData] = useState({
     inventory_unit_id: '',
@@ -30,9 +32,16 @@ export const usePackageConversion = (): UsePackageConversionReturn => {
   });
 
   const refreshAvailableUnits = useCallback(async () => {
+    const refreshGeneration = refreshGenerationRef.current + 1;
+    refreshGenerationRef.current = refreshGeneration;
+
     const { data } = await itemMasterDataService.getActiveInventoryUnits();
 
-    if (data) {
+    if (
+      mountedRef.current &&
+      refreshGenerationRef.current === refreshGeneration &&
+      data
+    ) {
       setAvailableUnits(data);
     }
   }, []);
@@ -40,6 +49,15 @@ export const usePackageConversion = (): UsePackageConversionReturn => {
   useEffect(() => {
     void refreshAvailableUnits();
   }, [refreshAvailableUnits]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+
+    return () => {
+      mountedRef.current = false;
+      refreshGenerationRef.current += 1;
+    };
+  }, []);
 
   const addPackageConversion = useCallback(
     (

@@ -1,8 +1,29 @@
 import { act, renderHook } from '@testing-library/react';
 import { useState } from 'react';
-import { describe, expect, it, vi } from 'vite-plus/test';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import type { ChatMessage } from '../data/chatSidebarGateway';
+import type { DeleteMessagesResult } from '../hooks/chatComposerActionTypes';
 import { useChatBulkDelete } from '../hooks/useChatBulkDelete';
+
+const { mockToast } = vi.hoisted(() => ({
+  mockToast: {
+    error: vi.fn(),
+    success: vi.fn(),
+  },
+}));
+
+vi.mock('react-hot-toast', () => ({
+  default: mockToast,
+}));
+
+const createDeferred = <Value,>() => {
+  let resolve!: (value: Value) => void;
+  const promise = new Promise<Value>(promiseResolve => {
+    resolve = promiseResolve;
+  });
+
+  return { promise, resolve };
+};
 
 const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
   id: overrides.id ?? 'message-1',
@@ -32,6 +53,10 @@ const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
 });
 
 describe('useChatBulkDelete', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('passes selected incoming messages to the delete mutation', async () => {
     const incomingMessage = buildMessage({
       id: 'incoming-1',
@@ -69,5 +94,59 @@ describe('useChatBulkDelete', () => {
       suppressErrorToast: true,
     });
     expect([...result.current.selectedMessageIds]).toEqual([]);
+  });
+
+  it('does not show stale bulk delete feedback after the reset key changes', async () => {
+    const incomingMessage = buildMessage({
+      id: 'incoming-stale',
+      sender_id: 'user-b',
+      receiver_id: 'user-a',
+    });
+    const deferredDelete = createDeferred<DeleteMessagesResult>();
+    const deleteMessages = vi.fn().mockReturnValueOnce(deferredDelete.promise);
+    const setSelectedMessageIds = vi.fn();
+
+    const { result, rerender } = renderHook(
+      ({ resetKey }: { resetKey: string | null }) =>
+        useChatBulkDelete({
+          user: { id: 'user-a' },
+          selectedVisibleMessages: [incomingMessage],
+          setSelectedMessageIds,
+          deleteMessages,
+          resetKey,
+        }),
+      {
+        initialProps: {
+          resetKey: 'channel-1',
+        },
+      }
+    );
+
+    let deletePromise!: Promise<void>;
+    act(() => {
+      deletePromise = result.current();
+    });
+
+    act(() => {
+      rerender({
+        resetKey: 'channel-2',
+      });
+    });
+
+    await act(async () => {
+      deferredDelete.resolve({
+        deletedTargetMessageIds: ['incoming-stale'],
+        failedTargetMessageIds: [],
+        cleanupWarningTargetMessageIds: [],
+      });
+      await deletePromise;
+    });
+
+    expect(deleteMessages).toHaveBeenCalledWith([incomingMessage], {
+      suppressErrorToast: true,
+    });
+    expect(setSelectedMessageIds).not.toHaveBeenCalled();
+    expect(mockToast.success).not.toHaveBeenCalled();
+    expect(mockToast.error).not.toHaveBeenCalled();
   });
 });

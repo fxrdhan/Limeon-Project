@@ -10,6 +10,7 @@ import {
 } from 'vite-plus/test';
 import { SEARCH_CONSTANTS } from '../../../components/search-bar/constants';
 import type { ChatMessage } from '../../../services/api/chat.service';
+import { CHAT_COPY_LOADING_TOAST_DELAY_MS } from '../constants';
 import { useChatInteractionModes } from '../hooks/useChatInteractionModes';
 import { getAttachmentCaptionData } from '../utils/message-derivations';
 
@@ -60,6 +61,15 @@ const stubScrollTo = (
     configurable: true,
     value: scrollTo,
   });
+};
+
+const createDeferred = <Value,>() => {
+  let resolve!: (value: Value) => void;
+  const promise = new Promise<Value>(promiseResolve => {
+    resolve = promiseResolve;
+  });
+
+  return { promise, resolve };
 };
 
 const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
@@ -219,6 +229,169 @@ describe('useChatInteractionModes', () => {
     });
 
     expect(result.current.activeSearchMessageId).toBe('file-1');
+  });
+
+  it('does not copy stale selected messages after the active channel changes', async () => {
+    const deferredCopyableUrl = createDeferred<string | null>();
+    mockResolveCopyableChatAssetUrl.mockReturnValueOnce(
+      deferredCopyableUrl.promise
+    );
+    const messagesContainerRef = createRef<HTMLDivElement>();
+    const messagesContainer = document.createElement('div');
+    stubScrollTo(messagesContainer);
+    messagesContainerRef.current = messagesContainer;
+    const selectionMessages = [
+      buildMessage({
+        id: 'image-stale-copy',
+        message: 'https://example.com/image.png',
+        message_type: 'image',
+        sender_name: 'Admin',
+      }),
+    ];
+
+    const { result, rerender } = renderHook(
+      ({ channelId }: { channelId: string }) =>
+        useChatInteractionModes({
+          isOpen: true,
+          currentChannelId: channelId,
+          messages: selectionMessages,
+          captionData: getAttachmentCaptionData(selectionMessages),
+          mergeSearchContextMessages: vi.fn(),
+          user: { id: 'user-a', name: 'Admin' },
+          targetUser: {
+            id: 'user-b',
+            name: 'Gudang',
+            email: 'gudang@example.com',
+            profilephoto: null,
+          },
+          closeMessageMenu: vi.fn(),
+          messagesContainerRef,
+          getAttachmentFileName: messageItem =>
+            messageItem.file_name || 'Lampiran',
+        }),
+      {
+        initialProps: { channelId: 'channel-1' },
+      }
+    );
+
+    act(() => {
+      result.current.handleEnterMessageSelectionMode();
+    });
+
+    expect(result.current.isSelectionMode).toBe(true);
+
+    act(() => {
+      result.current.handleToggleMessageSelection('image-stale-copy');
+    });
+
+    expect(result.current.selectedVisibleMessages).toHaveLength(1);
+
+    vi.useFakeTimers();
+
+    let copyPromise!: Promise<void>;
+    act(() => {
+      copyPromise = result.current.handleCopySelectedMessages();
+    });
+
+    act(() => {
+      rerender({ channelId: 'channel-2' });
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(CHAT_COPY_LOADING_TOAST_DELAY_MS);
+    });
+
+    await act(async () => {
+      deferredCopyableUrl.resolve('https://signed.example.com/chat/image.png');
+      await copyPromise;
+    });
+
+    expect(clipboardWriteText).not.toHaveBeenCalled();
+    expect(mockToast.loading).not.toHaveBeenCalled();
+    expect(mockToast.success).not.toHaveBeenCalled();
+    expect(mockToast.error).not.toHaveBeenCalled();
+    expect(result.current.isSelectionMode).toBe(false);
+    expect(result.current.selectedMessageIds.size).toBe(0);
+  });
+
+  it('does not copy stale selected messages after selection mode exits', async () => {
+    const deferredCopyableUrl = createDeferred<string | null>();
+    mockResolveCopyableChatAssetUrl.mockReturnValueOnce(
+      deferredCopyableUrl.promise
+    );
+    const messagesContainerRef = createRef<HTMLDivElement>();
+    const messagesContainer = document.createElement('div');
+    stubScrollTo(messagesContainer);
+    messagesContainerRef.current = messagesContainer;
+    const selectionMessages = [
+      buildMessage({
+        id: 'image-stale-exit-copy',
+        message: 'https://example.com/image.png',
+        message_type: 'image',
+        sender_name: 'Admin',
+      }),
+    ];
+
+    const { result } = renderHook(() =>
+      useChatInteractionModes({
+        isOpen: true,
+        currentChannelId: 'channel-1',
+        messages: selectionMessages,
+        captionData: getAttachmentCaptionData(selectionMessages),
+        mergeSearchContextMessages: vi.fn(),
+        user: { id: 'user-a', name: 'Admin' },
+        targetUser: {
+          id: 'user-b',
+          name: 'Gudang',
+          email: 'gudang@example.com',
+          profilephoto: null,
+        },
+        closeMessageMenu: vi.fn(),
+        messagesContainerRef,
+        getAttachmentFileName: messageItem =>
+          messageItem.file_name || 'Lampiran',
+      })
+    );
+
+    act(() => {
+      result.current.handleEnterMessageSelectionMode();
+    });
+
+    await waitFor(() => {
+      expect(result.current.isSelectionMode).toBe(true);
+    });
+
+    act(() => {
+      result.current.handleToggleMessageSelection('image-stale-exit-copy');
+    });
+
+    await waitFor(() => {
+      expect(result.current.selectedVisibleMessages).toHaveLength(1);
+    });
+
+    vi.useFakeTimers();
+
+    let copyPromise!: Promise<void>;
+    act(() => {
+      copyPromise = result.current.handleCopySelectedMessages();
+    });
+
+    act(() => {
+      result.current.handleExitMessageSelectionMode();
+      vi.advanceTimersByTime(CHAT_COPY_LOADING_TOAST_DELAY_MS);
+    });
+
+    await act(async () => {
+      deferredCopyableUrl.resolve('https://signed.example.com/chat/image.png');
+      await copyPromise;
+    });
+
+    expect(clipboardWriteText).not.toHaveBeenCalled();
+    expect(mockToast.loading).not.toHaveBeenCalled();
+    expect(mockToast.success).not.toHaveBeenCalled();
+    expect(mockToast.error).not.toHaveBeenCalled();
+    expect(result.current.isSelectionMode).toBe(false);
+    expect(result.current.selectedMessageIds.size).toBe(0);
   });
 
   it('copies selected visible messages and resets search when channel changes', async () => {

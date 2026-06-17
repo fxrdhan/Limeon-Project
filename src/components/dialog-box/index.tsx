@@ -61,12 +61,19 @@ export const ConfirmDialogComponent: React.FC = () => {
   const context = React.useContext(ConfirmDialogContext);
   const dialogRef = useRef<HTMLDivElement>(null);
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
+  const hasHandledActionRef = useRef(false);
   const isOpen = context?.isOpen ?? false;
 
   const handleCancel = useCallback(() => {
     if (!context) {
       return;
     }
+
+    if (hasHandledActionRef.current) {
+      return;
+    }
+
+    hasHandledActionRef.current = true;
     context.onCancel();
     context.closeConfirmDialog();
   }, [context]);
@@ -75,6 +82,12 @@ export const ConfirmDialogComponent: React.FC = () => {
     if (!context) {
       return;
     }
+
+    if (hasHandledActionRef.current) {
+      return;
+    }
+
+    hasHandledActionRef.current = true;
     context.onConfirm();
     context.closeConfirmDialog();
   }, [context]);
@@ -84,6 +97,7 @@ export const ConfirmDialogComponent: React.FC = () => {
       return;
     }
 
+    hasHandledActionRef.current = false;
     const timeoutId = window.setTimeout(() => {
       cancelButtonRef.current?.focus();
     }, 50);

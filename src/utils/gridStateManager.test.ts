@@ -115,6 +115,18 @@ describe('grid state manager', () => {
     expect(loadSavedPaginationEnabledState('items')).toBeUndefined();
   });
 
+  it('clears saved grid state values that are valid JSON but not objects', () => {
+    sessionStorage.setItem('grid_state_items', 'true');
+
+    expect(loadSavedStateForInit('items')).toBeUndefined();
+    expect(hasSavedState('items')).toBe(false);
+
+    sessionStorage.setItem('grid_state_items', '[]');
+
+    expect(loadSavedStateForInit('items')).toBeUndefined();
+    expect(hasSavedState('items')).toBe(false);
+  });
+
   it('clears individual and all saved grid state entries', () => {
     expect(autoSaveGridState(gridApi(), 'items')).toBe(true);
     expect(autoSaveGridState(gridApi(), 'suppliers')).toBe(true);

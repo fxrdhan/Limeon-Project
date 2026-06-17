@@ -1,21 +1,15 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { getInvalidationKeys } from '@/constants/queryKeys';
 import { invalidateQueryKeys } from '@/lib/queryInvalidation';
+import toast from 'react-hot-toast';
 import {
   useCustomers,
   useDoctors,
   usePatients,
 } from '@/features/item-management/public/useIdentityData';
-import type {
-  Customer,
-  Doctor,
-  Item,
-  Patient,
-  SaleFormData,
-  SaleItem,
-} from '@/types';
+import type { Item, SaleFormData, SaleItem } from '@/types';
 import {
   buildSaleCreatePayload,
   buildSaleItemCreatePayloads,
@@ -35,21 +29,22 @@ export const useSaleForm = ({ enabled = true }: UseSaleFormProps = {}) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
+  const mountedRef = useRef(true);
+  const enabledRef = useRef(enabled);
+  const formScopeVersionRef = useRef(0);
+  const submitInFlightRef = useRef(false);
   const customersQuery = useCustomers({ enabled });
   const patientsQuery = usePatients({ enabled });
   const doctorsQuery = useDoctors({ enabled });
   const customers = useMemo(
-    () => (customersQuery.data ?? []) as Customer[],
+    () => customersQuery.data ?? [],
     [customersQuery.data]
   );
   const patients = useMemo(
-    () => (patientsQuery.data ?? []) as Patient[],
+    () => patientsQuery.data ?? [],
     [patientsQuery.data]
   );
-  const doctors = useMemo(
-    () => (doctorsQuery.data ?? []) as Doctor[],
-    [doctorsQuery.data]
-  );
+  const doctors = useMemo(() => doctorsQuery.data ?? [], [doctorsQuery.data]);
   const [saleItems, setSaleItems] = useState<SaleItem[]>([]);
   const [formData, setFormData] = useState<SaleFormData>({
     customer_id: '',
@@ -61,6 +56,33 @@ export const useSaleForm = ({ enabled = true }: UseSaleFormProps = {}) => {
   });
 
   const total = calculateSaleTotal(saleItems);
+
+  enabledRef.current = enabled;
+
+  const isFormScopeActive = useCallback(
+    (scopeVersion: number) =>
+      mountedRef.current &&
+      enabledRef.current &&
+      formScopeVersionRef.current === scopeVersion,
+    []
+  );
+
+  useEffect(() => {
+    mountedRef.current = true;
+
+    return () => {
+      mountedRef.current = false;
+      formScopeVersionRef.current += 1;
+    };
+  }, []);
+
+  useEffect(() => {
+    formScopeVersionRef.current += 1;
+
+    if (!enabled) {
+      setLoading(false);
+    }
+  }, [enabled]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -108,9 +130,13 @@ export const useSaleForm = ({ enabled = true }: UseSaleFormProps = {}) => {
       getItemById,
     });
     if (validationErrors.length > 0) {
-      alert(validationErrors.join('\n'));
+      toast.error(validationErrors.join('\n'));
       return;
     }
+
+    if (submitInFlightRef.current) return;
+    submitInFlightRef.current = true;
+    const scopeVersion = formScopeVersionRef.current;
 
     try {
       setLoading(true);
@@ -121,6 +147,7 @@ export const useSaleForm = ({ enabled = true }: UseSaleFormProps = {}) => {
       );
 
       if (error) throw error;
+      if (!isFormScopeActive(scopeVersion)) return;
 
       void invalidateQueryKeys(
         queryClient,
@@ -129,10 +156,14 @@ export const useSaleForm = ({ enabled = true }: UseSaleFormProps = {}) => {
 
       void navigate('/sales');
     } catch (error) {
+      if (!isFormScopeActive(scopeVersion)) return;
       console.error('Error creating sale:', error);
-      alert('Gagal menyimpan penjualan. Silakan coba lagi.');
+      toast.error('Gagal menyimpan penjualan. Silakan coba lagi.');
     } finally {
-      setLoading(false);
+      submitInFlightRef.current = false;
+      if (isFormScopeActive(scopeVersion)) {
+        setLoading(false);
+      }
     }
   };
 

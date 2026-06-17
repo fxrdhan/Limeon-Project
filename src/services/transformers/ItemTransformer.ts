@@ -9,6 +9,10 @@ import type {
 } from '@/types/database';
 import type { DBItemWithRelations } from '../repositories/ItemRepository';
 import { formatItemDisplayName } from '@/lib/item-display';
+import {
+  normalizeDBPackageConversions,
+  normalizePackageConversions,
+} from '@/lib/packageConversions';
 
 export class ItemTransformer {
   private static resolveInventoryUnit(
@@ -105,23 +109,7 @@ export class ItemTransformer {
   static parsePackageConversions(
     packageConversions: unknown
   ): PackageConversion[] {
-    if (!packageConversions) {
-      return [];
-    }
-
-    if (typeof packageConversions === 'string') {
-      try {
-        return JSON.parse(packageConversions);
-      } catch {
-        return [];
-      }
-    }
-
-    if (Array.isArray(packageConversions)) {
-      return packageConversions;
-    }
-
-    return [];
+    return normalizePackageConversions(packageConversions);
   }
 
   /**
@@ -221,7 +209,7 @@ export class ItemTransformer {
     return {
       ...itemData,
       package_conversions: packageConversions
-        ? JSON.stringify(packageConversions)
+        ? JSON.stringify(normalizeDBPackageConversions(packageConversions))
         : '[]',
     };
   }
@@ -236,7 +224,9 @@ export class ItemTransformer {
     const updateData = { ...itemData };
 
     if (packageConversions !== undefined) {
-      updateData.package_conversions = JSON.stringify(packageConversions);
+      updateData.package_conversions = JSON.stringify(
+        normalizeDBPackageConversions(packageConversions)
+      );
     }
 
     return updateData;

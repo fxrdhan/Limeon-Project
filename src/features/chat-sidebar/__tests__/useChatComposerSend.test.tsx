@@ -186,6 +186,15 @@ const createPendingSendRegistry = () => {
   };
 };
 
+const createDeferred = <Value,>() => {
+  let resolve!: (value: Value) => void;
+  const promise = new Promise<Value>(promiseResolve => {
+    resolve = promiseResolve;
+  });
+
+  return { promise, resolve };
+};
+
 const useComposerSendWithMutationScope = ({
   messages = [],
   rawAttachmentUrl = null,
@@ -1590,6 +1599,149 @@ describe('useChatComposerSend', () => {
       'Gagal mengirim pesan',
       expect.anything()
     );
+  });
+
+  it('allows sending in a new conversation while the previous text send is still pending', async () => {
+    const pendingOldSend = createDeferred<{
+      data: ChatMessage | null;
+      error: null;
+    }>();
+    mockGateway.createMessage
+      .mockReturnValueOnce(pendingOldSend.promise)
+      .mockResolvedValueOnce({
+        data: buildMessage({
+          id: 'server-channel-2',
+          receiver_id: 'user-c',
+          channel_id: 'channel-2',
+          message: 'draft baru',
+          message_type: 'text',
+        }),
+        error: null,
+      });
+
+    const { registerPendingSend } = createPendingSendRegistry();
+
+    type HookProps = {
+      channelId: string;
+      targetUserId: string;
+      targetUserName: string;
+      initialDraftMessage: string;
+      initialMessages: ChatMessage[];
+    };
+
+    const { result, rerender } = renderHook(
+      (props: HookProps) => {
+        const [messages, setMessages] = useState<ChatMessage[]>(
+          props.initialMessages
+        );
+        const [draftMessage, setDraftMessage] = useState(
+          props.initialDraftMessage
+        );
+        const pendingImagePreviewUrlsRef = useRef<Map<string, string>>(
+          new Map()
+        );
+
+        useEffect(() => {
+          setMessages(props.initialMessages);
+          setDraftMessage(props.initialDraftMessage);
+        }, [props.channelId, props.initialDraftMessage, props.initialMessages]);
+
+        const send = useComposerSendWithMutationScope({
+          user: { id: 'user-a', name: 'Admin' },
+          targetUser: {
+            id: props.targetUserId,
+            name: props.targetUserName,
+            email: `${props.targetUserId}@example.com`,
+            profilephoto: null,
+          },
+          currentChannelId: props.channelId,
+          message: draftMessage,
+          setMessage: setDraftMessage,
+          editingMessageId: null,
+          pendingComposerAttachments: [],
+          clearPendingComposerAttachments: vi.fn(),
+          restorePendingComposerAttachments: vi.fn(),
+          setMessages,
+          scheduleScrollMessagesToBottom: vi.fn(),
+          triggerSendSuccessGlow: vi.fn(),
+          pendingImagePreviewUrlsRef,
+          registerPendingSend,
+        });
+
+        return {
+          ...send,
+          messages,
+          draftMessage,
+        };
+      },
+      {
+        initialProps: {
+          channelId: 'channel-1',
+          targetUserId: 'user-b',
+          targetUserName: 'Gudang',
+          initialDraftMessage: 'draft lama',
+          initialMessages: [],
+        },
+      }
+    );
+
+    let oldSendPromise!: Promise<boolean>;
+    await act(async () => {
+      oldSendPromise = result.current.handleSendMessage();
+      await Promise.resolve();
+    });
+
+    expect(mockGateway.createMessage).toHaveBeenCalledTimes(1);
+
+    rerender({
+      channelId: 'channel-2',
+      targetUserId: 'user-c',
+      targetUserName: 'Kasir',
+      initialDraftMessage: 'draft baru',
+      initialMessages: [],
+    });
+
+    await waitFor(() => {
+      expect(result.current.draftMessage).toBe('draft baru');
+    });
+
+    let newSendResult!: boolean;
+    await act(async () => {
+      newSendResult = await result.current.handleSendMessage();
+    });
+
+    expect(newSendResult).toBe(true);
+    expect(mockGateway.createMessage).toHaveBeenCalledTimes(2);
+    expect(mockGateway.createMessage).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        receiver_id: 'user-c',
+        message: 'draft baru',
+        message_type: 'text',
+      })
+    );
+
+    await act(async () => {
+      pendingOldSend.resolve({
+        data: buildMessage({
+          id: 'server-channel-1',
+          receiver_id: 'user-b',
+          channel_id: 'channel-1',
+          message: 'draft lama',
+          message_type: 'text',
+        }),
+        error: null,
+      });
+      await oldSendPromise;
+    });
+
+    expect(result.current.messages).toEqual([
+      expect.objectContaining({
+        id: 'server-channel-2',
+        channel_id: 'channel-2',
+        message: 'draft baru',
+      }),
+    ]);
   });
 
   it('shows an error toast and restores draft text when text send fails', async () => {

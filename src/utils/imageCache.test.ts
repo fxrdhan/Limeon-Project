@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vite-plus/test';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import {
   getCachedImage,
   getCachedImageBlobUrl,
@@ -8,6 +8,8 @@ import {
   setCachedImage,
   setCachedImageSet,
 } from './imageCache';
+
+const STORAGE_KEY = 'pharmasys_image_cache_v1';
 
 describe('image cache utilities', () => {
   beforeEach(async () => {
@@ -52,7 +54,7 @@ describe('image cache utilities', () => {
     await resetImageCache();
 
     expect(getCachedImage('supplier:1')).toBeNull();
-    expect(localStorage.getItem('pharmasys_image_cache_v1')).toBeNull();
+    expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
   });
 
   it('returns null for non-cacheable blob lookups without touching browser caches', async () => {
@@ -60,5 +62,57 @@ describe('image cache utilities', () => {
       getCachedImageBlobUrl('blob:local-preview')
     ).resolves.toBeNull();
     await expect(getCachedImageBlobUrl('/relative.png')).resolves.toBeNull();
+  });
+
+  it('loads only well-formed persisted entries from local storage', async () => {
+    await resetImageCache();
+    vi.resetModules();
+
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        version: 1,
+        entries: {
+          'item:broken-date': {
+            type: 'set',
+            urls: ['https://cdn.example.test/missing-date.png'],
+          },
+          'item:broken-urls': {
+            type: 'set',
+            urls: 'https://cdn.example.test/broken.png',
+            updatedAt: 3,
+          },
+          'item:valid': {
+            type: 'set',
+            urls: ['', 'https://cdn.example.test/front.png'],
+            updatedAt: 2,
+          },
+          'patient:broken': {
+            type: 'single',
+            updatedAt: 4,
+          },
+          'patient:valid': {
+            type: 'single',
+            url: 'https://cdn.example.test/patient.png',
+            updatedAt: 1,
+          },
+        },
+      })
+    );
+
+    const cacheModule = await import('./imageCache');
+
+    expect(cacheModule.getCachedImage('patient:valid')).toBe(
+      'https://cdn.example.test/patient.png'
+    );
+    expect(cacheModule.getCachedImageSet('item:valid')).toEqual([
+      '',
+      'https://cdn.example.test/front.png',
+    ]);
+    expect(cacheModule.getCachedImage('patient:broken')).toBeNull();
+    expect(cacheModule.getCachedImageSet('item:broken-date')).toBeNull();
+    expect(cacheModule.getCachedImageSet('item:broken-urls')).toBeNull();
+
+    await cacheModule.resetImageCache();
   });
 });

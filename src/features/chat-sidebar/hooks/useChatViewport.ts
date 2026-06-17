@@ -96,6 +96,7 @@ export const useChatViewport = ({
   const menu = useChatViewportMenu({
     getVisibleMessagesBounds,
     messagesContainerRef,
+    resetKey: currentChannelId,
   });
 
   const focus = useChatViewportFocus({
@@ -105,6 +106,7 @@ export const useChatViewport = ({
     messageBubbleRefs,
     messagesContainerRef,
     editingMessageId,
+    resetKey: currentChannelId,
   });
   const { focusEditingTargetMessage, focusSearchTargetMessage } = focus;
 
@@ -170,8 +172,10 @@ export const useChatViewport = ({
 
   const handleChatPortalBackgroundClick = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
-      const target = event.target as HTMLElement;
-      if (!target) return;
+      if (!(event.target instanceof HTMLElement)) {
+        return;
+      }
+      const target = event.target;
 
       if (
         target.closest(

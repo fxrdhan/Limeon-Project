@@ -38,7 +38,8 @@ export const useAnchoredPopover = ({
     updatePosition();
 
     const handleOutsideClick = (event: MouseEvent) => {
-      const target = event.target as Node;
+      if (!(event.target instanceof Node)) return;
+      const target = event.target;
       if (popoverRef.current?.contains(target)) return;
       if (anchorRef.current?.contains(target)) return;
       setIsOpen(false);

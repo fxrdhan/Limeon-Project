@@ -25,6 +25,7 @@ export const useSingleImagePreview = ({
   const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
   const [isImagePreviewVisible, setIsImagePreviewVisible] = useState(false);
   const imagePreviewCloseTimerRef = useRef<number | null>(null);
+  const imagePreviewOpenFrameRef = useRef<number | null>(null);
   const imagePreviewObjectUrlRef = useRef<string | null>(null);
   const activeImagePreviewRequestIdRef = useRef(0);
 
@@ -37,8 +38,18 @@ export const useSingleImagePreview = ({
     imagePreviewObjectUrlRef.current = null;
   }, []);
 
+  const clearImagePreviewOpenFrame = useCallback(() => {
+    if (imagePreviewOpenFrameRef.current === null) {
+      return;
+    }
+
+    window.cancelAnimationFrame(imagePreviewOpenFrameRef.current);
+    imagePreviewOpenFrameRef.current = null;
+  }, []);
+
   const clearImagePreviewStateImmediately = useCallback(() => {
     activeImagePreviewRequestIdRef.current += 1;
+    clearImagePreviewOpenFrame();
     if (imagePreviewCloseTimerRef.current) {
       window.clearTimeout(imagePreviewCloseTimerRef.current);
       imagePreviewCloseTimerRef.current = null;
@@ -51,10 +62,11 @@ export const useSingleImagePreview = ({
       previewName: '',
     });
     releaseImagePreviewObjectUrl();
-  }, [releaseImagePreviewObjectUrl]);
+  }, [clearImagePreviewOpenFrame, releaseImagePreviewObjectUrl]);
 
   const closeImagePreview = useCallback(() => {
     activeImagePreviewRequestIdRef.current += 1;
+    clearImagePreviewOpenFrame();
     setIsImagePreviewVisible(false);
     if (imagePreviewCloseTimerRef.current) {
       window.clearTimeout(imagePreviewCloseTimerRef.current);
@@ -70,7 +82,7 @@ export const useSingleImagePreview = ({
       releaseImagePreviewObjectUrl();
       imagePreviewCloseTimerRef.current = null;
     }, 150);
-  }, [releaseImagePreviewObjectUrl]);
+  }, [clearImagePreviewOpenFrame, releaseImagePreviewObjectUrl]);
 
   const openImageInPortal = useCallback(
     async (
@@ -85,6 +97,7 @@ export const useSingleImagePreview = ({
         window.clearTimeout(imagePreviewCloseTimerRef.current);
         imagePreviewCloseTimerRef.current = null;
       }
+      clearImagePreviewOpenFrame();
       releaseImagePreviewObjectUrl();
       const normalizedChannelId = currentChannelId?.trim() || null;
       const runtimeFullPreviewUrl = normalizedChannelId
@@ -105,6 +118,13 @@ export const useSingleImagePreview = ({
       if (!resolvedPreviewBeforeOpen) {
         const { previewUrl, revokeOnClose } =
           await resolveImagePreviewResource(message);
+
+        if (activeImagePreviewRequestIdRef.current !== requestId) {
+          if (previewUrl && revokeOnClose) {
+            URL.revokeObjectURL(previewUrl);
+          }
+          return;
+        }
 
         if (!previewUrl) {
           toast.error('Preview gambar tidak tersedia', {
@@ -127,7 +147,8 @@ export const useSingleImagePreview = ({
         resolvedPreviewBeforeOpenRequiresCleanup
           ? resolvedPreviewBeforeOpen
           : null;
-      requestAnimationFrame(() => {
+      imagePreviewOpenFrameRef.current = window.requestAnimationFrame(() => {
+        imagePreviewOpenFrameRef.current = null;
         if (activeImagePreviewRequestIdRef.current === requestId) {
           setIsImagePreviewVisible(true);
         }
@@ -166,6 +187,7 @@ export const useSingleImagePreview = ({
     },
     [
       clearImagePreviewStateImmediately,
+      clearImagePreviewOpenFrame,
       currentChannelId,
       releaseImagePreviewObjectUrl,
       resolveImagePreviewResource,
@@ -175,13 +197,14 @@ export const useSingleImagePreview = ({
   useEffect(() => {
     return () => {
       activeImagePreviewRequestIdRef.current += 1;
+      clearImagePreviewOpenFrame();
       if (imagePreviewCloseTimerRef.current) {
         window.clearTimeout(imagePreviewCloseTimerRef.current);
         imagePreviewCloseTimerRef.current = null;
       }
       releaseImagePreviewObjectUrl();
     };
-  }, [releaseImagePreviewObjectUrl]);
+  }, [clearImagePreviewOpenFrame, releaseImagePreviewObjectUrl]);
 
   return {
     isImagePreviewOpen,

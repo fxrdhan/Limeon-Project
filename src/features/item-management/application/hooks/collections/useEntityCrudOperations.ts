@@ -20,6 +20,7 @@ import {
   getEntityCrudErrorMessage,
   isDuplicateEntityCodeError,
   isForeignKeyReferenceError,
+  toEntityCrudError,
 } from './entityCrudErrors';
 import {
   buildEntityCrudMutationPayload,
@@ -136,8 +137,7 @@ export const useEntityCrudOperations = (
             `Tidak dapat menghapus ${entityNameLabel.toLowerCase()} karena masih digunakan di data lain. Hapus terlebih dahulu data yang menggunakannya.`
           );
         } else {
-          const message =
-            error instanceof Error ? error.message : String(error);
+          const message = getEntityCrudErrorMessage(error);
           toast.error(`Gagal menghapus ${entityNameLabel}: ${message}`);
         }
         throw error;
@@ -150,12 +150,9 @@ export const useEntityCrudOperations = (
   const deleteMutation = {
     mutateAsync: handleDelete,
     isLoading: anyPending(normalizedCreate, normalizedUpdate, normalizedDelete),
-    error:
-      (firstError(
-        normalizedCreate,
-        normalizedUpdate,
-        normalizedDelete
-      ) as Error | null) ?? null,
+    error: toEntityCrudError(
+      firstError(normalizedCreate, normalizedUpdate, normalizedDelete)
+    ),
   };
 
   return {

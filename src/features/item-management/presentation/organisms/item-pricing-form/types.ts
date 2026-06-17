@@ -53,7 +53,6 @@ export interface ItemPricingFormProps {
   onBaseUnitChange: (value: string) => void;
   onBasePriceChange: (e: ChangeEvent<HTMLInputElement>) => void;
   onSellPriceChange: (e: ChangeEvent<HTMLInputElement>) => void;
-  onMarginChange: (percentage: string) => void;
   onStartEditMargin: () => void;
   onStopEditMargin: () => void;
   onMarginInputChange: (e: ChangeEvent<HTMLInputElement>) => void;

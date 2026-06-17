@@ -1,4 +1,4 @@
-import { useCallback, type RefObject } from 'react';
+import { useCallback, useEffect, useRef, type RefObject } from 'react';
 import toast from 'react-hot-toast';
 import {
   CHAT_SIDEBAR_TOASTER_ID,
@@ -22,6 +22,7 @@ import type {
 } from './types';
 
 export const useComposerAttachmentQueueActions = ({
+  currentChannelId,
   editingMessageId,
   markPendingComposerAttachmentsDirty,
   messageInputRef,
@@ -29,6 +30,7 @@ export const useComposerAttachmentQueueActions = ({
   releasePendingImagePreviewUrl,
   setPendingComposerAttachments,
 }: {
+  currentChannelId: string | null;
   editingMessageId: string | null;
   markPendingComposerAttachmentsDirty: () => void;
   messageInputRef: RefObject<HTMLTextAreaElement | null>;
@@ -36,8 +38,35 @@ export const useComposerAttachmentQueueActions = ({
   releasePendingImagePreviewUrl: ReleasePendingImagePreviewUrl;
   setPendingComposerAttachments: SetPendingComposerAttachments;
 }) => {
+  const textareaFocusFrameRef = useRef<number | null>(null);
+  const textareaFocusRequestRef = useRef(0);
+
+  const clearPendingTextareaFocusFrame = useCallback(() => {
+    textareaFocusRequestRef.current += 1;
+
+    if (textareaFocusFrameRef.current === null) {
+      return;
+    }
+
+    window.cancelAnimationFrame(textareaFocusFrameRef.current);
+    textareaFocusFrameRef.current = null;
+  }, []);
+
   const focusTextarea = useCallback(() => {
-    requestAnimationFrame(() => {
+    clearPendingTextareaFocusFrame();
+
+    const focusRequestId = textareaFocusRequestRef.current + 1;
+    let didRunSynchronously = false;
+    textareaFocusRequestRef.current = focusRequestId;
+
+    const frameId = window.requestAnimationFrame(() => {
+      didRunSynchronously = true;
+
+      if (textareaFocusRequestRef.current !== focusRequestId) {
+        return;
+      }
+
+      textareaFocusFrameRef.current = null;
       const textarea = messageInputRef.current;
       if (!textarea) return;
 
@@ -45,7 +74,24 @@ export const useComposerAttachmentQueueActions = ({
       const cursorPosition = textarea.value.length;
       textarea.setSelectionRange(cursorPosition, cursorPosition);
     });
-  }, [messageInputRef]);
+
+    if (didRunSynchronously) {
+      return;
+    }
+
+    textareaFocusFrameRef.current = frameId;
+  }, [clearPendingTextareaFocusFrame, messageInputRef]);
+
+  useEffect(() => {
+    clearPendingTextareaFocusFrame();
+  }, [clearPendingTextareaFocusFrame, currentChannelId]);
+
+  useEffect(
+    () => () => {
+      clearPendingTextareaFocusFrame();
+    },
+    [clearPendingTextareaFocusFrame]
+  );
 
   const removePendingComposerAttachment = useCallback(
     (attachmentId: string) => {
@@ -73,6 +119,7 @@ export const useComposerAttachmentQueueActions = ({
   );
 
   const clearPendingComposerAttachments = useCallback(() => {
+    clearPendingTextareaFocusFrame();
     markPendingComposerAttachmentsDirty();
     setPendingComposerAttachments(previousAttachments => {
       previousAttachments.forEach(attachment => {
@@ -81,6 +128,7 @@ export const useComposerAttachmentQueueActions = ({
       return [];
     });
   }, [
+    clearPendingTextareaFocusFrame,
     markPendingComposerAttachmentsDirty,
     releasePendingImagePreviewUrl,
     setPendingComposerAttachments,
@@ -295,6 +343,16 @@ export const useComposerAttachmentQueueActions = ({
       const compressedImage = await compressImageIfNeeded(
         targetAttachment.file
       );
+      const activeTargetAttachment = pendingComposerAttachmentsRef.current.find(
+        attachment =>
+          attachment.id === attachmentId &&
+          attachment.fileKind === 'image' &&
+          attachment.file === targetAttachment.file
+      );
+      if (!activeTargetAttachment) {
+        return false;
+      }
+
       const nextFile =
         compressedImage instanceof File
           ? compressedImage

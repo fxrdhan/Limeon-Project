@@ -16,6 +16,7 @@ import {
   type ChangeEvent,
   type RefObject,
 } from 'react';
+import toast from 'react-hot-toast';
 import type { SalesListItem } from '../../domain/types';
 import {
   deleteSaleWithStockRestore,
@@ -70,7 +71,7 @@ export const useSalesListPage = () => {
     },
     onError: error => {
       console.error('Error deleting sale:', error);
-      alert(`Gagal menghapus penjualan: ${error.message}`);
+      toast.error(`Gagal menghapus penjualan: ${error.message}`);
     },
   });
 

@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import type { ChatMessage } from '../data/chatSidebarGateway';
 import { MessageBubbleContent } from '../components/messages/MessageBubbleContent';
@@ -37,12 +43,83 @@ const buildMessage = (overrides: Partial<ChatMessage> = {}): ChatMessage => ({
 });
 
 describe('MessageBubbleContent', () => {
+  const createDeferred = <Value,>() => {
+    let resolve!: (value: Value) => void;
+    const promise = new Promise<Value>(promiseResolve => {
+      resolve = promiseResolve;
+    });
+
+    return { promise, resolve };
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
     Object.defineProperty(window, 'isSecureContext', {
       configurable: true,
       value: true,
     });
+  });
+
+  it('does not show stale context-menu copy feedback after unmount', async () => {
+    const url = 'shrtnk.works/bwdrrk3ugm';
+    const deferredCopy = createDeferred<void>();
+    const writeText = vi.fn().mockReturnValue(deferredCopy.promise);
+
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+
+    const { unmount } = render(
+      <MessageBubbleContent
+        message={buildMessage({
+          message: url,
+          message_type: 'text',
+        })}
+        isCurrentUser={false}
+        messageDeliveryStatus={null}
+        resolvedMessageUrl={null}
+        isSelectionMode={false}
+        isImageMessage={false}
+        isFileMessage={false}
+        isImageFileMessage={false}
+        isPdfFileMessage={false}
+        hasAttachmentCaption={false}
+        fileName={null}
+        fileSecondaryLabel={null}
+        fileIcon={<span />}
+        resolvedPdfPreviewUrl={null}
+        pdfMetaLabel={null}
+        highlightedMessage={renderHighlightedText(url, '', {
+          linkify: true,
+        })}
+        highlightedCaption=""
+        hasLeadingEllipsis={false}
+        hasTrailingEllipsis={false}
+        isMessageLong={false}
+        isExpanded={false}
+        isHighlightedBubble={false}
+        disableTextLinks={false}
+        onToggleExpand={() => {}}
+      />
+    );
+
+    fireEvent.contextMenu(screen.getByRole('link', { name: url }), {
+      clientX: 80,
+      clientY: 120,
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Salin' }));
+
+    expect(writeText).toHaveBeenCalledWith(url);
+
+    unmount();
+    await act(async () => {
+      deferredCopy.resolve();
+      await Promise.resolve();
+    });
+
+    expect(mockToast.success).not.toHaveBeenCalled();
+    expect(mockToast.error).not.toHaveBeenCalled();
   });
 
   it('renders text message urls as hyperlinks that stop bubble clicks', () => {
@@ -240,5 +317,59 @@ describe('MessageBubbleContent', () => {
         toasterId: 'chat-sidebar-toaster',
       });
     });
+  });
+
+  it('shows feedback when opening a context-menu link is blocked', () => {
+    const url = 'shrtnk.works/bwdrrk3ugm';
+    const openSpy = vi.spyOn(window, 'open').mockReturnValue(null);
+
+    render(
+      <MessageBubbleContent
+        message={buildMessage({
+          message: url,
+          message_type: 'text',
+        })}
+        isCurrentUser={false}
+        messageDeliveryStatus={null}
+        resolvedMessageUrl={null}
+        isSelectionMode={false}
+        isImageMessage={false}
+        isFileMessage={false}
+        isImageFileMessage={false}
+        isPdfFileMessage={false}
+        hasAttachmentCaption={false}
+        fileName={null}
+        fileSecondaryLabel={null}
+        fileIcon={<span />}
+        resolvedPdfPreviewUrl={null}
+        pdfMetaLabel={null}
+        highlightedMessage={renderHighlightedText(url, '', {
+          linkify: true,
+        })}
+        highlightedCaption=""
+        hasLeadingEllipsis={false}
+        hasTrailingEllipsis={false}
+        isMessageLong={false}
+        isExpanded={false}
+        isHighlightedBubble={false}
+        disableTextLinks={false}
+        onToggleExpand={() => {}}
+      />
+    );
+
+    const link = screen.getByRole('link', { name: url });
+
+    fireEvent.contextMenu(link, { clientX: 80, clientY: 120 });
+    fireEvent.click(screen.getByRole('button', { name: 'Buka' }));
+
+    expect(openSpy).toHaveBeenCalledWith(
+      `https://${url}`,
+      '_blank',
+      'noopener,noreferrer'
+    );
+    expect(mockToast.error).toHaveBeenCalledWith('Browser memblokir tab baru', {
+      toasterId: 'chat-sidebar-toaster',
+    });
+    expect(screen.queryByRole('button', { name: 'Buka' })).toBeNull();
   });
 });

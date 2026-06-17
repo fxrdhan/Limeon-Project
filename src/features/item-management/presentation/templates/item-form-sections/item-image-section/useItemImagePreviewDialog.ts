@@ -12,34 +12,50 @@ export const useItemImagePreviewDialog = ({
   const [previewSlotIndex, setPreviewSlotIndex] = useState<number | null>(null);
   const [isPreviewVisible, setIsPreviewVisible] = useState(false);
   const previewCloseTimerRef = useRef<number | null>(null);
+  const previewOpenFrameRef = useRef<number | null>(null);
 
   const previewImageUrl =
     previewSlotIndex !== null
       ? getDisplayUrlForSlot(imageSlots[previewSlotIndex], previewSlotIndex)
       : null;
 
+  const clearPreviewOpenFrame = useCallback(() => {
+    if (previewOpenFrameRef.current === null) {
+      return;
+    }
+
+    window.cancelAnimationFrame(previewOpenFrameRef.current);
+    previewOpenFrameRef.current = null;
+  }, []);
+
   const closePreview = useCallback(() => {
-    setIsPreviewVisible(false);
+    clearPreviewOpenFrame();
     if (previewCloseTimerRef.current) {
       window.clearTimeout(previewCloseTimerRef.current);
       previewCloseTimerRef.current = null;
     }
+    setIsPreviewVisible(false);
     previewCloseTimerRef.current = window.setTimeout(() => {
       setPreviewSlotIndex(null);
       previewCloseTimerRef.current = null;
     }, previewExitDurationMs);
-  }, []);
+  }, [clearPreviewOpenFrame]);
 
-  const openPreview = useCallback((slotIndex: number) => {
-    if (previewCloseTimerRef.current) {
-      window.clearTimeout(previewCloseTimerRef.current);
-      previewCloseTimerRef.current = null;
-    }
-    setPreviewSlotIndex(slotIndex);
-    window.requestAnimationFrame(() => {
-      setIsPreviewVisible(true);
-    });
-  }, []);
+  const openPreview = useCallback(
+    (slotIndex: number) => {
+      clearPreviewOpenFrame();
+      if (previewCloseTimerRef.current) {
+        window.clearTimeout(previewCloseTimerRef.current);
+        previewCloseTimerRef.current = null;
+      }
+      setPreviewSlotIndex(slotIndex);
+      previewOpenFrameRef.current = window.requestAnimationFrame(() => {
+        previewOpenFrameRef.current = null;
+        setIsPreviewVisible(true);
+      });
+    },
+    [clearPreviewOpenFrame]
+  );
 
   useEffect(() => {
     if (previewSlotIndex === null) return;
@@ -53,8 +69,9 @@ export const useItemImagePreviewDialog = ({
       if (previewCloseTimerRef.current) {
         window.clearTimeout(previewCloseTimerRef.current);
       }
+      clearPreviewOpenFrame();
     },
-    []
+    [clearPreviewOpenFrame]
   );
 
   return {

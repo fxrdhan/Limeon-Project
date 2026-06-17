@@ -155,7 +155,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({
   });
 
   const marginEditor = useInlineEditor({
-    initialValue: (calcMargin || 0).toString(),
+    initialValue: String(calcMargin ?? 0),
     onSave: value => {
       const basePrice = pricingFields.basePrice;
       const marginPercentage = parseFloat(value.toString()) || 0;
@@ -163,6 +163,12 @@ const PricingSection: React.FC<PricingSectionProps> = ({
       updateFormData(toPricingPatch({ sellPrice: newSellPrice }));
     },
   });
+  const { isEditing: isMarginEditing, setValue: setMarginValue } = marginEditor;
+
+  useEffect(() => {
+    if (isMarginEditing) return;
+    setMarginValue(String(calcMargin ?? 0));
+  }, [calcMargin, isMarginEditing, setMarginValue]);
 
   const handleSellPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const cleanValue = e.target.value
@@ -170,7 +176,6 @@ const PricingSection: React.FC<PricingSectionProps> = ({
       .replace(/[^0-9]/g, '');
     const value = parseFloat(cleanValue) || 0;
     updateFormData(toPricingPatch({ sellPrice: value }));
-    marginEditor.setValue((calcMargin || 0).toString());
   };
 
   const handleBasePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -238,7 +243,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({
         isEditing: marginEditor.isEditing,
         percentage: marginEditor.value,
       }}
-      calculatedMargin={calcMargin || 0}
+      calculatedMargin={calcMargin ?? 0}
       showLevelPricing={showLevelPricing}
       onShowLevelPricing={() => setShowLevelPricing(true)}
       onHideLevelPricing={() => setShowLevelPricing(false)}
@@ -294,7 +299,6 @@ const PricingSection: React.FC<PricingSectionProps> = ({
       }}
       onBasePriceChange={handleBasePriceChange}
       onSellPriceChange={handleSellPriceChange}
-      onMarginChange={marginEditor.setValue}
       onStartEditMargin={marginEditor.startEditing}
       onStopEditMargin={marginEditor.stopEditing}
       onMarginInputChange={marginEditor.handleChange}

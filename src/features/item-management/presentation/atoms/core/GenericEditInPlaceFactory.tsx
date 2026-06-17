@@ -170,6 +170,20 @@ export function GenericEditInPlace<T = unknown>({
     config.accessibility?.displayTitle ||
     `Click to edit ${config.label.toLowerCase()}`;
   const iconSize = config.iconSize ?? 14;
+  const displayInteractionProps = disabled
+    ? {}
+    : {
+        tabIndex,
+        onClick: onStartEdit,
+        role: 'button',
+        title: displayTitle,
+        onKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onStartEdit();
+          }
+        },
+      };
 
   return (
     <FormField label={config.label} className={config.classes?.label}>
@@ -196,17 +210,8 @@ export function GenericEditInPlace<T = unknown>({
           </div>
         ) : (
           <div
-            tabIndex={disabled ? undefined : tabIndex}
+            {...displayInteractionProps}
             className={`group w-full py-2 ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'} font-semibold flex items-center focus:outline-hidden ${displayStyle.textColor || 'text-slate-900'} ${displayStyle.className || ''} ${config.classes?.display || ''}`}
-            onClick={disabled ? undefined : onStartEdit}
-            role="button"
-            title={disabled ? undefined : displayTitle}
-            onKeyDown={e => {
-              if (!disabled && (e.key === 'Enter' || e.key === ' ')) {
-                e.preventDefault();
-                onStartEdit();
-              }
-            }}
           >
             <span className={config.classes?.value || ''}>
               {finalDisplayValue}

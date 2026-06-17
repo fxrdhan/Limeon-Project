@@ -6,6 +6,10 @@ import ChatSidebar from '@/app/layout/chat-sidebar';
 import { preloadChatSidebarPanels } from '@/app/layout/chat-sidebar/panelLoaders';
 import { useChatSidebarStore } from '@/features/chat-sidebar/public/chatSidebarStore';
 import { usePageFocusBlockStore } from '@/store/pageFocusBlockStore';
+import {
+  readInitialSidebarLocked,
+  writeSidebarLockedState,
+} from './sidebarLockStorage';
 
 const PresenceRuntimeHost = lazy(
   () => import('@/features/chat-sidebar/public/PresenceRuntimeHost')
@@ -13,11 +17,6 @@ const PresenceRuntimeHost = lazy(
 const ChatRuntimeHost = lazy(
   () => import('@/features/chat-sidebar/public/ChatRuntimeHost')
 );
-
-const SIDEBAR_LOCK_STORAGE_KEY = 'pharmasys.sidebar.locked';
-
-const readInitialSidebarLocked = () =>
-  window.localStorage.getItem(SIDEBAR_LOCK_STORAGE_KEY) === 'true';
 
 const MainLayout = () => {
   const [initialSidebarLocked] = useState(readInitialSidebarLocked);
@@ -31,7 +30,7 @@ const MainLayout = () => {
     (updater: boolean | ((prev: boolean) => boolean)) => {
       setLockState(prev => {
         const next = typeof updater === 'function' ? updater(prev) : updater;
-        window.localStorage.setItem(SIDEBAR_LOCK_STORAGE_KEY, String(next));
+        writeSidebarLockedState(next);
         return next;
       });
     },

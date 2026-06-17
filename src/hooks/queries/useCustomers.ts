@@ -14,7 +14,7 @@ export const useCustomers = (options?: { enabled?: boolean }) => {
     queryFn: async () => {
       const result = await customersService.getActiveCustomers();
       if (result.error) throw result.error;
-      return result.data;
+      return result.data ?? [];
     },
     enabled: options?.enabled ?? true,
   });

@@ -12,7 +12,9 @@ import { useChatMessageTransferActions } from '../hooks/useChatMessageTransferAc
 
 const { mockToast, mockGateway } = vi.hoisted(() => ({
   mockToast: {
+    dismiss: vi.fn(),
     error: vi.fn(),
+    loading: vi.fn(),
     success: vi.fn(),
     promise: vi.fn(),
   },
@@ -50,6 +52,15 @@ const createDownloadAnchor = (
   return anchor;
 };
 
+const createDeferred = <Value,>() => {
+  let resolve!: (value: Value) => void;
+  const promise = new Promise<Value>(promiseResolve => {
+    resolve = promiseResolve;
+  });
+
+  return { promise, resolve };
+};
+
 const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
   id: overrides.id ?? 'message-1',
   sender_id: overrides.sender_id ?? 'user-a',
@@ -84,10 +95,10 @@ describe('useChatMessageTransferActions', () => {
       configurable: true,
       value: true,
     });
-    mockToast.promise.mockImplementation(async promise => await promise);
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
@@ -192,6 +203,83 @@ describe('useChatMessageTransferActions', () => {
     appendSpy.mockRestore();
   });
 
+  it('cleans up a prepared download when the browser rejects the click', async () => {
+    vi.useFakeTimers();
+    const closeMessageMenu = vi.fn();
+    const downloadBlob = new Blob(['stok'], { type: 'application/pdf' });
+    const anchorClick = vi.fn(() => {
+      throw new Error('download blocked');
+    });
+    const anchorRemove = vi.fn();
+    let createdDownloadLink: HTMLAnchorElement | null = null;
+    const originalCreateElement = document.createElement.bind(document);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const appendSpy = vi
+      .spyOn(document.body, 'append')
+      .mockImplementation(() => undefined);
+    const createElementSpy = vi
+      .spyOn(document, 'createElement')
+      .mockImplementation(tagName => {
+        if (tagName === 'a') {
+          createdDownloadLink = createDownloadAnchor(
+            () => originalCreateElement('a') as HTMLAnchorElement,
+            anchorClick,
+            anchorRemove
+          );
+
+          return createdDownloadLink;
+        }
+
+        return originalCreateElement(tagName);
+      });
+    const revokeObjectURL = vi.fn();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        blob: async () => downloadBlob,
+      })
+    );
+    vi.stubGlobal(
+      'URL',
+      Object.assign(URL, {
+        createObjectURL: vi.fn().mockReturnValue('blob:download'),
+        revokeObjectURL,
+      })
+    );
+
+    const { result } = renderHook(() =>
+      useChatMessageTransferActions({
+        closeMessageMenu,
+      })
+    );
+
+    await act(async () => {
+      await result.current.handleDownloadMessage(
+        buildMessage({
+          message: 'https://example.com/storage/stok.pdf',
+          file_storage_path: null,
+        })
+      );
+    });
+
+    expect((createdDownloadLink as HTMLAnchorElement | null)?.download).toBe(
+      'stok.pdf'
+    );
+    expect(anchorClick).toHaveBeenCalledOnce();
+    expect(anchorRemove).toHaveBeenCalledOnce();
+    expect(closeMessageMenu).toHaveBeenCalledOnce();
+
+    act(() => {
+      vi.advanceTimersByTime(1500);
+    });
+
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:download');
+
+    createElementSpy.mockRestore();
+    appendSpy.mockRestore();
+  });
+
   it('downloads grouped image bubbles as a zip archive', async () => {
     const closeMessageMenu = vi.fn();
     const imageBlobA = new Blob(['image-a'], { type: 'image/png' });
@@ -268,14 +356,17 @@ describe('useChatMessageTransferActions', () => {
 
     expect(anchorClick).toHaveBeenCalledOnce();
     expect(closeMessageMenu).toHaveBeenCalledOnce();
-    expect(mockToast.promise).toHaveBeenCalledWith(
-      expect.any(Promise),
+    expect(mockToast.loading).toHaveBeenCalledWith(
+      'Menyiapkan arsip gambar...',
       expect.objectContaining({
-        loading: 'Menyiapkan arsip gambar...',
-        success: 'Unduhan ZIP dimulai',
-        error: 'Gagal mengunduh arsip gambar',
-      }),
+        id: 'chat-download-image-group-1',
+        toasterId: 'chat-sidebar-toaster',
+      })
+    );
+    expect(mockToast.success).toHaveBeenCalledWith(
+      'Unduhan ZIP dimulai',
       expect.objectContaining({
+        id: 'chat-download-image-group-1',
         toasterId: 'chat-sidebar-toaster',
       })
     );
@@ -372,6 +463,101 @@ describe('useChatMessageTransferActions', () => {
 
     expect((createdDownloadLink as HTMLAnchorElement | null)?.download).toBe(
       'ZIP_260306093000.zip'
+    );
+    expect(closeMessageMenu).toHaveBeenCalledOnce();
+
+    createElementSpy.mockRestore();
+    appendSpy.mockRestore();
+  });
+
+  it('does not start a stale download after the transfer reset key changes', async () => {
+    const closeMessageMenu = vi.fn();
+    const downloadBlob = new Blob(['stok'], { type: 'application/pdf' });
+    const deferredDownloadBlob = createDeferred<Blob>();
+    const anchorClick = vi.fn();
+    const originalCreateElement = document.createElement.bind(document);
+    const appendSpy = vi
+      .spyOn(document.body, 'append')
+      .mockImplementation(() => undefined);
+    const createElementSpy = vi
+      .spyOn(document, 'createElement')
+      .mockImplementation(tagName => {
+        if (tagName === 'a') {
+          return createDownloadAnchor(
+            () => originalCreateElement('a') as HTMLAnchorElement,
+            anchorClick
+          );
+        }
+
+        return originalCreateElement(tagName);
+      });
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        blob: async () => await deferredDownloadBlob.promise,
+      })
+    );
+    vi.stubGlobal(
+      'URL',
+      Object.assign(URL, {
+        createObjectURL: vi.fn().mockReturnValue('blob:download'),
+        revokeObjectURL: vi.fn(),
+      })
+    );
+
+    const { result, rerender } = renderHook(
+      ({ resetKey }: { resetKey: string | null }) =>
+        useChatMessageTransferActions({
+          closeMessageMenu,
+          resetKey,
+        }),
+      {
+        initialProps: {
+          resetKey: 'channel-1',
+        },
+      }
+    );
+
+    let downloadPromise!: Promise<void>;
+    act(() => {
+      downloadPromise = result.current.handleDownloadMessage(
+        buildMessage({
+          message: 'https://example.com/storage/stok.pdf',
+          file_storage_path: null,
+        })
+      );
+    });
+
+    expect(mockToast.loading).toHaveBeenCalledWith(
+      'Menyiapkan unduhan...',
+      expect.objectContaining({
+        id: 'chat-download-message-1',
+        toasterId: 'chat-sidebar-toaster',
+      })
+    );
+
+    act(() => {
+      rerender({
+        resetKey: 'channel-2',
+      });
+    });
+
+    await act(async () => {
+      deferredDownloadBlob.resolve(downloadBlob);
+      await downloadPromise;
+    });
+
+    expect(mockToast.dismiss).toHaveBeenCalledWith('chat-download-message-1');
+    expect(anchorClick).not.toHaveBeenCalled();
+    expect(mockToast.success).not.toHaveBeenCalledWith(
+      'Unduhan dimulai',
+      expect.anything()
+    );
+    expect(mockToast.error).not.toHaveBeenCalledWith(
+      'Gagal mengunduh file',
+      expect.anything()
     );
     expect(closeMessageMenu).toHaveBeenCalledOnce();
 
@@ -485,14 +671,17 @@ describe('useChatMessageTransferActions', () => {
     expect(mockGateway.downloadFile).toHaveBeenCalledWith(
       'images/channel/stok.png'
     );
-    expect(mockToast.promise).toHaveBeenCalledWith(
-      expect.any(Promise),
+    expect(mockToast.loading).toHaveBeenCalledWith(
+      'Menyalin gambar...',
       expect.objectContaining({
-        loading: 'Menyalin gambar...',
-        success: 'Gambar berhasil disalin',
-        error: 'Gagal menyalin gambar ke clipboard',
-      }),
+        id: 'chat-copy-image-message-1',
+        toasterId: 'chat-sidebar-toaster',
+      })
+    );
+    expect(mockToast.success).toHaveBeenCalledWith(
+      'Gambar berhasil disalin',
       expect.objectContaining({
+        id: 'chat-copy-image-message-1',
         toasterId: 'chat-sidebar-toaster',
       })
     );
@@ -718,14 +907,17 @@ describe('useChatMessageTransferActions', () => {
     expect(write).toHaveBeenCalledOnce();
     expect(createdClipboardItems).toHaveLength(1);
     expect(Object.keys(createdClipboardItems[0] ?? {})).toEqual(['image/webp']);
-    expect(mockToast.promise).toHaveBeenCalledWith(
-      expect.any(Promise),
+    expect(mockToast.loading).toHaveBeenCalledWith(
+      'Menyalin gambar...',
       expect.objectContaining({
-        loading: 'Menyalin gambar...',
-        success: 'Gambar berhasil disalin',
-        error: 'Gagal menyalin gambar ke clipboard',
-      }),
+        id: 'chat-copy-image-message-1',
+        toasterId: 'chat-sidebar-toaster',
+      })
+    );
+    expect(mockToast.success).toHaveBeenCalledWith(
+      'Gambar berhasil disalin',
       expect.objectContaining({
+        id: 'chat-copy-image-message-1',
         toasterId: 'chat-sidebar-toaster',
       })
     );

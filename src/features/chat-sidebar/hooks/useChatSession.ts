@@ -70,6 +70,7 @@ export const useChatSession = ({
   );
   const [retryInitialLoadTick, setRetryInitialLoadTick] = useState(0);
   const requestedReplyTargetIdsRef = useRef<Set<string>>(new Set());
+  const replyTargetRequestVersionRef = useRef(0);
 
   const applyMessageUpdate = useCallback(
     (updatedMessage: Partial<ChatMessage> & { id: string }) => {
@@ -145,10 +146,16 @@ export const useChatSession = ({
         requestedReplyTargetIdsRef.current.add(replyToId);
       });
 
+      const replyTargetRequestVersion = replyTargetRequestVersionRef.current;
       const replyTargetEntries = await Promise.all(
         missingReplyTargetIds.map(async replyToId => {
           const { data: replyTargetMessage, error } =
             await chatSidebarMessagesGateway.getMessageById(replyToId);
+          if (
+            replyTargetRequestVersionRef.current !== replyTargetRequestVersion
+          ) {
+            return null;
+          }
 
           if (error || !replyTargetMessage) {
             return null;
@@ -178,6 +185,10 @@ export const useChatSession = ({
         } => Boolean(replyTargetEntry)
       );
 
+      if (replyTargetRequestVersionRef.current !== replyTargetRequestVersion) {
+        return;
+      }
+
       if (resolvedReplyTargetEntries.length === 0) {
         return;
       }
@@ -206,6 +217,7 @@ export const useChatSession = ({
   );
 
   useEffect(() => {
+    replyTargetRequestVersionRef.current += 1;
     replyTargetMessagesByIdRef.current = {};
     setReplyTargetMessagesById(previousReplyTargetMessagesById =>
       Object.keys(previousReplyTargetMessagesById).length === 0

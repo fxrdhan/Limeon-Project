@@ -89,6 +89,149 @@ const buildRefs = (): ChatSidebarRefs => ({
   handleToggleExpand: vi.fn(),
 });
 
+const buildComposerMock = () => ({
+  messageInputHeight: 40,
+  isMessageInputMultiline: false,
+  composerAttachmentPreviewItems: [],
+  pendingComposerAttachments: [],
+  loadingComposerAttachments: [],
+  editingMessageId: null,
+  replyingMessageId: null,
+  replyingMessagePreview: null,
+  message: '',
+  setMessage: vi.fn(),
+  closeAttachModal: vi.fn(),
+  handleAttachImageClick: vi.fn(),
+  handleAttachDocumentClick: vi.fn(),
+  compressPendingComposerImage: vi.fn(),
+  compressPendingComposerPdf: vi.fn(),
+  removePendingComposerAttachment: vi.fn(),
+  openComposerImagePreview: vi.fn(),
+  pendingImagePreviewUrlsRef: { current: [] },
+  isSendSuccessGlowVisible: false,
+  isAttachModalOpen: false,
+  attachmentPastePromptUrl: null,
+  isAttachmentPastePromptAttachmentCandidate: false,
+  isAttachmentPastePromptShortenable: false,
+  hoverableAttachmentCandidates: [],
+  hoverableAttachmentUrl: null,
+  rawAttachmentUrl: null,
+  previewComposerImageAttachment: undefined,
+  isComposerImageExpanded: false,
+  isComposerImageExpandedVisible: false,
+  attachButtonRef: { current: null },
+  attachModalRef: { current: null },
+  attachmentPastePromptRef: { current: null },
+  imageInputRef: { current: null },
+  documentInputRef: { current: null },
+  audioInputRef: { current: null },
+  clearAttachmentPasteState: vi.fn(),
+  dismissAttachmentPastePrompt: vi.fn(),
+  openAttachmentPastePrompt: vi.fn(),
+  openComposerLinkPrompt: vi.fn(),
+  handleEditAttachmentLink: vi.fn(),
+  handleOpenAttachmentPastePromptLink: vi.fn(),
+  handleCopyAttachmentPastePromptLink: vi.fn(),
+  handleShortenAttachmentPastePromptLink: vi.fn(),
+  handleComposerPaste: vi.fn(),
+  handleUseAttachmentPasteAsUrl: vi.fn(),
+  handleUseAttachmentPasteAsAttachment: vi.fn(),
+  cancelLoadingComposerAttachment: vi.fn(),
+  clearPendingComposerAttachments: vi.fn(),
+  restorePendingComposerAttachments: vi.fn(),
+  queueComposerImage: vi.fn(),
+  triggerSendSuccessGlow: vi.fn(),
+  isLoadingAttachmentComposerAttachments: false,
+  linkPrompt: {},
+  composerContextualOffset: 0,
+});
+
+const buildViewportMock = (overrides: Record<string, unknown> = {}) => ({
+  closeMessageMenu: vi.fn(),
+  scheduleScrollMessagesToBottom: vi.fn(),
+  toggleMessageMenu: vi.fn(),
+  getVisibleMessagesBounds: vi.fn(),
+  focusEditingTargetMessage: vi.fn(),
+  focusReplyTargetMessage: vi.fn(),
+  focusSearchTargetMessage: vi.fn(),
+  isAtBottom: true,
+  isAtTop: true,
+  hasNewMessages: false,
+  isInitialOpenPinPending: false,
+  composerContainerHeight: 0,
+  openMenuMessageId: null,
+  menuDimmingMessageId: null,
+  menuPlacement: 'up',
+  menuSideAnchor: 'middle',
+  shouldAnimateMenuOpen: false,
+  menuTransitionSourceId: null,
+  menuOffsetX: 0,
+  flashingMessageId: null,
+  isFlashHighlightVisible: false,
+  handleChatPortalBackgroundClick: vi.fn(),
+  scrollToBottom: vi.fn(),
+  ...overrides,
+});
+
+const buildPreviewMock = (overrides: Record<string, unknown> = {}) => ({
+  openImageInPortal: vi.fn(async () => {}),
+  openImageGroupInPortal: vi.fn(async () => {}),
+  closeImageActionsMenu: vi.fn(),
+  openDocumentInPortal: vi.fn(),
+  closeImageGroupPreview: vi.fn(),
+  closeImagePreview: vi.fn(),
+  openDocumentPreview: vi.fn(),
+  closeDocumentPreview: vi.fn(),
+  imageGroupPreviewItems: [],
+  activeImageGroupPreviewId: null,
+  isImageGroupPreviewVisible: false,
+  isImagePreviewOpen: false,
+  isImagePreviewVisible: false,
+  imagePreviewUrl: null,
+  imagePreviewBackdropUrl: null,
+  imagePreviewName: '',
+  documentPreviewUrl: null,
+  documentPreviewName: '',
+  isDocumentPreviewVisible: false,
+  selectImageGroupPreviewItem: vi.fn(),
+  handleDownloadMessage: vi.fn(),
+  handleCopyMessage: vi.fn(),
+  handleReplyMessage: vi.fn(),
+  handleOpenForwardMessagePicker: vi.fn(),
+  activeImageGroupPreviewMessage: null,
+  openImageActionsAttachmentId: null,
+  imageActionsMenuPosition: null,
+  pdfCompressionMenuPosition: null,
+  imageActions: [],
+  pdfCompressionLevelActions: [],
+  imageActionsButtonRef: { current: null },
+  imageActionsMenuRef: { current: null },
+  pdfCompressionMenuRef: { current: null },
+  handleToggleImageActionsMenu: vi.fn(),
+  composerDocumentPreviewUrl: null,
+  composerDocumentPreviewName: '',
+  isComposerDocumentPreviewVisible: false,
+  closeComposerDocumentPreview: vi.fn(),
+  closeImageGroupPreviewVisible: vi.fn(),
+  captionMessagesByAttachmentId: new Map(),
+  captionMessageIds: new Set(),
+  ...overrides,
+});
+
+const createDeferred = <T,>() => {
+  let resolvePromise: ((value: T) => void) | null = null;
+  const promise = new Promise<T>(resolve => {
+    resolvePromise = resolve;
+  });
+
+  return {
+    promise,
+    resolve: (value: T) => {
+      resolvePromise?.(value);
+    },
+  };
+};
+
 describe('useChatSidebarUiState', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -1630,5 +1773,186 @@ describe('useChatSidebarUiState', () => {
     });
     expect(openImageInPortal).not.toHaveBeenCalled();
     expect(focusReplyTargetMessage).toHaveBeenCalledWith('older-image-1');
+  });
+
+  it('ignores loaded reply target context after the active channel changes', async () => {
+    const sourceMessage = buildMessage({
+      id: 'stale-reply-context',
+      sender_id: 'user-b',
+      receiver_id: 'user-a',
+      message: 'Konteks lama',
+      message_type: 'text',
+      created_at: '2026-03-05T09:40:00.000Z',
+      updated_at: '2026-03-05T09:40:00.000Z',
+    });
+    const deferred = createDeferred<{
+      data: ChatMessage[];
+      error: null;
+    }>();
+    const mergeSearchContextMessages = vi.fn();
+    const focusReplyTargetMessage = vi.fn();
+    const suspendPinnedViewportSync = vi.fn();
+
+    mockUseChatComposer.mockReturnValue(buildComposerMock());
+    mockUseChatViewport.mockReturnValue(
+      buildViewportMock({
+        focusReplyTargetMessage,
+        suspendPinnedViewportSync,
+      })
+    );
+    mockUseChatSidebarPreviewState.mockReturnValue(buildPreviewMock());
+    mockFetchConversationMessageContext.mockReturnValue(deferred.promise);
+
+    let currentChannelId = 'channel-1';
+    const refs = buildRefs();
+    const { result, rerender } = renderHook(() =>
+      useChatSidebarUiState({
+        isOpen: true,
+        currentChannelId,
+        messages: [],
+        loading: false,
+        userId: 'user-a',
+        targetUserId: 'user-b',
+        normalizedMessageSearchQuery: '',
+        isMessageSearchMode: false,
+        activeSearchMessageId: null,
+        searchNavigationTick: 0,
+        markMessageIdsAsRead: vi.fn(async () => {}),
+        mergeSearchContextMessages,
+        refs,
+        closeMessageMenu: vi.fn(),
+        getAttachmentFileName: message => message.file_name || 'Lampiran',
+        getAttachmentFileKind: (_message: ChatMessage) => 'document',
+        captionData: {
+          captionMessagesByAttachmentId: new Map(),
+          captionMessageIds: new Set(),
+        },
+      })
+    );
+
+    act(() => {
+      result.current.viewport.focusReplyTargetMessage('stale-reply-context');
+    });
+
+    act(() => {
+      currentChannelId = 'channel-2';
+      rerender();
+    });
+
+    await act(async () => {
+      deferred.resolve({
+        data: [sourceMessage],
+        error: null,
+      });
+      await deferred.promise;
+      await Promise.resolve();
+    });
+
+    expect(mockFetchConversationMessageContext).toHaveBeenCalledWith(
+      'user-b',
+      'stale-reply-context',
+      {
+        beforeLimit: 20,
+        afterLimit: 20,
+      }
+    );
+    expect(mergeSearchContextMessages).not.toHaveBeenCalled();
+    expect(suspendPinnedViewportSync).not.toHaveBeenCalled();
+    expect(focusReplyTargetMessage).not.toHaveBeenCalled();
+  });
+
+  it('ignores stale reply target context after another target is focused', async () => {
+    const visibleMessage = buildMessage({
+      id: 'visible-reply-target',
+      sender_id: 'user-b',
+      receiver_id: 'user-a',
+      message: 'Target yang sudah terlihat',
+      message_type: 'text',
+      created_at: '2026-03-05T09:41:00.000Z',
+      updated_at: '2026-03-05T09:41:00.000Z',
+    });
+    const staleContextMessage = buildMessage({
+      id: 'older-stale-target',
+      sender_id: 'user-b',
+      receiver_id: 'user-a',
+      message: 'Target lama',
+      message_type: 'text',
+      created_at: '2026-03-05T09:39:00.000Z',
+      updated_at: '2026-03-05T09:39:00.000Z',
+    });
+    const deferred = createDeferred<{
+      data: ChatMessage[];
+      error: null;
+    }>();
+    const mergeSearchContextMessages = vi.fn();
+    const focusReplyTargetMessage = vi.fn();
+    const suspendPinnedViewportSync = vi.fn();
+
+    mockUseChatComposer.mockReturnValue(buildComposerMock());
+    mockUseChatViewport.mockReturnValue(
+      buildViewportMock({
+        focusReplyTargetMessage,
+        suspendPinnedViewportSync,
+      })
+    );
+    mockUseChatSidebarPreviewState.mockReturnValue(buildPreviewMock());
+    mockFetchConversationMessageContext.mockReturnValue(deferred.promise);
+
+    const { result } = renderHook(() =>
+      useChatSidebarUiState({
+        isOpen: true,
+        currentChannelId: 'channel-1',
+        messages: [visibleMessage],
+        loading: false,
+        userId: 'user-a',
+        targetUserId: 'user-b',
+        normalizedMessageSearchQuery: '',
+        isMessageSearchMode: false,
+        activeSearchMessageId: null,
+        searchNavigationTick: 0,
+        markMessageIdsAsRead: vi.fn(async () => {}),
+        mergeSearchContextMessages,
+        refs: buildRefs(),
+        closeMessageMenu: vi.fn(),
+        getAttachmentFileName: message => message.file_name || 'Lampiran',
+        getAttachmentFileKind: (_message: ChatMessage) => 'document',
+        captionData: {
+          captionMessagesByAttachmentId: new Map(),
+          captionMessageIds: new Set(),
+        },
+      })
+    );
+
+    act(() => {
+      result.current.viewport.focusReplyTargetMessage('older-stale-target');
+    });
+
+    act(() => {
+      result.current.viewport.focusReplyTargetMessage('visible-reply-target');
+    });
+
+    await act(async () => {
+      deferred.resolve({
+        data: [staleContextMessage],
+        error: null,
+      });
+      await deferred.promise;
+      await Promise.resolve();
+    });
+
+    expect(mockFetchConversationMessageContext).toHaveBeenCalledWith(
+      'user-b',
+      'older-stale-target',
+      {
+        beforeLimit: 20,
+        afterLimit: 20,
+      }
+    );
+    expect(mergeSearchContextMessages).not.toHaveBeenCalled();
+    expect(suspendPinnedViewportSync).not.toHaveBeenCalled();
+    expect(focusReplyTargetMessage).toHaveBeenCalledTimes(1);
+    expect(focusReplyTargetMessage).toHaveBeenCalledWith(
+      'visible-reply-target'
+    );
   });
 });

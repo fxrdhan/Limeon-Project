@@ -47,16 +47,18 @@ export function SelectedInvoiceFilePreview({
         whileTap={{ scale: 0.98 }}
         className="flex items-center p-3 pr-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
         onClick={event => {
-          const target = event.target as HTMLElement;
-          const isRemoveButton = target.closest('[aria-label="Hapus file"]');
+          const isRemoveButton =
+            event.target instanceof HTMLElement &&
+            event.target.closest('[aria-label="Hapus file"]');
           if (!isRemoveButton) {
             event.stopPropagation();
             onToggleFullPreview();
           }
         }}
         onTouchEnd={event => {
-          const target = event.target as HTMLElement;
-          const isRemoveButton = target.closest('[aria-label="Hapus file"]');
+          const isRemoveButton =
+            event.target instanceof HTMLElement &&
+            event.target.closest('[aria-label="Hapus file"]');
           if (!isRemoveButton) {
             event.preventDefault();
             event.stopPropagation();

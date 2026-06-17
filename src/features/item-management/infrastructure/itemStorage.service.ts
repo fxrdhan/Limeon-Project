@@ -1,6 +1,8 @@
 import type { FileObject } from '@supabase/storage-js';
-import type { PostgrestError } from '@supabase/supabase-js';
-import type { ServiceResponse } from '@/services/api/base.service';
+import {
+  toServiceError,
+  type ServiceResponse,
+} from '@/services/api/base.service';
 import {
   StorageService,
   type UploadResult,
@@ -22,7 +24,7 @@ export const itemStorageService = {
 
       return { data: data || [], error: null };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   },
 
@@ -45,7 +47,7 @@ export const itemStorageService = {
         error: null,
       };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   },
 

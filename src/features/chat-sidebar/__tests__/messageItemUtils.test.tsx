@@ -1,6 +1,24 @@
-import { describe, expect, it, vi } from 'vite-plus/test';
+import { waitFor } from '@testing-library/react';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vite-plus/test';
 import type { ChatMessage } from '../../../services/api/chat.service';
 import { buildMessageMenuActions } from '../components/messages/messageItemUtils';
+
+const { mockToast } = vi.hoisted(() => ({
+  mockToast: {
+    error: vi.fn(),
+  },
+}));
+
+vi.mock('react-hot-toast', () => ({
+  default: mockToast,
+}));
 
 const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
   id: overrides.id ?? 'message-1',
@@ -29,6 +47,15 @@ const buildMessage = (overrides: Partial<ChatMessage>): ChatMessage => ({
 });
 
 describe('messageItemUtils', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
   it('does not expose edit for temp text messages that are still sending', () => {
     const actions = buildMessageMenuActions({
       message: buildMessage({
@@ -122,6 +149,56 @@ describe('messageItemUtils', () => {
       'Lampiran.png',
       undefined
     );
+  });
+
+  it('shows feedback when opening a non-previewable file is blocked', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new Error('network failed');
+      })
+    );
+    vi.spyOn(window, 'open').mockReturnValue(null);
+    const fileMessage = buildMessage({
+      message_type: 'file',
+      message: 'https://example.com/files/stok.xlsx',
+      file_mime_type:
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+    const actions = buildMessageMenuActions({
+      message: fileMessage,
+      isCurrentUser: true,
+      isImageMessage: false,
+      isFileMessage: true,
+      isImageFileMessage: false,
+      isPdfFileMessage: false,
+      fileKind: 'document',
+      fileName: 'stok.xlsx',
+      openImageInPortal: vi.fn(),
+      openDocumentInPortal: vi.fn().mockResolvedValue(undefined),
+      handleEditMessage: vi.fn(),
+      handleReplyMessage: vi.fn(),
+      handleCopyMessage: vi.fn().mockResolvedValue(undefined),
+      handleDownloadMessage: vi.fn().mockResolvedValue(undefined),
+      handleOpenForwardMessagePicker: vi.fn(),
+      handleDeleteMessage: vi.fn().mockResolvedValue(true),
+    });
+
+    await actions.find(action => action.label === 'Lihat')?.onClick();
+
+    await waitFor(() => {
+      expect(window.open).toHaveBeenCalledWith(
+        'https://example.com/files/stok.xlsx',
+        '_blank',
+        'noopener,noreferrer'
+      );
+      expect(mockToast.error).toHaveBeenCalledWith(
+        'Browser memblokir tab baru',
+        {
+          toasterId: 'chat-sidebar-toaster',
+        }
+      );
+    });
   });
 
   it('shows download for image messages and downloads the original attachment', async () => {

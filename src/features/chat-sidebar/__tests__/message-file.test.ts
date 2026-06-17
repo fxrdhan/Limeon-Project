@@ -1,6 +1,14 @@
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vite-plus/test';
 import {
   fetchPdfBlobWithFallback,
+  openChatFileInNewTab,
   resetSignedChatAssetUrlCache,
   resolveCopyableChatAssetUrl,
   resolveChatMessageStoragePaths,
@@ -43,6 +51,11 @@ describe('message-file utils', () => {
     resetSignedChatAssetUrlCache();
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
   it('falls back to the chat storage gateway when direct fetch fails', async () => {
     vi.stubGlobal(
       'fetch',
@@ -81,6 +94,108 @@ describe('message-file utils', () => {
     expect(mockStorageService.downloadFile).not.toHaveBeenCalled();
     expect(pdfBlob).toBeInstanceOf(Blob);
     expect(pdfBlob?.type).toBe('application/pdf');
+  });
+
+  it('downloads inline-safe file blobs when the browser blocks a new tab', async () => {
+    const createObjectUrlDescriptor = Object.getOwnPropertyDescriptor(
+      URL,
+      'createObjectURL'
+    );
+    const revokeObjectUrlDescriptor = Object.getOwnPropertyDescriptor(
+      URL,
+      'revokeObjectURL'
+    );
+    const anchorClickDescriptor = Object.getOwnPropertyDescriptor(
+      HTMLAnchorElement.prototype,
+      'click'
+    );
+    const createObjectUrl = vi.fn(() => 'blob:download-pdf');
+    const revokeObjectUrl = vi.fn();
+    const anchorClick = vi.fn();
+
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      value: createObjectUrl,
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      value: revokeObjectUrl,
+    });
+    Object.defineProperty(HTMLAnchorElement.prototype, 'click', {
+      configurable: true,
+      value: anchorClick,
+    });
+
+    try {
+      vi.spyOn(window, 'open').mockReturnValue(null);
+      mockStorageService.downloadFile.mockResolvedValue(
+        new Blob(['pdf'], { type: 'application/pdf' })
+      );
+
+      const didOpenFile = await openChatFileInNewTab(
+        'documents/channel/stok.pdf',
+        'documents/channel/stok.pdf',
+        'application/pdf'
+      );
+
+      expect(didOpenFile).toBe(true);
+      expect(window.open).toHaveBeenCalledWith(
+        'blob:download-pdf',
+        '_blank',
+        'noopener,noreferrer'
+      );
+      expect(anchorClick).toHaveBeenCalledOnce();
+      expect(createObjectUrl).toHaveBeenCalledWith(expect.any(Blob));
+    } finally {
+      if (createObjectUrlDescriptor) {
+        Object.defineProperty(
+          URL,
+          'createObjectURL',
+          createObjectUrlDescriptor
+        );
+      } else {
+        Reflect.deleteProperty(URL, 'createObjectURL');
+      }
+      if (revokeObjectUrlDescriptor) {
+        Object.defineProperty(
+          URL,
+          'revokeObjectURL',
+          revokeObjectUrlDescriptor
+        );
+      } else {
+        Reflect.deleteProperty(URL, 'revokeObjectURL');
+      }
+      if (anchorClickDescriptor) {
+        Object.defineProperty(
+          HTMLAnchorElement.prototype,
+          'click',
+          anchorClickDescriptor
+        );
+      } else {
+        Reflect.deleteProperty(HTMLAnchorElement.prototype, 'click');
+      }
+    }
+  });
+
+  it('returns false when a direct file url cannot open in a new tab', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new Error('network failed');
+      })
+    );
+    vi.spyOn(window, 'open').mockReturnValue(null);
+
+    const didOpenFile = await openChatFileInNewTab(
+      'https://example.com/files/manual.txt'
+    );
+
+    expect(didOpenFile).toBe(false);
+    expect(window.open).toHaveBeenCalledWith(
+      'https://example.com/files/manual.txt',
+      '_blank',
+      'noopener,noreferrer'
+    );
   });
 
   it('collects attachment and preview storage paths for persisted pdf messages', () => {

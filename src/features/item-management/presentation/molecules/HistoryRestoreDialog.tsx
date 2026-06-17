@@ -39,7 +39,11 @@ const HistoryRestoreDialog: React.FC<HistoryRestoreDialogProps> = ({
         >
           <div
             className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={onCancel}
+            onClick={() => {
+              if (!isRestoring) {
+                onCancel();
+              }
+            }}
             aria-hidden="true"
           />
         </TransitionChild>
@@ -63,20 +67,23 @@ const HistoryRestoreDialog: React.FC<HistoryRestoreDialogProps> = ({
 
             <div className="mb-6 space-y-3">
               <label
-                className={`flex cursor-pointer items-start gap-3 rounded-xl border-2 p-4 transition-all ${
+                className={`flex items-start gap-3 rounded-xl border-2 p-4 transition-all ${
                   restoreMode === 'soft'
                     ? 'border-blue-500 bg-blue-50'
                     : 'border-slate-200 hover:border-slate-300'
-                }`}
+                } ${isRestoring ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
               >
                 <input
                   type="radio"
                   name="restoreMode"
                   value="soft"
                   checked={restoreMode === 'soft'}
-                  onChange={event =>
-                    onRestoreModeChange(event.target.value as RestoreMode)
-                  }
+                  disabled={isRestoring}
+                  aria-label="Soft Restore"
+                  onChange={event => {
+                    if (isRestoring) return;
+                    onRestoreModeChange(event.target.value as RestoreMode);
+                  }}
                   className="mt-1"
                 />
                 <div className="flex-1">
@@ -95,20 +102,23 @@ const HistoryRestoreDialog: React.FC<HistoryRestoreDialogProps> = ({
               </label>
 
               <label
-                className={`flex cursor-pointer items-start gap-3 rounded-xl border-2 p-4 transition-all ${
+                className={`flex items-start gap-3 rounded-xl border-2 p-4 transition-all ${
                   restoreMode === 'hard'
                     ? 'border-red-500 bg-red-50'
                     : 'border-slate-200 hover:border-slate-300'
-                }`}
+                } ${isRestoring ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
               >
                 <input
                   type="radio"
                   name="restoreMode"
                   value="hard"
                   checked={restoreMode === 'hard'}
-                  onChange={event =>
-                    onRestoreModeChange(event.target.value as RestoreMode)
-                  }
+                  disabled={isRestoring}
+                  aria-label="Hard Rollback"
+                  onChange={event => {
+                    if (isRestoring) return;
+                    onRestoreModeChange(event.target.value as RestoreMode);
+                  }}
                   className="mt-1"
                 />
                 <div className="flex-1">

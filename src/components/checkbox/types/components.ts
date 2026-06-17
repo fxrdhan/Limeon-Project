@@ -2,6 +2,7 @@ import React from 'react';
 
 export interface CheckboxInputProps {
   id?: string;
+  ariaLabel?: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
   disabled?: boolean;

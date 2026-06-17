@@ -35,17 +35,12 @@ interface TokenResponse {
 interface CreateSpreadsheetResponse {
   spreadsheetId: string;
   spreadsheetUrl: string;
-  properties: {
-    title: string;
-  };
 }
 
-interface GoogleSheetsApiErrorBody {
-  error?: {
-    code?: number;
-    message?: string;
-    status?: string;
-  };
+interface GoogleSheetsApiErrorDetails {
+  code?: number;
+  message?: string;
+  status?: string;
 }
 
 interface UpdateValuesRequestBody {
@@ -59,6 +54,60 @@ const googleSheetsApiBaseUrl = 'https://sheets.googleapis.com/v4/spreadsheets';
 function parseGoogleSheetsResponse(responseText: string): unknown {
   return responseText.length > 0 ? JSON.parse(responseText) : null;
 }
+
+function parseGoogleSheetsErrorResponse(responseText: string): unknown {
+  if (responseText.length === 0) return null;
+
+  try {
+    return JSON.parse(responseText);
+  } catch {
+    return null;
+  }
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const readGoogleSheetsApiError = (
+  value: unknown
+): GoogleSheetsApiErrorDetails | null => {
+  if (!isRecord(value) || !isRecord(value.error)) return null;
+
+  const code =
+    typeof value.error.code === 'number' ? value.error.code : undefined;
+  const message =
+    typeof value.error.message === 'string' ? value.error.message : undefined;
+  const status =
+    typeof value.error.status === 'string' ? value.error.status : undefined;
+
+  if (!code && !message && !status) return null;
+
+  return {
+    code,
+    message,
+    status,
+  };
+};
+
+const formatGoogleSheetsApiError = (error: GoogleSheetsApiErrorDetails) =>
+  [error.code, error.status, error.message].filter(Boolean).join(' ');
+
+const readCreateSpreadsheetResponse = (
+  value: unknown
+): CreateSpreadsheetResponse | null => {
+  if (
+    !isRecord(value) ||
+    typeof value.spreadsheetId !== 'string' ||
+    typeof value.spreadsheetUrl !== 'string'
+  ) {
+    return null;
+  }
+
+  return {
+    spreadsheetId: value.spreadsheetId,
+    spreadsheetUrl: value.spreadsheetUrl,
+  };
+};
 
 class GoogleSheetsService {
   private clientId: string;
@@ -157,22 +206,10 @@ class GoogleSheetsService {
   private getGoogleApiErrorMessage(error: unknown): string {
     if (error instanceof Error) return error.message;
 
-    if (error && typeof error === 'object') {
-      const responseError = (
-        error as {
-          error?: {
-            code?: number;
-            message?: string;
-            status?: string;
-          };
-        }
-      ).error;
+    if (isRecord(error)) {
+      const responseError = readGoogleSheetsApiError(error);
 
-      if (responseError) {
-        return [responseError.code, responseError.status, responseError.message]
-          .filter(Boolean)
-          .join(' ');
-      }
+      if (responseError) return formatGoogleSheetsApiError(responseError);
 
       try {
         return JSON.stringify(error);
@@ -195,10 +232,10 @@ class GoogleSheetsService {
     );
   }
 
-  private async requestGoogleSheets<ResponseBody>(
+  private async requestGoogleSheets(
     path: string,
     options: RequestInit
-  ): Promise<ResponseBody> {
+  ): Promise<unknown> {
     if (!this.accessToken) {
       throw new Error('Not authorized. Please call authorize() first.');
     }
@@ -212,11 +249,10 @@ class GoogleSheetsService {
       headers,
     });
     const responseText = await response.text();
-    const responseBody = parseGoogleSheetsResponse(responseText);
 
     if (!response.ok) {
-      const apiError = responseBody as GoogleSheetsApiErrorBody | null;
-      const responseError = apiError?.error;
+      const responseBody = parseGoogleSheetsErrorResponse(responseText);
+      const responseError = readGoogleSheetsApiError(responseBody);
       throw new Error(
         [
           response.status,
@@ -228,7 +264,8 @@ class GoogleSheetsService {
       );
     }
 
-    return responseBody as ResponseBody;
+    const responseBody = parseGoogleSheetsResponse(responseText);
+    return responseBody;
   }
 
   private initializeTokenClient(): void {
@@ -306,15 +343,21 @@ class GoogleSheetsService {
 
     try {
       // Create the spreadsheet
-      const createResponse =
-        await this.requestGoogleSheets<CreateSpreadsheetResponse>('', {
-          method: 'POST',
-          body: JSON.stringify({
-            properties: {
-              title,
-            },
-          }),
-        });
+      const createResponseBody = await this.requestGoogleSheets('', {
+        method: 'POST',
+        body: JSON.stringify({
+          properties: {
+            title,
+          },
+        }),
+      });
+      const createResponse = readCreateSpreadsheetResponse(createResponseBody);
+
+      if (!createResponse) {
+        throw new Error(
+          'Google Sheets API returned an invalid spreadsheet response'
+        );
+      }
 
       const spreadsheetId = createResponse.spreadsheetId;
       const spreadsheetUrl = createResponse.spreadsheetUrl;

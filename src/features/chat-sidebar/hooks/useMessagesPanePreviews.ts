@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { useDocumentPreviewPortal } from './useDocumentPreviewPortal';
 import { useMessagesPaneImagePreviews } from './useMessagesPaneImagePreviews';
@@ -23,6 +23,11 @@ export const useMessagesPanePreviews = ({
     closeDocumentPreview,
     openDocumentPreview,
   } = useDocumentPreviewPortal();
+  const normalizedCurrentChannelId = currentChannelId?.trim() || null;
+  const activePreviewChannelIdRef = useRef<string | null>(
+    normalizedCurrentChannelId
+  );
+  const isPreviewScopeMountedRef = useRef(true);
   const {
     clearImagePreviewStateImmediately,
     clearImageGroupPreviewStateImmediately,
@@ -32,6 +37,38 @@ export const useMessagesPanePreviews = ({
   } = useMessagesPaneImagePreviews({
     currentChannelId,
   });
+
+  const isPreviewChannelScopeActive = useCallback(
+    (channelId: string | null) =>
+      isPreviewScopeMountedRef.current &&
+      activePreviewChannelIdRef.current === channelId,
+    []
+  );
+
+  useEffect(() => {
+    const previousChannelId = activePreviewChannelIdRef.current;
+    activePreviewChannelIdRef.current = normalizedCurrentChannelId;
+
+    if (previousChannelId === normalizedCurrentChannelId) {
+      return;
+    }
+
+    closeDocumentPreview();
+    clearImagePreviewStateImmediately();
+    clearImageGroupPreviewStateImmediately();
+  }, [
+    clearImageGroupPreviewStateImmediately,
+    clearImagePreviewStateImmediately,
+    closeDocumentPreview,
+    normalizedCurrentChannelId,
+  ]);
+
+  useEffect(
+    () => () => {
+      isPreviewScopeMountedRef.current = false;
+    },
+    []
+  );
 
   const openImageInPortal = useCallback(
     async (
@@ -62,6 +99,7 @@ export const useMessagesPanePreviews = ({
       closeMessageMenu();
       clearImagePreviewStateImmediately();
       clearImageGroupPreviewStateImmediately();
+      const requestChannelId = activePreviewChannelIdRef.current;
 
       const shouldOpenExternally =
         forcePdfMime && shouldPreferExternalPdfPreview();
@@ -89,6 +127,14 @@ export const useMessagesPanePreviews = ({
           }
 
           const previewUrl = resolvedPreviewResource.previewUrl;
+          if (!isPreviewChannelScopeActive(requestChannelId)) {
+            externalPreviewWindow.close();
+            if (resolvedPreviewResource.revokeOnClose) {
+              URL.revokeObjectURL(previewUrl);
+            }
+            return;
+          }
+
           externalPreviewWindow.location.replace(previewUrl);
           if (resolvedPreviewResource.revokeOnClose) {
             window.setTimeout(() => {
@@ -119,6 +165,10 @@ export const useMessagesPanePreviews = ({
         });
       } catch {
         externalPreviewWindow?.close();
+        if (!isPreviewChannelScopeActive(requestChannelId)) {
+          return;
+        }
+
         toast.error('Preview dokumen tidak tersedia', {
           toasterId: CHAT_SIDEBAR_TOASTER_ID,
         });
@@ -128,6 +178,7 @@ export const useMessagesPanePreviews = ({
       closeMessageMenu,
       clearImageGroupPreviewStateImmediately,
       clearImagePreviewStateImmediately,
+      isPreviewChannelScopeActive,
       openDocumentPreview,
     ]
   );

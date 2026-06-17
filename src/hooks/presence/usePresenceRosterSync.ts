@@ -156,10 +156,10 @@ export const usePresenceRosterSync = ({
   ]);
 
   const trackCurrentUserPresence = useCallback(
-    async (channel: RealtimeChannel) => {
+    async (channel: RealtimeChannel, isCurrentSubscription: () => boolean) => {
       const currentUser = buildCurrentOnlineUser();
-      if (!currentUser) {
-        return;
+      if (!currentUser || !isCurrentSubscription()) {
+        return false;
       }
 
       const trackStatus = await channel.track({
@@ -171,11 +171,16 @@ export const usePresenceRosterSync = ({
         online_at: currentUser.online_at,
       });
 
+      if (!isCurrentSubscription()) {
+        return false;
+      }
+
       if (trackStatus !== 'ok') {
         throw new Error(`Failed to track browser presence: ${trackStatus}`);
       }
 
       hydrateRosterFromPresenceState(channel);
+      return true;
     },
     [buildCurrentOnlineUser, hydrateRosterFromPresenceState]
   );
@@ -205,18 +210,31 @@ export const usePresenceRosterSync = ({
         );
 
         if (setupGenerationRef.current !== setupGeneration) {
+          if (rosterChannelRef.current !== newChannel) {
+            void realtimeService.removeChannel(newChannel);
+          }
           return;
         }
 
+        const isCurrentSubscription = () =>
+          setupGenerationRef.current === setupGeneration &&
+          rosterChannelRef.current === newChannel;
+
         newChannel
           .on('presence', { event: 'sync' }, () => {
-            hydrateRosterFromPresenceState(newChannel);
+            if (isCurrentSubscription()) {
+              hydrateRosterFromPresenceState(newChannel);
+            }
           })
           .on('presence', { event: 'join' }, () => {
-            hydrateRosterFromPresenceState(newChannel);
+            if (isCurrentSubscription()) {
+              hydrateRosterFromPresenceState(newChannel);
+            }
           })
           .on('presence', { event: 'leave' }, () => {
-            hydrateRosterFromPresenceState(newChannel);
+            if (isCurrentSubscription()) {
+              hydrateRosterFromPresenceState(newChannel);
+            }
           });
 
         rosterChannelRef.current = newChannel;
@@ -230,9 +248,20 @@ export const usePresenceRosterSync = ({
           if (status === 'SUBSCRIBED') {
             void (async () => {
               try {
-                await trackCurrentUserPresence(newChannel);
+                const didTrackPresence = await trackCurrentUserPresence(
+                  newChannel,
+                  isCurrentSubscription
+                );
+                if (!didTrackPresence) {
+                  return;
+                }
+
                 markRecoverySuccess();
               } catch (trackingError) {
+                if (!isCurrentSubscription()) {
+                  return;
+                }
+
                 console.error(
                   'Failed to track browser active presence after subscribe:',
                   trackingError

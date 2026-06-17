@@ -138,12 +138,12 @@ export const useChatConversationInitialLoad = ({
         }
 
         await Promise.all(
-          recentPreviewableMessages.map(messageItem =>
-            resolveChatAssetUrl(
-              messageItem.file_preview_url!.trim(),
-              messageItem.file_preview_url!.trim()
-            ).catch(() => null)
-          )
+          recentPreviewableMessages.map(messageItem => {
+            const previewPath = messageItem.file_preview_url?.trim();
+            return previewPath
+              ? resolveChatAssetUrl(previewPath, previewPath).catch(() => null)
+              : Promise.resolve(null);
+          })
         );
       };
 
@@ -317,6 +317,10 @@ export const useChatConversationInitialLoad = ({
           sessionToken
         );
       } catch (error) {
+        if (!isActiveSession()) {
+          return;
+        }
+
         console.error('Error loading messages:', error);
         setLoadError(
           hasCachedConversation

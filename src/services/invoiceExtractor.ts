@@ -1,4 +1,4 @@
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 import type { ExtractedInvoiceData } from '../types';
 
 // Supabase Edge Functions configuration
@@ -18,6 +18,28 @@ const ENDPOINTS = {
   EXTRACT: `${API_BASE_URL}/extract-invoice`,
   REGENERATE: `${API_BASE_URL}/regenerate-invoice`,
   CONFIRM: `${API_BASE_URL}/confirm-invoice`,
+};
+
+interface InvoiceExtractionErrorPayload {
+  error?: unknown;
+  details?: unknown;
+}
+
+const readInvoiceExtractionErrorMessage = (
+  data: InvoiceExtractionErrorPayload | string | undefined,
+  fallback: string
+) => {
+  if (
+    typeof data === 'object' &&
+    data !== null &&
+    typeof data.error === 'string'
+  ) {
+    return typeof data.details === 'string' && data.details
+      ? `${data.error}: ${data.details}`
+      : data.error;
+  }
+
+  return fallback;
 };
 
 export async function uploadAndExtractInvoice(
@@ -45,28 +67,18 @@ export async function uploadAndExtractInvoice(
   } catch (error: unknown) {
     console.error('Error details:', error);
     let errorMessage = 'Gagal mengekstrak data faktur. Silakan coba lagi.';
-    if (axios.isAxiosError(error)) {
-      const axiosError = error as AxiosError<
-        { error?: string; details?: string } | string
-      >;
-      console.error('Axios error status:', axiosError.status);
-      console.error('Axios error response:', axiosError.response?.data);
-      console.error('Axios error request config:', axiosError.config);
+    if (axios.isAxiosError<InvoiceExtractionErrorPayload | string>(error)) {
+      console.error('Axios error status:', error.status);
+      console.error('Axios error response:', error.response?.data);
+      console.error('Axios error request config:', error.config);
 
-      if (
-        typeof axiosError.response?.data === 'object' &&
-        axiosError.response.data !== null &&
-        'error' in axiosError.response.data
-      ) {
-        errorMessage = (axiosError.response.data as { error: string }).error;
-        if (
-          'details' in axiosError.response.data &&
-          (axiosError.response.data as { details: string }).details
-        ) {
-          errorMessage += `: ${(axiosError.response.data as { details: string }).details}`;
-        }
-      } else if (axiosError.message) {
-        errorMessage = axiosError.message;
+      if (error.response?.data) {
+        errorMessage = readInvoiceExtractionErrorMessage(
+          error.response.data,
+          error.message || errorMessage
+        );
+      } else if (error.message) {
+        errorMessage = error.message;
       }
     } else if (error instanceof Error) {
       errorMessage = error.message;

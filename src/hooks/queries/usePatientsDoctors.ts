@@ -20,7 +20,7 @@ export const usePatients = (options?: { enabled?: boolean }) => {
     queryFn: async () => {
       const result = await patientsService.getActivePatients();
       if (result.error) throw result.error;
-      return result.data;
+      return result.data ?? [];
     },
     enabled: options?.enabled ?? true,
   });
@@ -58,7 +58,7 @@ export const useSearchPatients = (
     queryFn: async () => {
       const result = await patientsService.searchPatients(query);
       if (result.error) throw result.error;
-      return result.data;
+      return result.data ?? [];
     },
     enabled: (options?.enabled ?? true) && query.length > 0,
   });
@@ -73,7 +73,7 @@ export const usePatientsByGender = (
     queryFn: async () => {
       const result = await patientsService.getPatientsByGender(gender);
       if (result.error) throw result.error;
-      return result.data;
+      return result.data ?? [];
     },
     enabled: (options?.enabled ?? true) && !!gender,
   });
@@ -88,7 +88,7 @@ export const useRecentPatients = (
     queryFn: async () => {
       const result = await patientsService.getRecentPatients(limit);
       if (result.error) throw result.error;
-      return result.data;
+      return result.data ?? [];
     },
     enabled: options?.enabled ?? true,
   });
@@ -169,7 +169,7 @@ export const useDoctors = (options?: { enabled?: boolean }) => {
     queryFn: async () => {
       const result = await doctorsService.getActiveDoctors();
       if (result.error) throw result.error;
-      return result.data;
+      return result.data ?? [];
     },
     enabled: options?.enabled ?? true,
   });
@@ -207,7 +207,7 @@ export const useSearchDoctors = (
     queryFn: async () => {
       const result = await doctorsService.searchDoctors(query);
       if (result.error) throw result.error;
-      return result.data;
+      return result.data ?? [];
     },
     enabled: (options?.enabled ?? true) && query.length > 0,
   });
@@ -223,7 +223,7 @@ export const useDoctorsBySpecialization = (
       const result =
         await doctorsService.getDoctorsBySpecialization(specialization);
       if (result.error) throw result.error;
-      return result.data;
+      return result.data ?? [];
     },
     enabled: (options?.enabled ?? true) && !!specialization,
   });
@@ -238,7 +238,7 @@ export const useDoctorsByExperience = (
     queryFn: async () => {
       const result = await doctorsService.getDoctorsByExperience(minYears);
       if (result.error) throw result.error;
-      return result.data;
+      return result.data ?? [];
     },
     enabled: (options?.enabled ?? true) && minYears > 0,
   });
@@ -253,7 +253,7 @@ export const useRecentDoctors = (
     queryFn: async () => {
       const result = await doctorsService.getRecentDoctors(limit);
       if (result.error) throw result.error;
-      return result.data;
+      return result.data ?? [];
     },
     enabled: options?.enabled ?? true,
   });

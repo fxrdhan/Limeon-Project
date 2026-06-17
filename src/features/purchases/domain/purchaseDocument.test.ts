@@ -10,12 +10,35 @@ import {
   getPurchaseDocumentPaymentStatusClass,
   getPurchaseDocumentPaymentStatusLabel,
   getPurchaseDocumentPositivePercentageLabel,
+  parsePurchasePrintSessionValue,
 } from './purchaseDocument';
 
 const makePurchase = (
   overrides: Partial<PurchaseData> = {}
 ): Pick<PurchaseData, 'is_vat_included'> => ({
   is_vat_included: false,
+  ...overrides,
+});
+
+const makeFullPurchase = (
+  overrides: Partial<PurchaseData> = {}
+): PurchaseData => ({
+  id: 'purchase-1',
+  invoice_number: 'P-001',
+  date: '2026-06-15',
+  due_date: null,
+  total: 19_980,
+  payment_status: 'paid',
+  payment_method: 'cash',
+  vat_percentage: 11,
+  is_vat_included: false,
+  vat_amount: 1_980,
+  notes: null,
+  supplier: {
+    name: 'Supplier A',
+    address: 'Jl. Mawar',
+    contact_person: null,
+  },
   ...overrides,
 });
 
@@ -111,5 +134,90 @@ describe('purchase document helpers', () => {
     );
     expect(getPurchaseDocumentPositivePercentageLabel(11)).toBe('11%');
     expect(getPurchaseDocumentPositivePercentageLabel(0)).toBe('-');
+  });
+
+  it('parses purchase print session payloads without throwing on corrupt storage', () => {
+    expect(parsePurchasePrintSessionValue(null)).toEqual({
+      purchase: null,
+      items: [],
+      subtotals: null,
+    });
+    expect(parsePurchasePrintSessionValue('{invalid')).toEqual({
+      purchase: null,
+      items: [],
+      subtotals: null,
+    });
+  });
+
+  it('normalizes printable purchase session data and drops invalid line items', () => {
+    expect(
+      parsePurchasePrintSessionValue(
+        JSON.stringify({
+          purchase: makeFullPurchase({
+            total: '19980' as unknown as number,
+            supplier: {
+              name: 'Supplier A',
+              address: null,
+              contact_person: null,
+            },
+          }),
+          items: [
+            makeItem({
+              price: '10000' as unknown as number,
+              unit_conversion_rate: '1' as unknown as number,
+            }),
+            {
+              id: 'missing-required-fields',
+            },
+          ],
+          subtotals: {
+            baseTotal: '20000',
+            discountTotal: 2000,
+            afterDiscountTotal: 18000,
+            vatTotal: 1980,
+            grandTotal: 19980,
+          },
+        })
+      )
+    ).toEqual({
+      purchase: makeFullPurchase({
+        total: 19_980,
+        supplier: {
+          name: 'Supplier A',
+          address: null,
+          contact_person: null,
+        },
+      }),
+      items: [
+        makeItem({
+          price: 10_000,
+          unit_conversion_rate: 1,
+        }),
+      ],
+      subtotals: {
+        baseTotal: 20_000,
+        discountTotal: 2_000,
+        afterDiscountTotal: 18_000,
+        vatTotal: 1_980,
+        grandTotal: 19_980,
+      },
+    });
+  });
+
+  it('recalculates printable subtotals when stored session data is from an older shape', () => {
+    expect(
+      parsePurchasePrintSessionValue(
+        JSON.stringify({
+          purchase: makeFullPurchase(),
+          items: [makeItem()],
+        })
+      ).subtotals
+    ).toEqual({
+      baseTotal: 20_000,
+      discountTotal: 2_000,
+      afterDiscountTotal: 18_000,
+      vatTotal: 1_980,
+      grandTotal: 19_980,
+    });
   });
 });

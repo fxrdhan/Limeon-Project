@@ -182,6 +182,12 @@ const createEndOfCentralDirectoryRecord = ({
   return record;
 };
 
+const copyBytesToArrayBuffer = (bytes: Uint8Array): ArrayBuffer => {
+  const buffer = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(buffer).set(bytes);
+  return buffer;
+};
+
 export const buildZipBlob = async (
   files: Array<{
     blob: Blob;
@@ -233,19 +239,17 @@ export const buildZipBlob = async (
     (totalSize, part) => totalSize + part.length,
     0
   );
+  const zipParts = [
+    ...localFileParts,
+    ...centralDirectoryParts,
+    createEndOfCentralDirectoryRecord({
+      totalEntries: normalizedFiles.length,
+      centralDirectorySize,
+      centralDirectoryOffset,
+    }),
+  ].map(copyBytesToArrayBuffer);
 
-  return new Blob(
-    [
-      ...localFileParts,
-      ...centralDirectoryParts,
-      createEndOfCentralDirectoryRecord({
-        totalEntries: normalizedFiles.length,
-        centralDirectorySize,
-        centralDirectoryOffset,
-      }),
-    ] as BlobPart[],
-    {
-      type: 'application/zip',
-    }
-  );
+  return new Blob(zipParts, {
+    type: 'application/zip',
+  });
 };

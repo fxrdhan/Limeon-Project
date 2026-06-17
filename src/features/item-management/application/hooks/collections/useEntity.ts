@@ -12,7 +12,7 @@
  */
 
 import { useMemo } from 'react';
-import type { EntityData, ManagedEntityType } from './useEntityManager';
+import type { ManagedEntityType } from './useEntityManager';
 import {
   getExternalHooks,
   isEntityTypeSupported,
@@ -64,7 +64,7 @@ export const useEntity = (options: EntityOptions) => {
   // Filter data (no pagination - let AG Grid handle it)
   const filteredData = useMemo(() => {
     return filterEntityData({
-      data: allData as EntityData[],
+      data: allData,
       searchTerm: search,
     });
   }, [allData, search]);

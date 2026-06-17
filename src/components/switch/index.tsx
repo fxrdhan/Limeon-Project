@@ -8,6 +8,7 @@ interface SwitchProps {
   disabled?: boolean;
   size?: SwitchSize;
   id?: string;
+  ariaLabel?: string;
   className?: string;
 }
 
@@ -17,6 +18,7 @@ const Switch: React.FC<SwitchProps> = ({
   disabled = false,
   size = 'default',
   id,
+  ariaLabel = 'Ubah pilihan',
   className = '',
 }) => {
   const sizeClasses =
@@ -39,6 +41,8 @@ const Switch: React.FC<SwitchProps> = ({
       role="switch"
       aria-checked={checked}
       aria-disabled={disabled}
+      aria-label={ariaLabel}
+      disabled={disabled}
       onClick={() => {
         if (!disabled) {
           onChange(!checked);

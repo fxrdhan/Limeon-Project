@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect, useRef } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import FormAction from '@/components/form-action';
@@ -46,6 +46,13 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
 
   const invoiceNumberInputRef = useRef<HTMLInputElement>(null);
   const itemSearchBarRef = useRef<ItemSearchBarRef>(null);
+  const invoiceFocusTimerRef = useRef<number | null>(null);
+  const closeAddItemPortalTimerRef = useRef<number | null>(null);
+  const focusItemSearchTimerRef = useRef<number | null>(null);
+  const submitLifecycleVersionRef = useRef(0);
+  const portalStatusRef = useRef({ isOpen, isClosing });
+
+  portalStatusRef.current = { isOpen, isClosing };
 
   const {
     searchItem,
@@ -66,9 +73,25 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
     searchItem.trim() !== '' && items.length === 0
   );
 
-  const onHandleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (!isOpen || isClosing) {
+      submitLifecycleVersionRef.current += 1;
+    }
+  }, [isClosing, isOpen]);
+
+  const onHandleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    void handleSubmit(e);
+    const submitLifecycleVersion = submitLifecycleVersionRef.current;
+    const didSubmit = await handleSubmit(e);
+    if (!didSubmit) return;
+    if (
+      submitLifecycleVersionRef.current !== submitLifecycleVersion ||
+      !portalStatusRef.current.isOpen ||
+      portalStatusRef.current.isClosing
+    ) {
+      return;
+    }
+
     setIsClosing(true);
     onClose();
   };
@@ -81,29 +104,83 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
     getItemById,
   });
 
-  useEffect(() => {
-    if (isOpen && invoiceNumberInputRef.current) {
-      setTimeout(() => {
-        invoiceNumberInputRef.current?.focus();
-      }, 150);
+  const clearInvoiceFocusTimer = useCallback(() => {
+    if (invoiceFocusTimerRef.current !== null) {
+      window.clearTimeout(invoiceFocusTimerRef.current);
+      invoiceFocusTimerRef.current = null;
     }
-  }, [isOpen]);
+  }, []);
+
+  useEffect(() => {
+    clearInvoiceFocusTimer();
+
+    if (!isOpen || !invoiceNumberInputRef.current) {
+      return;
+    }
+
+    invoiceFocusTimerRef.current = window.setTimeout(() => {
+      invoiceNumberInputRef.current?.focus();
+      invoiceFocusTimerRef.current = null;
+    }, 150);
+
+    return clearInvoiceFocusTimer;
+  }, [clearInvoiceFocusTimer, isOpen]);
 
   const onHandleUnitChange = (id: string, unitName: string) => {
     handleUnitChange(id, unitName, getItemById);
   };
 
-  const handleCloseAddItemPortal = () => {
+  const clearAddItemPortalTimers = useCallback(() => {
+    if (closeAddItemPortalTimerRef.current !== null) {
+      window.clearTimeout(closeAddItemPortalTimerRef.current);
+      closeAddItemPortalTimerRef.current = null;
+    }
+
+    if (focusItemSearchTimerRef.current !== null) {
+      window.clearTimeout(focusItemSearchTimerRef.current);
+      focusItemSearchTimerRef.current = null;
+    }
+  }, []);
+
+  const handleOpenAddItemPortal = useCallback(() => {
+    clearAddItemPortalTimers();
+    setIsAddItemClosing(false);
+    setIsAddItemPortalOpen(true);
+    setPortalRenderId(prev => prev + 1);
+  }, [clearAddItemPortalTimers]);
+
+  const handleCloseAddItemPortal = useCallback(() => {
+    clearAddItemPortalTimers();
     setIsAddItemClosing(true);
-    setTimeout(() => {
+    closeAddItemPortalTimerRef.current = window.setTimeout(() => {
       setIsAddItemPortalOpen(false);
       setIsAddItemClosing(false);
       void refetchItems();
-      setTimeout(() => {
+      closeAddItemPortalTimerRef.current = null;
+      focusItemSearchTimerRef.current = window.setTimeout(() => {
         itemSearchBarRef.current?.focus();
+        focusItemSearchTimerRef.current = null;
       }, 100);
     }, 200);
-  };
+  }, [clearAddItemPortalTimers, refetchItems]);
+
+  useEffect(() => {
+    if (isOpen) {
+      return;
+    }
+
+    clearAddItemPortalTimers();
+    setIsAddItemPortalOpen(false);
+    setIsAddItemClosing(false);
+  }, [clearAddItemPortalTimers, isOpen]);
+
+  useEffect(
+    () => () => {
+      clearAddItemPortalTimers();
+      clearInvoiceFocusTimer();
+    },
+    [clearAddItemPortalTimers, clearInvoiceFocusTimer]
+  );
 
   return createPortal(
     <AnimatePresence>
@@ -176,10 +253,7 @@ const AddPurchasePortal: React.FC<AddPurchasePortalProps> = ({
                     onSelectItem={handleSelectItem}
                     purchaseItems={purchaseItems}
                     isAddNewItemDisabled={isAddNewItemDisabled}
-                    onOpenAddItemPortal={() => {
-                      setIsAddItemPortalOpen(true);
-                      setPortalRenderId(prev => prev + 1);
-                    }}
+                    onOpenAddItemPortal={handleOpenAddItemPortal}
                     itemSearchBarRef={itemSearchBarRef}
                     formData={formData}
                     total={total}

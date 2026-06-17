@@ -21,6 +21,11 @@ interface UseMultiImagePreviewSidebarResizeProps {
   itemCount: number;
 }
 
+const DEFAULT_SIDEBAR_LAYOUT_LEVEL = SIDEBAR_LAYOUT_LEVELS[0];
+if (!DEFAULT_SIDEBAR_LAYOUT_LEVEL) {
+  throw new Error('Sidebar layout levels must define a default level.');
+}
+
 export const useMultiImagePreviewSidebarResize = ({
   isOpen,
   itemCount,
@@ -246,7 +251,7 @@ export const useMultiImagePreviewSidebarResize = ({
   const maxSidebarWidth = getMaxSidebarWidth(containerWidth);
   const activeLayoutLevel =
     SIDEBAR_LAYOUT_LEVELS.find(level => level.width === boundedSidebarWidth) ??
-    SIDEBAR_LAYOUT_LEVELS[0]!;
+    DEFAULT_SIDEBAR_LAYOUT_LEVEL;
   const sidebarColumnCount = activeLayoutLevel.columnCount;
   const containerStyle = {
     '--multi-image-preview-sidebar-width': `${boundedSidebarWidth}px`,

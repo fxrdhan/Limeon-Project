@@ -1,11 +1,14 @@
-import { BaseService, ServiceResponse } from './base.service';
+import {
+  BaseService,
+  toServiceError,
+  type ServiceResponse,
+} from './base.service';
 import {
   itemRepository,
   ItemQueryOptions,
 } from '../repositories/ItemRepository';
 import { ItemTransformer } from '../transformers/ItemTransformer';
 import type { DBItem, DBPackageConversion, Item } from '@/types/database';
-import type { PostgrestError } from '@supabase/supabase-js';
 
 export class ItemsService extends BaseService<DBItem> {
   constructor() {
@@ -34,7 +37,7 @@ export class ItemsService extends BaseService<DBItem> {
 
       return { data: transformedData, error: null };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -55,7 +58,7 @@ export class ItemsService extends BaseService<DBItem> {
 
       return { data: transformedItem, error: null };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -86,7 +89,7 @@ export class ItemsService extends BaseService<DBItem> {
 
       return { data: transformedData, error: null };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -132,7 +135,7 @@ export class ItemsService extends BaseService<DBItem> {
 
       return { data: transformedData, error: null };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -158,7 +161,7 @@ export class ItemsService extends BaseService<DBItem> {
 
       return this.create(dataToInsert);
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -187,7 +190,7 @@ export class ItemsService extends BaseService<DBItem> {
 
       return this.update(id, updateData);
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -201,7 +204,7 @@ export class ItemsService extends BaseService<DBItem> {
     if (newStock < 0) {
       return {
         data: null,
-        error: { message: 'Stock cannot be negative' } as PostgrestError,
+        error: new Error('Stock cannot be negative'),
       };
     }
 
@@ -219,9 +222,7 @@ export class ItemsService extends BaseService<DBItem> {
       if (update.stock < 0) {
         return {
           data: null,
-          error: {
-            message: `Stock cannot be negative for item ${update.id}`,
-          } as PostgrestError,
+          error: new Error(`Stock cannot be negative for item ${update.id}`),
         };
       }
     }

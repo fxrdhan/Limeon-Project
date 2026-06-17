@@ -12,7 +12,7 @@ export const useCategories = (options?: { enabled?: boolean }) => {
     queryFn: async () => {
       const result = await masterDataService.categories.getActiveCategories();
       if (result.error) throw result.error;
-      return result.data;
+      return result.data ?? [];
     },
     enabled: options?.enabled ?? true,
   });

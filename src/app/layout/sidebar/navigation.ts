@@ -30,6 +30,16 @@ export const hasActiveChildRoute = (
   });
 };
 
+export const buildClosedMenusState = () => {
+  const openMenus: Record<string, boolean> = {};
+
+  MENU_GROUPS.forEach(item => {
+    openMenus[item.key] = false;
+  });
+
+  return openMenus;
+};
+
 export const buildOpenMenusState = ({
   forceOpenMenuKey,
   manuallyClosedMenus,
@@ -39,19 +49,19 @@ export const buildOpenMenusState = ({
   manuallyClosedMenus: Set<string>;
   pathname: string;
 }) => {
-  return Object.fromEntries(
-    MENU_GROUPS.map(item => {
-      const isMenuActive =
-        isRouteActive(pathname, item.path) ||
-        hasActiveChildRoute(pathname, item.children);
+  const openMenus: Record<string, boolean> = {};
 
-      return [
-        item.key,
-        item.key === forceOpenMenuKey ||
-          (Boolean(isMenuActive) && !manuallyClosedMenus.has(item.key)),
-      ] as const;
-    })
-  ) as Record<string, boolean>;
+  MENU_GROUPS.forEach(item => {
+    const isMenuActive =
+      isRouteActive(pathname, item.path) ||
+      hasActiveChildRoute(pathname, item.children);
+
+    openMenus[item.key] =
+      item.key === forceOpenMenuKey ||
+      (Boolean(isMenuActive) && !manuallyClosedMenus.has(item.key));
+  });
+
+  return openMenus;
 };
 
 export const isSubmenuItemActive = (pathname: string, childPath: string) => {

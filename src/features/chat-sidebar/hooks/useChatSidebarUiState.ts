@@ -67,6 +67,18 @@ export const useChatSidebarUiState = ({
     scrollHeight: number;
     scrollTop: number;
   } | null>(null);
+  const replyTargetContextRequestIdRef = useRef(0);
+  const latestReplyTargetContextScopeRef = useRef({
+    currentChannelId,
+    isOpen,
+    targetUserId,
+  });
+  latestReplyTargetContextScopeRef.current = {
+    currentChannelId,
+    isOpen,
+    targetUserId,
+  };
+
   const focusMessageComposer = useCallback(() => {
     const textarea = refs.messageInputRef.current;
     if (!textarea) return;
@@ -201,6 +213,35 @@ export const useChatSidebarUiState = ({
     pendingReplyTargetFocusFrameRef.current = null;
   }, []);
 
+  const clearPendingReplyTargetFocusState = useCallback(() => {
+    cancelPendingReplyTargetFocusFrame();
+    pendingReplyTargetFocusMessageIdRef.current = null;
+    pendingReplyTargetViewportSnapshotRef.current = null;
+  }, [cancelPendingReplyTargetFocusFrame]);
+
+  const invalidatePendingReplyTargetContextRequest = useCallback(() => {
+    replyTargetContextRequestIdRef.current += 1;
+    loadingReplyContextMessageIdRef.current = null;
+    clearPendingReplyTargetFocusState();
+  }, [clearPendingReplyTargetFocusState]);
+
+  const isReplyTargetContextRequestCurrent = useCallback(
+    (
+      requestId: number,
+      requestChannelId: string,
+      requestTargetUserId: string
+    ) => {
+      const scope = latestReplyTargetContextScopeRef.current;
+      return (
+        replyTargetContextRequestIdRef.current === requestId &&
+        scope.isOpen &&
+        scope.currentChannelId === requestChannelId &&
+        scope.targetUserId === requestTargetUserId
+      );
+    },
+    []
+  );
+
   const scheduleReplyTargetViewportFocus = useCallback(
     (messageId: string) => {
       pendingReplyTargetFocusMessageIdRef.current = messageId;
@@ -236,6 +277,15 @@ export const useChatSidebarUiState = ({
     },
     [cancelPendingReplyTargetFocusFrame, refs.messageBubbleRefs, viewport]
   );
+
+  useLayoutEffect(() => {
+    invalidatePendingReplyTargetContextRequest();
+  }, [
+    currentChannelId,
+    invalidatePendingReplyTargetContextRequest,
+    isOpen,
+    targetUserId,
+  ]);
 
   useLayoutEffect(() => {
     const pendingViewportSnapshot =
@@ -314,6 +364,10 @@ export const useChatSidebarUiState = ({
 
   const focusReplyTargetMessage = useCallback(
     (messageId: string) => {
+      if (messages.some(message => message.id === messageId)) {
+        invalidatePendingReplyTargetContextRequest();
+      }
+
       if (focusReplyTargetFromMessages(messageId, messages)) {
         return;
       }
@@ -327,18 +381,35 @@ export const useChatSidebarUiState = ({
         return;
       }
 
+      const requestChannelId = currentChannelId;
+      const requestTargetUserId = targetUserId;
+      const requestId = replyTargetContextRequestIdRef.current + 1;
+      replyTargetContextRequestIdRef.current = requestId;
       loadingReplyContextMessageIdRef.current = messageId;
+      clearPendingReplyTargetFocusState();
+
       void (async () => {
         try {
           const { data: searchContextMessages, error } =
             await chatSidebarMessagesGateway.fetchConversationMessageContext(
-              targetUserId,
+              requestTargetUserId,
               messageId,
               {
                 beforeLimit: REPLY_TARGET_CONTEXT_BEFORE_LIMIT,
                 afterLimit: REPLY_TARGET_CONTEXT_AFTER_LIMIT,
               }
             );
+
+          if (
+            !isReplyTargetContextRequestCurrent(
+              requestId,
+              requestChannelId,
+              requestTargetUserId
+            )
+          ) {
+            return;
+          }
+
           if (
             error ||
             !searchContextMessages ||
@@ -360,13 +431,23 @@ export const useChatSidebarUiState = ({
 
           const hasOlderMessages =
             await confirmReplyTargetContextHasOlderMessages(
-              targetUserId,
+              requestTargetUserId,
               searchContextMessages,
               getReplyTargetContextHasOlderMessages(
                 messageId,
                 searchContextMessages
               )
             );
+
+          if (
+            !isReplyTargetContextRequestCurrent(
+              requestId,
+              requestChannelId,
+              requestTargetUserId
+            )
+          ) {
+            return;
+          }
 
           viewport.suspendPinnedViewportSync?.();
           mergeSearchContextMessages(searchContextMessages, {
@@ -395,7 +476,10 @@ export const useChatSidebarUiState = ({
 
           scheduleReplyTargetViewportFocus(messageId);
         } finally {
-          if (loadingReplyContextMessageIdRef.current === messageId) {
+          if (
+            replyTargetContextRequestIdRef.current === requestId &&
+            loadingReplyContextMessageIdRef.current === messageId
+          ) {
             loadingReplyContextMessageIdRef.current = null;
           }
         }
@@ -404,8 +488,11 @@ export const useChatSidebarUiState = ({
     [
       confirmReplyTargetContextHasOlderMessages,
       currentChannelId,
+      clearPendingReplyTargetFocusState,
       getReplyTargetImageGroup,
       focusReplyTargetFromMessages,
+      invalidatePendingReplyTargetContextRequest,
+      isReplyTargetContextRequestCurrent,
       isOpen,
       mergeSearchContextMessages,
       messages,

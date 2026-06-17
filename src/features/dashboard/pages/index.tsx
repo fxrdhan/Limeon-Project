@@ -9,7 +9,6 @@ import {
 import HeroSection from '../components/HeroSection';
 import OperationsSection from '../components/OperationsSection';
 import PerformanceSection from '../components/PerformanceSection';
-import type { LowStockItem, RecentTransaction } from '../domain/types';
 
 const DashboardNew = () => {
   useDashboardRealtime();
@@ -28,9 +27,8 @@ const DashboardNew = () => {
   const isRecentTransactionsLoading =
     recentTransactionsQuery.isLoading && !recentTransactionsQuery.data;
 
-  const lowStockItems = (lowStockQuery.data || []) as LowStockItem[];
-  const recentTransactions = (recentTransactionsQuery.data ||
-    []) as RecentTransaction[];
+  const lowStockItems = lowStockQuery.data ?? [];
+  const recentTransactions = recentTransactionsQuery.data ?? [];
 
   return (
     <div className="w-full px-1 pb-6 pt-2 sm:px-2 lg:px-4">

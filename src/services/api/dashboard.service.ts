@@ -1,6 +1,13 @@
 import { supabase } from '@/lib/supabase';
 import { formatDateOnlyDisplayValue } from '@/lib/formatters';
-import type { PostgrestError } from '@supabase/supabase-js';
+import {
+  getSupabaseRelationName,
+  type SupabaseRelationValue,
+} from '@/lib/supabaseRelations';
+import {
+  toServiceError,
+  type ServiceResponse as BaseServiceResponse,
+} from './base.service';
 
 export interface DashboardStats {
   totalSales: number;
@@ -28,10 +35,16 @@ export interface TopSellingMedicine {
   total_quantity: number;
 }
 
-export interface ServiceResponse<T> {
-  data: T | null;
-  error: PostgrestError | Error | null;
+export interface LowStockDashboardItem {
+  id: string;
+  name: string;
+  stock: number;
+  item_categories?: NamedRelation[];
+  item_types?: NamedRelation[];
+  item_packages?: NamedRelation[];
 }
+
+export type ServiceResponse<T> = BaseServiceResponse<T>;
 
 interface DashboardSummaryRow {
   total_sales: number | string | null;
@@ -47,8 +60,211 @@ export interface DashboardSummaryResponse {
   monthlyRevenue: MonthlyRevenueComparison;
 }
 
+interface NamedRelation {
+  name?: string | null;
+}
+
+interface RecentTransactionBaseRow {
+  id: string;
+  invoice_number?: string | null;
+  date: string;
+  total: number;
+}
+
+interface RecentSaleRow extends RecentTransactionBaseRow {
+  patients?: SupabaseRelationValue<NamedRelation>;
+}
+
+interface RecentPurchaseRow extends RecentTransactionBaseRow {
+  suppliers?: SupabaseRelationValue<NamedRelation>;
+}
+
+export interface RecentDashboardTransaction extends RecentTransactionBaseRow {
+  type: 'sale' | 'purchase';
+  counterparty: string;
+}
+
+const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
 const toNumericValue = (value: number | string | null | undefined) =>
   Number(value ?? 0);
+
+const toFiniteNumericValue = (value: unknown) => {
+  const numericValue =
+    typeof value === 'number'
+      ? value
+      : typeof value === 'string'
+        ? Number(value)
+        : 0;
+
+  return Number.isFinite(numericValue) ? numericValue : 0;
+};
+
+const toSummaryNumericField = (
+  value: unknown
+): DashboardSummaryRow[keyof DashboardSummaryRow] =>
+  typeof value === 'number' || typeof value === 'string' ? value : null;
+
+export const normalizeDashboardSummaryRow = (
+  value: unknown
+): DashboardSummaryRow | null => {
+  if (!isObjectRecord(value)) {
+    return null;
+  }
+
+  return {
+    total_sales: toSummaryNumericField(value.total_sales),
+    total_purchases: toSummaryNumericField(value.total_purchases),
+    total_medicines: toSummaryNumericField(value.total_medicines),
+    low_stock_count: toSummaryNumericField(value.low_stock_count),
+    current_month_sales: toSummaryNumericField(value.current_month_sales),
+    previous_month_sales: toSummaryNumericField(value.previous_month_sales),
+  };
+};
+
+const normalizeNamedRelationRecord = (value: unknown): NamedRelation | null => {
+  if (!isObjectRecord(value)) {
+    return null;
+  }
+
+  const { name } = value;
+  return {
+    name: typeof name === 'string' || name === null ? name : null,
+  };
+};
+
+const normalizeNamedRelation = (
+  value: unknown
+): SupabaseRelationValue<NamedRelation> => {
+  if (Array.isArray(value)) {
+    return value.flatMap(relation => {
+      const normalizedRelation = normalizeNamedRelationRecord(relation);
+      return normalizedRelation ? [normalizedRelation] : [];
+    });
+  }
+
+  return normalizeNamedRelationRecord(value);
+};
+
+const normalizeNamedRelationArray = (value: unknown): NamedRelation[] => {
+  if (Array.isArray(value)) {
+    return value.flatMap(relation => {
+      const normalizedRelation = normalizeNamedRelationRecord(relation);
+      return normalizedRelation ? [normalizedRelation] : [];
+    });
+  }
+
+  const normalizedRelation = normalizeNamedRelationRecord(value);
+  return normalizedRelation ? [normalizedRelation] : [];
+};
+
+const normalizeRecentTransactionBaseRow = (
+  value: unknown
+): RecentTransactionBaseRow | null => {
+  if (!isObjectRecord(value)) {
+    return null;
+  }
+
+  const { date, id, invoice_number, total } = value;
+  if (typeof id !== 'string' || typeof date !== 'string') {
+    return null;
+  }
+
+  return {
+    id,
+    invoice_number:
+      typeof invoice_number === 'string' || invoice_number === null
+        ? invoice_number
+        : null,
+    date,
+    total: toFiniteNumericValue(total),
+  };
+};
+
+const normalizeRecentSaleRow = (value: unknown): RecentSaleRow | null => {
+  if (!isObjectRecord(value)) {
+    return null;
+  }
+
+  const baseRow = normalizeRecentTransactionBaseRow(value);
+  if (!baseRow) {
+    return null;
+  }
+
+  return {
+    ...baseRow,
+    patients: normalizeNamedRelation(value.patients),
+  };
+};
+
+const normalizeRecentPurchaseRow = (
+  value: unknown
+): RecentPurchaseRow | null => {
+  if (!isObjectRecord(value)) {
+    return null;
+  }
+
+  const baseRow = normalizeRecentTransactionBaseRow(value);
+  if (!baseRow) {
+    return null;
+  }
+
+  return {
+    ...baseRow,
+    suppliers: normalizeNamedRelation(value.suppliers),
+  };
+};
+
+export const normalizeRecentSaleRows = (value: unknown): RecentSaleRow[] =>
+  Array.isArray(value)
+    ? value.flatMap(row => {
+        const normalizedRow = normalizeRecentSaleRow(row);
+        return normalizedRow ? [normalizedRow] : [];
+      })
+    : [];
+
+export const normalizeRecentPurchaseRows = (
+  value: unknown
+): RecentPurchaseRow[] =>
+  Array.isArray(value)
+    ? value.flatMap(row => {
+        const normalizedRow = normalizeRecentPurchaseRow(row);
+        return normalizedRow ? [normalizedRow] : [];
+      })
+    : [];
+
+const normalizeLowStockDashboardItem = (
+  value: unknown
+): LowStockDashboardItem | null => {
+  if (!isObjectRecord(value)) {
+    return null;
+  }
+
+  const { id, item_categories, item_packages, item_types, name, stock } = value;
+  if (typeof id !== 'string' || typeof name !== 'string') {
+    return null;
+  }
+
+  return {
+    id,
+    name,
+    stock: toFiniteNumericValue(stock),
+    item_categories: normalizeNamedRelationArray(item_categories),
+    item_types: normalizeNamedRelationArray(item_types),
+    item_packages: normalizeNamedRelationArray(item_packages),
+  };
+};
+
+export const normalizeLowStockDashboardItems = (
+  value: unknown
+): LowStockDashboardItem[] =>
+  Array.isArray(value)
+    ? value.flatMap(item => {
+        const normalizedItem = normalizeLowStockDashboardItem(item);
+        return normalizedItem ? [normalizedItem] : [];
+      })
+    : [];
 
 const buildMonthlyRevenueComparison = (
   currentMonthTotal: number,
@@ -67,6 +283,34 @@ const buildMonthlyRevenueComparison = (
   };
 };
 
+export const mapRecentDashboardTransactions = (
+  sales: RecentSaleRow[],
+  purchases: RecentPurchaseRow[],
+  limit: number
+): RecentDashboardTransaction[] => {
+  const transactions: RecentDashboardTransaction[] = [
+    ...sales.map(sale => ({
+      ...sale,
+      type: 'sale' as const,
+      counterparty: getSupabaseRelationName(sale.patients, 'Walk-in Customer'),
+    })),
+    ...purchases.map(purchase => ({
+      ...purchase,
+      type: 'purchase' as const,
+      counterparty: getSupabaseRelationName(
+        purchase.suppliers,
+        'Unknown Supplier'
+      ),
+    })),
+  ];
+
+  transactions.sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
+
+  return transactions.slice(0, limit);
+};
+
 export class DashboardService {
   async getDashboardSummary(): Promise<
     ServiceResponse<DashboardSummaryResponse>
@@ -78,7 +322,7 @@ export class DashboardService {
 
       if (error) throw error;
 
-      const summary = (data || null) as DashboardSummaryRow | null;
+      const summary = normalizeDashboardSummaryRow(data);
       if (!summary) {
         throw new Error('Missing dashboard summary data');
       }
@@ -101,7 +345,7 @@ export class DashboardService {
         error: null,
       };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -172,7 +416,7 @@ export class DashboardService {
 
       return { data: analyticsData, error: null };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -189,12 +433,14 @@ export class DashboardService {
 
       return { data: data || [], error: null };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
   // Get low stock items
-  async getLowStockItems(threshold: number = 10) {
+  async getLowStockItems(
+    threshold: number = 10
+  ): Promise<ServiceResponse<LowStockDashboardItem[]>> {
     try {
       const { data, error } = await supabase
         .from('items')
@@ -214,9 +460,9 @@ export class DashboardService {
 
       if (error) throw error;
 
-      return { data: data || [], error: null };
+      return { data: normalizeLowStockDashboardItems(data), error: null };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -255,32 +501,16 @@ export class DashboardService {
       if (salesResult.error) throw salesResult.error;
       if (purchasesResult.error) throw purchasesResult.error;
 
-      // Combine and sort transactions
-      const transactions = [
-        ...(salesResult.data || []).map(sale => ({
-          ...sale,
-          type: 'sale' as const,
-          counterparty:
-            (sale as Record<string, { name?: string }>).patients?.name ||
-            'Walk-in Customer',
-        })),
-        ...(purchasesResult.data || []).map(purchase => ({
-          ...purchase,
-          type: 'purchase' as const,
-          counterparty:
-            (purchase as Record<string, { name?: string }>).suppliers?.name ||
-            'Unknown Supplier',
-        })),
-      ];
-
-      // Sort by date descending
-      transactions.sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-      );
-
-      return { data: transactions.slice(0, limit), error: null };
+      return {
+        data: mapRecentDashboardTransactions(
+          normalizeRecentSaleRows(salesResult.data),
+          normalizeRecentPurchaseRows(purchasesResult.data),
+          limit
+        ),
+        error: null,
+      };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 

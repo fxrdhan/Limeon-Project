@@ -25,6 +25,8 @@ export const useChatMessageSearchMode = ({
   targetUser,
 }: UseChatMessageSearchModeProps) => {
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchInputFocusFrameRef = useRef<number | null>(null);
+  const searchInputFocusRequestRef = useRef(0);
   const [isMessageSearchMode, setIsMessageSearchMode] = useState(false);
   const [messageSearchQuery, setMessageSearchQuery] = useState('');
   const normalizedMessageSearchQuery = messageSearchQuery.trim().toLowerCase();
@@ -56,17 +58,55 @@ export const useChatMessageSearchMode = ({
     resetSearchResults,
   } = searchResults;
 
-  useEffect(() => {
-    if (!isMessageSearchMode) return;
+  const clearPendingSearchInputFocusFrame = useCallback(() => {
+    searchInputFocusRequestRef.current += 1;
 
-    const rafId = requestAnimationFrame(() => {
+    if (searchInputFocusFrameRef.current === null) {
+      return;
+    }
+
+    cancelAnimationFrame(searchInputFocusFrameRef.current);
+    searchInputFocusFrameRef.current = null;
+  }, []);
+
+  const scheduleSearchInputFocus = useCallback(() => {
+    clearPendingSearchInputFocusFrame();
+
+    const focusRequestId = searchInputFocusRequestRef.current + 1;
+    let didRunSynchronously = false;
+    searchInputFocusRequestRef.current = focusRequestId;
+
+    const frameId = requestAnimationFrame(() => {
+      didRunSynchronously = true;
+
+      if (searchInputFocusRequestRef.current !== focusRequestId) {
+        return;
+      }
+
+      searchInputFocusFrameRef.current = null;
       searchInputRef.current?.focus();
     });
 
+    if (didRunSynchronously) {
+      return;
+    }
+
+    searchInputFocusFrameRef.current = frameId;
+  }, [clearPendingSearchInputFocusFrame]);
+
+  useEffect(() => {
+    if (!isMessageSearchMode) return;
+
+    scheduleSearchInputFocus();
+
     return () => {
-      cancelAnimationFrame(rafId);
+      clearPendingSearchInputFocusFrame();
     };
-  }, [isMessageSearchMode]);
+  }, [
+    clearPendingSearchInputFocusFrame,
+    isMessageSearchMode,
+    scheduleSearchInputFocus,
+  ]);
 
   useChatMessageSearchContext({
     isOpen,
@@ -83,10 +123,11 @@ export const useChatMessageSearchMode = ({
   });
 
   const resetSearchModeState = useCallback(() => {
+    clearPendingSearchInputFocusFrame();
     resetSearchResults();
     setIsMessageSearchMode(false);
     setMessageSearchQuery('');
-  }, [resetSearchResults]);
+  }, [clearPendingSearchInputFocusFrame, resetSearchResults]);
 
   useEffect(() => {
     if (isOpen) return;
@@ -107,10 +148,15 @@ export const useChatMessageSearchMode = ({
 
   const handleFocusSearchInput = useCallback(() => {
     if (!isMessageSearchMode) return;
-    requestAnimationFrame(() => {
-      searchInputRef.current?.focus();
-    });
-  }, [isMessageSearchMode]);
+    scheduleSearchInputFocus();
+  }, [isMessageSearchMode, scheduleSearchInputFocus]);
+
+  useEffect(
+    () => () => {
+      clearPendingSearchInputFocusFrame();
+    },
+    [clearPendingSearchInputFocusFrame]
+  );
 
   const handleMessageSearchQueryChange = useCallback((nextQuery: string) => {
     setMessageSearchQuery(nextQuery);

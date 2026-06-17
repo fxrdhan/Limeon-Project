@@ -59,6 +59,7 @@ const createModel = (
       isFlashHighlightVisible: false,
       searchMatchedMessageIds: new Set<string>(),
       activeSearchMessageId: null,
+      isInitialOpenPinPending: false,
       maxMessageChars: 220,
       onToggleMessageSelection: () => {},
       handleToggleExpand: () => {},

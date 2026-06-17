@@ -1,5 +1,4 @@
-import type { PostgrestError } from '@supabase/supabase-js';
-import type { ServiceResponse } from './base.service';
+import { toServiceError, type ServiceResponse } from './base.service';
 import { supabase } from '@/lib/supabase';
 
 export interface StockDeltaUpdate {
@@ -129,6 +128,6 @@ export const updateRecordWithLinkedItems = async <
       error: null,
     };
   } catch (error) {
-    return { data: null, error: error as PostgrestError };
+    return { data: null, error: toServiceError(error) };
   }
 };

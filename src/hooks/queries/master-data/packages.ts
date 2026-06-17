@@ -12,7 +12,7 @@ export const usePackages = (options?: { enabled?: boolean }) => {
     queryFn: async () => {
       const result = await masterDataService.packages.getActivePackages();
       if (result.error) throw result.error;
-      return result.data;
+      return result.data ?? [];
     },
     enabled: options?.enabled ?? true,
   });

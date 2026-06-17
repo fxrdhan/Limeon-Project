@@ -35,6 +35,7 @@ import {
   getQueryConfig,
   getMutationConfig,
 } from './EntityHookConfigurations';
+import { requireMutationResponseData } from './mutationResponse';
 import { itemMasterDataService } from '../../../infrastructure/itemMasterData.service';
 
 // Re-export commonly used types
@@ -149,6 +150,15 @@ export interface DeleteMutationOptions {
   invalidateQueries?: boolean;
 }
 
+const toMutationRecord = (value: object): Record<string, unknown> =>
+  Object.entries(value).reduce<Record<string, unknown>>(
+    (record, [key, fieldValue]) => {
+      record[key] = fieldValue;
+      return record;
+    },
+    {}
+  );
+
 /**
  * Generic mutation hook factory for CRUD operations
  *
@@ -179,7 +189,7 @@ export function createEntityMutations<TEntityType extends EntityTypeKey>(
     return useMutation({
       mutationFn: async (input: TCreateInput) => {
         const { data, error } = await service.create(
-          input as Record<string, unknown>,
+          toMutationRecord(input),
           config.selectFields
         );
 
@@ -188,7 +198,10 @@ export function createEntityMutations<TEntityType extends EntityTypeKey>(
           throw error;
         }
 
-        return data!;
+        return requireMutationResponseData(data, {
+          entityDisplayName: config.entityDisplayName,
+          operation: 'create',
+        });
       },
       onSuccess: data => {
         if (invalidateQueries) {
@@ -212,14 +225,11 @@ export function createEntityMutations<TEntityType extends EntityTypeKey>(
 
     return useMutation({
       mutationFn: async (input: TUpdateInput) => {
-        const { id, ...updateData } = input as { id: string } & Record<
-          string,
-          unknown
-        >;
+        const { id, ...updateData } = input;
 
         const { data, error } = await service.update(
           id,
-          updateData,
+          toMutationRecord(updateData),
           config.selectFields
         );
 
@@ -228,7 +238,10 @@ export function createEntityMutations<TEntityType extends EntityTypeKey>(
           throw error;
         }
 
-        return data!;
+        return requireMutationResponseData(data, {
+          entityDisplayName: config.entityDisplayName,
+          operation: 'update',
+        });
       },
       onSuccess: data => {
         if (invalidateQueries) {

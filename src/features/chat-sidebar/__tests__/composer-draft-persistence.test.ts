@@ -5,6 +5,7 @@ import {
   type PersistedComposerDraftAttachmentRecord,
   type PersistedComposerDraftRecord,
 } from '../utils/composer-draft-persistence';
+import { normalizePersistedComposerDraftRecords } from '../utils/composer-draft-persistence/attachments';
 
 const buildPersistedAttachment = (
   fileSize: number
@@ -68,6 +69,13 @@ describe('composer-draft-persistence', () => {
     });
   });
 
+  it('drops malformed persisted message draft stores', () => {
+    const result = prunePersistedComposerDraftMessageStore('not-a-store');
+
+    expect(result.didPrune).toBe(true);
+    expect(result.store).toEqual({});
+  });
+
   it('keeps the newest attachment drafts within the configured byte budget', () => {
     const now = 10_000;
     const result = prunePersistedComposerDraftAttachmentRecords(
@@ -118,5 +126,57 @@ describe('composer-draft-persistence', () => {
         'channel-too-large',
       ])
     );
+  });
+
+  it('normalizes persisted attachment records from IndexedDB payloads', () => {
+    const blob = new Blob(['image'], { type: 'image/png' });
+
+    expect(
+      normalizePersistedComposerDraftRecords([
+        {
+          channelId: ' channel-1 ',
+          updatedAt: 100,
+          attachments: [
+            {
+              id: 'attachment-1',
+              file: blob,
+              fileKind: 'image',
+              fileName: 'image.png',
+              fileTypeLabel: 'PNG',
+              mimeType: 'image/png',
+              pdfCoverUrl: null,
+              pdfPageCount: null,
+            },
+            {
+              id: 'attachment-2',
+              file: {},
+              fileKind: 'image',
+            },
+          ],
+        },
+        {
+          channelId: 'channel-2',
+          updatedAt: 200,
+          attachments: [{ file: blob, fileKind: 'unknown' }],
+        },
+      ])
+    ).toEqual([
+      {
+        channelId: 'channel-1',
+        updatedAt: 100,
+        attachments: [
+          {
+            id: 'attachment-1',
+            file: blob,
+            fileKind: 'image',
+            fileName: 'image.png',
+            fileTypeLabel: 'PNG',
+            mimeType: 'image/png',
+            pdfCoverUrl: null,
+            pdfPageCount: null,
+          },
+        ],
+      },
+    ]);
   });
 });

@@ -16,17 +16,21 @@ const CheckboxComponent: React.ForwardRefRenderFunction<
     onChange,
     checked,
   });
+  const keyboardProps = {
+    tabIndex,
+    onKeyDown: handleKeyDown,
+  };
 
   return (
     <label
+      {...keyboardProps}
       htmlFor={id}
       ref={ref}
-      tabIndex={tabIndex}
-      onKeyDown={handleKeyDown}
       className={getContainerStyles(disabled, className)}
     >
       <CheckboxInput
         id={id}
+        ariaLabel={label || 'Checkbox'}
         checked={checked}
         onChange={onChange}
         disabled={disabled}

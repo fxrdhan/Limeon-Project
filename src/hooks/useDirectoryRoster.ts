@@ -7,7 +7,7 @@ import type { OnlineUser } from '@/types';
 import type { DirectoryUser } from '@/types/directory';
 
 const DIRECTORY_CACHE_MAX_AGE_MS = 60_000;
-const EMPTY_DIRECTORY_USERS: DirectoryUser[] = [];
+const EMPTY_DIRECTORY_USERS: never[] = [];
 
 interface UseDirectoryRosterOptions<TUser extends DirectoryUser> {
   shouldLoadDirectory?: boolean;
@@ -55,7 +55,7 @@ export const useDirectoryRoster = <TUser extends DirectoryUser>({
     directoryOwnerUserId === activeDirectoryOwnerUserId;
   const resolvedDirectoryUsers = isActiveDirectoryOwner
     ? directoryUsers
-    : (EMPTY_DIRECTORY_USERS as TUser[]);
+    : EMPTY_DIRECTORY_USERS;
   const resolvedIsDirectoryLoading = isActiveDirectoryOwner
     ? isDirectoryLoading
     : false;

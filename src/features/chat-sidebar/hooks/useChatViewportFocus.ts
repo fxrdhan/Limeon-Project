@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type MutableRefObject,
@@ -23,6 +24,7 @@ interface UseChatViewportFocusProps {
   messageBubbleRefs: MutableRefObject<Map<string, HTMLDivElement>>;
   messagesContainerRef: RefObject<HTMLDivElement | null>;
   editingMessageId: string | null;
+  resetKey?: string | null;
 }
 
 export const useChatViewportFocus = ({
@@ -32,6 +34,7 @@ export const useChatViewportFocus = ({
   messageBubbleRefs,
   messagesContainerRef,
   editingMessageId,
+  resetKey,
 }: UseChatViewportFocusProps) => {
   const [flashingMessageId, setFlashingMessageId] = useState<string | null>(
     null
@@ -42,23 +45,32 @@ export const useChatViewportFocus = ({
   const pendingSearchFlashRafRef = useRef<number | null>(null);
   const pendingFocusRafRef = useRef<number | null>(null);
 
-  const triggerMessageFlash = useCallback((messageId: string) => {
-    if (flashMessageTimeoutRef.current) {
-      clearTimeout(flashMessageTimeoutRef.current);
-      flashMessageTimeoutRef.current = null;
+  const clearFlashMessageTimeout = useCallback(() => {
+    if (!flashMessageTimeoutRef.current) {
+      return;
     }
 
-    setFlashingMessageId(messageId);
-    setIsFlashHighlightVisible(true);
-
-    flashMessageTimeoutRef.current = setTimeout(() => {
-      setIsFlashHighlightVisible(false);
-      setFlashingMessageId(currentId =>
-        currentId === messageId ? null : currentId
-      );
-      flashMessageTimeoutRef.current = null;
-    }, EDIT_TARGET_FLASH_PHASE_DURATION * 2);
+    clearTimeout(flashMessageTimeoutRef.current);
+    flashMessageTimeoutRef.current = null;
   }, []);
+
+  const triggerMessageFlash = useCallback(
+    (messageId: string) => {
+      clearFlashMessageTimeout();
+
+      setFlashingMessageId(messageId);
+      setIsFlashHighlightVisible(true);
+
+      flashMessageTimeoutRef.current = setTimeout(() => {
+        setIsFlashHighlightVisible(false);
+        setFlashingMessageId(currentId =>
+          currentId === messageId ? null : currentId
+        );
+        flashMessageTimeoutRef.current = null;
+      }, EDIT_TARGET_FLASH_PHASE_DURATION * 2);
+    },
+    [clearFlashMessageTimeout]
+  );
 
   const clearPendingSearchFlash = useCallback(() => {
     if (pendingSearchFlashRafRef.current === null) return;
@@ -279,24 +291,26 @@ export const useChatViewportFocus = ({
     [focusMessage]
   );
 
+  useLayoutEffect(() => {
+    clearFlashMessageTimeout();
+    clearPendingSearchFlash();
+    clearPendingFocus();
+    setFlashingMessageId(null);
+    setIsFlashHighlightVisible(false);
+  }, [
+    clearFlashMessageTimeout,
+    clearPendingFocus,
+    clearPendingSearchFlash,
+    resetKey,
+  ]);
+
   useEffect(() => {
     return () => {
-      if (flashMessageTimeoutRef.current) {
-        clearTimeout(flashMessageTimeoutRef.current);
-        flashMessageTimeoutRef.current = null;
-      }
-
-      if (pendingSearchFlashRafRef.current !== null) {
-        cancelAnimationFrame(pendingSearchFlashRafRef.current);
-        pendingSearchFlashRafRef.current = null;
-      }
-
-      if (pendingFocusRafRef.current !== null) {
-        cancelAnimationFrame(pendingFocusRafRef.current);
-        pendingFocusRafRef.current = null;
-      }
+      clearFlashMessageTimeout();
+      clearPendingSearchFlash();
+      clearPendingFocus();
     };
-  }, []);
+  }, [clearFlashMessageTimeout, clearPendingFocus, clearPendingSearchFlash]);
 
   return {
     flashingMessageId,

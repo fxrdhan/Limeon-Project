@@ -1,3 +1,4 @@
+import { hasErrorStringFields } from '@/lib/errorFields';
 import type { PostgrestError } from '@supabase/supabase-js';
 
 const CHAT_CONTRACT_ERROR_CODE = 'CHAT_CONTRACT_INVALID';
@@ -48,16 +49,7 @@ export const createPostgrestError = (
 };
 
 const isPostgrestError = (error: unknown): error is PostgrestError =>
-  typeof error === 'object' &&
-  error !== null &&
-  'code' in error &&
-  typeof error.code === 'string' &&
-  'details' in error &&
-  typeof error.details === 'string' &&
-  'hint' in error &&
-  typeof error.hint === 'string' &&
-  'message' in error &&
-  typeof error.message === 'string';
+  hasErrorStringFields(error, ['code', 'details', 'hint', 'message']);
 
 export const createChatContractError = (
   message: string,

@@ -10,6 +10,7 @@ import {
 } from 'vite-plus/test';
 import { MESSAGE_BOTTOM_GAP } from '../constants';
 import { useChatViewport } from '../hooks/useChatViewport';
+import { useChatViewportFocus } from '../hooks/useChatViewportFocus';
 
 const createRect = (top: number, bottom: number): DOMRect =>
   ({
@@ -162,6 +163,369 @@ describe('useChatViewport', () => {
     expect(markMessageIdsAsRead).toHaveBeenCalledWith(['incoming-1']);
 
     unmount();
+  });
+
+  it('clears a focused message flash when the channel changes', () => {
+    const queuedFrames = new Map<number, FrameRequestCallback>();
+    let nextFrameId = 1;
+    const originalRequestAnimationFrame = window.requestAnimationFrame;
+    const originalCancelAnimationFrame = window.cancelAnimationFrame;
+    const cancelAnimationFrameMock = vi.fn((frameId: number) => {
+      queuedFrames.delete(frameId);
+    });
+    vi.stubGlobal('requestAnimationFrame', ((
+      callback: FrameRequestCallback
+    ) => {
+      const frameId = nextFrameId;
+      nextFrameId += 1;
+      queuedFrames.set(frameId, callback);
+      return frameId;
+    }) as typeof requestAnimationFrame);
+    vi.stubGlobal(
+      'cancelAnimationFrame',
+      cancelAnimationFrameMock as typeof cancelAnimationFrame
+    );
+    window.requestAnimationFrame = requestAnimationFrame;
+    window.cancelAnimationFrame = cancelAnimationFrame;
+
+    const flushQueuedFrames = () => {
+      const frames = Array.from(queuedFrames.entries());
+      queuedFrames.clear();
+
+      for (const [frameId, callback] of frames) {
+        callback(frameId);
+      }
+    };
+
+    try {
+      const messagesContainer = document.createElement('div');
+      const chatHeaderContainer = document.createElement('div');
+      const messageBubble = document.createElement('div');
+
+      Object.defineProperty(messagesContainer, 'scrollTop', {
+        configurable: true,
+        value: 120,
+        writable: true,
+      });
+      messagesContainer.getBoundingClientRect = () => createRect(0, 400);
+      chatHeaderContainer.getBoundingClientRect = () => createRect(0, 48);
+      messageBubble.getBoundingClientRect = () => createRect(160, 220);
+
+      const messagesContainerRef = createRef<HTMLDivElement>();
+      const chatHeaderContainerRef = createRef<HTMLDivElement>();
+      const messageBubbleRefs = {
+        current: new Map<string, HTMLDivElement>([
+          ['message-1', messageBubble],
+        ]),
+      };
+
+      messagesContainerRef.current = messagesContainer;
+      chatHeaderContainerRef.current = chatHeaderContainer;
+
+      const { result, rerender } = renderHook(
+        ({ resetKey }: { resetKey: string }) =>
+          useChatViewportFocus({
+            getVisibleMessagesBounds: () => ({
+              containerRect: createRect(0, 400),
+              visibleBottom: 400,
+            }),
+            closeMessageMenu: vi.fn(),
+            chatHeaderContainerRef,
+            messageBubbleRefs,
+            messagesContainerRef,
+            editingMessageId: null,
+            resetKey,
+          }),
+        {
+          initialProps: { resetKey: 'channel-1' },
+        }
+      );
+
+      act(() => {
+        result.current.focusReplyTargetMessage('message-1');
+      });
+      act(() => {
+        flushQueuedFrames();
+        vi.advanceTimersByTime(24);
+        flushQueuedFrames();
+      });
+
+      expect(result.current.flashingMessageId).toBe('message-1');
+      expect(result.current.isFlashHighlightVisible).toBe(true);
+
+      rerender({ resetKey: 'channel-2' });
+
+      expect(result.current.flashingMessageId).toBeNull();
+      expect(result.current.isFlashHighlightVisible).toBe(false);
+
+      act(() => {
+        vi.advanceTimersByTime(10_000);
+        flushQueuedFrames();
+      });
+
+      expect(result.current.flashingMessageId).toBeNull();
+      expect(result.current.isFlashHighlightVisible).toBe(false);
+    } finally {
+      vi.stubGlobal('requestAnimationFrame', originalRequestAnimationFrame);
+      vi.stubGlobal('cancelAnimationFrame', originalCancelAnimationFrame);
+      window.requestAnimationFrame = originalRequestAnimationFrame;
+      window.cancelAnimationFrame = originalCancelAnimationFrame;
+    }
+  });
+
+  it('cancels a pending read receipt check when the chat target changes', () => {
+    const messagesContainer = document.createElement('div');
+    const messagesEnd = document.createElement('div');
+    const composerContainer = document.createElement('div');
+    const chatHeaderContainer = document.createElement('div');
+    const messageBubble = document.createElement('div');
+
+    Object.defineProperty(messagesContainer, 'clientHeight', {
+      configurable: true,
+      value: 400,
+    });
+    Object.defineProperty(messagesContainer, 'scrollHeight', {
+      configurable: true,
+      value: 800,
+    });
+    Object.defineProperty(messagesContainer, 'scrollTop', {
+      configurable: true,
+      value: 120,
+      writable: true,
+    });
+    Object.defineProperty(composerContainer, 'offsetHeight', {
+      configurable: true,
+      value: 80,
+    });
+
+    messagesContainer.getBoundingClientRect = () => createRect(0, 400);
+    composerContainer.getBoundingClientRect = () => createRect(320, 400);
+    messageBubble.getBoundingClientRect = () => createRect(60, 120);
+    messagesEnd.getBoundingClientRect = () => createRect(760, 760);
+
+    const messagesContainerRef = createRef<HTMLDivElement>();
+    const messagesEndRef = createRef<HTMLDivElement>();
+    const composerContainerRef = createRef<HTMLDivElement>();
+    const chatHeaderContainerRef = createRef<HTMLDivElement>();
+    const messageBubbleRefs = {
+      current: new Map<string, HTMLDivElement>([['incoming-1', messageBubble]]),
+    };
+
+    messagesContainerRef.current = messagesContainer;
+    messagesEndRef.current = messagesEnd;
+    composerContainerRef.current = composerContainer;
+    chatHeaderContainerRef.current = chatHeaderContainer;
+
+    const markMessageIdsAsRead = vi.fn().mockResolvedValue(undefined);
+
+    const { rerender, unmount } = renderHook(
+      ({ targetUserId }: { targetUserId: string }) =>
+        useChatViewport({
+          isOpen: true,
+          currentChannelId: 'channel-1',
+          messages: [
+            {
+              id: 'incoming-1',
+              sender_id: 'user-b',
+              receiver_id: 'user-a',
+              is_read: false,
+            },
+          ],
+          userId: 'user-a',
+          targetUserId,
+          messagesCount: 1,
+          loading: false,
+          messageInputHeight: 22,
+          composerContextualOffset: 0,
+          isMessageInputMultiline: false,
+          pendingComposerAttachmentsCount: 0,
+          normalizedMessageSearchQuery: '',
+          isMessageSearchMode: false,
+          activeSearchMessageId: null,
+          searchNavigationTick: 0,
+          editingMessageId: null,
+          focusMessageComposer: vi.fn(),
+          markMessageIdsAsRead,
+          messagesContainerRef,
+          messagesEndRef,
+          composerContainerRef,
+          chatHeaderContainerRef,
+          messageBubbleRefs,
+        }),
+      {
+        initialProps: { targetUserId: 'user-b' },
+      }
+    );
+
+    act(() => {
+      vi.runAllTimers();
+    });
+    markMessageIdsAsRead.mockClear();
+
+    act(() => {
+      messagesContainer.dispatchEvent(new Event('scroll'));
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(89);
+    });
+
+    rerender({ targetUserId: 'user-c' });
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+
+    expect(markMessageIdsAsRead).not.toHaveBeenCalled();
+
+    unmount();
+  });
+
+  it('cancels a pending scroll state frame after unmount', () => {
+    const queuedFrames = new Map<number, FrameRequestCallback>();
+    let nextFrameId = 1;
+    const originalRequestAnimationFrame = window.requestAnimationFrame;
+    const originalCancelAnimationFrame = window.cancelAnimationFrame;
+    const cancelAnimationFrameMock = vi.fn((frameId: number) => {
+      queuedFrames.delete(frameId);
+    });
+    vi.stubGlobal('requestAnimationFrame', ((
+      callback: FrameRequestCallback
+    ) => {
+      const frameId = nextFrameId;
+      nextFrameId += 1;
+      queuedFrames.set(frameId, callback);
+      return frameId;
+    }) as typeof requestAnimationFrame);
+    vi.stubGlobal(
+      'cancelAnimationFrame',
+      cancelAnimationFrameMock as typeof cancelAnimationFrame
+    );
+    window.requestAnimationFrame = requestAnimationFrame;
+    window.cancelAnimationFrame = cancelAnimationFrame;
+
+    const flushQueuedFrames = () => {
+      const frames = Array.from(queuedFrames.entries());
+      queuedFrames.clear();
+
+      for (const [frameId, callback] of frames) {
+        callback(frameId);
+      }
+    };
+
+    try {
+      const messagesContainer = document.createElement('div');
+      const messagesEnd = document.createElement('div');
+      const composerContainer = document.createElement('div');
+      const chatHeaderContainer = document.createElement('div');
+      const messageBubble = document.createElement('div');
+
+      Object.defineProperty(messagesContainer, 'clientHeight', {
+        configurable: true,
+        value: 400,
+      });
+      Object.defineProperty(messagesContainer, 'scrollHeight', {
+        configurable: true,
+        value: 800,
+      });
+      Object.defineProperty(messagesContainer, 'scrollTop', {
+        configurable: true,
+        value: 120,
+        writable: true,
+      });
+      Object.defineProperty(composerContainer, 'offsetHeight', {
+        configurable: true,
+        value: 80,
+      });
+
+      messagesContainer.getBoundingClientRect = () => createRect(0, 400);
+      composerContainer.getBoundingClientRect = () => createRect(320, 400);
+      messageBubble.getBoundingClientRect = () => createRect(60, 120);
+      messagesEnd.getBoundingClientRect = () => createRect(760, 760);
+
+      const messagesContainerRef = createRef<HTMLDivElement>();
+      const messagesEndRef = createRef<HTMLDivElement>();
+      const composerContainerRef = createRef<HTMLDivElement>();
+      const chatHeaderContainerRef = createRef<HTMLDivElement>();
+      const messageBubbleRefs = {
+        current: new Map<string, HTMLDivElement>([
+          ['incoming-1', messageBubble],
+        ]),
+      };
+
+      messagesContainerRef.current = messagesContainer;
+      messagesEndRef.current = messagesEnd;
+      composerContainerRef.current = composerContainer;
+      chatHeaderContainerRef.current = chatHeaderContainer;
+
+      const markMessageIdsAsRead = vi.fn().mockResolvedValue(undefined);
+
+      const { unmount } = renderHook(() =>
+        useChatViewport({
+          isOpen: true,
+          currentChannelId: 'channel-1',
+          messages: [
+            {
+              id: 'incoming-1',
+              sender_id: 'user-b',
+              receiver_id: 'user-a',
+              is_read: false,
+            },
+          ],
+          userId: 'user-a',
+          targetUserId: 'user-b',
+          messagesCount: 1,
+          loading: false,
+          messageInputHeight: 22,
+          composerContextualOffset: 0,
+          isMessageInputMultiline: false,
+          pendingComposerAttachmentsCount: 0,
+          normalizedMessageSearchQuery: '',
+          isMessageSearchMode: false,
+          activeSearchMessageId: null,
+          searchNavigationTick: 0,
+          editingMessageId: null,
+          focusMessageComposer: vi.fn(),
+          markMessageIdsAsRead,
+          messagesContainerRef,
+          messagesEndRef,
+          composerContainerRef,
+          chatHeaderContainerRef,
+          messageBubbleRefs,
+        })
+      );
+
+      act(() => {
+        flushQueuedFrames();
+        flushQueuedFrames();
+        vi.runOnlyPendingTimers();
+      });
+      markMessageIdsAsRead.mockClear();
+      cancelAnimationFrameMock.mockClear();
+
+      act(() => {
+        messagesContainer.dispatchEvent(new Event('scroll'));
+      });
+
+      const scrollFrameId = nextFrameId - 1;
+      expect(queuedFrames.has(scrollFrameId)).toBe(true);
+
+      unmount();
+
+      expect(cancelAnimationFrameMock).toHaveBeenCalledWith(scrollFrameId);
+
+      act(() => {
+        flushQueuedFrames();
+        vi.advanceTimersByTime(100);
+      });
+
+      expect(markMessageIdsAsRead).not.toHaveBeenCalled();
+    } finally {
+      vi.stubGlobal('requestAnimationFrame', originalRequestAnimationFrame);
+      vi.stubGlobal('cancelAnimationFrame', originalCancelAnimationFrame);
+      window.requestAnimationFrame = originalRequestAnimationFrame;
+      window.cancelAnimationFrame = originalCancelAnimationFrame;
+    }
   });
 
   it('does not mark an incoming message as read while it is still hidden behind the sticky header', () => {
@@ -440,6 +804,100 @@ describe('useChatViewport', () => {
 
     expect(result.current.menuPlacement).toBe('left');
     expect(messagesContainer.scrollTop).toBe(76);
+
+    messagesContainer.remove();
+  });
+
+  it('closes an open message menu when the channel changes', () => {
+    const messagesContainer = document.createElement('div');
+    const messagesEnd = document.createElement('div');
+    const composerContainer = document.createElement('div');
+    const chatHeaderContainer = document.createElement('div');
+    const anchor = document.createElement('div');
+
+    document.body.append(messagesContainer);
+    messagesContainer.append(anchor);
+
+    Object.defineProperty(messagesContainer, 'clientHeight', {
+      configurable: true,
+      value: 400,
+    });
+    Object.defineProperty(messagesContainer, 'scrollHeight', {
+      configurable: true,
+      value: 800,
+    });
+    Object.defineProperty(messagesContainer, 'scrollTop', {
+      configurable: true,
+      value: 120,
+      writable: true,
+    });
+    Object.defineProperty(composerContainer, 'offsetHeight', {
+      configurable: true,
+      value: 80,
+    });
+
+    messagesContainer.getBoundingClientRect = () => createRect(0, 400);
+    composerContainer.getBoundingClientRect = () => createRect(320, 400);
+    messagesEnd.getBoundingClientRect = () => createRect(760, 760);
+    anchor.getBoundingClientRect = () => createRect(156, 252);
+
+    const messagesContainerRef = createRef<HTMLDivElement>();
+    const messagesEndRef = createRef<HTMLDivElement>();
+    const composerContainerRef = createRef<HTMLDivElement>();
+    const chatHeaderContainerRef = createRef<HTMLDivElement>();
+    const messageBubbleRefs = {
+      current: new Map<string, HTMLDivElement>(),
+    };
+
+    messagesContainerRef.current = messagesContainer;
+    messagesEndRef.current = messagesEnd;
+    composerContainerRef.current = composerContainer;
+    chatHeaderContainerRef.current = chatHeaderContainer;
+
+    const { result, rerender } = renderHook(
+      ({ channelId }: { channelId: string }) =>
+        useChatViewport({
+          isOpen: true,
+          currentChannelId: channelId,
+          messages: [],
+          userId: 'user-a',
+          targetUserId: 'user-b',
+          messagesCount: 0,
+          loading: false,
+          messageInputHeight: 22,
+          composerContextualOffset: 0,
+          isMessageInputMultiline: false,
+          pendingComposerAttachmentsCount: 0,
+          normalizedMessageSearchQuery: '',
+          isMessageSearchMode: false,
+          activeSearchMessageId: null,
+          searchNavigationTick: 0,
+          editingMessageId: null,
+          focusMessageComposer: vi.fn(),
+          markMessageIdsAsRead: vi.fn().mockResolvedValue(undefined),
+          messagesContainerRef,
+          messagesEndRef,
+          composerContainerRef,
+          chatHeaderContainerRef,
+          messageBubbleRefs,
+        }),
+      {
+        initialProps: { channelId: 'channel-1' },
+      }
+    );
+
+    act(() => {
+      result.current.toggleMessageMenu(anchor, 'message-1', 'left');
+    });
+
+    expect(result.current.openMenuMessageId).toBe('message-1');
+    expect(result.current.menuDimmingMessageId).toBe('message-1');
+
+    rerender({ channelId: 'channel-2' });
+
+    expect(result.current.openMenuMessageId).toBeNull();
+    expect(result.current.menuDimmingMessageId).toBeNull();
+    expect(result.current.menuTransitionSourceId).toBeNull();
 
     messagesContainer.remove();
   });
@@ -1939,6 +2397,465 @@ describe('useChatViewport', () => {
     expect(result.current.hasNewMessages).toBe(false);
 
     unmount();
+  });
+
+  it('cancels a scheduled scroll-to-bottom frame after unmount', () => {
+    const queuedFrames = new Map<number, FrameRequestCallback>();
+    let nextFrameId = 1;
+    const originalRequestAnimationFrame = window.requestAnimationFrame;
+    const originalCancelAnimationFrame = window.cancelAnimationFrame;
+    const cancelAnimationFrameMock = vi.fn((frameId: number) => {
+      queuedFrames.delete(frameId);
+    });
+    vi.stubGlobal('requestAnimationFrame', ((
+      callback: FrameRequestCallback
+    ) => {
+      const frameId = nextFrameId;
+      nextFrameId += 1;
+      queuedFrames.set(frameId, callback);
+      return frameId;
+    }) as typeof requestAnimationFrame);
+    vi.stubGlobal(
+      'cancelAnimationFrame',
+      cancelAnimationFrameMock as typeof cancelAnimationFrame
+    );
+    window.requestAnimationFrame = requestAnimationFrame;
+    window.cancelAnimationFrame = cancelAnimationFrame;
+
+    const flushQueuedFrames = () => {
+      const frames = Array.from(queuedFrames.entries());
+      queuedFrames.clear();
+
+      for (const [frameId, callback] of frames) {
+        callback(frameId);
+      }
+    };
+
+    try {
+      const messagesContainer = document.createElement('div');
+      const messagesEnd = document.createElement('div');
+      const composerContainer = document.createElement('div');
+      const chatHeaderContainer = document.createElement('div');
+      let scrollTop = 0;
+
+      Object.defineProperty(messagesContainer, 'clientHeight', {
+        configurable: true,
+        value: 400,
+      });
+      Object.defineProperty(messagesContainer, 'scrollHeight', {
+        configurable: true,
+        value: 900,
+      });
+      Object.defineProperty(messagesContainer, 'scrollTop', {
+        configurable: true,
+        get: () => scrollTop,
+        set: value => {
+          scrollTop = value;
+        },
+      });
+      const scrollTo = vi.fn(({ top }: ScrollToOptions) => {
+        scrollTop = top ?? scrollTop;
+      });
+      stubScrollTo(messagesContainer, scrollTo);
+      Object.defineProperty(composerContainer, 'offsetHeight', {
+        configurable: true,
+        value: 80,
+      });
+
+      messagesContainer.getBoundingClientRect = () => createRect(0, 400);
+      composerContainer.getBoundingClientRect = () => createRect(320, 400);
+      messagesEnd.getBoundingClientRect = () => createRect(860, 860);
+
+      const messagesContainerRef = createRef<HTMLDivElement>();
+      const messagesEndRef = createRef<HTMLDivElement>();
+      const composerContainerRef = createRef<HTMLDivElement>();
+      const chatHeaderContainerRef = createRef<HTMLDivElement>();
+      const messageBubbleRefs = {
+        current: new Map<string, HTMLDivElement>(),
+      };
+
+      messagesContainerRef.current = messagesContainer;
+      messagesEndRef.current = messagesEnd;
+      composerContainerRef.current = composerContainer;
+      chatHeaderContainerRef.current = chatHeaderContainer;
+
+      const { result, unmount } = renderHook(() =>
+        useChatViewport({
+          isOpen: true,
+          currentChannelId: 'channel-1',
+          messages: [],
+          userId: 'user-a',
+          targetUserId: 'user-b',
+          messagesCount: 0,
+          loading: false,
+          messageInputHeight: 22,
+          composerContextualOffset: 0,
+          isMessageInputMultiline: false,
+          pendingComposerAttachmentsCount: 0,
+          normalizedMessageSearchQuery: '',
+          isMessageSearchMode: false,
+          activeSearchMessageId: null,
+          searchNavigationTick: 0,
+          editingMessageId: null,
+          focusMessageComposer: vi.fn(),
+          markMessageIdsAsRead: vi.fn().mockResolvedValue(undefined),
+          messagesContainerRef,
+          messagesEndRef,
+          composerContainerRef,
+          chatHeaderContainerRef,
+          messageBubbleRefs,
+        })
+      );
+
+      act(() => {
+        flushQueuedFrames();
+        flushQueuedFrames();
+        vi.runOnlyPendingTimers();
+      });
+      scrollTo.mockClear();
+      cancelAnimationFrameMock.mockClear();
+
+      act(() => {
+        result.current.scheduleScrollMessagesToBottom();
+      });
+
+      const scrollFrameId = nextFrameId - 1;
+      expect(queuedFrames.has(scrollFrameId)).toBe(true);
+
+      unmount();
+
+      expect(cancelAnimationFrameMock).toHaveBeenCalledWith(scrollFrameId);
+
+      act(() => {
+        flushQueuedFrames();
+      });
+
+      expect(scrollTo).not.toHaveBeenCalled();
+      expect(scrollTop).toBe(0);
+    } finally {
+      vi.stubGlobal('requestAnimationFrame', originalRequestAnimationFrame);
+      vi.stubGlobal('cancelAnimationFrame', originalCancelAnimationFrame);
+      window.requestAnimationFrame = originalRequestAnimationFrame;
+      window.cancelAnimationFrame = originalCancelAnimationFrame;
+    }
+  });
+
+  it('cancels an active scroll-to-bottom animation when the channel changes', () => {
+    const queuedFrames = new Map<number, FrameRequestCallback>();
+    let nextFrameId = 1;
+    const originalRequestAnimationFrame = window.requestAnimationFrame;
+    const originalCancelAnimationFrame = window.cancelAnimationFrame;
+    const cancelAnimationFrameMock = vi.fn((frameId: number) => {
+      queuedFrames.delete(frameId);
+    });
+    vi.stubGlobal('requestAnimationFrame', ((
+      callback: FrameRequestCallback
+    ) => {
+      const frameId = nextFrameId;
+      nextFrameId += 1;
+      queuedFrames.set(frameId, callback);
+      return frameId;
+    }) as typeof requestAnimationFrame);
+    vi.stubGlobal(
+      'cancelAnimationFrame',
+      cancelAnimationFrameMock as typeof cancelAnimationFrame
+    );
+    window.requestAnimationFrame = requestAnimationFrame;
+    window.cancelAnimationFrame = cancelAnimationFrame;
+
+    const flushQueuedFrames = () => {
+      const frames = Array.from(queuedFrames.entries());
+      queuedFrames.clear();
+
+      for (const [frameId, callback] of frames) {
+        callback(frameId);
+      }
+    };
+
+    try {
+      const messagesContainer = document.createElement('div');
+      const messagesEnd = document.createElement('div');
+      const composerContainer = document.createElement('div');
+      const chatHeaderContainer = document.createElement('div');
+      let scrollTop = 0;
+
+      Object.defineProperty(messagesContainer, 'clientHeight', {
+        configurable: true,
+        value: 400,
+      });
+      Object.defineProperty(messagesContainer, 'scrollHeight', {
+        configurable: true,
+        value: 900,
+      });
+      Object.defineProperty(messagesContainer, 'scrollTop', {
+        configurable: true,
+        get: () => scrollTop,
+        set: value => {
+          scrollTop = value;
+        },
+      });
+      const scrollTo = vi.fn(({ top }: ScrollToOptions) => {
+        scrollTop = top ?? scrollTop;
+      });
+      stubScrollTo(messagesContainer, scrollTo);
+      Object.defineProperty(composerContainer, 'offsetHeight', {
+        configurable: true,
+        value: 80,
+      });
+
+      messagesContainer.getBoundingClientRect = () => createRect(0, 400);
+      composerContainer.getBoundingClientRect = () => createRect(320, 400);
+      messagesEnd.getBoundingClientRect = () =>
+        createRect(860 - scrollTop, 860 - scrollTop);
+
+      const messagesContainerRef = createRef<HTMLDivElement>();
+      const messagesEndRef = createRef<HTMLDivElement>();
+      const composerContainerRef = createRef<HTMLDivElement>();
+      const chatHeaderContainerRef = createRef<HTMLDivElement>();
+      const messageBubbleRefs = {
+        current: new Map<string, HTMLDivElement>(),
+      };
+
+      messagesContainerRef.current = messagesContainer;
+      messagesEndRef.current = messagesEnd;
+      composerContainerRef.current = composerContainer;
+      chatHeaderContainerRef.current = chatHeaderContainer;
+
+      const { result, rerender } = renderHook(
+        ({ channelId }: { channelId: string }) =>
+          useChatViewport({
+            isOpen: true,
+            currentChannelId: channelId,
+            messages: [],
+            userId: 'user-a',
+            targetUserId: 'user-b',
+            messagesCount: 0,
+            loading: false,
+            messageInputHeight: 22,
+            composerContextualOffset: 0,
+            isMessageInputMultiline: false,
+            pendingComposerAttachmentsCount: 0,
+            normalizedMessageSearchQuery: '',
+            isMessageSearchMode: false,
+            activeSearchMessageId: null,
+            searchNavigationTick: 0,
+            editingMessageId: null,
+            focusMessageComposer: vi.fn(),
+            markMessageIdsAsRead: vi.fn().mockResolvedValue(undefined),
+            messagesContainerRef,
+            messagesEndRef,
+            composerContainerRef,
+            chatHeaderContainerRef,
+            messageBubbleRefs,
+          }),
+        {
+          initialProps: { channelId: 'channel-1' },
+        }
+      );
+
+      act(() => {
+        flushQueuedFrames();
+        vi.runOnlyPendingTimers();
+      });
+      scrollTo.mockClear();
+      cancelAnimationFrameMock.mockClear();
+
+      act(() => {
+        result.current.scrollToBottom();
+      });
+
+      const scrollFrameId = nextFrameId - 1;
+      expect(queuedFrames.has(scrollFrameId)).toBe(true);
+
+      rerender({ channelId: 'channel-2' });
+
+      expect(cancelAnimationFrameMock).toHaveBeenCalledWith(scrollFrameId);
+
+      act(() => {
+        flushQueuedFrames();
+      });
+
+      expect(scrollTo).not.toHaveBeenCalled();
+      expect(scrollTop).toBe(0);
+    } finally {
+      vi.stubGlobal('requestAnimationFrame', originalRequestAnimationFrame);
+      vi.stubGlobal('cancelAnimationFrame', originalCancelAnimationFrame);
+      window.requestAnimationFrame = originalRequestAnimationFrame;
+      window.cancelAnimationFrame = originalCancelAnimationFrame;
+    }
+  });
+
+  it('cancels a pending resize sync frame after unmount', () => {
+    const queuedFrames = new Map<number, FrameRequestCallback>();
+    let nextFrameId = 1;
+    const originalRequestAnimationFrame = window.requestAnimationFrame;
+    const originalCancelAnimationFrame = window.cancelAnimationFrame;
+    const originalResizeObserver = globalThis.ResizeObserver;
+    const cancelAnimationFrameMock = vi.fn((frameId: number) => {
+      queuedFrames.delete(frameId);
+    });
+    vi.stubGlobal('requestAnimationFrame', ((
+      callback: FrameRequestCallback
+    ) => {
+      const frameId = nextFrameId;
+      nextFrameId += 1;
+      queuedFrames.set(frameId, callback);
+      return frameId;
+    }) as typeof requestAnimationFrame);
+    vi.stubGlobal(
+      'cancelAnimationFrame',
+      cancelAnimationFrameMock as typeof cancelAnimationFrame
+    );
+    window.requestAnimationFrame = requestAnimationFrame;
+    window.cancelAnimationFrame = cancelAnimationFrame;
+
+    const resizeObserverCallbacks = new Map<Element, ResizeObserverCallback>();
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        private readonly callback: ResizeObserverCallback;
+
+        constructor(callback: ResizeObserverCallback) {
+          this.callback = callback;
+        }
+
+        observe(target: Element) {
+          resizeObserverCallbacks.set(target, this.callback);
+        }
+
+        disconnect() {}
+      }
+    );
+
+    const flushQueuedFrames = () => {
+      const frames = Array.from(queuedFrames.entries());
+      queuedFrames.clear();
+
+      for (const [frameId, callback] of frames) {
+        callback(frameId);
+      }
+    };
+
+    try {
+      const messagesContainer = document.createElement('div');
+      const messagesContent = document.createElement('div');
+      const messagesEnd = document.createElement('div');
+      const composerContainer = document.createElement('div');
+      const chatHeaderContainer = document.createElement('div');
+      let scrollTop = 452;
+      let contentHeight = 852;
+
+      Object.defineProperty(messagesContainer, 'clientHeight', {
+        configurable: true,
+        value: 400,
+      });
+      Object.defineProperty(messagesContainer, 'scrollHeight', {
+        configurable: true,
+        value: 912,
+      });
+      Object.defineProperty(messagesContainer, 'scrollTop', {
+        configurable: true,
+        get: () => scrollTop,
+        set: value => {
+          scrollTop = value;
+        },
+      });
+      const scrollTo = vi.fn(({ top }: ScrollToOptions) => {
+        scrollTop = top ?? scrollTop;
+      });
+      stubScrollTo(messagesContainer, scrollTo);
+      Object.defineProperty(composerContainer, 'offsetHeight', {
+        configurable: true,
+        value: 80,
+      });
+
+      messagesContainer.getBoundingClientRect = () => createRect(0, 400);
+      messagesContent.getBoundingClientRect = () =>
+        createRect(0, contentHeight);
+      composerContainer.getBoundingClientRect = () => createRect(320, 400);
+      messagesEnd.getBoundingClientRect = () =>
+        createRect(852 - scrollTop, 852 - scrollTop);
+
+      const messagesContainerRef = createRef<HTMLDivElement>();
+      const messagesContentRef = createRef<HTMLDivElement>();
+      const messagesEndRef = createRef<HTMLDivElement>();
+      const composerContainerRef = createRef<HTMLDivElement>();
+      const chatHeaderContainerRef = createRef<HTMLDivElement>();
+      const messageBubbleRefs = {
+        current: new Map<string, HTMLDivElement>(),
+      };
+
+      messagesContainerRef.current = messagesContainer;
+      messagesContentRef.current = messagesContent;
+      messagesEndRef.current = messagesEnd;
+      composerContainerRef.current = composerContainer;
+      chatHeaderContainerRef.current = chatHeaderContainer;
+
+      const { unmount } = renderHook(() =>
+        useChatViewport({
+          isOpen: true,
+          currentChannelId: 'channel-1',
+          messages: [],
+          userId: 'user-a',
+          targetUserId: 'user-b',
+          messagesCount: 0,
+          loading: false,
+          messageInputHeight: 22,
+          composerContextualOffset: 0,
+          isMessageInputMultiline: false,
+          pendingComposerAttachmentsCount: 0,
+          normalizedMessageSearchQuery: '',
+          isMessageSearchMode: false,
+          activeSearchMessageId: null,
+          searchNavigationTick: 0,
+          editingMessageId: null,
+          focusMessageComposer: vi.fn(),
+          markMessageIdsAsRead: vi.fn().mockResolvedValue(undefined),
+          messagesContainerRef,
+          messagesContentRef,
+          messagesEndRef,
+          composerContainerRef,
+          chatHeaderContainerRef,
+          messageBubbleRefs,
+        })
+      );
+
+      act(() => {
+        flushQueuedFrames();
+        flushQueuedFrames();
+        vi.runOnlyPendingTimers();
+      });
+      scrollTo.mockClear();
+      cancelAnimationFrameMock.mockClear();
+
+      contentHeight = 912;
+      act(() => {
+        resizeObserverCallbacks.get(messagesContent)?.(
+          [],
+          {} as ResizeObserver
+        );
+      });
+
+      const resizeFrameId = nextFrameId - 1;
+      expect(queuedFrames.has(resizeFrameId)).toBe(true);
+
+      unmount();
+
+      expect(cancelAnimationFrameMock).toHaveBeenCalledWith(resizeFrameId);
+
+      act(() => {
+        flushQueuedFrames();
+      });
+
+      expect(scrollTo).not.toHaveBeenCalled();
+      expect(scrollTop).toBe(452);
+    } finally {
+      vi.stubGlobal('requestAnimationFrame', originalRequestAnimationFrame);
+      vi.stubGlobal('cancelAnimationFrame', originalCancelAnimationFrame);
+      vi.stubGlobal('ResizeObserver', originalResizeObserver);
+      window.requestAnimationFrame = originalRequestAnimationFrame;
+      window.cancelAnimationFrame = originalCancelAnimationFrame;
+    }
   });
 
   it('preserves the visible messages when the composer tray grows while not pinned to bottom', () => {

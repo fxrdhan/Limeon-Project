@@ -62,6 +62,16 @@ export const useItemMasterTabNavigation = ({
   const lastNavigationTimeRef = useRef<number>(0);
   const pendingTabRef = useRef<MasterDataType | null>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const filterUnlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+
+  const clearFilterUnlockTimer = useCallback(() => {
+    if (filterUnlockTimerRef.current) {
+      clearTimeout(filterUnlockTimerRef.current);
+      filterUnlockTimerRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -69,9 +79,10 @@ export const useItemMasterTabNavigation = ({
         clearTimeout(debounceTimerRef.current);
         debounceTimerRef.current = null;
       }
+      clearFilterUnlockTimer();
       pendingTabRef.current = null;
     };
-  }, []);
+  }, [clearFilterUnlockTimer]);
 
   useEffect(() => {
     if (debounceTimerRef.current) {
@@ -128,8 +139,10 @@ export const useItemMasterTabNavigation = ({
       currentSearchRuntime.clearUiOnly();
       resetVisibleColumns();
 
-      setTimeout(() => {
+      clearFilterUnlockTimer();
+      filterUnlockTimerRef.current = setTimeout(() => {
         isTabSwitchingRef.current = false;
+        filterUnlockTimerRef.current = null;
       }, TAB_SWITCH_FILTER_UNLOCK_DELAY_MS);
 
       clearOpenModals();
@@ -137,6 +150,7 @@ export const useItemMasterTabNavigation = ({
     [
       activeTab,
       clearOpenModals,
+      clearFilterUnlockTimer,
       isTabSwitchingRef,
       navigate,
       resetVisibleColumns,

@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { PostgrestError } from '@supabase/supabase-js';
+import { toServiceError, type ServiceError } from '@/services/api/base.service';
 
 // Raw database result with joined tables
 export interface DBItemWithRelations {
@@ -89,7 +89,7 @@ export interface ItemQueryOptions {
 
 export interface ItemRepositoryResponse<T> {
   data: T | null;
-  error: PostgrestError | null;
+  error: ServiceError | null;
 }
 
 export class ItemRepository {
@@ -144,13 +144,17 @@ export class ItemRepository {
 
   // Manufacturer data now comes from JOIN - no caching needed!
 
+  private buildItemsQuery(select: string) {
+    return supabase.from('items').select(select);
+  }
+
   async getItems(
     options: ItemQueryOptions = {}
   ): Promise<ItemRepositoryResponse<DBItemWithRelations[]>> {
     try {
-      let query = supabase
-        .from('items')
-        .select(options.select || ItemRepository.DEFAULT_SELECT);
+      let query = this.buildItemsQuery(
+        options.select || ItemRepository.DEFAULT_SELECT
+      );
 
       // Apply filters
       if (options.filters) {
@@ -166,10 +170,10 @@ export class ItemRepository {
         });
       }
 
-      const { data, error } = await query;
-      return { data: data as DBItemWithRelations[] | null, error };
+      const { data, error } = await query.returns<DBItemWithRelations[]>();
+      return { data, error };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -181,11 +185,12 @@ export class ItemRepository {
         .from('items')
         .select(ItemRepository.DEFAULT_SELECT)
         .eq('id', id)
+        .returns<DBItemWithRelations[]>()
         .single();
 
-      return { data: data as DBItemWithRelations | null, error };
+      return { data, error };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -200,9 +205,9 @@ export class ItemRepository {
     options: ItemQueryOptions = {}
   ): Promise<ItemRepositoryResponse<DBItemWithRelations[]>> {
     try {
-      let supabaseQuery = supabase
-        .from('items')
-        .select(options.select || ItemRepository.DEFAULT_SELECT);
+      let supabaseQuery = this.buildItemsQuery(
+        options.select || ItemRepository.DEFAULT_SELECT
+      );
 
       // Build OR condition for search (using joined manufacturer table)
       const orConditions = searchFields
@@ -225,10 +230,11 @@ export class ItemRepository {
         });
       }
 
-      const { data, error } = await supabaseQuery;
-      return { data: data as DBItemWithRelations[] | null, error };
+      const { data, error } =
+        await supabaseQuery.returns<DBItemWithRelations[]>();
+      return { data, error };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 
@@ -240,11 +246,12 @@ export class ItemRepository {
         .from('items')
         .select(ItemRepository.DEFAULT_SELECT)
         .lte('stock', threshold)
-        .order('stock', { ascending: true });
+        .order('stock', { ascending: true })
+        .returns<DBItemWithRelations[]>();
 
-      return { data: data as DBItemWithRelations[] | null, error };
+      return { data, error };
     } catch (error) {
-      return { data: null, error: error as PostgrestError };
+      return { data: null, error: toServiceError(error) };
     }
   }
 

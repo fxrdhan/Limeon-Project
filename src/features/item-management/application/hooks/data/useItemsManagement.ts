@@ -102,7 +102,7 @@ export const useItemsManagement = (options?: UseItemsManagementOptions) => {
   });
 
   useEffect(() => {
-    (allData as Item[]).forEach(item => {
+    allData.forEach(item => {
       if (!item.id || !Array.isArray(item.image_urls)) return;
       const cacheKey = `item-images:${item.id}`;
       const urls = item.image_urls;
@@ -118,11 +118,11 @@ export const useItemsManagement = (options?: UseItemsManagementOptions) => {
   // Filter items based on search query
   const filteredData = useMemo(() => {
     if (!search || search.trim() === '') {
-      return [...(allData as Item[])].sort(compareItemsByDisplayName);
+      return [...allData].sort(compareItemsByDisplayName);
     }
 
     return filterAndRank<Item>({
-      data: allData as Item[],
+      data: allData,
       searchTerm: search,
       matcher: (item, searchTermLower) => {
         return (

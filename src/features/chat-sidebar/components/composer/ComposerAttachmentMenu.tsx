@@ -136,6 +136,7 @@ export const ComposerAttachmentMenu = ({
       <input
         ref={imageInputRef}
         type="file"
+        aria-label="Lampirkan gambar"
         accept="image/*"
         multiple
         className="hidden"
@@ -144,6 +145,7 @@ export const ComposerAttachmentMenu = ({
       <input
         ref={documentInputRef}
         type="file"
+        aria-label="Lampirkan dokumen"
         accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.ppt,.pptx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/plain,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation"
         multiple
         className="hidden"
@@ -152,6 +154,7 @@ export const ComposerAttachmentMenu = ({
       <input
         ref={audioInputRef}
         type="file"
+        aria-label="Lampirkan audio"
         accept="audio/*"
         multiple
         className="hidden"

@@ -1,7 +1,8 @@
 import { QueryKeys } from '@/constants/queryKeys';
 import type { CompanyProfile, ProfileKey } from '@/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import toast from 'react-hot-toast';
 import { buildProfileEditValues } from '../../domain/profileEditValues';
 import {
   createDefaultCompanyProfile,
@@ -15,6 +16,9 @@ export const useProfilePage = () => {
   const [editValues, setEditValues] = useState<Record<string, string | null>>(
     {}
   );
+  const [isCreatingProfile, setIsCreatingProfile] = useState(false);
+  const createProfileInFlightRef = useRef(false);
+  const mountedRef = useRef(true);
   const queryClient = useQueryClient();
 
   const {
@@ -22,7 +26,7 @@ export const useProfilePage = () => {
     isLoading,
     isError,
     error,
-  } = useQuery<CompanyProfile | null>({
+  } = useQuery<CompanyProfile | null, Error>({
     queryKey: QueryKeys.companyProfile.all,
     queryFn: fetchCompanyProfile,
     staleTime: 30 * 1000,
@@ -35,6 +39,14 @@ export const useProfilePage = () => {
       setEditValues(buildProfileEditValues(profile));
     }
   }, [profile]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const invalidateProfile = () => {
     void queryClient.invalidateQueries({
@@ -52,7 +64,7 @@ export const useProfilePage = () => {
     },
     onError: error => {
       console.error('Error updating profile:', error);
-      alert(`Gagal memperbarui profil: ${error.message}`);
+      toast.error(`Gagal memperbarui profil: ${error.message}`);
     },
   });
 
@@ -82,27 +94,43 @@ export const useProfilePage = () => {
   };
 
   const createProfile = async () => {
+    if (createProfileInFlightRef.current) return false;
+
+    createProfileInFlightRef.current = true;
+    setIsCreatingProfile(true);
+
     try {
       const { data, error } = await createDefaultCompanyProfile();
+      if (!mountedRef.current) return false;
 
       if (error) {
         console.error('Error creating profile:', error);
-        alert(`Gagal membuat profil: ${error.message}`);
-        return;
+        toast.error(`Gagal membuat profil: ${error.message}`);
+        return false;
       }
 
       if (data) {
         invalidateProfile();
         setEditValues(buildProfileEditValues(data));
-        alert('Profil berhasil dibuat. Silakan lengkapi data.');
+        toast.success('Profil berhasil dibuat. Silakan lengkapi data.');
+        return true;
       }
+
+      return false;
     } catch (error) {
+      if (!mountedRef.current) return false;
       console.error('Error:', error);
-      alert(
+      toast.error(
         `Terjadi kesalahan saat membuat profil: ${
           error instanceof Error ? error.message : 'Kesalahan tidak diketahui'
         }`
       );
+      return false;
+    } finally {
+      createProfileInFlightRef.current = false;
+      if (mountedRef.current) {
+        setIsCreatingProfile(false);
+      }
     }
   };
 
@@ -113,6 +141,7 @@ export const useProfilePage = () => {
     error,
     editMode,
     editValues,
+    isCreatingProfile,
     updateProfileMutation,
     toggleEdit,
     handleSave,

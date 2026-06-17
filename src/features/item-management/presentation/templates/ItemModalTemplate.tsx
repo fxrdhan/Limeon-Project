@@ -102,7 +102,10 @@ const ItemModalTemplate: React.FC<ItemModalTemplateProps> = React.memo(
 
       const handleKeyDown = (event: KeyboardEvent) => {
         if (event.key !== 'Tab') return;
-        const activeElement = document.activeElement as HTMLElement | null;
+        const activeElement =
+          document.activeElement instanceof HTMLElement
+            ? document.activeElement
+            : null;
         if (activeElement?.closest('[data-modal-tab-override="true"]')) return;
         if (!container.contains(activeElement)) return;
 

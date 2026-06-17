@@ -10,6 +10,7 @@ import { CHAT_POPUP_MENU_SURFACE_CLASS_NAME } from '../chatPopupSurface';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../../constants';
 import type { ChatMessage } from '../../data/chatSidebarGateway';
 import { copyTextToClipboard } from '../../utils/clipboard';
+import { openInNewTab } from '../../utils/message-file';
 import type { MessageDeliveryStatus } from './MessageBubbleMeta';
 
 interface MessageBubbleContentProps {
@@ -77,9 +78,19 @@ export const MessageBubbleContent = ({
   const [linkContextMenu, setLinkContextMenu] =
     useState<LinkContextMenuState | null>(null);
   const linkContextMenuRef = useRef<HTMLDivElement | null>(null);
+  const linkCopyRequestIdRef = useRef(0);
+  const isLinkContextMountedRef = useRef(true);
   const isSquareImageAttachment = isImageMessage || isImageFileMessage;
   const sendingProgressLabel =
     messageDeliveryStatus === 'sending' ? '0%' : null;
+
+  useEffect(
+    () => () => {
+      isLinkContextMountedRef.current = false;
+      linkCopyRequestIdRef.current += 1;
+    },
+    []
+  );
 
   useEffect(() => {
     if (!linkContextMenu) return;
@@ -119,7 +130,12 @@ export const MessageBubbleContent = ({
           label: 'Buka',
           icon: <TbArrowUpRight className="h-4 w-4" />,
           onClick: () => {
-            window.open(linkContextMenu.href, '_blank', 'noopener,noreferrer');
+            const didOpenLink = openInNewTab(linkContextMenu.href);
+            if (!didOpenLink) {
+              toast.error('Browser memblokir tab baru', {
+                toasterId: CHAT_SIDEBAR_TOASTER_ID,
+              });
+            }
             setLinkContextMenu(null);
           },
         },
@@ -127,19 +143,43 @@ export const MessageBubbleContent = ({
           label: 'Salin',
           icon: <TbCopy className="h-4 w-4" />,
           onClick: () => {
+            const requestId = linkCopyRequestIdRef.current + 1;
+            linkCopyRequestIdRef.current = requestId;
+
             void copyTextToClipboard(linkContextMenu.text)
               .then(() => {
+                if (
+                  !isLinkContextMountedRef.current ||
+                  linkCopyRequestIdRef.current !== requestId
+                ) {
+                  return;
+                }
+
                 toast.success('Link berhasil disalin', {
                   toasterId: CHAT_SIDEBAR_TOASTER_ID,
                 });
               })
               .catch(error => {
+                if (
+                  !isLinkContextMountedRef.current ||
+                  linkCopyRequestIdRef.current !== requestId
+                ) {
+                  return;
+                }
+
                 console.error('Error copying visible message link:', error);
                 toast.error('Gagal menyalin link', {
                   toasterId: CHAT_SIDEBAR_TOASTER_ID,
                 });
               })
               .finally(() => {
+                if (
+                  !isLinkContextMountedRef.current ||
+                  linkCopyRequestIdRef.current !== requestId
+                ) {
+                  return;
+                }
+
                 setLinkContextMenu(null);
               });
           },

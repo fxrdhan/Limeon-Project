@@ -71,6 +71,8 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
     const inputRef = useRef<HTMLInputElement>(null);
     const itemDropdownRef = useRef<HTMLDivElement>(null);
     const openTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const highlightedItemRef = useRef<HTMLDivElement>(null);
     const addItemButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -121,6 +123,14 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
 
     const openDropdown = useCallback(() => {
       if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+        closeTimeoutRef.current = null;
+      }
+      if (blurTimeoutRef.current) {
+        clearTimeout(blurTimeoutRef.current);
+        blurTimeoutRef.current = null;
+      }
       setIsOpen(true);
       setIsClosing(false);
       setHighlightedIndex(-1);
@@ -128,9 +138,17 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
 
     const closeDropdown = useCallback(() => {
       if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
+      if (blurTimeoutRef.current) {
+        clearTimeout(blurTimeoutRef.current);
+        blurTimeoutRef.current = null;
+      }
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+      }
       setIsClosing(true);
       setHighlightedIndex(-1);
-      setTimeout(() => {
+      closeTimeoutRef.current = setTimeout(() => {
+        closeTimeoutRef.current = null;
         setIsOpen(false);
         setIsClosing(false);
         setApplyOpenStyles(false);
@@ -179,12 +197,16 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
       const currentOpenTimeout = openTimeoutRef.current;
 
       const handleClickOutside = (event: MouseEvent) => {
+        if (!(event.target instanceof Node)) {
+          return;
+        }
+
         if (
           isOpen &&
           searchBarRef.current &&
-          !searchBarRef.current.contains(event.target as Node) &&
+          !searchBarRef.current.contains(event.target) &&
           itemDropdownRef.current &&
-          !itemDropdownRef.current.contains(event.target as Node)
+          !itemDropdownRef.current.contains(event.target)
         ) {
           closeDropdown();
         }
@@ -196,6 +218,20 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
       };
     }, [isOpen, closeDropdown, searchBarRef, itemDropdownRef]);
 
+    useEffect(
+      () => () => {
+        if (closeTimeoutRef.current) {
+          clearTimeout(closeTimeoutRef.current);
+          closeTimeoutRef.current = null;
+        }
+        if (blurTimeoutRef.current) {
+          clearTimeout(blurTimeoutRef.current);
+          blurTimeoutRef.current = null;
+        }
+      },
+      []
+    );
+
     // highlightedIndex is now derived from isOpen and items (no effect needed)
 
     const handleItemSelect = (item: Item) => {
@@ -203,13 +239,18 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
     };
 
     const handleInputFocus = () => {
-      if (searchItem && !isOpen && !isClosing) {
+      if (searchItem && (!isOpen || isClosing)) {
         openDropdown();
       }
     };
 
     const handleInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-      setTimeout(() => {
+      if (blurTimeoutRef.current) {
+        clearTimeout(blurTimeoutRef.current);
+      }
+
+      blurTimeoutRef.current = setTimeout(() => {
+        blurTimeoutRef.current = null;
         const newFocusedElement = e.relatedTarget as Node | null;
         const isFocusInsideDropdown =
           itemDropdownRef.current &&
@@ -318,8 +359,7 @@ const ItemSearchBar = forwardRef<ItemSearchBarRef, ItemSearchBarProps>(
                 onSearchItemChange(value);
                 if (
                   value &&
-                  !isOpen &&
-                  !isClosing &&
+                  (!isOpen || isClosing) &&
                   document.activeElement === inputRef.current
                 ) {
                   openDropdown();

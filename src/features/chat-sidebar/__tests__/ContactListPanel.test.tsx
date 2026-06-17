@@ -60,6 +60,8 @@ describe('ContactListPanel', () => {
   it('allows opening the current user as a self chat contact', () => {
     render(<ContactListPanel onClose={vi.fn()} />);
 
+    expect(screen.getByRole('textbox', { name: 'Cari kontak' })).toBeDefined();
+
     const currentUserContact = screen.getByRole('button', {
       name: /admin/i,
     }) as HTMLButtonElement;

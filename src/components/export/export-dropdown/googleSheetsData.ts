@@ -1,30 +1,26 @@
 import type { ColDef, Column, GridApi, IRowNode } from 'ag-grid-community';
 import type { GoogleSheetsExportData } from './types';
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
 const isVisibleFieldColumn = (
   columnDefinition: unknown
 ): columnDefinition is ColDef & { field: string } =>
-  Boolean(
-    columnDefinition &&
-    typeof columnDefinition === 'object' &&
-    'field' in columnDefinition &&
-    columnDefinition.field != null &&
-    !('hide' in columnDefinition && columnDefinition.hide)
-  );
+  isRecord(columnDefinition) &&
+  typeof columnDefinition.field === 'string' &&
+  !columnDefinition.hide;
 
-const getNestedValue = (
-  obj: Record<string, unknown>,
-  path: string
-): unknown => {
+const getNestedValue = (obj: unknown, path: string): unknown => {
   const keys = path.split('.');
   let current: unknown = obj;
 
   for (const key of keys) {
-    if (current && typeof current === 'object' && current !== null) {
-      current = (current as Record<string, unknown>)[key];
-    } else {
+    if (!isRecord(current)) {
       return null;
     }
+
+    current = current[key];
   }
 
   return current;
@@ -104,24 +100,17 @@ const getColumnValue = ({
         api: gridApi,
         context: undefined,
         column: (column || fallbackColumn) as Column,
-        getValue: (field: string) =>
-          getNestedValue(rowData as Record<string, unknown>, field),
+        getValue: (field: string) => getNestedValue(rowData, field),
       });
     } catch (error) {
       console.warn(
         `ValueGetter error for column ${columnDefinition.field}:`,
         error
       );
-      value = getNestedValue(
-        rowData as Record<string, unknown>,
-        columnDefinition.field
-      );
+      value = getNestedValue(rowData, columnDefinition.field);
     }
   } else {
-    value = getNestedValue(
-      rowData as Record<string, unknown>,
-      columnDefinition.field
-    );
+    value = getNestedValue(rowData, columnDefinition.field);
   }
 
   return toExportString(value);

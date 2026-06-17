@@ -50,6 +50,7 @@ export const useComposerPendingAttachments = ({
     replacePendingComposerAttachmentFile,
     restorePendingComposerAttachments,
   } = useComposerAttachmentQueueActions({
+    currentChannelId,
     editingMessageId,
     markPendingComposerAttachmentsDirty,
     messageInputRef,

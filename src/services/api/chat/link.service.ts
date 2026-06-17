@@ -1,6 +1,6 @@
 import { supabase, supabaseUrl } from '@/lib/supabase';
 import type { PostgrestError } from '@supabase/supabase-js';
-import type { ServiceResponse } from '../base.service';
+import { toServiceError, type ServiceResponse } from '../base.service';
 import { createPostgrestError } from './contractErrors';
 import type {
   ChatSharedLinkCreateRequest,
@@ -38,7 +38,7 @@ export const chatLinkService = {
       if (error) {
         return {
           data: null,
-          error: error as PostgrestError,
+          error: toServiceError(error),
         };
       }
 
@@ -69,7 +69,7 @@ export const chatLinkService = {
     } catch (error) {
       return {
         data: null,
-        error: error as PostgrestError,
+        error: toServiceError(error),
       };
     }
   },

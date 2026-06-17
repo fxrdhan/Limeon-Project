@@ -128,6 +128,20 @@ describe('useMessageImagePreviews', () => {
     };
   };
 
+  const createDeferred = <T,>() => {
+    let resolvePromise: ((value: T) => void) | null = null;
+    const promise = new Promise<T>(resolve => {
+      resolvePromise = resolve;
+    });
+
+    return {
+      promise,
+      resolve: (value: T) => {
+        resolvePromise?.(value);
+      },
+    };
+  };
+
   beforeEach(() => {
     vi.useFakeTimers();
     vi.clearAllMocks();
@@ -417,5 +431,73 @@ describe('useMessageImagePreviews', () => {
       'dm_user-a_user-b'
     );
     expect(mockActivateChannelImageAssetScope).not.toHaveBeenCalledWith(null);
+  });
+
+  it('ignores thumbnail prefetch results from a previous channel', async () => {
+    const staleThumbnail = createDeferred<string | null>();
+    const oldMessage = createMessage({
+      id: 'same-id-image',
+      channel_id: 'dm_user-a_user-b',
+      message: 'images/channel-b/same-id-image.png',
+      file_storage_path: 'images/channel-b/same-id-image.png',
+    });
+    const nextMessage = createMessage({
+      id: 'same-id-image',
+      channel_id: 'dm_user-a_user-c',
+      message: 'images/channel-c/same-id-image.png',
+      file_storage_path: 'images/channel-c/same-id-image.png',
+    });
+    const oldProps = createHookProps([oldMessage]);
+    const nextProps = {
+      ...createHookProps([nextMessage]),
+      currentChannelId: 'dm_user-a_user-c',
+    };
+
+    oldProps.messageBubbleRefs.current.set(
+      'same-id-image',
+      createBubbleElement(32, 180)
+    );
+    nextProps.messageBubbleRefs.current.set(
+      'same-id-image',
+      createBubbleElement(32, 180)
+    );
+    mockEnsureChannelImageAssetUrl.mockImplementation(
+      async (channelId, _message: ChatMessage, variant: 'thumbnail' | 'full') =>
+        channelId === 'dm_user-a_user-b' && variant === 'thumbnail'
+          ? await staleThumbnail.promise
+          : await new Promise<string | null>(() => {})
+    );
+
+    const { result, rerender } = renderHook(
+      (props: HookProps) => useMessageImagePreviews(props),
+      {
+        initialProps: oldProps,
+      }
+    );
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(90);
+      await Promise.resolve();
+    });
+
+    expect(mockEnsureChannelImageAssetUrl).toHaveBeenCalledWith(
+      'dm_user-a_user-b',
+      expect.objectContaining({
+        id: 'same-id-image',
+      }),
+      'thumbnail'
+    );
+
+    act(() => {
+      rerender(nextProps);
+    });
+
+    await act(async () => {
+      staleThumbnail.resolve('blob:old-channel-thumbnail');
+      await staleThumbnail.promise;
+      await Promise.resolve();
+    });
+
+    expect(result.current.getImageMessageUrl(nextMessage)).toBeNull();
   });
 });

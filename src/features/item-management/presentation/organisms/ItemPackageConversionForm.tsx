@@ -33,7 +33,7 @@ import {
   resolvePackageConversionParentUnitName,
   shouldEndPackageConversionInteraction,
 } from './item-package-conversion-form/helpers';
-import { focusFirstSectionField } from './sectionFocus';
+import { useDeferredSectionFocus } from './useDeferredSectionFocus';
 
 const DeleteButton = React.memo(
   ({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) => (
@@ -93,6 +93,8 @@ export default function ItemPackageConversionManager({
   const sectionRef = useRef<HTMLElement>(null);
   const hasAutoSizedRef = useRef(false);
   const isMenuOpenRef = useRef(false);
+  const { scheduleFocusFirstSectionField } =
+    useDeferredSectionFocus(sectionRef);
   const popupParent =
     typeof document !== 'undefined' ? document.body : undefined;
   const filteredAvailableUnits = useMemo(
@@ -191,8 +193,10 @@ export default function ItemPackageConversionManager({
       ) {
         return;
       }
-      const nextTarget = event.relatedTarget as Node | null;
-      const activeElement = document.activeElement as Node | null;
+      const nextTarget =
+        event.relatedTarget instanceof Node ? event.relatedTarget : null;
+      const activeElement =
+        document.activeElement instanceof Node ? document.activeElement : null;
 
       if (
         shouldEndPackageConversionInteraction({
@@ -304,18 +308,18 @@ export default function ItemPackageConversionManager({
         cellStyle: { textAlign: 'center' },
         ...headerMenuDisabled,
         enableCellChangeFlash: false,
-        cellRenderer: (params: { data?: { id: string } }) =>
-          params.data ? (
+        cellRenderer: (params: { data?: { id: string } }) => {
+          const conversionId = params.data?.id;
+          return conversionId ? (
             <DeleteButton
-              onClick={() => onRemoveConversion(params.data!.id)}
+              onClick={() => onRemoveConversion(conversionId)}
               disabled={disabled}
             />
-          ) : null,
+          ) : null;
+        },
       },
     ] as (ColDef | ColGroupDef)[];
   }, [disabled, onRemoveConversion, resolveParentUnitName]);
-
-  const focusFirstField = () => focusFirstSectionField(sectionRef.current);
 
   return (
     <section
@@ -332,14 +336,14 @@ export default function ItemPackageConversionManager({
         onFocus={event => {
           if (!isExpanded && event.currentTarget.matches(':focus-visible')) {
             onExpand?.();
-            setTimeout(focusFirstField, 0);
+            scheduleFocusFirstSectionField();
           }
         }}
         onKeyDown={event => {
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();
             onExpand?.();
-            setTimeout(focusFirstField, 0);
+            scheduleFocusFirstSectionField();
           }
         }}
         tabIndex={25}

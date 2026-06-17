@@ -1,4 +1,4 @@
-import { useQueryClient } from '@tanstack/react-query';
+import { type QueryClient, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { QueryKeys } from '@/constants/queryKeys';
 import { invalidateQueryKeys } from '@/lib/queryInvalidation';
@@ -17,6 +17,9 @@ interface ItemsSyncOptions {
  */
 let globalSetupRef = false;
 let globalChannelRef: RealtimeChannel | null = null;
+let subscriberCount = 0;
+let setupTimeoutId: ReturnType<typeof setTimeout> | null = null;
+let retryTimeoutId: ReturnType<typeof setTimeout> | null = null;
 const ITEM_MASTER_REALTIME_QUERY_KEYS = [
   QueryKeys.items.all,
   QueryKeys.masterData.categories.all,
@@ -27,30 +30,48 @@ const ITEM_MASTER_REALTIME_QUERY_KEYS = [
   QueryKeys.masterData.manufacturers.all,
 ] as const;
 
+const queryClientSubscribers = new Map<QueryClient, number>();
+
+const addQueryClientSubscriber = (queryClient: QueryClient) => {
+  queryClientSubscribers.set(
+    queryClient,
+    (queryClientSubscribers.get(queryClient) ?? 0) + 1
+  );
+};
+
+const removeQueryClientSubscriber = (queryClient: QueryClient) => {
+  const count = queryClientSubscribers.get(queryClient);
+  if (!count) return;
+
+  if (count === 1) {
+    queryClientSubscribers.delete(queryClient);
+    return;
+  }
+
+  queryClientSubscribers.set(queryClient, count - 1);
+};
+
+const invalidateActiveQueryClients = () => {
+  queryClientSubscribers.forEach((_count, queryClient) => {
+    void invalidateQueryKeys(queryClient, ITEM_MASTER_REALTIME_QUERY_KEYS);
+  });
+};
+
 export const useItemsSync = ({ enabled = true }: ItemsSyncOptions = {}) => {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (!enabled || globalSetupRef) {
+    if (!enabled) {
       return;
     }
 
-    globalSetupRef = true;
-
-    const timeoutId = setTimeout(() => {
-      if (navigator.onLine && document.readyState === 'complete') {
-        setupRealtimeConnection();
-      } else {
-        setTimeout(() => {
-          setupRealtimeConnection();
-        }, 1000);
-      }
-    }, 2000);
+    subscriberCount += 1;
+    addQueryClientSubscriber(queryClient);
 
     const setupRealtimeConnection = () => {
-      const handleTableChange = () => {
-        void invalidateQueryKeys(queryClient, ITEM_MASTER_REALTIME_QUERY_KEYS);
-      };
+      if (subscriberCount === 0 || globalChannelRef) {
+        return;
+      }
 
       const channel = itemRealtimeService
         .createChannel('item-master-realtime')
@@ -61,7 +82,7 @@ export const useItemsSync = ({ enabled = true }: ItemsSyncOptions = {}) => {
             table: 'items',
             event: '*',
           },
-          handleTableChange
+          invalidateActiveQueryClients
         )
         .on(
           'postgres_changes',
@@ -70,7 +91,7 @@ export const useItemsSync = ({ enabled = true }: ItemsSyncOptions = {}) => {
             table: 'item_categories',
             event: '*',
           },
-          handleTableChange
+          invalidateActiveQueryClients
         )
         .on(
           'postgres_changes',
@@ -79,7 +100,7 @@ export const useItemsSync = ({ enabled = true }: ItemsSyncOptions = {}) => {
             table: 'item_types',
             event: '*',
           },
-          handleTableChange
+          invalidateActiveQueryClients
         )
         .on(
           'postgres_changes',
@@ -88,7 +109,7 @@ export const useItemsSync = ({ enabled = true }: ItemsSyncOptions = {}) => {
             table: 'item_units',
             event: '*',
           },
-          handleTableChange
+          invalidateActiveQueryClients
         )
         .on(
           'postgres_changes',
@@ -97,7 +118,7 @@ export const useItemsSync = ({ enabled = true }: ItemsSyncOptions = {}) => {
             table: 'item_packages',
             event: '*',
           },
-          handleTableChange
+          invalidateActiveQueryClients
         )
         .on(
           'postgres_changes',
@@ -106,7 +127,7 @@ export const useItemsSync = ({ enabled = true }: ItemsSyncOptions = {}) => {
             table: 'item_dosages',
             event: '*',
           },
-          handleTableChange
+          invalidateActiveQueryClients
         )
         .on(
           'postgres_changes',
@@ -115,15 +136,46 @@ export const useItemsSync = ({ enabled = true }: ItemsSyncOptions = {}) => {
             table: 'item_manufacturers',
             event: '*',
           },
-          handleTableChange
+          invalidateActiveQueryClients
         )
         .subscribe();
 
       globalChannelRef = channel;
     };
 
+    if (!globalSetupRef) {
+      globalSetupRef = true;
+      setupTimeoutId = setTimeout(() => {
+        setupTimeoutId = null;
+
+        if (navigator.onLine && document.readyState === 'complete') {
+          setupRealtimeConnection();
+          return;
+        }
+
+        retryTimeoutId = setTimeout(() => {
+          retryTimeoutId = null;
+          setupRealtimeConnection();
+        }, 1000);
+      }, 2000);
+    }
+
     return () => {
-      clearTimeout(timeoutId);
+      subscriberCount = Math.max(0, subscriberCount - 1);
+      removeQueryClientSubscriber(queryClient);
+
+      if (subscriberCount > 0) {
+        return;
+      }
+
+      if (setupTimeoutId !== null) {
+        clearTimeout(setupTimeoutId);
+        setupTimeoutId = null;
+      }
+      if (retryTimeoutId !== null) {
+        clearTimeout(retryTimeoutId);
+        retryTimeoutId = null;
+      }
       globalSetupRef = false;
 
       if (globalChannelRef) {

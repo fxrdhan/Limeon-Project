@@ -43,6 +43,44 @@ export const useChatMessageUpdateAction = ({
   runInCurrentConversationScope,
 }: UseChatMessageUpdateActionProps) => {
   const pendingEditComposerRestoreRef = useRef(false);
+  const restoreFocusFrameRef = useRef<number | null>(null);
+  const restoreFocusRequestRef = useRef(0);
+
+  const clearPendingRestoreFocusFrame = useCallback(() => {
+    restoreFocusRequestRef.current += 1;
+
+    if (restoreFocusFrameRef.current === null) {
+      return;
+    }
+
+    cancelAnimationFrame(restoreFocusFrameRef.current);
+    restoreFocusFrameRef.current = null;
+  }, []);
+
+  const scheduleRestoreFocus = useCallback(() => {
+    clearPendingRestoreFocusFrame();
+
+    const restoreFocusRequestId = restoreFocusRequestRef.current + 1;
+    let didRunSynchronously = false;
+    restoreFocusRequestRef.current = restoreFocusRequestId;
+
+    const frameId = requestAnimationFrame(() => {
+      didRunSynchronously = true;
+
+      if (restoreFocusRequestRef.current !== restoreFocusRequestId) {
+        return;
+      }
+
+      restoreFocusFrameRef.current = null;
+      focusMessageComposer();
+    });
+
+    if (didRunSynchronously) {
+      return;
+    }
+
+    restoreFocusFrameRef.current = frameId;
+  }, [clearPendingRestoreFocusFrame, focusMessageComposer]);
 
   useEffect(() => {
     if (
@@ -55,7 +93,15 @@ export const useChatMessageUpdateAction = ({
 
   useEffect(() => {
     pendingEditComposerRestoreRef.current = false;
-  }, [currentChannelId]);
+    clearPendingRestoreFocusFrame();
+  }, [clearPendingRestoreFocusFrame, currentChannelId]);
+
+  useEffect(
+    () => () => {
+      clearPendingRestoreFocusFrame();
+    },
+    [clearPendingRestoreFocusFrame]
+  );
 
   const handleUpdateMessage = useCallback(async () => {
     if (
@@ -104,7 +150,7 @@ export const useChatMessageUpdateAction = ({
           pendingEditComposerRestoreRef.current = false;
           setEditingMessageId(messageId);
           setMessage(updatedText);
-          requestAnimationFrame(focusMessageComposer);
+          scheduleRestoreFocus();
         }
 
         toast.error('Gagal memperbarui pesan', {
@@ -165,11 +211,11 @@ export const useChatMessageUpdateAction = ({
     closeMessageMenu,
     currentChannelId,
     editingMessageId,
-    focusMessageComposer,
     isCurrentConversationScopeActive,
     message,
     messages,
     runInCurrentConversationScope,
+    scheduleRestoreFocus,
     setEditingMessageId,
     setMessage,
     setMessages,

@@ -1,4 +1,10 @@
-import type { ChangeEvent, RefObject } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  type ChangeEvent,
+  type RefObject,
+} from 'react';
 
 interface AddItemFormType {
   handleSelectChange: (e: ChangeEvent<HTMLSelectElement>) => void;
@@ -29,12 +35,46 @@ interface AddItemEventHandlersProps {
   expiryCheckboxRef?: RefObject<HTMLLabelElement | null>;
 }
 
+type TimeoutRef = { current: ReturnType<typeof setTimeout> | null };
+
 export const useAddItemEventHandlers = ({
   addItemForm,
   marginInputRef,
   minStockInputRef,
   expiryCheckboxRef,
 }: AddItemEventHandlersProps) => {
+  const sellPriceMarginSyncTimerRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
+  const marginFocusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const minStockFocusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+  const expiryFocusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+
+  const clearTimerRef = useCallback((timerRef: TimeoutRef) => {
+    if (timerRef.current === null) {
+      return;
+    }
+
+    clearTimeout(timerRef.current);
+    timerRef.current = null;
+  }, []);
+
+  useEffect(
+    () => () => {
+      clearTimerRef(sellPriceMarginSyncTimerRef);
+      clearTimerRef(marginFocusTimerRef);
+      clearTimerRef(minStockFocusTimerRef);
+      clearTimerRef(expiryFocusTimerRef);
+    },
+    [clearTimerRef]
+  );
+
   const handleSelectChange = (e: ChangeEvent<HTMLSelectElement>) => {
     addItemForm.handleSelectChange(e);
   };
@@ -59,9 +99,11 @@ export const useAddItemEventHandlers = ({
 
   const handleSellPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     addItemForm.handleChange(e);
-    setTimeout(() => {
+    clearTimerRef(sellPriceMarginSyncTimerRef);
+    sellPriceMarginSyncTimerRef.current = setTimeout(() => {
       const profit = addItemForm.calculateProfitPercentage();
       if (profit !== null) addItemForm.setMarginPercentage(profit.toFixed(1));
+      sellPriceMarginSyncTimerRef.current = null;
     }, 0);
   };
 
@@ -72,11 +114,13 @@ export const useAddItemEventHandlers = ({
     );
     addItemForm.setEditingMargin(true);
 
-    setTimeout(() => {
+    clearTimerRef(marginFocusTimerRef);
+    marginFocusTimerRef.current = setTimeout(() => {
       if (marginInputRef.current) {
         marginInputRef.current.focus();
         marginInputRef.current.select();
       }
+      marginFocusTimerRef.current = null;
     }, 10);
   };
 
@@ -109,11 +153,13 @@ export const useAddItemEventHandlers = ({
     addItemForm.setMinStockValue(String(addItemForm.formData.min_stock));
     addItemForm.setEditingMinStock(true);
 
-    setTimeout(() => {
+    clearTimerRef(minStockFocusTimerRef);
+    minStockFocusTimerRef.current = setTimeout(() => {
       if (minStockInputRef.current) {
         minStockInputRef.current.focus();
         minStockInputRef.current.select();
       }
+      minStockFocusTimerRef.current = null;
     }, 10);
   };
 
@@ -137,8 +183,10 @@ export const useAddItemEventHandlers = ({
       e.preventDefault();
       stopEditingMinStock();
       if (addItemForm.formData.is_medicine && expiryCheckboxRef?.current) {
-        setTimeout(() => {
+        clearTimerRef(expiryFocusTimerRef);
+        expiryFocusTimerRef.current = setTimeout(() => {
           expiryCheckboxRef.current?.focus();
+          expiryFocusTimerRef.current = null;
         }, 0);
       }
     }

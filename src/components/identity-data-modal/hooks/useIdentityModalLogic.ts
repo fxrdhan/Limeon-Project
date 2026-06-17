@@ -1,5 +1,6 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useIdentityForm } from './identityForm';
+import { focusEditableIdentityField, focusIdentitySearchInput } from '../focus';
 import { formatDateTime } from '@/lib/formatters';
 import type { GenericIdentityModalProps } from '@/types';
 import type { IdentityModalContextValue } from '@/contexts/IdentityModalContextState';
@@ -54,6 +55,26 @@ export const useIdentityModalLogic = (props: UseIdentityModalLogicProps) => {
     showImageUploader = true,
     useInlineFieldActions = false,
   } = props;
+  const nameFocusTimerRef = useRef<number | null>(null);
+  const searchFocusFrameRef = useRef<number | null>(null);
+
+  const clearNameFocusTimer = useCallback(() => {
+    if (nameFocusTimerRef.current === null) {
+      return;
+    }
+
+    window.clearTimeout(nameFocusTimerRef.current);
+    nameFocusTimerRef.current = null;
+  }, []);
+
+  const clearSearchFocusFrame = useCallback(() => {
+    if (searchFocusFrameRef.current === null) {
+      return;
+    }
+
+    window.cancelAnimationFrame(searchFocusFrameRef.current);
+    searchFocusFrameRef.current = null;
+  }, []);
 
   // Use getDerivedStateFromProps to reset isClosing when isOpen changes
   const [closingState, setClosingState] = useState({
@@ -109,41 +130,62 @@ export const useIdentityModalLogic = (props: UseIdentityModalLogicProps) => {
 
   // Auto-focus on name field when modal opens
   useEffect(() => {
-    if (isOpen) {
-      const nameField = fields.find(
-        field =>
-          field.key === 'name' ||
-          field.key === 'nama' ||
-          field.label.toLowerCase().includes('nama')
-      );
+    clearNameFocusTimer();
 
-      if (nameField && (mode === 'add' || editMode[nameField.key])) {
-        setTimeout(() => {
-          const inputElement = document.getElementById(nameField.key) as
-            | HTMLInputElement
-            | HTMLTextAreaElement;
-          if (inputElement) {
-            inputElement.focus();
-          }
-        }, 100);
-      }
+    if (!isOpen || closingState.isClosing) {
+      return;
     }
-  }, [isOpen, mode, editMode, fields]);
+
+    const nameField = fields.find(
+      field =>
+        field.key === 'name' ||
+        field.key === 'nama' ||
+        field.label.toLowerCase().includes('nama')
+    );
+
+    if (nameField && (mode === 'add' || editMode[nameField.key])) {
+      const fieldKey = nameField.key;
+      nameFocusTimerRef.current = window.setTimeout(() => {
+        nameFocusTimerRef.current = null;
+        focusEditableIdentityField(fieldKey);
+      }, 100);
+    }
+
+    return clearNameFocusTimer;
+  }, [
+    clearNameFocusTimer,
+    closingState.isClosing,
+    editMode,
+    fields,
+    isOpen,
+    mode,
+  ]);
+
+  useEffect(() => {
+    if (isOpen) {
+      clearSearchFocusFrame();
+    }
+  }, [clearSearchFocusFrame, isOpen]);
+
+  useEffect(() => clearSearchFocusFrame, [clearSearchFocusFrame]);
 
   const handleCloseModal = useCallback(() => {
+    clearNameFocusTimer();
+    clearSearchFocusFrame();
     setIsClosing(true);
 
-    requestAnimationFrame(() => {
-      const searchInput = document.querySelector(
-        'input[placeholder*="Cari"]'
-      ) as HTMLInputElement;
-      if (searchInput) {
-        searchInput.focus();
+    const frameId = window.requestAnimationFrame(() => {
+      if (searchFocusFrameRef.current !== frameId) {
+        return;
       }
+
+      searchFocusFrameRef.current = null;
+      focusIdentitySearchInput();
     });
+    searchFocusFrameRef.current = frameId;
 
     onClose();
-  }, [onClose, setIsClosing]);
+  }, [clearNameFocusTimer, clearSearchFocusFrame, onClose, setIsClosing]);
 
   // isClosing auto-resets when isOpen changes (getDerivedStateFromProps pattern)
 
@@ -161,7 +203,7 @@ export const useIdentityModalLogic = (props: UseIdentityModalLogicProps) => {
     loadingField,
     isSubmitting,
     isDirty,
-    localData: localData as Record<string, string | number | boolean | null>,
+    localData,
 
     // UI State
     title,

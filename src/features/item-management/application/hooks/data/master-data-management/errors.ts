@@ -1,9 +1,8 @@
+import { getErrorStringField, hasErrorStringFields } from '@/lib/errorFields';
 import type { PostgrestError } from '@supabase/supabase-js';
 
 export const isPostgrestError = (err: unknown): err is PostgrestError => {
-  return (
-    typeof err === 'object' && err !== null && 'message' in err && 'code' in err
-  );
+  return hasErrorStringFields(err, ['message', 'code']);
 };
 
 export const getMasterDataErrorMessage = (error: unknown) => {
@@ -17,11 +16,15 @@ export const getMasterDataErrorMessage = (error: unknown) => {
 };
 
 export const getMasterDataErrorDetails = (error: unknown) => {
-  return isPostgrestError(error) ? (error.details ?? '') : '';
+  return isPostgrestError(error)
+    ? (getErrorStringField(error, 'details') ?? '')
+    : '';
 };
 
 export const getMasterDataErrorCode = (error: unknown) => {
-  return isPostgrestError(error) ? (error.code ?? '') : '';
+  return isPostgrestError(error)
+    ? (getErrorStringField(error, 'code') ?? '')
+    : '';
 };
 
 export const isDuplicateCodeError = (error: unknown) => {

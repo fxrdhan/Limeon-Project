@@ -4,25 +4,23 @@ import type {
   MasterDataUpdateMutation,
 } from './types';
 
+interface MutationLike {
+  mutateAsync: (...args: unknown[]) => unknown;
+}
+
+const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
 const pickMutation = (mutations: unknown, keys: string[]) => {
-  if (!mutations || typeof mutations !== 'object') {
+  if (!isObjectRecord(mutations)) {
     return undefined;
   }
 
-  const mutationRecord = mutations as Record<string, unknown>;
-  return keys.map(key => mutationRecord[key]).find(Boolean);
+  return keys.map(key => mutations[key]).find(Boolean);
 };
 
-const hasMutateAsync = (
-  mutation: unknown
-): mutation is { mutateAsync: unknown } => {
-  return (
-    !!mutation &&
-    typeof mutation === 'object' &&
-    'mutateAsync' in mutation &&
-    typeof mutation.mutateAsync === 'function'
-  );
-};
+const hasMutateAsync = (mutation: unknown): mutation is MutationLike =>
+  isObjectRecord(mutation) && typeof mutation.mutateAsync === 'function';
 
 export const getMasterDataUpdateMutation = (
   mutations: unknown
@@ -34,9 +32,13 @@ export const getMasterDataUpdateMutation = (
     'updateCustomer',
   ]);
 
-  return hasMutateAsync(mutation)
-    ? (mutation as MasterDataUpdateMutation)
-    : undefined;
+  if (!hasMutateAsync(mutation)) {
+    return undefined;
+  }
+
+  return {
+    mutateAsync: async params => await mutation.mutateAsync(params),
+  };
 };
 
 export const getMasterDataCreateMutation = (
@@ -49,9 +51,13 @@ export const getMasterDataCreateMutation = (
     'createCustomer',
   ]);
 
-  return hasMutateAsync(mutation)
-    ? (mutation as MasterDataCreateMutation)
-    : undefined;
+  if (!hasMutateAsync(mutation)) {
+    return undefined;
+  }
+
+  return {
+    mutateAsync: async data => await mutation.mutateAsync(data),
+  };
 };
 
 export const getMasterDataDeleteMutation = (
@@ -64,7 +70,11 @@ export const getMasterDataDeleteMutation = (
     'deleteCustomer',
   ]);
 
-  return hasMutateAsync(mutation)
-    ? (mutation as MasterDataDeleteMutation)
-    : undefined;
+  if (!hasMutateAsync(mutation)) {
+    return undefined;
+  }
+
+  return {
+    mutateAsync: async id => await mutation.mutateAsync(id),
+  };
 };

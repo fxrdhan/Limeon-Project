@@ -23,6 +23,7 @@ import {
 
 interface UseComposerAttachmentPromptActionsProps {
   attachmentPastePrompt: AttachmentPastePromptState | null;
+  attachmentPasteValidationScopeRef: MutableRefObject<number>;
   dismissAttachmentPastePrompt: (preserveRawLink?: boolean) => void;
   focusComposerSelection: (
     selectionStart: number,
@@ -59,6 +60,7 @@ interface UseComposerAttachmentPromptActionsProps {
 
 export const useComposerAttachmentPromptActions = ({
   attachmentPastePrompt,
+  attachmentPasteValidationScopeRef,
   dismissAttachmentPastePrompt,
   focusComposerSelection,
   hoverableAttachmentCandidates,
@@ -109,7 +111,12 @@ export const useComposerAttachmentPromptActions = ({
       return;
     }
 
-    openInNewTab(attachmentPastePrompt.url);
+    const didOpenLink = openInNewTab(attachmentPastePrompt.url);
+    if (!didOpenLink) {
+      toast.error('Browser memblokir tab baru', {
+        toasterId: CHAT_SIDEBAR_TOASTER_ID,
+      });
+    }
     dismissAttachmentPastePrompt();
     focusComposerSelection(attachmentPastePrompt.rangeEnd);
   }, [
@@ -123,12 +130,23 @@ export const useComposerAttachmentPromptActions = ({
       return;
     }
 
+    const promptState = attachmentPastePrompt;
+    const promptScope = attachmentPasteValidationScopeRef.current;
+
     try {
-      await copyTextToClipboard(attachmentPastePrompt.url);
+      await copyTextToClipboard(promptState.url);
+      if (attachmentPasteValidationScopeRef.current !== promptScope) {
+        return;
+      }
+
       toast.success('Link berhasil disalin', {
         toasterId: CHAT_SIDEBAR_TOASTER_ID,
       });
     } catch (error) {
+      if (attachmentPasteValidationScopeRef.current !== promptScope) {
+        return;
+      }
+
       console.error('Error copying attachment composer link:', error);
       toast.error('Gagal menyalin link', {
         toasterId: CHAT_SIDEBAR_TOASTER_ID,
@@ -136,9 +154,10 @@ export const useComposerAttachmentPromptActions = ({
     }
 
     dismissAttachmentPastePrompt();
-    focusComposerSelection(attachmentPastePrompt.rangeEnd);
+    focusComposerSelection(promptState.rangeEnd);
   }, [
     attachmentPastePrompt,
+    attachmentPasteValidationScopeRef,
     dismissAttachmentPastePrompt,
     focusComposerSelection,
   ]);
@@ -149,6 +168,7 @@ export const useComposerAttachmentPromptActions = ({
     }
 
     const promptState = attachmentPastePrompt;
+    const promptScope = attachmentPasteValidationScopeRef.current;
     const storagePath = extractChatStoragePath(promptState.url)?.trim();
     if (!storagePath) {
       toast.error('Hanya link attachment chat yang bisa dipendekkan', {
@@ -160,6 +180,10 @@ export const useComposerAttachmentPromptActions = ({
     const sharedLinkResult = await chatSidebarShareGateway.createSharedLink({
       storagePath,
     });
+    if (attachmentPasteValidationScopeRef.current !== promptScope) {
+      return;
+    }
+
     const shortUrl = sharedLinkResult.data?.shortUrl?.trim() || null;
 
     if (!shortUrl) {
@@ -195,6 +219,7 @@ export const useComposerAttachmentPromptActions = ({
     });
   }, [
     attachmentPastePrompt,
+    attachmentPasteValidationScopeRef,
     dismissAttachmentPastePrompt,
     focusComposerSelection,
     setMessage,
@@ -208,6 +233,7 @@ export const useComposerAttachmentPromptActions = ({
     }
 
     const promptState = attachmentPastePrompt;
+    const promptScope = attachmentPasteValidationScopeRef.current;
     const prefetchedRemoteFile =
       validatedAttachmentRemoteFilesRef.current.get(promptState.id) ?? null;
     const restoreCandidateIndex = pastedAttachmentCandidates.findIndex(
@@ -243,6 +269,9 @@ export const useComposerAttachmentPromptActions = ({
       );
       if (didQueue) {
         validatedAttachmentRemoteFilesRef.current.delete(promptState.id);
+        return;
+      }
+      if (attachmentPasteValidationScopeRef.current !== promptScope) {
         return;
       }
 
@@ -290,6 +319,7 @@ export const useComposerAttachmentPromptActions = ({
     })();
   }, [
     attachmentPastePrompt,
+    attachmentPasteValidationScopeRef,
     focusComposerSelection,
     pastedAttachmentCandidates,
     queueAttachmentComposerLink,

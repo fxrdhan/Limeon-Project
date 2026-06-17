@@ -1,13 +1,19 @@
 import { supabase } from '@/lib/supabase';
 
 let isRealtimeAuthSyncInitialized = false;
+let realtimeAuthSyncVersion = 0;
 
-export const syncSupabaseRealtimeAuthToken = (accessToken?: string | null) => {
+const applySupabaseRealtimeAuthToken = (accessToken?: string | null) => {
   try {
     void supabase.realtime.setAuth(accessToken ?? null);
   } catch (error) {
     console.warn('Failed to sync Supabase Realtime auth token:', error);
   }
+};
+
+export const syncSupabaseRealtimeAuthToken = (accessToken?: string | null) => {
+  realtimeAuthSyncVersion += 1;
+  applySupabaseRealtimeAuthToken(accessToken);
 };
 
 export const initializeSupabaseRealtimeAuthSync = () => {
@@ -16,11 +22,16 @@ export const initializeSupabaseRealtimeAuthSync = () => {
   }
 
   isRealtimeAuthSyncInitialized = true;
+  const initialHydrationVersion = realtimeAuthSyncVersion;
 
   void supabase.auth
     .getSession()
     .then(({ data }) => {
-      syncSupabaseRealtimeAuthToken(data.session?.access_token ?? null);
+      if (realtimeAuthSyncVersion !== initialHydrationVersion) {
+        return;
+      }
+
+      applySupabaseRealtimeAuthToken(data.session?.access_token ?? null);
     })
     .catch(error => {
       console.warn('Failed to hydrate Supabase Realtime auth token:', error);

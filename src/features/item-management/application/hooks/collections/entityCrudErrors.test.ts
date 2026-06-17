@@ -3,6 +3,7 @@ import {
   getEntityCrudErrorMessage,
   isDuplicateEntityCodeError,
   isForeignKeyReferenceError,
+  toEntityCrudError,
 } from './entityCrudErrors';
 
 describe('entityCrudErrors', () => {
@@ -42,6 +43,20 @@ describe('entityCrudErrors', () => {
 
     expect(isDuplicateEntityCodeError('409 conflict')).toBe(true);
     expect(isDuplicateEntityCodeError('network unavailable')).toBe(false);
+  });
+
+  it('normalizes mutation state errors to Error instances', () => {
+    const runtimeError = new Error('Runtime failure');
+
+    expect(toEntityCrudError(null)).toBeNull();
+    expect(toEntityCrudError(runtimeError)).toBe(runtimeError);
+    expect(
+      toEntityCrudError({
+        code: 'PGRST123',
+        message: 'Database rejected the request',
+      })?.message
+    ).toBe('Database rejected the request');
+    expect(toEntityCrudError('Plain failure')?.message).toBe('Plain failure');
   });
 
   it('detects foreign-key delete failures only from Error instances', () => {

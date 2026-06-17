@@ -4,16 +4,45 @@ import { useState, useCallback } from 'react';
 export type ColumnDisplayMode = 'name' | 'code';
 
 const DISPLAY_MODE_STORAGE_KEY = 'pharmasys_column_display_modes';
+const REFERENCE_COLUMN_IDS = [
+  'manufacturer.name',
+  'category.name',
+  'type.name',
+  'package.name',
+  'dosage.name',
+] as const;
 
 // Default display modes for reference columns
 const getDefaultDisplayModes = (): Record<string, ColumnDisplayMode> => {
-  return {
-    'manufacturer.name': 'name',
-    'category.name': 'name',
-    'type.name': 'name',
-    'package.name': 'name',
-    'dosage.name': 'name',
-  };
+  const displayModes: Record<string, ColumnDisplayMode> = {};
+  for (const columnId of REFERENCE_COLUMN_IDS) {
+    displayModes[columnId] = 'name';
+  }
+  return displayModes;
+};
+
+const isColumnDisplayMode = (value: unknown): value is ColumnDisplayMode =>
+  value === 'name' || value === 'code';
+
+const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+export const normalizeColumnDisplayModes = (
+  value: unknown
+): Record<string, ColumnDisplayMode> => {
+  const displayModes = getDefaultDisplayModes();
+  if (!isObjectRecord(value)) {
+    return displayModes;
+  }
+
+  for (const columnId of REFERENCE_COLUMN_IDS) {
+    const mode = value[columnId];
+    if (isColumnDisplayMode(mode)) {
+      displayModes[columnId] = mode;
+    }
+  }
+
+  return displayModes;
 };
 
 // Load display modes from localStorage
@@ -21,9 +50,7 @@ const loadDisplayModes = (): Record<string, ColumnDisplayMode> => {
   try {
     const saved = localStorage.getItem(DISPLAY_MODE_STORAGE_KEY);
     if (saved) {
-      const parsed = JSON.parse(saved);
-      // Merge with defaults in case new columns were added
-      return { ...getDefaultDisplayModes(), ...parsed };
+      return normalizeColumnDisplayModes(JSON.parse(saved));
     }
   } catch {
     // Silently fail
@@ -34,7 +61,10 @@ const loadDisplayModes = (): Record<string, ColumnDisplayMode> => {
 // Save display modes to localStorage
 const saveDisplayModes = (modes: Record<string, ColumnDisplayMode>) => {
   try {
-    localStorage.setItem(DISPLAY_MODE_STORAGE_KEY, JSON.stringify(modes));
+    localStorage.setItem(
+      DISPLAY_MODE_STORAGE_KEY,
+      JSON.stringify(normalizeColumnDisplayModes(modes))
+    );
   } catch {
     // Silently fail
   }
@@ -49,13 +79,7 @@ export const useColumnDisplayMode = () => {
 
   // Helper to check if a column is a reference column
   const isReferenceColumn = useCallback((colId: string) => {
-    return [
-      'manufacturer.name',
-      'category.name',
-      'type.name',
-      'package.name',
-      'dosage.name',
-    ].includes(colId);
+    return REFERENCE_COLUMN_IDS.some(columnId => columnId === colId);
   }, []);
 
   // Toggle display mode for a single column

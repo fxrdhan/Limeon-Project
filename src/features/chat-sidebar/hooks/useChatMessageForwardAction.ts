@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { CHAT_SIDEBAR_TOASTER_ID } from '../constants';
 import {
@@ -22,6 +22,7 @@ interface UseChatMessageForwardActionProps {
   messages: ChatMessage[];
   closeMessageMenu: () => void;
   reconcileCurrentConversationMessages: () => Promise<void>;
+  resetKey?: string | null;
 }
 
 const buildAttachmentCaptionSnapshot = (
@@ -40,6 +41,7 @@ export const useChatMessageForwardAction = ({
   messages,
   closeMessageMenu,
   reconcileCurrentConversationMessages,
+  resetKey = null,
 }: UseChatMessageForwardActionProps) => {
   const [forwardDraft, setForwardDraft] = useState<ForwardMessageDraft | null>(
     null
@@ -48,6 +50,10 @@ export const useChatMessageForwardAction = ({
     new Set()
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const normalizedResetKey = resetKey?.trim() || null;
+  const activeForwardResetKeyRef = useRef<string | null>(normalizedResetKey);
+  const forwardScopeVersionRef = useRef(0);
+  const isForwardScopeMountedRef = useRef(true);
   const {
     portalOrderedUsers,
     isDirectoryLoading,
@@ -62,6 +68,37 @@ export const useChatMessageForwardAction = ({
     [portalOrderedUsers, user?.id]
   );
 
+  const resetForwardState = useCallback(() => {
+    forwardScopeVersionRef.current += 1;
+    setForwardDraft(null);
+    setSelectedRecipientIds(new Set());
+    setIsSubmitting(false);
+  }, []);
+
+  const isForwardScopeActive = useCallback(
+    (scopeVersion: number) =>
+      isForwardScopeMountedRef.current &&
+      forwardScopeVersionRef.current === scopeVersion,
+    []
+  );
+
+  useEffect(() => {
+    const previousResetKey = activeForwardResetKeyRef.current;
+    activeForwardResetKeyRef.current = normalizedResetKey;
+
+    if (previousResetKey !== normalizedResetKey) {
+      resetForwardState();
+    }
+  }, [normalizedResetKey, resetForwardState]);
+
+  useEffect(
+    () => () => {
+      isForwardScopeMountedRef.current = false;
+      forwardScopeVersionRef.current += 1;
+    },
+    []
+  );
+
   const closeForwardPicker = useCallback(() => {
     if (isSubmitting) {
       return;
@@ -74,6 +111,7 @@ export const useChatMessageForwardAction = ({
   const openForwardPicker = useCallback(
     (targetMessage: ChatMessage) => {
       closeMessageMenu();
+      forwardScopeVersionRef.current += 1;
 
       setForwardDraft({
         message: targetMessage,
@@ -111,6 +149,7 @@ export const useChatMessageForwardAction = ({
     }
 
     setIsSubmitting(true);
+    const submitScopeVersion = forwardScopeVersionRef.current;
 
     const recipientsToSend = availableRecipients.filter(recipient =>
       selectedRecipientIds.has(recipient.id)
@@ -123,6 +162,10 @@ export const useChatMessageForwardAction = ({
         messageId: forwardDraft.message.id,
         recipientIds: recipientsToSend.map(recipient => recipient.id),
       });
+
+      if (!isForwardScopeActive(submitScopeVersion)) {
+        return;
+      }
 
       if (error || !data) {
         console.error('Failed to forward chat message', {
@@ -143,6 +186,10 @@ export const useChatMessageForwardAction = ({
         try {
           await reconcileCurrentConversationMessages();
         } catch (error) {
+          if (!isForwardScopeActive(submitScopeVersion)) {
+            return;
+          }
+
           console.error(
             'Failed to reconcile current conversation after forwarding chat message',
             {
@@ -152,6 +199,10 @@ export const useChatMessageForwardAction = ({
             }
           );
         }
+      }
+
+      if (!isForwardScopeActive(submitScopeVersion)) {
+        return;
       }
 
       if (
@@ -186,6 +237,10 @@ export const useChatMessageForwardAction = ({
         toasterId: CHAT_SIDEBAR_TOASTER_ID,
       });
     } catch (error) {
+      if (!isForwardScopeActive(submitScopeVersion)) {
+        return;
+      }
+
       console.error('Unexpected error while forwarding chat message', {
         error,
         messageId: forwardDraft.message.id,
@@ -195,11 +250,14 @@ export const useChatMessageForwardAction = ({
         toasterId: CHAT_SIDEBAR_TOASTER_ID,
       });
     } finally {
-      setIsSubmitting(false);
+      if (isForwardScopeActive(submitScopeVersion)) {
+        setIsSubmitting(false);
+      }
     }
   }, [
     availableRecipients,
     forwardDraft,
+    isForwardScopeActive,
     reconcileCurrentConversationMessages,
     selectedRecipientIds,
     targetUser?.id,

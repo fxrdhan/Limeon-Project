@@ -185,9 +185,11 @@ export const useChatReceiptMutationQueue = <T extends { id: string }>({
           scheduleRetry();
         }
       } finally {
-        targetIds.forEach(messageId => {
-          pendingMessageIdsRef.current.delete(messageId);
-        });
+        if (scopeVersion === scopeVersionRef.current) {
+          targetIds.forEach(messageId => {
+            pendingMessageIdsRef.current.delete(messageId);
+          });
+        }
       }
     },
     [

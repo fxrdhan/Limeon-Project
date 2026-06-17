@@ -9,17 +9,19 @@ import type {
   PersistedComposerDraftRecord,
 } from './types';
 
-const normalizeUpdatedAt = (
-  updatedAt: number | null | undefined,
-  now: number
-) =>
-  Number.isFinite(updatedAt) && Number(updatedAt) > 0 ? Number(updatedAt) : now;
+const normalizeUpdatedAt = (updatedAt: unknown, now: number) =>
+  typeof updatedAt === 'number' && Number.isFinite(updatedAt) && updatedAt > 0
+    ? updatedAt
+    : now;
 
 const isComposerDraftFresh = (
-  updatedAt: number | null | undefined,
+  updatedAt: unknown,
   now: number,
   maxAgeMs: number
 ) => now - normalizeUpdatedAt(updatedAt, now) <= maxAgeMs;
+
+const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
 
 const getPersistedComposerDraftAttachmentRecordSize = (
   record: Pick<PersistedComposerDraftRecord, 'attachments'>
@@ -33,7 +35,7 @@ const getPersistedComposerDraftAttachmentRecordSize = (
   }, 0);
 
 export const prunePersistedComposerDraftMessageStore = (
-  payload: PersistedComposerDraftMessageStore | null | undefined,
+  payload: unknown,
   options?: {
     now?: number;
     maxAgeMs?: number;
@@ -44,10 +46,18 @@ export const prunePersistedComposerDraftMessageStore = (
   const nextStore: PersistedComposerDraftMessageStore = {};
   let didPrune = false;
 
-  Object.entries(payload ?? {}).forEach(([rawChannelId, record]) => {
+  if (!isObjectRecord(payload)) {
+    return {
+      didPrune: payload !== null && payload !== undefined,
+      store: nextStore,
+    };
+  }
+
+  Object.entries(payload).forEach(([rawChannelId, record]) => {
     const channelId = normalizeChannelId(rawChannelId);
     if (
       !channelId ||
+      !isObjectRecord(record) ||
       typeof record?.message !== 'string' ||
       record.message.length === 0
     ) {

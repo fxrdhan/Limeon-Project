@@ -129,7 +129,7 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
           value={fieldValue ? parseDateOnlyValue(String(fieldValue)) : null}
           onChange={(date: CalendarDateValue) => {
             const formattedDate = date ? formatDateOnlyValue(date) : null;
-            handleChange(field.key, formattedDate as string | number | boolean);
+            handleChange(field.key, formattedDate);
           }}
           placeholder={`Pilih ${field.label.toLowerCase()}`}
           inputClassName="w-full p-2.5 border rounded-xl text-sm"
@@ -144,7 +144,7 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
       return (
         <textarea
           aria-label={field.label}
-          ref={el => setInputRef(field.key, el as HTMLTextAreaElement)}
+          ref={el => setInputRef(field.key, el)}
           id={field.key}
           className="text-sm w-full p-2 border border-slate-300 rounded-xl focus:outline-hidden focus:border-primary focus:ring-3 focus:ring-emerald-100 transition duration-200 ease-in-out"
           value={String(fieldValue ?? '')}
@@ -158,7 +158,7 @@ const IdentityFormField: React.FC<IdentityFormFieldProps> = ({ field }) => {
 
     return (
       <Input
-        ref={el => setInputRef(field.key, el as HTMLInputElement)}
+        ref={el => setInputRef(field.key, el)}
         id={field.key}
         type={field.type || 'text'}
         value={String(fieldValue ?? '')}

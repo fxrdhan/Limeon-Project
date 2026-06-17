@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -45,10 +46,45 @@ export function useUploadInvoicePortal({
   const [glowIntensity, setGlowIntensity] = useState(0);
 
   const glowAnimationRef = useRef<NodeJS.Timeout | null>(null);
+  const glowAnimationFrameRef = useRef<number | null>(null);
+  const resetTransformFrameRef = useRef<number | null>(null);
   const imageContainerRef = useRef<HTMLDivElement>(null);
   const uploaderContainerRef = useRef<HTMLDivElement>(null);
+  const isOpenRef = useRef(isOpen);
   const mousePositionRef = useRef({ x: 0, y: 0 });
   const throttleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const uploadRequestIdRef = useRef(0);
+
+  isOpenRef.current = isOpen;
+
+  const invalidateActiveUpload = useCallback(() => {
+    uploadRequestIdRef.current += 1;
+  }, []);
+
+  const clearGlowAnimation = useCallback(() => {
+    if (glowAnimationRef.current) {
+      clearTimeout(glowAnimationRef.current);
+      glowAnimationRef.current = null;
+    }
+    if (glowAnimationFrameRef.current !== null) {
+      cancelAnimationFrame(glowAnimationFrameRef.current);
+      glowAnimationFrameRef.current = null;
+    }
+  }, []);
+
+  const clearThrottleTimeout = useCallback(() => {
+    if (throttleTimeoutRef.current) {
+      clearTimeout(throttleTimeoutRef.current);
+      throttleTimeoutRef.current = null;
+    }
+  }, []);
+
+  const clearResetTransformFrame = useCallback(() => {
+    if (resetTransformFrameRef.current !== null) {
+      cancelAnimationFrame(resetTransformFrameRef.current);
+      resetTransformFrameRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     if (!file) {
@@ -63,9 +99,8 @@ export function useUploadInvoicePortal({
   }, [file]);
 
   useEffect(() => {
-    const glowTimeout = glowAnimationRef.current;
-
     if (!isOpen) {
+      invalidateActiveUpload();
       setFile(null);
       setError(null);
       setLoading(false);
@@ -77,17 +112,34 @@ export function useUploadInvoicePortal({
       setIsHovering(false);
       setShouldShowGlow(false);
       setGlowIntensity(0);
-      if (glowTimeout) {
-        clearTimeout(glowTimeout);
-      }
+      clearGlowAnimation();
+      clearThrottleTimeout();
+      clearResetTransformFrame();
     }
 
+    return clearGlowAnimation;
+  }, [
+    clearGlowAnimation,
+    clearResetTransformFrame,
+    clearThrottleTimeout,
+    invalidateActiveUpload,
+    isOpen,
+  ]);
+
+  useEffect(() => {
     return () => {
-      if (glowTimeout) {
-        clearTimeout(glowTimeout);
-      }
+      isOpenRef.current = false;
+      invalidateActiveUpload();
+      clearGlowAnimation();
+      clearThrottleTimeout();
+      clearResetTransformFrame();
     };
-  }, [isOpen]);
+  }, [
+    clearGlowAnimation,
+    clearResetTransformFrame,
+    clearThrottleTimeout,
+    invalidateActiveUpload,
+  ]);
 
   useEffect(() => {
     const handleMouseMove = (event: globalThis.MouseEvent) => {
@@ -104,11 +156,9 @@ export function useUploadInvoicePortal({
 
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
-      if (throttleTimeoutRef.current) {
-        clearTimeout(throttleTimeoutRef.current);
-      }
+      clearThrottleTimeout();
     };
-  }, []);
+  }, [clearThrottleTimeout]);
 
   useEffect(() => {
     if (isOpen) {
@@ -131,9 +181,7 @@ export function useUploadInvoicePortal({
             setShouldShowGlow(true);
             setGlowIntensity(0.7);
 
-            if (glowAnimationRef.current) {
-              clearTimeout(glowAnimationRef.current);
-            }
+            clearGlowAnimation();
 
             let currentIntensity = 0.7;
             const animateGlow = () => {
@@ -164,6 +212,7 @@ export function useUploadInvoicePortal({
       return () => {
         clearTimeout(timeoutId);
         document.removeEventListener('mousemove', handlePortalMouseMove);
+        clearGlowAnimation();
       };
     } else {
       document.body.style.pointerEvents = 'auto';
@@ -178,22 +227,25 @@ export function useUploadInvoicePortal({
       setShouldShowGlow(false);
       setGlowIntensity(0);
 
-      if (glowAnimationRef.current) {
-        clearTimeout(glowAnimationRef.current);
-        glowAnimationRef.current = null;
-      }
-      if (throttleTimeoutRef.current) {
-        clearTimeout(throttleTimeoutRef.current);
-        throttleTimeoutRef.current = null;
-      }
+      clearGlowAnimation();
+      clearThrottleTimeout();
+      clearResetTransformFrame();
 
-      requestAnimationFrame(() => {
+      resetTransformFrameRef.current = requestAnimationFrame(() => {
+        resetTransformFrameRef.current = null;
         if (uploaderContainerRef.current) {
           uploaderContainerRef.current.style.transform = 'translateZ(0)';
         }
       });
     }
-  }, [isOpen, cachedInvoiceFile, file]);
+  }, [
+    cachedInvoiceFile,
+    clearGlowAnimation,
+    clearResetTransformFrame,
+    clearThrottleTimeout,
+    file,
+    isOpen,
+  ]);
 
   const applySelectedFile = (
     selectedFile: File,
@@ -239,11 +291,25 @@ export function useUploadInvoicePortal({
   };
 
   const handleUpload = async () => {
+    if (!file) {
+      setError('Pilih file faktur terlebih dahulu.');
+      return;
+    }
+
+    const uploadRequestId = uploadRequestIdRef.current + 1;
+    uploadRequestIdRef.current = uploadRequestId;
+    const isCurrentUpload = () =>
+      isOpenRef.current && uploadRequestIdRef.current === uploadRequestId;
+
     try {
       setLoading(true);
       setError(null);
       const startTime = Date.now();
-      const data = await uploadAndExtractPurchaseInvoice(file!);
+      const data = await uploadAndExtractPurchaseInvoice(file);
+      if (!isCurrentUpload()) {
+        return;
+      }
+
       const completedAtMs = Date.now();
       clearCachedInvoiceFile();
       onClose();
@@ -256,9 +322,13 @@ export function useUploadInvoicePortal({
         }),
       });
     } catch (err: unknown) {
-      setError(getInvoiceExtractionErrorMessage(err));
+      if (isCurrentUpload()) {
+        setError(getInvoiceExtractionErrorMessage(err));
+      }
     } finally {
-      setLoading(false);
+      if (isCurrentUpload()) {
+        setLoading(false);
+      }
     }
   };
 
@@ -270,6 +340,8 @@ export function useUploadInvoicePortal({
 
     setFile(null);
     setPreviewUrl(null);
+    invalidateActiveUpload();
+    setLoading(false);
     setFileInputKey(prev => prev + 1);
     setError(null);
     setShowFullPreview(false);
@@ -280,14 +352,9 @@ export function useUploadInvoicePortal({
     setZoomLevel(1);
     setPosition({ x: 0, y: 0 });
 
-    if (glowAnimationRef.current) {
-      clearTimeout(glowAnimationRef.current);
-      glowAnimationRef.current = null;
-    }
-    if (throttleTimeoutRef.current) {
-      clearTimeout(throttleTimeoutRef.current);
-      throttleTimeoutRef.current = null;
-    }
+    clearGlowAnimation();
+    clearThrottleTimeout();
+    clearResetTransformFrame();
 
     clearCachedInvoiceFile();
 
@@ -321,9 +388,7 @@ export function useUploadInvoicePortal({
   const handleUploaderMouseEnter = () => {
     if (!isHovering) {
       setIsHovering(true);
-      if (glowAnimationRef.current) {
-        clearTimeout(glowAnimationRef.current);
-      }
+      clearGlowAnimation();
       setShouldShowGlow(true);
       setGlowIntensity(0.8);
 
@@ -335,7 +400,10 @@ export function useUploadInvoicePortal({
           glowAnimationRef.current = setTimeout(animateGlow, 3);
         }
       };
-      requestAnimationFrame(animateGlow);
+      glowAnimationFrameRef.current = requestAnimationFrame(() => {
+        glowAnimationFrameRef.current = null;
+        animateGlow();
+      });
     }
   };
 
@@ -349,9 +417,7 @@ export function useUploadInvoicePortal({
 
       if (!isStillInside) {
         setIsHovering(false);
-        if (glowAnimationRef.current) {
-          clearTimeout(glowAnimationRef.current);
-        }
+        clearGlowAnimation();
 
         let currentIntensity = glowIntensity;
         const fadeGlow = () => {
@@ -364,12 +430,18 @@ export function useUploadInvoicePortal({
             setShouldShowGlow(false);
           }
         };
-        requestAnimationFrame(fadeGlow);
+        glowAnimationFrameRef.current = requestAnimationFrame(() => {
+          glowAnimationFrameRef.current = null;
+          fadeGlow();
+        });
       }
     }
   };
 
   const handlePortalClose = () => {
+    invalidateActiveUpload();
+    setLoading(false);
+
     if (showFullPreview) {
       setShowFullPreview(false);
     }
@@ -379,17 +451,21 @@ export function useUploadInvoicePortal({
     setGlowIntensity(0);
     setIsDragging(false);
 
-    if (glowAnimationRef.current) {
-      clearTimeout(glowAnimationRef.current);
-      glowAnimationRef.current = null;
-    }
-    if (throttleTimeoutRef.current) {
-      clearTimeout(throttleTimeoutRef.current);
-      throttleTimeoutRef.current = null;
-    }
+    clearGlowAnimation();
+    clearThrottleTimeout();
+    clearResetTransformFrame();
 
     document.body.style.pointerEvents = 'auto';
 
+    onClose();
+  };
+
+  const handleCancel = () => {
+    invalidateActiveUpload();
+    setLoading(false);
+    clearGlowAnimation();
+    clearThrottleTimeout();
+    clearResetTransformFrame();
     onClose();
   };
 
@@ -415,10 +491,7 @@ export function useUploadInvoicePortal({
     setShouldShowGlow(false);
     setGlowIntensity(0);
 
-    if (glowAnimationRef.current) {
-      clearTimeout(glowAnimationRef.current);
-      glowAnimationRef.current = null;
-    }
+    clearGlowAnimation();
   };
 
   return {
@@ -442,7 +515,7 @@ export function useUploadInvoicePortal({
       isOpen,
       loading,
       onBackdropClick: handlePortalClose,
-      onCancel: onClose,
+      onCancel: handleCancel,
       onDragLeave: handleDragLeave,
       onDragOver: handleDragOver,
       onDrop: handleDrop,

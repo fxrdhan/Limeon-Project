@@ -40,6 +40,7 @@ export const useImageGroupPreview = ({
   const [isImageGroupPreviewVisible, setIsImageGroupPreviewVisible] =
     useState(false);
   const imageGroupPreviewCloseTimerRef = useRef<number | null>(null);
+  const imageGroupPreviewOpenFrameRef = useRef<number | null>(null);
   const imageGroupPreviewObjectUrlsRef = useRef<string[]>([]);
   const imageGroupPreviewMessagesRef = useRef<
     Map<string, { index: number; message: PreviewableImageGroupMessage }>
@@ -47,6 +48,12 @@ export const useImageGroupPreview = ({
   const imageGroupPreviewInflightIdsRef = useRef<Set<string>>(new Set());
   const imageGroupPreviewResolvedIdsRef = useRef<Set<string>>(new Set());
   const activeImageGroupPreviewRequestIdRef = useRef(0);
+  const activeImageGroupPreviewIdRef = useRef<string | null>(null);
+
+  const setActiveImageGroupPreview = useCallback((messageId: string | null) => {
+    activeImageGroupPreviewIdRef.current = messageId;
+    setActiveImageGroupPreviewId(messageId);
+  }, []);
 
   const releaseImageGroupPreviewObjectUrls = useCallback(() => {
     if (imageGroupPreviewObjectUrlsRef.current.length === 0) {
@@ -59,23 +66,38 @@ export const useImageGroupPreview = ({
     imageGroupPreviewObjectUrlsRef.current = [];
   }, []);
 
+  const clearImageGroupPreviewOpenFrame = useCallback(() => {
+    if (imageGroupPreviewOpenFrameRef.current === null) {
+      return;
+    }
+
+    window.cancelAnimationFrame(imageGroupPreviewOpenFrameRef.current);
+    imageGroupPreviewOpenFrameRef.current = null;
+  }, []);
+
   const clearImageGroupPreviewStateImmediately = useCallback(() => {
     activeImageGroupPreviewRequestIdRef.current += 1;
+    clearImageGroupPreviewOpenFrame();
     if (imageGroupPreviewCloseTimerRef.current) {
       window.clearTimeout(imageGroupPreviewCloseTimerRef.current);
       imageGroupPreviewCloseTimerRef.current = null;
     }
     setIsImageGroupPreviewVisible(false);
     setImageGroupPreviewItems([]);
-    setActiveImageGroupPreviewId(null);
+    setActiveImageGroupPreview(null);
     imageGroupPreviewMessagesRef.current.clear();
     imageGroupPreviewInflightIdsRef.current.clear();
     imageGroupPreviewResolvedIdsRef.current.clear();
     releaseImageGroupPreviewObjectUrls();
-  }, [releaseImageGroupPreviewObjectUrls]);
+  }, [
+    clearImageGroupPreviewOpenFrame,
+    releaseImageGroupPreviewObjectUrls,
+    setActiveImageGroupPreview,
+  ]);
 
   const closeImageGroupPreview = useCallback(() => {
     activeImageGroupPreviewRequestIdRef.current += 1;
+    clearImageGroupPreviewOpenFrame();
     setIsImageGroupPreviewVisible(false);
     if (imageGroupPreviewCloseTimerRef.current) {
       window.clearTimeout(imageGroupPreviewCloseTimerRef.current);
@@ -83,14 +105,18 @@ export const useImageGroupPreview = ({
     }
     imageGroupPreviewCloseTimerRef.current = window.setTimeout(() => {
       setImageGroupPreviewItems([]);
-      setActiveImageGroupPreviewId(null);
+      setActiveImageGroupPreview(null);
       imageGroupPreviewMessagesRef.current.clear();
       imageGroupPreviewInflightIdsRef.current.clear();
       imageGroupPreviewResolvedIdsRef.current.clear();
       releaseImageGroupPreviewObjectUrls();
       imageGroupPreviewCloseTimerRef.current = null;
     }, 150);
-  }, [releaseImageGroupPreviewObjectUrls]);
+  }, [
+    clearImageGroupPreviewOpenFrame,
+    releaseImageGroupPreviewObjectUrls,
+    setActiveImageGroupPreview,
+  ]);
 
   const resolveImageGroupThumbnailItem = useCallback(
     async (
@@ -291,6 +317,7 @@ export const useImageGroupPreview = ({
         window.clearTimeout(imageGroupPreviewCloseTimerRef.current);
         imageGroupPreviewCloseTimerRef.current = null;
       }
+      clearImageGroupPreviewOpenFrame();
       releaseImageGroupPreviewObjectUrls();
       imageGroupPreviewInflightIdsRef.current.clear();
       imageGroupPreviewResolvedIdsRef.current.clear();
@@ -316,6 +343,14 @@ export const useImageGroupPreview = ({
       if (activePreviewMessage && !seededActivePreviewUrl) {
         const { previewUrl, revokeOnClose } =
           await resolveImagePreviewResource(activePreviewMessage);
+
+        if (activeImageGroupPreviewRequestIdRef.current !== requestId) {
+          if (previewUrl && revokeOnClose) {
+            URL.revokeObjectURL(previewUrl);
+          }
+          return;
+        }
+
         if (previewUrl) {
           seededActivePreviewUrl = previewUrl;
           if (revokeOnClose) {
@@ -331,12 +366,15 @@ export const useImageGroupPreview = ({
         seededActivePreviewUrl: seededActivePreviewUrl || null,
       });
       setImageGroupPreviewItems(nextPreviewItems);
-      setActiveImageGroupPreviewId(nextActivePreviewId);
-      requestAnimationFrame(() => {
-        if (activeImageGroupPreviewRequestIdRef.current === requestId) {
-          setIsImageGroupPreviewVisible(true);
+      setActiveImageGroupPreview(nextActivePreviewId);
+      imageGroupPreviewOpenFrameRef.current = window.requestAnimationFrame(
+        () => {
+          imageGroupPreviewOpenFrameRef.current = null;
+          if (activeImageGroupPreviewRequestIdRef.current === requestId) {
+            setIsImageGroupPreviewVisible(true);
+          }
         }
-      });
+      );
       void (async () => {
         const prioritizedMessageIds = getPrioritizedImageGroupPreviewMessageIds(
           messages,
@@ -366,11 +404,13 @@ export const useImageGroupPreview = ({
       });
     },
     [
+      clearImageGroupPreviewOpenFrame,
       currentChannelId,
       releaseImageGroupPreviewObjectUrls,
       resolveImageGroupThumbnailItem,
       resolveImageGroupPreviewItem,
       resolveImagePreviewResource,
+      setActiveImageGroupPreview,
     ]
   );
 
@@ -383,6 +423,7 @@ export const useImageGroupPreview = ({
 
     return () => {
       activeImageGroupPreviewRequestIdRef.current += 1;
+      clearImageGroupPreviewOpenFrame();
       imageGroupPreviewMessages.clear();
       imageGroupPreviewInflightIds.clear();
       imageGroupPreviewResolvedIds.clear();
@@ -392,7 +433,7 @@ export const useImageGroupPreview = ({
       }
       releaseImageGroupPreviewObjectUrls();
     };
-  }, [releaseImageGroupPreviewObjectUrls]);
+  }, [clearImageGroupPreviewOpenFrame, releaseImageGroupPreviewObjectUrls]);
 
   const selectImageGroupPreviewItem = useCallback(
     (messageId: string) => {
@@ -402,7 +443,8 @@ export const useImageGroupPreview = ({
         return;
       }
 
-      setActiveImageGroupPreviewId(messageId);
+      const requestId = activeImageGroupPreviewRequestIdRef.current;
+      setActiveImageGroupPreview(messageId);
 
       const normalizedChannelId = currentChannelId?.trim() || null;
       const runtimeFullPreviewUrl = normalizedChannelId
@@ -410,13 +452,21 @@ export const useImageGroupPreview = ({
         : null;
 
       const applyResolvedPreviewUrl = (resolvedPreviewUrl: string) => {
-        setActiveImageGroupPreviewId(messageId);
+        if (
+          activeImageGroupPreviewRequestIdRef.current !== requestId ||
+          activeImageGroupPreviewIdRef.current !== messageId
+        ) {
+          return false;
+        }
+
+        setActiveImageGroupPreview(messageId);
         setImageGroupPreviewItems(previousItems =>
           withImageGroupPreviewResolvedUrl(previousItems, {
             messageId,
             previewUrl: resolvedPreviewUrl,
           })
         );
+        return true;
       };
 
       if (runtimeFullPreviewUrl) {
@@ -449,6 +499,16 @@ export const useImageGroupPreview = ({
           return;
         }
 
+        if (
+          activeImageGroupPreviewRequestIdRef.current !== requestId ||
+          activeImageGroupPreviewIdRef.current !== messageId
+        ) {
+          if (revokeOnClose) {
+            URL.revokeObjectURL(previewUrl);
+          }
+          return;
+        }
+
         if (revokeOnClose) {
           imageGroupPreviewObjectUrlsRef.current.push(previewUrl);
         }
@@ -461,6 +521,7 @@ export const useImageGroupPreview = ({
       imageGroupPreviewItems,
       resolveImageGroupPreviewItem,
       resolveImagePreviewResource,
+      setActiveImageGroupPreview,
     ]
   );
 

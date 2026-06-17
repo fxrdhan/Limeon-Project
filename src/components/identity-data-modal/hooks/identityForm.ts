@@ -51,6 +51,18 @@ export const useIdentityForm = ({
     Record<string, { el: HTMLInputElement | HTMLTextAreaElement | null }>
   >({});
   const previewImageUrlRef = useRef<string | null>(null);
+  const focusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const formSessionRef = useRef(0);
+  const saveAllAttemptRef = useRef(0);
+  const fieldSaveAttemptsRef = useRef<Record<string, number>>({});
+  const saveAllInFlightRef = useRef(false);
+  const fieldSavesInFlightRef = useRef(new Set<string>());
+
+  const clearFocusTimer = useCallback(() => {
+    if (!focusTimerRef.current) return;
+    clearTimeout(focusTimerRef.current);
+    focusTimerRef.current = null;
+  }, []);
 
   const revokePreviewImageUrl = useCallback(() => {
     if (!previewImageUrlRef.current) return;
@@ -58,7 +70,25 @@ export const useIdentityForm = ({
     previewImageUrlRef.current = null;
   }, []);
 
+  const scheduleFieldFocus = useCallback(
+    (key: string, delay: number) => {
+      clearFocusTimer();
+      focusTimerRef.current = setTimeout(() => {
+        focusTimerRef.current = null;
+        const refData = inputRefs.current[key];
+        if (refData && refData.el) {
+          refData.el.focus();
+          if (typeof refData.el.select === 'function') {
+            refData.el.select();
+          }
+        }
+      }, delay);
+    },
+    [clearFocusTimer]
+  );
+
   const resetInternalState = useCallback(() => {
+    clearFocusTimer();
     setEditMode({});
     setEditValues({});
     revokePreviewImageUrl();
@@ -72,70 +102,78 @@ export const useIdentityForm = ({
     if (mode === 'add') {
       setLocalData(initialData);
     }
-  }, [initialData, mode, revokePreviewImageUrl]);
+  }, [clearFocusTimer, initialData, mode, revokePreviewImageUrl]);
 
   useEffect(() => {
+    isMountedRef.current = true;
+
     return () => {
       isMountedRef.current = false;
+      formSessionRef.current += 1;
+      clearFocusTimer();
       revokePreviewImageUrl();
     };
-  }, [revokePreviewImageUrl]);
+  }, [clearFocusTimer, revokePreviewImageUrl]);
 
   useEffect(() => {
-    if (isOpen) {
-      revokePreviewImageUrl();
-      const initialEditState: Record<string, boolean> = {};
-      const initialFormValues: Record<
-        string,
-        string | number | boolean | null
-      > = {};
+    formSessionRef.current += 1;
+    saveAllAttemptRef.current += 1;
+    fieldSaveAttemptsRef.current = {};
+    saveAllInFlightRef.current = false;
+    fieldSavesInFlightRef.current.clear();
+    setLoadingField({});
+    setIsSubmitting(false);
+  }, [initialData?.id, isOpen, mode]);
 
-      fields.forEach(field => {
-        initialEditState[field.key] =
-          field.editable !== false &&
-          (mode === 'add' || (mode === 'edit' && !useInlineFieldActions));
-        let value =
-          initialData[field.key] ??
-          (field.type === 'textarea' ||
-          field.type === 'text' ||
-          field.type === 'email' ||
-          field.type === 'tel'
-            ? ''
-            : null);
+  useEffect(() => {
+    clearFocusTimer();
 
-        if (mode === 'add' && field.key === 'name' && initialNameFromSearch) {
-          value = initialNameFromSearch;
-        }
-        initialFormValues[field.key] = value;
-      });
-      setEditMode(initialEditState);
-      setEditValues(initialFormValues);
-      setLocalData(initialData);
-      setCurrentImageUrl(initialImageUrl || null);
-      setPendingImageFile(null);
-      setPendingImageDelete(false);
+    if (!isOpen) {
+      return;
+    }
 
-      if (mode === 'add' && initialNameFromSearch) {
-        const nameFieldKey =
-          fields.find(f => f.key === 'name')?.key ||
-          fields.find(f => f.editable)?.key;
-        if (nameFieldKey) {
-          setTimeout(() => {
-            const refData = inputRefs.current[nameFieldKey];
-            if (refData && refData.el) {
-              refData.el.focus();
-              if (
-                typeof (refData.el as HTMLInputElement | HTMLTextAreaElement)
-                  .select === 'function'
-              ) {
-                (refData.el as HTMLInputElement | HTMLTextAreaElement).select();
-              }
-            }
-          }, 100);
-        }
+    revokePreviewImageUrl();
+    const initialEditState: Record<string, boolean> = {};
+    const initialFormValues: Record<string, string | number | boolean | null> =
+      {};
+
+    fields.forEach(field => {
+      initialEditState[field.key] =
+        field.editable !== false &&
+        (mode === 'add' || (mode === 'edit' && !useInlineFieldActions));
+      let value =
+        initialData[field.key] ??
+        (field.type === 'textarea' ||
+        field.type === 'text' ||
+        field.type === 'email' ||
+        field.type === 'tel'
+          ? ''
+          : null);
+
+      if (mode === 'add' && field.key === 'name' && initialNameFromSearch) {
+        value = initialNameFromSearch;
+      }
+      initialFormValues[field.key] = value;
+    });
+    setEditMode(initialEditState);
+    setEditValues(initialFormValues);
+    setLocalData(initialData);
+    setCurrentImageUrl(initialImageUrl || null);
+    setPendingImageFile(null);
+    setPendingImageDelete(false);
+
+    if (mode === 'add' && initialNameFromSearch) {
+      const nameFieldKey =
+        fields.find(f => f.key === 'name')?.key ||
+        fields.find(f => f.editable)?.key;
+      if (nameFieldKey) {
+        scheduleFieldFocus(nameFieldKey, 100);
       }
     }
+
+    return clearFocusTimer;
   }, [
+    clearFocusTimer,
     isOpen,
     initialData,
     fields,
@@ -144,6 +182,7 @@ export const useIdentityForm = ({
     initialNameFromSearch,
     useInlineFieldActions,
     revokePreviewImageUrl,
+    scheduleFieldFocus,
   ]);
 
   const setInputRef = useCallback(
@@ -164,23 +203,14 @@ export const useIdentityForm = ({
         const newEditState = !isCurrentlyEditing;
 
         if (newEditState) {
-          setTimeout(() => {
-            const refData = inputRefs.current[key];
-            if (refData && refData.el) {
-              refData.el.focus();
-              if (
-                typeof (refData.el as HTMLInputElement | HTMLTextAreaElement)
-                  .select === 'function'
-              ) {
-                (refData.el as HTMLInputElement | HTMLTextAreaElement).select();
-              }
-            }
-          }, 50);
+          scheduleFieldFocus(key, 50);
+        } else {
+          clearFocusTimer();
         }
         return { ...prevEditModeMap, [key]: newEditState };
       });
     },
-    [inputRefs]
+    [clearFocusTimer, scheduleFieldFocus]
   );
 
   const handleChange = useCallback(
@@ -204,21 +234,61 @@ export const useIdentityForm = ({
         return;
       }
 
+      if (fieldSavesInFlightRef.current.has(key)) {
+        return;
+      }
+
+      const fieldSession = formSessionRef.current;
+      const fieldAttempt = (fieldSaveAttemptsRef.current[key] ?? 0) + 1;
+      fieldSaveAttemptsRef.current[key] = fieldAttempt;
+      fieldSavesInFlightRef.current.add(key);
+      const valueToSave = editValues[key];
       setLoadingField(prev => ({ ...prev, [key]: true }));
       try {
-        await onFieldSave(key, editValues[key]);
-        setLocalData(prev => ({ ...prev, [key]: editValues[key] }));
-        setEditMode(prev => ({ ...prev, [key]: false }));
+        await onFieldSave(key, valueToSave);
+        if (
+          isMountedRef.current &&
+          formSessionRef.current === fieldSession &&
+          fieldSaveAttemptsRef.current[key] === fieldAttempt
+        ) {
+          setLocalData(prev => ({ ...prev, [key]: valueToSave }));
+          setEditMode(prev => ({ ...prev, [key]: false }));
+        }
       } catch (error) {
-        console.error(`Error menyimpan field ${key}:`, error);
+        if (
+          isMountedRef.current &&
+          formSessionRef.current === fieldSession &&
+          fieldSaveAttemptsRef.current[key] === fieldAttempt
+        ) {
+          console.error(`Error menyimpan field ${key}:`, error);
+        }
       } finally {
-        setLoadingField(prev => ({ ...prev, [key]: false }));
+        if (
+          isMountedRef.current &&
+          formSessionRef.current === fieldSession &&
+          fieldSaveAttemptsRef.current[key] === fieldAttempt
+        ) {
+          fieldSavesInFlightRef.current.delete(key);
+          setLoadingField(prev => ({ ...prev, [key]: false }));
+        }
       }
     },
     [onFieldSave, editValues]
   );
 
   const handleSaveAll = useCallback(async () => {
+    if (saveAllInFlightRef.current) {
+      return;
+    }
+
+    saveAllInFlightRef.current = true;
+    const saveSession = formSessionRef.current;
+    const saveAttempt = saveAllAttemptRef.current + 1;
+    saveAllAttemptRef.current = saveAttempt;
+    const isCurrentSave = () =>
+      isMountedRef.current &&
+      formSessionRef.current === saveSession &&
+      saveAllAttemptRef.current === saveAttempt;
     setIsSubmitting(true);
     try {
       const dataToSave = { ...editValues };
@@ -232,6 +302,10 @@ export const useIdentityForm = ({
       }
 
       const saveResult = await onSave(dataToSave);
+      if (!isCurrentSave()) {
+        return;
+      }
+
       const savedEntityId =
         mode === 'edit'
           ? String(initialData?.id || '')
@@ -246,6 +320,9 @@ export const useIdentityForm = ({
 
       if (savedEntityId && pendingImageDelete && onImageDeleteProp) {
         await onImageDeleteProp(savedEntityId);
+        if (!isCurrentSave()) {
+          return;
+        }
         nextImageUrl = null;
       }
 
@@ -254,12 +331,15 @@ export const useIdentityForm = ({
           entityId: savedEntityId,
           file: pendingImageFile,
         });
+        if (!isCurrentSave()) {
+          return;
+        }
         if (typeof uploadedUrl === 'string' && uploadedUrl.trim() !== '') {
           nextImageUrl = uploadedUrl;
         }
       }
 
-      if (isMountedRef.current) {
+      if (isCurrentSave()) {
         revokePreviewImageUrl();
         setPendingImageFile(null);
         setPendingImageDelete(false);
@@ -271,9 +351,12 @@ export const useIdentityForm = ({
         }));
       }
     } catch (error) {
-      console.error('Error menyimpan semua data:', error);
+      if (isCurrentSave()) {
+        console.error('Error menyimpan semua data:', error);
+      }
     } finally {
-      if (isMountedRef.current) {
+      if (isCurrentSave()) {
+        saveAllInFlightRef.current = false;
         setIsSubmitting(false);
       }
     }

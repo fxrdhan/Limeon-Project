@@ -10,8 +10,8 @@ import {
 } from '@/styles/uiPrimitives';
 import MinStockEditor from '../atoms/core/MinStockEditor';
 import FefoTooltip from '../molecules/FefoTooltip';
-import { focusFirstSectionField } from './sectionFocus';
 import { shouldRequestItemSettingsNextSection } from './itemSettingsFormState';
+import { useDeferredSectionFocus } from './useDeferredSectionFocus';
 
 interface ItemSettingsFormProps {
   isExpanded?: boolean;
@@ -57,7 +57,8 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
     ref
   ) => {
     const sectionRef = useRef<HTMLElement>(null);
-    const focusFirstField = () => focusFirstSectionField(sectionRef.current);
+    const { scheduleFocusFirstSectionField } =
+      useDeferredSectionFocus(sectionRef);
 
     return (
       <section
@@ -86,14 +87,14 @@ const ItemSettingsForm = forwardRef<HTMLLabelElement, ItemSettingsFormProps>(
           onFocus={event => {
             if (!isExpanded && event.currentTarget.matches(':focus-visible')) {
               onExpand?.();
-              setTimeout(focusFirstField, 0);
+              scheduleFocusFirstSectionField();
             }
           }}
           onKeyDown={event => {
             if (event.key === 'Enter' || event.key === ' ') {
               event.preventDefault();
               onExpand?.();
-              setTimeout(focusFirstField, 0);
+              scheduleFocusFirstSectionField();
             }
           }}
           tabIndex={17}

@@ -15,11 +15,77 @@ const CHANNEL_IMAGE_ASSET_DB_VERSION = 1;
 const CHANNEL_IMAGE_ASSET_STORE_NAME = 'channel-image-assets';
 const CHANNEL_IMAGE_ASSET_CHANNEL_INDEX = 'channelId';
 const CHANNEL_IMAGE_ASSET_CHANNEL_VARIANT_INDEX = 'channelVariant';
-
 let channelImageAssetDbPromise: Promise<IDBDatabase | null> | null = null;
 
 const canUseIndexedDb = () =>
   typeof window !== 'undefined' && typeof window.indexedDB !== 'undefined';
+
+const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const isChannelImageAssetVariant = (
+  value: unknown
+): value is ChannelImageAssetVariant =>
+  value === 'thumbnail' || value === 'full';
+
+export const normalizePersistedChannelImageAssetRecord = (
+  value: unknown
+): PersistedChannelImageAssetRecord | null => {
+  if (!isObjectRecord(value)) {
+    return null;
+  }
+
+  const {
+    blob,
+    byteSize,
+    channelId,
+    key,
+    lastAccessedAt,
+    messageId,
+    mimeType,
+    updatedAt,
+    variant,
+  } = value;
+
+  if (
+    !(blob instanceof Blob) ||
+    typeof byteSize !== 'number' ||
+    typeof channelId !== 'string' ||
+    !channelId.trim() ||
+    typeof key !== 'string' ||
+    !key.trim() ||
+    typeof lastAccessedAt !== 'number' ||
+    typeof messageId !== 'string' ||
+    !messageId.trim() ||
+    typeof mimeType !== 'string' ||
+    !mimeType.trim() ||
+    typeof updatedAt !== 'number' ||
+    !isChannelImageAssetVariant(variant)
+  ) {
+    return null;
+  }
+
+  return {
+    blob,
+    byteSize,
+    channelId,
+    key,
+    lastAccessedAt,
+    messageId,
+    mimeType,
+    updatedAt,
+    variant,
+  };
+};
+
+export const normalizePersistedChannelImageAssetRecords = (value: unknown) =>
+  Array.isArray(value)
+    ? value.flatMap(record => {
+        const normalizedRecord =
+          normalizePersistedChannelImageAssetRecord(record);
+        return normalizedRecord ? [normalizedRecord] : [];
+      })
+    : [];
 
 const getChannelImageAssetDb = async (): Promise<IDBDatabase | null> => {
   if (!canUseIndexedDb()) {
@@ -79,9 +145,7 @@ export const readPersistedChannelImageAssetRecord = async (
     const request = store.get(assetKey);
 
     request.onsuccess = () => {
-      resolve(
-        (request.result as PersistedChannelImageAssetRecord | undefined) ?? null
-      );
+      resolve(normalizePersistedChannelImageAssetRecord(request.result));
     };
     request.onerror = () => {
       resolve(null);
@@ -110,7 +174,7 @@ export const listPersistedChannelImageAssetRecords = async (
     const request = source.getAll(variant ? [channelId, variant] : channelId);
 
     request.onsuccess = () => {
-      resolve((request.result || []) as PersistedChannelImageAssetRecord[]);
+      resolve(normalizePersistedChannelImageAssetRecords(request.result));
     };
     request.onerror = () => {
       resolve([]);
@@ -212,7 +276,7 @@ export const purgePersistedChannelImageAssetsExcept = async (
     const request = store.getAll();
 
     request.onsuccess = () => {
-      ((request.result || []) as PersistedChannelImageAssetRecord[]).forEach(
+      normalizePersistedChannelImageAssetRecords(request.result).forEach(
         record => {
           if (retainedChannelIds.has(record.channelId)) {
             return;

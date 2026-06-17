@@ -14,7 +14,7 @@ const PDF_PREVIEW_CACHE_KEY_INDEX = 'cacheKey';
 const PDF_PREVIEW_CACHE_UPDATED_AT_INDEX = 'updatedAt';
 const PDF_PREVIEW_CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
-interface PersistedPdfPreviewRecord {
+export interface PersistedPdfPreviewRecord {
   messageId: string;
   cacheKey: string;
   coverDataUrl: string;
@@ -36,6 +36,47 @@ const isPersistedRecordFresh = (
   record: Pick<PersistedPdfPreviewRecord, 'updatedAt'>,
   now = Date.now()
 ) => now - record.updatedAt <= PDF_PREVIEW_CACHE_MAX_AGE_MS;
+
+const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+export const normalizePersistedPdfPreviewRecord = (
+  value: unknown
+): PersistedPdfPreviewRecord | null => {
+  if (!isObjectRecord(value)) {
+    return null;
+  }
+
+  const { cacheKey, coverDataUrl, messageId, pageCount, updatedAt } = value;
+  if (
+    typeof messageId !== 'string' ||
+    !messageId.trim() ||
+    typeof cacheKey !== 'string' ||
+    !cacheKey.trim() ||
+    typeof coverDataUrl !== 'string' ||
+    !coverDataUrl.trim() ||
+    typeof pageCount !== 'number' ||
+    typeof updatedAt !== 'number'
+  ) {
+    return null;
+  }
+
+  return {
+    cacheKey,
+    coverDataUrl,
+    messageId,
+    pageCount,
+    updatedAt,
+  };
+};
+
+export const normalizePersistedPdfPreviewRecords = (value: unknown) =>
+  Array.isArray(value)
+    ? value.flatMap(record => {
+        const normalizedRecord = normalizePersistedPdfPreviewRecord(record);
+        return normalizedRecord ? [normalizedRecord] : [];
+      })
+    : [];
 
 const mapPersistedRecordToEntry = (
   record: PersistedPdfPreviewRecord
@@ -104,14 +145,12 @@ const cleanupPersistedPdfPreviewEntries = async (
 
     getAllRequest.onsuccess = () => {
       const now = Date.now();
-      const records = (
-        (getAllRequest.result || []) as PersistedPdfPreviewRecord[]
-      )
-        .filter(record => typeof record?.messageId === 'string')
-        .sort(
-          (leftRecord, rightRecord) =>
-            rightRecord.updatedAt - leftRecord.updatedAt
-        );
+      const records = normalizePersistedPdfPreviewRecords(
+        getAllRequest.result
+      ).sort(
+        (leftRecord, rightRecord) =>
+          rightRecord.updatedAt - leftRecord.updatedAt
+      );
 
       records.forEach((record, index) => {
         if (
@@ -159,7 +198,7 @@ export const loadPersistedPdfPreviewEntry = async (
     const request = index.get(cacheKey);
 
     request.onsuccess = () => {
-      const record = request.result as PersistedPdfPreviewRecord | undefined;
+      const record = normalizePersistedPdfPreviewRecord(request.result);
       if (!record || !isPersistedRecordFresh(record)) {
         resolve(null);
         return;
@@ -191,7 +230,7 @@ export const loadPersistedPdfPreviewEntries = async (
     const request = store.getAll();
 
     request.onsuccess = () => {
-      resolve((request.result || []) as PersistedPdfPreviewRecord[]);
+      resolve(normalizePersistedPdfPreviewRecords(request.result));
     };
     request.onerror = () => {
       resolve([]);

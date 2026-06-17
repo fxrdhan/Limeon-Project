@@ -44,7 +44,7 @@ export const openRuntimeIndexedDb = ({
     };
 
     request.onupgradeneeded = event => {
-      onUpgrade((event.target as IDBOpenDBRequest).result, event);
+      onUpgrade(request.result, event);
     };
 
     request.onsuccess = () => {

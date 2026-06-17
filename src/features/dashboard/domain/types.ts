@@ -33,14 +33,14 @@ export interface LowStockItem {
   id: string;
   name: string;
   stock: number;
-  item_categories?: { name: string }[];
-  item_packages?: { name: string }[];
+  item_categories?: { name?: string | null }[];
+  item_packages?: { name?: string | null }[];
 }
 
 export interface RecentTransaction {
   id: string;
   type: 'sale' | 'purchase';
-  invoice_number?: string;
+  invoice_number?: string | null;
   counterparty: string;
   date: string;
   total: number;

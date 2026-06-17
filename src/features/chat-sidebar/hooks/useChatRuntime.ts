@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
+import { getErrorCode, getErrorStringField } from '@/lib/errorFields';
 import { chatSidebarCleanupGateway } from '../data/chatSidebarGateway';
 import { chatRuntime } from '../utils/chatRuntime';
 import { useChatIncomingDeliveries } from './useChatIncomingDeliveries';
@@ -14,11 +15,8 @@ const isChatCleanupAuthError = (error: unknown) => {
     return false;
   }
 
-  const code = 'code' in error ? error.code : undefined;
-  const message =
-    'message' in error && typeof error.message === 'string'
-      ? error.message.toLowerCase()
-      : '';
+  const code = getErrorCode(error);
+  const message = getErrorStringField(error, 'message')?.toLowerCase() ?? '';
 
   return (
     code === '401' ||

@@ -58,7 +58,6 @@ export default function ItemPricingForm({
   onBaseUnitChange,
   onBasePriceChange,
   onSellPriceChange,
-  onMarginChange,
   onStartEditMargin,
   onStopEditMargin,
   onMarginInputChange,
@@ -87,6 +86,7 @@ export default function ItemPricingForm({
   const baselineDiscountInputRef = useRef<HTMLInputElement | null>(null);
   const sectionRef = useRef<HTMLElement>(null);
   const pendingFocusRef = useRef(false);
+  const pendingFocusFrameRef = useRef<number | null>(null);
 
   const {
     anchorRef: menuButtonRef,
@@ -109,11 +109,6 @@ export default function ItemPricingForm({
 
   const handleBasePriceChange = (event: ChangeEvent<HTMLInputElement>) => {
     onBasePriceChange(event);
-    setTimeout(() => {
-      if (formData.base_price > 0 && calculatedMargin !== null) {
-        onMarginChange(calculatedMargin.toFixed(1));
-      }
-    }, 0);
   };
 
   const fetchBaseUnitHoverDetail = useCallback(
@@ -264,11 +259,37 @@ export default function ItemPricingForm({
     firstFocusable?.focus();
   }, []);
 
+  const cancelPendingFocusFrame = useCallback(() => {
+    if (pendingFocusFrameRef.current === null) {
+      return;
+    }
+
+    cancelAnimationFrame(pendingFocusFrameRef.current);
+    pendingFocusFrameRef.current = null;
+  }, []);
+
   useEffect(() => {
-    if (!isExpanded || !pendingFocusRef.current) return;
+    if (!isExpanded) {
+      cancelPendingFocusFrame();
+      return;
+    }
+
+    if (!pendingFocusRef.current) return;
     pendingFocusRef.current = false;
-    requestAnimationFrame(() => focusFirstField());
-  }, [focusFirstField, isExpanded]);
+    cancelPendingFocusFrame();
+
+    const frameId = requestAnimationFrame(() => {
+      if (pendingFocusFrameRef.current !== frameId) {
+        return;
+      }
+
+      pendingFocusFrameRef.current = null;
+      focusFirstField();
+    });
+    pendingFocusFrameRef.current = frameId;
+
+    return cancelPendingFocusFrame;
+  }, [cancelPendingFocusFrame, focusFirstField, isExpanded]);
 
   return (
     <section
@@ -309,6 +330,7 @@ export default function ItemPricingForm({
             >
               <Switch
                 size="small"
+                ariaLabel="Harga bertingkat"
                 checked={getIsLevelPricingSwitchChecked({
                   formIsLevelPricingActive: formData.is_level_pricing_active,
                   isLevelPricingActive,
@@ -324,7 +346,12 @@ export default function ItemPricingForm({
             <button
               type="button"
               ref={baselineButtonRef}
-              className="p-1 -ml-1 mr-2 text-slate-500 hover:text-slate-700 cursor-pointer"
+              className={`p-1 -ml-1 mr-2 text-slate-500 hover:text-slate-700 ${
+                disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+              }`}
+              aria-label="Atur baseline harga bertingkat"
+              aria-disabled={disabled}
+              tabIndex={disabled ? -1 : undefined}
               onClick={event => {
                 event.stopPropagation();
                 if (disabled) return;
@@ -338,7 +365,12 @@ export default function ItemPricingForm({
             <button
               type="button"
               ref={menuButtonRef}
-              className="p-1 -ml-2 text-slate-500 hover:text-slate-700 cursor-pointer"
+              className={`p-1 -ml-2 text-slate-500 hover:text-slate-700 ${
+                disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+              }`}
+              aria-label="Buka menu pengaturan harga"
+              aria-disabled={disabled}
+              tabIndex={disabled ? -1 : undefined}
               onClick={event => {
                 event.stopPropagation();
                 if (disabled) return;
@@ -352,6 +384,7 @@ export default function ItemPricingForm({
             <button
               type="button"
               className="p-1 text-slate-500 hover:text-slate-700 cursor-pointer"
+              aria-label="Kembali ke harga utama"
               onClick={event => {
                 event.stopPropagation();
                 hideLevelPricing();

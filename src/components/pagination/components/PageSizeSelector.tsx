@@ -94,8 +94,12 @@ export const PageSizeSelector: React.FC = () => {
     if (!isExpanded) return;
 
     const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target as Node | null;
-      if (target && rootRef.current?.contains(target)) return;
+      if (
+        event.target instanceof Node &&
+        rootRef.current?.contains(event.target)
+      ) {
+        return;
+      }
       setIsExpanded(false);
     };
 

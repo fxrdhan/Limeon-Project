@@ -13,7 +13,7 @@ export const useInventoryUnits = (options?: { enabled?: boolean }) => {
       const result =
         await masterDataService.inventoryUnits.getActiveInventoryUnits();
       if (result.error) throw result.error;
-      return result.data;
+      return result.data ?? [];
     },
     enabled: options?.enabled ?? true,
   });

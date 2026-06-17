@@ -1,4 +1,10 @@
-import React, { forwardRef, useCallback, useMemo, useRef } from 'react';
+import React, {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+} from 'react';
 import { AgGridReact } from 'ag-grid-react';
 import { type AgGridReactProps } from 'ag-grid-react';
 import type {
@@ -8,11 +14,11 @@ import type {
   FirstDataRenderedEvent,
   GetContextMenuItems,
   GridApi,
-  GridState,
   RowDataUpdatedEvent,
   ColumnMenuTab,
 } from 'ag-grid-community';
 import { getDefaultGridConfig } from './gridSetup';
+import { hasInitialColumnSizing } from './gridState';
 
 const MANUAL_COLUMN_RESIZE_PREFIX = 'ag_grid_manual_column_resize_';
 
@@ -67,11 +73,6 @@ const writeManualResizeState = (key?: string): void => {
   }
 };
 
-const hasInitialColumnSizing = (state: unknown): boolean => {
-  const gridState = state as Partial<GridState> | undefined;
-  return (gridState?.columnSizing?.columnSizingModel?.length ?? 0) > 0;
-};
-
 interface DataGridProps extends AgGridReactProps {
   className?: string;
   style?: React.CSSProperties;
@@ -101,6 +102,8 @@ const DataGrid = forwardRef<AgGridReact, DataGridProps>(
   ) => {
     const internalRef = useRef<AgGridReact | null>(null);
     const defaultAutoSizedKeyRef = useRef<string | null>(null);
+    const defaultAutoSizeFrameRef = useRef<number | null>(null);
+    const pendingDefaultAutoSizeKeyRef = useRef<string | null>(null);
     const defaultConfig = getDefaultGridConfig();
     const normalizedColumnDefs = useMemo(() => {
       const stripFlex = (
@@ -156,6 +159,22 @@ const DataGrid = forwardRef<AgGridReact, DataGridProps>(
       !hasInitialColumnSizing(props.initialState) &&
       !hasManualResize;
     const defaultAutoSizeKey = `${manualResizeStorageKey ?? 'grid'}:${columnSignature ?? 'columns'}`;
+    const cancelDefaultAutoSizeFrame = useCallback(() => {
+      if (defaultAutoSizeFrameRef.current === null) {
+        return;
+      }
+
+      cancelAnimationFrame(defaultAutoSizeFrameRef.current);
+      defaultAutoSizeFrameRef.current = null;
+      pendingDefaultAutoSizeKeyRef.current = null;
+    }, []);
+
+    useEffect(
+      () => () => {
+        cancelDefaultAutoSizeFrame();
+      },
+      [cancelDefaultAutoSizeFrame]
+    );
 
     // Modify default config based on props
     const finalConfig = {
@@ -192,6 +211,10 @@ const DataGrid = forwardRef<AgGridReact, DataGridProps>(
       (instance: AgGridReact | null) => {
         internalRef.current = instance;
 
+        if (instance === null) {
+          cancelDefaultAutoSizeFrame();
+        }
+
         if (typeof ref === 'function') {
           ref(instance);
           return;
@@ -202,21 +225,39 @@ const DataGrid = forwardRef<AgGridReact, DataGridProps>(
             instance;
         }
       },
-      [ref]
+      [cancelDefaultAutoSizeFrame, ref]
     );
     const runDefaultAutoSize = useCallback(
       (api: GridApi) => {
         if (!shouldDefaultAutoSize || api.isDestroyed()) return;
         if (defaultAutoSizedKeyRef.current === defaultAutoSizeKey) return;
+        if (
+          defaultAutoSizeFrameRef.current !== null &&
+          pendingDefaultAutoSizeKeyRef.current === defaultAutoSizeKey
+        ) {
+          return;
+        }
 
-        defaultAutoSizedKeyRef.current = defaultAutoSizeKey;
-        requestAnimationFrame(() => {
+        cancelDefaultAutoSizeFrame();
+        const frameId = requestAnimationFrame(() => {
+          if (
+            defaultAutoSizeFrameRef.current !== frameId ||
+            pendingDefaultAutoSizeKeyRef.current !== defaultAutoSizeKey
+          ) {
+            return;
+          }
+
+          defaultAutoSizeFrameRef.current = null;
+          pendingDefaultAutoSizeKeyRef.current = null;
           if (!api.isDestroyed()) {
             api.autoSizeAllColumns();
+            defaultAutoSizedKeyRef.current = defaultAutoSizeKey;
           }
         });
+        defaultAutoSizeFrameRef.current = frameId;
+        pendingDefaultAutoSizeKeyRef.current = defaultAutoSizeKey;
       },
-      [defaultAutoSizeKey, shouldDefaultAutoSize]
+      [cancelDefaultAutoSizeFrame, defaultAutoSizeKey, shouldDefaultAutoSize]
     );
 
     const handleFirstDataRendered = useCallback(

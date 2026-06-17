@@ -65,4 +65,49 @@ describe('useComposerAttachmentPreviewState', () => {
 
     expect(revokeObjectURLSpy).toHaveBeenCalledWith('blob:expanded-preview');
   });
+
+  it('cancels a stale composer image preview open frame after reset', () => {
+    let queuedFrame: FrameRequestCallback | null = null;
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:expanded-preview');
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    const requestAnimationFrameSpy = vi
+      .spyOn(window, 'requestAnimationFrame')
+      .mockImplementation(callback => {
+        queuedFrame = callback;
+        return 42;
+      });
+    const cancelAnimationFrameSpy = vi
+      .spyOn(window, 'cancelAnimationFrame')
+      .mockImplementation(() => {});
+
+    const { result } = renderHook(() =>
+      useComposerAttachmentPreviewState({
+        closeAttachModal: vi.fn(),
+        closeMessageMenu: vi.fn(),
+        pendingComposerAttachments: [buildAttachment()],
+      })
+    );
+
+    act(() => {
+      result.current.openComposerImagePreview('attachment-1');
+    });
+
+    expect(requestAnimationFrameSpy).toHaveBeenCalledOnce();
+    expect(result.current.isComposerImageExpanded).toBe(true);
+    expect(result.current.isComposerImageExpandedVisible).toBe(false);
+
+    act(() => {
+      result.current.resetComposerImagePreviewState();
+    });
+
+    expect(cancelAnimationFrameSpy).toHaveBeenCalledWith(42);
+    expect(result.current.isComposerImageExpanded).toBe(false);
+    expect(result.current.isComposerImageExpandedVisible).toBe(false);
+
+    act(() => {
+      queuedFrame?.(0);
+    });
+
+    expect(result.current.isComposerImageExpandedVisible).toBe(false);
+  });
 });

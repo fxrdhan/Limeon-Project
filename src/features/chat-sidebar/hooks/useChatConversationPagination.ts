@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import type { UserDetails } from '@/types/database';
 import { CHAT_CONVERSATION_PAGE_SIZE } from '../constants';
 import {
@@ -37,6 +37,7 @@ export const useChatConversationPagination = ({
   setIsLoadingOlderMessages,
   setOlderMessagesError,
 }: UseChatConversationPaginationProps) => {
+  const isLoadingOlderMessagesRef = useRef(isLoadingOlderMessages);
   const {
     getActiveSessionToken,
     isSessionTokenActive,
@@ -44,6 +45,10 @@ export const useChatConversationPagination = ({
     oldestLoadedMessageIdRef,
     searchContextMessageIdsRef,
   } = conversationSession;
+
+  useEffect(() => {
+    isLoadingOlderMessagesRef.current = isLoadingOlderMessages;
+  }, [isLoadingOlderMessages]);
 
   return useCallback(async () => {
     if (
@@ -53,12 +58,14 @@ export const useChatConversationPagination = ({
       !currentChannelId ||
       !hasOlderMessages ||
       isLoadingOlderMessages ||
+      isLoadingOlderMessagesRef.current ||
       !oldestLoadedMessageCreatedAtRef.current ||
       !oldestLoadedMessageIdRef.current
     ) {
       return;
     }
 
+    isLoadingOlderMessagesRef.current = true;
     setIsLoadingOlderMessages(true);
     setOlderMessagesError(null);
     const paginationSessionToken = getActiveSessionToken();
@@ -127,6 +134,7 @@ export const useChatConversationPagination = ({
       setOlderMessagesError('Gagal memuat pesan lama');
     } finally {
       if (isSessionTokenActive(paginationSessionToken)) {
+        isLoadingOlderMessagesRef.current = false;
         setIsLoadingOlderMessages(false);
       }
     }

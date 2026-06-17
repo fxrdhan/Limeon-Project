@@ -13,6 +13,9 @@ import {
   syncRealtimeAuthToken,
 } from './authStoreServices';
 
+let loginInFlight = false;
+let logoutInFlight = false;
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   session: null,
   user: null,
@@ -36,6 +39,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   login: async (email, password) => {
+    if (loginInFlight) {
+      return;
+    }
+
+    loginInFlight = true;
     try {
       set({ loading: true, error: null });
       const authService = await loadAuthService();
@@ -61,10 +69,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           error instanceof Error ? error.message : 'An unknown error occurred',
         loading: false,
       });
+    } finally {
+      loginInFlight = false;
     }
   },
 
   logout: async () => {
+    if (logoutInFlight) {
+      return;
+    }
+
+    logoutInFlight = true;
     try {
       const { user } = get();
       set({ loading: true, error: null });
@@ -94,6 +109,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           error instanceof Error ? error.message : 'An unknown error occurred',
         loading: false,
       });
+      logoutInFlight = false;
     }
   },
 
