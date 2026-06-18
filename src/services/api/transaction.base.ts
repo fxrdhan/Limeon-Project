@@ -1,5 +1,6 @@
 import { toServiceError, type ServiceResponse } from './base.service';
 import { supabase } from '@/lib/supabase';
+import type { Json } from '@/types/supabase.generated';
 
 export interface StockDeltaUpdate {
   id: string;
@@ -57,25 +58,21 @@ export const buildStockUpdates = <TOldItem, TNewItem>(
 export const applyStockUpdates = async (
   updates: StockDeltaUpdate[]
 ): Promise<void> => {
-  try {
-    for (const update of updates) {
-      const { data: item } = await supabase
-        .from('items')
-        .select('stock')
-        .eq('id', update.id)
-        .single();
+  if (updates.length === 0) {
+    return;
+  }
 
-      if (!item) {
-        continue;
-      }
+  const payload: Json = updates.map(update => ({
+    id: update.id,
+    increment: update.increment,
+  }));
 
-      await supabase
-        .from('items')
-        .update({ stock: item.stock + update.increment })
-        .eq('id', update.id);
-    }
-  } catch (error) {
-    console.error('Error updating item stocks:', error);
+  const { error } = await supabase.rpc('apply_item_stock_deltas', {
+    p_updates: payload,
+  });
+
+  if (error) {
+    throw error;
   }
 };
 

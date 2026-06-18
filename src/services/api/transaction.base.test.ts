@@ -1,6 +1,18 @@
 import type { PostgrestError } from '@supabase/supabase-js';
-import { describe, expect, it, vi } from 'vite-plus/test';
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
+
+const { mockRpc } = vi.hoisted(() => ({
+  mockRpc: vi.fn(),
+}));
+
+vi.mock('@/lib/supabase', () => ({
+  supabase: {
+    rpc: mockRpc,
+  },
+}));
+
 import {
+  applyStockUpdates,
   buildStockUpdates,
   updateRecordWithLinkedItems,
 } from './transaction.base';
@@ -37,6 +49,14 @@ interface LinkedItem {
 }
 
 describe('transaction base helpers', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockRpc.mockResolvedValue({
+      data: null,
+      error: null,
+    });
+  });
+
   it('aggregates old and new item stock deltas and drops zero changes', () => {
     expect(
       buildStockUpdates({
@@ -75,6 +95,48 @@ describe('transaction base helpers', () => {
         increment: -3,
       },
     ]);
+  });
+
+  it('applies stock deltas through the atomic database rpc', async () => {
+    const updates = [
+      {
+        id: 'item-1',
+        increment: 4,
+      },
+      {
+        id: 'item-2',
+        increment: -2,
+      },
+    ];
+
+    await expect(applyStockUpdates(updates)).resolves.toBeUndefined();
+
+    expect(mockRpc).toHaveBeenCalledWith('apply_item_stock_deltas', {
+      p_updates: updates,
+    });
+  });
+
+  it('skips stock rpc calls when there are no deltas', async () => {
+    await expect(applyStockUpdates([])).resolves.toBeUndefined();
+
+    expect(mockRpc).not.toHaveBeenCalled();
+  });
+
+  it('surfaces stock rpc errors to the caller', async () => {
+    const stockError = error('stock update failed');
+    mockRpc.mockResolvedValueOnce({
+      data: null,
+      error: stockError,
+    });
+
+    await expect(
+      applyStockUpdates([
+        {
+          id: 'item-1',
+          increment: -3,
+        },
+      ])
+    ).rejects.toBe(stockError);
   });
 
   it('updates only the parent record when no linked item payload is supplied', async () => {
@@ -162,6 +224,53 @@ describe('transaction base helpers', () => {
       oldItems,
       nextItems
     );
+  });
+
+  it('returns stock recalculation errors after replacing linked items', async () => {
+    const stockError = error('stock recalculation failed');
+
+    await expect(
+      updateRecordWithLinkedItems<
+        { id: string },
+        LinkedItem,
+        LinkedItem,
+        LinkedItem
+      >({
+        fetchExistingItems: vi.fn(async () =>
+          response([
+            {
+              item_id: 'item-1',
+              quantity: 1,
+            },
+          ])
+        ),
+        nextItems: [
+          {
+            item_id: 'item-1',
+            quantity: 2,
+          },
+        ],
+        recalculateStockDifferences: vi.fn(async () => {
+          throw stockError;
+        }),
+        replaceItems: vi.fn(async () =>
+          response([
+            {
+              item_id: 'item-1',
+              quantity: 2,
+            },
+          ])
+        ),
+        updateRecord: vi.fn(async () =>
+          response({
+            id: 'sale-1',
+          })
+        ),
+      })
+    ).resolves.toEqual({
+      data: null,
+      error: stockError,
+    });
   });
 
   it('returns record and replace errors without running downstream work', async () => {
