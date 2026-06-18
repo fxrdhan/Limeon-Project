@@ -20,7 +20,15 @@ src/schemas/
 
 ## Generated Schemas
 
-Auto-generated from TypeScript type definitions using `ts-to-zod`.
+Auto-generated from TypeScript type definitions using `ts-to-zod`. The generated
+schema files are tracked because runtime validation imports them directly, but
+they should not be edited manually.
+
+Database source of truth flows separately from Supabase into
+`src/types/supabase.generated.ts`. Prefer deriving database-facing TypeScript
+types from that generated file, then generate or write Zod schemas at runtime
+boundaries where validation is required. UI-only form state may keep local types
+when it has transient fields or display-specific shape.
 
 ### Available Schemas
 
@@ -129,7 +137,8 @@ function MyComponent() {
 
 ## Regenerating Schemas
 
-Schemas are automatically generated from TypeScript types. When you update types, regenerate schemas:
+Schemas are generated from TypeScript types. When you update source types,
+regenerate and verify schemas:
 
 ```bash
 # Regenerate all schemas
@@ -140,7 +149,13 @@ bun run gen:schemas:db        # Database types
 bun run gen:schemas:forms     # Form types
 bun run gen:schemas:invoice   # Invoice types
 bun run gen:schemas:purchase  # Purchase types
+
+# Verify tracked generated artifacts are current
+bun run check:generated
 ```
+
+Use `bun run check:generated:fix` when both generated Zod schemas and generated
+Supabase database types should be refreshed in one pass.
 
 ## Configuration
 

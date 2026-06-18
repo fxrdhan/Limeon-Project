@@ -159,6 +159,7 @@ We use a feature branch workflow:
 - [ ] Feature service/data-access imports stay inside explicit data boundary modules (`data/`, `infrastructure/`, or named route/form service-call helpers; `use*Data.ts` files are hooks)
 - [ ] Direct Supabase client imports stay inside service modules, feature infrastructure, or explicit auth/logout realtime helpers in `src/lib`
 - [ ] All React Query keys use `src/constants/queryKeys.ts`
+- [ ] Generated database types and Zod schemas are current (`bun run check:generated`)
 - [ ] No direct Supabase calls in hooks/components (use services/infrastructure)
 - [ ] No hooks/components/features import `src/services/repositories/*` directly
 - [ ] PR title follows conventional commit format
@@ -252,6 +253,12 @@ We use a feature branch workflow:
   (`data/`, `infrastructure/`, or named route/form service-call helpers;
   `use*Data.ts` files are hooks); keep
   `src/services/repositories/*` internal to service-owned modules.
+- Treat `src/types/supabase.generated.ts` as the generated base database
+  contract. Do not edit it manually.
+- Derive app-facing table row, insert, update, RPC, and enum types from
+  `src/types/supabase.generated.ts` where database shape matters. UI/form
+  state may keep narrower local types, but it should not redefine database
+  payload contracts freely.
 
 ## Testing Guidelines
 
@@ -299,6 +306,17 @@ If your changes require database modifications:
    ```
 
 4. Include migration in your PR
+5. Refresh generated database artifacts:
+
+   ```bash
+   bun run check:generated:fix
+   ```
+
+6. Verify generated artifacts are current:
+
+   ```bash
+   bun run check:generated
+   ```
 
 ### Supabase Best Practices
 
@@ -306,6 +324,9 @@ If your changes require database modifications:
 - Write migrations in the `supabase/migrations/` folder
 - Test migrations locally before submitting
 - Document any schema changes in the PR description
+- Keep `src/types/supabase.generated.ts` generated from Supabase, then derive
+  frontend database contracts from that file instead of duplicating table
+  shapes manually.
 
 ## Documentation
 

@@ -32,6 +32,7 @@
 - Do not make remote-only Supabase changes first.
 - Update the relevant local files first, confirm the intended changes are tracked by Git, then use Supabase MCP to deploy Edge Functions or apply migrations only when those local changes are ready.
 - If you need live database state such as tables, columns, schema definitions, RLS policies, or other metadata not represented in `supabase/`, use Supabase MCP.
+- Supabase Auth leaked password protection (`auth_leaked_password_protection` / `password_hibp_enabled`) is a Pro-plan-and-up feature. On the current plan, treat that advisor warning as an accepted platform limitation; do not try to fix it with SQL migrations, `config push`, or application code unless the project plan is upgraded or the user explicitly provides Management API access and asks to enable it.
 
 # Code Exploration
 
