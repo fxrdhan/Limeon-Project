@@ -45,10 +45,10 @@ export const ItemDosageSchema = z.object({
   updated_at: z.string().optional().nullable(),
 });
 
-export const InventoryUnitKindSchema = z.enum([
-  'packaging',
-  'retail_unit',
-  'custom',
+export const InventoryUnitKindSchema = z.union([
+  z.literal('packaging'),
+  z.literal('retail_unit'),
+  z.literal('custom'),
 ]);
 
 export const ItemInventoryUnitSchema = z.object({
@@ -163,15 +163,6 @@ export const PackageConversionSchema = z.object({
   sell_price: z.number(),
 });
 
-export const DBPackageConversionSchema = z.object({
-  id: z.string().optional(),
-  unit_name: z.string(),
-  to_unit_id: z.string().optional(),
-  conversion_rate: z.number(),
-  base_price: z.number().optional(),
-  sell_price: z.number().optional(),
-});
-
 export const ItemUnitHierarchyEntrySchema = z.object({
   id: z.string(),
   item_id: z.string().optional(),
@@ -187,9 +178,25 @@ export const ItemUnitHierarchyEntrySchema = z.object({
   sell_price: z.number(),
 });
 
+export const UnitDataSchema = z.object({
+  id: z.string(),
+  code: z.string().optional(),
+  name: z.string(),
+});
+
+export const DBPackageConversionSchema = z.object({
+  id: z.string().optional(),
+  unit_name: z.string(),
+  to_unit_id: z.string().optional(),
+  conversion_rate: z.number(),
+  base_price: z.number().optional(),
+  sell_price: z.number().optional(),
+});
+
 export const DBItemSchema = z.object({
   id: z.string(),
   name: z.string(),
+  display_name: z.string().optional(),
   manufacturer_id: z.string().optional().nullable(),
   code: z.string().optional(),
   barcode: z.string().optional().nullable(),
@@ -219,6 +226,10 @@ export const DBItemSchema = z.object({
   has_expiry_date: z.boolean().optional().nullable(),
   is_medicine: z.boolean().optional().nullable(),
   dosage_id: z.string().optional().nullable(),
+  measurement_value: z.number().optional().nullable(),
+  measurement_unit_id: z.string().optional().nullable(),
+  measurement_denominator_value: z.number().optional().nullable(),
+  measurement_denominator_unit_id: z.string().optional().nullable(),
   item_categories: z
     .array(
       z.object({
@@ -262,12 +273,6 @@ export const ItemTypeSchema = z.object({
   description: z.string(),
 });
 
-export const UnitDataSchema = z.object({
-  id: z.string(),
-  code: z.string().optional(),
-  name: z.string(),
-});
-
 export const UserDetailsSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -286,6 +291,7 @@ export const TopSellingMedicineSchema = z.object({
 export const ItemSchema = z.object({
   id: z.string(),
   name: z.string(),
+  display_name: z.string().optional(),
   manufacturer: z.object({
     id: z.string().optional(),
     code: z.string().optional().nullable(),
@@ -321,4 +327,8 @@ export const ItemSchema = z.object({
       name: z.string(),
     })
     .optional(),
+  measurement_value: z.number().optional().nullable(),
+  measurement_unit: UnitDataSchema.optional().nullable(),
+  measurement_denominator_value: z.number().optional().nullable(),
+  measurement_denominator_unit: UnitDataSchema.optional().nullable(),
 });

@@ -24,6 +24,7 @@
     ".claude/**",
     ".yarn/**",
     "coverage/**",
+    "src/types/supabase.generated.ts",
     "**/*.js",
     "**/*.mjs",
     "**/*.cjs"

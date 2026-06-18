@@ -10,6 +10,7 @@ export const FormDataSchema = z.object({
   type_id: z.string(),
   category_id: z.string(),
   package_id: z.string(),
+  base_inventory_unit_id: z.string().optional(),
   dosage_id: z.string(),
   barcode: z.string(),
   description: z.string(),
@@ -38,15 +39,10 @@ export const PurchaseFormDataSchema = z.object({
 });
 
 export const SaleFormDataSchema = z.object({
+  customer_id: z.string(),
   patient_id: z.string(),
   doctor_id: z.string(),
+  invoice_number: z.string(),
+  date: z.string(),
   payment_method: z.string(),
-  items: z.array(
-    z.object({
-      item_id: z.string(),
-      quantity: z.number(),
-      price: z.number(),
-      subtotal: z.number(),
-    })
-  ),
 });

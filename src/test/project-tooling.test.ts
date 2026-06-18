@@ -182,9 +182,16 @@ describe('project tooling guardrails', () => {
     expect(scripts['test:coverage:open']).toBe(
       'vp test run --coverage && open coverage/index.html'
     );
-    expect(scripts['gen:schemas']).toBe(
-      'bun run gen:schemas:db && bun run gen:schemas:forms && bun run gen:schemas:invoice && bun run gen:schemas:purchase'
+    expect(scripts['check:generated']).toBe(
+      'bun scripts/check-generated-artifacts.ts'
     );
+    expect(scripts['check:generated:fix']).toBe(
+      'bun scripts/check-generated-artifacts.ts --fix'
+    );
+    expect(scripts['gen:schemas']).toBe(
+      'bun scripts/check-generated-artifacts.ts --fix --only=zod'
+    );
+    expect(scripts['gen:db-types']).toBe('bun run check:db-types:fix');
     expect(scripts['test:agent:run']).toBe(
       'AI_AGENT=codex vp test run --passWithNoTests'
     );
@@ -462,8 +469,10 @@ describe('project tooling guardrails', () => {
       'scripts/check-coverage-100.ts',
       'scripts/coverage/generate-non-runtime-files.ts',
     ]);
+    const bannedVitePlusWorkflowPattern =
+      /\bbun run (?:dev|build|preview|lint|format|test)(?::|\b)|\bbun run check(?:\s|$)/;
     const bannedPatterns = [
-      /\bbun run (?:dev|build|preview|lint|format|check|test)(?::|\b)/,
+      bannedVitePlusWorkflowPattern,
       /\bVite\b/,
       /\bVitest\b/,
       /\bvite\b/,
