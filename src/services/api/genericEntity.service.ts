@@ -16,7 +16,9 @@ export class GenericEntityService<TEntity> {
 
   async list(options: ListOptions): Promise<ServiceResponse<TEntity[]>> {
     try {
-      let query = supabase.from(this.tableName).select(options.select);
+      let query = (supabase.from(this.tableName as any) as any).select(
+        options.select
+      );
 
       if (options.filters) {
         Object.entries(options.filters).forEach(([key, value]) => {
@@ -32,12 +34,12 @@ export class GenericEntityService<TEntity> {
         });
       }
 
-      const { data, error } = await query.returns<TEntity[]>();
+      const { data, error } = await query.returns();
       if (error) {
         return { data: null, error };
       }
 
-      return { data: data || [], error: null };
+      return { data: (data as TEntity[]) || [], error: null };
     } catch (error) {
       return { data: null, error: toServiceError(error) };
     }
@@ -48,18 +50,19 @@ export class GenericEntityService<TEntity> {
     selectFields: string
   ): Promise<ServiceResponse<TEntity>> {
     try {
-      const { data, error } = await supabase
-        .from(this.tableName)
-        .insert(input)
+      const { data, error } = await (
+        supabase.from(this.tableName as any) as any
+      )
+        .insert(input as any)
         .select(selectFields)
-        .returns<TEntity[]>()
+        .returns()
         .single();
 
       if (error) {
         return { data: null, error };
       }
 
-      return { data, error: null };
+      return { data: (data as TEntity) ?? null, error: null };
     } catch (error) {
       return { data: null, error: toServiceError(error) };
     }
@@ -71,12 +74,13 @@ export class GenericEntityService<TEntity> {
     selectFields: string
   ): Promise<ServiceResponse<TEntity>> {
     try {
-      const { data, error } = await supabase
-        .from(this.tableName)
-        .update(input)
+      const { data, error } = await (
+        supabase.from(this.tableName as any) as any
+      )
+        .update(input as any)
         .eq('id', id)
         .select(selectFields)
-        .returns<TEntity[]>()
+        .returns()
         .single();
 
       if (error) {
@@ -91,8 +95,7 @@ export class GenericEntityService<TEntity> {
 
   async delete(id: string): Promise<ServiceResponse<null>> {
     try {
-      const { error } = await supabase
-        .from(this.tableName)
+      const { error } = await (supabase.from(this.tableName as any) as any)
         .delete()
         .eq('id', id);
 

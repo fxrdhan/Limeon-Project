@@ -18,7 +18,7 @@ export class CompanyProfileService {
         return { data: null, error };
       }
 
-      return { data: data ?? null, error: null };
+      return { data: (data as CompanyProfile) ?? null, error: null };
     } catch (error) {
       return { data: null, error: toServiceError(error) };
     }
@@ -32,7 +32,7 @@ export class CompanyProfileService {
     try {
       const { error } = await supabase
         .from('company_profiles')
-        .update({ [field]: value === '' ? null : value })
+        .update({ [field]: value === '' ? null : value } as any)
         .eq('id', profileId);
 
       return { data: null, error };
@@ -47,11 +47,11 @@ export class CompanyProfileService {
     try {
       const { data, error } = await supabase
         .from('company_profiles')
-        .insert(payload)
+        .insert(payload as any)
         .select()
         .single();
 
-      return { data: data ?? null, error };
+      return { data: (data as CompanyProfile) ?? null, error };
     } catch (error) {
       return { data: null, error: toServiceError(error) };
     }

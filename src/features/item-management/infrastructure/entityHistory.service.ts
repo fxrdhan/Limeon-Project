@@ -125,10 +125,10 @@ export const entityHistoryService = {
         entity_id: entityId,
         version_number: versionNumber,
         action_type: actionType,
-        entity_data: entityData,
-        changed_fields: changedFields,
+        entity_data: entityData as any,
+        changed_fields: changedFields as any,
         change_description: changeDescription,
-      });
+      } as any);
 
       return { data: null, error };
     } catch (error) {

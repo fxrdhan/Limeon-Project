@@ -50,12 +50,11 @@ export const itemHistoryService = {
   }): Promise<ServiceResponse<null>> {
     try {
       const { entityTable, entityId, restoreData } = params;
-      const { error } = await supabase
-        .from(entityTable)
+      const { error } = await (supabase.from(entityTable as any) as any)
         .update({
           ...restoreData,
           updated_at: new Date().toISOString(),
-        })
+        } as any)
         .eq('id', entityId);
 
       return { data: null, error };

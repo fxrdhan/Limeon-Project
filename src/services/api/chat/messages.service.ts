@@ -37,7 +37,7 @@ export const chatMessagesService = {
     try {
       const { data, error } = await supabase.rpc(
         CHAT_RPC_NAMES.getMessageById,
-        buildGetChatMessageByIdRpcArgs(id)
+        buildGetChatMessageByIdRpcArgs(id) as any
       );
 
       if (error) {
@@ -71,7 +71,7 @@ export const chatMessagesService = {
         buildFetchChatMessagesPageRpcArgs(targetUserId, {
           ...options,
           limit: pageSize + 1,
-        })
+        }) as any
       );
 
       if (error) {
@@ -117,7 +117,7 @@ export const chatMessagesService = {
         buildSearchChatMessagesRpcArgs(targetUserId, normalizedQuery, {
           ...options,
           limit: pageSize + 1,
-        })
+        }) as any
       );
 
       if (error) {
@@ -148,7 +148,11 @@ export const chatMessagesService = {
     try {
       const { data, error } = await supabase.rpc(
         CHAT_RPC_NAMES.fetchMessageContext,
-        buildFetchChatMessageContextRpcArgs(targetUserId, messageId, options)
+        buildFetchChatMessageContextRpcArgs(
+          targetUserId,
+          messageId,
+          options
+        ) as any
       );
 
       if (error) {
@@ -167,7 +171,7 @@ export const chatMessagesService = {
     try {
       const { data, error } = await supabase.rpc(
         CHAT_RPC_NAMES.createMessage,
-        buildCreateChatMessageRpcArgs(payload)
+        buildCreateChatMessageRpcArgs(payload) as any
       );
 
       if (error) {
@@ -187,7 +191,7 @@ export const chatMessagesService = {
     try {
       const { data, error } = await supabase.rpc(
         CHAT_RPC_NAMES.editMessageText,
-        buildEditChatMessageTextRpcArgs(id, payload)
+        buildEditChatMessageTextRpcArgs(id, payload) as any
       );
 
       if (error) {
@@ -209,7 +213,7 @@ export const chatMessagesService = {
     try {
       const { data, error } = await supabase.rpc(
         CHAT_RPC_NAMES.markMessageIdsAsDelivered,
-        buildMarkChatMessageIdsAsDeliveredRpcArgs(normalizedMessageIds)
+        buildMarkChatMessageIdsAsDeliveredRpcArgs(normalizedMessageIds) as any
       );
 
       if (error) {
@@ -231,7 +235,7 @@ export const chatMessagesService = {
     try {
       const { data, error } = await supabase.rpc(
         CHAT_RPC_NAMES.markMessageIdsAsRead,
-        buildMarkChatMessageIdsAsReadRpcArgs(normalizedMessageIds)
+        buildMarkChatMessageIdsAsReadRpcArgs(normalizedMessageIds) as any
       );
 
       if (error) {
@@ -295,7 +299,7 @@ export const chatMessagesService = {
         buildListUndeliveredIncomingMessageIdsRpcArgs({
           ...options,
           limit: pageSize + 1,
-        })
+        }) as any
       );
 
       if (error) {
@@ -321,7 +325,7 @@ export const chatMessagesService = {
     try {
       const { data, error } = await supabase.rpc(
         CHAT_RPC_NAMES.deleteMessageThread,
-        buildDeleteChatMessageThreadRpcArgs(id)
+        buildDeleteChatMessageThreadRpcArgs(id) as any
       );
 
       if (error) {

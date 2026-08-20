@@ -18,7 +18,10 @@ export const chatDirectoryService = {
     try {
       const { data, error } = await supabase.rpc(
         CHAT_RPC_NAMES.listChatDirectoryUsers,
-        buildListChatDirectoryUsersRpcArgs(pageSize + 1, Math.max(0, offset))
+        buildListChatDirectoryUsersRpcArgs(
+          pageSize + 1,
+          Math.max(0, offset)
+        ) as any
       );
 
       if (error) {

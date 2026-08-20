@@ -36,8 +36,9 @@ export async function replaceLinkedItems<
   const { tableName, foreignKey, parentId, items } = params;
 
   try {
-    const { error: deleteError } = await supabase
-      .from(tableName)
+    const { error: deleteError } = await (
+      supabase.from(tableName as any) as any
+    )
       .delete()
       .eq(foreignKey, parentId);
 
@@ -54,17 +55,16 @@ export async function replaceLinkedItems<
       [foreignKey]: parentId,
     }));
 
-    const { data, error } = await supabase
-      .from(tableName)
-      .insert(payload)
+    const { data, error } = await (supabase.from(tableName as any) as any)
+      .insert(payload as any)
       .select('*')
-      .returns<TInsertedItem[]>();
+      .returns();
 
     if (error) {
       return { data: null, error };
     }
 
-    return { data: data || [], error: null };
+    return { data: (data as TInsertedItem[]) || [], error: null };
   } catch (error) {
     return { data: null, error: toServiceError(error) };
   }
@@ -83,22 +83,24 @@ export async function fetchRecordWithItems<TRecord, TItem>(
   } = params;
 
   try {
-    const { data: record, error: recordError } = await supabase
-      .from(parentTable)
+    const { data: record, error: recordError } = await (
+      supabase.from(parentTable as any) as any
+    )
       .select(parentSelect)
       .eq('id', parentId)
-      .returns<TRecord[]>()
+      .returns()
       .single();
 
     if (recordError || !record) {
       return { data: null, error: recordError };
     }
 
-    const { data: items, error: itemsError } = await supabase
-      .from(itemsTable)
+    const { data: items, error: itemsError } = await (
+      supabase.from(itemsTable as any) as any
+    )
       .select(itemsSelect)
       .eq(itemsForeignKey, parentId)
-      .returns<TItem[]>();
+      .returns();
 
     if (itemsError) {
       return { data: null, error: itemsError };
@@ -106,8 +108,8 @@ export async function fetchRecordWithItems<TRecord, TItem>(
 
     return {
       data: {
-        record,
-        items: items || [],
+        record: record as TRecord,
+        items: (items as TItem[]) || [],
       },
       error: null,
     };
@@ -123,7 +125,9 @@ export async function isUniqueByColumn(
   excludeId?: string
 ): Promise<boolean> {
   try {
-    let query = supabase.from(tableName).select('id').eq(columnName, value);
+    let query = (supabase.from(tableName as any) as any)
+      .select('id')
+      .eq(columnName, value);
 
     if (excludeId) {
       query = query.neq('id', excludeId);
@@ -155,16 +159,15 @@ export async function getRecordsByDateRange<TRecord>(
   } = params;
 
   try {
-    const { data, error } = await supabase
-      .from(tableName)
+    const { data, error } = await (supabase.from(tableName as any) as any)
       .select(select)
       .gte(dateColumn, startDate)
       .lte(dateColumn, endDate)
       .order(orderColumn, { ascending })
-      .returns<TRecord[]>();
+      .returns();
 
     return {
-      data: data || [],
+      data: (data as TRecord[]) || [],
       error,
     };
   } catch (error) {

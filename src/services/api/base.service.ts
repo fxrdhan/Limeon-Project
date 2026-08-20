@@ -60,9 +60,10 @@ export class BaseService<T extends BaseEntity> {
 
   async getAll(options: QueryOptions = {}): Promise<ServiceResponse<T[]>> {
     try {
-      let query = supabase
-        .from(this.tableName)
-        .select(options.select || '*', { count: 'exact' });
+      let query = (supabase.from(this.tableName as any) as any).select(
+        options.select || '*',
+        { count: 'exact' }
+      );
 
       // Apply filters
       if (options.filters) {
@@ -91,10 +92,10 @@ export class BaseService<T extends BaseEntity> {
         );
       }
 
-      const result = await query.returns<T[]>();
+      const result = await query.returns();
 
       return {
-        data: result.data || [],
+        data: (result.data as T[]) || [],
         error: result.error,
         count: result.count,
       };
@@ -109,15 +110,14 @@ export class BaseService<T extends BaseEntity> {
 
   async getById(id: string, select?: string): Promise<ServiceResponse<T>> {
     try {
-      const result = await supabase
-        .from(this.tableName)
+      const result = await (supabase.from(this.tableName as any) as any)
         .select(select || '*')
         .eq('id', id)
-        .returns<T[]>()
+        .returns()
         .single();
 
       return {
-        data: result.data,
+        data: (result.data as T) ?? null,
         error: result.error,
       };
     } catch (error) {
@@ -133,15 +133,14 @@ export class BaseService<T extends BaseEntity> {
   ): Promise<ServiceResponse<T>> {
     try {
       const insertPayload: Record<string, unknown> = { ...data };
-      const result = await supabase
-        .from(this.tableName)
-        .insert(insertPayload)
+      const result = await (supabase.from(this.tableName as any) as any)
+        .insert(insertPayload as any)
         .select()
-        .returns<T[]>()
+        .returns()
         .single();
 
       return {
-        data: result.data,
+        data: (result.data as T) ?? null,
         error: result.error,
       };
     } catch (error) {
@@ -157,16 +156,15 @@ export class BaseService<T extends BaseEntity> {
     data: Partial<Omit<T, 'id' | 'created_at'>>
   ): Promise<ServiceResponse<T>> {
     try {
-      const result = await supabase
-        .from(this.tableName)
-        .update({ ...data, updated_at: new Date().toISOString() })
+      const result = await (supabase.from(this.tableName as any) as any)
+        .update({ ...data, updated_at: new Date().toISOString() } as any)
         .eq('id', id)
         .select()
-        .returns<T[]>()
+        .returns()
         .single();
 
       return {
-        data: result.data,
+        data: (result.data as T) ?? null,
         error: result.error,
       };
     } catch (error) {
@@ -179,7 +177,9 @@ export class BaseService<T extends BaseEntity> {
 
   async delete(id: string): Promise<ServiceResponse<null>> {
     try {
-      const result = await supabase.from(this.tableName).delete().eq('id', id);
+      const result = await (supabase.from(this.tableName as any) as any)
+        .delete()
+        .eq('id', id);
 
       return {
         data: null,
@@ -199,9 +199,10 @@ export class BaseService<T extends BaseEntity> {
     options: QueryOptions = {}
   ): Promise<ServiceResponse<T[]>> {
     try {
-      let searchQuery = supabase
-        .from(this.tableName)
-        .select(options.select || '*', { count: 'exact' });
+      let searchQuery = (supabase.from(this.tableName as any) as any).select(
+        options.select || '*',
+        { count: 'exact' }
+      );
 
       // Build search filter
       if (query && columns.length > 0) {
@@ -232,10 +233,10 @@ export class BaseService<T extends BaseEntity> {
         searchQuery = searchQuery.limit(options.limit);
       }
 
-      const result = await searchQuery.returns<T[]>();
+      const result = await searchQuery.returns();
 
       return {
-        data: result.data || [],
+        data: (result.data as T[]) || [],
         error: result.error,
         count: result.count,
       };
@@ -255,14 +256,13 @@ export class BaseService<T extends BaseEntity> {
       const insertPayload: Record<string, unknown>[] = data.map(item => ({
         ...item,
       }));
-      const result = await supabase
-        .from(this.tableName)
-        .insert(insertPayload)
+      const result = await (supabase.from(this.tableName as any) as any)
+        .insert(insertPayload as any)
         .select()
-        .returns<T[]>();
+        .returns();
 
       return {
-        data: result.data || [],
+        data: (result.data as T[]) || [],
         error: result.error,
       };
     } catch (error) {
@@ -305,8 +305,7 @@ export class BaseService<T extends BaseEntity> {
 
   async exists(id: string): Promise<boolean> {
     try {
-      const result = await supabase
-        .from(this.tableName)
+      const result = await (supabase.from(this.tableName as any) as any)
         .select('id')
         .eq('id', id)
         .single();

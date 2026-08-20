@@ -324,7 +324,7 @@ export class PurchasesService extends BaseService<DBPurchase> {
           p_customer_name: purchaseData.customer_name || null,
           p_customer_address: purchaseData.customer_address || null,
           p_items: purchaseItems,
-        }
+        } as any
       );
 
       if (purchaseError || !purchaseId) {

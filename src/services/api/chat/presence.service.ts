@@ -30,7 +30,7 @@ const syncUserPresenceExitRpc = async (
   try {
     const { data, error } = await supabase.rpc(
       USER_PRESENCE_EXIT_RPC,
-      buildSyncUserPresenceOnExitRpcArgs(userId, payload)
+      buildSyncUserPresenceOnExitRpcArgs(userId, payload) as any
     );
 
     if (error) {
@@ -50,7 +50,7 @@ export const chatPresenceService = {
     try {
       const { data, error } = await supabase.rpc(
         CHAT_RPC_NAMES.getUserPresence,
-        buildGetUserPresenceRpcArgs(userId)
+        buildGetUserPresenceRpcArgs(userId) as any
       );
 
       if (error) {
@@ -70,7 +70,7 @@ export const chatPresenceService = {
     try {
       const { data, error } = await supabase.rpc(
         CHAT_RPC_NAMES.upsertUserPresence,
-        buildUpsertUserPresenceRpcArgs(userId, payload)
+        buildUpsertUserPresenceRpcArgs(userId, payload) as any
       );
 
       if (error) {
@@ -100,15 +100,16 @@ export const chatPresenceService = {
         };
       }
 
-      return {
-        ok: true,
-        errorMessage: null,
-      };
+      return { ok: true, errorMessage: null };
     } catch (error) {
-      console.error('Caught error syncing user presence state:', error);
+      console.error(
+        'Unexpected error while syncing user presence state:',
+        error
+      );
       return {
         ok: false,
-        errorMessage: 'Gagal menyinkronkan status online ke server.',
+        errorMessage:
+          'Terjadi kesalahan tidak terduga saat menyinkronkan status online.',
       };
     }
   },
@@ -119,7 +120,7 @@ export const chatPresenceService = {
     try {
       const { data, error } = await supabase.rpc(
         CHAT_RPC_NAMES.listActiveUserPresenceSince,
-        buildListActiveUserPresenceSinceRpcArgs(since)
+        buildListActiveUserPresenceSinceRpcArgs(since) as any
       );
 
       if (error) {

@@ -1,2 +1,2 @@
-export { PaginationProvider } from './PaginationContext';
+export { PaginationProvider } from './PaginationProvider';
 export { PaginationContext } from './paginationContext';

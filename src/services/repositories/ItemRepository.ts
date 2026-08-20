@@ -159,7 +159,7 @@ export class ItemRepository {
       // Apply filters
       if (options.filters) {
         Object.entries(options.filters).forEach(([key, value]) => {
-          query = query.eq(key, value);
+          query = (query as any).eq(key, value);
         });
       }
 
@@ -219,7 +219,7 @@ export class ItemRepository {
       // Apply additional filters
       if (options.filters) {
         Object.entries(options.filters).forEach(([key, value]) => {
-          supabaseQuery = supabaseQuery.eq(key, value);
+          supabaseQuery = (supabaseQuery as any).eq(key, value);
         });
       }
 

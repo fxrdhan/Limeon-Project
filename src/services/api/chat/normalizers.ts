@@ -158,7 +158,7 @@ const normalizeChatPreviewStatus = (value: string | null | undefined) => {
 };
 
 export const normalizeChatMessage = (
-  message: Partial<ChatMessageRow> | null | undefined
+  message: Partial<ChatMessageRow> | Record<string, unknown> | null | undefined
 ): ChatMessage | null => {
   if (message === null || message === undefined) {
     return null;
@@ -166,51 +166,73 @@ export const normalizeChatMessage = (
 
   const normalizedCreatedAt = getRequiredTimestamp(
     'created_at',
-    message.created_at,
-    message.updated_at
+    message.created_at as string | null | undefined,
+    message.updated_at as string | null | undefined
   );
   const normalizedUpdatedAt = getRequiredTimestamp(
     'updated_at',
-    message.updated_at,
+    message.updated_at as string | null | undefined,
     normalizedCreatedAt
   );
 
   return {
-    id: getRequiredNonEmptyString(message.id, 'id'),
-    sender_id: getRequiredNonEmptyString(message.sender_id, 'sender_id'),
-    receiver_id: getRequiredNonEmptyString(message.receiver_id, 'receiver_id'),
-    channel_id: getRequiredNonEmptyString(message.channel_id, 'channel_id'),
-    message: getRequiredString(message.message, 'message'),
-    reply_to_id: message.reply_to_id ?? null,
+    id: getRequiredNonEmptyString(message.id as string | undefined, 'id'),
+    sender_id: getRequiredNonEmptyString(
+      message.sender_id as string | undefined,
+      'sender_id'
+    ),
+    receiver_id: getRequiredNonEmptyString(
+      message.receiver_id as string | undefined,
+      'receiver_id'
+    ),
+    channel_id: getRequiredNonEmptyString(
+      message.channel_id as string | undefined,
+      'channel_id'
+    ),
+    message: getRequiredString(
+      message.message as string | undefined,
+      'message'
+    ),
+    reply_to_id: (message.reply_to_id as string | null | undefined) ?? null,
     created_at: normalizedCreatedAt,
     updated_at: normalizedUpdatedAt,
     is_read: Boolean(message.is_read),
     is_delivered:
       typeof message.is_delivered === 'boolean' ? message.is_delivered : false,
-    message_type: normalizeChatMessageType(message.message_type),
-    message_relation_kind: normalizeChatMessageRelationKind(
-      message.message_relation_kind
+    message_type: normalizeChatMessageType(
+      message.message_type as string | undefined
     ),
-    file_name: message.file_name ?? null,
-    file_kind: normalizeChatFileKind(message.file_kind),
-    file_mime_type: message.file_mime_type ?? null,
+    message_relation_kind: normalizeChatMessageRelationKind(
+      message.message_relation_kind as string | undefined
+    ),
+    file_name: (message.file_name as string | null | undefined) ?? null,
+    file_kind: normalizeChatFileKind(message.file_kind as string | undefined),
+    file_mime_type:
+      (message.file_mime_type as string | null | undefined) ?? null,
     file_size: typeof message.file_size === 'number' ? message.file_size : null,
-    file_storage_path: message.file_storage_path ?? null,
-    file_preview_url: message.file_preview_url ?? null,
+    file_storage_path:
+      (message.file_storage_path as string | null | undefined) ?? null,
+    file_preview_url:
+      (message.file_preview_url as string | null | undefined) ?? null,
     file_preview_page_count:
       typeof message.file_preview_page_count === 'number'
         ? message.file_preview_page_count
         : null,
     file_preview_status: normalizeChatPreviewStatus(
-      message.file_preview_status
+      message.file_preview_status as string | undefined
     ),
-    file_preview_error: message.file_preview_error ?? null,
-    shared_link_slug: message.shared_link_slug ?? null,
+    file_preview_error:
+      (message.file_preview_error as string | null | undefined) ?? null,
+    shared_link_slug:
+      (message.shared_link_slug as string | null | undefined) ?? null,
   };
 };
 
 export const normalizeChatMessages = (
-  messages: Array<Partial<ChatMessageRow>> | null | undefined
+  messages:
+    | Array<Partial<ChatMessageRow> | Record<string, unknown>>
+    | null
+    | undefined
 ) =>
   (messages ?? []).flatMap((message, messageIndex) => {
     try {
@@ -228,8 +250,8 @@ export const normalizeChatMessages = (
   });
 
 export const normalizeRealtimeChatMessage = (
-  message: Partial<ChatMessageRow> | null | undefined
-) => {
+  message: Partial<ChatMessageRow> | Record<string, unknown> | null | undefined
+): ChatMessage | null => {
   try {
     return normalizeChatMessage(message);
   } catch (error) {
@@ -248,28 +270,42 @@ export const extractRealtimeChatMessageId = (
 };
 
 export const normalizeUserPresence = (
-  presence: Partial<UserPresenceRow> | null | undefined
+  presence:
+    | Partial<UserPresenceRow>
+    | Record<string, unknown>
+    | null
+    | undefined
 ): UserPresence | null => {
   if (presence === null || presence === undefined) {
     return null;
   }
 
   return {
-    id: getRequiredNonEmptyString(presence.id, 'presence.id'),
-    user_id: getRequiredNonEmptyString(presence.user_id, 'presence.user_id'),
+    id: getRequiredNonEmptyString(
+      presence.id as string | undefined,
+      'presence.id'
+    ),
+    user_id: getRequiredNonEmptyString(
+      presence.user_id as string | undefined,
+      'presence.user_id'
+    ),
     is_online: Boolean(presence.is_online),
     last_seen: getRequiredTimestamp(
       'presence.last_seen',
-      presence.last_seen,
-      presence.updated_at
+      presence.last_seen as string | null | undefined,
+      presence.updated_at as string | null | undefined
     ),
-    last_chat_opened: presence.last_chat_opened ?? null,
-    updated_at: presence.updated_at ?? null,
+    last_chat_opened:
+      (presence.last_chat_opened as string | null | undefined) ?? null,
+    updated_at: (presence.updated_at as string | null | undefined) ?? null,
   };
 };
 
 export const normalizeUserPresenceList = (
-  presences: Array<Partial<UserPresenceRow>> | null | undefined
+  presences:
+    | Array<Partial<UserPresenceRow> | Record<string, unknown>>
+    | null
+    | undefined
 ) =>
   (presences ?? []).flatMap((presence, presenceIndex) => {
     invariantChatContract(

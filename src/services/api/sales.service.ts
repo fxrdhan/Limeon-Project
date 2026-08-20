@@ -186,7 +186,7 @@ export class SalesService extends BaseService<DBSale> {
           p_payment_method: saleData.payment_method,
           p_created_by: saleData.created_by || null,
           p_items: buildSaleRpcItems(items),
-        }
+        } as any
       );
 
       if (saleError || !saleId) {
@@ -310,8 +310,13 @@ export class SalesService extends BaseService<DBSale> {
         return { data: null, error };
       }
 
+      const normalizedSales = data.map(item => ({
+        ...item,
+        payment_method: item.payment_method || 'CASH',
+      }));
+
       return {
-        data: calculateSalesAnalytics(data),
+        data: calculateSalesAnalytics(normalizedSales),
         error: null,
       };
     } catch (error) {

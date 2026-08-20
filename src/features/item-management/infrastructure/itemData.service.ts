@@ -248,7 +248,7 @@ export const itemDataService = {
     try {
       const { error } = await supabase
         .from('items')
-        .update(updates)
+        .update(updates as any)
         .eq('id', itemId);
 
       return { data: null, error };
@@ -263,7 +263,7 @@ export const itemDataService = {
     try {
       const { data, error } = await supabase
         .from('items')
-        .insert(payload)
+        .insert(payload as any)
         .select('id')
         .single();
 
@@ -537,7 +537,7 @@ export const itemDataService = {
       }
 
       return {
-        data: (data || []).map(toItemUnitHierarchyEntry),
+        data: (data || []).map(entry => toItemUnitHierarchyEntry(entry as any)),
         error: null,
       };
     } catch (error) {
